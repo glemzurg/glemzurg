@@ -69,7 +69,7 @@ func parseAction(content []byte, filename string) (*inputAction, error) {
 			ErrActionSchemaViolation,
 			"action JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(actionSchemaContent).WithHint("required: \"name\". allowed: name, details, parameters, requires, guarantees, safety_rules")
+		).WithHint("run: req_check --schema action")
 	}
 
 	// Validate required fields and business rules

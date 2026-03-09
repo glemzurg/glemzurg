@@ -132,13 +132,6 @@ func (suite *StateMachineSuite) TestParseStateMachineErrors() {
 					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
 					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
 			}
-
-			if expected.HasSchema {
-				suite.NotEmpty(parseErr.Schema, testName+" should have schema content")
-			} else {
-				suite.Empty(parseErr.Schema, testName+" should not have schema content")
-			}
-
 			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {

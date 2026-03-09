@@ -49,7 +49,7 @@ func parseQuery(content []byte, filename string) (*inputQuery, error) {
 	}
 
 	if err := querySchema.Validate(jsonData); err != nil {
-		return nil, NewParseError(ErrQuerySchemaViolation, "query JSON does not match schema: "+err.Error(), filename).WithSchema(querySchemaContent).WithHint("required: \"name\". allowed: name, details, parameters, requires, guarantees")
+		return nil, NewParseError(ErrQuerySchemaViolation, "query JSON does not match schema: "+err.Error(), filename).WithHint("run: req_check --schema query")
 	}
 
 	if err := validateQuery(&query, filename); err != nil {

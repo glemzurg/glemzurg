@@ -21,7 +21,6 @@ type ParseError struct {
 	Message     string // Human-readable error message
 	ErrorFile   string // Name of the markdown file in errors/ with detailed error info
 	ErrorDetail string // Content of the error markdown file (used by VerboseError and --explain)
-	Schema      string // The JSON schema content (used by VerboseError and --explain)
 	File        string // The JSON file being parsed where the error occurred
 	Field       string // JSON path to the field that caused the error (optional), e.g., "name", "attributes.myAttr.name"
 	Hint        string // Concise remediation hint (1-3 lines)
@@ -62,15 +61,6 @@ func (e *ParseError) VerboseError() string {
 		}
 	}
 
-	// Schema (if set).
-	if e.Schema != "" {
-		b.WriteString("\n--- Schema ---\n")
-		b.WriteString(e.Schema)
-		if !strings.HasSuffix(e.Schema, "\n") {
-			b.WriteString("\n")
-		}
-	}
-
 	return b.String()
 }
 
@@ -93,20 +83,6 @@ func NewParseError(code int, message string, file string) *ParseError {
 	}
 }
 
-// WithSchema returns a copy of the error with the schema content attached.
-func (e *ParseError) WithSchema(schemaContent string) *ParseError {
-	return &ParseError{
-		Code:        e.Code,
-		Message:     e.Message,
-		ErrorFile:   e.ErrorFile,
-		ErrorDetail: e.ErrorDetail,
-		Schema:      schemaContent,
-		File:        e.File,
-		Field:       e.Field,
-		Hint:        e.Hint,
-	}
-}
-
 // WithField returns a copy of the error with the field path set.
 // The field supports JSON path notation for nested fields:
 //   - Top-level: "name"
@@ -118,7 +94,6 @@ func (e *ParseError) WithField(field string) *ParseError {
 		Message:     e.Message,
 		ErrorFile:   e.ErrorFile,
 		ErrorDetail: e.ErrorDetail,
-		Schema:      e.Schema,
 		File:        e.File,
 		Field:       field,
 		Hint:        e.Hint,
@@ -133,7 +108,6 @@ func (e *ParseError) WithHint(hint string) *ParseError {
 		Message:     e.Message,
 		ErrorFile:   e.ErrorFile,
 		ErrorDetail: e.ErrorDetail,
-		Schema:      e.Schema,
 		File:        e.File,
 		Field:       e.Field,
 		Hint:        hint,

@@ -72,7 +72,7 @@ func parseLogic(content []byte, filename string) (*inputLogic, error) {
 			ErrLogicSchemaViolation,
 			"logic JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(logicSchemaContent).WithHint("required: \"description\". allowed: type, description, target, target_type_spec, notation, specification")
+		).WithHint("run: req_check --schema logic")
 	}
 
 	// Validate required fields and business rules

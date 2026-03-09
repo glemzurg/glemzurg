@@ -89,7 +89,7 @@ func parseClass(content []byte, filename string) (*inputClass, error) {
 			ErrClassSchemaViolation,
 			"class JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(classSchemaContent).WithHint("required: \"name\". allowed: name, details, actor_key, attributes, indexes, uml_comment")
+		).WithHint("run: req_check --schema class")
 	}
 
 	// Validate required fields and business rules

@@ -67,7 +67,7 @@ func parseActor(content []byte, filename string) (*inputActor, error) {
 			ErrActorSchemaViolation,
 			"actor JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(actorSchemaContent).WithHint("required: \"name\", \"type\". allowed: name, type, details, uml_comment")
+		).WithHint("run: req_check --schema actor")
 	}
 
 	// Validate required fields

@@ -69,7 +69,7 @@ func parseGlobalFunction(content []byte, filename string) (*inputGlobalFunction,
 			ErrGlobalFuncSchemaViolation,
 			"global function JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(globalFunctionSchemaContent).WithHint("required: \"name\", \"logic\". allowed: name, parameters, logic")
+		).WithHint("run: req_check --schema global_function")
 	}
 
 	// Validate required fields and business rules

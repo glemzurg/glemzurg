@@ -1,228 +1,38 @@
 # State Machine Schema Violation (E7002)
 
-The state machine JSON file contains valid JSON but does not conform to the expected schema.
+The state machine JSON file does not conform to the expected schema.
 
 ## What Went Wrong
 
-The parser successfully read your state machine file as valid JSON, but its structure or content violates the schema rules. This typically means:
-
+The file contains valid JSON but violates the schema rules. Common causes:
 - A required field is missing
-- A field has the wrong type
-- An unknown field is present
-- A field value doesn't meet constraints
+- A field has the wrong type (e.g., number instead of string)
+- An unknown field is present (no additional properties allowed)
+- A string field is empty when a minimum length is required
+
+## How to Fix
+
+1. Run `req_check --schema state_machine` to see the full JSON schema
+2. Compare your file against the schema requirements
+3. Fix the specific violation mentioned in the error message
 
 ## File Location
 
-State machine files are located alongside their class files:
+State machine files: `domains/{domain}/subdomains/{subdomain}/classes/{class}/state_machine.json`.
 
-```
-your_model/
-├── model.json
-└── order_management/
-    ├── domain.json
-    ├── order.class.json
-    └── order.state_machine.json    <-- This file violates the schema
-```
+## How to Read the Error Message
 
-## Schema Requirements
+The error message includes the JSON path to the failing field and the specific rule violated:
 
-### States
+| Error Pattern | Meaning | Fix |
+|--------------|---------|-----|
+| `missing properties: 'X'` | Required field X is absent | Add the field |
+| `expected string, but got number` | Wrong value type | Use a string in double quotes |
+| `length must be >= 1, but got 0` | Empty string not allowed | Provide at least one character |
+| `additionalProperties 'X' not allowed` | Unknown field present | Remove the field or check spelling |
 
-Each state must have:
-- `name` (required, minLength: 1)
-- `details` (optional)
-- `uml_comment` (optional)
-- `actions` (optional array)
+## Related
 
-### Events
-
-Each event must have:
-- `name` (required, minLength: 1)
-- `details` (optional)
-- `parameters` (optional array)
-
-### Guards
-
-Each guard must have:
-- `name` (required, minLength: 1)
-- `details` (required, minLength: 1)
-
-### Transitions
-
-Each transition must have:
-- `event_key` (required, minLength: 1)
-- `from_state_key` (optional, null for initial)
-- `to_state_key` (optional, null for final)
-- `guard_key` (optional)
-- `action_key` (optional)
-- `uml_comment` (optional)
-
-## Common Schema Violations
-
-### 1. State Missing Name
-
-```json
-// WRONG
-{
-    "states": {
-        "pending": {
-            "details": "Order is pending"
-        }
-    }
-}
-
-// CORRECT
-{
-    "states": {
-        "pending": {
-            "name": "Pending",
-            "details": "Order is pending"
-        }
-    }
-}
-```
-
-### 2. Event Missing Name
-
-```json
-// WRONG
-{
-    "events": {
-        "submit": {
-            "details": "User submits"
-        }
-    }
-}
-
-// CORRECT
-{
-    "events": {
-        "submit": {
-            "name": "Submit",
-            "details": "User submits"
-        }
-    }
-}
-```
-
-### 3. Guard Missing Details
-
-```json
-// WRONG
-{
-    "guards": {
-        "is_valid": {
-            "name": "Is Valid"
-        }
-    }
-}
-
-// CORRECT
-{
-    "guards": {
-        "is_valid": {
-            "name": "Is Valid",
-            "details": "Checks all validation rules pass"
-        }
-    }
-}
-```
-
-### 4. Invalid Action When Value
-
-```json
-// WRONG: "when" must be "entry", "exit", or "do"
-{
-    "states": {
-        "pending": {
-            "name": "Pending",
-            "actions": [
-                {
-                    "action_key": "notify",
-                    "when": "always"
-                }
-            ]
-        }
-    }
-}
-
-// CORRECT
-{
-    "states": {
-        "pending": {
-            "name": "Pending",
-            "actions": [
-                {
-                    "action_key": "notify",
-                    "when": "entry"
-                }
-            ]
-        }
-    }
-}
-```
-
-### 5. Unknown Field
-
-```json
-// WRONG: "type" is not in the schema
-{
-    "states": {
-        "pending": {
-            "name": "Pending",
-            "type": "initial"
-        }
-    }
-}
-
-// CORRECT
-{
-    "states": {
-        "pending": {
-            "name": "Pending"
-        }
-    }
-}
-```
-
-## Valid Example
-
-```json
-{
-    "states": {
-        "pending": {
-            "name": "Pending",
-            "details": "Order awaiting approval"
-        },
-        "approved": {
-            "name": "Approved"
-        }
-    },
-    "events": {
-        "approve": {
-            "name": "Approve"
-        }
-    },
-    "guards": {
-        "is_valid": {
-            "name": "Is Valid",
-            "details": "Order passes validation"
-        }
-    },
-    "transitions": [
-        {
-            "from_state_key": "pending",
-            "to_state_key": "approved",
-            "event_key": "approve",
-            "guard_key": "is_valid"
-        }
-    ]
-}
-```
-
-## Related Errors
-
-- **E7001**: Invalid JSON syntax
-- **E7003**: State name is missing
-- **E7009**: Event name is missing
-- **E7014**: Guard name is missing
+- Run `req_check --schema state_machine` for the full schema
+- Run `req_check --format-docs` for model format documentation
+- Run `req_check --tree` for expected directory structure

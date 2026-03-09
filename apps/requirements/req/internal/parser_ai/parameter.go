@@ -65,7 +65,7 @@ func parseParameter(content []byte, filename string) (*inputParameter, error) {
 			ErrParamSchemaViolation,
 			"parameter JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(parameterSchemaContent).WithHint("required: \"name\". allowed: name, data_type_rules")
+		).WithHint("run: req_check --schema parameter")
 	}
 
 	// Validate required fields and business rules

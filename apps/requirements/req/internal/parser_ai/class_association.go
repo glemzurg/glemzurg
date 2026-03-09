@@ -52,7 +52,7 @@ func parseAssociation(content []byte, filename string) (*inputClassAssociation, 
 	}
 
 	if err := classAssociationSchema.Validate(jsonData); err != nil {
-		return nil, NewParseError(ErrAssocSchemaViolation, "association JSON does not match schema: "+err.Error(), filename).WithSchema(classAssociationSchemaContent).WithHint("required: name, from_class_key, from_multiplicity, to_class_key, to_multiplicity. allowed: +details, association_class_key, uml_comment")
+		return nil, NewParseError(ErrAssocSchemaViolation, "association JSON does not match schema: "+err.Error(), filename).WithHint("run: req_check --schema class_association")
 	}
 
 	if err := validateAssociation(&assoc, filename); err != nil {

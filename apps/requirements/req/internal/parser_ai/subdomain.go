@@ -74,7 +74,7 @@ func parseSubdomain(content []byte, filename string) (*inputSubdomain, error) {
 			ErrSubdomainSchemaViolation,
 			"subdomain JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(subdomainSchemaContent).WithHint("required: \"name\". allowed: name, details, uml_comment")
+		).WithHint("run: req_check --schema subdomain")
 	}
 
 	// Validate required fields

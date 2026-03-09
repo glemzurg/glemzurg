@@ -94,7 +94,6 @@ type t_ExpectedError struct {
 	Message       string `json:"message"`        // The expected error message (exact match).
 	MessagePrefix string `json:"message_prefix"` // The expected error message prefix (for dynamic messages).
 	ErrorFile     string `json:"error_file"`     // The expected error markdown file name.
-	HasSchema     bool   `json:"has_schema"`     // Whether the schema content should be attached.
 	Field         string `json:"field"`          // The expected error field (optional).
 }
 

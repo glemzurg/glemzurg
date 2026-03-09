@@ -79,7 +79,7 @@ func parseUseCase(content []byte, filename string) (*inputUseCase, error) {
 			ErrUseCaseSchemaViolation,
 			"use case JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(useCaseSchemaContent).WithHint("required: \"name\", \"level\". allowed: name, details, level, read_only, uml_comment, actors")
+		).WithHint("run: req_check --schema use_case")
 	}
 
 	// Validate required fields and business rules

@@ -72,7 +72,7 @@ func parseActorGeneralization(content []byte, filename string) (*inputActorGener
 			ErrActorGenSchemaViolation,
 			"actor generalization JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(actorGeneralizationSchemaContent).WithHint("required: name, superclass_key, subclass_keys. allowed: +details, is_complete, is_static, uml_comment")
+		).WithHint("run: req_check --schema actor_generalization")
 	}
 
 	// Validate required fields and business rules

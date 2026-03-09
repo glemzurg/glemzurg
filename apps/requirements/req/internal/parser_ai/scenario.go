@@ -93,7 +93,7 @@ func parseScenario(content []byte, filename string) (*inputScenario, error) {
 			ErrScenarioSchemaViolation,
 			"scenario JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(scenarioSchemaContent).WithHint("required: \"name\". allowed: name, details, objects, steps")
+		).WithHint("run: req_check --schema scenario")
 	}
 
 	// Validate required fields

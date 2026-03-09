@@ -1,49 +1,38 @@
 # Global Function Schema Violation (E16004)
 
-The global function JSON is valid JSON but does not conform to the expected schema.
+The global function JSON file does not conform to the expected schema.
 
 ## What Went Wrong
 
-The JSON was parsed successfully, but its structure does not match what is expected for a global function. This typically means:
-- A required field is missing (`name` or `logic`)
-- A field has the wrong type (e.g., `name` is a number instead of a string)
-- An unknown/extra field is present
-- The `logic` object is missing its required `description` field
-- The `parameters` array contains a non-string or empty string
+The file contains valid JSON but violates the schema rules. Common causes:
+- A required field is missing
+- A field has the wrong type (e.g., number instead of string)
+- An unknown field is present (no additional properties allowed)
+- A string field is empty when a minimum length is required
 
-## Required Fields
+## How to Fix
 
-Global function files must contain:
+1. Run `req_check --schema global_function` to see the full JSON schema
+2. Compare your file against the schema requirements
+3. Fix the specific violation mentioned in the error message
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Function name starting with underscore |
-| `logic` | object | Yes | Logic specification with description |
-| `parameters` | array of strings | No | Named parameters for the function |
+## File Location
 
-The `logic` object must contain:
+Global function files: `global_functions/{key}.json`.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `description` | string | Yes | Human-readable description |
-| `notation` | string | No | Formal notation system |
-| `specification` | string | No | Formal specification |
+## How to Read the Error Message
 
-## Correct Format
+The error message includes the JSON path to the failing field and the specific rule violated:
 
-```json
-{
-    "name": "_Max",
-    "parameters": ["x", "y"],
-    "logic": {
-        "description": "Returns the maximum of two values",
-        "notation": "tla_plus",
-        "specification": "IF x > y THEN x ELSE y"
-    }
-}
-```
+| Error Pattern | Meaning | Fix |
+|--------------|---------|-----|
+| `missing properties: 'X'` | Required field X is absent | Add the field |
+| `expected string, but got number` | Wrong value type | Use a string in double quotes |
+| `length must be >= 1, but got 0` | Empty string not allowed | Provide at least one character |
+| `additionalProperties 'X' not allowed` | Unknown field present | Remove the field or check spelling |
 
-## Related Errors
+## Related
 
-- **E16003**: The JSON itself is malformed (syntax error)
-- **E16001**: The `name` field is specifically missing
+- Run `req_check --schema global_function` for the full schema
+- Run `req_check --format-docs` for model format documentation
+- Run `req_check --tree` for expected directory structure

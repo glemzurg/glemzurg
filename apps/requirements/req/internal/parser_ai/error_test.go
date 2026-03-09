@@ -43,7 +43,6 @@ func TestParseErrorConciseOutput(t *testing.T) {
 	assert.Contains(t, output, "file: model.json")
 	// Should NOT contain verbose markdown
 	assert.NotContains(t, output, "--- Error Detail ---")
-	assert.NotContains(t, output, "--- Schema ---")
 }
 
 func TestParseErrorWithField(t *testing.T) {
@@ -62,29 +61,13 @@ func TestParseErrorWithHint(t *testing.T) {
 	assert.Contains(t, output, "hint: required: \"name\" (non-empty string)")
 }
 
-func TestParseErrorWithSchema(t *testing.T) {
-	err := NewParseError(ErrModelNameRequired, "model name is required", "model.json").
-		WithSchema(`{"type": "object"}`)
-
-	// Schema should NOT appear in concise output
-	output := err.Error()
-	assert.NotContains(t, output, "Schema")
-
-	// Schema SHOULD appear in verbose output
-	verbose := err.VerboseError()
-	assert.Contains(t, verbose, "--- Schema ---")
-	assert.Contains(t, verbose, `{"type": "object"}`)
-}
-
 func TestParseErrorVerboseOutput(t *testing.T) {
 	err := NewParseError(ErrModelNameRequired, "model name is required", "model.json").
-		WithHint("add a name field").
-		WithSchema(`{"type": "object"}`)
+		WithHint("add a name field")
 
 	verbose := err.VerboseError()
 	assert.Contains(t, verbose, "E1001:")
 	assert.Contains(t, verbose, "--- Error Detail ---")
-	assert.Contains(t, verbose, "--- Schema ---")
 }
 
 func TestParseErrorBuildersPreserveFields(t *testing.T) {
@@ -97,9 +80,4 @@ func TestParseErrorBuildersPreserveFields(t *testing.T) {
 	withField := withHint.WithField("name")
 	assert.Equal(t, "name", withField.Field)
 	assert.Equal(t, "hint text", withField.Hint)
-
-	withSchema := withField.WithSchema("schema content")
-	assert.Equal(t, "schema content", withSchema.Schema)
-	assert.Equal(t, "name", withSchema.Field)
-	assert.Equal(t, "hint text", withSchema.Hint)
 }

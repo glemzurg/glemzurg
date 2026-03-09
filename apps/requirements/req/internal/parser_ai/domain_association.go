@@ -68,7 +68,7 @@ func parseDomainAssociation(content []byte, filename string) (*inputDomainAssoci
 			ErrDomainAssocSchemaViolation,
 			"domain association JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(domainAssociationSchemaContent).WithHint("required: problem_domain_key, solution_domain_key. allowed: +uml_comment")
+		).WithHint("run: req_check --schema domain_association")
 	}
 
 	// Validate required fields and business rules

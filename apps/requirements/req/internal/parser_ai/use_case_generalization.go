@@ -72,7 +72,7 @@ func parseUseCaseGeneralization(content []byte, filename string) (*inputUseCaseG
 			ErrUseCaseGenSchemaViolation,
 			"use case generalization JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(useCaseGeneralizationSchemaContent).WithHint("required: name, superclass_key, subclass_keys. allowed: +details, is_complete, is_static, uml_comment")
+		).WithHint("run: req_check --schema use_case_generalization")
 	}
 
 	// Validate required fields and business rules

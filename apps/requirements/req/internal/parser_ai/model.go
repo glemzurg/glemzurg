@@ -75,7 +75,7 @@ func parseModel(content []byte, filename string) (*inputModel, error) {
 			ErrModelSchemaViolation,
 			"model JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(modelSchemaContent).WithHint("required: \"name\" (non-empty string). allowed: name, details")
+		).WithHint("run: req_check --schema model")
 	}
 
 	// Validate required fields

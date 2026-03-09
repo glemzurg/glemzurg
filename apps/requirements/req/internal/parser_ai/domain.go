@@ -71,7 +71,7 @@ func parseDomain(content []byte, filename string) (*inputDomain, error) {
 			ErrDomainSchemaViolation,
 			"domain JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(domainSchemaContent).WithHint("required: \"name\". allowed: name, details, realized, uml_comment")
+		).WithHint("run: req_check --schema domain")
 	}
 
 	// Validate required fields

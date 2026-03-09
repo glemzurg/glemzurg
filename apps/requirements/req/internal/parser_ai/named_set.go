@@ -64,7 +64,7 @@ func parseNamedSet(content []byte, filename string) (*inputNamedSet, error) {
 			ErrNamedSetSchemaViolation,
 			"named set JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(namedSetSchemaContent).WithHint("required: \"name\". allowed: name, description, notation, specification, type_spec")
+		).WithHint("run: req_check --schema named_set")
 	}
 
 	if err := validateNamedSet(&ns, filename); err != nil {

@@ -1,153 +1,38 @@
 # Action Schema Violation (E8004)
 
-The action JSON file contains valid JSON but does not conform to the expected schema.
+The action JSON file does not conform to the expected schema.
 
 ## What Went Wrong
 
-The parser successfully read your action file as valid JSON, but its structure or content violates the schema rules. This typically means:
+The file contains valid JSON but violates the schema rules. Common causes:
+- A required field is missing
+- A field has the wrong type (e.g., number instead of string)
+- An unknown field is present (no additional properties allowed)
+- A string field is empty when a minimum length is required
 
-- A required field is missing (`name`)
-- A field has the wrong type
-- An unknown field is present
-- A field value doesn't meet constraints (e.g., empty string)
+## How to Fix
+
+1. Run `req_check --schema action` to see the full JSON schema
+2. Compare your file against the schema requirements
+3. Fix the specific violation mentioned in the error message
 
 ## File Location
 
-Action files are located alongside their class files:
+Action files: `domains/{domain}/subdomains/{subdomain}/classes/{class}/actions/{action}.json`.
 
-```
-your_model/
-├── model.json
-└── order_management/
-    ├── order.class.json
-    └── order.actions.json    <-- This file violates the schema
-```
+## How to Read the Error Message
 
-## Schema Requirements
+The error message includes the JSON path to the failing field and the specific rule violated:
 
-### Required Fields
+| Error Pattern | Meaning | Fix |
+|--------------|---------|-----|
+| `missing properties: 'X'` | Required field X is absent | Add the field |
+| `expected string, but got number` | Wrong value type | Use a string in double quotes |
+| `length must be >= 1, but got 0` | Empty string not allowed | Provide at least one character |
+| `additionalProperties 'X' not allowed` | Unknown field present | Remove the field or check spelling |
 
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| `name` | string | `minLength: 1` | Display name for the action |
+## Related
 
-### Optional Fields
-
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| `details` | string | None | Human-readable summary (NOT for logic) |
-| `requires` | string[] | None | Preconditions (logic goes here) |
-| `guarantees` | string[] | None | Postconditions (logic goes here) |
-
-**Important**: The `details` field is for human-readable summaries only. Logic (preconditions, postconditions, business rules) must go in `requires` and `guarantees`.
-
-## Common Schema Violations
-
-### 1. Missing Required Name
-
-```json
-// WRONG: Missing 'name'
-{
-    "details": "Sends an email"
-}
-
-// CORRECT
-{
-    "name": "Send Email",
-    "details": "Sends an email"
-}
-```
-
-### 2. Empty Name
-
-```json
-// WRONG: Empty name
-{
-    "name": ""
-}
-
-// CORRECT
-{
-    "name": "Send Email"
-}
-```
-
-### 3. Wrong Type for Fields
-
-```json
-// WRONG: requires should be an array, not a string
-{
-    "name": "Send Email",
-    "requires": "Customer must exist"
-}
-
-// CORRECT
-{
-    "name": "Send Email",
-    "requires": ["Customer must exist"]
-}
-```
-
-### 4. Additional Properties Not Allowed
-
-```json
-// WRONG: 'type' is not in the schema
-{
-    "name": "Send Email",
-    "type": "notification"
-}
-
-// CORRECT
-{
-    "name": "Send Email"
-}
-```
-
-## Valid Examples
-
-### Minimal Valid File
-
-```json
-{
-    "name": "Send Confirmation Email"
-}
-```
-
-### Action with Details
-
-```json
-{
-    "name": "Send Confirmation Email",
-    "details": "Sends an email to the customer confirming their order has been received"
-}
-```
-
-### Complete Action
-
-```json
-{
-    "name": "Process Payment",
-    "details": "Charges the customer's payment method and records the transaction",
-    "requires": [
-        "Order total must be greater than zero",
-        "Customer payment method must be valid"
-    ],
-    "guarantees": [
-        "Payment has been charged",
-        "Transaction record has been created"
-    ]
-}
-```
-
-## Understanding Requires and Guarantees
-
-- **requires**: Preconditions that must be true before the action executes
-- **guarantees**: Postconditions that will be true after the action completes
-
-These are design-by-contract concepts that help document the action's behavior.
-
-## Related Errors
-
-- **E8001**: Name field is missing
-- **E8002**: Name field is empty
-- **E8003**: JSON syntax is invalid
+- Run `req_check --schema action` for the full schema
+- Run `req_check --format-docs` for model format documentation
+- Run `req_check --tree` for expected directory structure
