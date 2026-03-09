@@ -1,24 +1,4 @@
 
-update ai parser to be an ai desitned cli:
-  - move error codes to req_model
-  - small outputs with ways to get schemas to people
-    - https://grok.com/share/c2hhcmQtMw_d87e1d40-d147-49e4-a204-39e0de4afe15
-  - rename to logic/ir
-    - that is the input structure for ai interface
-
-
-
-
-
-[
-  {
-    "type": "parse",
-    "code": "E21002",
-    "message": "resulting model validation failed: requires 0: [LOGIC_SPEC_INVALID] logic \"domain/sales/subdomain/default/class/item/action/update_item/arequire/0\" spec: [EXPRSPEC_NOTATION_REQUIRED] Notation is required (field: Notation, want: one of: tla_plus) (field: Spec)",
-    "file": "model.json",
-    "hint": "run: req_check --explain E21002"
-  }
-]
 
 ----------------------------
 
