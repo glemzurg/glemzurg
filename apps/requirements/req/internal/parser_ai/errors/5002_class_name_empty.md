@@ -12,10 +12,13 @@ Class files are located within domain directories:
 
 ```
 your_model/
-├── model.json
-└── order_management/           <-- Domain directory
-    ├── domain.json
-    └── order.class.json        <-- This file has an empty name
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── classes/
+                    └── order/
+                        └── class.json    <-- This file has an empty name
 ```
 
 ## How to Fix

@@ -13,10 +13,10 @@ Association files are located in the `associations/` directory at the model root
 ```
 your_model/
 ├── model.json
-├── associations/
+├── class_associations/
 │   └── order_has_items.assoc.json    <-- This file has an empty name
-└── order_management/
-    └── order.class.json
+└── domains/
+    └── ...
 ```
 
 ## How to Fix

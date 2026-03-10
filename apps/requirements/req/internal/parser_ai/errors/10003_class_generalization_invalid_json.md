@@ -8,13 +8,16 @@ The parser attempted to read your class generalization file but encountered a JS
 
 ## File Location
 
-Class generalization files are located in the `class_generalizations/` directory:
+Class generalization files are located in the `class_generalizations/` directory within a subdomain:
 
 ```
 your_model/
-├── model.json
-└── class_generalizations/
-    └── payment_types.cgen.json    <-- This file contains invalid JSON syntax
+└── domains/
+    └── billing/
+        └── subdomains/
+            └── default/
+                └── class_generalizations/
+                    └── payment_types.cgen.json    <-- This file contains invalid JSON syntax
 ```
 
 ## How to Fix

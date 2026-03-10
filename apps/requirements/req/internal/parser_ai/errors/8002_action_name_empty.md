@@ -12,10 +12,15 @@ Action files are located alongside their class files:
 
 ```
 your_model/
-├── model.json
-└── order_management/
-    ├── order.class.json
-    └── order.actions.json    <-- This file has an empty name
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── classes/
+                    └── order/
+                        ├── class.json
+                        └── actions/
+                            └── send_confirmation.json    <-- This file has an empty name
 ```
 
 ## How to Fix

@@ -8,13 +8,16 @@ The `subclass_keys` array contains an entry that is either an empty string (`""`
 
 ## File Location
 
-Class generalization files are located in the `class_generalizations/` directory:
+Class generalization files are located in the `class_generalizations/` directory within a subdomain:
 
 ```
 your_model/
-├── model.json
-└── class_generalizations/
-    └── payment_types.cgen.json    <-- This file has an empty subclass key
+└── domains/
+    └── billing/
+        └── subdomains/
+            └── default/
+                └── class_generalizations/
+                    └── payment_types.cgen.json    <-- This file has an empty subclass key
 ```
 
 ## How to Fix

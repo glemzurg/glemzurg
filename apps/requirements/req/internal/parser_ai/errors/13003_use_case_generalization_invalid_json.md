@@ -12,9 +12,12 @@ Use case generalization files are located in the `use_case_generalizations/` dir
 
 ```
 your_model/
-├── model.json
-└── use_case_generalizations/
-    └── order_types.uc_gen.json    <-- This file contains invalid JSON syntax
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── use_case_generalizations/
+                    └── order_types.ucgen.json    <-- This file contains invalid JSON syntax
 ```
 
 ## How to Fix
@@ -133,10 +136,10 @@ Ensure your use case generalization file contains valid JSON. A minimal valid fi
 
 ```bash
 # Validate JSON with jq
-jq . use_case_generalizations/order_types.uc_gen.json
+jq . use_case_generalizations/order_types.ucgen.json
 
 # Validate with Python
-python3 -m json.tool use_case_generalizations/order_types.uc_gen.json
+python3 -m json.tool use_case_generalizations/order_types.ucgen.json
 ```
 
 ## Valid Use Case Generalization Template

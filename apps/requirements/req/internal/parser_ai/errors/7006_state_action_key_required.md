@@ -12,11 +12,16 @@ State machine files are located alongside their class files:
 
 ```
 your_model/
-├── model.json
-└── order_management/
-    ├── order.class.json
-    ├── order.actions.json          <-- Actions are defined here
-    └── order.state_machine.json    <-- An action reference has an empty key
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── classes/
+                    └── order/
+                        ├── class.json
+                        ├── state_machine.json    <-- An action reference has an empty key
+                        └── actions/
+                            └── *.json            <-- Actions are defined here
 ```
 
 ## How to Fix

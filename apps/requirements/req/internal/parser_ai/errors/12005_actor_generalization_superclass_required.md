@@ -14,7 +14,7 @@ Actor generalization files are located in the `actor_generalizations/` directory
 your_model/
 ├── model.json
 └── actor_generalizations/
-    └── user_types.actor_gen.json    <-- This file has invalid superclass_key
+    └── user_types.agen.json    <-- This file has invalid superclass_key
 ```
 
 ## How to Fix

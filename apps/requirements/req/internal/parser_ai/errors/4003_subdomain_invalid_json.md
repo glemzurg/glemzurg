@@ -13,11 +13,14 @@ Subdomain files are located within domain directories:
 ```
 your_model/
 ├── model.json
-└── order_management/
-    ├── domain.json
-    └── fulfillment/
-        ├── subdomain.json            <-- This file contains invalid JSON syntax
-        └── ... (classes, etc.)
+└── domains/
+    └── order_management/
+        ├── domain.json
+        └── subdomains/
+            └── fulfillment/
+                ├── subdomain.json        <-- This file contains invalid JSON syntax
+                └── classes/
+                    └── ...
 ```
 
 ## How to Fix

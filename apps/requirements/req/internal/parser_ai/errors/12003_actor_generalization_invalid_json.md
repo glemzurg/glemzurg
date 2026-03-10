@@ -14,7 +14,7 @@ Actor generalization files are located in the `actor_generalizations/` directory
 your_model/
 ├── model.json
 └── actor_generalizations/
-    └── user_types.actor_gen.json    <-- This file contains invalid JSON syntax
+    └── user_types.agen.json    <-- This file contains invalid JSON syntax
 ```
 
 ## How to Fix
@@ -133,10 +133,10 @@ Ensure your actor generalization file contains valid JSON. A minimal valid file 
 
 ```bash
 # Validate JSON with jq
-jq . actor_generalizations/user_types.actor_gen.json
+jq . actor_generalizations/user_types.agen.json
 
 # Validate with Python
-python3 -m json.tool actor_generalizations/user_types.actor_gen.json
+python3 -m json.tool actor_generalizations/user_types.agen.json
 ```
 
 ## Valid Actor Generalization Template

@@ -15,8 +15,7 @@ your_model/
 ├── model.json          <-- This file contains invalid JSON syntax
 ├── actors/
 ├── domains/
-├── class_associations/
-└── class_generalizations/
+└── class_associations/
 ```
 
 ## How to Fix

@@ -12,11 +12,14 @@ State machine files are located alongside their class files:
 
 ```
 your_model/
-├── model.json
-└── order_management/
-    ├── domain.json
-    ├── order.class.json
-    └── order.state_machine.json    <-- This file contains invalid JSON
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── classes/
+                    └── order/
+                        ├── class.json
+                        └── state_machine.json    <-- This file contains invalid JSON
 ```
 
 ## How to Fix

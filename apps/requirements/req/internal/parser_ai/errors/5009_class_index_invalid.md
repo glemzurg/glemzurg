@@ -12,10 +12,13 @@ Class files are located within domain directories:
 
 ```
 your_model/
-├── model.json
-└── order_management/           <-- Domain directory
-    ├── domain.json
-    └── order.class.json        <-- An index in this file has an invalid key
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── classes/
+                    └── order/
+                        └── class.json    <-- An index in this file has an invalid key
 ```
 
 ## How to Fix

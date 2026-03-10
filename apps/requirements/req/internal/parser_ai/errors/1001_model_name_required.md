@@ -15,8 +15,7 @@ your_model/
 ├── model.json          <-- This file is missing the "name" field
 ├── actors/
 ├── domains/
-├── class_associations/
-└── class_generalizations/
+└── class_associations/
 ```
 
 ## How to Fix

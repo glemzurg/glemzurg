@@ -8,16 +8,18 @@ The parser found a class generalization file but it does not contain a `name` pr
 
 ## File Location
 
-Class generalization files are located in the `class_generalizations/` directory at the model root:
+Class generalization files are located in the `class_generalizations/` directory within a subdomain:
 
 ```
 your_model/
-├── model.json
-├── actors/
-├── order_management/
-│   └── ... (classes)
-└── class_generalizations/
-    └── payment_types.cgen.json    <-- This file is missing the "name" field
+└── domains/
+    └── billing/
+        └── subdomains/
+            └── default/
+                ├── classes/
+                │   └── ...
+                └── class_generalizations/
+                    └── payment_types.cgen.json    <-- This file is missing the "name" field
 ```
 
 ## How to Fix

@@ -12,10 +12,14 @@ State machine files are located alongside their class files:
 
 ```
 your_model/
-├── model.json
-└── order_management/
-    ├── order.class.json
-    └── order.state_machine.json    <-- A guard in this file has an empty name
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── classes/
+                    └── order/
+                        ├── class.json
+                        └── state_machine.json    <-- A guard in this file has an empty name
 ```
 
 ## How to Fix

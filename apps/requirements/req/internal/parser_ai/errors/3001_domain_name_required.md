@@ -14,9 +14,11 @@ Domain files are located in directories named after the domain. The `domain.json
 your_model/
 ├── model.json
 ├── actors/
-└── order_management/           <-- Domain directory (name becomes the domain key)
-    ├── domain.json             <-- This file is missing the "name" field
-    └── ... (classes, etc.)
+└── domains/
+    └── order_management/           <-- Domain directory (name becomes the domain key)
+        ├── domain.json             <-- This file is missing the "name" field
+        └── subdomains/
+            └── ...
 ```
 
 ## How to Fix
@@ -110,20 +112,24 @@ The domain has two identifiers:
 ## How Domains Connect to Other Files
 
 ```
-order_management/                    <-- Domain directory
-├── domain.json                      <-- You are here (defines domain name)
-│
-├── order.class.json                 <-- Classes in this domain
-├── order_line.class.json            │   Key: order_management.order
-│                                    │   Key: order_management.order_line
-│
-├── order.state_machine.json         <-- State machines for classes
-├── order.actions.json               <-- Actions for classes
-└── order.queries.json               <-- Queries for classes
-
-associations/
-└── *.assoc.json                     <-- May reference classes in this domain
-                                         using keys like "order_management.order"
+domains/
+└── order_management/                         <-- Domain directory
+    ├── domain.json                           <-- You are here (defines domain name)
+    ├── class_associations/
+    │   └── *.assoc.json                      <-- Domain-level associations (cross-subdomain)
+    └── subdomains/
+        └── default/
+            ├── subdomain.json
+            ├── class_associations/
+            │   └── *.assoc.json              <-- Subdomain-level associations
+            └── classes/
+                └── order/
+                    ├── class.json
+                    ├── state_machine.json
+                    ├── actions/
+                    │   └── *.json
+                    └── queries/
+                        └── *.json
 ```
 
 ## Related Errors

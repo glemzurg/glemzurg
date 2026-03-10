@@ -12,9 +12,12 @@ Use case generalization files are located in the `use_case_generalizations/` dir
 
 ```
 your_model/
-├── model.json
-└── use_case_generalizations/
-    └── order_types.uc_gen.json    <-- This file has missing or empty subclass_keys
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── use_case_generalizations/
+                    └── order_types.ucgen.json    <-- This file has missing or empty subclass_keys
 ```
 
 ## How to Fix
@@ -95,9 +98,9 @@ Each entry in `subclass_keys` must reference an existing use case file:
 
 | Use Case File Path | Use Case Key |
 |---------------------|--------------|
-| `use_cases/process_online_order.uc.json` | `process_online_order` |
-| `use_cases/process_in_store_order.uc.json` | `process_in_store_order` |
-| `use_cases/process_phone_order.uc.json` | `process_phone_order` |
+| `use_cases/process_online_order/use_case.json` | `process_online_order` |
+| `use_cases/process_in_store_order/use_case.json` | `process_in_store_order` |
+| `use_cases/process_phone_order/use_case.json` | `process_phone_order` |
 
 ## Troubleshooting Checklist
 
@@ -110,8 +113,8 @@ Each entry in `subclass_keys` must reference an existing use case file:
 
 ```bash
 # For subclass_keys: ["process_online_order", "process_in_store_order"]
-ls use_cases/process_online_order.uc.json
-ls use_cases/process_in_store_order.uc.json
+ls use_cases/process_online_order/use_case.json
+ls use_cases/process_in_store_order/use_case.json
 ```
 
 ## Complete Schema
