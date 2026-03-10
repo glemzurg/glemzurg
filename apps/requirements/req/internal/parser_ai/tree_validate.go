@@ -374,7 +374,7 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 }
 
 // dataTypeHint is the concise hint shown for data type parse errors.
-const dataTypeHint = "valid types: unconstrained, enum of v1, v2, v3, [1..100] at 1 unit, ordered/unordered/stack/queue of <type>, { field: <type> }. integers and floats are spans e.g. [0..unconstrained] at 1 count or [0..unconstrained] at 0.01 dollars"
+const dataTypeHint = "valid types: unconstrained, enum of v1, v2, v3, [1..100] at 1 unit, ordered/unordered/stack/queue of <type>, { field: <type> }. integers and floats are spans e.g. [0..unconstrained] at 1 count or [0..unconstrained] at 0.01 dollars. booleans are enum of true, false. strings are unconstrained for free text, enum of x, y for a fixed set, or ref from Source Name for externally documented values (e.g. ISO codes)"
 
 // validateClassDataTypes validates that all attribute data_type_rules in a class are parseable.
 func validateClassDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {

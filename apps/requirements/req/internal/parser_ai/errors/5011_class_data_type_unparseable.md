@@ -32,7 +32,8 @@ Where `<type>` is any atomic type (unconstrained, enum, span).
 
 Check spelling and syntax of `data_type_rules`. Common mistakes:
 - Using `integer`/`float`/`number` — there are no primitive numeric types; use a **span** instead, e.g. `[0 .. unconstrained] at 1 count` for integers or `[0 .. unconstrained] at 0.01 dollars` for decimals
-- Using `string`/`boolean` (these are TLA+ type specs, not data_type_rules)
+- Using `boolean` — there is no boolean type; use `enum of true, false` instead
+- Using `string` — there is no string type; use `unconstrained` for free text, `enum of x, y, z` for a fixed set of values, or `ref from Source Name` for externally documented values (e.g. ISO country codes)
 - Missing `of` keyword in collections or enums
 - Missing `at` keyword and precision in spans
 - Invalid span bracket syntax
