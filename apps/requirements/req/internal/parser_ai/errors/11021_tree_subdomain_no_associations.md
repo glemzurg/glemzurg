@@ -6,9 +6,34 @@ Every subdomain must have at least one association to describe how its classes r
 
 A subdomain has classes defined but no associations between them. Associations are essential for describing the relationships and cardinality between classes.
 
-## Context
+## Why Associations Are Required
 
-Associations define how classes relate to each other. Without associations, classes exist in isolation without any defined connections.
+Even a subdomain with classes that connect to classes in other domains or subdomains should always have at least two classes within the subdomain that are connected to each other. If the classes in a subdomain have no internal associations, there is no reason for them to be grouped in the same subdomain — they should be moved to the subdomains where they are actually connected.
+
+## How to Fix
+
+### Step 1: Identify Relationships
+
+Look at your classes and ask:
+- Does one class **contain** another? (Order contains LineItems)
+- Does one class **reference** another? (LineItem references Product)
+- Is there a **many-to-many** relationship? (Product has many Categories)
+
+### Step 2: Build the Association Filename
+
+Association filenames encode the two connected classes and a descriptive name, separated by `--`:
+
+```
+{from_class_key}--{to_class_key}--{name}.assoc.json
+```
+
+For example, if class `order` has line items from class `line_item`, the filename is:
+
+```
+order--line_item--order_has_items.assoc.json
+```
+
+The full path in your model tree:
 
 ```
 your_model/
@@ -22,25 +47,8 @@ your_model/
                 │   │   └── class.json
                 │   └── line_item/
                 │       └── class.json
-                └── associations/          <-- Must contain at least one association
-                    └── order_has_items.assoc.json
-```
-
-## How to Fix
-
-### Step 1: Identify Relationships
-
-Look at your classes and ask:
-- Does one class **contain** another? (Order contains LineItems)
-- Does one class **reference** another? (LineItem references Product)
-- Is there a **many-to-many** relationship? (Product has many Categories)
-
-### Step 2: Create Association File
-
-Create an association file in the `associations/` directory:
-
-```
-{subdomain}/associations/{descriptive_name}.assoc.json
+                └── associations/
+                    └── order--line_item--order_has_items.assoc.json
 ```
 
 ### Step 3: Define the Association
@@ -55,6 +63,8 @@ Create an association file in the `associations/` directory:
     "details": "Each order contains at least one line item; line items belong to exactly one order"
 }
 ```
+
+The `from_class_key` and `to_class_key` in the JSON must match the class keys used in the filename.
 
 ## Understanding Multiplicities
 
@@ -90,6 +100,8 @@ Create an association file in the `associations/` directory:
 }
 ```
 
+Filename: `order--line_item--order_contains_line_items.assoc.json`
+
 ### Reference (Links To)
 ```json
 {
@@ -102,6 +114,8 @@ Create an association file in the `associations/` directory:
 }
 ```
 
+Filename: `line_item--product--line_item_references_product.assoc.json`
+
 ### Many-to-Many
 ```json
 {
@@ -113,6 +127,8 @@ Create an association file in the `associations/` directory:
     "details": "Products can belong to multiple categories; categories contain multiple products"
 }
 ```
+
+Filename: `product--category--product_has_categories.assoc.json`
 
 ## Association Classes
 
@@ -130,12 +146,7 @@ For relationships that have their own attributes, use an association class:
 }
 ```
 
-## Naming Conventions
-
-Use descriptive names that describe the relationship:
-- `order_has_line_items` - Clear parent-child relationship
-- `user_manages_account` - Action-oriented relationship
-- `product_in_category` - Membership relationship
+Filename: `student--course--student_enrollment.assoc.json`
 
 ## Related Errors
 
