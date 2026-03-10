@@ -10,7 +10,7 @@ Every action defined in a class must be used in the state machine. Actions exist
 
 If an action file exists but is never referenced, it serves no purpose and may indicate:
 - A forgotten reference in the state machine
-- An action that should be deleted
+- An action that should be deleted (this should only be done after review with a human)
 - A typo in the action key
 
 ## How to Fix
@@ -64,6 +64,8 @@ If the action is no longer needed, delete the action file:
 ```bash
 rm domains/{domain}/subdomains/{subdomain}/classes/{class}/actions/{action}.json
 ```
+
+Only do this after review with a human. This is not an appropriate means to just make the error go away.
 
 ## Example
 
