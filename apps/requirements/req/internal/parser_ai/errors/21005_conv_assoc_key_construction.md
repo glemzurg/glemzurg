@@ -30,9 +30,9 @@ Place your association file at the correct level:
 
 | Scenario | Level | Directory |
 |----------|-------|-----------|
-| Both classes in same subdomain | Subdomain | `domains/{d}/subdomains/{s}/associations/` |
-| Classes in different subdomains, same domain | Domain | `domains/{d}/associations/` |
-| Classes in different domains | Model | `associations/` |
+| Both classes in same subdomain | Subdomain | `domains/{d}/subdomains/{s}/class_associations/` |
+| Classes in different subdomains, same domain | Domain | `domains/{d}/class_associations/` |
+| Classes in different domains | Model | `class_associations/` |
 
 ## Related Errors
 

@@ -1033,9 +1033,9 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	ok := errors.As(err, &parseErr)
 	suite.True(ok)
 	suite.Equal(ErrTreeSubdomainNoAssociations, parseErr.Code)
-	suite.Equal("associations", parseErr.Field)
+	suite.Equal("class_associations", parseErr.Field)
 	suite.Contains(parseErr.Message, "at least one association")
-	suite.Contains(parseErr.Message, "associations/") // Check for guidance about file location
+	suite.Contains(parseErr.Message, "class_associations/") // Check for guidance about file location
 }
 
 // TestCompletenessClassNoAttributes verifies error when class has no attributes.
@@ -1173,7 +1173,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			expectedCode: ErrTreeSubdomainNoAssociations,
 			shouldContain: []string{
 				"associations describe how classes relate",
-				"associations/",
+				"class_associations/",
 				".assoc.json",
 			},
 		},

@@ -8,13 +8,13 @@ The `subclass_keys` array contains an entry that is either an empty string (`""`
 
 ## File Location
 
-Class generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `class_generalizations/` directory:
 
 ```
 your_model/
 ├── model.json
-└── generalizations/
-    └── payment_types.gen.json    <-- This file has an empty subclass key
+└── class_generalizations/
+    └── payment_types.cgen.json    <-- This file has an empty subclass key
 ```
 
 ## How to Fix
@@ -123,10 +123,10 @@ The error message includes the array index (0-based) of the problematic entry:
 
 ```bash
 # View the subclass_keys array
-cat payment_types.gen.json | jq '.subclass_keys'
+cat payment_types.cgen.json | jq '.subclass_keys'
 
 # Check for empty strings
-cat payment_types.gen.json | jq '.subclass_keys | map(select(. == "" or (. | test("^\\s*$"))))'
+cat payment_types.cgen.json | jq '.subclass_keys | map(select(. == "" or (. | test("^\\s*$"))))'
 ```
 
 ## Understanding Class Keys

@@ -8,13 +8,13 @@ The parser attempted to read your class generalization file but encountered a JS
 
 ## File Location
 
-Class generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `class_generalizations/` directory:
 
 ```
 your_model/
 ├── model.json
-└── generalizations/
-    └── payment_types.gen.json    <-- This file contains invalid JSON syntax
+└── class_generalizations/
+    └── payment_types.cgen.json    <-- This file contains invalid JSON syntax
 ```
 
 ## How to Fix
@@ -133,10 +133,10 @@ Ensure your class generalization file contains valid JSON. A minimal valid file 
 
 ```bash
 # Validate JSON with jq
-jq . generalizations/payment_types.gen.json
+jq . class_generalizations/payment_types.cgen.json
 
 # Validate with Python
-python3 -m json.tool generalizations/payment_types.gen.json
+python3 -m json.tool class_generalizations/payment_types.cgen.json
 ```
 
 ## Valid Class Generalization Template

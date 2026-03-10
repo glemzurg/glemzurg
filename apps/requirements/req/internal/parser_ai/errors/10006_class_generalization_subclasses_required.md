@@ -8,13 +8,13 @@ Every class generalization must specify at least one subclass (child class). The
 
 ## File Location
 
-Class generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `class_generalizations/` directory:
 
 ```
 your_model/
 ├── model.json
-└── generalizations/
-    └── payment_types.gen.json    <-- This file has missing or empty subclass_keys
+└── class_generalizations/
+    └── payment_types.cgen.json    <-- This file has missing or empty subclass_keys
 ```
 
 ## How to Fix

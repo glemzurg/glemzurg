@@ -41,15 +41,15 @@ const treeText = `Expected directory structure for a requirements model:
 ├── domains/
 │   └── <domain_key>/
 │       ├── domain.json                                 domain definition
-│       ├── associations/
+│       ├── class_associations/
 │       │   └── <from>--<to>--<name>.assoc.json         domain-level association
 │       └── subdomains/
 │           └── <subdomain_key>/
 │               ├── subdomain.json                      subdomain definition
-│               ├── associations/
+│               ├── class_associations/
 │               │   └── <from>--<to>--<name>.assoc.json subdomain-level association
-│               ├── generalizations/
-│               │   └── <key>.gen.json                  class generalization
+│               ├── class_generalizations/
+│               │   └── <key>.cgen.json                 class generalization
 │               └── classes/
 │                   └── <class_key>/
 │                       ├── class.json                  class definition (attributes, indexes)
@@ -69,7 +69,7 @@ const treeText = `Expected directory structure for a requirements model:
 │                           └── <attr_key>/
 │                               └── invariants/
 │                                   └── <N>.json        attribute invariant logic
-├── associations/
+├── class_associations/
 │   └── <from>--<to>--<name>.assoc.json                 model-level association
 ├── domain_associations/
 │   └── <key>.domain_assoc.json                         domain association

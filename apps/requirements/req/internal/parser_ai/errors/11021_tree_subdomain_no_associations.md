@@ -47,7 +47,7 @@ your_model/
                 │   │   └── class.json
                 │   └── line_item/
                 │       └── class.json
-                └── associations/
+                └── class_associations/
                     └── order--line_item--order_has_items.assoc.json
 ```
 

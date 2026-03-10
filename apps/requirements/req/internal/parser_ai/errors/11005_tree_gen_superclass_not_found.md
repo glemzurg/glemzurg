@@ -23,8 +23,8 @@ your_model/
                 │   │   └── class.json
                 │   └── ebook/
                 │       └── class.json
-                └── generalizations/
-                    └── medium.gen.json    <-- References superclass "product"
+                └── class_generalizations/
+                    └── medium.cgen.json    <-- References superclass "product"
 ```
 
 ## How to Fix

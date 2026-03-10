@@ -19,7 +19,7 @@ Check the `from_class_key` and `to_class_key` values in your association file:
 
 ### Domain-Level Association
 ```json
-// File: domains/sales/associations/order_to_product.assoc.json
+// File: domains/sales/class_associations/order_to_product.assoc.json
 {
     "name": "Order Products",
     "from_class_key": "default/order",
@@ -31,7 +31,7 @@ Check the `from_class_key` and `to_class_key` values in your association file:
 
 ### Model-Level Association
 ```json
-// File: associations/order_to_warehouse.assoc.json
+// File: class_associations/order_to_warehouse.assoc.json
 {
     "name": "Order Fulfillment",
     "from_class_key": "sales/default/order",

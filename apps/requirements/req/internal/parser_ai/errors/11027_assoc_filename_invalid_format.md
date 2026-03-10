@@ -14,7 +14,7 @@ Association filenames must follow a specific compound format that encodes the re
 
 ### Subdomain-Level Associations
 
-Located at: `domains/{domain}/subdomains/{subdomain}/associations/`
+Located at: `domains/{domain}/subdomains/{subdomain}/class_associations/`
 
 Format: `{from_class}--{to_class}--{name}.assoc.json`
 
@@ -25,7 +25,7 @@ Examples:
 
 ### Domain-Level Associations
 
-Located at: `domains/{domain}/associations/`
+Located at: `domains/{domain}/class_associations/`
 
 Format: `{from_subdomain}.{from_class}--{to_subdomain}.{to_class}--{name}.assoc.json`
 
@@ -35,7 +35,7 @@ Examples:
 
 ### Model-Level Associations
 
-Located at: `associations/`
+Located at: `class_associations/`
 
 Format: `{from_domain}.{from_subdomain}.{from_class}--{to_domain}.{to_subdomain}.{to_class}--{name}.assoc.json`
 
@@ -112,9 +112,9 @@ Make sure you're using the right format for where the file is located:
 
 | Location | Format |
 |----------|--------|
-| `subdomains/{sub}/associations/` | `class--class--name` |
-| `domains/{dom}/associations/` | `sub.class--sub.class--name` |
-| `associations/` (model root) | `dom.sub.class--dom.sub.class--name` |
+| `subdomains/{sub}/class_associations/` | `class--class--name` |
+| `domains/{dom}/class_associations/` | `sub.class--sub.class--name` |
+| `class_associations/` (model root) | `dom.sub.class--dom.sub.class--name` |
 
 ## Why This Format?
 

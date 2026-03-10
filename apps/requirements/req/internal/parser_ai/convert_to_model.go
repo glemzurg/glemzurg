@@ -1400,7 +1400,7 @@ func convertClassGeneralizationToModel(keyStr string, gen *inputClassGeneralizat
 
 // convertSubdomainAssociationToModel converts an inputClassAssociation at subdomain level to a model_class.Association.
 func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociation, subdomainKey identity.Key, classes map[identity.Key]model_class.Class, domainKeyStr, subdomainKeyStr string) (model_class.Association, error) {
-	assocFile := fmt.Sprintf("domains/%s/subdomains/%s/associations/%s.assoc.json", domainKeyStr, subdomainKeyStr, keyStr)
+	assocFile := fmt.Sprintf("domains/%s/subdomains/%s/class_associations/%s.assoc.json", domainKeyStr, subdomainKeyStr, keyStr)
 
 	// Find the class keys
 	var fromClassKey, toClassKey identity.Key
@@ -1481,7 +1481,7 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 
 // convertDomainClassAssociationToModel converts an inputClassAssociation at domain level to a model_class.Association.
 func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssociation, domainKey identity.Key, subdomains map[identity.Key]model_domain.Subdomain, domainKeyStr string) (model_class.Association, error) {
-	assocFile := fmt.Sprintf("domains/%s/associations/%s.assoc.json", domainKeyStr, keyStr)
+	assocFile := fmt.Sprintf("domains/%s/class_associations/%s.assoc.json", domainKeyStr, keyStr)
 
 	// Parse subdomain/class format
 	fromSubdomain, fromClass, err := parseDomainScopedKey(assoc.FromClassKey)
@@ -1580,7 +1580,7 @@ func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssoci
 
 // convertModelAssociationToModel converts an inputClassAssociation at model level to a model_class.Association.
 func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation, domains map[identity.Key]model_domain.Domain) (model_class.Association, error) {
-	assocFile := fmt.Sprintf("associations/%s.assoc.json", keyStr)
+	assocFile := fmt.Sprintf("class_associations/%s.assoc.json", keyStr)
 
 	// Parse domain/subdomain/class format
 	fromDomain, fromSubdomain, fromClass, err := parseModelScopedKey(assoc.FromClassKey)

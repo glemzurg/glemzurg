@@ -15,8 +15,8 @@ your_model/
 ├── model.json          <-- This file has an empty "name" value
 ├── actors/
 ├── domains/
-├── associations/
-└── generalizations/
+├── class_associations/
+└── class_generalizations/
 ```
 
 ## How to Fix
