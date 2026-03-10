@@ -34,5 +34,4 @@ The error message includes the JSON path to the failing field and the specific r
 ## Related
 
 - Run `req_check --schema domain_association` for the full schema
-- Run `req_check --format-docs` for model format documentation
 - Run `req_check --tree` for expected directory structure
