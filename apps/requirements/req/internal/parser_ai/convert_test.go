@@ -1004,7 +1004,10 @@ func (suite *ConvertSuite) TestConvertToModelValidationError() {
 
 	_, err := ConvertToModel(input, "testmodel")
 	suite.Require().Error(err)
-	suite.Contains(err.Error(), "validation failed")
+	var pe *ParseError
+	suite.Require().ErrorAs(err, &pe, "error should be a ParseError")
+	suite.Equal(ErrConvReferenceNotFound, pe.Code, "should map CLASS_ACTOR_NOTFOUND to ErrConvReferenceNotFound")
+	suite.Contains(err.Error(), "CLASS_ACTOR_NOTFOUND")
 }
 
 // TestConvertFromModelWithDomainAssociation tests converting a domain-level association.

@@ -41,11 +41,7 @@ func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
 
 	// Validate the resulting model
 	if err := result.Validate(); err != nil {
-		return nil, convErr(
-			ErrConvModelValidation,
-			fmt.Sprintf("resulting model validation failed: %s", err.Error()),
-			"model.json",
-		)
+		return nil, mapValidationError(err)
 	}
 
 	return result, nil

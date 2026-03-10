@@ -254,6 +254,26 @@ func allErrorCodes() map[int]string {
 		ErrConvObjectResolveFailed:   "ErrConvObjectResolveFailed",
 		ErrConvSourceModelValidation: "ErrConvSourceModelValidation",
 
+		// Mapped core validation errors (21100-21199).
+		ErrConvParamDatatypeRequired:     "ErrConvParamDatatypeRequired",
+		ErrConvParamNameRequired:         "ErrConvParamNameRequired",
+		ErrConvLogicTypeInvalid:          "ErrConvLogicTypeInvalid",
+		ErrConvLogicDuplicateLet:         "ErrConvLogicDuplicateLet",
+		ErrConvLogicDuplicateTarget:      "ErrConvLogicDuplicateTarget",
+		ErrConvLogicTargetRequired:       "ErrConvLogicTargetRequired",
+		ErrConvLogicTargetNotAllowed:     "ErrConvLogicTargetNotAllowed",
+		ErrConvLogicTargetNoUnderscore:   "ErrConvLogicTargetNoUnderscore",
+		ErrConvReferenceNotFound:         "ErrConvReferenceNotFound",
+		ErrConvGenCardinalityInvalid:     "ErrConvGenCardinalityInvalid",
+		ErrConvDomainStructureInvalid:    "ErrConvDomainStructureInvalid",
+		ErrConvScenarioStepInvalid:       "ErrConvScenarioStepInvalid",
+		ErrConvGuaranteeInvalidTarget:    "ErrConvGuaranteeInvalidTarget",
+		ErrConvAssocClassSameAsEndpoint:  "ErrConvAssocClassSameAsEndpoint",
+		ErrConvInternalKeyError:          "ErrConvInternalKeyError",
+		ErrConvUseCaseActorNotActorClass: "ErrConvUseCaseActorNotActorClass",
+		ErrConvLogicSpecInvalid:          "ErrConvLogicSpecInvalid",
+		ErrConvDomainAssocSameDomains:    "ErrConvDomainAssocSameDomains",
+
 		// Named set errors (22xxx).
 		ErrNamedSetNameRequired:     "ErrNamedSetNameRequired",
 		ErrNamedSetNameEmpty:        "ErrNamedSetNameEmpty",
@@ -364,8 +384,8 @@ func (s *ErrorCoverageSuite) TestAllDocsAreNonEmpty() {
 // This test catches cases where a new constant is added to errors.go but not to allErrorCodes().
 func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
-	// 202 error codes as of current implementation.
+	// 220 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 202,
+	s.Len(codes, 220,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }
