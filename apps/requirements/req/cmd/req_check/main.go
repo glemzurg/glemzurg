@@ -33,50 +33,54 @@ Exit codes: 0 = valid, 1 = validation errors, 2 = usage error
 const treeText = `Expected directory structure for a requirements model:
 
 <model_name>/
-├── model.json                                          model definition
+├── model.json                                                  model definition
+├── invariants/
+│   └── <NNN>.invariant.json                                    model-level invariant logic
 ├── actors/
-│   └── <actor_key>.actor.json                          actor definitions
+│   └── <actor_key>.actor.json                                  actor definition
 ├── actor_generalizations/
-│   └── <key>.agen.json                                 actor generalization
-├── domains/
-│   └── <domain_key>/
-│       ├── domain.json                                 domain definition
-│       ├── class_associations/
-│       │   └── <from>--<to>--<name>.assoc.json         domain-level association
-│       └── subdomains/
-│           └── <subdomain_key>/
-│               ├── subdomain.json                      subdomain definition
-│               ├── class_associations/
-│               │   └── <from>--<to>--<name>.assoc.json subdomain-level association
-│               ├── class_generalizations/
-│               │   └── <key>.cgen.json                 class generalization
-│               └── classes/
-│                   └── <class_key>/
-│                       ├── class.json                  class definition (attributes, indexes)
-│                       ├── state_machine.json          state machine (states, events, guards, transitions)
-│                       ├── actions/
-│                       │   └── <action_key>.json       action (requires, guarantees, safety_rules)
-│                       ├── queries/
-│                       │   └── <query_key>.json        query (requires, guarantees)
-│                       ├── invariants/
-│                       │   └── <N>.json                class invariant logic
-│                       ├── use_cases/
-│                       │   └── <use_case_key>/
-│                       │       ├── use_case.json       use case definition
-│                       │       └── scenarios/
-│                       │           └── <scenario_key>.json
-│                       └── attributes/
-│                           └── <attr_key>/
-│                               └── invariants/
-│                                   └── <N>.json        attribute invariant logic
-├── class_associations/
-│   └── <from>--<to>--<name>.assoc.json                 model-level association
-├── domain_associations/
-│   └── <key>.domain_assoc.json                         domain association
+│   └── <key>.agen.json                                         actor generalization
 ├── global_functions/
-│   └── <func_key>.json                                 global function
-└── named_sets/
-    └── <set_key>.json                                  named set
+│   └── <func_key>.json                                         global function
+├── named_sets/
+│   └── <set_key>.nset.json                                     named set
+├── class_associations/
+│   └── <from>--<to>--<name>.assoc.json                         model-level association (cross-domain)
+├── domain_associations/
+│   └── <key>.domain_assoc.json                                 domain association
+└── domains/
+    └── <domain_key>/
+        ├── domain.json                                         domain definition
+        ├── class_associations/
+        │   └── <from>--<to>--<name>.assoc.json                 domain-level association (cross-subdomain)
+        └── subdomains/
+            └── <subdomain_key>/
+                ├── subdomain.json                              subdomain definition
+                ├── class_associations/
+                │   └── <from>--<to>--<name>.assoc.json         subdomain-level association
+                ├── class_generalizations/
+                │   └── <key>.cgen.json                         class generalization
+                ├── use_case_generalizations/
+                │   └── <key>.ucgen.json                        use case generalization
+                ├── use_cases/
+                │   └── <use_case_key>/
+                │       ├── use_case.json                       use case definition
+                │       └── scenarios/
+                │           └── <scenario_key>.scenario.json    scenario
+                └── classes/
+                    └── <class_key>/
+                        ├── class.json                          class definition (attributes, indexes)
+                        ├── state_machine.json                  state machine (states, events, guards, transitions)
+                        ├── actions/
+                        │   └── <action_key>.json               action (requires, guarantees, safety_rules)
+                        ├── queries/
+                        │   └── <query_key>.json                query (requires, guarantees)
+                        ├── invariants/
+                        │   └── <NNN>.invariant.json            class invariant logic
+                        └── attributes/
+                            └── <attr_key>/
+                                └── invariants/
+                                    └── <NNN>.invariant.json    attribute invariant logic
 
 Keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$
 `
