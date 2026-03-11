@@ -199,7 +199,7 @@ func outputJSONTo(w io.Writer, errs []error) {
 		File    string `json:"file,omitempty"`
 		Field   string `json:"field,omitempty"`
 		Hint    string `json:"hint,omitempty"`
-		Path    string `json:"path,omitempty"`
+		Context string `json:"context,omitempty"`
 		Got     string `json:"got,omitempty"`
 		Want    string `json:"want,omitempty"`
 	}
@@ -219,6 +219,9 @@ func outputJSONTo(w io.Writer, errs []error) {
 				File:    pe.File,
 				Field:   pe.Field,
 				Hint:    hint,
+				Context: pe.Context,
+				Got:     pe.Got,
+				Want:    pe.Want,
 			})
 		case errors.As(err, &ve):
 			items = append(items, jsonError{
@@ -226,7 +229,7 @@ func outputJSONTo(w io.Writer, errs []error) {
 				Code:    string(ve.Code()),
 				Message: ve.Message(),
 				Field:   ve.Field(),
-				Path:    coreerr.FormatPath(ve.Path()),
+				Context: coreerr.FormatPath(ve.Path()),
 				Got:     ve.Got(),
 				Want:    ve.Want(),
 			})

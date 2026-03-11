@@ -30,35 +30,49 @@ func mapValidationError(err error) *ParseError {
 		).WithHint(fmt.Sprintf("core error code: %s", code))
 	}
 
-	// Build a useful message from the full error chain (includes wrapping context).
-	message := err.Error()
+	return buildMappedParseError(err, ve, parserCode)
+}
 
-	pe := NewParseError(parserCode, message, "model.json")
+// buildMappedParseError creates a ParseError from a mapped ValidationError,
+// populating field, got/want, and wrapping context.
+func buildMappedParseError(err error, ve *coreerr.ValidationError, parserCode int) *ParseError {
+	pe := NewParseError(parserCode, ve.Message(), "model.json")
 
-	// Add field from the ValidationError if present.
 	if ve.Field() != "" {
 		pe = pe.WithField(ve.Field())
 	}
 
-	// Build a hint from got/want if available.
-	hint := buildHintFromValidationError(ve)
-	if hint != "" {
-		pe = pe.WithHint(hint)
+	if ve.Got() != "" || ve.Want() != "" {
+		pe = pe.WithGotWant(ve.Got(), ve.Want())
+	}
+
+	context := extractWrappingContext(err, ve)
+	if context != "" {
+		pe = pe.WithContext(context)
 	}
 
 	return pe
 }
 
-// buildHintFromValidationError constructs a concise hint from the ValidationError's got/want fields.
-func buildHintFromValidationError(ve *coreerr.ValidationError) string {
-	var parts []string
-	if ve.Got() != "" {
-		parts = append(parts, fmt.Sprintf("got: %s", ve.Got()))
+// extractWrappingContext extracts the pkg/errors.Wrapf context from the error chain.
+// Given a full error like "domain 'x': subdomain 'y': class 'z': [CODE] msg",
+// it strips the inner ValidationError text and returns "domain 'x': subdomain 'y': class 'z'".
+func extractWrappingContext(err error, ve *coreerr.ValidationError) string {
+	full := err.Error()
+	inner := ve.Error()
+
+	// The wrapping chain prepends "context: context: ... innerError".
+	if full == inner {
+		return "" // No wrapping context.
 	}
-	if ve.Want() != "" {
-		parts = append(parts, fmt.Sprintf("expected: %s", ve.Want()))
+
+	context := strings.TrimSuffix(full, ": "+inner)
+	if context == full {
+		// Fallback: if the pattern doesn't match, try trimming just the inner part.
+		context = strings.TrimSuffix(full, inner)
+		context = strings.TrimRight(context, ": ")
 	}
-	return strings.Join(parts, "; ")
+	return context
 }
 
 // coreToParserCode maps core validation error codes to parser_ai error codes.

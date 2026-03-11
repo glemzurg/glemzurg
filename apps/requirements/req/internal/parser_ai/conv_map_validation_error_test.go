@@ -114,7 +114,7 @@ func (s *MapValidationErrorSuite) TestMappedCoreCode() {
 
 			s.Require().NotNil(pe)
 			s.Equal(tc.parserCode, pe.Code, "wrong parser code for core code %s", tc.coreCode)
-			s.Contains(pe.Error(), string(tc.coreCode), "error message should contain core code")
+			s.Equal("test message", pe.Message, "message should be the ValidationError message")
 			s.Equal("test_field", pe.Field, "field should be propagated")
 		})
 	}
@@ -142,8 +142,8 @@ func (s *MapValidationErrorSuite) TestNonValidationErrorFallsBackToGeneric() {
 	s.Contains(pe.Error(), "something broke")
 }
 
-// TestWrappedValidationErrorIsExtracted verifies that errors.Wrapf-wrapped ValidationErrors are correctly extracted.
-func (s *MapValidationErrorSuite) TestWrappedValidationErrorIsExtracted() {
+// TestWrappedValidationErrorExtractsContext verifies that errors.Wrapf context is extracted.
+func (s *MapValidationErrorSuite) TestWrappedValidationErrorExtractsContext() {
 	ve := coreerr.New(coreerr.ClassActorNotfound, "actor not found", "actor_key")
 	wrapped := errors.Wrapf(ve, "class 'order'")
 
@@ -151,23 +151,40 @@ func (s *MapValidationErrorSuite) TestWrappedValidationErrorIsExtracted() {
 
 	s.Require().NotNil(pe)
 	s.Equal(ErrConvReferenceNotFound, pe.Code, "should extract ValidationError through wrapping")
-	s.Contains(pe.Error(), "class 'order'", "wrapped context should be in message")
-	s.Contains(pe.Error(), "actor not found", "original message should be in message")
+	s.Equal("actor not found", pe.Message, "message should be the inner ValidationError message")
 	s.Equal("actor_key", pe.Field, "field should be propagated from inner ValidationError")
+	s.Equal("class 'order'", pe.Context, "context should be extracted from wrapping chain")
 }
 
-// TestGotWantHintGeneration verifies that got/want fields are included in the hint.
-func (s *MapValidationErrorSuite) TestGotWantHintGeneration() {
+// TestMultiLevelWrappingContext verifies deeply wrapped errors extract the full context chain.
+func (s *MapValidationErrorSuite) TestMultiLevelWrappingContext() {
+	ve := coreerr.New(coreerr.ParamDatatypesRequired, "DataTypeRules is required", "DataTypeRules")
+	wrapped := errors.Wrapf(ve, "parameter 'amount'")
+	wrapped = errors.Wrapf(wrapped, "action 'create'")
+	wrapped = errors.Wrapf(wrapped, "class 'order'")
+
+	pe := mapValidationError(wrapped)
+
+	s.Require().NotNil(pe)
+	s.Equal(ErrConvParamDatatypeRequired, pe.Code)
+	s.Equal("DataTypeRules is required", pe.Message)
+	s.Equal("DataTypeRules", pe.Field)
+	s.Equal("class 'order': action 'create': parameter 'amount'", pe.Context)
+}
+
+// TestGotWantPassedThrough verifies that got/want fields are passed through as structured data.
+func (s *MapValidationErrorSuite) TestGotWantPassedThrough() {
 	tests := []struct {
 		name         string
 		got          string
 		want         string
-		expectedHint string
+		expectedGot  string
+		expectedWant string
 	}{
-		{"both got and want", "bad_value", "good_value", "got: bad_value; expected: good_value"},
-		{"only got", "bad_value", "", "got: bad_value"},
-		{"only want", "", "good_value", "expected: good_value"},
-		{"neither", "", "", ""},
+		{"both got and want", "bad_value", "good_value", "bad_value", "good_value"},
+		{"only got", "bad_value", "", "bad_value", ""},
+		{"only want", "", "good_value", "", "good_value"},
+		{"neither", "", "", "", ""},
 	}
 
 	for _, tc := range tests {
@@ -176,7 +193,8 @@ func (s *MapValidationErrorSuite) TestGotWantHintGeneration() {
 			pe := mapValidationError(ve)
 
 			s.Require().NotNil(pe)
-			s.Equal(tc.expectedHint, pe.Hint)
+			s.Equal(tc.expectedGot, pe.Got)
+			s.Equal(tc.expectedWant, pe.Want)
 		})
 	}
 }
@@ -197,6 +215,15 @@ func (s *MapValidationErrorSuite) TestFilePathIsModelJSON() {
 	pe := mapValidationError(ve)
 
 	s.Equal("model.json", pe.File, "all validation errors should reference model.json")
+}
+
+// TestNoContextWhenUnwrapped verifies no context is set for unwrapped ValidationErrors.
+func (s *MapValidationErrorSuite) TestNoContextWhenUnwrapped() {
+	ve := coreerr.New(coreerr.ParamNameRequired, "name is required", "name")
+	pe := mapValidationError(ve)
+
+	s.Require().NotNil(pe)
+	s.Empty(pe.Context, "unwrapped error should have no context")
 }
 
 // TestAllCoreCodesInMapHaveMatchingParserCode verifies every entry in coreToParserCode maps to a valid parser_ai code.
@@ -228,25 +255,18 @@ func (s *MapValidationErrorSuite) TestAllCoreCodesInMapHaveMatchingParserCode() 
 	}
 }
 
-// TestBuildHintFromValidationError tests the hint builder directly.
-func (s *MapValidationErrorSuite) TestBuildHintFromValidationError() {
-	tests := []struct {
-		name     string
-		got      string
-		want     string
-		expected string
-	}{
-		{"both", "foo", "bar", "got: foo; expected: bar"},
-		{"got only", "foo", "", "got: foo"},
-		{"want only", "", "bar", "expected: bar"},
-		{"empty", "", "", ""},
-	}
+// TestExtractWrappingContext tests the context extraction helper directly.
+func (s *MapValidationErrorSuite) TestExtractWrappingContext() {
+	ve := coreerr.New("TEST_CODE", "inner message", "field")
 
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			ve := coreerr.NewWithValues("TEST_CODE", "test", "", tc.got, tc.want)
-			result := buildHintFromValidationError(ve)
-			s.Equal(tc.expected, result)
-		})
-	}
+	// No wrapping — empty context.
+	s.Empty(extractWrappingContext(ve, ve))
+
+	// Single wrap.
+	w1 := errors.Wrap(ve, "level 1")
+	s.Equal("level 1", extractWrappingContext(w1, ve))
+
+	// Double wrap.
+	w2 := errors.Wrap(w1, "level 2")
+	s.Equal("level 2: level 1", extractWrappingContext(w2, ve))
 }

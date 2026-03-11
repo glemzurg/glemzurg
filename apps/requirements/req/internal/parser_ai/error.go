@@ -24,6 +24,9 @@ type ParseError struct {
 	File        string // The JSON file being parsed where the error occurred
 	Field       string // JSON path to the field that caused the error (optional), e.g., "name", "attributes.myAttr.name"
 	Hint        string // Concise remediation hint (1-3 lines)
+	Got         string // The invalid value that was provided (from core validation)
+	Want        string // What valid values look like (from core validation)
+	Context     string // Location in the model tree where the error occurred (from core validation wrapping chain)
 }
 
 // Error implements the error interface.
@@ -35,6 +38,15 @@ func (e *ParseError) Error() string {
 	fmt.Fprintf(&b, "\n  file: %s", e.File)
 	if e.Field != "" {
 		fmt.Fprintf(&b, "\n  field: %s", e.Field)
+	}
+	if e.Context != "" {
+		fmt.Fprintf(&b, "\n  context: %s", e.Context)
+	}
+	if e.Got != "" {
+		fmt.Fprintf(&b, "\n  got: %s", e.Got)
+	}
+	if e.Want != "" {
+		fmt.Fprintf(&b, "\n  want: %s", e.Want)
 	}
 	if e.Hint != "" {
 		fmt.Fprintf(&b, "\n  hint: %s", e.Hint)
@@ -89,27 +101,36 @@ func NewParseError(code int, message string, file string) *ParseError {
 //   - Nested object: "attributes.myAttr.name"
 //   - Array index: "indexes.0" or "items[0]"
 func (e *ParseError) WithField(field string) *ParseError {
-	return &ParseError{
-		Code:        e.Code,
-		Message:     e.Message,
-		ErrorFile:   e.ErrorFile,
-		ErrorDetail: e.ErrorDetail,
-		File:        e.File,
-		Field:       field,
-		Hint:        e.Hint,
-	}
+	c := e.copy()
+	c.Field = field
+	return c
 }
 
 // WithHint returns a copy of the error with a concise remediation hint.
 // The hint should be 1-3 lines of actionable guidance.
 func (e *ParseError) WithHint(hint string) *ParseError {
-	return &ParseError{
-		Code:        e.Code,
-		Message:     e.Message,
-		ErrorFile:   e.ErrorFile,
-		ErrorDetail: e.ErrorDetail,
-		File:        e.File,
-		Field:       e.Field,
-		Hint:        hint,
-	}
+	c := e.copy()
+	c.Hint = hint
+	return c
+}
+
+// WithGotWant returns a copy of the error with got/want values from core validation.
+func (e *ParseError) WithGotWant(got, want string) *ParseError {
+	c := e.copy()
+	c.Got = got
+	c.Want = want
+	return c
+}
+
+// WithContext returns a copy of the error with the model tree location context.
+func (e *ParseError) WithContext(context string) *ParseError {
+	c := e.copy()
+	c.Context = context
+	return c
+}
+
+// copy returns a shallow copy of the ParseError.
+func (e *ParseError) copy() *ParseError {
+	cp := *e
+	return &cp
 }
