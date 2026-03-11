@@ -36,7 +36,7 @@ func mapValidationError(err error) *ParseError {
 // buildMappedParseError creates a ParseError from a mapped ValidationError,
 // populating field, got/want, and wrapping context.
 func buildMappedParseError(err error, ve *coreerr.ValidationError, parserCode int) *ParseError {
-	pe := NewParseError(parserCode, ve.Message(), "model.json")
+	pe := NewParseError(parserCode, ve.Message(), "")
 
 	if ve.Field() != "" {
 		pe = pe.WithField(ve.Field())

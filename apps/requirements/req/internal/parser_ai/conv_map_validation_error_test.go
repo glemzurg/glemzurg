@@ -209,12 +209,13 @@ func (s *MapValidationErrorSuite) TestFieldNotSetWhenEmpty() {
 	s.Empty(pe.Field, "field should be empty when ValidationError has no field")
 }
 
-// TestFilePathIsModelJSON verifies all mapped errors use model.json as the file path.
-func (s *MapValidationErrorSuite) TestFilePathIsModelJSON() {
+// TestFilePathIsBlankForMappedErrors verifies mapped core errors have no file path,
+// since the context field tells the AI where in the model tree the error is.
+func (s *MapValidationErrorSuite) TestFilePathIsBlankForMappedErrors() {
 	ve := coreerr.New(coreerr.ClassActorNotfound, "actor not found", "actor_key")
 	pe := mapValidationError(ve)
 
-	s.Equal("model.json", pe.File, "all validation errors should reference model.json")
+	s.Empty(pe.File, "mapped core errors should have blank file — context provides location")
 }
 
 // TestNoContextWhenUnwrapped verifies no context is set for unwrapped ValidationErrors.
