@@ -193,15 +193,13 @@ func outputJSON(errs []error) {
 // outputJSONTo writes errors as a JSON array to the given writer.
 func outputJSONTo(w io.Writer, errs []error) {
 	type jsonError struct {
-		Type    string `json:"type"`
-		Code    string `json:"code"`
-		Message string `json:"message"`
-		File    string `json:"file,omitempty"`
-		Field   string `json:"field,omitempty"`
-		Hint    string `json:"hint,omitempty"`
-		Context string `json:"context,omitempty"`
-		Got     string `json:"got,omitempty"`
-		Want    string `json:"want,omitempty"`
+		Type    string                          `json:"type"`
+		Code    string                          `json:"code"`
+		Message string                          `json:"message"`
+		File    string                          `json:"file,omitempty"`
+		Field   string                          `json:"field,omitempty"`
+		Hint    string                          `json:"hint,omitempty"`
+		Context *parser_ai.CoreValidationDetail `json:"context,omitempty"`
 	}
 
 	var items []jsonError
@@ -220,8 +218,6 @@ func outputJSONTo(w io.Writer, errs []error) {
 				Field:   pe.Field,
 				Hint:    hint,
 				Context: pe.Context,
-				Got:     pe.Got,
-				Want:    pe.Want,
 			})
 		case errors.As(err, &ve):
 			items = append(items, jsonError{
@@ -229,9 +225,14 @@ func outputJSONTo(w io.Writer, errs []error) {
 				Code:    string(ve.Code()),
 				Message: ve.Message(),
 				Field:   ve.Field(),
-				Context: coreerr.FormatPath(ve.Path()),
-				Got:     ve.Got(),
-				Want:    ve.Want(),
+				Context: &parser_ai.CoreValidationDetail{
+					Code:    string(ve.Code()),
+					Message: ve.Message(),
+					Path:    ve.Path(),
+					Field:   ve.Field(),
+					Got:     ve.Got(),
+					Want:    ve.Want(),
+				},
 			})
 		default:
 			items = append(items, jsonError{

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/errors"
 )
 
@@ -12,21 +13,31 @@ import (
 // altering input data.
 const InternalErrorPrefix = "INTERNAL ERROR: "
 
+// CoreValidationDetail is an exported mirror of coreerr.ValidationError.
+// It carries all structured data from core model validation so that the
+// calling AI receives pre-parsed JSON without needing to parse strings.
+type CoreValidationDetail struct {
+	Code    string                `json:"code"`            // Core error code, e.g. "CLASS_KEY_TYPE_INVALID".
+	Message string                `json:"message"`         // Human-readable description of what went wrong.
+	Path    []coreerr.PathSegment `json:"path,omitempty"`  // Location in the model tree.
+	Field   string                `json:"field,omitempty"` // The specific field that failed validation.
+	Got     string                `json:"got,omitempty"`   // The invalid value that was provided.
+	Want    string                `json:"want,omitempty"`  // What valid values look like.
+}
+
 // ParseError represents a validation error during AI input parsing.
 // It includes a unique error number and concise remediation guidance.
 // Full error documentation is available via the VerboseError() method
 // or the req_check --explain flag.
 type ParseError struct {
-	Code        int    // Unique error number
-	Message     string // Human-readable error message
-	ErrorFile   string // Name of the markdown file in errors/ with detailed error info
-	ErrorDetail string // Content of the error markdown file (used by VerboseError and --explain)
-	File        string // The JSON file being parsed where the error occurred
-	Field       string // JSON path to the field that caused the error (optional), e.g., "name", "attributes.myAttr.name"
-	Hint        string // Concise remediation hint (1-3 lines)
-	Got         string // The invalid value that was provided (from core validation)
-	Want        string // What valid values look like (from core validation)
-	Context     string // Location in the model tree where the error occurred (from core validation wrapping chain)
+	Code        int                   // Unique error number
+	Message     string                // Human-readable error message
+	ErrorFile   string                // Name of the markdown file in errors/ with detailed error info
+	ErrorDetail string                // Content of the error markdown file (used by VerboseError and --explain)
+	File        string                // The JSON file being parsed where the error occurred
+	Field       string                // JSON path to the field that caused the error (optional), e.g., "name", "attributes.myAttr.name"
+	Hint        string                // Concise remediation hint (1-3 lines)
+	Context     *CoreValidationDetail // Structured core validation detail (nil for non-core errors).
 }
 
 // Error implements the error interface.
@@ -39,14 +50,16 @@ func (e *ParseError) Error() string {
 	if e.Field != "" {
 		fmt.Fprintf(&b, "\n  field: %s", e.Field)
 	}
-	if e.Context != "" {
-		fmt.Fprintf(&b, "\n  context: %s", e.Context)
-	}
-	if e.Got != "" {
-		fmt.Fprintf(&b, "\n  got: %s", e.Got)
-	}
-	if e.Want != "" {
-		fmt.Fprintf(&b, "\n  want: %s", e.Want)
+	if e.Context != nil {
+		if len(e.Context.Path) > 0 {
+			fmt.Fprintf(&b, "\n  context: %s", coreerr.FormatPath(e.Context.Path))
+		}
+		if e.Context.Got != "" {
+			fmt.Fprintf(&b, "\n  got: %s", e.Context.Got)
+		}
+		if e.Context.Want != "" {
+			fmt.Fprintf(&b, "\n  want: %s", e.Context.Want)
+		}
 	}
 	if e.Hint != "" {
 		fmt.Fprintf(&b, "\n  hint: %s", e.Hint)
@@ -114,18 +127,17 @@ func (e *ParseError) WithHint(hint string) *ParseError {
 	return c
 }
 
-// WithGotWant returns a copy of the error with got/want values from core validation.
-func (e *ParseError) WithGotWant(got, want string) *ParseError {
+// WithCoreValidation returns a copy of the error with the full core validation detail populated.
+func (e *ParseError) WithCoreValidation(ve *coreerr.ValidationError) *ParseError {
 	c := e.copy()
-	c.Got = got
-	c.Want = want
-	return c
-}
-
-// WithContext returns a copy of the error with the model tree location context.
-func (e *ParseError) WithContext(context string) *ParseError {
-	c := e.copy()
-	c.Context = context
+	c.Context = &CoreValidationDetail{
+		Code:    string(ve.Code()),
+		Message: ve.Message(),
+		Path:    ve.Path(),
+		Field:   ve.Field(),
+		Got:     ve.Got(),
+		Want:    ve.Want(),
+	}
 	return c
 }
 

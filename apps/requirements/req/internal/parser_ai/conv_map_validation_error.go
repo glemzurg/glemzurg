@@ -37,26 +37,13 @@ func mapValidationError(err error) *ParseError {
 // If the path is empty, the error is reported as an internal error
 // because the calling AI cannot determine which file to fix without location context.
 func buildMappedParseError(ve *coreerr.ValidationError, parserCode int) *ParseError {
-	context := coreerr.FormatPath(ve.Path())
-	if context == "" {
+	if len(ve.Path()) == 0 {
 		return missingContextError(ve)
 	}
 
 	pe := NewParseError(parserCode, ve.Message(), "")
-	pe = enrichFromValidationError(pe, ve)
-	pe = pe.WithContext(context)
+	pe = pe.WithCoreValidation(ve)
 
-	return pe
-}
-
-// enrichFromValidationError copies field and got/want from a ValidationError onto a ParseError.
-func enrichFromValidationError(pe *ParseError, ve *coreerr.ValidationError) *ParseError {
-	if ve.Field() != "" {
-		pe = pe.WithField(ve.Field())
-	}
-	if ve.Got() != "" || ve.Want() != "" {
-		pe = pe.WithGotWant(ve.Got(), ve.Want())
-	}
 	return pe
 }
 

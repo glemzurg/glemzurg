@@ -107,8 +107,15 @@ func (s *CLISuite) TestOutputJSON_ValidationError() {
 	s.Equal("TEST_CODE", item["code"])
 	s.Equal("test message", item["message"])
 	s.Equal("field1", item["field"])
-	s.Equal("bad_value", item["got"])
-	s.Equal("good_value", item["want"])
+
+	// got/want are now nested inside context.
+	ctxObj, ok := item["context"].(map[string]any)
+	s.Require().True(ok, "context should be a JSON object")
+	s.Equal("bad_value", ctxObj["got"])
+	s.Equal("good_value", ctxObj["want"])
+	s.Equal("TEST_CODE", ctxObj["code"])
+	s.Equal("test message", ctxObj["message"])
+	s.Equal("field1", ctxObj["field"])
 }
 
 func (s *CLISuite) TestOutputJSON_GenericError() {
