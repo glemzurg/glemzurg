@@ -3,6 +3,7 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
@@ -107,7 +108,8 @@ func (suite *GuardSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.guard.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.guard.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -137,6 +139,7 @@ func (suite *GuardSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (suite *GuardSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
@@ -151,7 +154,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Name:  "", // Invalid
 		Logic: validLogic,
 	}
-	err := guard.ValidateWithParent(&classKey)
+	err := guard.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - guard key has class1 as parent, but we pass other_class.
@@ -160,11 +163,11 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Name:  "Name",
 		Logic: validLogic,
 	}
-	err = guard.ValidateWithParent(&otherClassKey)
+	err = guard.ValidateWithParent(ctx, &otherClassKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = guard.ValidateWithParent(&classKey)
+	err = guard.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 
 	// Test logic key equality - logic key must match the guard's own key.
@@ -174,7 +177,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Name:  "Name",
 		Logic: model_logic.NewLogic(differentGuardKey, model_logic.LogicTypeAssessment, "Guard condition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 	}
-	err = guard.ValidateWithParent(&classKey)
+	err = guard.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "does not match guard key", "ValidateWithParent should enforce logic key == guard key")
 
 	// Test logic ValidateWithParent is called - wrong parent should fail.
@@ -186,6 +189,6 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Logic: model_logic.NewLogic(wrongParentGuardKey, model_logic.LogicTypeAssessment, "Guard condition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 	}
 	// The guard key has otherClassKey2 as parent, but we pass otherClassKey as the parent.
-	err = guard.ValidateWithParent(&otherClassKey)
+	err = guard.ValidateWithParent(ctx, &otherClassKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should validate logic key parent")
 }

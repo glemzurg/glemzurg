@@ -3,6 +3,7 @@ package model_class
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
@@ -122,7 +123,8 @@ func (suite *ClassSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.class.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.class.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -156,6 +158,7 @@ func (suite *ClassSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (suite *ClassSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	validKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
@@ -166,7 +169,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := class.ValidateWithParent(&subdomainKey)
+	err := class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - class key has subdomain1 as parent, but we pass other_subdomain.
@@ -174,11 +177,11 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = class.ValidateWithParent(&otherSubdomainKey)
+	err = class.ValidateWithParent(ctx, &otherSubdomainKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err)
 
 	// Test child Invariant validation propagates error.
@@ -189,7 +192,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}}, // Invalid: empty key
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "invariant 0", "Should validate child Invariants")
 
 	// Test child Invariant with wrong parent key is caught.
@@ -202,7 +205,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "invariant 0", "Should catch invariant with wrong parent key")
 
 	// Test valid class with let in invariants.
@@ -216,7 +219,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeAssessment, "Must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err, "Class with let in invariants should be valid")
 
 	// Test duplicate let target in class invariants.
@@ -228,7 +231,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeLet, "Local a again.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "duplicate let target \"a\"", "Should catch duplicate let target in class invariants")
 
 	// Test child Attribute validation propagates error.
@@ -240,7 +243,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			attrKey: {Key: attrKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Attributes")
 
 	// Test child Action validation propagates error.
@@ -252,7 +255,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			actionKey: {Key: actionKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Actions")
 
 	// Test child Query validation propagates error.
@@ -264,7 +267,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			queryKey: {Key: queryKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Queries")
 
 	// Test child Event validation propagates error.
@@ -276,7 +279,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			eventKey: {Key: eventKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Events")
 
 	// Test child Guard validation propagates error.
@@ -288,7 +291,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			guardKey: {Key: guardKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Guards")
 
 	// Test child State validation propagates error.
@@ -300,7 +303,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			stateKey: {Key: stateKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child States")
 
 	// Test child Transition validation propagates error (bad event key).
@@ -312,7 +315,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			transitionKey: {Key: transitionKey, EventKey: identity.Key{}}, // Invalid: empty event key
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().Error(err, "Should validate child Transitions")
 
 	// Test valid class with all child types.
@@ -338,7 +341,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Queries:     map[identity.Key]model_state.Query{queryKey: validQuery},
 		Transitions: map[identity.Key]model_state.Transition{transitionKey: validTransition},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err, "Valid class with all children should pass")
 
 	// Test guard logic key mismatch is caught through class validation.
@@ -351,7 +354,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			guardKey: model_state.NewGuard(guardKey, "Guard", mismatchedLogic),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch")
 
 	// Test action require key with wrong parent is caught.
@@ -365,8 +368,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			actionKey: model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
-	suite.Require().ErrorContains(err, "requires 0", "Should catch action require key with wrong parent")
+	err = class.ValidateWithParent(ctx, &subdomainKey)
+	suite.Require().ErrorContains(err, "requires[0]", "Should catch action require key with wrong parent")
 
 	// Test query guarantee key with wrong parent is caught.
 	otherQueryKey := helper.Must(identity.NewQueryKey(validKey, "other_query"))
@@ -379,8 +382,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			queryKey: model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{wrongGuarLogic}, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
-	suite.Require().ErrorContains(err, "guarantee 0", "Should catch query guarantee key with wrong parent")
+	err = class.ValidateWithParent(ctx, &subdomainKey)
+	suite.Require().ErrorContains(err, "guarantees[0]", "Should catch query guarantee key with wrong parent")
 
 	// Test attribute derivation policy key with wrong parent is caught.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(validKey, "other_attr"))
@@ -393,7 +396,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &wrongDerivLogic},
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "DerivationPolicy", "Should catch attribute derivation policy key with wrong parent")
 }
 
@@ -576,7 +579,8 @@ func (suite *ClassSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.class.ValidateReferences(tt.actors, tt.generalizations)
+			ctx := coreerr.NewContext("test", "")
+			err := tt.class.ValidateReferences(ctx, tt.actors, tt.generalizations)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

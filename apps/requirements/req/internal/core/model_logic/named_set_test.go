@@ -3,6 +3,7 @@ package model_logic
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -117,7 +118,8 @@ func (s *NamedSetTestSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.ns.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.ns.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -157,6 +159,7 @@ func (s *NamedSetTestSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent validates the key's parent relationship.
 func (s *NamedSetTestSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	validKey := helper.Must(identity.NewNamedSetKey("valid_statuses"))
 
 	// Test valid case - nset key is root-level (nil parent).
@@ -165,7 +168,7 @@ func (s *NamedSetTestSuite) TestValidateWithParent() {
 		Name: "Valid Statuses",
 		Spec: validSpec(),
 	}
-	err := ns.ValidateWithParent()
+	err := ns.ValidateWithParent(ctx)
 	s.Require().NoError(err)
 
 	// Test that Validate is called.
@@ -174,7 +177,7 @@ func (s *NamedSetTestSuite) TestValidateWithParent() {
 		Name: "", // Invalid: blank name
 		Spec: validSpec(),
 	}
-	err = ns.ValidateWithParent()
+	err = ns.ValidateWithParent(ctx)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "Name")
 }

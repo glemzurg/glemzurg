@@ -3,6 +3,7 @@ package model_actor
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -138,7 +139,8 @@ func (suite *ActorSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.actor.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.actor.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -183,13 +185,15 @@ func (suite *ActorSuite) TestNew() {
 func (suite *ActorSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewActorKey("actor1"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	actor := Actor{
 		Key:  validKey,
 		Name: "", // Invalid
 		Type: _USER_TYPE_PERSON,
 	}
-	err := actor.ValidateWithParent(nil)
+	err := actor.ValidateWithParent(ctx, nil)
 	suite.Require().ErrorContains(err, "Name is required", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - actors should have nil parent.
@@ -199,11 +203,11 @@ func (suite *ActorSuite) TestValidateWithParent() {
 		Name: "Name",
 		Type: _USER_TYPE_PERSON,
 	}
-	err = actor.ValidateWithParent(&domainKey)
+	err = actor.ValidateWithParent(ctx, &domainKey)
 	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = actor.ValidateWithParent(nil)
+	err = actor.ValidateWithParent(ctx, nil)
 	suite.Require().NoError(err)
 }
 
@@ -219,6 +223,8 @@ func (suite *ActorSuite) TestValidateReferences() {
 		genKeyB: true,
 	}
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Valid: references existing generalizations.
 	actor := Actor{
 		Key:             validKey,
@@ -227,7 +233,7 @@ func (suite *ActorSuite) TestValidateReferences() {
 		SuperclassOfKey: &genKeyA,
 		SubclassOfKey:   &genKeyB,
 	}
-	err := actor.ValidateReferences(generalizations)
+	err := actor.ValidateReferences(ctx, generalizations)
 	suite.Require().NoError(err)
 
 	// Valid: no references.
@@ -236,7 +242,7 @@ func (suite *ActorSuite) TestValidateReferences() {
 		Name: "Name",
 		Type: _USER_TYPE_PERSON,
 	}
-	err = actor.ValidateReferences(generalizations)
+	err = actor.ValidateReferences(ctx, generalizations)
 	suite.Require().NoError(err)
 
 	// Error: superclass references non-existent generalization.
@@ -246,7 +252,7 @@ func (suite *ActorSuite) TestValidateReferences() {
 		Type:            _USER_TYPE_PERSON,
 		SuperclassOfKey: &genKeyC,
 	}
-	err = actor.ValidateReferences(generalizations)
+	err = actor.ValidateReferences(ctx, generalizations)
 	suite.Require().ErrorContains(err, "non-existent generalization")
 
 	// Error: subclass references non-existent generalization.
@@ -256,6 +262,6 @@ func (suite *ActorSuite) TestValidateReferences() {
 		Type:          _USER_TYPE_PERSON,
 		SubclassOfKey: &genKeyC,
 	}
-	err = actor.ValidateReferences(generalizations)
+	err = actor.ValidateReferences(ctx, generalizations)
 	suite.Require().ErrorContains(err, "non-existent generalization")
 }

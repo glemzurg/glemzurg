@@ -3,6 +3,7 @@ package model_logic
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -303,7 +304,8 @@ func (s *LogicTestSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.logic.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.logic.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -354,6 +356,7 @@ func (s *LogicTestSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (s *LogicTestSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	validKey := helper.Must(identity.NewInvariantKey("0"))
 
 	// Test valid case - invariant keys have nil parent.
@@ -363,7 +366,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Description: "Some description.",
 		Spec:        validSpec(),
 	}
-	err := logic.ValidateWithParent(nil)
+	err := logic.ValidateWithParent(ctx, nil)
 	s.Require().NoError(err)
 
 	// Test that Validate is called.
@@ -373,7 +376,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Description: "", // Invalid
 		Spec:        validSpec(),
 	}
-	err = logic.ValidateWithParent(nil)
+	err = logic.ValidateWithParent(ctx, nil)
 	s.Require().ErrorContains(err, "Description")
 
 	// Test that ValidateParent is called - invariant key should have nil parent.
@@ -384,7 +387,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Description: "Some description.",
 		Spec:        validSpec(),
 	}
-	err = logic.ValidateWithParent(&domainKey)
+	err = logic.ValidateWithParent(ctx, &domainKey)
 	s.Require().ErrorContains(err, "should not have a parent")
 
 	// Test with action require key and action parent.
@@ -399,10 +402,10 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Description: "Precondition.",
 		Spec:        validSpec(),
 	}
-	err = logic.ValidateWithParent(&actionKey)
+	err = logic.ValidateWithParent(ctx, &actionKey)
 	s.Require().NoError(err)
 
 	// Test wrong parent for action require key.
-	err = logic.ValidateWithParent(&classKey)
+	err = logic.ValidateWithParent(ctx, &classKey)
 	s.Require().Error(err)
 }

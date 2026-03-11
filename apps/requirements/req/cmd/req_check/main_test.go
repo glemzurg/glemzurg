@@ -90,7 +90,8 @@ func (s *CLISuite) TestOutputJSON_ParseError() {
 }
 
 func (s *CLISuite) TestOutputJSON_ValidationError() {
-	ve := coreerr.NewWithValues("TEST_CODE", "test message", "field1", "bad_value", "good_value")
+	ctx := coreerr.NewContext("test", "")
+	ve := coreerr.NewWithValues(ctx, "TEST_CODE", "test message", "field1", "bad_value", "good_value")
 	errs := []error{ve}
 
 	var buf bytes.Buffer
@@ -128,7 +129,8 @@ func (s *CLISuite) TestOutputJSON_GenericError() {
 
 func (s *CLISuite) TestOutputJSON_MixedErrors() {
 	pe := parser_ai.NewParseError(parser_ai.ErrModelNameRequired, "parse error", "model.json")
-	ve := coreerr.New("VAL_CODE", "validation error", "field")
+	ctx := coreerr.NewContext("test", "")
+	ve := coreerr.New(ctx, "VAL_CODE", "validation error", "field")
 	ge := fmt.Errorf("generic error")
 	errs := []error{pe, ve, ge}
 

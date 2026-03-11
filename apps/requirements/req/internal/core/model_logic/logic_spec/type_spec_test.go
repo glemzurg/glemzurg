@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression_type"
 )
 
@@ -75,7 +76,8 @@ func (s *TypeSpecTestSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.spec.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.spec.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {

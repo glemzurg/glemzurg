@@ -9,9 +9,9 @@ type AtomicEnum struct {
 	SortOrder int
 }
 
-func (a *AtomicEnum) Validate() error {
+func (a *AtomicEnum) Validate(ctx *coreerr.ValidationContext) error {
 	if a.Value == "" {
-		return coreerr.New(coreerr.DtypeEnumValueRequired, "Value is required", "Value")
+		return coreerr.New(ctx, coreerr.DtypeEnumValueRequired, "Value is required", "Value")
 	}
 	return nil
 }

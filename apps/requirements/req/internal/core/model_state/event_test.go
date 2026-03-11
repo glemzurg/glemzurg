@@ -3,6 +3,7 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -70,7 +71,8 @@ func (suite *EventSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.event.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.event.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -117,12 +119,14 @@ func (suite *EventSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewEventKey(classKey, "event1"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	event := Event{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := event.ValidateWithParent(&classKey)
+	err := event.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - event key has class1 as parent, but we pass other_class.
@@ -130,11 +134,11 @@ func (suite *EventSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = event.ValidateWithParent(&otherClassKey)
+	err = event.ValidateWithParent(ctx, &otherClassKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = event.ValidateWithParent(&classKey)
+	err = event.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 
 	// Test child Parameter validation propagates error.
@@ -145,7 +149,7 @@ func (suite *EventSuite) TestValidateWithParent() {
 			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
 		},
 	}
-	err = event.ValidateWithParent(&classKey)
+	err = event.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
@@ -156,6 +160,6 @@ func (suite *EventSuite) TestValidateWithParent() {
 			helper.Must(NewParameter("param1", "Nat")),
 		},
 	}
-	err = event.ValidateWithParent(&classKey)
+	err = event.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 }

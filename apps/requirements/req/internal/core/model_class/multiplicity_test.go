@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,7 +53,8 @@ func (suite *MultiplicitySuite) TestValidate() {
 	}
 	for _, test := range tests {
 		suite.Run(test.name, func() {
-			err := test.obj.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := test.obj.Validate(ctx)
 			if test.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

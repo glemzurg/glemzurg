@@ -15,6 +15,8 @@ func TestErrorSuite(t *testing.T) {
 }
 
 func (suite *ErrorSuite) TestValidationErrorMessage() {
+	ctx := NewContext("model", "")
+
 	tests := []struct {
 		testName string
 		err      *ValidationError
@@ -22,34 +24,33 @@ func (suite *ErrorSuite) TestValidationErrorMessage() {
 	}{
 		{
 			testName: "minimal error",
-			err:      New("TEST_CODE", "something went wrong", ""),
-			expected: `[TEST_CODE] something went wrong`,
+			err:      New(ctx, "TEST_CODE", "something went wrong", ""),
+			expected: `[TEST_CODE] something went wrong at model`,
 		},
 		{
 			testName: "error with field",
-			err:      New("TEST_CODE", "something went wrong", "Name"),
-			expected: `[TEST_CODE] something went wrong (field: Name)`,
+			err:      New(ctx, "TEST_CODE", "something went wrong", "Name"),
+			expected: `[TEST_CODE] something went wrong (field: Name) at model`,
 		},
 		{
 			testName: "error with field got and want",
-			err:      NewWithValues("TEST_CODE", "something went wrong", "Type", "invalid", "one of: person, system"),
-			expected: `[TEST_CODE] something went wrong (field: Type, got: "invalid", want: one of: person, system)`,
+			err:      NewWithValues(ctx, "TEST_CODE", "something went wrong", "Type", "invalid", "one of: person, system"),
+			expected: `[TEST_CODE] something went wrong (field: Type, got: "invalid", want: one of: person, system) at model`,
 		},
 		{
-			testName: "error with path",
-			err: NewWithPath("TEST_CODE", "something went wrong", []PathSegment{
-				{Entity: "model", Key: ""},
-				{Entity: "domains", Key: "domain1"},
-				{Entity: "classes", Key: "order"},
-			}, ""),
+			testName: "error with deep path",
+			err: New(
+				ctx.Child("domains", "domain1").Child("classes", "order"),
+				"TEST_CODE", "something went wrong", "",
+			),
 			expected: `[TEST_CODE] something went wrong at model.domains[domain1].classes[order]`,
 		},
 		{
 			testName: "full error",
-			err: func() *ValidationError {
-				ctx := NewContext("model", "").Child("domains", "d1")
-				return ctx.Err("CLASS_NAME_REQUIRED", "Name", "", "non-empty string", "class name is required")
-			}(),
+			err: NewWithValues(
+				ctx.Child("domains", "d1"),
+				"CLASS_NAME_REQUIRED", "class name is required", "Name", "", "non-empty string",
+			),
 			expected: `[CLASS_NAME_REQUIRED] class name is required (field: Name, want: non-empty string) at model.domains[d1]`,
 		},
 	}
@@ -62,9 +63,10 @@ func (suite *ErrorSuite) TestValidationErrorMessage() {
 }
 
 func (suite *ErrorSuite) TestValidationErrorIs() {
-	err1 := New("TEST_CODE", "msg1", "")
-	err2 := New("TEST_CODE", "msg2", "")
-	err3 := New("OTHER_CODE", "msg1", "")
+	ctx := NewContext("model", "")
+	err1 := New(ctx, "TEST_CODE", "msg1", "")
+	err2 := New(ctx, "TEST_CODE", "msg2", "")
+	err3 := New(ctx, "OTHER_CODE", "msg1", "")
 
 	// Same code matches.
 	suite.Require().ErrorIs(err1, err2)
@@ -73,7 +75,8 @@ func (suite *ErrorSuite) TestValidationErrorIs() {
 }
 
 func (suite *ErrorSuite) TestValidationErrorAs() {
-	err := New("TEST_CODE", "msg", "")
+	ctx := NewContext("model", "")
+	err := New(ctx, "TEST_CODE", "msg", "")
 
 	var ve *ValidationError
 	suite.Require().ErrorAs(err, &ve)
@@ -81,13 +84,14 @@ func (suite *ErrorSuite) TestValidationErrorAs() {
 }
 
 func (suite *ErrorSuite) TestGetters() {
-	err := NewWithValues("TEST_CODE", "msg", "Field1", "bad", "good")
+	ctx := NewContext("model", "")
+	err := NewWithValues(ctx, "TEST_CODE", "msg", "Field1", "bad", "good")
 	suite.Equal(Code("TEST_CODE"), err.Code())
 	suite.Equal("msg", err.Message())
 	suite.Equal("Field1", err.Field())
 	suite.Equal("bad", err.Got())
 	suite.Equal("good", err.Want())
-	suite.Nil(err.Path())
+	suite.Len(err.Path(), 1) // Has the context path.
 }
 
 func (suite *ErrorSuite) TestFormatPath() {
@@ -144,61 +148,42 @@ func (suite *ErrorSuite) TestValidationContext() {
 	suite.Len(ctx.ContextPath(), 1)
 }
 
-func (suite *ErrorSuite) TestValidationContextErr() {
-	ctx := NewContext("model", "").Child("classes", "order")
-	err := ctx.Err("CLASS_NAME_REQUIRED", "Name", "", "non-empty string", "class name is required")
-
-	suite.Equal(Code("CLASS_NAME_REQUIRED"), err.Code())
-	suite.Equal("class name is required", err.Message())
-	suite.Equal("Name", err.Field())
-	suite.Empty(err.Got())
-	suite.Equal("non-empty string", err.Want())
-	suite.Len(err.Path(), 2)
-}
-
-func (suite *ErrorSuite) TestEnsureContext() {
-	// Non-nil context is returned as-is.
-	existing := NewContext("model", "")
-	result := EnsureContext(existing, "other", "key")
-	suite.Same(existing, result)
-
-	// Nil context creates a new one.
-	result = EnsureContext(nil, "action", "place_order")
-	suite.NotNil(result)
-	suite.Equal("action", result.ContextPath()[0].Entity)
-	suite.Equal("place_order", result.ContextPath()[0].Key)
+func (suite *ErrorSuite) TestNewPanicsOnNilContext() {
+	suite.Panics(func() { _ = New(nil, "CODE", "msg", "Field") })
 }
 
 func (suite *ErrorSuite) TestNewPanicsOnEmptyCode() {
-	suite.Panics(func() { _ = New("", "msg", "Field") })
+	ctx := NewContext("model", "")
+	suite.Panics(func() { _ = New(ctx, "", "msg", "Field") })
 }
 
 func (suite *ErrorSuite) TestNewPanicsOnEmptyMessage() {
-	suite.Panics(func() { _ = New("CODE", "", "Field") })
+	ctx := NewContext("model", "")
+	suite.Panics(func() { _ = New(ctx, "CODE", "", "Field") })
+}
+
+func (suite *ErrorSuite) TestNewWithValuesPanicsOnNilContext() {
+	suite.Panics(func() { _ = NewWithValues(nil, "CODE", "msg", "Field", "got", "want") })
 }
 
 func (suite *ErrorSuite) TestNewWithValuesPanicsOnEmptyCode() {
-	suite.Panics(func() { _ = NewWithValues("", "msg", "Field", "got", "want") })
+	ctx := NewContext("model", "")
+	suite.Panics(func() { _ = NewWithValues(ctx, "", "msg", "Field", "got", "want") })
 }
 
 func (suite *ErrorSuite) TestNewWithValuesPanicsOnEmptyMessage() {
-	suite.Panics(func() { _ = NewWithValues("CODE", "", "Field", "got", "want") })
-}
-
-func (suite *ErrorSuite) TestNewWithPathPanicsOnEmptyCode() {
-	suite.Panics(func() { _ = NewWithPath("", "msg", nil, "Field") })
-}
-
-func (suite *ErrorSuite) TestNewWithPathPanicsOnEmptyMessage() {
-	suite.Panics(func() { _ = NewWithPath("CODE", "", nil, "Field") })
-}
-
-func (suite *ErrorSuite) TestContextErrPanicsOnEmptyCode() {
 	ctx := NewContext("model", "")
-	suite.Panics(func() { _ = ctx.Err("", "Field", "", "", "msg") })
+	suite.Panics(func() { _ = NewWithValues(ctx, "CODE", "", "Field", "got", "want") })
 }
 
-func (suite *ErrorSuite) TestContextErrPanicsOnEmptyMessage() {
-	ctx := NewContext("model", "")
-	suite.Panics(func() { _ = ctx.Err("CODE", "Field", "", "", "") })
+func (suite *ErrorSuite) TestPathIsPopulated() {
+	ctx := NewContext("model", "").Child("domains", "d1").Child("classes", "order")
+	err := New(ctx, "TEST_CODE", "msg", "Field")
+
+	suite.Len(err.Path(), 3)
+	suite.Equal("model", err.Path()[0].Entity)
+	suite.Equal("domains", err.Path()[1].Entity)
+	suite.Equal("d1", err.Path()[1].Key)
+	suite.Equal("classes", err.Path()[2].Entity)
+	suite.Equal("order", err.Path()[2].Key)
 }

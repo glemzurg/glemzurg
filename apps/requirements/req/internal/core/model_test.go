@@ -130,7 +130,7 @@ func (suite *ModelSuite) TestValidate() {
 					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
-			errstr: "invariant 0",
+			errstr: "invariant[0]",
 		},
 		{
 			testName: "valid model with let in invariants",

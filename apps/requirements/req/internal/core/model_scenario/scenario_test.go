@@ -3,6 +3,7 @@ package model_scenario
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -62,7 +63,8 @@ func (suite *ScenarioSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.scenario.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.scenario.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -97,12 +99,14 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
 	otherUseCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "other_usecase"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	scenario := Scenario{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := scenario.ValidateWithParent(&useCaseKey)
+	err := scenario.ValidateWithParent(ctx, &useCaseKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - scenario key has usecase1 as parent, but we pass other_usecase.
@@ -110,11 +114,11 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = scenario.ValidateWithParent(&otherUseCaseKey)
+	err = scenario.ValidateWithParent(ctx, &otherUseCaseKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = scenario.ValidateWithParent(&useCaseKey)
+	err = scenario.ValidateWithParent(ctx, &useCaseKey)
 	suite.Require().NoError(err)
 }
 
@@ -140,7 +144,8 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 			objectKey: {Key: objectKey, ObjectNumber: 1, Name: "Obj", NameStyle: "name", ClassKey: classKey},
 		},
 	}
-	err := scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
+	ctx := coreerr.NewContext("test", "")
+	err := scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes)
 	suite.Require().NoError(err)
 
 	// Test invalid child Object (blank name with name style) propagates error.
@@ -151,7 +156,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 			objectKey: {Key: objectKey, ObjectNumber: 1, Name: "", NameStyle: "name", ClassKey: classKey}, // Invalid: name required for "name" style
 		},
 	}
-	err = scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
+	err = scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Objects")
 
 	// Test Object references non-existent class.
@@ -162,7 +167,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 			objectKey: {Key: objectKey, ObjectNumber: 1, Name: "Obj", NameStyle: "name", ClassKey: nonExistentClassKey},
 		},
 	}
-	err = scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
+	err = scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes)
 	suite.Require().ErrorContains(err, "references non-existent class", "Should validate Object class references")
 }
 

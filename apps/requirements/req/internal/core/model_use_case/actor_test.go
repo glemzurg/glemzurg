@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,7 +38,8 @@ func (suite *ActorSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.obj.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.obj.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -78,10 +80,12 @@ func (suite *ActorSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
 func (suite *ActorSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
+
 	// Test valid case - Actor.Validate() always returns nil.
 	obj := Actor{
 		UmlComment: "UmlComment",
 	}
-	err := obj.ValidateWithParent()
+	err := obj.ValidateWithParent(ctx)
 	suite.Require().NoError(err)
 }

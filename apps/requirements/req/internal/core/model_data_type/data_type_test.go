@@ -3,6 +3,7 @@ package model_data_type
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -70,13 +71,14 @@ func (suite *DataTypeSuite) TestValidate() {
 		},
 	}
 
+	ctx := coreerr.NewContext("test", "")
 	for _, tt := range tests {
 		dataType := &DataType{
 			Key:            tt.key,
 			CollectionType: tt.collectionType,
 			Atomic:         tt.atomic,
 		}
-		err := dataType.Validate()
+		err := dataType.Validate(ctx)
 		if tt.errstr == "" {
 			suite.Require().NoError(err, "expected no error for %+v", dataType)
 		} else {
@@ -217,7 +219,7 @@ func (suite *DataTypeSuite) TestValidate() {
 	}
 
 	for _, tt := range collectionTests {
-		err := tt.dt.Validate()
+		err := tt.dt.Validate(ctx)
 		if tt.errstr == "" {
 			suite.Require().NoError(err, "expected no error for %s", tt.name)
 		} else {

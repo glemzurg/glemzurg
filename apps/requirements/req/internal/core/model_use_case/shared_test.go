@@ -3,6 +3,7 @@ package model_use_case
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,7 +55,8 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.obj.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.obj.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -77,12 +79,14 @@ func (suite *UseCaseSharedSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
 func (suite *UseCaseSharedSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	obj := UseCaseShared{
 		ShareType:  "", // Invalid
 		UmlComment: "UmlComment",
 	}
-	err := obj.ValidateWithParent()
+	err := obj.ValidateWithParent(ctx)
 	suite.Require().ErrorContains(err, "ShareType", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
@@ -90,6 +94,6 @@ func (suite *UseCaseSharedSuite) TestValidateWithParent() {
 		ShareType:  "include",
 		UmlComment: "UmlComment",
 	}
-	err = obj.ValidateWithParent()
+	err = obj.ValidateWithParent(ctx)
 	suite.Require().NoError(err)
 }

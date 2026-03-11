@@ -26,17 +26,17 @@ func NewScenario(key identity.Key, name, details string) Scenario {
 }
 
 // Validate validates the Scenario struct.
-func (s *Scenario) Validate() error {
+func (s *Scenario) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := s.Key.Validate(); err != nil {
-		return coreerr.New(coreerr.ScenarioKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
+	if err := s.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ScenarioKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO {
-		return coreerr.NewWithValues(coreerr.ScenarioKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for scenario", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_SCENARIO)
+		return coreerr.NewWithValues(ctx, coreerr.ScenarioKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for scenario", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_SCENARIO)
 	}
 	// Validate Name required.
 	if s.Name == "" {
-		return coreerr.New(coreerr.ScenarioNameRequired, "Name is required", "Name")
+		return coreerr.New(ctx, coreerr.ScenarioNameRequired, "Name is required", "Name")
 	}
 	return nil
 }
@@ -47,34 +47,36 @@ func (s *Scenario) SetObjects(objects map[identity.Key]Object) {
 
 // ValidateWithParent validates the Scenario, its key's parent relationship, and all children.
 // The parent must be a UseCase.
-func (s *Scenario) ValidateWithParent(parent *identity.Key) error {
-	return s.ValidateWithParentAndClasses(parent, nil)
+func (s *Scenario) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
+	return s.ValidateWithParentAndClasses(ctx, parent, nil)
 }
 
 // ValidateWithParentAndClasses validates the Scenario with access to classes for cross-reference validation.
 // The parent must be a UseCase.
 // The classes map is used to validate that Object ClassKey references exist.
-func (s *Scenario) ValidateWithParentAndClasses(parent *identity.Key, classes map[identity.Key]bool) error {
+func (s *Scenario) ValidateWithParentAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, classes map[identity.Key]bool) error {
 	// Validate the object itself.
-	if err := s.Validate(); err != nil {
+	if err := s.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := s.Key.ValidateParent(parent); err != nil {
+	if err := s.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// Validate all children.
 	for _, obj := range s.Objects {
-		if err := obj.ValidateWithParent(&s.Key); err != nil {
+		childCtx := ctx.Child("object", obj.Key.String())
+		if err := obj.ValidateWithParent(childCtx, &s.Key); err != nil {
 			return err
 		}
-		if err := obj.ValidateReferences(classes); err != nil {
+		if err := obj.ValidateReferences(childCtx, classes); err != nil {
 			return err
 		}
 	}
 	// Validate Steps if there is content.
 	if s.Steps != nil {
-		if err := s.Steps.ValidateWithParent(&s.Key); err != nil {
+		childCtx := ctx.Child("steps", s.Key.String())
+		if err := s.Steps.ValidateWithParent(childCtx, &s.Key); err != nil {
 			return err
 		}
 	}

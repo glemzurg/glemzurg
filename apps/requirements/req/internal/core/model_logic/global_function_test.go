@@ -3,6 +3,7 @@ package model_logic
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -192,7 +193,8 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.gf.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.gf.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -232,6 +234,7 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent validates the key's parent relationship.
 func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	gfKey := helper.Must(identity.NewGlobalFunctionKey("_max"))
 
 	validLogic := NewLogic(gfKey, LogicTypeValue, "Max of two values.", "", validSpec(), nil)
@@ -243,7 +246,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 		Parameters: []string{"x", "y"},
 		Logic:      validLogic,
 	}
-	err := gf.ValidateWithParent()
+	err := gf.ValidateWithParent(ctx)
 	s.Require().NoError(err)
 
 	// Test that Validate is called.
@@ -253,7 +256,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 		Parameters: []string{"x", "y"},
 		Logic:      validLogic,
 	}
-	err = gf.ValidateWithParent()
+	err = gf.ValidateWithParent(ctx)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "must start with underscore")
 
@@ -269,7 +272,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 			Spec:        validSpec(),
 		},
 	}
-	err = gf.ValidateWithParent()
+	err = gf.ValidateWithParent(ctx)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "Description")
 }

@@ -3,6 +3,7 @@ package model_class
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -147,7 +148,8 @@ func (suite *AssociationSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.association.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.association.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -196,6 +198,8 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	assoc := Association{
 		Key:          validKey,
@@ -203,7 +207,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		FromClassKey: fromClassKey,
 		ToClassKey:   toClassKey,
 	}
-	err := assoc.ValidateWithParent(&subdomainKey)
+	err := assoc.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - association key has subdomain1 as parent, but we pass other_subdomain.
@@ -213,11 +217,11 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		FromClassKey: fromClassKey,
 		ToClassKey:   toClassKey,
 	}
-	err = assoc.ValidateWithParent(&otherSubdomainKey)
+	err = assoc.ValidateWithParent(ctx, &otherSubdomainKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = assoc.ValidateWithParent(&subdomainKey)
+	err = assoc.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err)
 }
 
@@ -302,7 +306,8 @@ func (suite *AssociationSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.association.ValidateReferences(tt.classes)
+			ctx := coreerr.NewContext("test", "")
+			err := tt.association.ValidateReferences(ctx, tt.classes)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

@@ -55,57 +55,57 @@ func NewLogic(key identity.Key, logicType, description, target string, spec logi
 }
 
 // Validate validates the Logic struct.
-func (l *Logic) Validate() error {
+func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := l.Key.Validate(); err != nil {
+	if err := l.Key.ValidateWithContext(ctx); err != nil {
 		return err
 	}
 	// Type is required.
 	if l.Type == "" {
-		return coreerr.NewWithValues(coreerr.LogicTypeRequired, "Type is required", "Type", "", "one of: assessment, state_change, query, safety_rule, value, let")
+		return coreerr.NewWithValues(ctx, coreerr.LogicTypeRequired, "Type is required", "Type", "", "one of: assessment, state_change, query, safety_rule, value, let")
 	}
 	// Type must be a valid value.
 	if !validLogicTypes[l.Type] {
-		return coreerr.NewWithValues(coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let")
+		return coreerr.NewWithValues(ctx, coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let")
 	}
 	// Description is required.
 	if l.Description == "" {
-		return coreerr.New(coreerr.LogicDescRequired, "Description is required", "Description")
+		return coreerr.New(ctx, coreerr.LogicDescRequired, "Description is required", "Description")
 	}
 	// Target validation based on logic type.
 	switch l.Type {
 	case LogicTypeStateChange, LogicTypeQuery, LogicTypeLet:
 		if l.Target == "" {
-			return coreerr.NewWithValues(coreerr.LogicTargetRequired, fmt.Sprintf("logic %q of type %q requires a non-empty target", l.Key.String(), l.Type), "Target", "", "non-empty string")
+			return coreerr.NewWithValues(ctx, coreerr.LogicTargetRequired, fmt.Sprintf("logic %q of type %q requires a non-empty target", l.Key.String(), l.Type), "Target", "", "non-empty string")
 		}
 		// Query and let targets cannot start with "_".
 		if (l.Type == LogicTypeQuery || l.Type == LogicTypeLet) && strings.HasPrefix(l.Target, "_") {
-			return coreerr.NewWithValues(coreerr.LogicTargetNoUnderscore, fmt.Sprintf("logic %q of type %q has target %q starting with '_' which is not allowed", l.Key.String(), l.Type, l.Target), "Target", l.Target, "")
+			return coreerr.NewWithValues(ctx, coreerr.LogicTargetNoUnderscore, fmt.Sprintf("logic %q of type %q has target %q starting with '_' which is not allowed", l.Key.String(), l.Type, l.Target), "Target", l.Target, "")
 		}
 	case LogicTypeAssessment, LogicTypeSafetyRule, LogicTypeValue:
 		if l.Target != "" {
-			return coreerr.NewWithValues(coreerr.LogicTargetMustBeEmpty, fmt.Sprintf("logic %q of type %q must not have a target, got %q", l.Key.String(), l.Type, l.Target), "Target", l.Target, "empty string")
+			return coreerr.NewWithValues(ctx, coreerr.LogicTargetMustBeEmpty, fmt.Sprintf("logic %q of type %q must not have a target, got %q", l.Key.String(), l.Type, l.Target), "Target", l.Target, "empty string")
 		}
 	}
 	// Validate the ExpressionSpec.
-	if err := l.Spec.Validate(); err != nil {
-		return coreerr.New(coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q spec: %s", l.Key.String(), err.Error()), "Spec")
+	if err := l.Spec.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q spec: %s", l.Key.String(), err.Error()), "Spec")
 	}
 	// Validate TargetTypeSpec if present.
 	if l.TargetTypeSpec != nil {
-		if err := l.TargetTypeSpec.Validate(); err != nil {
-			return coreerr.New(coreerr.LogicTargetTypespecInvalid, fmt.Sprintf("logic %q target type spec: %s", l.Key.String(), err.Error()), "TargetTypeSpec")
+		if err := l.TargetTypeSpec.Validate(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.LogicTargetTypespecInvalid, fmt.Sprintf("logic %q target type spec: %s", l.Key.String(), err.Error()), "TargetTypeSpec")
 		}
 	}
 	return nil
 }
 
 // ValidateWithParent validates the Logic and its key's parent relationship.
-func (l *Logic) ValidateWithParent(parent *identity.Key) error {
-	if err := l.Validate(); err != nil {
+func (l *Logic) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
+	if err := l.Validate(ctx); err != nil {
 		return err
 	}
-	if err := l.Key.ValidateParent(parent); err != nil {
+	if err := l.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	return nil

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
@@ -882,7 +883,7 @@ func (s *LowerTestSuite) TestLoweredExpressionValidates() {
 	}
 	result, err := Lower(expr, s.ctx)
 	s.Require().NoError(err)
-	s.Require().NoError(result.Validate())
+	s.Require().NoError(result.Validate(coreerr.NewContext("test", "")))
 }
 
 // --- Test local variable scoping ---

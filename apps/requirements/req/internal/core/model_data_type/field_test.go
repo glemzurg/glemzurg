@@ -3,6 +3,7 @@ package model_data_type
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -117,7 +118,8 @@ func (suite *FieldSuite) TestValidate() {
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			err := tt.field.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.field.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err, "expected no error for %+v", tt.field)
 			} else {

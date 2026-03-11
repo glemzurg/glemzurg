@@ -44,18 +44,18 @@ func isCannotParseError(err error, target **model_data_type.CannotParseError) bo
 }
 
 // Validate validates the Parameter struct.
-func (p *Parameter) Validate() error {
+func (p *Parameter) Validate(ctx *coreerr.ValidationContext) error {
 	if p.Name == "" {
-		return coreerr.New(coreerr.ParamNameRequired, "Name is required", "Name")
+		return coreerr.New(ctx, coreerr.ParamNameRequired, "Name is required", "Name")
 	}
 	if p.DataTypeRules == "" {
-		return coreerr.New(coreerr.ParamDatatypesRequired, "DataTypeRules is required", "DataTypeRules")
+		return coreerr.New(ctx, coreerr.ParamDatatypesRequired, "DataTypeRules is required", "DataTypeRules")
 	}
 	return nil
 }
 
 // ValidateWithParent validates the Parameter.
 // Parameter has no key, so parent validation is not applicable.
-func (p *Parameter) ValidateWithParent() error {
-	return p.Validate()
+func (p *Parameter) ValidateWithParent(ctx *coreerr.ValidationContext) error {
+	return p.Validate(ctx)
 }

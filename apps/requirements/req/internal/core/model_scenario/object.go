@@ -38,51 +38,51 @@ func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, clas
 }
 
 // Validate validates the Object struct.
-func (o *Object) Validate() error {
+func (o *Object) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := o.Key.Validate(); err != nil {
-		return coreerr.New(coreerr.SobjectKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
+	if err := o.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.SobjectKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if o.Key.KeyType != identity.KEY_TYPE_SCENARIO_OBJECT {
-		return coreerr.NewWithValues(coreerr.SobjectKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for scenario object", o.Key.KeyType), "Key", o.Key.KeyType, identity.KEY_TYPE_SCENARIO_OBJECT)
+		return coreerr.NewWithValues(ctx, coreerr.SobjectKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for scenario object", o.Key.KeyType), "Key", o.Key.KeyType, identity.KEY_TYPE_SCENARIO_OBJECT)
 	}
 	// Validate NameStyle required.
 	if o.NameStyle == "" {
-		return coreerr.New(coreerr.SobjectNamestyleRequired, "NameStyle is required", "NameStyle")
+		return coreerr.New(ctx, coreerr.SobjectNamestyleRequired, "NameStyle is required", "NameStyle")
 	}
 	// Validate NameStyle is one of the valid values.
 	if o.NameStyle != _NAME_STYLE_NAME && o.NameStyle != _NAME_STYLE_ID && o.NameStyle != _NAME_STYLE_UNNAMED {
-		return coreerr.NewWithValues(coreerr.SobjectNamestyleInvalid, "NameStyle must be one of: name, id, unnamed", "NameStyle", o.NameStyle, "one of: name, id, unnamed")
+		return coreerr.NewWithValues(ctx, coreerr.SobjectNamestyleInvalid, "NameStyle must be one of: name, id, unnamed", "NameStyle", o.NameStyle, "one of: name, id, unnamed")
 	}
 	// Validate Name conditionally based on NameStyle.
 	if o.NameStyle == _NAME_STYLE_UNNAMED {
 		if o.Name != "" {
-			return coreerr.NewWithValues(coreerr.SobjectNameMustBeBlank, "Name: Name must be blank for unnamed style", "Name", o.Name, "")
+			return coreerr.NewWithValues(ctx, coreerr.SobjectNameMustBeBlank, "Name: Name must be blank for unnamed style", "Name", o.Name, "")
 		}
 	} else {
 		if o.Name == "" {
-			return coreerr.New(coreerr.SobjectNameRequired, "Name: Name cannot be blank", "Name")
+			return coreerr.New(ctx, coreerr.SobjectNameRequired, "Name: Name cannot be blank", "Name")
 		}
 	}
 	// Validate ClassKey.
-	if err := o.ClassKey.Validate(); err != nil {
-		return coreerr.New(coreerr.SobjectClasskeyInvalid, fmt.Sprintf("ClassKey: %s", err.Error()), "ClassKey")
+	if err := o.ClassKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.SobjectClasskeyInvalid, fmt.Sprintf("ClassKey: %s", err.Error()), "ClassKey")
 	}
 	if o.ClassKey.KeyType != identity.KEY_TYPE_CLASS {
-		return coreerr.NewWithValues(coreerr.SobjectClasskeyTypeInvalid, fmt.Sprintf("classKey: invalid key type '%s' for class", o.ClassKey.KeyType), "ClassKey", o.ClassKey.KeyType, identity.KEY_TYPE_CLASS)
+		return coreerr.NewWithValues(ctx, coreerr.SobjectClasskeyTypeInvalid, fmt.Sprintf("classKey: invalid key type '%s' for class", o.ClassKey.KeyType), "ClassKey", o.ClassKey.KeyType, identity.KEY_TYPE_CLASS)
 	}
 	return nil
 }
 
 // ValidateWithParent validates the Object, its key's parent relationship, and all children.
 // The parent must be a Scenario.
-func (o *Object) ValidateWithParent(parent *identity.Key) error {
+func (o *Object) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
 	// Validate the object itself.
-	if err := o.Validate(); err != nil {
+	if err := o.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := o.Key.ValidateParent(parent); err != nil {
+	if err := o.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// Object has no children with keys that need validation.
@@ -91,9 +91,9 @@ func (o *Object) ValidateWithParent(parent *identity.Key) error {
 
 // ValidateReferences validates that the object's ClassKey references a real class.
 // The class must exist in the classes map (classes from the same subdomain as the use case).
-func (o *Object) ValidateReferences(classes map[identity.Key]bool) error {
+func (o *Object) ValidateReferences(ctx *coreerr.ValidationContext, classes map[identity.Key]bool) error {
 	if !classes[o.ClassKey] {
-		return coreerr.NewWithValues(coreerr.SobjectClassNotfound, fmt.Sprintf("scenario object '%s' references non-existent class '%s'", o.Key.String(), o.ClassKey.String()), "ClassKey", o.ClassKey.String(), "")
+		return coreerr.NewWithValues(ctx, coreerr.SobjectClassNotfound, fmt.Sprintf("scenario object '%s' references non-existent class '%s'", o.Key.String(), o.ClassKey.String()), "ClassKey", o.ClassKey.String(), "")
 	}
 	return nil
 }

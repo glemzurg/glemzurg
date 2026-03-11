@@ -29,18 +29,18 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 }
 
 // Validate validates the Generalization struct.
-func (g *Generalization) Validate() error {
+func (g *Generalization) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := g.Key.Validate(); err != nil {
-		return coreerr.New(coreerr.CgenKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
+	if err := g.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.CgenKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if g.Key.KeyType != identity.KEY_TYPE_CLASS_GENERALIZATION {
-		return coreerr.NewWithValues(coreerr.CgenKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for generalization", g.Key.KeyType), "Key", g.Key.KeyType, identity.KEY_TYPE_CLASS_GENERALIZATION)
+		return coreerr.NewWithValues(ctx, coreerr.CgenKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for generalization", g.Key.KeyType), "Key", g.Key.KeyType, identity.KEY_TYPE_CLASS_GENERALIZATION)
 	}
 
 	// Name is required.
 	if g.Name == "" {
-		return coreerr.New(coreerr.CgenNameRequired, "Name is required", "Name")
+		return coreerr.New(ctx, coreerr.CgenNameRequired, "Name is required", "Name")
 	}
 
 	return nil
@@ -48,13 +48,13 @@ func (g *Generalization) Validate() error {
 
 // ValidateWithParent validates the Generalization, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
-func (g *Generalization) ValidateWithParent(parent *identity.Key) error {
+func (g *Generalization) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
 	// Validate the object itself.
-	if err := g.Validate(); err != nil {
+	if err := g.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := g.Key.ValidateParent(parent); err != nil {
+	if err := g.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// Generalization has no children with keys that need validation.

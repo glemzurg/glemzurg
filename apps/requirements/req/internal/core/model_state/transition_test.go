@@ -3,6 +3,7 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -157,7 +158,8 @@ func (suite *TransitionSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.transition.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.transition.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -194,6 +196,7 @@ func (suite *TransitionSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (suite *TransitionSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
@@ -210,7 +213,7 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 		EventKey:     eventKey,
 		ToStateKey:   nil, // Invalid - both nil
 	}
-	err := transition.ValidateWithParent(&classKey)
+	err := transition.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "FromStateKey, ToStateKey: cannot both be blank", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - transition key has class1 as parent, but we pass other_class.
@@ -220,11 +223,11 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 		EventKey:     eventKey,
 		ToStateKey:   &toStateKey,
 	}
-	err = transition.ValidateWithParent(&otherClassKey)
+	err = transition.ValidateWithParent(ctx, &otherClassKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = transition.ValidateWithParent(&classKey)
+	err = transition.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 }
 
@@ -375,7 +378,8 @@ func (suite *TransitionSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.transition.ValidateReferences(tt.states, tt.events, tt.guards, tt.actions)
+			ctx := coreerr.NewContext("test", "")
+			err := tt.transition.ValidateReferences(ctx, tt.states, tt.events, tt.guards, tt.actions)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

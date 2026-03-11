@@ -18,15 +18,15 @@ func NewUseCaseShared(shareType, umlComment string) UseCaseShared {
 }
 
 // Validate validates the UseCaseShared struct.
-func (u *UseCaseShared) Validate() error {
+func (u *UseCaseShared) Validate(ctx *coreerr.ValidationContext) error {
 	if u.ShareType != "include" && u.ShareType != "extend" {
-		return coreerr.NewWithValues(coreerr.UshareSharetypeInvalid, "ShareType must be one of: include, extend", "ShareType", u.ShareType, "one of: include, extend")
+		return coreerr.NewWithValues(ctx, coreerr.UshareSharetypeInvalid, "ShareType must be one of: include, extend", "ShareType", u.ShareType, "one of: include, extend")
 	}
 	return nil
 }
 
 // ValidateWithParent validates the UseCaseShared.
 // UseCaseShared does not have a key, so it does not validate parent relationships.
-func (u *UseCaseShared) ValidateWithParent() error {
-	return u.Validate()
+func (u *UseCaseShared) ValidateWithParent(ctx *coreerr.ValidationContext) error {
+	return u.Validate(ctx)
 }

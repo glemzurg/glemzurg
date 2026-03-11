@@ -1,11 +1,15 @@
 package logic_expression
 
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+)
+
 // Expression is the interface implemented by all model expression nodes.
 // Model expressions are notation-independent representations of formal logic.
 type Expression interface {
 	expressionNode()
 	NodeType() string
-	Validate() error
+	Validate(ctx *coreerr.ValidationContext) error
 }
 
 // Node type constants. These match the SQL expression_node_type enum values.
@@ -66,9 +70,9 @@ const (
 )
 
 // ValidateExpression validates an Expression if it is non-nil.
-func ValidateExpression(expr Expression) error {
+func ValidateExpression(ctx *coreerr.ValidationContext, expr Expression) error {
 	if expr == nil {
 		return nil
 	}
-	return expr.Validate()
+	return expr.Validate(ctx)
 }

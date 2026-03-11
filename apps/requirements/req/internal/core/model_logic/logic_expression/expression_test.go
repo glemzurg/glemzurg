@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -77,7 +78,8 @@ func (s *ExpressionTestSuite) TestValidateLiterals() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.expr.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.expr.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -106,7 +108,8 @@ func (s *ExpressionTestSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.expr.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.expr.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -147,7 +150,8 @@ func (s *ExpressionTestSuite) TestValidateBinaryOps() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.expr.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.expr.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -171,7 +175,8 @@ func (s *ExpressionTestSuite) TestValidateUnaryOps() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.expr.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.expr.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -205,7 +210,8 @@ func (s *ExpressionTestSuite) TestValidateCollections() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.expr.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.expr.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -237,7 +243,8 @@ func (s *ExpressionTestSuite) TestValidateControlFlow() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.expr.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.expr.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -274,7 +281,8 @@ func (s *ExpressionTestSuite) TestValidateQuantifiers() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.expr.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.expr.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -307,7 +315,8 @@ func (s *ExpressionTestSuite) TestValidateCalls() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.expr.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.expr.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -319,10 +328,11 @@ func (s *ExpressionTestSuite) TestValidateCalls() {
 }
 
 func (s *ExpressionTestSuite) TestValidateExpression() {
+	ctx := coreerr.NewContext("test", "")
 	// Test the ValidateExpression helper function.
-	s.Require().NoError(ValidateExpression(nil))
-	s.Require().NoError(ValidateExpression(&BoolLiteral{Value: true}))
-	s.Require().Error(ValidateExpression(&RationalLiteral{}))
+	s.Require().NoError(ValidateExpression(ctx, nil))
+	s.Require().NoError(ValidateExpression(ctx, &BoolLiteral{Value: true}))
+	s.Require().Error(ValidateExpression(ctx, &RationalLiteral{}))
 }
 
 func (s *ExpressionTestSuite) TestNodeType() {
@@ -350,7 +360,8 @@ func (s *ExpressionTestSuite) TestRecursiveValidation() {
 			Expr: invalidLeaf,
 		},
 	}
-	err := tree.Validate()
+	ctx := coreerr.NewContext("test", "")
+	err := tree.Validate(ctx)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "RationalLiteral.Value: is required")
 }

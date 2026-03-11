@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -39,7 +40,8 @@ func (s *ExpressionTypeTestSuite) TestValidateScalars() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.et.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.et.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -66,7 +68,8 @@ func (s *ExpressionTypeTestSuite) TestValidateCollections() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.et.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.et.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -97,7 +100,8 @@ func (s *ExpressionTypeTestSuite) TestValidateCompound() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.et.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.et.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -119,7 +123,8 @@ func (s *ExpressionTypeTestSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.et.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.et.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -142,7 +147,8 @@ func (s *ExpressionTypeTestSuite) TestValidateNested() {
 			},
 		},
 	}
-	s.Require().NoError(et.Validate())
+	ctx := coreerr.NewContext("test", "")
+	s.Require().NoError(et.Validate(ctx))
 
 	// Nested with error deep inside.
 	etBad := &SetType{
@@ -154,7 +160,7 @@ func (s *ExpressionTypeTestSuite) TestValidateNested() {
 			},
 		},
 	}
-	err := etBad.Validate()
+	err := etBad.Validate(ctx)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "ElementTypes")
 }
@@ -175,11 +181,12 @@ func (s *ExpressionTypeTestSuite) TestTypeName() {
 }
 
 func (s *ExpressionTypeTestSuite) TestValidateExpressionTypeHelper() {
+	ctx := coreerr.NewContext("test", "")
 	// Nil is valid.
-	s.Require().NoError(ValidateExpressionType(nil))
+	s.Require().NoError(ValidateExpressionType(ctx, nil))
 	// Valid type.
-	s.Require().NoError(ValidateExpressionType(&BooleanType{}))
+	s.Require().NoError(ValidateExpressionType(ctx, &BooleanType{}))
 	// Invalid type.
-	err := ValidateExpressionType(&SetType{})
+	err := ValidateExpressionType(ctx, &SetType{})
 	s.Require().Error(err)
 }

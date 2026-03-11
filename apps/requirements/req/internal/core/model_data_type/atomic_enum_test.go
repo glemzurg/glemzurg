@@ -3,6 +3,7 @@ package model_data_type
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +42,8 @@ func TestAtomicEnumValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.atomicEnum.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.atomicEnum.Validate(ctx)
 			if tt.errorMessage != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)

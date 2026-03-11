@@ -28,17 +28,17 @@ func NewState(key identity.Key, name, details, umlComment string) State {
 }
 
 // Validate validates the State struct.
-func (s *State) Validate() error {
+func (s *State) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := s.Key.Validate(); err != nil {
-		return coreerr.New(coreerr.StateKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
+	if err := s.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.StateKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_STATE {
-		return coreerr.NewWithValues(coreerr.StateKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for state", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_STATE)
+		return coreerr.NewWithValues(ctx, coreerr.StateKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for state", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_STATE)
 	}
 
 	if s.Name == "" {
-		return coreerr.New(coreerr.StateNameRequired, "Name is required", "Name")
+		return coreerr.New(ctx, coreerr.StateNameRequired, "Name is required", "Name")
 	}
 
 	return nil
@@ -54,28 +54,29 @@ func (s *State) SetActions(actions []StateAction) {
 
 // ValidateWithParent validates the State, its key's parent relationship, and all children.
 // The parent must be a Class.
-func (s *State) ValidateWithParent(parent *identity.Key) error {
-	return s.ValidateWithParentAndActions(parent, nil)
+func (s *State) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
+	return s.ValidateWithParentAndActions(ctx, parent, nil)
 }
 
 // ValidateWithParentAndActions validates the State with access to actions for cross-reference validation.
 // The parent must be a Class.
 // The actions map is used to validate that StateAction ActionKey references exist.
-func (s *State) ValidateWithParentAndActions(parent *identity.Key, actions map[identity.Key]bool) error {
+func (s *State) ValidateWithParentAndActions(ctx *coreerr.ValidationContext, parent *identity.Key, actions map[identity.Key]bool) error {
 	// Validate the object itself.
-	if err := s.Validate(); err != nil {
+	if err := s.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := s.Key.ValidateParent(parent); err != nil {
+	if err := s.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// Validate all children.
 	for i := range s.Actions {
-		if err := s.Actions[i].ValidateWithParent(&s.Key); err != nil {
+		childCtx := ctx.Child("stateAction", s.Actions[i].Key.String())
+		if err := s.Actions[i].ValidateWithParent(childCtx, &s.Key); err != nil {
 			return err
 		}
-		if err := s.Actions[i].ValidateReferences(actions); err != nil {
+		if err := s.Actions[i].ValidateReferences(childCtx, actions); err != nil {
 			return err
 		}
 	}

@@ -18,15 +18,15 @@ type Field struct {
 }
 
 // Validate validates the Field struct.
-func (f Field) Validate() error {
+func (f Field) Validate(ctx *coreerr.ValidationContext) error {
 	if f.Name == "" {
-		return coreerr.New(coreerr.DtypeFieldNameRequired, "Name is required", "Name")
+		return coreerr.New(ctx, coreerr.DtypeFieldNameRequired, "Name is required", "Name")
 	}
 	if f.FieldDataType == nil {
-		return coreerr.New(coreerr.DtypeFieldDatatypeRequired, "FieldDataType is required", "FieldDataType")
+		return coreerr.New(ctx, coreerr.DtypeFieldDatatypeRequired, "FieldDataType is required", "FieldDataType")
 	}
 	if !_fieldNameRegexp.MatchString(f.Name) {
-		return coreerr.NewWithValues(coreerr.DtypeFieldNameInvalid, fmt.Sprintf("name '%s' must be a lowercase identifier", f.Name), "Name", f.Name, "matching [a-z_][a-z0-9_]*")
+		return coreerr.NewWithValues(ctx, coreerr.DtypeFieldNameInvalid, fmt.Sprintf("name '%s' must be a lowercase identifier", f.Name), "Name", f.Name, "matching [a-z_][a-z0-9_]*")
 	}
 	return nil
 }

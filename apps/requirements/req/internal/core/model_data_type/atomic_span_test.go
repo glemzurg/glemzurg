@@ -3,6 +3,7 @@ package model_data_type
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -270,7 +271,8 @@ func TestAtomicSpanValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.atomicSpan.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.atomicSpan.Validate(ctx)
 			if tt.errorMessage != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)

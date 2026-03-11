@@ -3,6 +3,7 @@ package model_class
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
@@ -186,7 +187,8 @@ func (suite *AttributeSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.attribute.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.attribute.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -264,12 +266,14 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 	derivKey := helper.Must(identity.NewAttributeDerivationKey(validKey, "deriv1"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	attr := Attribute{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := attr.ValidateWithParent(&classKey)
+	err := attr.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - attribute key has class1 as parent, but we pass other_class.
@@ -277,11 +281,11 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = attr.ValidateWithParent(&otherClassKey)
+	err = attr.ValidateWithParent(ctx, &otherClassKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = attr.ValidateWithParent(&classKey)
+	err = attr.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 
 	// Test valid with derivation policy.
@@ -291,7 +295,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name:             "Name",
 		DerivationPolicy: &validDerivPolicy,
 	}
-	err = attr.ValidateWithParent(&classKey)
+	err = attr.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 
 	// Test derivation policy key validation - wrong parent should fail.
@@ -303,7 +307,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name:             "Name",
 		DerivationPolicy: &wrongParentDerivPolicy,
 	}
-	err = attr.ValidateWithParent(&classKey)
+	err = attr.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "DerivationPolicy", "ValidateWithParent should validate derivation policy key parent")
 
 	// Test valid with invariants.
@@ -314,7 +318,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name:       "Name",
 		Invariants: []model_logic.Logic{validInvariant},
 	}
-	err = attr.ValidateWithParent(&classKey)
+	err = attr.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 
 	// Test invariant with wrong parent key - invariant key has other_attr as parent, but attribute key is validKey.
@@ -325,6 +329,6 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name:       "Name",
 		Invariants: []model_logic.Logic{wrongParentInvariant},
 	}
-	err = attr.ValidateWithParent(&classKey)
+	err = attr.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "attribute invariant 0", "ValidateWithParent should validate invariant key parent")
 }

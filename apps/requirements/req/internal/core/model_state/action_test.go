@@ -3,6 +3,7 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
@@ -134,7 +135,7 @@ func (suite *ActionSuite) TestValidate() {
 					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
-			errstr: "requires 0",
+			errstr: "requires[0]",
 		},
 		{
 			testName: "error invalid guarantee logic missing key",
@@ -145,7 +146,7 @@ func (suite *ActionSuite) TestValidate() {
 					{Key: identity.Key{}, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
-			errstr: "guarantee 0",
+			errstr: "guarantees[0]",
 		},
 		{
 			testName: "error invalid safety rule logic missing key",
@@ -156,7 +157,7 @@ func (suite *ActionSuite) TestValidate() {
 					{Key: identity.Key{}, Type: model_logic.LogicTypeSafetyRule, Description: "x must stay positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
-			errstr: "safety rule 0",
+			errstr: "safetyRules[0]",
 		},
 		{
 			testName: "error requires wrong kind",
@@ -287,7 +288,8 @@ func (suite *ActionSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.action.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.action.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -360,12 +362,14 @@ func (suite *ActionSuite) TestValidateWithParent() {
 	guarKey := helper.Must(identity.NewActionGuaranteeKey(validKey, "guar_1"))
 	safetyKey := helper.Must(identity.NewActionSafetyKey(validKey, "safety_1"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	action := Action{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := action.ValidateWithParent(&classKey)
+	err := action.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - action key has class1 as parent, but we pass other_class.
@@ -373,11 +377,11 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = action.ValidateWithParent(&otherClassKey)
+	err = action.ValidateWithParent(ctx, &otherClassKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = action.ValidateWithParent(&classKey)
+	err = action.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 
 	// Test valid with logic children.
@@ -394,7 +398,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 			model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
-	err = action.ValidateWithParent(&classKey)
+	err = action.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 
 	// Test logic key validation - require with wrong parent should fail.
@@ -407,8 +411,8 @@ func (suite *ActionSuite) TestValidateWithParent() {
 			model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
-	err = action.ValidateWithParent(&classKey)
-	suite.Require().ErrorContains(err, "requires 0", "ValidateWithParent should validate logic key parent")
+	err = action.ValidateWithParent(ctx, &classKey)
+	suite.Require().ErrorContains(err, "requires[0]", "ValidateWithParent should validate logic key parent")
 
 	// Test child Parameter validation propagates error.
 	action = Action{
@@ -418,7 +422,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
 		},
 	}
-	err = action.ValidateWithParent(&classKey)
+	err = action.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
@@ -429,6 +433,6 @@ func (suite *ActionSuite) TestValidateWithParent() {
 			helper.Must(NewParameter("param1", "Nat")),
 		},
 	}
-	err = action.ValidateWithParent(&classKey)
+	err = action.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
@@ -64,7 +65,8 @@ func (suite *DomainSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.domain.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.domain.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -95,12 +97,14 @@ func (suite *DomainSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewDomainKey("domain1"))
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	domain := Domain{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := domain.ValidateWithParent(nil)
+	err := domain.ValidateWithParent(ctx, nil)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domains should have nil parent.
@@ -108,11 +112,11 @@ func (suite *DomainSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = domain.ValidateWithParent(&otherDomainKey)
+	err = domain.ValidateWithParent(ctx, &otherDomainKey)
 	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = domain.ValidateWithParent(nil)
+	err = domain.ValidateWithParent(ctx, nil)
 	suite.Require().NoError(err)
 }
 
@@ -297,7 +301,8 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 			},
 		},
 	}
-	err := domain.ValidateWithParent(nil)
+	ctx := coreerr.NewContext("test", "")
+	err := domain.ValidateWithParent(ctx, nil)
 	suite.Require().NoError(err, "Valid full tree should pass")
 
 	// Test that a guard logic key mismatch deep in the tree is caught.
@@ -319,7 +324,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 			},
 		},
 	}
-	err = domain.ValidateWithParent(nil)
+	err = domain.ValidateWithParent(ctx, nil)
 	suite.Require().ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
 
 	// Test that an action require key with wrong parent deep in the tree is caught.
@@ -342,8 +347,8 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 			},
 		},
 	}
-	err = domain.ValidateWithParent(nil)
-	suite.Require().ErrorContains(err, "requires 0", "Should catch action require key error in deep tree")
+	err = domain.ValidateWithParent(ctx, nil)
+	suite.Require().ErrorContains(err, "requires[0]", "Should catch action require key error in deep tree")
 }
 
 // TestValidateWithParentAndActorsAndClasses tests child validation propagation.
@@ -361,6 +366,8 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		classKey2: true,
 	}
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test invalid Subdomain child propagates error.
 	domain := Domain{
 		Key:  domainKey,
@@ -369,7 +376,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err := domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err := domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Subdomains")
 
 	// Test invalid ClassAssociation child propagates error.
@@ -382,7 +389,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			assocKey: {Key: assocKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().ErrorContains(err, "Name", "Should validate child ClassAssociations")
 
 	// Test valid domain with single subdomain named "default".
@@ -393,7 +400,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: "Subdomain"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().NoError(err, "Valid domain with single 'default' subdomain should pass")
 
 	// Test single subdomain with non-"default" key fails.
@@ -404,7 +411,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain1Key: {Key: subdomain1Key, Name: "Subdomain"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().ErrorContains(err, "must be 'default'", "Single subdomain must have key 'default'")
 
 	// Test multiple subdomains with "default" key fails.
@@ -416,7 +423,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain1Key:       {Key: subdomain1Key, Name: "Subdomain1"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().ErrorContains(err, "reserved for single-subdomain", "Multiple subdomains cannot include 'default'")
 
 	// Test multiple subdomains without "default" key passes.
@@ -428,6 +435,6 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain2Key: {Key: subdomain2Key, Name: "Subdomain2"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().NoError(err, "Multiple subdomains without 'default' should pass")
 }

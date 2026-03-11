@@ -25,39 +25,41 @@ type ValidationError struct {
 	want    string        // What valid values look like (e.g., "one of: person, system").
 }
 
-// New creates a ValidationError with code, message, and field.
-// Panics if code or message is empty — these are programming errors.
-func New(code Code, message, field string) *ValidationError {
+// New creates a ValidationError with context, code, message, and field.
+// The context provides the location in the model tree. It must not be nil.
+// Panics if ctx is nil, code is empty, or message is empty — these are programming errors.
+func New(ctx *ValidationContext, code Code, message, field string) *ValidationError {
+	requireContext(ctx)
 	requireCodeAndMessage(code, message)
 	return &ValidationError{
 		code:    code,
 		message: message,
+		path:    ctx.path,
 		field:   field,
 	}
 }
 
-// NewWithValues creates a ValidationError with code, message, field, got, and want.
-// Panics if code or message is empty — these are programming errors.
-func NewWithValues(code Code, message, field, got, want string) *ValidationError {
+// NewWithValues creates a ValidationError with context, code, message, field, got, and want.
+// The context provides the location in the model tree. It must not be nil.
+// Panics if ctx is nil, code is empty, or message is empty — these are programming errors.
+func NewWithValues(ctx *ValidationContext, code Code, message, field, got, want string) *ValidationError {
+	requireContext(ctx)
 	requireCodeAndMessage(code, message)
 	return &ValidationError{
 		code:    code,
 		message: message,
+		path:    ctx.path,
 		field:   field,
 		got:     got,
 		want:    want,
 	}
 }
 
-// NewWithPath creates a ValidationError with code, message, path, and field.
-// Panics if code or message is empty — these are programming errors.
-func NewWithPath(code Code, message string, path []PathSegment, field string) *ValidationError {
-	requireCodeAndMessage(code, message)
-	return &ValidationError{
-		code:    code,
-		message: message,
-		path:    path,
-		field:   field,
+// requireContext panics if ctx is nil.
+// An error without a context is always a programming bug.
+func requireContext(ctx *ValidationContext) {
+	if ctx == nil {
+		panic("coreerr: context must not be nil")
 	}
 }
 
@@ -154,31 +156,7 @@ func (vc *ValidationContext) Child(entity, key string) *ValidationContext {
 	return &ValidationContext{path: newPath}
 }
 
-// Err creates a new ValidationError at the current context path.
-// Panics if code or message is empty — these are programming errors.
-func (vc *ValidationContext) Err(code Code, field, got, want, message string) *ValidationError {
-	requireCodeAndMessage(code, message)
-	return &ValidationError{
-		code:    code,
-		message: message,
-		path:    vc.path,
-		field:   field,
-		got:     got,
-		want:    want,
-	}
-}
-
 // ContextPath returns the current path segments.
 func (vc *ValidationContext) ContextPath() []PathSegment {
 	return vc.path
-}
-
-// EnsureContext returns the given context if non-nil, otherwise creates
-// a new root context with the given entity and key. This allows Validate
-// methods to be called with or without a context.
-func EnsureContext(ctx *ValidationContext, entity, key string) *ValidationContext {
-	if ctx != nil {
-		return ctx
-	}
-	return NewContext(entity, key)
 }

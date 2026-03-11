@@ -51,16 +51,16 @@ func (s *ExpressionSpec) ParseOk() bool {
 }
 
 // Validate validates the ExpressionSpec.
-func (s *ExpressionSpec) Validate() error {
+func (s *ExpressionSpec) Validate(ctx *coreerr.ValidationContext) error {
 	if s.Notation == "" {
-		return coreerr.NewWithValues(coreerr.ExprspecNotationRequired, "Notation is required", "Notation", "", "one of: tla_plus")
+		return coreerr.NewWithValues(ctx, coreerr.ExprspecNotationRequired, "Notation is required", "Notation", "", "one of: tla_plus")
 	}
 	if s.Notation != "tla_plus" {
-		return coreerr.NewWithValues(coreerr.ExprspecNotationInvalid, fmt.Sprintf("Notation '%s' is not valid", s.Notation), "Notation", s.Notation, "one of: tla_plus")
+		return coreerr.NewWithValues(ctx, coreerr.ExprspecNotationInvalid, fmt.Sprintf("Notation '%s' is not valid", s.Notation), "Notation", s.Notation, "one of: tla_plus")
 	}
 	if s.Expression != nil {
-		if err := s.Expression.Validate(); err != nil {
-			return coreerr.New(coreerr.ExprspecExpressionInvalid, fmt.Sprintf("ExpressionSpec.Expression: %s", err.Error()), "Expression")
+		if err := s.Expression.Validate(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.ExprspecExpressionInvalid, fmt.Sprintf("ExpressionSpec.Expression: %s", err.Error()), "Expression")
 		}
 	}
 	return nil

@@ -3,6 +3,7 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,7 +48,8 @@ func (suite *ParameterSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.param.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.param.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -68,12 +70,13 @@ func (suite *ParameterSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
 func (suite *ParameterSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	// Test that Validate is called.
 	param := Parameter{
 		Name:          "",
 		DataTypeRules: "Nat",
 	}
-	err := param.ValidateWithParent()
+	err := param.ValidateWithParent(ctx)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
@@ -81,6 +84,6 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 		Name:          "amount",
 		DataTypeRules: "Nat",
 	}
-	err = param.ValidateWithParent()
+	err = param.ValidateWithParent(ctx)
 	suite.Require().NoError(err)
 }

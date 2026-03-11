@@ -71,21 +71,22 @@ var validKeyTypes = map[string]bool{
 	KEY_TYPE_SCENARIO: true, KEY_TYPE_SCENARIO_OBJECT: true, KEY_TYPE_SCENARIO_STEP: true,
 }
 
-// keyErr creates a coreerr.ValidationError for key validation failures.
-func keyErr(code coreerr.Code, field, got, want, message string) *coreerr.ValidationError {
-	return coreerr.NewWithValues(code, message, field, got, want)
-}
-
 // Validate validates the Key struct.
 func (k *Key) Validate() error {
+	ctx := coreerr.NewContext("key", k.KeyType+"/"+k.SubKey)
+	return k.ValidateWithContext(ctx)
+}
+
+// ValidateWithContext validates the Key struct using the given validation context.
+func (k *Key) ValidateWithContext(ctx *coreerr.ValidationContext) error {
 	if k.KeyType == "" {
-		return keyErr(coreerr.KeyTypeInvalid, "KeyType", "", "non-empty key type", "key type is required")
+		return coreerr.NewWithValues(ctx, coreerr.KeyTypeInvalid, "key type is required", "KeyType", "", "non-empty key type")
 	}
 	if !validKeyTypes[k.KeyType] {
-		return keyErr(coreerr.KeyTypeInvalid, "KeyType", k.KeyType, "one of the valid key types", fmt.Sprintf("key type '%s' is not valid", k.KeyType))
+		return coreerr.NewWithValues(ctx, coreerr.KeyTypeInvalid, fmt.Sprintf("key type '%s' is not valid", k.KeyType), "KeyType", k.KeyType, "one of the valid key types")
 	}
 	if k.SubKey == "" {
-		return keyErr(coreerr.KeySubkeyRequired, "SubKey", "", "non-empty sub key", "sub key is required")
+		return coreerr.NewWithValues(ctx, coreerr.KeySubkeyRequired, "sub key is required", "SubKey", "", "non-empty sub key")
 	}
 
 	// Custom ParentKey validation (context-dependent on KeyType).
@@ -93,16 +94,18 @@ func (k *Key) Validate() error {
 	case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT, KEY_TYPE_NAMED_SET:
 		// These key types must have blank parentKey.
 		if k.ParentKey != "" {
-			return keyErr(coreerr.KeyParentkeyMustBeBlank, "ParentKey", k.ParentKey, "blank",
-				fmt.Sprintf("parentKey must be blank for '%s' keys, cannot be '%s'", k.KeyType, k.ParentKey))
+			return coreerr.NewWithValues(ctx, coreerr.KeyParentkeyMustBeBlank,
+				fmt.Sprintf("parentKey must be blank for '%s' keys, cannot be '%s'", k.KeyType, k.ParentKey),
+				"ParentKey", k.ParentKey, "blank")
 		}
 	case KEY_TYPE_CLASS_ASSOCIATION:
 		// Class associations can have blank parentKey (model-level) or non-blank (domain/subdomain level).
 		// No validation needed - both are valid.
 	default:
 		if k.ParentKey == "" {
-			return keyErr(coreerr.KeyParentkeyRequired, "ParentKey", "", "non-blank parent key",
-				fmt.Sprintf("parentKey must be non-blank for '%s' keys", k.KeyType))
+			return coreerr.NewWithValues(ctx, coreerr.KeyParentkeyRequired,
+				fmt.Sprintf("parentKey must be non-blank for '%s' keys", k.KeyType),
+				"ParentKey", "", "non-blank parent key")
 		}
 	}
 	return nil
@@ -159,84 +162,98 @@ func (k *Key) GetParentKey() string {
 //
 //complexity:cyclo:warn=60,fail=60 Simple routing switch.
 func (k *Key) ValidateParent(parent *Key) error {
+	ctx := coreerr.NewContext("key", k.String())
+	return k.ValidateParentWithContext(ctx, parent)
+}
+
+// ValidateParentWithContext validates the key's parent relationship using the given context.
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
+func (k *Key) ValidateParentWithContext(ctx *coreerr.ValidationContext, parent *Key) error {
 	// First validate the key itself.
-	if err := k.Validate(); err != nil {
+	if err := k.ValidateWithContext(ctx); err != nil {
 		return err
 	}
 
 	switch k.KeyType {
 	case KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT, KEY_TYPE_NAMED_SET:
-		return k.validateRootParent(parent)
+		return k.validateRootParent(ctx, parent)
 
 	case KEY_TYPE_SUBDOMAIN:
-		return k.validateRequiredParent(parent, KEY_TYPE_DOMAIN)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_DOMAIN)
 
 	case KEY_TYPE_USE_CASE, KEY_TYPE_USE_CASE_GENERALIZATION, KEY_TYPE_CLASS, KEY_TYPE_CLASS_GENERALIZATION:
-		return k.validateRequiredParent(parent, KEY_TYPE_SUBDOMAIN)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_SUBDOMAIN)
 
 	case KEY_TYPE_SCENARIO:
-		return k.validateRequiredParent(parent, KEY_TYPE_USE_CASE)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_USE_CASE)
 
 	case KEY_TYPE_SCENARIO_OBJECT, KEY_TYPE_SCENARIO_STEP:
-		return k.validateRequiredParent(parent, KEY_TYPE_SCENARIO)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_SCENARIO)
 
 	case KEY_TYPE_STATE, KEY_TYPE_EVENT, KEY_TYPE_GUARD, KEY_TYPE_ACTION, KEY_TYPE_QUERY, KEY_TYPE_TRANSITION, KEY_TYPE_ATTRIBUTE, KEY_TYPE_CLASS_INVARIANT:
-		return k.validateRequiredParent(parent, KEY_TYPE_CLASS)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_CLASS)
 
 	case KEY_TYPE_STATE_ACTION:
-		return k.validateRequiredParent(parent, KEY_TYPE_STATE)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_STATE)
 
 	case KEY_TYPE_ACTION_REQUIRE, KEY_TYPE_ACTION_GUARANTEE, KEY_TYPE_ACTION_SAFETY:
-		return k.validateRequiredParent(parent, KEY_TYPE_ACTION)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_ACTION)
 
 	case KEY_TYPE_QUERY_REQUIRE, KEY_TYPE_QUERY_GUARANTEE:
-		return k.validateRequiredParent(parent, KEY_TYPE_QUERY)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_QUERY)
 
 	case KEY_TYPE_ATTRIBUTE_DERIVATION, KEY_TYPE_ATTRIBUTE_INVARIANT:
-		return k.validateRequiredParent(parent, KEY_TYPE_ATTRIBUTE)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_ATTRIBUTE)
 
 	case KEY_TYPE_CLASS_ASSOCIATION:
-		return k.validateClassAssociationParent(parent)
+		return k.validateClassAssociationParent(ctx, parent)
 
 	default:
-		return keyErr(coreerr.KeyTypeUnknown, "KeyType", k.KeyType, "a valid key type",
-			fmt.Sprintf("unknown key type '%s'", k.KeyType))
+		return coreerr.NewWithValues(ctx, coreerr.KeyTypeUnknown,
+			fmt.Sprintf("unknown key type '%s'", k.KeyType),
+			"KeyType", k.KeyType, "a valid key type")
 	}
 }
 
 // validateRootParent validates that a root-level key has no parent.
-func (k *Key) validateRootParent(parent *Key) error {
+func (k *Key) validateRootParent(ctx *coreerr.ValidationContext, parent *Key) error {
 	if parent != nil {
-		return keyErr(coreerr.KeyRootHasParent, "Parent", parent.KeyType, "nil",
-			fmt.Sprintf("key type '%s' should not have a parent, but got parent of type '%s'", k.KeyType, parent.KeyType))
+		return coreerr.NewWithValues(ctx, coreerr.KeyRootHasParent,
+			fmt.Sprintf("key type '%s' should not have a parent, but got parent of type '%s'", k.KeyType, parent.KeyType),
+			"Parent", parent.KeyType, "nil")
 	}
 	if k.ParentKey != "" {
-		return keyErr(coreerr.KeyRootHasParentkey, "ParentKey", k.ParentKey, "blank",
-			fmt.Sprintf("key type '%s' should have empty parentKey, but got '%s'", k.KeyType, k.ParentKey))
+		return coreerr.NewWithValues(ctx, coreerr.KeyRootHasParentkey,
+			fmt.Sprintf("key type '%s' should have empty parentKey, but got '%s'", k.KeyType, k.ParentKey),
+			"ParentKey", k.ParentKey, "blank")
 	}
 	return nil
 }
 
 // validateRequiredParent validates that a key has a parent of the expected type with matching key value.
-func (k *Key) validateRequiredParent(parent *Key, expectedType string) error {
+func (k *Key) validateRequiredParent(ctx *coreerr.ValidationContext, parent *Key, expectedType string) error {
 	if parent == nil {
-		return keyErr(coreerr.KeyNoParent, "Parent", "", expectedType,
-			fmt.Sprintf("key type '%s' requires a parent of type '%s'", k.KeyType, expectedType))
+		return coreerr.NewWithValues(ctx, coreerr.KeyNoParent,
+			fmt.Sprintf("key type '%s' requires a parent of type '%s'", k.KeyType, expectedType),
+			"Parent", "", expectedType)
 	}
 	if parent.KeyType != expectedType {
-		return keyErr(coreerr.KeyWrongParentType, "Parent", parent.KeyType, expectedType,
-			fmt.Sprintf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, expectedType, parent.KeyType))
+		return coreerr.NewWithValues(ctx, coreerr.KeyWrongParentType,
+			fmt.Sprintf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, expectedType, parent.KeyType),
+			"Parent", parent.KeyType, expectedType)
 	}
 	if k.ParentKey != parent.String() {
-		return keyErr(coreerr.KeyParentkeyMismatch, "ParentKey", k.ParentKey, parent.String(),
-			fmt.Sprintf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String()))
+		return coreerr.NewWithValues(ctx, coreerr.KeyParentkeyMismatch,
+			fmt.Sprintf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String()),
+			"ParentKey", k.ParentKey, parent.String())
 	}
 	return nil
 }
 
 // validateClassAssociationParent validates the parent for class association keys.
-func (k *Key) validateClassAssociationParent(parent *Key) error {
-	expectedParentType, err := k.determineClassAssociationParentType()
+func (k *Key) validateClassAssociationParent(ctx *coreerr.ValidationContext, parent *Key) error {
+	expectedParentType, err := k.determineClassAssociationParentType(ctx)
 	if err != nil {
 		return err
 	}
@@ -244,17 +261,19 @@ func (k *Key) validateClassAssociationParent(parent *Key) error {
 	switch expectedParentType {
 	case "": // Model level - no parent.
 		if parent != nil {
-			return keyErr(coreerr.KeyCassocModelHasParent, "Parent", parent.KeyType, "nil",
-				fmt.Sprintf("model-level class association should not have a parent, but got parent of type '%s'", parent.KeyType))
+			return coreerr.NewWithValues(ctx, coreerr.KeyCassocModelHasParent,
+				fmt.Sprintf("model-level class association should not have a parent, but got parent of type '%s'", parent.KeyType),
+				"Parent", parent.KeyType, "nil")
 		}
 		if k.ParentKey != "" {
-			return keyErr(coreerr.KeyRootHasParentkey, "ParentKey", k.ParentKey, "blank",
-				fmt.Sprintf("model-level class association should have empty parentKey, but got '%s'", k.ParentKey))
+			return coreerr.NewWithValues(ctx, coreerr.KeyRootHasParentkey,
+				fmt.Sprintf("model-level class association should have empty parentKey, but got '%s'", k.ParentKey),
+				"ParentKey", k.ParentKey, "blank")
 		}
 	case KEY_TYPE_DOMAIN:
-		return k.validateRequiredParent(parent, KEY_TYPE_DOMAIN)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_DOMAIN)
 	case KEY_TYPE_SUBDOMAIN:
-		return k.validateRequiredParent(parent, KEY_TYPE_SUBDOMAIN)
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_SUBDOMAIN)
 	}
 	return nil
 }
@@ -262,15 +281,17 @@ func (k *Key) validateClassAssociationParent(parent *Key) error {
 // determineClassAssociationParentType determines what type of parent a class association should have
 // by examining the structure of its subKey and subKey2 values.
 // Returns "" for model-level, KEY_TYPE_DOMAIN for domain-level, or KEY_TYPE_SUBDOMAIN for subdomain-level.
-func (k *Key) determineClassAssociationParentType() (string, error) {
+func (k *Key) determineClassAssociationParentType(ctx *coreerr.ValidationContext) (string, error) {
 	if k.KeyType != KEY_TYPE_CLASS_ASSOCIATION {
-		return "", keyErr(coreerr.KeyCassocParentUnknown, "KeyType", k.KeyType, KEY_TYPE_CLASS_ASSOCIATION,
-			fmt.Sprintf("determineClassAssociationParentType called on non-class-association key of type '%s'", k.KeyType))
+		return "", coreerr.NewWithValues(ctx, coreerr.KeyCassocParentUnknown,
+			fmt.Sprintf("determineClassAssociationParentType called on non-class-association key of type '%s'", k.KeyType),
+			"KeyType", k.KeyType, KEY_TYPE_CLASS_ASSOCIATION)
 	}
 
 	if k.SubKey2 == "" {
-		return "", keyErr(coreerr.KeySubkeyRequired, "SubKey2", "", "non-empty",
-			"class association key missing subKey2")
+		return "", coreerr.NewWithValues(ctx, coreerr.KeySubkeyRequired,
+			"class association key missing subKey2",
+			"SubKey2", "", "non-empty")
 	}
 
 	// Parse the subKey to understand the structure.
@@ -280,8 +301,9 @@ func (k *Key) determineClassAssociationParentType() (string, error) {
 	subKeyParts := strings.Split(k.SubKey, "/")
 
 	if len(subKeyParts) < 2 {
-		return "", keyErr(coreerr.KeyCassocParentUnknown, "SubKey", k.SubKey, "a structured class path",
-			fmt.Sprintf("invalid class association subKey structure: '%s'", k.SubKey))
+		return "", coreerr.NewWithValues(ctx, coreerr.KeyCassocParentUnknown,
+			fmt.Sprintf("invalid class association subKey structure: '%s'", k.SubKey),
+			"SubKey", k.SubKey, "a structured class path")
 	}
 
 	// Check the first part to determine the level.
@@ -296,8 +318,9 @@ func (k *Key) determineClassAssociationParentType() (string, error) {
 		// Subdomain level - subKey starts with "class/".
 		return KEY_TYPE_SUBDOMAIN, nil
 	default:
-		return "", keyErr(coreerr.KeyCassocParentUnknown, "SubKey", k.SubKey, "subKey starting with domain/, subdomain/, or class/",
-			fmt.Sprintf("cannot determine class association parent type from subKey '%s'", k.SubKey))
+		return "", coreerr.NewWithValues(ctx, coreerr.KeyCassocParentUnknown,
+			fmt.Sprintf("cannot determine class association parent type from subKey '%s'", k.SubKey),
+			"SubKey", k.SubKey, "subKey starting with domain/, subdomain/, or class/")
 	}
 }
 

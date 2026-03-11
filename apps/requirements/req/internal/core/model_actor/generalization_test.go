@@ -3,6 +3,7 @@ package model_actor
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -59,7 +60,8 @@ func (suite *GeneralizationSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.generalization.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.generalization.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -90,12 +92,14 @@ func (suite *GeneralizationSuite) TestNew() {
 func (suite *GeneralizationSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewActorGeneralizationKey("gen1"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	gen := Generalization{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := gen.ValidateWithParent(nil)
+	err := gen.ValidateWithParent(ctx, nil)
 	suite.Require().ErrorContains(err, "Name is required", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - actor generalizations should have nil parent.
@@ -104,10 +108,10 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = gen.ValidateWithParent(&domainKey)
+	err = gen.ValidateWithParent(ctx, &domainKey)
 	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = gen.ValidateWithParent(nil)
+	err = gen.ValidateWithParent(ctx, nil)
 	suite.Require().NoError(err)
 }

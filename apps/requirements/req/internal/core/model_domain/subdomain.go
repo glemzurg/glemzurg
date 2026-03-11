@@ -37,100 +37,103 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) Subdomain 
 }
 
 // Validate validates the Subdomain struct.
-func (s *Subdomain) Validate() error {
+func (s *Subdomain) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := s.Key.Validate(); err != nil {
-		return coreerr.New(coreerr.SubdomainKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
+	if err := s.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.SubdomainKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SUBDOMAIN {
-		return coreerr.NewWithValues(coreerr.SubdomainKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for subdomain", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_SUBDOMAIN)
+		return coreerr.NewWithValues(ctx, coreerr.SubdomainKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for subdomain", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_SUBDOMAIN)
 	}
 	// Validate Name required.
 	if s.Name == "" {
-		return coreerr.New(coreerr.SubdomainNameRequired, "Name is required", "Name")
+		return coreerr.New(ctx, coreerr.SubdomainNameRequired, "Name is required", "Name")
 	}
 	return nil
 }
 
 // ValidateWithParent validates the Subdomain, its key's parent relationship, and all children.
 // The parent must be a Domain.
-func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
-	return s.ValidateWithParentAndActorsAndClasses(parent, nil, nil)
+func (s *Subdomain) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
+	return s.ValidateWithParentAndActorsAndClasses(ctx, parent, nil, nil)
 }
 
 // ValidateWithParentAndActors validates the Subdomain with access to actors for cross-reference validation.
 // The parent must be a Domain.
 // The actors map is used to validate that class ActorKey references exist.
-func (s *Subdomain) ValidateWithParentAndActors(parent *identity.Key, actors map[identity.Key]bool) error {
-	return s.ValidateWithParentAndActorsAndClasses(parent, actors, nil)
+func (s *Subdomain) ValidateWithParentAndActors(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool) error {
+	return s.ValidateWithParentAndActorsAndClasses(ctx, parent, actors, nil)
 }
 
 // ValidateWithParentAndActorsAndClasses validates the Subdomain with access to actors and classes for cross-reference validation.
 // The parent must be a Domain.
 // The actors map is used to validate that class ActorKey references exist.
 // The classes map is used to validate that association class references exist.
-func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool) error {
-	if err := s.Validate(); err != nil {
+func (s *Subdomain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool) error {
+	if err := s.Validate(ctx); err != nil {
 		return err
 	}
-	if err := s.Key.ValidateParent(parent); err != nil {
+	if err := s.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
-	if err := s.validateGeneralizations(); err != nil {
+	if err := s.validateGeneralizations(ctx); err != nil {
 		return err
 	}
-	if err := s.validateClasses(actors); err != nil {
+	if err := s.validateClasses(ctx, actors); err != nil {
 		return err
 	}
-	if err := s.validateClassGeneralizationUsage(); err != nil {
+	if err := s.validateClassGeneralizationUsage(ctx); err != nil {
 		return err
 	}
-	if err := s.validateUseCases(); err != nil {
+	if err := s.validateUseCases(ctx); err != nil {
 		return err
 	}
-	if err := s.validateUseCaseGeneralizationUsage(); err != nil {
+	if err := s.validateUseCaseGeneralizationUsage(ctx); err != nil {
 		return err
 	}
-	if err := s.validateSubdomainAssociations(classes); err != nil {
+	if err := s.validateSubdomainAssociations(ctx, classes); err != nil {
 		return err
 	}
-	if err := s.validateUseCaseShares(); err != nil {
+	if err := s.validateUseCaseShares(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Subdomain) validateGeneralizations() error {
+func (s *Subdomain) validateGeneralizations(ctx *coreerr.ValidationContext) error {
 	for _, gen := range s.Generalizations {
-		if err := gen.ValidateWithParent(&s.Key); err != nil {
+		genCtx := ctx.Child("classGeneralization", gen.Key.String())
+		if err := gen.ValidateWithParent(genCtx, &s.Key); err != nil {
 			return err
 		}
 	}
 	for _, ucGen := range s.UseCaseGeneralizations {
-		if err := ucGen.ValidateWithParent(&s.Key); err != nil {
+		ucGenCtx := ctx.Child("useCaseGeneralization", ucGen.Key.String())
+		if err := ucGen.ValidateWithParent(ucGenCtx, &s.Key); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *Subdomain) validateClasses(actors map[identity.Key]bool) error {
+func (s *Subdomain) validateClasses(ctx *coreerr.ValidationContext, actors map[identity.Key]bool) error {
 	generalizationKeys := make(map[identity.Key]bool)
 	for genKey := range s.Generalizations {
 		generalizationKeys[genKey] = true
 	}
 	for _, class := range s.Classes {
-		if err := class.ValidateWithParent(&s.Key); err != nil {
+		classCtx := ctx.Child("class", class.Key.String())
+		if err := class.ValidateWithParent(classCtx, &s.Key); err != nil {
 			return err
 		}
-		if err := class.ValidateReferences(actors, generalizationKeys); err != nil {
+		if err := class.ValidateReferences(classCtx, actors, generalizationKeys); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *Subdomain) validateClassGeneralizationUsage() error {
+func (s *Subdomain) validateClassGeneralizationUsage(ctx *coreerr.ValidationContext) error {
 	for _, gen := range s.Generalizations {
 		superCount := 0
 		subCount := 0
@@ -143,16 +146,16 @@ func (s *Subdomain) validateClassGeneralizationUsage() error {
 			}
 		}
 		if superCount != 1 {
-			return coreerr.NewWithValues(coreerr.SubdomainCgenSuperclassCount, fmt.Sprintf("class generalization '%s' must have exactly one superclass, found %d", gen.Key.String(), superCount), "Generalizations", fmt.Sprintf("%d", superCount), "1")
+			return coreerr.NewWithValues(ctx, coreerr.SubdomainCgenSuperclassCount, fmt.Sprintf("class generalization '%s' must have exactly one superclass, found %d", gen.Key.String(), superCount), "Generalizations", fmt.Sprintf("%d", superCount), "1")
 		}
 		if subCount < 1 {
-			return coreerr.NewWithValues(coreerr.SubdomainCgenSubclassCount, fmt.Sprintf("class generalization '%s' must have at least one subclass, found %d", gen.Key.String(), subCount), "Generalizations", fmt.Sprintf("%d", subCount), ">=1")
+			return coreerr.NewWithValues(ctx, coreerr.SubdomainCgenSubclassCount, fmt.Sprintf("class generalization '%s' must have at least one subclass, found %d", gen.Key.String(), subCount), "Generalizations", fmt.Sprintf("%d", subCount), ">=1")
 		}
 	}
 	return nil
 }
 
-func (s *Subdomain) validateUseCases() error {
+func (s *Subdomain) validateUseCases(ctx *coreerr.ValidationContext) error {
 	subdomainClassKeys := make(map[identity.Key]bool)
 	actorClassKeys := make(map[identity.Key]bool)
 	for classKey, class := range s.Classes {
@@ -166,17 +169,18 @@ func (s *Subdomain) validateUseCases() error {
 		useCaseGeneralizationKeys[ucGenKey] = true
 	}
 	for _, useCase := range s.UseCases {
-		if err := useCase.ValidateWithParentAndClasses(&s.Key, subdomainClassKeys, actorClassKeys); err != nil {
+		ucCtx := ctx.Child("useCase", useCase.Key.String())
+		if err := useCase.ValidateWithParentAndClasses(ucCtx, &s.Key, subdomainClassKeys, actorClassKeys); err != nil {
 			return err
 		}
-		if err := useCase.ValidateReferences(useCaseGeneralizationKeys); err != nil {
+		if err := useCase.ValidateReferences(ucCtx, useCaseGeneralizationKeys); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *Subdomain) validateUseCaseGeneralizationUsage() error {
+func (s *Subdomain) validateUseCaseGeneralizationUsage(ctx *coreerr.ValidationContext) error {
 	for _, ucGen := range s.UseCaseGeneralizations {
 		superCount := 0
 		subCount := 0
@@ -189,37 +193,39 @@ func (s *Subdomain) validateUseCaseGeneralizationUsage() error {
 			}
 		}
 		if superCount != 1 {
-			return coreerr.NewWithValues(coreerr.SubdomainUcgenSuperclassCount, fmt.Sprintf("use case generalization '%s' must have exactly one superclass, found %d", ucGen.Key.String(), superCount), "UseCaseGeneralizations", fmt.Sprintf("%d", superCount), "1")
+			return coreerr.NewWithValues(ctx, coreerr.SubdomainUcgenSuperclassCount, fmt.Sprintf("use case generalization '%s' must have exactly one superclass, found %d", ucGen.Key.String(), superCount), "UseCaseGeneralizations", fmt.Sprintf("%d", superCount), "1")
 		}
 		if subCount < 1 {
-			return coreerr.NewWithValues(coreerr.SubdomainUcgenSubclassCount, fmt.Sprintf("use case generalization '%s' must have at least one subclass, found %d", ucGen.Key.String(), subCount), "UseCaseGeneralizations", fmt.Sprintf("%d", subCount), ">=1")
+			return coreerr.NewWithValues(ctx, coreerr.SubdomainUcgenSubclassCount, fmt.Sprintf("use case generalization '%s' must have at least one subclass, found %d", ucGen.Key.String(), subCount), "UseCaseGeneralizations", fmt.Sprintf("%d", subCount), ">=1")
 		}
 	}
 	return nil
 }
 
-func (s *Subdomain) validateSubdomainAssociations(classes map[identity.Key]bool) error {
+func (s *Subdomain) validateSubdomainAssociations(ctx *coreerr.ValidationContext, classes map[identity.Key]bool) error {
 	for _, classAssoc := range s.ClassAssociations {
-		if err := classAssoc.ValidateWithParent(&s.Key); err != nil {
+		assocCtx := ctx.Child("classAssociation", classAssoc.Key.String())
+		if err := classAssoc.ValidateWithParent(assocCtx, &s.Key); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(classes); err != nil {
+		if err := classAssoc.ValidateReferences(assocCtx, classes); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *Subdomain) validateUseCaseShares() error {
+func (s *Subdomain) validateUseCaseShares(ctx *coreerr.ValidationContext) error {
 	for seaLevelKey, mudLevelShares := range s.UseCaseShares {
 		if _, exists := s.UseCases[seaLevelKey]; !exists {
-			return coreerr.NewWithValues(coreerr.SubdomainUshareSealevelNotfound, fmt.Sprintf("UseCaseShares sea-level key '%s' is not a use case in this subdomain", seaLevelKey.String()), "UseCaseShares", seaLevelKey.String(), "")
+			return coreerr.NewWithValues(ctx, coreerr.SubdomainUshareSealevelNotfound, fmt.Sprintf("UseCaseShares sea-level key '%s' is not a use case in this subdomain", seaLevelKey.String()), "UseCaseShares", seaLevelKey.String(), "")
 		}
 		for mudLevelKey, shared := range mudLevelShares {
 			if _, exists := s.UseCases[mudLevelKey]; !exists {
-				return coreerr.NewWithValues(coreerr.SubdomainUshareMudlevelNotfound, fmt.Sprintf("UseCaseShares mud-level key '%s' is not a use case in this subdomain", mudLevelKey.String()), "UseCaseShares", mudLevelKey.String(), "")
+				return coreerr.NewWithValues(ctx, coreerr.SubdomainUshareMudlevelNotfound, fmt.Sprintf("UseCaseShares mud-level key '%s' is not a use case in this subdomain", mudLevelKey.String()), "UseCaseShares", mudLevelKey.String(), "")
 			}
-			if err := shared.ValidateWithParent(); err != nil {
+			sharedCtx := ctx.Child("useCaseShared", seaLevelKey.String()+"/"+mudLevelKey.String())
+			if err := shared.ValidateWithParent(sharedCtx); err != nil {
 				return err
 			}
 		}

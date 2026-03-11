@@ -1,11 +1,15 @@
 package logic_expression_type
 
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+)
+
 // ExpressionType is the interface implemented by all precise structural types.
 // ExpressionTypes describe the shape and kind of values an expression can produce.
 type ExpressionType interface {
 	expressionType()
 	TypeName() string
-	Validate() error
+	Validate(ctx *coreerr.ValidationContext) error
 }
 
 // Type name constants.
@@ -25,9 +29,9 @@ const (
 )
 
 // ValidateExpressionType validates an ExpressionType if it is non-nil.
-func ValidateExpressionType(et ExpressionType) error {
+func ValidateExpressionType(ctx *coreerr.ValidationContext, et ExpressionType) error {
 	if et == nil {
 		return nil
 	}
-	return et.Validate()
+	return et.Validate(ctx)
 }

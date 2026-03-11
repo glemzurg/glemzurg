@@ -3,7 +3,6 @@ package parser_ai
 import (
 	stderrors "errors"
 	"fmt"
-	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
@@ -26,21 +25,21 @@ func mapValidationError(err error) *ParseError {
 		// Unmapped core error — use catch-all but include the core code for debugging.
 		return convErr(ErrConvModelValidation,
 			fmt.Sprintf("resulting model validation failed: %s", err.Error()),
-			"model.json",
+			"",
 		).WithHint(fmt.Sprintf("core error code: %s", code))
 	}
 
-	return buildMappedParseError(err, ve, parserCode)
+	return buildMappedParseError(ve, parserCode)
 }
 
 // buildMappedParseError creates a ParseError from a mapped ValidationError,
-// populating field, got/want, and wrapping context.
-// If the wrapping context is blank, the error is reported as an internal error
+// populating field, got/want, and context from the error's baked-in path.
+// If the path is empty, the error is reported as an internal error
 // because the calling AI cannot determine which file to fix without location context.
-func buildMappedParseError(err error, ve *coreerr.ValidationError, parserCode int) *ParseError {
-	context := extractWrappingContext(err, ve)
+func buildMappedParseError(ve *coreerr.ValidationError, parserCode int) *ParseError {
+	context := coreerr.FormatPath(ve.Path())
 	if context == "" {
-		return missingContextError(err, ve)
+		return missingContextError(ve)
 	}
 
 	pe := NewParseError(parserCode, ve.Message(), "")
@@ -62,33 +61,12 @@ func enrichFromValidationError(pe *ParseError, ve *coreerr.ValidationError) *Par
 }
 
 // missingContextError creates an internal error when a mapped ValidationError has no
-// wrapping context. Without context the calling AI cannot determine which file to fix.
-func missingContextError(err error, ve *coreerr.ValidationError) *ParseError {
+// path context. Without context the calling AI cannot determine which file to fix.
+func missingContextError(ve *coreerr.ValidationError) *ParseError {
 	return convErr(ErrConvModelValidation,
-		fmt.Sprintf("internal error: validation failed without location context: %s", err.Error()),
+		fmt.Sprintf("internal error: validation failed without location context: %s", ve.Error()),
 		"",
 	).WithHint(fmt.Sprintf("core error code: %s", ve.Code()))
-}
-
-// extractWrappingContext extracts the pkg/errors.Wrapf context from the error chain.
-// Given a full error like "domain 'x': subdomain 'y': class 'z': [CODE] msg",
-// it strips the inner ValidationError text and returns "domain 'x': subdomain 'y': class 'z'".
-func extractWrappingContext(err error, ve *coreerr.ValidationError) string {
-	full := err.Error()
-	inner := ve.Error()
-
-	// The wrapping chain prepends "context: context: ... innerError".
-	if full == inner {
-		return "" // No wrapping context.
-	}
-
-	context := strings.TrimSuffix(full, ": "+inner)
-	if context == full {
-		// Fallback: if the pattern doesn't match, try trimming just the inner part.
-		context = strings.TrimSuffix(full, inner)
-		context = strings.TrimRight(context, ": ")
-	}
-	return context
 }
 
 // coreToParserCode maps core validation error codes to parser_ai error codes.

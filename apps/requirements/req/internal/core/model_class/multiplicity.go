@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
 
 const (
@@ -35,7 +37,7 @@ func NewMultiplicity(value string) (multiplicity Multiplicity, err error) {
 }
 
 // Validate validates the Multiplicity struct.
-func (m *Multiplicity) Validate() error {
+func (m *Multiplicity) Validate(_ *coreerr.ValidationContext) error {
 	// If HigherBound is 0, it means "any" (unlimited), so no constraint.
 	// If LowerBound is 0, it also means "any", so no constraint.
 	// Only validate when both are non-zero: HigherBound must be >= LowerBound.

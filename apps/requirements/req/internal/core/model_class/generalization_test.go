@@ -3,6 +3,7 @@ package model_class
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -61,7 +62,8 @@ func (suite *GeneralizationSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.generalization.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.generalization.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -91,6 +93,7 @@ func (suite *GeneralizationSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (suite *GeneralizationSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	validKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
@@ -101,7 +104,7 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := gen.ValidateWithParent(&subdomainKey)
+	err := gen.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - generalization key has subdomain1 as parent, but we pass other_subdomain.
@@ -109,10 +112,10 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = gen.ValidateWithParent(&otherSubdomainKey)
+	err = gen.ValidateWithParent(ctx, &otherSubdomainKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = gen.ValidateWithParent(&subdomainKey)
+	err = gen.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err)
 }
