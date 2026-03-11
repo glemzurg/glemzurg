@@ -18,6 +18,10 @@ april (in parallel)
 
 ---------------------------
 
+constraints:
+  - add regex constraints to model string values
+    - ensure the schemas in parser_ai match them
+
 cleanup:
   - remove the json markup in req_model tree, and any json handling code
     - move to the parser_ai package

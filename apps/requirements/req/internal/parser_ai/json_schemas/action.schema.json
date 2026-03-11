@@ -52,8 +52,9 @@
           },
           "target": {
             "type": "string",
-            "description": "Required for 'let' type: the local variable name. Must not start with '_'. Must be omitted or empty for 'assessment' type.",
-            "minLength": 1
+            "description": "Required for 'let' type: the local variable name. Must be omitted or empty for 'assessment' type.",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
           },
           "target_type_spec": {
             "type": "string",
@@ -91,8 +92,9 @@
           },
           "target": {
             "type": "string",
-            "description": "Required. For 'state_change': the lowercase attribute SubKey being set (e.g., 'shipping', 'status'). For 'let': the local variable name. Must not start with '_'.",
-            "minLength": 1
+            "description": "Required. For 'state_change': the attribute SubKey being set (e.g., 'shipping', 'status'). For 'let': the local variable name.",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
           },
           "target_type_spec": {
             "type": "string",
@@ -130,8 +132,9 @@
           },
           "target": {
             "type": "string",
-            "description": "Required for 'let' type: the local variable name. Must not start with '_'. Must be omitted or empty for 'safety_rule' type.",
-            "minLength": 1
+            "description": "Required for 'let' type: the local variable name. Must be omitted or empty for 'safety_rule' type.",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
           },
           "target_type_spec": {
             "type": "string",

@@ -17,8 +17,9 @@
     },
     "target": {
       "type": "string",
-      "description": "The target identifier for this logic. The target separates the left-hand side from the specification so that the specification contains only the right-hand-side value expression (no primed values). Required for 'state_change' type (the lowercase attribute SubKey being set, e.g., 'shipping', 'status' — so 'self.log' = Append(self.log, amount)' becomes target='log', specification='Append(self.log, amount)'). Required for 'query' type (the output identifier name, e.g., 'result'; can be mixed case but cannot start with '_'). Required for 'let' type (the local variable name, cannot start with '_'). Must be empty or omitted for 'assessment', 'safety_rule', and 'value' types.",
-      "minLength": 1
+      "description": "The target identifier for this logic. The target separates the left-hand side from the specification so that the specification contains only the right-hand-side value expression (no primed values). Required for 'state_change' type (the attribute SubKey being set, e.g., 'shipping', 'status' — so 'self.log' = Append(self.log, amount)' becomes target='log', specification='Append(self.log, amount)'). Required for 'query' type (the output identifier name, e.g., 'result'). Required for 'let' type (the local variable name). Must be empty or omitted for 'assessment', 'safety_rule', and 'value' types.",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
     },
     "target_type_spec": {
       "type": "string",
