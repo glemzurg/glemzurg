@@ -26,7 +26,7 @@
       "type": "object",
       "description": "Map of attribute keys to attribute definitions. Each key in this object becomes the attribute's identifier and must be unique within the class. These keys are referenced by indexes and other parts of the model. If validation fails: check that each attribute has a valid 'name' field.",
       "propertyNames": {
-        "pattern": "^[a-zA-Z][a-zA-Z0-9_ ]*$"
+        "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
       },
       "additionalProperties": {
         "type": "object",
@@ -34,7 +34,8 @@
           "name": {
             "type": "string",
             "description": "The display name of the attribute (e.g., 'Order Date', 'Total Amount'). This is the human-readable name shown in diagrams and documentation. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
-            "minLength": 1
+            "minLength": 1,
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_ ]*$"
           },
           "data_type_rules": {
             "type": "string",
