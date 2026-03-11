@@ -1006,8 +1006,9 @@ func (suite *ConvertSuite) TestConvertToModelValidationError() {
 	suite.Require().Error(err)
 	var pe *ParseError
 	suite.Require().ErrorAs(err, &pe, "error should be a ParseError")
-	suite.Equal(ErrConvReferenceNotFound, pe.Code, "should map CLASS_ACTOR_NOTFOUND to ErrConvReferenceNotFound")
-	suite.Contains(pe.Message, "non-existent actor")
+	suite.Equal(ErrConvModelValidation, pe.Code, "missing wrapping context should fall back to internal error")
+	suite.Contains(pe.Message, "internal error")
+	suite.Contains(pe.Hint, "CLASS_ACTOR_NOTFOUND")
 }
 
 // TestConvertFromModelWithDomainAssociation tests converting a domain-level association.

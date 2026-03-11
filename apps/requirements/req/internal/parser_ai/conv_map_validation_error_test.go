@@ -18,8 +18,9 @@ func TestMapValidationErrorSuite(t *testing.T) {
 	suite.Run(t, new(MapValidationErrorSuite))
 }
 
-// TestMappedCoreCode verifies that known core error codes produce the correct parser_ai error code.
-func (s *MapValidationErrorSuite) TestMappedCoreCode() {
+// TestMappedCoreCodeWithContext verifies that known core error codes with wrapping context
+// produce the correct parser_ai error code.
+func (s *MapValidationErrorSuite) TestMappedCoreCodeWithContext() {
 	tests := []struct {
 		name       string
 		coreCode   coreerr.Code
@@ -110,14 +111,29 @@ func (s *MapValidationErrorSuite) TestMappedCoreCode() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			ve := coreerr.New(tc.coreCode, "test message", "test_field")
-			pe := mapValidationError(ve)
+			wrapped := errors.Wrap(ve, "some context")
+			pe := mapValidationError(wrapped)
 
 			s.Require().NotNil(pe)
 			s.Equal(tc.parserCode, pe.Code, "wrong parser code for core code %s", tc.coreCode)
 			s.Equal("test message", pe.Message, "message should be the ValidationError message")
 			s.Equal("test_field", pe.Field, "field should be propagated")
+			s.Equal("some context", pe.Context, "context should be extracted from wrapping")
 		})
 	}
+}
+
+// TestMappedCoreCodeWithoutContextFallsBack verifies that a mapped core code without
+// wrapping context produces an internal error (ErrConvModelValidation).
+func (s *MapValidationErrorSuite) TestMappedCoreCodeWithoutContextFallsBack() {
+	ve := coreerr.New(coreerr.ParamDatatypesRequired, "DataTypeRules is required", "DataTypeRules")
+	pe := mapValidationError(ve)
+
+	s.Require().NotNil(pe)
+	s.Equal(ErrConvModelValidation, pe.Code, "missing context should fall back to internal error")
+	s.Contains(pe.Message, "internal error")
+	s.Contains(pe.Message, "without location context")
+	s.Contains(pe.Hint, "core error code: PARAM_DATATYPES_REQUIRED")
 }
 
 // TestUnmappedCoreCodeFallsBackToGeneric verifies that an unmapped core code produces the catch-all error.
@@ -184,47 +200,29 @@ func (s *MapValidationErrorSuite) TestGotWantPassedThrough() {
 		{"both got and want", "bad_value", "good_value", "bad_value", "good_value"},
 		{"only got", "bad_value", "", "bad_value", ""},
 		{"only want", "", "good_value", "", "good_value"},
-		{"neither", "", "", "", ""},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			ve := coreerr.NewWithValues(coreerr.ParamNameRequired, "param name required", "name", tc.got, tc.want)
-			pe := mapValidationError(ve)
+			wrapped := errors.Wrap(ve, "some entity")
+			pe := mapValidationError(wrapped)
 
 			s.Require().NotNil(pe)
+			s.Equal(ErrConvParamNameRequired, pe.Code)
 			s.Equal(tc.expectedGot, pe.Got)
 			s.Equal(tc.expectedWant, pe.Want)
 		})
 	}
 }
 
-// TestFieldNotSetWhenEmpty verifies that an empty field on the ValidationError produces an empty field on ParseError.
-func (s *MapValidationErrorSuite) TestFieldNotSetWhenEmpty() {
-	ve := coreerr.New(coreerr.DassocSameDomains, "domain association same domains", "")
-	pe := mapValidationError(ve)
-
-	s.Require().NotNil(pe)
-	s.Equal(ErrConvDomainAssocSameDomains, pe.Code)
-	s.Empty(pe.Field, "field should be empty when ValidationError has no field")
-}
-
-// TestFilePathIsBlankForMappedErrors verifies mapped core errors have no file path,
-// since the context field tells the AI where in the model tree the error is.
+// TestFilePathIsBlankForMappedErrors verifies mapped core errors have no file path.
 func (s *MapValidationErrorSuite) TestFilePathIsBlankForMappedErrors() {
 	ve := coreerr.New(coreerr.ClassActorNotfound, "actor not found", "actor_key")
-	pe := mapValidationError(ve)
+	wrapped := errors.Wrap(ve, "class 'order'")
+	pe := mapValidationError(wrapped)
 
 	s.Empty(pe.File, "mapped core errors should have blank file — context provides location")
-}
-
-// TestNoContextWhenUnwrapped verifies no context is set for unwrapped ValidationErrors.
-func (s *MapValidationErrorSuite) TestNoContextWhenUnwrapped() {
-	ve := coreerr.New(coreerr.ParamNameRequired, "name is required", "name")
-	pe := mapValidationError(ve)
-
-	s.Require().NotNil(pe)
-	s.Empty(pe.Context, "unwrapped error should have no context")
 }
 
 // TestAllCoreCodesInMapHaveMatchingParserCode verifies every entry in coreToParserCode maps to a valid parser_ai code.

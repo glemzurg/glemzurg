@@ -35,23 +35,39 @@ func mapValidationError(err error) *ParseError {
 
 // buildMappedParseError creates a ParseError from a mapped ValidationError,
 // populating field, got/want, and wrapping context.
+// If the wrapping context is blank, the error is reported as an internal error
+// because the calling AI cannot determine which file to fix without location context.
 func buildMappedParseError(err error, ve *coreerr.ValidationError, parserCode int) *ParseError {
-	pe := NewParseError(parserCode, ve.Message(), "")
+	context := extractWrappingContext(err, ve)
+	if context == "" {
+		return missingContextError(err, ve)
+	}
 
+	pe := NewParseError(parserCode, ve.Message(), "")
+	pe = enrichFromValidationError(pe, ve)
+	pe = pe.WithContext(context)
+
+	return pe
+}
+
+// enrichFromValidationError copies field and got/want from a ValidationError onto a ParseError.
+func enrichFromValidationError(pe *ParseError, ve *coreerr.ValidationError) *ParseError {
 	if ve.Field() != "" {
 		pe = pe.WithField(ve.Field())
 	}
-
 	if ve.Got() != "" || ve.Want() != "" {
 		pe = pe.WithGotWant(ve.Got(), ve.Want())
 	}
-
-	context := extractWrappingContext(err, ve)
-	if context != "" {
-		pe = pe.WithContext(context)
-	}
-
 	return pe
+}
+
+// missingContextError creates an internal error when a mapped ValidationError has no
+// wrapping context. Without context the calling AI cannot determine which file to fix.
+func missingContextError(err error, ve *coreerr.ValidationError) *ParseError {
+	return convErr(ErrConvModelValidation,
+		fmt.Sprintf("internal error: validation failed without location context: %s", err.Error()),
+		"",
+	).WithHint(fmt.Sprintf("core error code: %s", ve.Code()))
 }
 
 // extractWrappingContext extracts the pkg/errors.Wrapf context from the error chain.
