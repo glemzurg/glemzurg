@@ -762,7 +762,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 			fmt.Sprintf("association '%s' to_class_key '%s' does not exist in subdomain '%s'",
 				assocKey, assoc.ToClassKey, subdomainKey),
 			assocPath,
-		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(sortedKeys(subdomain.Classes), ", ")))
+		).WithField("to_class_key").WithHint(fmt.Sprintf("first verify the association is at the correct level (subdomain/domain/model), then check the key format matches that level, then create the class if needed. Available classes in this subdomain: %s", strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Validate association_class_key if present
@@ -863,7 +863,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' to_class_key '%s' is invalid: %s",
 				assocKey, assoc.ToClassKey, err.Error()),
 			assocPath,
-		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(domainClassKeys, ", ")))
+		).WithField("to_class_key").WithHint(fmt.Sprintf("first verify the association is at the correct level (subdomain/domain/model), then check the key format matches that level, then create the class if needed. Domain-level key format is 'subdomain/class'. Available classes: %s", strings.Join(domainClassKeys, ", ")))
 	}
 
 	// Check to subdomain exists
@@ -874,7 +874,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' to_class_key '%s' references subdomain '%s' which does not exist",
 				assocKey, assoc.ToClassKey, toSubdomain),
 			assocPath,
-		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(domainClassKeys, ", ")))
+		).WithField("to_class_key").WithHint(fmt.Sprintf("first verify the association is at the correct level (subdomain/domain/model), then check the key format matches that level, then create the class if needed. Available classes: %s", strings.Join(domainClassKeys, ", ")))
 	}
 
 	// Check to class exists
@@ -884,7 +884,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' to_class_key '%s' references class '%s' which does not exist in subdomain '%s'",
 				assocKey, assoc.ToClassKey, toClass, toSubdomain),
 			assocPath,
-		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes in subdomain '%s': %s", toSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
+		).WithField("to_class_key").WithHint(fmt.Sprintf("first verify the association is at the correct level (subdomain/domain/model), then check the key format matches that level, then create the class if needed. Available classes in subdomain '%s': %s", toSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Validate association_class_key if present
@@ -1016,7 +1016,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_class_key '%s' is invalid: %s",
 				assocKey, assoc.ToClassKey, err.Error()),
 			assocPath,
-		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
+		).WithField("to_class_key").WithHint(fmt.Sprintf("first verify the association is at the correct level (subdomain/domain/model), then check the key format matches that level, then create the class if needed. Model-level key format is 'domain/subdomain/class'. Available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check to domain exists
@@ -1027,7 +1027,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_class_key '%s' references domain '%s' which does not exist",
 				assocKey, assoc.ToClassKey, toDomain),
 			assocPath,
-		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
+		).WithField("to_class_key").WithHint(fmt.Sprintf("first verify the association is at the correct level (subdomain/domain/model), then check the key format matches that level, then create the class if needed. Available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check to subdomain exists
@@ -1038,7 +1038,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_class_key '%s' references subdomain '%s' which does not exist in domain '%s'",
 				assocKey, assoc.ToClassKey, toSubdomain, toDomain),
 			assocPath,
-		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
+		).WithField("to_class_key").WithHint(fmt.Sprintf("first verify the association is at the correct level (subdomain/domain/model), then check the key format matches that level, then create the class if needed. Available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check to class exists
@@ -1048,7 +1048,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_class_key '%s' references class '%s' which does not exist",
 				assocKey, assoc.ToClassKey, toClass),
 			assocPath,
-		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes in subdomain '%s/%s': %s", toDomain, toSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
+		).WithField("to_class_key").WithHint(fmt.Sprintf("first verify the association is at the correct level (subdomain/domain/model), then check the key format matches that level, then create the class if needed. Available classes in subdomain '%s/%s': %s", toDomain, toSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Validate association_class_key if present
