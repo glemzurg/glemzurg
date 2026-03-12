@@ -187,7 +187,7 @@ func ValidateAssociationFilename(filename string, level AssociationLevel, filePa
 			ErrAssocFilenameInvalidFormat,
 			"association filename is empty",
 			filePath,
-		).WithField("filename").WithHint("association filenames must follow the pattern: from--to--name.assoc.json")
+		).WithField("filename").WithHint("first verify the association is at the correct level (subdomain/domain/model) for the two classes, then use the filename format for that level (from--to--name.assoc.json), then create any missing classes")
 	}
 
 	// Split by "--" to get the three main parts: from, to, name
@@ -198,7 +198,7 @@ func ValidateAssociationFilename(filename string, level AssociationLevel, filePa
 			fmt.Sprintf("association filename '%s' must have exactly 3 parts separated by '--' "+
 				"(from--to--name), found %d parts", filename, len(parts)),
 			filePath,
-		).WithField("filename").WithHint("association filenames must follow the pattern: from--to--name.assoc.json")
+		).WithField("filename").WithHint("first verify the association is at the correct level (subdomain/domain/model) for the two classes, then use the filename format for that level (from--to--name.assoc.json), then create any missing classes")
 	}
 
 	fromPart := parts[0]
@@ -292,7 +292,7 @@ func validatePathComponent(path, componentName string, expectedParts int, filePa
 			fmt.Sprintf("association filename component '%s' has %d parts (expected %s format): '%s'",
 				componentName, len(parts), expectedDesc, path),
 			filePath,
-		).WithField(componentName).WithHint("association filenames must follow the pattern: from--to--name.assoc.json")
+		).WithField(componentName).WithHint("first verify the association is at the correct level (subdomain/domain/model) for the two classes, then use the filename format for that level (from--to--name.assoc.json), then create any missing classes")
 	}
 
 	// Validate each part of the path
