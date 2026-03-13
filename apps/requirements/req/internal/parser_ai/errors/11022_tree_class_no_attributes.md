@@ -81,6 +81,10 @@ Add attributes to your class's `attributes` map:
 
 For the complete data type syntax including spans, enums, collections, and records, see **E5011** (Attribute Data Type Unparseable).
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple class or attribute errors in a single bulk operation. Each class has its own distinct attributes, state machine, and relationships — a bulk change will often fix some parts correctly while breaking others, creating more errors to fix later. Address each class error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E5001**: Class name is required

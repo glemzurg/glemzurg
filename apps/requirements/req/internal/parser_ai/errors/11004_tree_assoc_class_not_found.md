@@ -67,6 +67,10 @@ If no association class is needed, remove the field or set it to null:
 2. **Check key format**: Ensure the scope matches the association's location
 3. **Check class exists**: The association class must be a valid class in the model
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple association errors in a single bulk operation. Each association is distinct — a bulk move or rename will often fix some associations correctly while breaking others, creating more errors to fix later. Address each association error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E11002**: Association from_class_key not found

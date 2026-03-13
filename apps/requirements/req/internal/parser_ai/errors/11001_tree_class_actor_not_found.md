@@ -99,6 +99,10 @@ Cross-references use minimal scoped keys:
 - **Within a model (cross-domain)**: `domain/subdomain/entity` (e.g., `order_fulfillment/default/book_order`)
 - **Actors**: always model-scoped, just the actor name (e.g., `customer`)
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple class or reference errors in a single bulk operation. Classes, attributes, actors, and cross-references are interconnected — a bulk change will often fix some parts correctly while breaking others, creating more errors to fix later. Address each error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E2001**: Actor name is required

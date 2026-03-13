@@ -21,3 +21,7 @@ Example
 
 - Invalid: step `from_object_key: buyer` but `objects` contains only `customer`.
 - Fix: rename or add the appropriate object entry.
+
+Important: Resolve each issue individually
+
+Do not attempt to fix multiple scenario step errors in a single bulk operation. Each step references distinct objects, events, and queries — a bulk change will often fix some steps correctly while breaking others, creating more errors to fix later. Address each step error one at a time, verifying correctness before moving to the next.

@@ -21,3 +21,7 @@ Example
 
 - Invalid: `superclass_key: customer` when no `actors/customer.actor.json` exists.
 - Fix: add `actors/customer.actor.json` or change the key to the existing actor.
+
+Important: Resolve each issue individually
+
+Do not attempt to fix multiple actor or generalization errors in a single bulk operation. Each reference is distinct — a bulk change will often fix some parts correctly while breaking others, creating more errors to fix later. Address each error one at a time, verifying correctness before moving to the next.

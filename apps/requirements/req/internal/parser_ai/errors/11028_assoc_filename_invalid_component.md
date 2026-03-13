@@ -28,6 +28,10 @@ book_order--line--orders.assoc.json
 - Domain level: `{from_sub}.{from_class}--{to_sub}.{to_class}--{name}.assoc.json`
 - Model level: `{from_dom}.{from_sub}.{from_class}--{to_dom}.{to_sub}.{to_class}--{name}.assoc.json`
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple association filename errors in a single bulk operation. Each association is distinct — a bulk rename will often fix some filenames correctly while breaking others, creating more errors to fix later. Address each filename error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E11026**: Key invalid format

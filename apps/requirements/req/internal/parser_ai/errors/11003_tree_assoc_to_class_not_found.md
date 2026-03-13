@@ -32,6 +32,10 @@ Only after confirming the association is at the right level and the key format i
 domains/{domain}/subdomains/{subdomain}/classes/{class_name}/class.json
 ```
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple association errors in a single bulk operation. Each association is distinct — a bulk move or rename will often fix some associations correctly while breaking others, creating more errors to fix later. Address each association error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E11002**: `from_class_key` not found (same resolution steps)

@@ -34,6 +34,10 @@ Only after the association is at the correct level with the correct filename for
 - Wrong number of parts (must be exactly 3)
 - Using the wrong depth for the level (e.g., domain-level format in a subdomain directory)
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple association filename errors in a single bulk operation. Each association is distinct — a bulk rename will often fix some filenames correctly while breaking others, creating more errors to fix later. Address each filename error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E11026**: Key invalid format
