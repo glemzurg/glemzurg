@@ -1,7 +1,7 @@
 package registry
 
 import (
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 )
 
 // RuntimeAdapter implements evaluator.IRRegistryInterface.

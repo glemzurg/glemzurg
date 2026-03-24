@@ -38,18 +38,19 @@ func init() {
 
 // parseQuery parses and validates a query JSON file.
 func parseQuery(content []byte, filename string) (*inputQuery, error) {
-	var query inputQuery
-	if err := json.Unmarshal(content, &query); err != nil {
-		return nil, NewParseError(ErrQueryInvalidJSON, "failed to parse query JSON: "+err.Error(), filename)
-	}
-
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
-		return nil, NewParseError(ErrQueryInvalidJSON, "failed to parse query JSON for schema validation: "+err.Error(), filename)
+		return nil, NewParseError(ErrQueryInvalidJSON, "failed to parse query JSON: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
+	}
+	if err := querySchema.Validate(jsonData); err != nil {
+		return nil, NewParseError(ErrQuerySchemaViolation, "query JSON does not match schema: "+err.Error(), filename).WithHint("run: req_check --schema query")
 	}
 
-	if err := querySchema.Validate(jsonData); err != nil {
-		return nil, NewParseError(ErrQuerySchemaViolation, "query JSON does not match schema: "+err.Error(), filename).WithSchema(querySchemaContent)
+	// Unmarshal into typed struct (schema already validated structure).
+	var query inputQuery
+	if err := json.Unmarshal(content, &query); err != nil {
+		return nil, NewParseError(ErrQueryInvalidJSON, "failed to parse query JSON: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	if err := validateQuery(&query, filename); err != nil {
@@ -62,10 +63,10 @@ func parseQuery(content []byte, filename string) (*inputQuery, error) {
 // validateQuery performs custom validation beyond JSON schema.
 func validateQuery(query *inputQuery, filename string) error {
 	if query.Name == "" {
-		return NewParseError(ErrQueryNameRequired, "query name is required, got ''", filename).WithField("name")
+		return NewParseError(ErrQueryNameRequired, "query name is required, got ''", filename).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 	if strings.TrimSpace(query.Name) == "" {
-		return NewParseError(ErrQueryNameEmpty, "query name cannot be empty or whitespace only, got '"+query.Name+"'", filename).WithField("name")
+		return NewParseError(ErrQueryNameEmpty, "query name cannot be empty or whitespace only, got '"+query.Name+"'", filename).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 	return nil
 }

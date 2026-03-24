@@ -88,6 +88,13 @@ Actors help AI understand:
 - **Analytics**: Data collection and reporting systems
 - **Schedulers**: Background job triggers
 
+## Deriving Actors from an Existing System
+
+When modeling an existing system, identify actors from:
+- **User roles** in authentication/authorization → `person` actors
+- **External API integrations** (payment, email, analytics) → `external_system` actors
+- **Scheduled jobs** (cron, background workers) → `time` actors
+
 ## Related Errors
 
 - **E2001**: Actor name is required

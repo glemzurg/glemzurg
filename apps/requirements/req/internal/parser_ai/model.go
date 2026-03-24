@@ -50,32 +50,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the model schema and returns detailed errors if validation fails.
 func parseModel(content []byte, filename string) (*inputModel, error) {
-	var model inputModel
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &model); err != nil {
-		return nil, NewParseError(
-			ErrModelInvalidJSON,
-			"failed to parse model JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrModelInvalidJSON,
-			"failed to parse model JSON for schema validation: "+err.Error(),
+			"failed to parse model JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := modelSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrModelSchemaViolation,
 			"model JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(modelSchemaContent)
+		).WithHint("run: req_check --schema model")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var model inputModel
+	if err := json.Unmarshal(content, &model); err != nil {
+		return nil, NewParseError(
+			ErrModelInvalidJSON,
+			"failed to parse model JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields
@@ -95,7 +94,7 @@ func validateModel(model *inputModel, filename string) error {
 			ErrModelNameRequired,
 			"model name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to model.json")
 	}
 
 	// Name cannot be only whitespace
@@ -104,7 +103,7 @@ func validateModel(model *inputModel, filename string) error {
 			ErrModelNameEmpty,
 			"model name cannot be empty or whitespace only, got '"+model.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("\"name\" must contain non-whitespace characters")
 	}
 
 	return nil

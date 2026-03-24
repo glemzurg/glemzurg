@@ -1,12 +1,10 @@
 
-update ai parser to be an ai desitned cli:
-  - move error codes to req_model
-  https://grok.com/c/e1be5ee4-1771-499f-9d52-4cb80e9c3b46?rid=36cf9e90-0129-47a9-9437-aab9eb24c280
 
 ----------------------------
 
 march (art workshops)
   - enter the evenplay model
+    - parser errors displayed in markdown
   - steven tockey model review
 
 april (in parallel)
@@ -20,18 +18,23 @@ april (in parallel)
 
 ---------------------------
 
+constraints:
+  - add regex constraints to model string values
+    - ensure the schemas in parser_ai match them
+
 cleanup:
   - remove the json markup in req_model tree, and any json handling code
     - move to the parser_ai package
+  - change constants styles
   - replace all fmt.Errorf() with errors.Errorf()
+  - rename as intermediate representation?
+
 
 - use case shared display in graphviz and capturing the meaning
 
   - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
 
 - restrict names so that tla+ do not have conflics (like _Stack:Pop, no state attribute)
-
-  - make object members private
 - cleanup regex must compile code
 - import examples models from steve's examples
 - fix the nested sequence diagram display issue (move to d2)
@@ -70,6 +73,10 @@ update to https://github.com/go-playground/validator
 - make state class members innate and not specified
 
 - use godoc to review exported methods
+
+- private data members
+  - would need to solve the testify object comparision
+
 
 - revisit irrationals and how they are handled in a model:
   - https://grok.com/share/c2hhcmQtMw_524fb597-1e4a-4906-b1ce-37de14fe80af

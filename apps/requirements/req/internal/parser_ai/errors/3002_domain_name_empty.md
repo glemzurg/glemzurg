@@ -13,9 +13,11 @@ Domain files are located in directories named after the domain:
 ```
 your_model/
 ├── model.json
-└── order_management/
-    ├── domain.json             <-- This file has an empty "name" value
-    └── ... (classes, etc.)
+└── domains/
+    └── order_management/
+        ├── domain.json             <-- This file has an empty "name" value
+        └── subdomains/
+            └── ...
 ```
 
 ## How to Fix

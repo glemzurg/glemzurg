@@ -6,10 +6,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
 	"github.com/stretchr/testify/suite"
@@ -33,10 +32,10 @@ func (s *LoaderTestSuite) TestLoadModelInvariants() {
 	invKey1, err := identity.NewInvariantKey("1")
 	s.Require().NoError(err)
 
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil))
-	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Basic arithmetic.", "", parsedSpec("1 + 1 = 2"), nil))
+	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)
+	inv1 := model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Basic arithmetic.", "", parsedSpec("1 + 1 = 2"), nil)
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -57,7 +56,7 @@ func (s *LoaderTestSuite) TestLoadModelInvariants() {
 }
 
 func (s *LoaderTestSuite) TestLoadModelInvariants_Empty() {
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{}, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{}, nil, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -73,11 +72,11 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_NilExpression() {
 	invKey1, err := identity.NewInvariantKey("1")
 	s.Require().NoError(err)
 
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil))
+	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)
 	// Create a logic with no specification (will have nil Expression).
-	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil))
+	inv1 := model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil)
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -95,14 +94,14 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions() {
 	gfuncKey, err := identity.NewGlobalFunctionKey("_Max")
 	s.Require().NoError(err)
 
-	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Max of two values.", "", parsedSpec("IF x > y THEN x ELSE y", "x", "y"), nil))
-	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_Max", []string{"x", "y"}, gfuncLogic))
+	gfuncLogic := model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Max of two values.", "", parsedSpec("IF x > y THEN x ELSE y", "x", "y"), nil)
+	gfunc := model_logic.NewGlobalFunction(gfuncKey, "_Max", []string{"x", "y"}, gfuncLogic)
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
 		gfuncKey: gfunc,
 	}
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", nil, globalFunctions, nil))
+	model := core.NewModel("test_model", "Test Model", "", nil, globalFunctions, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -124,14 +123,14 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions_NoParams() {
 	gfuncKey, err := identity.NewGlobalFunctionKey("_StatusSet")
 	s.Require().NoError(err)
 
-	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Status set.", "", parsedSpec(`{"pending", "active"}`), nil))
-	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_StatusSet", []string{}, gfuncLogic))
+	gfuncLogic := model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Status set.", "", parsedSpec(`{"pending", "active"}`), nil)
+	gfunc := model_logic.NewGlobalFunction(gfuncKey, "_StatusSet", []string{}, gfuncLogic)
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
 		gfuncKey: gfunc,
 	}
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", nil, globalFunctions, nil))
+	model := core.NewModel("test_model", "Test Model", "", nil, globalFunctions, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -161,27 +160,27 @@ func (s *LoaderTestSuite) TestLoadActionExpressions() {
 	// Build action requires logic
 	actionReqKey, err := identity.NewActionRequireKey(actionKey, "0")
 	s.Require().NoError(err)
-	actionReq := helper.Must(model_logic.NewLogic(actionReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", parsedSpec("TRUE"), nil))
+	actionReq := model_logic.NewLogic(actionReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", parsedSpec("TRUE"), nil)
 
 	// Build action guarantees logic
 	actionGuarKey, err := identity.NewActionGuaranteeKey(actionKey, "0")
 	s.Require().NoError(err)
-	actionGuar := helper.Must(model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", parsedSpec("TRUE"), nil))
+	actionGuar := model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", parsedSpec("TRUE"), nil)
 
 	// Build the action
-	action := helper.Must(model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil))
+	action := model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil)
 
 	// Build class, subdomain, domain using constructors then set children
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Management", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", nil, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	loader := NewLoader()
@@ -222,31 +221,31 @@ func (s *LoaderTestSuite) TestLoadQueryExpressions() {
 	// Build query requires logic
 	queryReqKey, err := identity.NewQueryRequireKey(queryKey, "0")
 	s.Require().NoError(err)
-	queryReq := helper.Must(model_logic.NewLogic(queryReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", parsedSpec("TRUE"), nil))
+	queryReq := model_logic.NewLogic(queryReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", parsedSpec("TRUE"), nil)
 
 	// Build query guarantees logic
 	queryGuarKey0, err := identity.NewQueryGuaranteeKey(queryKey, "0")
 	s.Require().NoError(err)
-	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, model_logic.LogicTypeQuery, "Postcondition.", "result", parsedSpec("TRUE"), nil))
+	queryGuar0 := model_logic.NewLogic(queryGuarKey0, model_logic.LogicTypeQuery, "Postcondition.", "result", parsedSpec("TRUE"), nil)
 
 	queryGuarKey1, err := identity.NewQueryGuaranteeKey(queryKey, "1")
 	s.Require().NoError(err)
-	queryGuar1 := helper.Must(model_logic.NewLogic(queryGuarKey1, model_logic.LogicTypeQuery, "Postcondition.", "items", parsedSpec("FALSE"), nil))
+	queryGuar1 := model_logic.NewLogic(queryGuarKey1, model_logic.LogicTypeQuery, "Postcondition.", "items", parsedSpec("FALSE"), nil)
 
 	// Build the query
-	query := helper.Must(model_state.NewQuery(queryKey, "FindPending", "", []model_logic.Logic{queryReq}, []model_logic.Logic{queryGuar0, queryGuar1}, nil))
+	query := model_state.NewQuery(queryKey, "FindPending", "", []model_logic.Logic{queryReq}, []model_logic.Logic{queryGuar0, queryGuar1}, nil)
 
 	// Build class, subdomain, domain using constructors then set children
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.Queries = map[identity.Key]model_state.Query{queryKey: query}
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Management", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", nil, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	loader := NewLoader()
@@ -287,22 +286,22 @@ func (s *LoaderTestSuite) TestLoadGuardExpressions() {
 	s.Require().NoError(err)
 
 	// Build guard logic using the guard key itself
-	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Order can be shipped", "", parsedSpec("TRUE"), nil))
+	guardLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Order can be shipped", "", parsedSpec("TRUE"), nil)
 
 	// Build the guard
-	guard := helper.Must(model_state.NewGuard(guardKey, "CanShip", guardLogic))
+	guard := model_state.NewGuard(guardKey, "CanShip", guardLogic)
 
 	// Build class, subdomain, domain using constructors then set children
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.Guards = map[identity.Key]model_state.Guard{guardKey: guard}
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Management", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", nil, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	loader := NewLoader()
@@ -336,13 +335,13 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	// Build invariant
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil))
+	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)
 
 	// Build global function
 	gfuncKey, err := identity.NewGlobalFunctionKey("_Threshold")
 	s.Require().NoError(err)
-	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Threshold value.", "", parsedSpec("10"), nil))
-	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_Threshold", nil, gfuncLogic))
+	gfuncLogic := model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Threshold value.", "", parsedSpec("10"), nil)
+	gfunc := model_logic.NewGlobalFunction(gfuncKey, "_Threshold", nil, gfuncLogic)
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
 		gfuncKey: gfunc,
@@ -351,27 +350,27 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	// Build action requires logic
 	actionReqKey, err := identity.NewActionRequireKey(actionKey, "0")
 	s.Require().NoError(err)
-	actionReq := helper.Must(model_logic.NewLogic(actionReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", parsedSpec("TRUE"), nil))
+	actionReq := model_logic.NewLogic(actionReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", parsedSpec("TRUE"), nil)
 
 	// Build action guarantees logic
 	actionGuarKey, err := identity.NewActionGuaranteeKey(actionKey, "0")
 	s.Require().NoError(err)
-	actionGuar := helper.Must(model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", "stock", parsedSpec("TRUE"), nil))
+	actionGuar := model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", "stock", parsedSpec("TRUE"), nil)
 
 	// Build the action
-	action := helper.Must(model_state.NewAction(actionKey, "Restock", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil))
+	action := model_state.NewAction(actionKey, "Restock", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil)
 
 	// Build class, subdomain, domain using constructors then set children
-	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Product", "", nil, nil, nil, "")
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Inventory", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Inventory", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "Shop", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "Shop", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := helper.Must(core.NewModel("shop_model", "Shop Model", "", []model_logic.Logic{inv0}, globalFunctions, nil))
+	model := core.NewModel("shop_model", "Shop Model", "", []model_logic.Logic{inv0}, globalFunctions, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	loader := NewLoader()
@@ -458,9 +457,9 @@ func (s *LoaderTestSuite) TestLoadIntoRegistry() {
 func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil))
+	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
 	result, err := loader.LoadFromModelStrict(&model)
@@ -473,9 +472,9 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 func (s *LoaderTestSuite) TestLoadFromModelStrict_NilExpression() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil))
+	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil)
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
 	result, err := loader.LoadFromModelStrict(&model)
@@ -491,9 +490,9 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_NilExpression() {
 func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil))
+	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
 
@@ -506,9 +505,9 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
 func (s *LoaderTestSuite) TestMustLoadFromModel_Panics() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil))
+	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil)
 
-	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil))
+	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
 

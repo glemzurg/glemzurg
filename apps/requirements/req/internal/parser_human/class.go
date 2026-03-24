@@ -7,7 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
@@ -48,10 +48,7 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 		return model_class.Class{}, nil, errors.WithStack(err)
 	}
 
-	class, err = model_class.NewClass(classKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
-	if err != nil {
-		return model_class.Class{}, nil, err
-	}
+	class = model_class.NewClass(classKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 
 	// Parse and set class components from YAML data.
 	associations, err = parseClassComponents(&class, subdomainKey, classKey, yamlData)
@@ -402,14 +399,11 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 				if err != nil {
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
-				spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+				spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "derivation expression spec")
 				}
-				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
-				if err != nil {
-					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
-				}
+				logic := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
 				derivationPolicy = &logic
 			}
 		}
@@ -548,7 +542,7 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			return model_class.Association{}, errors.WithStack(err)
 		}
 
-		association, err = model_class.NewAssociation(
+		association = model_class.NewAssociation(
 			assocKey,
 			name,
 			details,
@@ -556,9 +550,6 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			model_class.AssociationEnd{ClassKey: toClassKey, Multiplicity: toMultiplicity},
 			associationClassKey,
 			umlComment)
-		if err != nil {
-			return model_class.Association{}, err
-		}
 	}
 
 	return association, nil
@@ -669,28 +660,22 @@ func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identit
 					return model_state.State{}, errors.WithStack(err)
 				}
 
-				action, err := model_state.NewStateAction(
+				action := model_state.NewStateAction(
 					stateActionKey,
 					actionKey,
 					when,
 				)
-				if err != nil {
-					return model_state.State{}, err
-				}
 
 				actions = append(actions, action)
 			}
 		}
 	}
 
-	state, err = model_state.NewState(
+	state = model_state.NewState(
 		stateKey,
 		name,
 		details,
 		umlComment)
-	if err != nil {
-		return model_state.State{}, err
-	}
 
 	// Attach the actions.
 	state.SetActions(actions)
@@ -738,14 +723,11 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 		}
 	}
 
-	event, err = model_state.NewEvent(
+	event = model_state.NewEvent(
 		eventKey,
 		name,
 		details,
 		parameters)
-	if err != nil {
-		return model_state.Event{}, err
-	}
 
 	return event, nil
 }
@@ -773,23 +755,17 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 		}
 	}
 
-	spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 	if err != nil {
 		return model_state.Guard{}, errors.Wrap(err, "guard expression spec")
 	}
 
-	logic, err := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, details, "", spec, nil)
-	if err != nil {
-		return model_state.Guard{}, errors.Wrap(err, "guard logic")
-	}
+	logic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, details, "", spec, nil)
 
-	guard, err = model_state.NewGuard(
+	guard = model_state.NewGuard(
 		guardKey,
 		name,
 		logic)
-	if err != nil {
-		return model_state.Guard{}, err
-	}
 
 	return guard, nil
 }
@@ -856,7 +832,7 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 		}
 	}
 
-	action, err = model_state.NewAction(
+	action = model_state.NewAction(
 		actionKey,
 		name,
 		details,
@@ -864,9 +840,6 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 		guarantees,
 		safetyRules,
 		parameters)
-	if err != nil {
-		return model_state.Action{}, err
-	}
 
 	return action, nil
 }
@@ -925,16 +898,13 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 		}
 	}
 
-	query, err = model_state.NewQuery(
+	query = model_state.NewQuery(
 		queryKey,
 		name,
 		details,
 		requires,
 		guarantees,
 		parameters)
-	if err != nil {
-		return model_state.Query{}, err
-	}
 
 	return query, nil
 }
@@ -971,25 +941,22 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		// Use constructors — Phase 1 uses nil parseFunc; Phase 2 re-lowers with full context.
-		spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+		spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 		if err != nil {
 			return nil, errors.Wrapf(err, "%s[%d] expression spec", field, i)
 		}
 
 		// Parse optional target_type_spec.
-		var targetTypeSpec *model_spec.TypeSpec
+		var targetTypeSpec *logic_spec.TypeSpec
 		if tsStr, ok := itemMap["target_type_spec"].(string); ok && tsStr != "" {
-			ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
+			ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
 			if err != nil {
 				return nil, errors.Wrapf(err, "%s[%d] target type spec", field, i)
 			}
 			targetTypeSpec = &ts
 		}
 
-		logic, err := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
-		if err != nil {
-			return nil, errors.Wrapf(err, "%s[%d]", field, i)
-		}
+		logic := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
 
 		logics = append(logics, logic)
 	}
@@ -1039,7 +1006,7 @@ func transitionFromYamlData(lookups parseKeyLookups, classKey identity.Key, tran
 
 	umlComment := yamlStringField(transitionData, "uml_comment")
 
-	transition, err = model_state.NewTransition(
+	transition = model_state.NewTransition(
 		transitionKey,
 		fromStateKey,
 		eventKey,
@@ -1047,9 +1014,6 @@ func transitionFromYamlData(lookups parseKeyLookups, classKey identity.Key, tran
 		actionKey,
 		toStateKey,
 		umlComment)
-	if err != nil {
-		return model_state.Transition{}, err
-	}
 
 	return transition, nil
 }

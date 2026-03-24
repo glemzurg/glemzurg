@@ -3,8 +3,7 @@ package model_state
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -24,44 +23,41 @@ var _whenSortValue = map[string]int{
 type StateAction struct {
 	Key       identity.Key
 	ActionKey identity.Key
-	When      string `validate:"required,oneof=entry exit do"`
+	When      string
 }
 
-func NewStateAction(key, actionKey identity.Key, when string) (stateAction StateAction, err error) {
-	stateAction = StateAction{
+func NewStateAction(key, actionKey identity.Key, when string) StateAction {
+	return StateAction{
 		Key:       key,
 		ActionKey: actionKey,
 		When:      when,
 	}
-
-	if err = stateAction.Validate(); err != nil {
-		return StateAction{}, err
-	}
-
-	return stateAction, nil
 }
 
 // Validate validates the StateAction struct.
-func (sa *StateAction) Validate() error {
+func (sa *StateAction) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := sa.Key.Validate(); err != nil {
-		return err
+	if err := sa.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.StateactionKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if sa.Key.KeyType != identity.KEY_TYPE_STATE_ACTION {
-		return errors.Errorf("Key: invalid key type '%s' for state action", sa.Key.KeyType)
+		return coreerr.NewWithValues(ctx, coreerr.StateactionKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for state action", sa.Key.KeyType), "Key", sa.Key.KeyType, identity.KEY_TYPE_STATE_ACTION)
 	}
 
 	// Validate the action key.
-	if err := sa.ActionKey.Validate(); err != nil {
-		return fmt.Errorf("ActionKey: %w", err)
+	if err := sa.ActionKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.StateactionActionkeyInvalid, fmt.Sprintf("ActionKey: %s", err.Error()), "ActionKey")
 	}
 	if sa.ActionKey.KeyType != identity.KEY_TYPE_ACTION {
-		return errors.Errorf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType)
+		return coreerr.NewWithValues(ctx, coreerr.StateactionActionkeyType, fmt.Sprintf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType), "ActionKey", sa.ActionKey.KeyType, identity.KEY_TYPE_ACTION)
 	}
 
-	// Validate struct tags (When required + oneof).
-	if err := _validate.Struct(sa); err != nil {
-		return err
+	// Validate When field.
+	if sa.When == "" {
+		return coreerr.New(ctx, coreerr.StateactionWhenRequired, "When is required", "When")
+	}
+	if sa.When != _WHEN_ENTRY && sa.When != _WHEN_EXIT && sa.When != _WHEN_DO {
+		return coreerr.NewWithValues(ctx, coreerr.StateactionWhenInvalid, fmt.Sprintf("When '%s' is not valid", sa.When), "When", sa.When, "one of: entry, exit, do")
 	}
 
 	return nil
@@ -69,13 +65,13 @@ func (sa *StateAction) Validate() error {
 
 // ValidateWithParent validates the StateAction, its key's parent relationship, and all children.
 // The parent must be a State.
-func (sa *StateAction) ValidateWithParent(parent *identity.Key) error {
+func (sa *StateAction) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
 	// Validate the object itself.
-	if err := sa.Validate(); err != nil {
+	if err := sa.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := sa.Key.ValidateParent(parent); err != nil {
+	if err := sa.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// StateAction has no children with keys that need validation.
@@ -83,9 +79,9 @@ func (sa *StateAction) ValidateWithParent(parent *identity.Key) error {
 }
 
 // ValidateReferences validates that the state action's ActionKey references a real action in the class.
-func (sa *StateAction) ValidateReferences(actions map[identity.Key]bool) error {
+func (sa *StateAction) ValidateReferences(ctx *coreerr.ValidationContext, actions map[identity.Key]bool) error {
 	if !actions[sa.ActionKey] {
-		return errors.Errorf("state action '%s' references non-existent action '%s'", sa.Key.String(), sa.ActionKey.String())
+		return coreerr.NewWithValues(ctx, coreerr.StateactionActionNotfound, fmt.Sprintf("state action '%s' references non-existent action '%s'", sa.Key.String(), sa.ActionKey.String()), "ActionKey", sa.ActionKey.String(), "")
 	}
 	return nil
 }

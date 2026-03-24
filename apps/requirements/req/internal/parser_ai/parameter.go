@@ -40,32 +40,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the parameter schema and returns detailed errors if validation fails.
 func parseParameter(content []byte, filename string) (*inputParameter, error) {
-	var param inputParameter
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &param); err != nil {
-		return nil, NewParseError(
-			ErrParamInvalidJSON,
-			"failed to parse parameter JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrParamInvalidJSON,
-			"failed to parse parameter JSON for schema validation: "+err.Error(),
+			"failed to parse parameter JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := parameterSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrParamSchemaViolation,
 			"parameter JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(parameterSchemaContent)
+		).WithHint("run: req_check --schema parameter")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var param inputParameter
+	if err := json.Unmarshal(content, &param); err != nil {
+		return nil, NewParseError(
+			ErrParamInvalidJSON,
+			"failed to parse parameter JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules
@@ -85,7 +84,7 @@ func validateParameter(param *inputParameter, filename string) error {
 			ErrParamNameRequired,
 			"parameter name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -94,7 +93,7 @@ func validateParameter(param *inputParameter, filename string) error {
 			ErrParamNameEmpty,
 			"parameter name cannot be empty or whitespace only, got '"+param.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	return nil

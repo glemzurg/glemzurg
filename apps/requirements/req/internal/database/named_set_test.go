@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -56,61 +56,61 @@ func (suite *NamedSetSuite) TestLoad() {
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
 	suite.Require().NoError(err)
-	suite.Equal(model_named_set.NamedSet{
+	suite.Equal(model_logic.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
 	}, ns)
 }
 
 func (suite *NamedSetSuite) TestAdd() {
-	err := AddNamedSet(suite.db, suite.model.Key, model_named_set.NamedSet{
+	err := AddNamedSet(suite.db, suite.model.Key, model_logic.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
 	})
 	suite.Require().NoError(err)
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
 	suite.Require().NoError(err)
-	suite.Equal(model_named_set.NamedSet{
+	suite.Equal(model_logic.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
 	}, ns)
 }
 
 func (suite *NamedSetSuite) TestAddWithTypeSpec() {
-	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
-	err := AddNamedSet(suite.db, suite.model.Key, model_named_set.NamedSet{
+	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
+	err := AddNamedSet(suite.db, suite.model.Key, model_logic.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
 		TypeSpec:    &ts,
 	})
 	suite.Require().NoError(err)
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
 	suite.Require().NoError(err)
-	suite.Equal(model_named_set.NamedSet{
+	suite.Equal(model_logic.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
-		TypeSpec:    &model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
+		TypeSpec:    &logic_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"},
 	}, ns)
 }
 
 func (suite *NamedSetSuite) TestRemove() {
-	err := AddNamedSet(suite.db, suite.model.Key, model_named_set.NamedSet{
+	err := AddNamedSet(suite.db, suite.model.Key, model_logic.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
 	})
 	suite.Require().NoError(err)
 
@@ -123,36 +123,36 @@ func (suite *NamedSetSuite) TestRemove() {
 }
 
 func (suite *NamedSetSuite) TestQuery() {
-	err := AddNamedSets(suite.db, suite.model.Key, []model_named_set.NamedSet{
+	err := AddNamedSets(suite.db, suite.model.Key, []model_logic.NamedSet{
 		{
 			Key:         suite.nsKeyB,
 			Name:        "_Min",
 			Description: "Min set",
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{1, 2}`},
+			Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{1, 2}`},
 		},
 		{
 			Key:         suite.nsKey,
 			Name:        "_Max",
 			Description: "Max set",
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{3, 4}`},
+			Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{3, 4}`},
 		},
 	})
 	suite.Require().NoError(err)
 
 	nss, err := QueryNamedSets(suite.db, suite.model.Key)
 	suite.Require().NoError(err)
-	suite.Equal([]model_named_set.NamedSet{
+	suite.Equal([]model_logic.NamedSet{
 		{
 			Key:         suite.nsKey,
 			Name:        "_Max",
 			Description: "Max set",
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{3, 4}`},
+			Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{3, 4}`},
 		},
 		{
 			Key:         suite.nsKeyB,
 			Name:        "_Min",
 			Description: "Min set",
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{1, 2}`},
+			Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{1, 2}`},
 		},
 	}, nss)
 }

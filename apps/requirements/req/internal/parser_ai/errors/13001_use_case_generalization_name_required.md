@@ -12,12 +12,15 @@ Use case generalization files are located in the `use_case_generalizations/` dir
 
 ```
 your_model/
-├── model.json
-├── actors/
-├── use_cases/
-│   └── create_order.uc.json
-└── use_case_generalizations/
-    └── order_types.uc_gen.json    <-- This file is missing the "name" field
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                ├── use_cases/
+                │   └── create_order/
+                │       └── use_case.json
+                └── use_case_generalizations/
+                    └── order_types.ucgen.json    <-- This file is missing the "name" field
 ```
 
 ## How to Fix

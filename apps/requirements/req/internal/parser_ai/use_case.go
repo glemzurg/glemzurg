@@ -54,32 +54,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the use case schema and returns detailed errors if validation fails.
 func parseUseCase(content []byte, filename string) (*inputUseCase, error) {
-	var uc inputUseCase
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &uc); err != nil {
-		return nil, NewParseError(
-			ErrUseCaseInvalidJSON,
-			"failed to parse use case JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrUseCaseInvalidJSON,
-			"failed to parse use case JSON for schema validation: "+err.Error(),
+			"failed to parse use case JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := useCaseSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrUseCaseSchemaViolation,
 			"use case JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(useCaseSchemaContent)
+		).WithHint("run: req_check --schema use_case")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var uc inputUseCase
+	if err := json.Unmarshal(content, &uc); err != nil {
+		return nil, NewParseError(
+			ErrUseCaseInvalidJSON,
+			"failed to parse use case JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules
@@ -99,7 +98,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 			ErrUseCaseNameRequired,
 			"use case name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -108,7 +107,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 			ErrUseCaseNameEmpty,
 			"use case name cannot be empty or whitespace only, got '"+uc.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Level is required
@@ -117,7 +116,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 			ErrUseCaseLevelRequired,
 			"use case level is required, got ''",
 			filename,
-		).WithField("level")
+		).WithField("level").WithHint("add \"level\": one of \"sky\", \"sea\", \"mud\"")
 	}
 
 	// Level must be one of the valid values
@@ -129,7 +128,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 			ErrUseCaseLevelInvalid,
 			"use case level must be 'sky', 'sea', or 'mud', got '"+uc.Level+"'",
 			filename,
-		).WithField("level")
+		).WithField("level").WithHint("\"level\" must be one of: sky, sea, mud")
 	}
 
 	return nil

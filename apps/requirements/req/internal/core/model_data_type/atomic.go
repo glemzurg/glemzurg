@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
 
 const (
@@ -14,9 +16,17 @@ const (
 	CONSTRAINT_TYPE_OBJECT        = "object"        // An object of a class.
 )
 
+var _validConstraintTypes = map[string]bool{
+	CONSTRAINT_TYPE_UNCONSTRAINED: true,
+	CONSTRAINT_TYPE_SPAN:          true,
+	CONSTRAINT_TYPE_ENUMERATION:   true,
+	CONSTRAINT_TYPE_REFERENCE:     true,
+	CONSTRAINT_TYPE_OBJECT:        true,
+}
+
 // Atomic represents the atomic data type (as opposed to a collection).
 type Atomic struct {
-	ConstraintType string `validate:"required,oneof=unconstrained span enumeration reference object"`
+	ConstraintType string
 	Span           *AtomicSpan
 	Reference      *string
 	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
@@ -25,81 +35,88 @@ type Atomic struct {
 }
 
 // Validate validates the Atomic struct.
-func (a Atomic) Validate() error {
-	if err := _validate.Struct(a); err != nil {
+func (a Atomic) Validate(ctx *coreerr.ValidationContext) error {
+	// ConstraintType: required and must be a valid value.
+	if a.ConstraintType == "" {
+		return coreerr.NewWithValues(ctx, coreerr.DtypeAtomicConstrainttypeRequired, "ConstraintType is required", "ConstraintType", "", "one of: unconstrained, span, enumeration, reference, object")
+	}
+	if !_validConstraintTypes[a.ConstraintType] {
+		return coreerr.NewWithValues(ctx, coreerr.DtypeAtomicConstrainttypeInvalid, "ConstraintType is not a valid value", "ConstraintType", a.ConstraintType, "one of: unconstrained, span, enumeration, reference, object")
+	}
+
+	if err := a.validateReference(ctx); err != nil {
 		return err
 	}
-	if err := a.validateReference(); err != nil {
+	if err := a.validateObjectClassKey(ctx); err != nil {
 		return err
 	}
-	if err := a.validateObjectClassKey(); err != nil {
+	if err := a.validateEnums(ctx); err != nil {
 		return err
 	}
-	if err := a.validateEnums(); err != nil {
-		return err
-	}
-	if err := a.validateSpan(); err != nil {
+	if err := a.validateSpan(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a Atomic) validateReference() error {
+func (a Atomic) validateReference(ctx *coreerr.ValidationContext) error {
 	if a.ConstraintType == CONSTRAINT_TYPE_REFERENCE {
 		if a.Reference == nil || *a.Reference == "" {
-			return fmt.Errorf("reference: reference must not be nil or empty for reference types")
+			return coreerr.New(ctx, coreerr.DtypeAtomicRefRequired, "reference must not be nil or empty for reference types", "Reference")
 		}
 	} else if a.Reference != nil {
-		return fmt.Errorf("reference: reference must be nil for non-reference types")
+		return coreerr.New(ctx, coreerr.DtypeAtomicRefMustBeBlank, "reference must be nil for non-reference types", "Reference")
 	}
 	return nil
 }
 
-func (a Atomic) validateObjectClassKey() error {
+func (a Atomic) validateObjectClassKey(ctx *coreerr.ValidationContext) error {
 	if a.ConstraintType == CONSTRAINT_TYPE_OBJECT {
 		if a.ObjectClassKey == nil || *a.ObjectClassKey == "" {
-			return fmt.Errorf("objectClassKey: objectClassKey must not be nil or empty for object types")
+			return coreerr.New(ctx, coreerr.DtypeAtomicObjkeyRequired, "objectClassKey must not be nil or empty for object types", "ObjectClassKey")
 		}
 	} else if a.ObjectClassKey != nil {
-		return fmt.Errorf("objectClassKey: objectClassKey must be nil for non-object types")
+		return coreerr.New(ctx, coreerr.DtypeAtomicObjkeyMustBeBlank, "objectClassKey must be nil for non-object types", "ObjectClassKey")
 	}
 	return nil
 }
 
-func (a Atomic) validateEnums() error {
+func (a Atomic) validateEnums(ctx *coreerr.ValidationContext) error {
 	if a.ConstraintType == CONSTRAINT_TYPE_ENUMERATION {
 		if len(a.Enums) == 0 {
-			return fmt.Errorf("enums: cannot be blank")
+			return coreerr.New(ctx, coreerr.DtypeAtomicEnumsRequired, "enums cannot be blank for enumeration types", "Enums")
 		}
-		for _, enum := range a.Enums {
-			if err := enum.Validate(); err != nil {
-				return fmt.Errorf("enums: (%s)", err.Error())
+		for i := range a.Enums {
+			childCtx := ctx.Child("enum", fmt.Sprintf("%d", i))
+			if err := a.Enums[i].Validate(childCtx); err != nil {
+				return err
 			}
 		}
 		if a.EnumOrdered == nil {
-			return fmt.Errorf("enumOrdered: enumOrdered must not be nil for enumeration types")
+			return coreerr.New(ctx, coreerr.DtypeAtomicEnumordRequired, "enumOrdered must not be nil for enumeration types", "EnumOrdered")
 		}
 	} else {
 		if len(a.Enums) > 0 {
-			return fmt.Errorf("enums: must be blank")
+			return coreerr.New(ctx, coreerr.DtypeAtomicEnumsMustBeBlank, "enums must be blank for non-enumeration types", "Enums")
 		}
 		if a.EnumOrdered != nil {
-			return fmt.Errorf("enumOrdered: enumOrdered must be nil for non-enumeration types")
+			return coreerr.New(ctx, coreerr.DtypeAtomicEnumordMustBeBlank, "enumOrdered must be nil for non-enumeration types", "EnumOrdered")
 		}
 	}
 	return nil
 }
 
-func (a Atomic) validateSpan() error {
+func (a Atomic) validateSpan(ctx *coreerr.ValidationContext) error {
 	if a.ConstraintType == CONSTRAINT_TYPE_SPAN {
 		if a.Span == nil {
-			return fmt.Errorf("span: span must not be nil for span types")
+			return coreerr.New(ctx, coreerr.DtypeAtomicSpanRequired, "span must not be nil for span types", "Span")
 		}
-		if err := a.Span.Validate(); err != nil {
-			return fmt.Errorf("span: (%s)", err.Error())
+		childCtx := ctx.Child("span", "")
+		if err := a.Span.Validate(childCtx); err != nil {
+			return err
 		}
 	} else if a.Span != nil {
-		return fmt.Errorf("span: span must be nil for non-span types")
+		return coreerr.New(ctx, coreerr.DtypeAtomicSpanMustBeBlank, "span must be nil for non-span types", "Span")
 	}
 	return nil
 }

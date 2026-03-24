@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
@@ -42,7 +42,7 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 	}
 
 	// Construct ExpressionSpec via constructor (nil parseFunc — parsing happens at higher layers).
-	logic.Spec, err = model_spec.NewExpressionSpec(notation, specification, nil)
+	logic.Spec, err = logic_spec.NewExpressionSpec(notation, specification, nil)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		if targetTypeSpecification != nil {
 			spec = *targetTypeSpecification
 		}
-		ts, err := model_spec.NewTypeSpec(*targetTypeNotation, spec, nil)
+		ts, err := logic_spec.NewTypeSpec(*targetTypeNotation, spec, nil)
 		if err != nil {
 			return err
 		}

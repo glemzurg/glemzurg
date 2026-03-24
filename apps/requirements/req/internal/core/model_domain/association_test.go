@@ -3,6 +3,7 @@ package model_domain
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -47,7 +48,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: suite.solutionDomainKey,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -65,7 +66,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  identity.Key{},
 				SolutionDomainKey: suite.solutionDomainKey,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong problem key type",
@@ -83,7 +84,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: identity.Key{},
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong solution key type",
@@ -106,7 +107,8 @@ func (suite *AssociationSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.association.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.association.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -121,18 +123,14 @@ func (suite *AssociationSuite) TestNew() {
 	key := helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey))
 
 	// Test parameters are mapped correctly.
-	assoc, err := NewAssociation(key, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	suite.Require().NoError(err)
+
+	assoc := NewAssociation(key, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
 	suite.Equal(Association{
 		Key:               key,
 		ProblemDomainKey:  suite.problemDomainKey,
 		SolutionDomainKey: suite.solutionDomainKey,
 		UmlComment:        "UmlComment",
 	}, assoc)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewAssociation(identity.Key{}, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	suite.Require().ErrorContains(err, "'KeyType' failed on the 'required' tag")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -140,14 +138,16 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey))
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	assoc := Association{
 		Key:               identity.Key{}, // Invalid
 		ProblemDomainKey:  suite.problemDomainKey,
 		SolutionDomainKey: suite.solutionDomainKey,
 	}
-	err := assoc.ValidateWithParent(nil)
-	suite.Require().ErrorContains(err, "'KeyType' failed on the 'required' tag", "ValidateWithParent should call Validate()")
+	err := assoc.ValidateWithParent(ctx, nil)
+	suite.Require().ErrorContains(err, "key type is required", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domain association is a root key, so it should not have a parent.
 	assoc = Association{
@@ -155,11 +155,11 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		ProblemDomainKey:  suite.problemDomainKey,
 		SolutionDomainKey: suite.solutionDomainKey,
 	}
-	err = assoc.ValidateWithParent(&otherDomainKey)
+	err = assoc.ValidateWithParent(ctx, &otherDomainKey)
 	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case - domain association key has no parent (root-level entity).
-	err = assoc.ValidateWithParent(nil)
+	err = assoc.ValidateWithParent(ctx, nil)
 	suite.Require().NoError(err)
 }
 
@@ -212,7 +212,8 @@ func (suite *AssociationSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.association.ValidateReferences(tt.domains)
+			ctx := coreerr.NewContext("test", "")
+			err := tt.association.ValidateReferences(ctx, tt.domains)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

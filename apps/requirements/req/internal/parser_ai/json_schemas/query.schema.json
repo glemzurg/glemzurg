@@ -52,8 +52,9 @@
           },
           "target": {
             "type": "string",
-            "description": "Required for 'let' type: the local variable name. Must not start with '_'. Must be omitted or empty for 'assessment' type.",
-            "minLength": 1
+            "description": "Required for 'let' type: the local variable name. Must be omitted or empty for 'assessment' type.",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
           },
           "target_type_spec": {
             "type": "string",
@@ -61,7 +62,7 @@
           },
           "notation": {
             "type": "string",
-            "description": "Optional formal notation system. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+            "description": "Required. The formal notation system. Currently the only supported value is 'tla_plus'. Must always be present. If validation fails: ensure this is exactly 'tla_plus'.",
             "enum": ["tla_plus"]
           },
           "specification": {
@@ -69,7 +70,7 @@
             "description": "Optional formal specification in the given notation. Must not contain primed values."
           }
         },
-        "required": ["description"],
+        "required": ["description", "notation"],
         "additionalProperties": false
       }
     },
@@ -91,8 +92,9 @@
           },
           "target": {
             "type": "string",
-            "description": "Required. For 'query': the output identifier name (e.g., 'result', 'TotalAmount'). For 'let': the local variable name. Cannot start with '_'.",
-            "minLength": 1
+            "description": "Required. For 'query': the output identifier name (e.g., 'result', 'totalAmount'). For 'let': the local variable name.",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
           },
           "target_type_spec": {
             "type": "string",
@@ -100,7 +102,7 @@
           },
           "notation": {
             "type": "string",
-            "description": "Optional formal notation system. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+            "description": "Required. The formal notation system. Currently the only supported value is 'tla_plus'. Must always be present. If validation fails: ensure this is exactly 'tla_plus'.",
             "enum": ["tla_plus"]
           },
           "specification": {
@@ -108,7 +110,7 @@
             "description": "Optional formal specification in the given notation. This must be only the value expression with no primed values. The output identifier is captured by the 'target' field."
           }
         },
-        "required": ["description", "target"],
+        "required": ["description", "target", "notation"],
         "additionalProperties": false
       }
     }

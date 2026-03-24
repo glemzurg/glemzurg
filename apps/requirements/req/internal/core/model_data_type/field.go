@@ -3,6 +3,8 @@ package model_data_type
 import (
 	"fmt"
 	"regexp"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
 
 // _fieldNameRegexp enforces that field names are lowercase identifiers.
@@ -11,17 +13,20 @@ var _fieldNameRegexp = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
 
 // Field represents a single field of a record datatype.
 type Field struct {
-	Name          string    `validate:"required"` // The name of the field.
-	FieldDataType *DataType `validate:"required"` // The data type of this field.
+	Name          string    // The name of the field.
+	FieldDataType *DataType // The data type of this field.
 }
 
 // Validate validates the Field struct.
-func (f Field) Validate() error {
-	if err := _validate.Struct(f); err != nil {
-		return err
+func (f Field) Validate(ctx *coreerr.ValidationContext) error {
+	if f.Name == "" {
+		return coreerr.New(ctx, coreerr.DtypeFieldNameRequired, "Name is required", "Name")
+	}
+	if f.FieldDataType == nil {
+		return coreerr.New(ctx, coreerr.DtypeFieldDatatypeRequired, "FieldDataType is required", "FieldDataType")
 	}
 	if !_fieldNameRegexp.MatchString(f.Name) {
-		return fmt.Errorf("name: '%s' must be a lowercase identifier matching [a-z_][a-z0-9_]*", f.Name)
+		return coreerr.NewWithValues(ctx, coreerr.DtypeFieldNameInvalid, fmt.Sprintf("name '%s' must be a lowercase identifier", f.Name), "Name", f.Name, "matching [a-z_][a-z0-9_]*")
 	}
 	return nil
 }

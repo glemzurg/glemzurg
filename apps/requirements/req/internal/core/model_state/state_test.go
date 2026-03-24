@@ -3,6 +3,7 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (suite *StateSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -62,7 +63,8 @@ func (suite *StateSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.state.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.state.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -80,22 +82,18 @@ func (suite *StateSuite) TestNew() {
 	key := helper.Must(identity.NewStateKey(classKey, "state1"))
 
 	// Test parameters are mapped correctly.
-	state, err := NewState(key, "Name", "Details", "UmlComment")
-	suite.Require().NoError(err)
+	state := NewState(key, "Name", "Details", "UmlComment")
 	suite.Equal(State{
 		Key:        key,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	}, state)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewState(key, "", "Details", "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (suite *StateSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
@@ -107,7 +105,7 @@ func (suite *StateSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := state.ValidateWithParent(&classKey)
+	err := state.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - state key has class1 as parent, but we pass other_class.
@@ -115,16 +113,17 @@ func (suite *StateSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = state.ValidateWithParent(&otherClassKey)
+	err = state.ValidateWithParent(ctx, &otherClassKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = state.ValidateWithParent(&classKey)
+	err = state.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 }
 
 // TestValidateWithParentAndActions tests that ValidateWithParentAndActions validates child StateActions.
 func (suite *StateSuite) TestValidateWithParentAndActions() {
+	ctx := coreerr.NewContext("test", "")
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
@@ -144,7 +143,7 @@ func (suite *StateSuite) TestValidateWithParentAndActions() {
 			{Key: stateActionKey, ActionKey: actionKey, When: "entry"},
 		},
 	}
-	err := state.ValidateWithParentAndActions(&classKey, actionKeys)
+	err := state.ValidateWithParentAndActions(ctx, &classKey, actionKeys)
 	suite.Require().NoError(err)
 
 	// Test invalid child StateAction (empty action key) propagates error.
@@ -155,7 +154,7 @@ func (suite *StateSuite) TestValidateWithParentAndActions() {
 			{Key: stateActionKey, ActionKey: identity.Key{}, When: "entry"},
 		},
 	}
-	err = state.ValidateWithParentAndActions(&classKey, actionKeys)
+	err = state.ValidateWithParentAndActions(ctx, &classKey, actionKeys)
 	suite.Require().Error(err, "Invalid child StateAction should propagate error")
 
 	// Test action reference validation - reference non-existent action.
@@ -167,7 +166,7 @@ func (suite *StateSuite) TestValidateWithParentAndActions() {
 			{Key: stateActionKey, ActionKey: nonExistentActionKey, When: "entry"},
 		},
 	}
-	err = state.ValidateWithParentAndActions(&classKey, actionKeys)
+	err = state.ValidateWithParentAndActions(ctx, &classKey, actionKeys)
 	suite.Require().ErrorContains(err, "references non-existent action", "Should validate action references")
 }
 

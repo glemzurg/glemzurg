@@ -12,9 +12,12 @@ Use case generalization files are located in the `use_case_generalizations/` dir
 
 ```
 your_model/
-├── model.json
-└── use_case_generalizations/
-    └── order_types.uc_gen.json    <-- This file has invalid superclass_key
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── use_case_generalizations/
+                    └── order_types.ucgen.json    <-- This file has invalid superclass_key
 ```
 
 ## How to Fix
@@ -73,22 +76,22 @@ Provide a valid use case key for the `superclass_key` field:
 
 ## Understanding Use Case Keys
 
-The `superclass_key` must reference an existing use case file. The key matches the filename without the extension:
+The `superclass_key` must reference an existing use case. The key matches the use case directory name:
 
 ```
 use_cases/
-├── process_order.uc.json            <-- Key: process_order
-├── process_online_order.uc.json     <-- Key: process_online_order
-└── process_in_store_order.uc.json   <-- Key: process_in_store_order
+├── process_order/use_case.json            <-- Key: process_order
+├── process_online_order/use_case.json     <-- Key: process_online_order
+└── process_in_store_order/use_case.json   <-- Key: process_in_store_order
 ```
 
 ### Examples
 
 | Use Case File Path | Use Case Key |
 |---------------------|--------------|
-| `use_cases/create_order.uc.json` | `create_order` |
-| `use_cases/process_payment.uc.json` | `process_payment` |
-| `use_cases/manage_account.uc.json` | `manage_account` |
+| `use_cases/create_order/use_case.json` | `create_order` |
+| `use_cases/process_payment/use_case.json` | `process_payment` |
+| `use_cases/manage_account/use_case.json` | `manage_account` |
 
 ## What is a Superclass Use Case?
 
@@ -113,18 +116,18 @@ The superclass use case typically:
 ## Troubleshooting Checklist
 
 1. **Check the use case exists**: Verify the superclass use case file exists at the expected path
-2. **Check the key format**: Use the filename without the `.uc.json` extension
+2. **Check the key format**: Use the filename without the `/use_case.json` extension
 3. **Check for typos**: Use case keys are case-sensitive
-4. **Don't include file extension**: Use `process_order`, not `process_order.uc.json`
+4. **Don't include file extension**: Use `process_order`, not `process_order/use_case.json`
 
 ### Verifying the Superclass Exists
 
 ```bash
 # If superclass_key is "process_order", check:
-ls use_cases/process_order.uc.json
+ls use_cases/process_order/
 
 # If superclass_key is "manage_account", check:
-ls use_cases/manage_account.uc.json
+ls use_cases/manage_account/
 ```
 
 ## Complete Schema

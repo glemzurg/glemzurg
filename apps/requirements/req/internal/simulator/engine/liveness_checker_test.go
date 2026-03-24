@@ -34,14 +34,14 @@ func livenessOrderClass() (model_class.Class, identity.Key) {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
 	attrAmountKey := mustKey("domain/d/subdomain/s/class/order/attribute/amount")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
 	attrAmount := helper.Must(model_class.NewAttribute(attrAmountKey, "amount", "", "", nil, false,
 		model_class.AttributeAnnotations{}))
-	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
+	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrAmountKey: attrAmount,
 	})
@@ -68,14 +68,14 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/item/transition/create")
 	attrNameKey := mustKey("domain/d/subdomain/s/class/item/attribute/name")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
 	attrName := helper.Must(model_class.NewAttribute(attrNameKey, "name", "", "", nil, false,
 		model_class.AttributeAnnotations{}))
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Item", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Item", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrNameKey: attrName,
 	})
@@ -250,15 +250,15 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
 	attrDerivedKey := mustKey("domain/d/subdomain/s/class/order/attribute/total")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", orderSpec("self.amount * 2"), nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
+	derivationLogic := model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", orderSpec("self.amount * 2"), nil)
 
 	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "total", "", "", &derivationLogic, false,
 		model_class.AttributeAnnotations{}))
-	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
+	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrDerivedKey: attrDerived,
 	})
@@ -341,10 +341,10 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "",
+	assoc := model_class.NewAssociation(assocKey, "order_items", "",
 		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
-		nil, ""))
+		nil, "")
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -378,10 +378,10 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "",
+	assoc := model_class.NewAssociation(assocKey, "order_items", "",
 		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
-		nil, ""))
+		nil, "")
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -408,7 +408,7 @@ func (s *LivenessCheckerSuite) TestNoSimulatableClasses_NoViolations() {
 	// Test the checker directly with an empty catalog.
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
-	statelessClass := helper.Must(model_class.NewClass(statelessKey, "Stateless", "", nil, nil, nil, ""))
+	statelessClass := model_class.NewClass(statelessKey, "Stateless", "", nil, nil, nil, "")
 	statelessClass.SetAttributes(map[identity.Key]model_class.Attribute{})
 	statelessClass.SetStates(map[identity.Key]model_state.State{})
 	statelessClass.SetEvents(map[identity.Key]model_state.Event{})

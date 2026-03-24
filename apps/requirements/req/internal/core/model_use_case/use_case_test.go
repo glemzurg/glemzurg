@@ -3,6 +3,7 @@ package model_use_case
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -71,7 +72,7 @@ func (suite *UseCaseSuite) TestValidate() {
 				Name:  "Name",
 				Level: _USE_CASE_LEVEL_SEA,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -149,7 +150,8 @@ func (suite *UseCaseSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.useCase.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.useCase.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -168,8 +170,8 @@ func (suite *UseCaseSuite) TestNew() {
 	genKeyB := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_b"))
 
 	// Test parameters are mapped correctly.
-	useCase, err := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{SuperclassOfKey: &genKeyA, SubclassOfKey: &genKeyB}, "UmlComment")
-	suite.Require().NoError(err)
+
+	useCase := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{SuperclassOfKey: &genKeyA, SubclassOfKey: &genKeyB}, "UmlComment")
 	suite.Equal(UseCase{
 		Key:             key,
 		Name:            "Name",
@@ -182,8 +184,8 @@ func (suite *UseCaseSuite) TestNew() {
 	}, useCase)
 
 	// Test with nil superclass/subclass.
-	useCase, err = NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{}, "UmlComment")
-	suite.Require().NoError(err)
+
+	useCase = NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{}, "UmlComment")
 	suite.Equal(UseCase{
 		Key:        key,
 		Name:       "Name",
@@ -192,10 +194,6 @@ func (suite *UseCaseSuite) TestNew() {
 		ReadOnly:   true,
 		UmlComment: "UmlComment",
 	}, useCase)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{}, "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -205,13 +203,15 @@ func (suite *UseCaseSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
 	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	useCase := UseCase{
 		Key:   validKey,
 		Name:  "", // Invalid
 		Level: _USE_CASE_LEVEL_SEA,
 	}
-	err := useCase.ValidateWithParent(&subdomainKey)
+	err := useCase.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - use case key has subdomain1 as parent, but we pass other_subdomain.
@@ -220,11 +220,11 @@ func (suite *UseCaseSuite) TestValidateWithParent() {
 		Name:  "Name",
 		Level: _USE_CASE_LEVEL_SEA,
 	}
-	err = useCase.ValidateWithParent(&otherSubdomainKey)
+	err = useCase.ValidateWithParent(ctx, &otherSubdomainKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = useCase.ValidateWithParent(&subdomainKey)
+	err = useCase.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err)
 }
 
@@ -292,7 +292,8 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.useCase.ValidateWithParentAndClasses(&subdomainKey, tt.classes, tt.actorClasses)
+			ctx := coreerr.NewContext("test", "")
+			err := tt.useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, tt.classes, tt.actorClasses)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -311,7 +312,8 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 			scenarioKey: {Key: scenarioKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err := useCase.ValidateWithParentAndClasses(&subdomainKey, classes, actorClasses)
+	ctx := coreerr.NewContext("test", "")
+	err := useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, classes, actorClasses)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Scenarios")
 
 	// Test valid with child Scenario.
@@ -323,7 +325,7 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 			scenarioKey: {Key: scenarioKey, Name: "Scenario"},
 		},
 	}
-	err = useCase.ValidateWithParentAndClasses(&subdomainKey, classes, actorClasses)
+	err = useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, classes, actorClasses)
 	suite.Require().NoError(err)
 }
 
@@ -372,7 +374,8 @@ func (suite *UseCaseSuite) TestValidateReferences() {
 		SuperclassOfKey: &genKeyA,
 		SubclassOfKey:   &genKeyB,
 	}
-	err := useCase.ValidateReferences(generalizations)
+	ctx := coreerr.NewContext("test", "")
+	err := useCase.ValidateReferences(ctx, generalizations)
 	suite.Require().NoError(err)
 
 	// Valid: no references.
@@ -381,7 +384,7 @@ func (suite *UseCaseSuite) TestValidateReferences() {
 		Name:  "Name",
 		Level: _USE_CASE_LEVEL_SEA,
 	}
-	err = useCase.ValidateReferences(generalizations)
+	err = useCase.ValidateReferences(ctx, generalizations)
 	suite.Require().NoError(err)
 
 	// Error: superclass references non-existent generalization.
@@ -391,7 +394,7 @@ func (suite *UseCaseSuite) TestValidateReferences() {
 		Level:           _USE_CASE_LEVEL_SEA,
 		SuperclassOfKey: &genKeyC,
 	}
-	err = useCase.ValidateReferences(generalizations)
+	err = useCase.ValidateReferences(ctx, generalizations)
 	suite.Require().ErrorContains(err, "non-existent generalization")
 
 	// Error: subclass references non-existent generalization.
@@ -401,6 +404,6 @@ func (suite *UseCaseSuite) TestValidateReferences() {
 		Level:         _USE_CASE_LEVEL_SEA,
 		SubclassOfKey: &genKeyC,
 	}
-	err = useCase.ValidateReferences(generalizations)
+	err = useCase.ValidateReferences(ctx, generalizations)
 	suite.Require().ErrorContains(err, "non-existent generalization")
 }

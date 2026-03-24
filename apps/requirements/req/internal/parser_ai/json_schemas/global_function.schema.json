@@ -35,7 +35,7 @@
         },
         "notation": {
           "type": "string",
-          "description": "Optional formal notation system used for the specification. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+          "description": "Required. The formal notation system. Currently the only supported value is 'tla_plus'. Must always be present. If validation fails: ensure this is exactly 'tla_plus'.",
           "enum": ["tla_plus"]
         },
         "specification": {
@@ -43,7 +43,7 @@
           "description": "Optional formal specification in the given notation."
         }
       },
-      "required": ["description"],
+      "required": ["description", "notation"],
       "additionalProperties": false
     }
   },

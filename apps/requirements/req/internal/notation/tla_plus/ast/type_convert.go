@@ -3,13 +3,13 @@ package ast
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression_type"
 )
 
 // ConvertToExpressionType converts a TLA+ AST expression into a structural ExpressionType.
 // This is the "type interpretation" pass — it treats a TLA+ expression as a type declaration
 // rather than a value expression. Only a subset of AST nodes are valid type expressions.
-func ConvertToExpressionType(expr Expression) (model_expression_type.ExpressionType, error) {
+func ConvertToExpressionType(expr Expression) (logic_expression_type.ExpressionType, error) {
 	if expr == nil {
 		return nil, fmt.Errorf("type expression is nil")
 	}
@@ -43,16 +43,16 @@ func ConvertToExpressionType(expr Expression) (model_expression_type.ExpressionT
 
 // convertIdentifier handles identifiers that name built-in types.
 // In the PEG grammar, Nat, Int, Real, BOOLEAN, STRING all parse as Identifiers.
-func convertIdentifier(id *Identifier) (model_expression_type.ExpressionType, error) {
+func convertIdentifier(id *Identifier) (logic_expression_type.ExpressionType, error) {
 	switch id.Value {
 	case "BOOLEAN":
-		return &model_expression_type.BooleanType{}, nil
+		return &logic_expression_type.BooleanType{}, nil
 	case "Nat", "Int":
-		return &model_expression_type.IntegerType{}, nil
+		return &logic_expression_type.IntegerType{}, nil
 	case "Real":
-		return &model_expression_type.RationalType{}, nil
+		return &logic_expression_type.RationalType{}, nil
 	case "STRING":
-		return &model_expression_type.StringType{}, nil
+		return &logic_expression_type.StringType{}, nil
 	default:
 		return nil, fmt.Errorf("unknown type identifier: %s", id.Value)
 	}
@@ -60,31 +60,31 @@ func convertIdentifier(id *Identifier) (model_expression_type.ExpressionType, er
 
 // convertSetConstant handles the SetConstant AST node (used when the evaluator
 // constructs AST nodes directly, not from the PEG parser).
-func convertSetConstant(sc *SetConstant) (model_expression_type.ExpressionType, error) {
+func convertSetConstant(sc *SetConstant) (logic_expression_type.ExpressionType, error) {
 	switch sc.Value {
 	case SetConstantBoolean:
-		return &model_expression_type.BooleanType{}, nil
+		return &logic_expression_type.BooleanType{}, nil
 	case SetConstantNat, SetConstantInt:
-		return &model_expression_type.IntegerType{}, nil
+		return &logic_expression_type.IntegerType{}, nil
 	case SetConstantReal:
-		return &model_expression_type.RationalType{}, nil
+		return &logic_expression_type.RationalType{}, nil
 	default:
 		return nil, fmt.Errorf("unknown set constant for type: %s", sc.Value)
 	}
 }
 
 // convertSetLiteralEnum handles {"val1", "val2", ...} → EnumType.
-func convertSetLiteralEnum(sle *SetLiteralEnum) (model_expression_type.ExpressionType, error) {
+func convertSetLiteralEnum(sle *SetLiteralEnum) (logic_expression_type.ExpressionType, error) {
 	if len(sle.Values) == 0 {
 		return nil, fmt.Errorf("enum type must have at least one value")
 	}
 	values := make([]string, len(sle.Values))
 	copy(values, sle.Values)
-	return &model_expression_type.EnumType{Values: values}, nil
+	return &logic_expression_type.EnumType{Values: values}, nil
 }
 
 // convertSetLiteral handles {expr1, expr2, ...} where all elements are string literals → EnumType.
-func convertSetLiteral(sl *SetLiteral) (model_expression_type.ExpressionType, error) {
+func convertSetLiteral(sl *SetLiteral) (logic_expression_type.ExpressionType, error) {
 	if len(sl.Elements) == 0 {
 		return nil, fmt.Errorf("set literal as type must have at least one element")
 	}
@@ -96,7 +96,7 @@ func convertSetLiteral(sl *SetLiteral) (model_expression_type.ExpressionType, er
 		}
 		values = append(values, strLit.Value)
 	}
-	return &model_expression_type.EnumType{Values: values}, nil
+	return &logic_expression_type.EnumType{Values: values}, nil
 }
 
 // convertFunctionCall handles built-in module type constructors:
@@ -104,7 +104,7 @@ func convertSetLiteral(sl *SetLiteral) (model_expression_type.ExpressionType, er
 //   - _Seq!SeqUnique(X) → SequenceType{ElementType: X, Unique: true}
 //   - _Set!_Set(X)      → SetType{ElementType: X}
 //   - _Bags!_Bag(X)     → BagType{ElementType: X}
-func convertFunctionCall(fc *FunctionCall) (model_expression_type.ExpressionType, error) {
+func convertFunctionCall(fc *FunctionCall) (logic_expression_type.ExpressionType, error) {
 	if len(fc.ScopePath) != 1 {
 		return nil, fmt.Errorf("not a valid type expression: %s", fc.String())
 	}
@@ -125,20 +125,20 @@ func convertFunctionCall(fc *FunctionCall) (model_expression_type.ExpressionType
 	case "_Seq":
 		switch name {
 		case "Seq":
-			return &model_expression_type.SequenceType{ElementType: elemType, Unique: false}, nil
+			return &logic_expression_type.SequenceType{ElementType: elemType, Unique: false}, nil
 		case "SeqUnique":
-			return &model_expression_type.SequenceType{ElementType: elemType, Unique: true}, nil
+			return &logic_expression_type.SequenceType{ElementType: elemType, Unique: true}, nil
 		default:
 			return nil, fmt.Errorf("unknown _Seq function for type: %s", name)
 		}
 	case "_Set":
 		if name == "_Set" {
-			return &model_expression_type.SetType{ElementType: elemType}, nil
+			return &logic_expression_type.SetType{ElementType: elemType}, nil
 		}
 		return nil, fmt.Errorf("unknown _Set function for type: %s", name)
 	case "_Bags":
 		if name == "_Bag" {
-			return &model_expression_type.BagType{ElementType: elemType}, nil
+			return &logic_expression_type.BagType{ElementType: elemType}, nil
 		}
 		return nil, fmt.Errorf("unknown _Bags function for type: %s", name)
 	default:
@@ -147,24 +147,24 @@ func convertFunctionCall(fc *FunctionCall) (model_expression_type.ExpressionType
 }
 
 // convertRecordTypeExpr handles [name: STRING, age: Int] → RecordType.
-func convertRecordTypeExpr(rt *RecordTypeExpr) (model_expression_type.ExpressionType, error) {
-	fields := make([]model_expression_type.RecordFieldType, len(rt.Fields))
+func convertRecordTypeExpr(rt *RecordTypeExpr) (logic_expression_type.ExpressionType, error) {
+	fields := make([]logic_expression_type.RecordFieldType, len(rt.Fields))
 	for i, field := range rt.Fields {
 		fieldType, err := ConvertToExpressionType(field.Type)
 		if err != nil {
 			return nil, fmt.Errorf("record field %s: %w", field.Name.Value, err)
 		}
-		fields[i] = model_expression_type.RecordFieldType{
+		fields[i] = logic_expression_type.RecordFieldType{
 			Name: field.Name.Value,
 			Type: fieldType,
 		}
 	}
-	return &model_expression_type.RecordType{Fields: fields}, nil
+	return &logic_expression_type.RecordType{Fields: fields}, nil
 }
 
 // convertCartesianProduct handles S1 \X S2 → TupleType.
-func convertCartesianProduct(cp *CartesianProduct) (model_expression_type.ExpressionType, error) {
-	elemTypes := make([]model_expression_type.ExpressionType, len(cp.Operands))
+func convertCartesianProduct(cp *CartesianProduct) (logic_expression_type.ExpressionType, error) {
+	elemTypes := make([]logic_expression_type.ExpressionType, len(cp.Operands))
 	for i, operand := range cp.Operands {
 		et, err := ConvertToExpressionType(operand)
 		if err != nil {
@@ -172,5 +172,5 @@ func convertCartesianProduct(cp *CartesianProduct) (model_expression_type.Expres
 		}
 		elemTypes[i] = et
 	}
-	return &model_expression_type.TupleType{ElementTypes: elemTypes}, nil
+	return &logic_expression_type.TupleType{ElementTypes: elemTypes}, nil
 }

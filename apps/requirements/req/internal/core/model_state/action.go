@@ -1,8 +1,9 @@
 package model_state
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
@@ -10,7 +11,7 @@ import (
 // Action is what happens in a transition between states.
 type Action struct {
 	Key     identity.Key
-	Name    string `validate:"required"`
+	Name    string
 	Details string
 	// Children
 	Parameters  []Parameter         // Typed parameters for this action.
@@ -19,8 +20,8 @@ type Action struct {
 	SafetyRules []model_logic.Logic // Boolean assertions that must reference primed variables.
 }
 
-func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) (action Action, err error) {
-	action = Action{
+func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) Action {
+	return Action{
 		Key:         key,
 		Name:        name,
 		Details:     details,
@@ -29,72 +30,70 @@ func NewAction(key identity.Key, name, details string, requires, guarantees, saf
 		SafetyRules: safetyRules,
 		Parameters:  parameters,
 	}
-
-	if err = action.Validate(); err != nil {
-		return Action{}, err
-	}
-
-	return action, nil
 }
 
 // Validate validates the Action struct.
-func (a *Action) Validate() error {
+//
+//complexity:cyclo:warn=20,fail=20 Sequential field validation.
+func (a *Action) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := a.Key.Validate(); err != nil {
-		return err
+	if err := a.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ActionKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ACTION {
-		return errors.Errorf("Key: invalid key type '%s' for action", a.Key.KeyType)
+		return coreerr.NewWithValues(ctx, coreerr.ActionKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for action", a.Key.KeyType), "Key", a.Key.KeyType, identity.KEY_TYPE_ACTION)
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(a); err != nil {
-		return err
+	if a.Name == "" {
+		return coreerr.New(ctx, coreerr.ActionNameRequired, "Name is required", "Name")
 	}
 
 	reqLetTargets := make(map[string]bool)
 	for i, req := range a.Requires {
-		if err := req.Validate(); err != nil {
-			return errors.Wrapf(err, "requires %d", i)
+		childCtx := ctx.Child("requires", fmt.Sprintf("%d", i))
+		if err := req.Validate(childCtx); err != nil {
+			return err
 		}
 		if req.Type != model_logic.LogicTypeAssessment && req.Type != model_logic.LogicTypeLet {
-			return errors.Errorf("requires %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, req.Type)
+			return coreerr.NewWithValues(childCtx, coreerr.ActionRequiresTypeInvalid, fmt.Sprintf("requires %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, req.Type), "Requires", req.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
 		}
 		if req.Type == model_logic.LogicTypeLet {
 			if reqLetTargets[req.Target] {
-				return errors.Errorf("requires %d: duplicate let target %q", i, req.Target)
+				return coreerr.NewWithValues(childCtx, coreerr.ActionRequiresDuplicateLet, fmt.Sprintf("requires %d: duplicate let target %q", i, req.Target), "Requires", req.Target, "")
 			}
 			reqLetTargets[req.Target] = true
 		}
 	}
 	guarTargets := make(map[string]bool)
 	for i, guar := range a.Guarantees {
-		if err := guar.Validate(); err != nil {
-			return errors.Wrapf(err, "guarantee %d", i)
+		childCtx := ctx.Child("guarantees", fmt.Sprintf("%d", i))
+		if err := guar.Validate(childCtx); err != nil {
+			return err
 		}
 		if guar.Type != model_logic.LogicTypeStateChange && guar.Type != model_logic.LogicTypeLet {
-			return errors.Errorf("guarantee %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, guar.Type)
+			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeTypeInvalid, fmt.Sprintf("guarantee %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, guar.Type), "Guarantees", guar.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeStateChange, model_logic.LogicTypeLet))
 		}
 		// Each guarantee and let must set a unique target.
 		if guarTargets[guar.Target] {
 			if guar.Type == model_logic.LogicTypeLet {
-				return errors.Errorf("guarantee %d: duplicate let target %q", i, guar.Target)
+				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateLet, fmt.Sprintf("guarantee %d: duplicate let target %q", i, guar.Target), "Guarantees", guar.Target, "")
 			}
-			return errors.Errorf("guarantee %d: duplicate target %q — each attribute can only be set once per action", i, guar.Target)
+			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateTarget, fmt.Sprintf("guarantee %d: duplicate target %q — each attribute can only be set once per action", i, guar.Target), "Guarantees", guar.Target, "")
 		}
 		guarTargets[guar.Target] = true
 	}
 	safetyLetTargets := make(map[string]bool)
 	for i, rule := range a.SafetyRules {
-		if err := rule.Validate(); err != nil {
-			return errors.Wrapf(err, "safety rule %d", i)
+		childCtx := ctx.Child("safetyRules", fmt.Sprintf("%d", i))
+		if err := rule.Validate(childCtx); err != nil {
+			return err
 		}
 		if rule.Type != model_logic.LogicTypeSafetyRule && rule.Type != model_logic.LogicTypeLet {
-			return errors.Errorf("safety rule %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeSafetyRule, model_logic.LogicTypeLet, rule.Type)
+			return coreerr.NewWithValues(childCtx, coreerr.ActionSafetyTypeInvalid, fmt.Sprintf("safety rule %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeSafetyRule, model_logic.LogicTypeLet, rule.Type), "SafetyRules", rule.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeSafetyRule, model_logic.LogicTypeLet))
 		}
 		if rule.Type == model_logic.LogicTypeLet {
 			if safetyLetTargets[rule.Target] {
-				return errors.Errorf("safety rule %d: duplicate let target %q", i, rule.Target)
+				return coreerr.NewWithValues(childCtx, coreerr.ActionSafetyDuplicateLet, fmt.Sprintf("safety rule %d: duplicate let target %q", i, rule.Target), "SafetyRules", rule.Target, "")
 			}
 			safetyLetTargets[rule.Target] = true
 		}
@@ -105,34 +104,38 @@ func (a *Action) Validate() error {
 
 // ValidateWithParent validates the Action, its key's parent relationship, and all children.
 // The parent must be a Class.
-func (a *Action) ValidateWithParent(parent *identity.Key) error {
+func (a *Action) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
 	// Validate the object itself.
-	if err := a.Validate(); err != nil {
+	if err := a.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := a.Key.ValidateParent(parent); err != nil {
+	if err := a.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// Validate logic children with action as parent.
 	for i := range a.Requires {
-		if err := a.Requires[i].ValidateWithParent(&a.Key); err != nil {
-			return errors.Wrapf(err, "requires %d", i)
+		childCtx := ctx.Child("requires", fmt.Sprintf("%d", i))
+		if err := a.Requires[i].ValidateWithParent(childCtx, &a.Key); err != nil {
+			return err
 		}
 	}
 	for i := range a.Guarantees {
-		if err := a.Guarantees[i].ValidateWithParent(&a.Key); err != nil {
-			return errors.Wrapf(err, "guarantee %d", i)
+		childCtx := ctx.Child("guarantees", fmt.Sprintf("%d", i))
+		if err := a.Guarantees[i].ValidateWithParent(childCtx, &a.Key); err != nil {
+			return err
 		}
 	}
 	for i := range a.SafetyRules {
-		if err := a.SafetyRules[i].ValidateWithParent(&a.Key); err != nil {
-			return errors.Wrapf(err, "safety rule %d", i)
+		childCtx := ctx.Child("safetyRules", fmt.Sprintf("%d", i))
+		if err := a.SafetyRules[i].ValidateWithParent(childCtx, &a.Key); err != nil {
+			return err
 		}
 	}
 	// Validate all children.
 	for i := range a.Parameters {
-		if err := a.Parameters[i].ValidateWithParent(); err != nil {
+		childCtx := ctx.Child("parameter", fmt.Sprintf("%d", i))
+		if err := a.Parameters[i].ValidateWithParent(childCtx); err != nil {
 			return err
 		}
 	}

@@ -3,13 +3,14 @@ package model_state
 import (
 	"errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 )
 
 // Parameter is a typed parameter for actions and queries.
 type Parameter struct {
-	Name          string                    `validate:"required"`
-	DataTypeRules string                    `validate:"required"` // What are the bounds of this data type.
+	Name          string
+	DataTypeRules string                    // What are the bounds of this data type.
 	DataType      *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
@@ -34,10 +35,6 @@ func NewParameter(name, dataTypeRules string) (param Parameter, err error) {
 		param.DataType = parsedDataType
 	}
 
-	if err = param.Validate(); err != nil {
-		return Parameter{}, err
-	}
-
 	return param, nil
 }
 
@@ -47,15 +44,18 @@ func isCannotParseError(err error, target **model_data_type.CannotParseError) bo
 }
 
 // Validate validates the Parameter struct.
-func (p *Parameter) Validate() error {
-	if err := _validate.Struct(p); err != nil {
-		return err
+func (p *Parameter) Validate(ctx *coreerr.ValidationContext) error {
+	if p.Name == "" {
+		return coreerr.New(ctx, coreerr.ParamNameRequired, "Name is required", "Name")
+	}
+	if p.DataTypeRules == "" {
+		return coreerr.New(ctx, coreerr.ParamDatatypesRequired, "DataTypeRules is required", "DataTypeRules")
 	}
 	return nil
 }
 
 // ValidateWithParent validates the Parameter.
 // Parameter has no key, so parent validation is not applicable.
-func (p *Parameter) ValidateWithParent() error {
-	return p.Validate()
+func (p *Parameter) ValidateWithParent(ctx *coreerr.ValidationContext) error {
+	return p.Validate(ctx)
 }

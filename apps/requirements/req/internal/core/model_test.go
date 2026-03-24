@@ -7,7 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -46,8 +46,8 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
-					{Key: invKey2, Type: model_logic.LogicTypeAssessment, Description: "y must be under 100.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "y < 100"}},
+					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
+					{Key: invKey2, Type: model_logic.LogicTypeAssessment, Description: "y must be under 100.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "y < 100"}},
 				},
 			},
 		},
@@ -65,7 +65,7 @@ func (suite *ModelSuite) TestValidate() {
 							Key:         gfKey,
 							Type:        model_logic.LogicTypeValue,
 							Description: "Max of two values.",
-							Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF x > y THEN x ELSE y"},
+							Spec:        logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF x > y THEN x ELSE y"},
 						},
 					},
 				},
@@ -77,7 +77,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
+					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
 				},
 				GlobalFunctions: map[identity.Key]model_logic.GlobalFunction{
 					gfKey: {
@@ -88,7 +88,7 @@ func (suite *ModelSuite) TestValidate() {
 							Key:         gfKey,
 							Type:        model_logic.LogicTypeValue,
 							Description: "Max of two values.",
-							Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF x > y THEN x ELSE y"},
+							Spec:        logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF x > y THEN x ELSE y"},
 						},
 					},
 				},
@@ -116,7 +116,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "",
 				Invariants: []model_logic.Logic{
-					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
+					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
 				},
 			},
 			errstr: "Name",
@@ -127,10 +127,10 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
-			errstr: "invariant 0",
+			errstr: "invariant[0]",
 		},
 		{
 			testName: "valid model with let in invariants",
@@ -138,8 +138,8 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
-					{Key: invKey2, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
+					model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local total.", "total", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
+					{Key: invKey2, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
 				},
 			},
 		},
@@ -149,8 +149,8 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
-					helper.Must(model_logic.NewLogic(invKey2, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+					model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local a.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
+					model_logic.NewLogic(invKey2, model_logic.LogicTypeLet, "Local a again.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 				},
 			},
 			errstr: "duplicate let target \"a\"",
@@ -168,7 +168,7 @@ func (suite *ModelSuite) TestValidate() {
 							Key:         gfKey1,
 							Type:        model_logic.LogicTypeValue,
 							Description: "Some desc.",
-							Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
+							Spec:        logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
 						},
 					},
 				},
@@ -188,7 +188,7 @@ func (suite *ModelSuite) TestValidate() {
 							Key:         gfKey1,
 							Type:        model_logic.LogicTypeValue,
 							Description: "Some desc.",
-							Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
+							Spec:        logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
 						},
 					},
 				},
@@ -223,16 +223,16 @@ func (suite *ModelSuite) TestNew() {
 				Key:         gfKey,
 				Type:        model_logic.LogicTypeValue,
 				Description: "Max of two values.",
-				Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF x > y THEN x ELSE y"},
+				Spec:        logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF x > y THEN x ELSE y"},
 			},
 		},
 	}
 	invariants := []model_logic.Logic{
-		{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "First invariant.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "inv1"}},
+		{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "First invariant.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "inv1"}},
 	}
-	model, err := NewModel("  MODEL1  ", "Name", "Details",
+
+	model := NewModel("  MODEL1  ", "Name", "Details",
 		invariants, globalFuncs, nil)
-	suite.Require().NoError(err)
 	suite.Equal(Model{
 		Key:             "model1",
 		Name:            "Name",
@@ -242,17 +242,13 @@ func (suite *ModelSuite) TestNew() {
 	}, model)
 
 	// Test with nil optional fields (Invariants and GlobalFunctions are optional).
-	model, err = NewModel("  MODEL1  ", "Name", "Details", nil, nil, nil)
-	suite.Require().NoError(err)
+
+	model = NewModel("  MODEL1  ", "Name", "Details", nil, nil, nil)
 	suite.Equal(Model{
 		Key:     "model1",
 		Name:    "Name",
 		Details: "Details",
 	}, model)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewModel("model1", "", "Details", nil, nil, nil)
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateTree tests that Validate validates the entire model tree.

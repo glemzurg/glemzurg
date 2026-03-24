@@ -6,12 +6,12 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
@@ -33,8 +33,8 @@ func mustKey(key identity.Key, err error) identity.Key {
 }
 
 // mustSpec creates a TLA+ expression spec for testing.
-func mustSpec(spec string) model_spec.ExpressionSpec {
-	s, err := model_spec.NewExpressionSpec("tla_plus", spec, nil)
+func mustSpec(spec string) logic_spec.ExpressionSpec {
+	s, err := logic_spec.NewExpressionSpec("tla_plus", spec, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -158,7 +158,7 @@ func buildTestModel() *core.Model {
 				Logic:      globalFuncLogic,
 			},
 		},
-		NamedSets: map[identity.Key]model_named_set.NamedSet{
+		NamedSets: map[identity.Key]model_logic.NamedSet{
 			namedSetKey: {
 				Key:  namedSetKey,
 				Name: "valid_statuses",
@@ -232,20 +232,20 @@ func (s *LowerModelTestSuite) TestLowerModelSuccess() {
 
 	// Verify model invariant was lowered.
 	s.NotNil(model.Invariants[0].Spec.Expression)
-	_, isBool := model.Invariants[0].Spec.Expression.(*model_expression.BoolLiteral)
+	_, isBool := model.Invariants[0].Spec.Expression.(*logic_expression.BoolLiteral)
 	s.True(isBool, "model invariant should be BoolLiteral")
 
 	// Verify global function was lowered.
 	for _, gf := range model.GlobalFunctions {
 		s.NotNil(gf.Logic.Spec.Expression, "global function should be lowered")
-		_, isITE := gf.Logic.Spec.Expression.(*model_expression.IfThenElse)
+		_, isITE := gf.Logic.Spec.Expression.(*logic_expression.IfThenElse)
 		s.True(isITE, "global function should be IfThenElse")
 	}
 
 	// Verify named set was lowered.
 	for _, ns := range model.NamedSets {
 		s.NotNil(ns.Spec.Expression, "named set should be lowered")
-		_, isSet := ns.Spec.Expression.(*model_expression.SetLiteral)
+		_, isSet := ns.Spec.Expression.(*logic_expression.SetLiteral)
 		s.True(isSet, "named set should be SetLiteral")
 	}
 
@@ -327,9 +327,9 @@ func (s *LowerModelTestSuite) TestLowerModelActionParameterScope() {
 	// The action require "amount > 0" should resolve 'amount' as a LocalVar.
 	for _, action := range getClassFromModel(model).Actions {
 		require := action.Requires[0].Spec.Expression
-		cmp, ok := require.(*model_expression.Compare)
+		cmp, ok := require.(*logic_expression.Compare)
 		s.True(ok)
-		lv, ok := cmp.Left.(*model_expression.LocalVar)
+		lv, ok := cmp.Left.(*logic_expression.LocalVar)
 		s.True(ok)
 		s.Equal("amount", lv.Name)
 	}
@@ -344,9 +344,9 @@ func (s *LowerModelTestSuite) TestLowerModelAttributeResolves() {
 	// The class invariant "balance ≥ 0" should resolve 'balance' as an AttributeRef.
 	class := getClassFromModel(model)
 	inv := class.Invariants[0].Spec.Expression
-	cmp, ok := inv.(*model_expression.Compare)
+	cmp, ok := inv.(*logic_expression.Compare)
 	s.True(ok)
-	_, isAttr := cmp.Left.(*model_expression.AttributeRef)
+	_, isAttr := cmp.Left.(*logic_expression.AttributeRef)
 	s.True(isAttr, "balance should resolve to AttributeRef")
 }
 
@@ -356,70 +356,72 @@ func (s *LowerModelTestSuite) TestLowerModelAllExpressionsValidate() {
 	err := LowerModel(model)
 	s.Require().NoError(err)
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Validate every lowered expression.
 	for _, inv := range model.Invariants {
 		if inv.Spec.Expression != nil {
-			s.Require().NoError(inv.Spec.Expression.Validate())
+			s.Require().NoError(inv.Spec.Expression.Validate(ctx))
 		}
 	}
 	for _, gf := range model.GlobalFunctions {
 		if gf.Logic.Spec.Expression != nil {
-			s.Require().NoError(gf.Logic.Spec.Expression.Validate())
+			s.Require().NoError(gf.Logic.Spec.Expression.Validate(ctx))
 		}
 	}
 	for _, ns := range model.NamedSets {
 		if ns.Spec.Expression != nil {
-			s.Require().NoError(ns.Spec.Expression.Validate())
+			s.Require().NoError(ns.Spec.Expression.Validate(ctx))
 		}
 	}
 
 	class := getClassFromModel(model)
 	for _, inv := range class.Invariants {
 		if inv.Spec.Expression != nil {
-			s.Require().NoError(inv.Spec.Expression.Validate())
+			s.Require().NoError(inv.Spec.Expression.Validate(ctx))
 		}
 	}
 	for _, attr := range class.Attributes {
 		if attr.DerivationPolicy != nil && attr.DerivationPolicy.Spec.Expression != nil {
-			s.Require().NoError(attr.DerivationPolicy.Spec.Expression.Validate())
+			s.Require().NoError(attr.DerivationPolicy.Spec.Expression.Validate(ctx))
 		}
 		for _, inv := range attr.Invariants {
 			if inv.Spec.Expression != nil {
-				s.Require().NoError(inv.Spec.Expression.Validate())
+				s.Require().NoError(inv.Spec.Expression.Validate(ctx))
 			}
 		}
 	}
 	for _, guard := range class.Guards {
 		if guard.Logic.Spec.Expression != nil {
-			s.Require().NoError(guard.Logic.Spec.Expression.Validate())
+			s.Require().NoError(guard.Logic.Spec.Expression.Validate(ctx))
 		}
 	}
 	for _, action := range class.Actions {
 		for _, r := range action.Requires {
 			if r.Spec.Expression != nil {
-				s.Require().NoError(r.Spec.Expression.Validate())
+				s.Require().NoError(r.Spec.Expression.Validate(ctx))
 			}
 		}
 		for _, g := range action.Guarantees {
 			if g.Spec.Expression != nil {
-				s.Require().NoError(g.Spec.Expression.Validate())
+				s.Require().NoError(g.Spec.Expression.Validate(ctx))
 			}
 		}
 		for _, sr := range action.SafetyRules {
 			if sr.Spec.Expression != nil {
-				s.Require().NoError(sr.Spec.Expression.Validate())
+				s.Require().NoError(sr.Spec.Expression.Validate(ctx))
 			}
 		}
 	}
 	for _, query := range class.Queries {
 		for _, r := range query.Requires {
 			if r.Spec.Expression != nil {
-				s.Require().NoError(r.Spec.Expression.Validate())
+				s.Require().NoError(r.Spec.Expression.Validate(ctx))
 			}
 		}
 		for _, g := range query.Guarantees {
 			if g.Spec.Expression != nil {
-				s.Require().NoError(g.Spec.Expression.Validate())
+				s.Require().NoError(g.Spec.Expression.Validate(ctx))
 			}
 		}
 	}

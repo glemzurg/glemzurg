@@ -3,6 +3,7 @@ package model_use_case
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -40,7 +41,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -61,7 +62,8 @@ func (suite *GeneralizationSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.generalization.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.generalization.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -78,8 +80,8 @@ func (suite *GeneralizationSuite) TestNew() {
 	key := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen1"))
 
 	// Test parameters are mapped correctly.
-	gen, err := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
-	suite.Require().NoError(err)
+
+	gen := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
 	suite.Equal(Generalization{
 		Key:        key,
 		Name:       "Name",
@@ -88,10 +90,6 @@ func (suite *GeneralizationSuite) TestNew() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	}, gen)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewGeneralization(key, "", "Details", true, false, "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -101,12 +99,14 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen1"))
 	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	gen := Generalization{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := gen.ValidateWithParent(&subdomainKey)
+	err := gen.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - generalization key has subdomain1 as parent, but we pass other_subdomain.
@@ -114,10 +114,10 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = gen.ValidateWithParent(&otherSubdomainKey)
+	err = gen.ValidateWithParent(ctx, &otherSubdomainKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = gen.ValidateWithParent(&subdomainKey)
+	err = gen.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err)
 }

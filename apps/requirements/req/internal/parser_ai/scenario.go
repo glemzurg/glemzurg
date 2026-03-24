@@ -68,32 +68,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the scenario schema and returns detailed errors if validation fails.
 func parseScenario(content []byte, filename string) (*inputScenario, error) {
-	var scenario inputScenario
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &scenario); err != nil {
-		return nil, NewParseError(
-			ErrScenarioInvalidJSON,
-			"failed to parse scenario JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrScenarioInvalidJSON,
-			"failed to parse scenario JSON for schema validation: "+err.Error(),
+			"failed to parse scenario JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := scenarioSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrScenarioSchemaViolation,
 			"scenario JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(scenarioSchemaContent)
+		).WithHint("run: req_check --schema scenario")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var scenario inputScenario
+	if err := json.Unmarshal(content, &scenario); err != nil {
+		return nil, NewParseError(
+			ErrScenarioInvalidJSON,
+			"failed to parse scenario JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields
@@ -113,7 +112,7 @@ func validateScenario(scenario *inputScenario, filename string) error {
 			ErrScenarioNameRequired,
 			"scenario name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -122,7 +121,7 @@ func validateScenario(scenario *inputScenario, filename string) error {
 			ErrScenarioNameEmpty,
 			"scenario name cannot be empty or whitespace only, got '"+scenario.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	return nil

@@ -99,6 +99,10 @@ Remove the index entry that references the missing attribute:
 }
 ```
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple class or attribute errors in a single bulk operation. Classes, attributes, and indexes are interconnected — a bulk change will often fix some parts correctly while breaking others, creating more errors to fix later. Address each error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E5008**: Attribute name is empty

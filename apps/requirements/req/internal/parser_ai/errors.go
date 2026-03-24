@@ -36,16 +36,17 @@ const (
 	ErrSubdomainDirInvalid      = 4006
 
 	// Class errors (5xxx).
-	ErrClassNameRequired       = 5001
-	ErrClassNameEmpty          = 5002
-	ErrClassInvalidJSON        = 5003
-	ErrClassSchemaViolation    = 5004
-	ErrClassDuplicateKey       = 5005
-	ErrClassDirInvalid         = 5006
-	ErrClassActorNotFound      = 5007
-	ErrClassAttributeNameEmpty = 5008
-	ErrClassIndexInvalid       = 5009
-	ErrClassIndexAttrNotFound  = 5010
+	ErrClassNameRequired        = 5001
+	ErrClassNameEmpty           = 5002
+	ErrClassInvalidJSON         = 5003
+	ErrClassSchemaViolation     = 5004
+	ErrClassDuplicateKey        = 5005
+	ErrClassDirInvalid          = 5006
+	ErrClassActorNotFound       = 5007
+	ErrClassAttributeNameEmpty  = 5008
+	ErrClassIndexInvalid        = 5009
+	ErrClassIndexAttrNotFound   = 5010
+	ErrClassDataTypeUnparseable = 5011 // Attribute data_type_rules could not be parsed
 
 	// Association errors (6xxx).
 	ErrAssocNameRequired        = 6001
@@ -64,31 +65,32 @@ const (
 	ErrAssocDuplicateKey        = 6014
 
 	// State machine errors (7xxx).
-	ErrStateMachineInvalidJSON     = 7001
-	ErrStateMachineSchemaViolation = 7002
-	ErrStateNameRequired           = 7003
-	ErrStateNameEmpty              = 7004
-	ErrStateDuplicateKey           = 7005
-	ErrStateActionKeyRequired      = 7006
-	ErrStateActionWhenRequired     = 7007
-	ErrStateActionWhenInvalid      = 7008
-	ErrEventNameRequired           = 7009
-	ErrEventNameEmpty              = 7010
-	ErrEventDuplicateKey           = 7011
-	ErrEventParamNameRequired      = 7012
-	ErrEventParamSourceRequired    = 7013
-	ErrGuardNameRequired           = 7014
-	ErrGuardNameEmpty              = 7015
-	ErrGuardDetailsRequired        = 7016
-	ErrGuardDuplicateKey           = 7017
-	ErrTransitionEventRequired     = 7018
-	ErrTransitionNoStates          = 7019
-	ErrTransitionFromStateNotFound = 7020
-	ErrTransitionToStateNotFound   = 7021
-	ErrTransitionEventNotFound     = 7022
-	ErrTransitionGuardNotFound     = 7023
-	ErrTransitionActionNotFound    = 7024
-	ErrTransitionInitialToFinal    = 7025
+	ErrStateMachineInvalidJSON       = 7001
+	ErrStateMachineSchemaViolation   = 7002
+	ErrStateNameRequired             = 7003
+	ErrStateNameEmpty                = 7004
+	ErrStateDuplicateKey             = 7005
+	ErrStateActionKeyRequired        = 7006
+	ErrStateActionWhenRequired       = 7007
+	ErrStateActionWhenInvalid        = 7008
+	ErrEventNameRequired             = 7009
+	ErrEventNameEmpty                = 7010
+	ErrEventDuplicateKey             = 7011
+	ErrEventParamNameRequired        = 7012
+	ErrEventParamSourceRequired      = 7013
+	ErrGuardNameRequired             = 7014
+	ErrGuardNameEmpty                = 7015
+	ErrGuardDetailsRequired          = 7016
+	ErrGuardDuplicateKey             = 7017
+	ErrTransitionEventRequired       = 7018
+	ErrTransitionNoStates            = 7019
+	ErrTransitionFromStateNotFound   = 7020
+	ErrTransitionToStateNotFound     = 7021
+	ErrTransitionEventNotFound       = 7022
+	ErrTransitionGuardNotFound       = 7023
+	ErrTransitionActionNotFound      = 7024
+	ErrTransitionInitialToFinal      = 7025
+	ErrEventParamDataTypeUnparseable = 7026 // Event parameter data_type_rules could not be parsed
 
 	// Action errors (8xxx).
 	ErrActionNameRequired    = 8001
@@ -149,10 +151,11 @@ const (
 	ErrLogicTargetNoLeadUnderscore = 14007
 
 	// Parameter errors (15xxx).
-	ErrParamNameRequired    = 15001
-	ErrParamNameEmpty       = 15002
-	ErrParamInvalidJSON     = 15003
-	ErrParamSchemaViolation = 15004
+	ErrParamNameRequired        = 15001
+	ErrParamNameEmpty           = 15002
+	ErrParamInvalidJSON         = 15003
+	ErrParamSchemaViolation     = 15004
+	ErrParamDataTypeUnparseable = 15005 // Parameter data_type_rules could not be parsed
 
 	// Global function errors (16xxx).
 	ErrGlobalFuncNameRequired     = 16001
@@ -253,11 +256,31 @@ const (
 
 	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion.
 	ErrConvKeyConstruction       = 21001 // Identity key construction failed during conversion
-	ErrConvModelValidation       = 21002 // Model validation failed after conversion
+	ErrConvModelValidation       = 21002 // Model validation failed after conversion (catch-all for unmapped core errors)
 	ErrConvMultiplicityInvalid   = 21003 // Multiplicity parsing failed during conversion
 	ErrConvClassNotFound         = 21004 // Class key not found during association conversion
 	ErrConvAssocKeyConstruction  = 21005 // Class association key construction failed during conversion
 	ErrConvScopedKeyInvalid      = 21006 // Scoped key format invalid during conversion (domain/subdomain/class)
 	ErrConvObjectResolveFailed   = 21007 // Failed to resolve object reference during scenario conversion
 	ErrConvSourceModelValidation = 21008 // Source model validation failed before ConvertFromModel
+
+	// Mapped core validation errors (21100-21199) - specific core errors mapped to parser_ai errors.
+	ErrConvParamDatatypeRequired     = 21100 // Parameter data_type_rules is empty
+	ErrConvParamNameRequired         = 21101 // Parameter name is empty
+	ErrConvLogicTypeInvalid          = 21102 // Logic has wrong type for its context (e.g., invariant must be assessment/let)
+	ErrConvLogicDuplicateLet         = 21103 // Duplicate let target in logic list
+	ErrConvLogicDuplicateTarget      = 21104 // Duplicate guarantee target in action/query
+	ErrConvLogicTargetRequired       = 21105 // Logic target (attribute) is required but empty
+	ErrConvLogicTargetNotAllowed     = 21106 // Logic target must be empty for this logic type
+	ErrConvLogicTargetNoUnderscore   = 21107 // Logic target must not start with underscore
+	ErrConvReferenceNotFound         = 21108 // Cross-reference to another entity not found
+	ErrConvGenCardinalityInvalid     = 21109 // Generalization has wrong number of super/subclasses
+	ErrConvDomainStructureInvalid    = 21110 // Domain structural rule violated (subdomain naming, orphan associations)
+	ErrConvScenarioStepInvalid       = 21111 // Scenario step structural rule violated
+	ErrConvGuaranteeInvalidTarget    = 21112 // Guarantee targets an attribute that doesn't exist
+	ErrConvAssocClassSameAsEndpoint  = 21113 // Association class cannot be same as from or to class
+	ErrConvInternalKeyError          = 21114 // Internal key validation error (should not normally occur)
+	ErrConvUseCaseActorNotActorClass = 21115 // Use case references class that is not an actor class
+	ErrConvLogicSpecInvalid          = 21116 // Logic specification (TLA+ expression) failed validation
+	ErrConvDomainAssocSameDomains    = 21117 // Domain association references same domain for problem and solution
 )

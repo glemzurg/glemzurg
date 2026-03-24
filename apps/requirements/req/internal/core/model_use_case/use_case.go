@@ -1,9 +1,11 @@
 package model_use_case
 
 import (
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -15,9 +17,9 @@ const (
 // UseCase is a user story for the system.
 type UseCase struct {
 	Key             identity.Key
-	Name            string        `validate:"required"`
+	Name            string
 	Details         string        // Markdown.
-	Level           string        `validate:"required,oneof=sky sea mud"` // How high cocept or tightly focused the user case is.
+	Level           string        // How high cocept or tightly focused the user case is.
 	ReadOnly        bool          // This is a user story that does not change the state of the system.
 	SuperclassOfKey *identity.Key // If this use case is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this use case is part of a generalization as a subclass.
@@ -33,8 +35,8 @@ type GeneralizationRefs struct {
 	SubclassOfKey   *identity.Key
 }
 
-func NewUseCase(key identity.Key, name, details, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) (useCase UseCase, err error) {
-	useCase = UseCase{
+func NewUseCase(key identity.Key, name, details, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) UseCase {
+	return UseCase{
 		Key:             key,
 		Name:            name,
 		Details:         details,
@@ -44,48 +46,50 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, ge
 		SubclassOfKey:   genRefs.SubclassOfKey,
 		UmlComment:      umlComment,
 	}
-
-	if err = useCase.Validate(); err != nil {
-		return UseCase{}, err
-	}
-
-	return useCase, nil
 }
 
 // Validate validates the UseCase struct.
-func (uc *UseCase) Validate() error {
+func (uc *UseCase) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := uc.Key.Validate(); err != nil {
-		return err
+	if err := uc.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.UcKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if uc.Key.KeyType != identity.KEY_TYPE_USE_CASE {
-		return errors.New("invalid key type for use_case")
+		return coreerr.NewWithValues(ctx, coreerr.UcKeyTypeInvalid, "invalid key type for use_case", "Key", uc.Key.KeyType, identity.KEY_TYPE_USE_CASE)
 	}
-	// Validate struct tags (Name required, Level required+oneof).
-	if err := _validate.Struct(uc); err != nil {
-		return err
+	// Validate Name required.
+	if uc.Name == "" {
+		return coreerr.New(ctx, coreerr.UcNameRequired, "Name is required", "Name")
+	}
+	// Validate Level required.
+	if uc.Level == "" {
+		return coreerr.New(ctx, coreerr.UcLevelRequired, "Level is required", "Level")
+	}
+	// Validate Level is one of valid values.
+	if uc.Level != _USE_CASE_LEVEL_SKY && uc.Level != _USE_CASE_LEVEL_SEA && uc.Level != _USE_CASE_LEVEL_MUD {
+		return coreerr.NewWithValues(ctx, coreerr.UcLevelInvalid, "Level must be one of: sky, sea, mud", "Level", uc.Level, "one of: sky, sea, mud")
 	}
 	// Validate FK key types.
 	if uc.SuperclassOfKey != nil {
-		if err := uc.SuperclassOfKey.Validate(); err != nil {
-			return errors.Wrap(err, "SuperclassOfKey")
+		if err := uc.SuperclassOfKey.ValidateWithContext(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.UcSuperkeyInvalid, fmt.Sprintf("SuperclassOfKey: %s", err.Error()), "SuperclassOfKey")
 		}
 		if uc.SuperclassOfKey.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
-			return errors.Errorf("SuperclassOfKey: invalid key type '%s' for use case generalization", uc.SuperclassOfKey.KeyType)
+			return coreerr.NewWithValues(ctx, coreerr.UcSuperkeyTypeInvalid, fmt.Sprintf("SuperclassOfKey: invalid key type '%s' for use case generalization", uc.SuperclassOfKey.KeyType), "SuperclassOfKey", uc.SuperclassOfKey.KeyType, identity.KEY_TYPE_USE_CASE_GENERALIZATION)
 		}
 	}
 	if uc.SubclassOfKey != nil {
-		if err := uc.SubclassOfKey.Validate(); err != nil {
-			return errors.Wrap(err, "SubclassOfKey")
+		if err := uc.SubclassOfKey.ValidateWithContext(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.UcSubkeyInvalid, fmt.Sprintf("SubclassOfKey: %s", err.Error()), "SubclassOfKey")
 		}
 		if uc.SubclassOfKey.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
-			return errors.Errorf("SubclassOfKey: invalid key type '%s' for use case generalization", uc.SubclassOfKey.KeyType)
+			return coreerr.NewWithValues(ctx, coreerr.UcSubkeyTypeInvalid, fmt.Sprintf("SubclassOfKey: invalid key type '%s' for use case generalization", uc.SubclassOfKey.KeyType), "SubclassOfKey", uc.SubclassOfKey.KeyType, identity.KEY_TYPE_USE_CASE_GENERALIZATION)
 		}
 	}
 
 	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
 	if uc.SuperclassOfKey != nil && uc.SubclassOfKey != nil && *uc.SuperclassOfKey == *uc.SubclassOfKey {
-		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
+		return coreerr.New(ctx, coreerr.UcSuperSubSame, "SuperclassOfKey and SubclassOfKey cannot be the same", "SuperclassOfKey")
 	}
 	return nil
 }
@@ -100,35 +104,37 @@ func (uc *UseCase) SetScenarios(scenarios map[identity.Key]model_scenario.Scenar
 
 // ValidateWithParent validates the UseCase, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
-func (uc *UseCase) ValidateWithParent(parent *identity.Key) error {
-	return uc.ValidateWithParentAndClasses(parent, nil, nil)
+func (uc *UseCase) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
+	return uc.ValidateWithParentAndClasses(ctx, parent, nil, nil)
 }
 
 // ValidateWithParentAndClasses validates the UseCase with access to classes for cross-reference validation.
 // The parent must be a Subdomain.
 // The classes map is used to validate that scenario object ClassKey references exist.
 // The actorClasses map contains class keys that have an ActorKey defined (i.e., classes that represent actors).
-func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes map[identity.Key]bool, actorClasses map[identity.Key]bool) error {
+func (uc *UseCase) ValidateWithParentAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, classes map[identity.Key]bool, actorClasses map[identity.Key]bool) error {
 	// Validate the object itself.
-	if err := uc.Validate(); err != nil {
+	if err := uc.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := uc.Key.ValidateParent(parent); err != nil {
+	if err := uc.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// Validate all children.
 	// Validate that each actor key references a class that has an ActorKey defined.
 	for actorClassKey, actor := range uc.Actors {
-		if err := actor.ValidateWithParent(); err != nil {
+		childCtx := ctx.Child("actor", actorClassKey.String())
+		if err := actor.ValidateWithParent(childCtx); err != nil {
 			return err
 		}
 		if !actorClasses[actorClassKey] {
-			return errors.Errorf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String())
+			return coreerr.NewWithValues(ctx, coreerr.UcActorNotActorClass, fmt.Sprintf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String()), "Actors", actorClassKey.String(), "")
 		}
 	}
 	for _, scenario := range uc.Scenarios {
-		if err := scenario.ValidateWithParentAndClasses(&uc.Key, classes); err != nil {
+		childCtx := ctx.Child("scenario", scenario.Key.String())
+		if err := scenario.ValidateWithParentAndClasses(childCtx, &uc.Key, classes); err != nil {
 			return err
 		}
 	}
@@ -138,15 +144,15 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 // ValidateReferences validates that the use case's reference keys point to valid entities.
 // - SuperclassOfKey must exist in the generalizations map
 // - SubclassOfKey must exist in the generalizations map.
-func (uc *UseCase) ValidateReferences(generalizations map[identity.Key]bool) error {
+func (uc *UseCase) ValidateReferences(ctx *coreerr.ValidationContext, generalizations map[identity.Key]bool) error {
 	if uc.SuperclassOfKey != nil {
 		if !generalizations[*uc.SuperclassOfKey] {
-			return errors.Errorf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SuperclassOfKey.String())
+			return coreerr.NewWithValues(ctx, coreerr.UcSupergenNotfound, fmt.Sprintf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SuperclassOfKey.String()), "SuperclassOfKey", uc.SuperclassOfKey.String(), "")
 		}
 	}
 	if uc.SubclassOfKey != nil {
 		if !generalizations[*uc.SubclassOfKey] {
-			return errors.Errorf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SubclassOfKey.String())
+			return coreerr.NewWithValues(ctx, coreerr.UcSubgenNotfound, fmt.Sprintf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SubclassOfKey.String()), "SubclassOfKey", uc.SubclassOfKey.String(), "")
 		}
 	}
 	return nil

@@ -43,32 +43,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the domain association schema and returns detailed errors if validation fails.
 func parseDomainAssociation(content []byte, filename string) (*inputDomainAssociation, error) {
-	var assoc inputDomainAssociation
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &assoc); err != nil {
-		return nil, NewParseError(
-			ErrDomainAssocInvalidJSON,
-			"failed to parse domain association JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrDomainAssocInvalidJSON,
-			"failed to parse domain association JSON for schema validation: "+err.Error(),
+			"failed to parse domain association JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := domainAssociationSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrDomainAssocSchemaViolation,
 			"domain association JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(domainAssociationSchemaContent)
+		).WithHint("run: req_check --schema domain_association")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var assoc inputDomainAssociation
+	if err := json.Unmarshal(content, &assoc); err != nil {
+		return nil, NewParseError(
+			ErrDomainAssocInvalidJSON,
+			"failed to parse domain association JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules
@@ -88,7 +87,7 @@ func validateDomainAssoc(assoc *inputDomainAssociation, filename string) error {
 			ErrDomainAssocProblemKeyRequired,
 			"domain association problem_domain_key is required, got ''",
 			filename,
-		).WithField("problem_domain_key")
+		).WithField("problem_domain_key").WithHint("add a non-empty \"problem_domain_key\" referencing a defined domain")
 	}
 
 	// Problem domain key cannot be only whitespace
@@ -97,7 +96,7 @@ func validateDomainAssoc(assoc *inputDomainAssociation, filename string) error {
 			ErrDomainAssocProblemKeyEmpty,
 			"domain association problem_domain_key cannot be empty or whitespace only, got '"+assoc.ProblemDomainKey+"'",
 			filename,
-		).WithField("problem_domain_key")
+		).WithField("problem_domain_key").WithHint("add a non-empty \"problem_domain_key\" referencing a defined domain")
 	}
 
 	// Solution domain key is required
@@ -106,7 +105,7 @@ func validateDomainAssoc(assoc *inputDomainAssociation, filename string) error {
 			ErrDomainAssocSolutionKeyRequired,
 			"domain association solution_domain_key is required, got ''",
 			filename,
-		).WithField("solution_domain_key")
+		).WithField("solution_domain_key").WithHint("add a non-empty \"solution_domain_key\" referencing a defined domain")
 	}
 
 	// Solution domain key cannot be only whitespace
@@ -115,7 +114,7 @@ func validateDomainAssoc(assoc *inputDomainAssociation, filename string) error {
 			ErrDomainAssocSolutionKeyEmpty,
 			"domain association solution_domain_key cannot be empty or whitespace only, got '"+assoc.SolutionDomainKey+"'",
 			filename,
-		).WithField("solution_domain_key")
+		).WithField("solution_domain_key").WithHint("add a non-empty \"solution_domain_key\" referencing a defined domain")
 	}
 
 	return nil

@@ -47,10 +47,7 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
-	useCase, err = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), level, readOnly, model_use_case.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, parsedFile.UmlComment)
-	if err != nil {
-		return model_use_case.UseCase{}, err
-	}
+	useCase = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), level, readOnly, model_use_case.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, parsedFile.UmlComment)
 
 	// Parse actors.
 	if err := parseUseCaseActors(&useCase, subdomainKey, yamlData); err != nil {
@@ -91,10 +88,7 @@ func parseUseCaseActors(useCase *model_use_case.UseCase, subdomainKey identity.K
 		if commentStr, ok := commentAny.(string); ok {
 			comment = commentStr
 		}
-		actor, err := model_use_case.NewActor(comment)
-		if err != nil {
-			return err
-		}
+		actor := model_use_case.NewActor(comment)
 		actorKey, err := identity.NewClassKey(subdomainKey, actorKeyStr)
 		if err != nil {
 			return errors.WithStack(err)
@@ -139,10 +133,7 @@ func parseOneScenario(scenarioKey, subdomainKey identity.Key, scenarioDataAny an
 		details = detailsAny.(string)
 	}
 
-	scenario, err := model_scenario.NewScenario(scenarioKey, name, details)
-	if err != nil {
-		return model_scenario.Scenario{}, err
-	}
+	scenario := model_scenario.NewScenario(scenarioKey, name, details)
 
 	// Parse objects.
 	if objectsAny, found := scenarioData["objects"]; found {
@@ -283,7 +274,7 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 		}
 	}
 
-	object, err = model_scenario.NewObject(
+	object = model_scenario.NewObject(
 		objectKey,
 		objectNum,
 		name,
@@ -291,9 +282,6 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 		classKey,
 		multi,
 		umlComment)
-	if err != nil {
-		return model_scenario.Object{}, err
-	}
 
 	return object, nil
 }

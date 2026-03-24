@@ -44,32 +44,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the action schema and returns detailed errors if validation fails.
 func parseAction(content []byte, filename string) (*inputAction, error) {
-	var action inputAction
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &action); err != nil {
-		return nil, NewParseError(
-			ErrActionInvalidJSON,
-			"failed to parse action JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrActionInvalidJSON,
-			"failed to parse action JSON for schema validation: "+err.Error(),
+			"failed to parse action JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := actionSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrActionSchemaViolation,
 			"action JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(actionSchemaContent)
+		).WithHint("run: req_check --schema action")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var action inputAction
+	if err := json.Unmarshal(content, &action); err != nil {
+		return nil, NewParseError(
+			ErrActionInvalidJSON,
+			"failed to parse action JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules
@@ -89,7 +88,7 @@ func validateAction(action *inputAction, filename string) error {
 			ErrActionNameRequired,
 			"action name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -98,7 +97,7 @@ func validateAction(action *inputAction, filename string) error {
 			ErrActionNameEmpty,
 			"action name cannot be empty or whitespace only, got '"+action.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	return nil

@@ -1,29 +1,30 @@
 package core
 
 import (
+	"fmt"
 	"maps"
 	"strings"
 
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Model is the documentation summary of a set of requirements.
 type Model struct {
-	Key        string              `validate:"required"` // Models do not have keys like other entitites. They just need to be unique to other models in the system.
-	Name       string              `validate:"required"`
+	Key        string // Models do not have keys like other entitites. They just need to be unique to other models in the system.
+	Name       string
 	Details    string              // Markdown.
 	Invariants []model_logic.Logic // Invariants that must be true for this model.
 	// Global functions that can be referenced from other expressions.
 	GlobalFunctions map[identity.Key]model_logic.GlobalFunction
 	// Named sets that can be referenced from behavioral logic.
-	NamedSets map[identity.Key]model_named_set.NamedSet
+	NamedSets map[identity.Key]model_logic.NamedSet
 	// Children
 	Actors               map[identity.Key]model_actor.Actor
 	ActorGeneralizations map[identity.Key]model_actor.Generalization
@@ -32,8 +33,8 @@ type Model struct {
 	ClassAssociations    map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_named_set.NamedSet) (model Model, err error) {
-	model = Model{
+func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_logic.NamedSet) Model {
+	return Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
 		Name:            name,
 		Details:         details,
@@ -41,56 +42,59 @@ func NewModel(key, name, details string, invariants []model_logic.Logic, globalF
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
 	}
-
-	if err = model.Validate(); err != nil {
-		return Model{}, err
-	}
-
-	return model, nil
 }
 
 // Validate validates the Model struct and all its children.
 // This is the entry point for validating the entire model tree.
 func (m *Model) Validate() error {
-	if err := _validate.Struct(m); err != nil {
+	ctx := coreerr.NewContext("model", m.Key)
+	if m.Key == "" {
+		return coreerr.NewWithValues(ctx, coreerr.ModelKeyRequired, "Key is required", "Key", "", "non-empty string")
+	}
+	if m.Name == "" {
+		return coreerr.NewWithValues(ctx, coreerr.ModelNameRequired, "Name is required", "Name", "", "non-empty string")
+	}
+	if err := m.validateInvariants(ctx); err != nil {
 		return err
 	}
-	if err := m.validateInvariants(); err != nil {
+	if err := m.validateGlobalFunctions(ctx); err != nil {
 		return err
 	}
-	if err := m.validateGlobalFunctions(); err != nil {
+	if err := m.validateNamedSets(ctx); err != nil {
 		return err
 	}
-	if err := m.validateNamedSets(); err != nil {
+	if err := m.validateActors(ctx); err != nil {
 		return err
 	}
-	if err := m.validateActors(); err != nil {
+	if err := m.validateDomains(ctx); err != nil {
 		return err
 	}
-	if err := m.validateDomains(); err != nil {
+	if err := m.validateDomainAssociations(ctx); err != nil {
 		return err
 	}
-	if err := m.validateDomainAssociations(); err != nil {
-		return err
-	}
-	if err := m.validateClassAssociations(); err != nil {
+	if err := m.validateClassAssociations(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *Model) validateInvariants() error {
+func (m *Model) validateInvariants(ctx *coreerr.ValidationContext) error {
 	letTargets := make(map[string]bool)
 	for i, inv := range m.Invariants {
-		if err := inv.ValidateWithParent(nil); err != nil {
-			return errors.Wrapf(err, "invariant %d", i)
+		childCtx := ctx.Child("invariant", fmt.Sprintf("%d", i))
+		if err := inv.ValidateWithParent(childCtx, nil); err != nil {
+			return err
 		}
 		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
-			return errors.Errorf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
+			return coreerr.NewWithValues(childCtx, coreerr.ModelInvariantTypeInvalid,
+				fmt.Sprintf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type),
+				"Invariants", inv.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
 		}
 		if inv.Type == model_logic.LogicTypeLet {
 			if letTargets[inv.Target] {
-				return errors.Errorf("invariant %d: duplicate let target %q", i, inv.Target)
+				return coreerr.NewWithValues(childCtx, coreerr.ModelInvariantDuplicateLet,
+					fmt.Sprintf("invariant %d: duplicate let target %q", i, inv.Target),
+					"Invariants", inv.Target, "")
 			}
 			letTargets[inv.Target] = true
 		}
@@ -98,57 +102,66 @@ func (m *Model) validateInvariants() error {
 	return nil
 }
 
-func (m *Model) validateGlobalFunctions() error {
+func (m *Model) validateGlobalFunctions(ctx *coreerr.ValidationContext) error {
 	for gfKey, gf := range m.GlobalFunctions {
-		if err := gf.ValidateWithParent(); err != nil {
-			return errors.Wrapf(err, "global function '%s'", gfKey.String())
+		childCtx := ctx.Child("globalFunction", gfKey.String())
+		if err := gf.ValidateWithParent(childCtx); err != nil {
+			return err
 		}
 		if gfKey != gf.Key {
-			return errors.Errorf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String())
+			return coreerr.NewWithValues(childCtx, coreerr.ModelGfuncKeyMismatch,
+				fmt.Sprintf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String()),
+				"GlobalFunctions", gfKey.String(), gf.Key.String())
 		}
 	}
 	return nil
 }
 
-func (m *Model) validateNamedSets() error {
+func (m *Model) validateNamedSets(ctx *coreerr.ValidationContext) error {
 	for nsKey, ns := range m.NamedSets {
-		if err := ns.ValidateWithParent(); err != nil {
-			return errors.Wrapf(err, "named set '%s'", nsKey.String())
+		childCtx := ctx.Child("namedSet", nsKey.String())
+		if err := ns.ValidateWithParent(childCtx); err != nil {
+			return err
 		}
 		if nsKey != ns.Key {
-			return errors.Errorf("named set map key '%s' does not match named set key '%s'", nsKey.String(), ns.Key.String())
+			return coreerr.NewWithValues(childCtx, coreerr.ModelNsetKeyMismatch,
+				fmt.Sprintf("named set map key '%s' does not match named set key '%s'", nsKey.String(), ns.Key.String()),
+				"NamedSets", nsKey.String(), ns.Key.String())
 		}
 	}
 	return nil
 }
 
-func (m *Model) validateActors() error {
+func (m *Model) validateActors(ctx *coreerr.ValidationContext) error {
 	actorGeneralizationKeys := make(map[identity.Key]bool)
 	for agKey := range m.ActorGeneralizations {
 		actorGeneralizationKeys[agKey] = true
 	}
 	for _, ag := range m.ActorGeneralizations {
-		if err := ag.ValidateWithParent(nil); err != nil {
+		childCtx := ctx.Child("actorGeneralization", ag.Key.String())
+		if err := ag.ValidateWithParent(childCtx, nil); err != nil {
 			return err
 		}
 	}
 	for _, actor := range m.Actors {
-		if err := actor.ValidateWithParent(nil); err != nil {
+		childCtx := ctx.Child("actor", actor.Key.String())
+		if err := actor.ValidateWithParent(childCtx, nil); err != nil {
 			return err
 		}
-		if err := actor.ValidateReferences(actorGeneralizationKeys); err != nil {
+		if err := actor.ValidateReferences(childCtx, actorGeneralizationKeys); err != nil {
 			return err
 		}
 	}
 	for _, ag := range m.ActorGeneralizations {
-		if err := m.validateGeneralizationUsage(ag); err != nil {
+		if err := m.validateGeneralizationUsage(ctx, ag); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m *Model) validateGeneralizationUsage(ag model_actor.Generalization) error {
+func (m *Model) validateGeneralizationUsage(ctx *coreerr.ValidationContext, ag model_actor.Generalization) error {
+	childCtx := ctx.Child("actorGeneralization", ag.Key.String())
 	superCount := 0
 	subCount := 0
 	for _, actor := range m.Actors {
@@ -160,22 +173,27 @@ func (m *Model) validateGeneralizationUsage(ag model_actor.Generalization) error
 		}
 	}
 	if superCount != 1 {
-		return errors.Errorf("actor generalization '%s' must have exactly one superclass, found %d", ag.Key.String(), superCount)
+		return coreerr.NewWithValues(childCtx, coreerr.ModelAgenSuperclassCount,
+			fmt.Sprintf("actor generalization '%s' must have exactly one superclass, found %d", ag.Key.String(), superCount),
+			"ActorGeneralizations", fmt.Sprintf("%d", superCount), "1")
 	}
 	if subCount < 1 {
-		return errors.Errorf("actor generalization '%s' must have at least one subclass, found %d", ag.Key.String(), subCount)
+		return coreerr.NewWithValues(childCtx, coreerr.ModelAgenSubclassCount,
+			fmt.Sprintf("actor generalization '%s' must have at least one subclass, found %d", ag.Key.String(), subCount),
+			"ActorGeneralizations", fmt.Sprintf("%d", subCount), "at least 1")
 	}
 	return nil
 }
 
-func (m *Model) validateDomains() error {
+func (m *Model) validateDomains(ctx *coreerr.ValidationContext) error {
 	actorKeys := make(map[identity.Key]bool)
 	for actorKey := range m.Actors {
 		actorKeys[actorKey] = true
 	}
 	classKeys := m.buildClassKeys()
 	for _, domain := range m.Domains {
-		if err := domain.ValidateWithParentAndActorsAndClasses(nil, actorKeys, classKeys); err != nil {
+		childCtx := ctx.Child("domain", domain.Key.String())
+		if err := domain.ValidateWithParentAndActorsAndClasses(childCtx, nil, actorKeys, classKeys); err != nil {
 			return err
 		}
 	}
@@ -194,29 +212,31 @@ func (m *Model) buildClassKeys() map[identity.Key]bool {
 	return classKeys
 }
 
-func (m *Model) validateDomainAssociations() error {
+func (m *Model) validateDomainAssociations(ctx *coreerr.ValidationContext) error {
 	domainKeys := make(map[identity.Key]bool)
 	for domainKey := range m.Domains {
 		domainKeys[domainKey] = true
 	}
 	for _, domainAssoc := range m.DomainAssociations {
-		if err := domainAssoc.ValidateWithParent(nil); err != nil {
+		childCtx := ctx.Child("domainAssociation", domainAssoc.Key.String())
+		if err := domainAssoc.ValidateWithParent(childCtx, nil); err != nil {
 			return err
 		}
-		if err := domainAssoc.ValidateReferences(domainKeys); err != nil {
+		if err := domainAssoc.ValidateReferences(childCtx, domainKeys); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m *Model) validateClassAssociations() error {
+func (m *Model) validateClassAssociations(ctx *coreerr.ValidationContext) error {
 	classKeys := m.buildClassKeys()
 	for _, classAssoc := range m.ClassAssociations {
-		if err := classAssoc.ValidateWithParent(nil); err != nil {
+		childCtx := ctx.Child("classAssociation", classAssoc.Key.String())
+		if err := classAssoc.ValidateWithParent(childCtx, nil); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(classKeys); err != nil {
+		if err := classAssoc.ValidateReferences(childCtx, classKeys); err != nil {
 			return err
 		}
 	}

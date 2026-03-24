@@ -91,6 +91,24 @@ Domains can be marked as `realized` (true/false):
 }
 ```
 
+## Deriving Domains from an Existing System
+
+When modeling an existing system, derive domains from:
+
+| Existing System Element | Model Element |
+|------------------------|---------------|
+| Database tables / Caches / Message types | Classes (within domains) |
+| Table columns / Fields | Attributes |
+| Status/state column values | States |
+| Read-only API endpoints | Queries |
+| State-changing API endpoints | Events + Transitions + Actions |
+
+Group related tables and APIs into domains by business area. Each domain should contain classes that change together and share a cohesive purpose.
+
+## About This Model
+
+This model captures **requirements** — the behavior of a system as understood by humans. It describes *what* the system does, not *how* it is implemented. The model is independent of deployment architecture (client/server, monolith/microservices). An "Order" object has attributes regardless of where data physically resides. Actions describe business effects without specifying servers or protocols.
+
 ## Related Errors
 
 - **E3001**: Domain name is required

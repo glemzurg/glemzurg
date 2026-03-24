@@ -3,6 +3,7 @@ package model_data_type
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -60,7 +61,7 @@ func (suite *DataTypeSuite) TestValidate() {
 			key:            "Key",
 			collectionType: "atomic",
 			atomic:         nil,
-			errstr:         `atomic: cannot be blank`,
+			errstr:         `atomic is required for atomic collection type`,
 		},
 		{
 			key:            "Key",
@@ -70,13 +71,14 @@ func (suite *DataTypeSuite) TestValidate() {
 		},
 	}
 
+	ctx := coreerr.NewContext("test", "")
 	for _, tt := range tests {
 		dataType := &DataType{
 			Key:            tt.key,
 			CollectionType: tt.collectionType,
 			Atomic:         tt.atomic,
 		}
-		err := dataType.Validate()
+		err := dataType.Validate(ctx)
 		if tt.errstr == "" {
 			suite.Require().NoError(err, "expected no error for %+v", dataType)
 		} else {
@@ -144,7 +146,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionType: "stack",
 				Atomic:         atomic,
 			},
-			errstr: "collectionUnique: cannot be blank",
+			errstr: "collection unique is required for collection types",
 		},
 		{
 			name: "collection CollectionMin less than 1",
@@ -155,7 +157,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMin:    intPtr(0),
 				Atomic:           atomic,
 			},
-			errstr: "collectionMin: must be no less than 1",
+			errstr: "collection min must be at least 1",
 		},
 		{
 			name: "collection CollectionMax less than 1",
@@ -166,7 +168,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMax:    intPtr(0),
 				Atomic:           atomic,
 			},
-			errstr: "collectionMax: must be no less than 1",
+			errstr: "collection max must be at least 1",
 		},
 		{
 			name: "collection max less than min",
@@ -178,7 +180,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMax:    intPtr(2),
 				Atomic:           atomic,
 			},
-			errstr: "collectionMax: must be no less than collectionMin",
+			errstr: "collection max must be at least collection min",
 		},
 
 		// Non-collections must not have collection fields.
@@ -190,7 +192,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionUnique: &falseValue,
 				Atomic:           atomic,
 			},
-			errstr: "collectionUnique: must be blank",
+			errstr: "collection unique must be nil for non-collection types",
 		},
 		{
 			name: "atomic with CollectionMin",
@@ -200,7 +202,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMin:  intPtr(1),
 				Atomic:         atomic,
 			},
-			errstr: "collectionMin: must be blank",
+			errstr: "collection min must be nil for non-collection types",
 		},
 		{
 			name: "record with CollectionMax",
@@ -212,12 +214,12 @@ func (suite *DataTypeSuite) TestValidate() {
 					{Name: "f", FieldDataType: &DataType{Key: "f", CollectionType: "atomic", Atomic: atomic}},
 				},
 			},
-			errstr: "collectionMax: must be blank",
+			errstr: "collection max must be nil for non-collection types",
 		},
 	}
 
 	for _, tt := range collectionTests {
-		err := tt.dt.Validate()
+		err := tt.dt.Validate(ctx)
 		if tt.errstr == "" {
 			suite.Require().NoError(err, "expected no error for %s", tt.name)
 		} else {

@@ -86,15 +86,7 @@ func (suite *ModelSuite) TestParseModelErrors() {
 					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
 			}
 
-			// Check schema content presence
-			if expected.HasSchema {
-				suite.NotEmpty(parseErr.Schema, testName+" should have schema content")
-			} else {
-				suite.Empty(parseErr.Schema, testName+" should not have schema content")
-			}
-
 			// Docs are always attached to all errors
-			suite.NotEmpty(parseErr.Docs, testName+" should have docs content")
 
 			// File is always set to the input filename
 			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")

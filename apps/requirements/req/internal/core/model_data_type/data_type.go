@@ -9,7 +9,8 @@ import (
 
 	pkgerrors "github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 )
 
 const (
@@ -21,20 +22,29 @@ const (
 	COLLECTION_TYPE_UNORDERED = "unordered" // An unordered collection.
 )
 
+var _validCollectionTypes = map[string]bool{
+	COLLECTION_TYPE_ATOMIC:    true,
+	COLLECTION_TYPE_ORDERED:   true,
+	COLLECTION_TYPE_QUEUE:     true,
+	COLLECTION_TYPE_RECORD:    true,
+	COLLECTION_TYPE_STACK:     true,
+	COLLECTION_TYPE_UNORDERED: true,
+}
+
 // DataType represents the main data type structure.
 type DataType struct {
-	Key              string `validate:"required"`
-	CollectionType   string `validate:"required,oneof=atomic ordered queue record stack unordered"`
+	Key              string
+	CollectionType   string
 	CollectionUnique *bool
 	CollectionMin    *int
 	CollectionMax    *int
 	Atomic           *Atomic
 	RecordFields     []Field
-	TypeSpec         *model_spec.TypeSpec // Optional precise type specification.
+	TypeSpec         *logic_spec.TypeSpec // Optional precise type specification.
 }
 
 // New creates a new DataType by parsing the input text.
-func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, err error) {
+func New(key, text string, typeSpec *logic_spec.TypeSpec) (dataType *DataType, err error) {
 	// If this is blank then it is an unconstrained data type.
 	if strings.TrimSpace(text) == "" {
 		dataType = &DataType{
@@ -77,7 +87,8 @@ func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, e
 	dataType.TypeSpec = typeSpec
 
 	// Validate the data type.
-	if err = dataType.Validate(); err != nil {
+	ctx := coreerr.NewContext("datatype", key)
+	if err = dataType.Validate(ctx); err != nil {
 		return nil, err
 	}
 
@@ -85,52 +96,62 @@ func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, e
 }
 
 // Validate validates the DataType struct.
-func (d DataType) Validate() error {
-	if err := _validate.Struct(d); err != nil {
+func (d DataType) Validate(ctx *coreerr.ValidationContext) error {
+	// Key: required.
+	if d.Key == "" {
+		return coreerr.New(ctx, coreerr.DtypeKeyRequired, "Key is required", "Key")
+	}
+	// CollectionType: required and must be valid.
+	if d.CollectionType == "" {
+		return coreerr.NewWithValues(ctx, coreerr.DtypeCollectiontypeRequired, "CollectionType is required", "CollectionType", "", "one of: atomic, ordered, queue, record, stack, unordered")
+	}
+	if !_validCollectionTypes[d.CollectionType] {
+		return coreerr.NewWithValues(ctx, coreerr.DtypeCollectiontypeInvalid, "CollectionType is not a valid value", "CollectionType", d.CollectionType, "one of: atomic, ordered, queue, record, stack, unordered")
+	}
+	if err := d.validateAtomic(ctx); err != nil {
 		return err
 	}
-	if err := d.validateAtomic(); err != nil {
+	if err := d.validateRecordFields(ctx); err != nil {
 		return err
 	}
-	if err := d.validateRecordFields(); err != nil {
-		return err
-	}
-	if err := d.validateCollectionFields(); err != nil {
+	if err := d.validateCollectionFields(ctx); err != nil {
 		return err
 	}
 	if d.TypeSpec != nil {
-		if err := d.TypeSpec.Validate(); err != nil {
-			return fmt.Errorf("typeSpec: %w", err)
+		if err := d.TypeSpec.Validate(ctx); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (d DataType) validateAtomic() error {
+func (d DataType) validateAtomic(ctx *coreerr.ValidationContext) error {
 	if d.CollectionType == COLLECTION_TYPE_ATOMIC && d.Atomic == nil {
-		return fmt.Errorf("atomic: cannot be blank")
+		return coreerr.New(ctx, coreerr.DtypeAtomicRequired, "atomic is required for atomic collection type", "Atomic")
 	}
 	if d.Atomic != nil {
-		if err := d.Atomic.Validate(); err != nil {
-			return fmt.Errorf("atomic: (%s)", err.Error())
+		childCtx := ctx.Child("atomic", "")
+		if err := d.Atomic.Validate(childCtx); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (d DataType) validateRecordFields() error {
+func (d DataType) validateRecordFields(ctx *coreerr.ValidationContext) error {
 	if d.CollectionType == COLLECTION_TYPE_RECORD && len(d.RecordFields) == 0 {
-		return fmt.Errorf("recordFields: cannot be blank")
+		return coreerr.New(ctx, coreerr.DtypeRecordfieldsRequired, "record fields are required for record collection type", "RecordFields")
 	}
-	for _, f := range d.RecordFields {
-		if err := f.Validate(); err != nil {
-			return fmt.Errorf("recordFields: (%s)", err.Error())
+	for i := range d.RecordFields {
+		childCtx := ctx.Child("field", fmt.Sprintf("%d", i))
+		if err := d.RecordFields[i].Validate(childCtx); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (d DataType) validateCollectionFields() error {
+func (d DataType) validateCollectionFields(ctx *coreerr.ValidationContext) error {
 	isCollection := d.CollectionType == COLLECTION_TYPE_STACK ||
 		d.CollectionType == COLLECTION_TYPE_UNORDERED ||
 		d.CollectionType == COLLECTION_TYPE_ORDERED ||
@@ -138,27 +159,27 @@ func (d DataType) validateCollectionFields() error {
 
 	if isCollection {
 		if d.CollectionUnique == nil {
-			return fmt.Errorf("collectionUnique: cannot be blank")
+			return coreerr.New(ctx, coreerr.DtypeColluniqRequired, "collection unique is required for collection types", "CollectionUnique")
 		}
 		if d.CollectionMin != nil && *d.CollectionMin < 1 {
-			return fmt.Errorf("collectionMin: must be no less than 1")
+			return coreerr.NewWithValues(ctx, coreerr.DtypeCollminTooSmall, "collection min must be at least 1", "CollectionMin", fmt.Sprintf("%d", *d.CollectionMin), "at least 1")
 		}
 		if d.CollectionMax != nil && *d.CollectionMax < 1 {
-			return fmt.Errorf("collectionMax: must be no less than 1")
+			return coreerr.NewWithValues(ctx, coreerr.DtypeCollmaxTooSmall, "collection max must be at least 1", "CollectionMax", fmt.Sprintf("%d", *d.CollectionMax), "at least 1")
 		}
 		if d.CollectionMin != nil && d.CollectionMax != nil && *d.CollectionMax < *d.CollectionMin {
-			return fmt.Errorf("collectionMax: must be no less than collectionMin")
+			return coreerr.NewWithValues(ctx, coreerr.DtypeCollmaxLessThanMin, "collection max must be at least collection min", "CollectionMax", fmt.Sprintf("%d", *d.CollectionMax), fmt.Sprintf("at least %d", *d.CollectionMin))
 		}
 		return nil
 	}
 	if d.CollectionUnique != nil {
-		return fmt.Errorf("collectionUnique: must be blank")
+		return coreerr.New(ctx, coreerr.DtypeColluniqMustBeBlank, "collection unique must be nil for non-collection types", "CollectionUnique")
 	}
 	if d.CollectionMin != nil {
-		return fmt.Errorf("collectionMin: must be blank")
+		return coreerr.New(ctx, coreerr.DtypeCollminMustBeBlank, "collection min must be nil for non-collection types", "CollectionMin")
 	}
 	if d.CollectionMax != nil {
-		return fmt.Errorf("collectionMax: must be blank")
+		return coreerr.New(ctx, coreerr.DtypeCollmaxMustBeBlank, "collection max must be nil for non-collection types", "CollectionMax")
 	}
 	return nil
 }

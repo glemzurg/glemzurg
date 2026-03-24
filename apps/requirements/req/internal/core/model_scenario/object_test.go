@@ -3,6 +3,7 @@ package model_scenario
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -66,7 +67,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: _NAME_STYLE_NAME,
 				ClassKey:  classKey,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -106,7 +107,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: _NAME_STYLE_NAME,
 				ClassKey:  identity.Key{},
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong class key type",
@@ -126,12 +127,13 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: "bogus",
 				ClassKey:  classKey,
 			},
-			errstr: "'NameStyle' failed on the 'oneof' tag",
+			errstr: "NameStyle must be one of: name, id, unnamed",
 		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.object.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.object.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -151,8 +153,8 @@ func (suite *ObjectSuite) TestNew() {
 	key := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj1"))
 
 	// Test parameters are mapped correctly.
-	obj, err := NewObject(key, 1, "Name", _NAME_STYLE_NAME, classKey, true, "UmlComment")
-	suite.Require().NoError(err)
+
+	obj := NewObject(key, 1, "Name", _NAME_STYLE_NAME, classKey, true, "UmlComment")
 	suite.Equal(Object{
 		Key:          key,
 		ObjectNumber: 1,
@@ -162,10 +164,6 @@ func (suite *ObjectSuite) TestNew() {
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	}, obj)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewObject(key, 1, "", _NAME_STYLE_NAME, classKey, true, "UmlComment")
-	suite.Require().ErrorContains(err, "Name: Name cannot be blank")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -178,6 +176,8 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj1"))
 	otherScenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "other_scenario"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	obj := Object{
 		Key:       validKey,
@@ -185,7 +185,7 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 		NameStyle: _NAME_STYLE_NAME,
 		ClassKey:  classKey,
 	}
-	err := obj.ValidateWithParent(&scenarioKey)
+	err := obj.ValidateWithParent(ctx, &scenarioKey)
 	suite.Require().ErrorContains(err, "Name: Name cannot be blank", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - object key has scenario1 as parent, but we pass other_scenario.
@@ -195,11 +195,11 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 		NameStyle: _NAME_STYLE_NAME,
 		ClassKey:  classKey,
 	}
-	err = obj.ValidateWithParent(&otherScenarioKey)
+	err = obj.ValidateWithParent(ctx, &otherScenarioKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = obj.ValidateWithParent(&scenarioKey)
+	err = obj.ValidateWithParent(ctx, &scenarioKey)
 	suite.Require().NoError(err)
 }
 
@@ -248,7 +248,8 @@ func (suite *ObjectSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.object.ValidateReferences(tt.classes)
+			ctx := coreerr.NewContext("test", "")
+			err := tt.object.ValidateReferences(ctx, tt.classes)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

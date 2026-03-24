@@ -30,16 +30,16 @@ func simpleOrderClass() (model_class.Class, identity.Key) {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
-	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
+	eventClose := model_state.NewEvent(eventCloseKey, "close", "", nil)
 
-	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
-	stateClosed := helper.Must(model_state.NewState(stateClosedKey, "Closed", "", ""))
+	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
+	stateClosed := model_state.NewState(stateClosedKey, "Closed", "", "")
 
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
-	transClose := helper.Must(model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, nil, &stateClosedKey, ""))
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
+	transClose := model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, nil, &stateClosedKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
@@ -153,12 +153,12 @@ func (s *EngineSuite) TestDeadlockDetection() {
 	eventUpdateKey := mustKey("domain/d/subdomain/s/class/stuck/event/update")
 	transUpdateKey := mustKey("domain/d/subdomain/s/class/stuck/transition/update")
 
-	eventUpdate := helper.Must(model_state.NewEvent(eventUpdateKey, "update", "", nil))
+	eventUpdate := model_state.NewEvent(eventUpdateKey, "update", "", nil)
 
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
-	transUpdate := helper.Must(model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, ""))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
+	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -195,7 +195,7 @@ func (s *EngineSuite) TestStopOnViolation() {
 	// Add an invariant that will fail: "FALSE".
 	model := testModel(classEntry(orderClass, orderKey))
 	invariantKey := helper.Must(identity.NewInvariantKey("0"))
-	invariantLogic := helper.Must(model_logic.NewLogic(invariantKey, model_logic.LogicTypeAssessment, "Always false.", "", parsedSpec("FALSE"), nil))
+	invariantLogic := model_logic.NewLogic(invariantKey, model_logic.LogicTypeAssessment, "Always false.", "", parsedSpec("FALSE"), nil)
 	model.Invariants = []model_logic.Logic{invariantLogic}
 
 	config := SimulationConfig{
@@ -250,7 +250,7 @@ func (s *EngineSuite) TestNoSimulatableClassesReturnsError() {
 	// A class with no states → not simulatable.
 	classKey := mustKey("domain/d/subdomain/s/class/empty")
 
-	class := helper.Must(model_class.NewClass(classKey, "Empty", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Empty", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})

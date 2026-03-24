@@ -13,9 +13,11 @@ Domain files are located in directories named after the domain:
 ```
 your_model/
 ├── model.json
-└── order_management/
-    ├── domain.json             <-- This file contains invalid JSON syntax
-    └── ... (classes, etc.)
+└── domains/
+    └── order_management/
+        ├── domain.json             <-- This file contains invalid JSON syntax
+        └── subdomains/
+            └── ...
 ```
 
 ## How to Fix

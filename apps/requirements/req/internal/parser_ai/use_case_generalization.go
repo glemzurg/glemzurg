@@ -47,32 +47,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the use case generalization schema and returns detailed errors if validation fails.
 func parseUseCaseGeneralization(content []byte, filename string) (*inputUseCaseGeneralization, error) {
-	var gen inputUseCaseGeneralization
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &gen); err != nil {
-		return nil, NewParseError(
-			ErrUseCaseGenInvalidJSON,
-			"failed to parse use case generalization JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrUseCaseGenInvalidJSON,
-			"failed to parse use case generalization JSON for schema validation: "+err.Error(),
+			"failed to parse use case generalization JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := useCaseGeneralizationSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrUseCaseGenSchemaViolation,
 			"use case generalization JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(useCaseGeneralizationSchemaContent)
+		).WithHint("run: req_check --schema use_case_generalization")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var gen inputUseCaseGeneralization
+	if err := json.Unmarshal(content, &gen); err != nil {
+		return nil, NewParseError(
+			ErrUseCaseGenInvalidJSON,
+			"failed to parse use case generalization JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules
@@ -92,7 +91,7 @@ func validateUseCaseGeneralization(gen *inputUseCaseGeneralization, filename str
 			ErrUseCaseGenNameRequired,
 			"use case generalization name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -101,7 +100,7 @@ func validateUseCaseGeneralization(gen *inputUseCaseGeneralization, filename str
 			ErrUseCaseGenNameEmpty,
 			"use case generalization name cannot be empty or whitespace only, got '"+gen.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Superclass key is required (schema enforces this, but we provide a clearer error)
@@ -110,7 +109,7 @@ func validateUseCaseGeneralization(gen *inputUseCaseGeneralization, filename str
 			ErrUseCaseGenSuperclassRequired,
 			"use case generalization superclass_key is required, got ''",
 			filename,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint("add a non-empty \"superclass_key\" referencing a defined use case")
 	}
 
 	// Superclass key cannot be only whitespace
@@ -119,7 +118,7 @@ func validateUseCaseGeneralization(gen *inputUseCaseGeneralization, filename str
 			ErrUseCaseGenSuperclassRequired,
 			"use case generalization superclass_key cannot be empty or whitespace only, got '"+gen.SuperclassKey+"'",
 			filename,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint("add a non-empty \"superclass_key\" referencing a defined use case")
 	}
 
 	// Subclass keys is required and must have at least one entry (schema enforces this)
@@ -128,7 +127,7 @@ func validateUseCaseGeneralization(gen *inputUseCaseGeneralization, filename str
 			ErrUseCaseGenSubclassesRequired,
 			"use case generalization subclass_keys is required and must have at least one entry",
 			filename,
-		).WithField("subclass_keys")
+		).WithField("subclass_keys").WithHint("add \"subclass_keys\" array with at least one use case key")
 	}
 
 	// Each subclass key must be non-empty and non-whitespace
@@ -138,14 +137,14 @@ func validateUseCaseGeneralization(gen *inputUseCaseGeneralization, filename str
 				ErrUseCaseGenSubclassesEmpty,
 				fmt.Sprintf("use case generalization subclass_keys[%d] cannot be empty", i),
 				filename,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("each entry in \"subclass_keys\" must be a non-empty use case key")
 		}
 		if strings.TrimSpace(key) == "" {
 			return NewParseError(
 				ErrUseCaseGenSubclassesEmpty,
 				fmt.Sprintf("use case generalization subclass_keys[%d] cannot be whitespace only, got '%s'", i, key),
 				filename,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("each entry in \"subclass_keys\" must be a non-empty use case key")
 		}
 	}
 

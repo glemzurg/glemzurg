@@ -3,6 +3,7 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -61,7 +62,7 @@ func (suite *StateActionSuite) TestValidate() {
 				ActionKey: actionKey,
 				When:      "entry",
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -79,7 +80,7 @@ func (suite *StateActionSuite) TestValidate() {
 				ActionKey: identity.Key{},
 				When:      "entry",
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong action key type",
@@ -111,7 +112,8 @@ func (suite *StateActionSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.stateAction.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.stateAction.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -131,21 +133,17 @@ func (suite *StateActionSuite) TestNew() {
 	key := helper.Must(identity.NewStateActionKey(stateKey, "entry", "stateaction1"))
 
 	// Test parameters are mapped correctly.
-	stateAction, err := NewStateAction(key, actionKey, "entry")
-	suite.Require().NoError(err)
+	stateAction := NewStateAction(key, actionKey, "entry")
 	suite.Equal(StateAction{
 		Key:       key,
 		ActionKey: actionKey,
 		When:      "entry",
 	}, stateAction)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewStateAction(key, actionKey, "")
-	suite.Require().ErrorContains(err, "When")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (suite *StateActionSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
@@ -160,7 +158,7 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 		ActionKey: actionKey,
 		When:      "", // Invalid
 	}
-	err := stateAction.ValidateWithParent(&stateKey)
+	err := stateAction.ValidateWithParent(ctx, &stateKey)
 	suite.Require().ErrorContains(err, "When", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - stateAction key has state1 as parent, but we pass other_state.
@@ -169,11 +167,11 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 		ActionKey: actionKey,
 		When:      "entry",
 	}
-	err = stateAction.ValidateWithParent(&otherStateKey)
+	err = stateAction.ValidateWithParent(ctx, &otherStateKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = stateAction.ValidateWithParent(&stateKey)
+	err = stateAction.ValidateWithParent(ctx, &stateKey)
 	suite.Require().NoError(err)
 }
 
@@ -220,7 +218,8 @@ func (suite *StateActionSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.stateAction.ValidateReferences(tt.actions)
+			ctx := coreerr.NewContext("test", "")
+			err := tt.stateAction.ValidateReferences(ctx, tt.actions)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

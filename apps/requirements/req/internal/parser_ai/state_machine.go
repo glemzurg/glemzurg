@@ -80,32 +80,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the state machine schema and returns detailed errors if validation fails.
 func parseStateMachine(content []byte, filename string) (*inputStateMachine, error) {
-	var sm inputStateMachine
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &sm); err != nil {
-		return nil, NewParseError(
-			ErrStateMachineInvalidJSON,
-			"failed to parse state machine JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrStateMachineInvalidJSON,
-			"failed to parse state machine JSON for schema validation: "+err.Error(),
+			"failed to parse state machine JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := stateMachineSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrStateMachineSchemaViolation,
 			"state machine JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(stateMachineSchemaContent)
+		).WithHint("run: req_check --schema state_machine")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var sm inputStateMachine
+	if err := json.Unmarshal(content, &sm); err != nil {
+		return nil, NewParseError(
+			ErrStateMachineInvalidJSON,
+			"failed to parse state machine JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules
@@ -142,14 +141,14 @@ func validateSMStates(sm *inputStateMachine, filename string) error {
 				ErrStateNameRequired,
 				fmt.Sprintf("state '%s' name is required, got ''", stateKey),
 				filename,
-			).WithField("states." + stateKey + ".name")
+			).WithField("states." + stateKey + ".name").WithHint("each state must have a non-empty \"name\" field")
 		}
 		if strings.TrimSpace(state.Name) == "" {
 			return NewParseError(
 				ErrStateNameEmpty,
 				fmt.Sprintf("state '%s' name cannot be empty or whitespace only, got '%s'", stateKey, state.Name),
 				filename,
-			).WithField("states." + stateKey + ".name")
+			).WithField("states." + stateKey + ".name").WithHint("each state must have a non-empty \"name\" field")
 		}
 		if err := validateSMStateActions(stateKey, state, filename); err != nil {
 			return err
@@ -166,28 +165,28 @@ func validateSMStateActions(stateKey string, state *inputState, filename string)
 				ErrStateActionKeyRequired,
 				fmt.Sprintf("state '%s' action[%d] action_key is required", stateKey, i),
 				filename,
-			).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i))
+			).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i)).WithHint("each state action must have a non-empty \"action_key\" referencing a defined action")
 		}
 		if strings.TrimSpace(action.ActionKey) == "" {
 			return NewParseError(
 				ErrStateActionKeyRequired,
 				fmt.Sprintf("state '%s' action[%d] action_key cannot be whitespace only, got '%s'", stateKey, i, action.ActionKey),
 				filename,
-			).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i))
+			).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i)).WithHint("each state action must have a non-empty \"action_key\" referencing a defined action")
 		}
 		if action.When == "" {
 			return NewParseError(
 				ErrStateActionWhenRequired,
 				fmt.Sprintf("state '%s' action[%d] when is required", stateKey, i),
 				filename,
-			).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i))
+			).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i)).WithHint("\"when\" must be one of: entry, exit, do")
 		}
 		if action.When != "entry" && action.When != "exit" && action.When != "do" {
 			return NewParseError(
 				ErrStateActionWhenInvalid,
 				fmt.Sprintf("state '%s' action[%d] when must be 'entry', 'exit', or 'do', got '%s'", stateKey, i, action.When),
 				filename,
-			).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i))
+			).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i)).WithHint("\"when\" must be one of: entry, exit, do")
 		}
 	}
 	return nil
@@ -201,14 +200,14 @@ func validateSMEvents(sm *inputStateMachine, filename string) error {
 				ErrEventNameRequired,
 				fmt.Sprintf("event '%s' name is required, got ''", eventKey),
 				filename,
-			).WithField("events." + eventKey + ".name")
+			).WithField("events." + eventKey + ".name").WithHint("each event must have a non-empty \"name\" field")
 		}
 		if strings.TrimSpace(event.Name) == "" {
 			return NewParseError(
 				ErrEventNameEmpty,
 				fmt.Sprintf("event '%s' name cannot be empty or whitespace only, got '%s'", eventKey, event.Name),
 				filename,
-			).WithField("events." + eventKey + ".name")
+			).WithField("events." + eventKey + ".name").WithHint("each event must have a non-empty \"name\" field")
 		}
 		for i, param := range event.Parameters {
 			if param.Name == "" {
@@ -216,14 +215,14 @@ func validateSMEvents(sm *inputStateMachine, filename string) error {
 					ErrEventParamNameRequired,
 					fmt.Sprintf("event '%s' parameter[%d] name is required", eventKey, i),
 					filename,
-				).WithField(fmt.Sprintf("events.%s.parameters[%d].name", eventKey, i))
+				).WithField(fmt.Sprintf("events.%s.parameters[%d].name", eventKey, i)).WithHint("each event parameter must have a non-empty \"name\" field")
 			}
 			if strings.TrimSpace(param.Name) == "" {
 				return NewParseError(
 					ErrEventParamNameRequired,
 					fmt.Sprintf("event '%s' parameter[%d] name cannot be whitespace only, got '%s'", eventKey, i, param.Name),
 					filename,
-				).WithField(fmt.Sprintf("events.%s.parameters[%d].name", eventKey, i))
+				).WithField(fmt.Sprintf("events.%s.parameters[%d].name", eventKey, i)).WithHint("each event parameter must have a non-empty \"name\" field")
 			}
 		}
 	}
@@ -238,28 +237,28 @@ func validateSMGuards(sm *inputStateMachine, filename string) error {
 				ErrGuardNameRequired,
 				fmt.Sprintf("guard '%s' name is required, got ''", guardKey),
 				filename,
-			).WithField("guards." + guardKey + ".name")
+			).WithField("guards." + guardKey + ".name").WithHint("each guard must have a non-empty \"name\" field")
 		}
 		if strings.TrimSpace(guard.Name) == "" {
 			return NewParseError(
 				ErrGuardNameEmpty,
 				fmt.Sprintf("guard '%s' name cannot be empty or whitespace only, got '%s'", guardKey, guard.Name),
 				filename,
-			).WithField("guards." + guardKey + ".name")
+			).WithField("guards." + guardKey + ".name").WithHint("each guard must have a non-empty \"name\" field")
 		}
 		if guard.Logic.Description == "" {
 			return NewParseError(
 				ErrGuardDetailsRequired,
 				fmt.Sprintf("guard '%s' logic description is required, got ''", guardKey),
 				filename,
-			).WithField("guards." + guardKey + ".logic.description")
+			).WithField("guards." + guardKey + ".logic.description").WithHint("each guard must have a logic object with a non-empty \"description\"")
 		}
 		if strings.TrimSpace(guard.Logic.Description) == "" {
 			return NewParseError(
 				ErrGuardDetailsRequired,
 				fmt.Sprintf("guard '%s' logic description cannot be empty or whitespace only, got '%s'", guardKey, guard.Logic.Description),
 				filename,
-			).WithField("guards." + guardKey + ".logic.description")
+			).WithField("guards." + guardKey + ".logic.description").WithHint("each guard must have a logic object with a non-empty \"description\"")
 		}
 	}
 	return nil
@@ -273,14 +272,14 @@ func validateSMTransitions(sm *inputStateMachine, filename string) error {
 				ErrTransitionEventRequired,
 				fmt.Sprintf("transition[%d] event_key is required", i),
 				filename,
-			).WithField(fmt.Sprintf("transitions[%d].event_key", i))
+			).WithField(fmt.Sprintf("transitions[%d].event_key", i)).WithHint("each transition must have a non-empty \"event_key\" referencing a defined event")
 		}
 		if strings.TrimSpace(transition.EventKey) == "" {
 			return NewParseError(
 				ErrTransitionEventRequired,
 				fmt.Sprintf("transition[%d] event_key cannot be whitespace only, got '%s'", i, transition.EventKey),
 				filename,
-			).WithField(fmt.Sprintf("transitions[%d].event_key", i))
+			).WithField(fmt.Sprintf("transitions[%d].event_key", i)).WithHint("each transition must have a non-empty \"event_key\" referencing a defined event")
 		}
 	}
 	return nil

@@ -1,8 +1,11 @@
 package model_class
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -11,10 +14,10 @@ import (
 // Attribute is a member of a class.
 type Attribute struct {
 	Key              identity.Key
-	Name             string             `validate:"required"`
+	Name             string
 	Details          string             // Markdown.
 	DataTypeRules    string             // What are the bounds of this data type.
-	DerivationPolicy *model_logic.Logic `validate:"-"` // If this is a derived attribute, the logic for how it is derived.
+	DerivationPolicy *model_logic.Logic // If this is a derived attribute, the logic for how it is derived.
 	Nullable         bool               // Is this attribute optional.
 	UmlComment       string
 	// Children
@@ -57,50 +60,48 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 		attribute.DataType = parsedDataType
 	}
 
-	if err = attribute.Validate(); err != nil {
-		return Attribute{}, err
-	}
-
 	return attribute, nil
 }
 
 // Validate validates the Attribute struct.
-func (a *Attribute) Validate() error {
+func (a *Attribute) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := a.Key.Validate(); err != nil {
-		return err
+	if err := a.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.AttrKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ATTRIBUTE {
-		return errors.Errorf("key: invalid key type '%s' for attribute", a.Key.KeyType)
+		return coreerr.NewWithValues(ctx, coreerr.AttrKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for attribute", a.Key.KeyType), "Key", a.Key.KeyType, identity.KEY_TYPE_ATTRIBUTE)
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(a); err != nil {
-		return err
+	// Name is required.
+	if a.Name == "" {
+		return coreerr.New(ctx, coreerr.AttrNameRequired, "Name is required", "Name")
 	}
 
 	// Validate the derivation policy logic if present.
 	if a.DerivationPolicy != nil {
-		if err := a.DerivationPolicy.Validate(); err != nil {
-			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
+		derivCtx := ctx.Child("derivationPolicy", a.Key.String())
+		if err := a.DerivationPolicy.Validate(derivCtx); err != nil {
+			return coreerr.New(derivCtx, coreerr.AttrDerivationTypeInvalid, fmt.Sprintf("attribute %s: DerivationPolicy: %s", a.Name, err.Error()), "DerivationPolicy")
 		}
 		if a.DerivationPolicy.Type != model_logic.LogicTypeValue {
-			return errors.Errorf("attribute %s: DerivationPolicy logic kind must be '%s', got '%s'", a.Name, model_logic.LogicTypeValue, a.DerivationPolicy.Type)
+			return coreerr.NewWithValues(ctx, coreerr.AttrDerivationTypeInvalid, fmt.Sprintf("attribute %s: DerivationPolicy logic kind must be '%s', got '%s'", a.Name, model_logic.LogicTypeValue, a.DerivationPolicy.Type), "DerivationPolicy", a.DerivationPolicy.Type, string(model_logic.LogicTypeValue))
 		}
 	}
 
 	// Validate invariants.
 	attrInvLetTargets := make(map[string]bool)
 	for i, inv := range a.Invariants {
-		if err := inv.Validate(); err != nil {
-			return errors.Wrapf(err, "attribute invariant %d", i)
+		invCtx := ctx.Child("invariant", fmt.Sprintf("%d", i))
+		if err := inv.Validate(invCtx); err != nil {
+			return coreerr.New(invCtx, coreerr.AttrInvariantTypeInvalid, fmt.Sprintf("attribute invariant %d: %s", i, err.Error()), "Invariants")
 		}
 		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
-			return errors.Errorf("attribute invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
+			return coreerr.NewWithValues(invCtx, coreerr.AttrInvariantTypeInvalid, fmt.Sprintf("attribute invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type), "Invariants", inv.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
 		}
 		if inv.Type == model_logic.LogicTypeLet {
 			if attrInvLetTargets[inv.Target] {
-				return errors.Errorf("attribute invariant %d: duplicate let target %q", i, inv.Target)
+				return coreerr.NewWithValues(invCtx, coreerr.AttrInvariantDuplicateLet, fmt.Sprintf("attribute invariant %d: duplicate let target %q", i, inv.Target), "Invariants", inv.Target, "")
 			}
 			attrInvLetTargets[inv.Target] = true
 		}
@@ -116,25 +117,27 @@ func (a *Attribute) SetInvariants(invariants []model_logic.Logic) {
 
 // ValidateWithParent validates the Attribute, its key's parent relationship, and all children.
 // The parent must be a Class.
-func (a *Attribute) ValidateWithParent(parent *identity.Key) error {
+func (a *Attribute) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
 	// Validate the object itself.
-	if err := a.Validate(); err != nil {
+	if err := a.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := a.Key.ValidateParent(parent); err != nil {
+	if err := a.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// Validate derivation policy with attribute as parent.
 	if a.DerivationPolicy != nil {
-		if err := a.DerivationPolicy.ValidateWithParent(&a.Key); err != nil {
-			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
+		derivCtx := ctx.Child("derivationPolicy", a.Key.String())
+		if err := a.DerivationPolicy.ValidateWithParent(derivCtx, &a.Key); err != nil {
+			return coreerr.New(derivCtx, coreerr.AttrDerivationTypeInvalid, fmt.Sprintf("attribute %s: DerivationPolicy: %s", a.Name, err.Error()), "DerivationPolicy")
 		}
 	}
 	// Validate invariants with attribute as parent.
 	for i, inv := range a.Invariants {
-		if err := inv.ValidateWithParent(&a.Key); err != nil {
-			return errors.Wrapf(err, "attribute invariant %d", i)
+		invCtx := ctx.Child("invariant", fmt.Sprintf("%d", i))
+		if err := inv.ValidateWithParent(invCtx, &a.Key); err != nil {
+			return coreerr.New(invCtx, coreerr.AttrInvariantTypeInvalid, fmt.Sprintf("attribute invariant %d: %s", i, err.Error()), "Invariants")
 		}
 	}
 	return nil

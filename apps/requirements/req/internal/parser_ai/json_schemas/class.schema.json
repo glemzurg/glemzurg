@@ -24,14 +24,18 @@
     },
     "attributes": {
       "type": "object",
-      "description": "Map of attribute keys to attribute definitions. Each key in this object becomes the attribute's identifier and must be unique within the class. Keys should be lowercase with underscores (e.g., 'order_date', 'total_amount'). These keys are referenced by indexes and other parts of the model. If validation fails: check that each attribute has a valid 'name' field.",
+      "description": "Map of attribute keys to attribute definitions. Each key in this object becomes the attribute's identifier and must be unique within the class. These keys are referenced by indexes and other parts of the model. If validation fails: check that each attribute has a valid 'name' field.",
+      "propertyNames": {
+        "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+      },
       "additionalProperties": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
             "description": "The display name of the attribute (e.g., 'Order Date', 'Total Amount'). This is the human-readable name shown in diagrams and documentation. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
-            "minLength": 1
+            "minLength": 1,
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_ ]*$"
           },
           "data_type_rules": {
             "type": "string",
@@ -57,7 +61,7 @@
               },
               "notation": {
                 "type": "string",
-                "description": "Optional formal notation system. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+                "description": "Required. The formal notation system. Currently the only supported value is 'tla_plus'. Must always be present. If validation fails: ensure this is exactly 'tla_plus'.",
                 "enum": ["tla_plus"]
               },
               "specification": {
@@ -65,7 +69,7 @@
                 "description": "Optional formal specification in the given notation."
               }
             },
-            "required": ["description"],
+            "required": ["description", "notation"],
             "additionalProperties": false
           },
           "nullable": {

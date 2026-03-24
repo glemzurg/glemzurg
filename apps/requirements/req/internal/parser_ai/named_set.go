@@ -41,30 +41,31 @@ func init() {
 
 // parseNamedSet parses a named set JSON file content into an inputNamedSet struct.
 func parseNamedSet(content []byte, filename string) (*inputNamedSet, error) {
-	var ns inputNamedSet
-
-	if err := json.Unmarshal(content, &ns); err != nil {
-		return nil, NewParseError(
-			ErrNamedSetInvalidJSON,
-			"failed to parse named set JSON: "+err.Error(),
-			filename,
-		)
-	}
-
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrNamedSetInvalidJSON,
-			"failed to parse named set JSON for schema validation: "+err.Error(),
+			"failed to parse named set JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := namedSetSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrNamedSetSchemaViolation,
 			"named set JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(namedSetSchemaContent)
+		).WithHint("run: req_check --schema named_set")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var ns inputNamedSet
+	if err := json.Unmarshal(content, &ns); err != nil {
+		return nil, NewParseError(
+			ErrNamedSetInvalidJSON,
+			"failed to parse named set JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	if err := validateNamedSet(&ns, filename); err != nil {
@@ -81,7 +82,7 @@ func validateNamedSet(ns *inputNamedSet, filename string) error {
 			ErrNamedSetNameRequired,
 			"named set name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field starting with underscore")
 	}
 
 	if strings.TrimSpace(ns.Name) == "" {
@@ -89,7 +90,7 @@ func validateNamedSet(ns *inputNamedSet, filename string) error {
 			ErrNamedSetNameEmpty,
 			"named set name cannot be empty or whitespace only, got '"+ns.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field starting with underscore")
 	}
 
 	if !strings.HasPrefix(ns.Name, "_") {
@@ -97,7 +98,7 @@ func validateNamedSet(ns *inputNamedSet, filename string) error {
 			ErrNamedSetNameNoUnderscore,
 			"named set name must start with underscore, got '"+ns.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("named set names must start with underscore, e.g. \"_OrderStatuses\"")
 	}
 
 	return nil

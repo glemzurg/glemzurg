@@ -6,8 +6,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
@@ -32,7 +31,7 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 		markdown += "\n\n" + parsedFile.UmlComment
 	}
 
-	model, err = core.NewModel(
+	model = core.NewModel(
 		strings.TrimSpace(strings.ToLower(key)),
 		parsedFile.Title,
 		markdown,
@@ -40,15 +39,12 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 		globalFunctions,
 		namedSets,
 	)
-	if err != nil {
-		return core.Model{}, errors.Wrap(err, "failed to create model")
-	}
 
 	return model, nil
 }
 
 // parseModelYamlData parses invariants, global functions, and named sets from the YAML data section.
-func parseModelYamlData(data string) ([]model_logic.Logic, map[identity.Key]model_logic.GlobalFunction, map[identity.Key]model_named_set.NamedSet, error) {
+func parseModelYamlData(data string) ([]model_logic.Logic, map[identity.Key]model_logic.GlobalFunction, map[identity.Key]model_logic.NamedSet, error) {
 	if data == "" {
 		return nil, nil, nil, nil
 	}
@@ -137,25 +133,19 @@ func parseOneGlobalFunction(gfMap map[string]any) (model_logic.GlobalFunction, e
 		specification = s.(string)
 	}
 
-	spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 	if err != nil {
 		return model_logic.GlobalFunction{}, errors.Wrapf(err, "global function %q expression spec", name)
 	}
 
-	logic, err := model_logic.NewLogic(gfKey, model_logic.LogicTypeValue, description, "", spec, nil)
-	if err != nil {
-		return model_logic.GlobalFunction{}, errors.Wrapf(err, "global function %q logic", name)
-	}
+	logic := model_logic.NewLogic(gfKey, model_logic.LogicTypeValue, description, "", spec, nil)
 
-	gf, err := model_logic.NewGlobalFunction(gfKey, name, parameters, logic)
-	if err != nil {
-		return model_logic.GlobalFunction{}, errors.Wrapf(err, "global function %q", name)
-	}
+	gf := model_logic.NewGlobalFunction(gfKey, name, parameters, logic)
 	return gf, nil
 }
 
 // parseNamedSets parses the named_sets list from YAML data.
-func parseNamedSets(yamlData map[string]any) (map[identity.Key]model_named_set.NamedSet, error) {
+func parseNamedSets(yamlData map[string]any) (map[identity.Key]model_logic.NamedSet, error) {
 	nsAny, found := yamlData["named_sets"]
 	if !found {
 		return nil, nil //nolint:nilnil // optional section, absence is not an error
@@ -164,7 +154,7 @@ func parseNamedSets(yamlData map[string]any) (map[identity.Key]model_named_set.N
 	if !ok {
 		return nil, errors.Errorf("named_sets must be a list")
 	}
-	namedSets := make(map[identity.Key]model_named_set.NamedSet, len(nsList))
+	namedSets := make(map[identity.Key]model_logic.NamedSet, len(nsList))
 	for _, nsItemAny := range nsList {
 		nsMap, ok := nsItemAny.(map[string]any)
 		if !ok {
@@ -180,7 +170,7 @@ func parseNamedSets(yamlData map[string]any) (map[identity.Key]model_named_set.N
 }
 
 // parseOneNamedSet parses a single named set from a YAML map.
-func parseOneNamedSet(nsMap map[string]any) (model_named_set.NamedSet, error) {
+func parseOneNamedSet(nsMap map[string]any) (model_logic.NamedSet, error) {
 	name := ""
 	if n, ok := nsMap["name"]; ok {
 		name = n.(string)
@@ -188,7 +178,7 @@ func parseOneNamedSet(nsMap map[string]any) (model_named_set.NamedSet, error) {
 
 	nsKey, err := identity.NewNamedSetKey(strings.ToLower(strings.TrimPrefix(name, "_")))
 	if err != nil {
-		return model_named_set.NamedSet{}, errors.WithStack(err)
+		return model_logic.NamedSet{}, errors.WithStack(err)
 	}
 
 	description := ""
@@ -201,24 +191,21 @@ func parseOneNamedSet(nsMap map[string]any) (model_named_set.NamedSet, error) {
 		specification = s.(string)
 	}
 
-	spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 	if err != nil {
-		return model_named_set.NamedSet{}, errors.Wrapf(err, "named set %q expression spec", name)
+		return model_logic.NamedSet{}, errors.Wrapf(err, "named set %q expression spec", name)
 	}
 
-	var typeSpec *model_spec.TypeSpec
+	var typeSpec *logic_spec.TypeSpec
 	if tsStr, ok := nsMap["type_spec"].(string); ok && tsStr != "" {
-		ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
+		ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
 		if err != nil {
-			return model_named_set.NamedSet{}, errors.Wrapf(err, "named set %q type spec", name)
+			return model_logic.NamedSet{}, errors.Wrapf(err, "named set %q type spec", name)
 		}
 		typeSpec = &ts
 	}
 
-	ns, err := model_named_set.NewNamedSet(nsKey, name, description, spec, typeSpec)
-	if err != nil {
-		return model_named_set.NamedSet{}, errors.Wrapf(err, "named set %q", name)
-	}
+	ns := model_logic.NewNamedSet(nsKey, name, description, spec, typeSpec)
 	return ns, nil
 }
 
@@ -268,7 +255,7 @@ func generateGlobalFunctionsYaml(builder *YamlBuilder, globalFunctions map[ident
 }
 
 // generateNamedSetsYaml generates the named_sets YAML section.
-func generateNamedSetsYaml(builder *YamlBuilder, namedSets map[identity.Key]model_named_set.NamedSet) {
+func generateNamedSetsYaml(builder *YamlBuilder, namedSets map[identity.Key]model_logic.NamedSet) {
 	if len(namedSets) == 0 {
 		return
 	}

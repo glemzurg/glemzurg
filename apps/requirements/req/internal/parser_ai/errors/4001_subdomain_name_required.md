@@ -13,11 +13,14 @@ Subdomain files are located within domain directories, providing finer-grained o
 ```
 your_model/
 ├── model.json
-└── order_management/                 <-- Domain directory
-    ├── domain.json
-    └── fulfillment/                  <-- Subdomain directory
-        ├── subdomain.json            <-- This file is missing the "name" field
-        └── ... (classes, etc.)
+└── domains/
+    └── order_management/                 <-- Domain directory
+        ├── domain.json
+        └── subdomains/
+            └── fulfillment/              <-- Subdomain directory
+                ├── subdomain.json        <-- This file is missing the "name" field
+                └── classes/
+                    └── ...
 ```
 
 ## How to Fix
@@ -109,21 +112,20 @@ The subdomain has two identifiers:
 ## How Subdomains Connect to Other Files
 
 ```
-order_management/                         <-- Domain (key: order_management)
-├── domain.json
-└── fulfillment/                          <-- Subdomain (key: fulfillment)
-    ├── subdomain.json                    <-- You are here
-    │
-    ├── shipment.class.json               <-- Classes in this subdomain
-    ├── package.class.json                │   Key: order_management.fulfillment.shipment
-    │                                     │   Key: order_management.fulfillment.package
-    │
-    └── shipment.state_machine.json       <-- State machines for classes
-
-associations/
-└── *.assoc.json                          <-- May reference subdomain classes
-                                              using keys like:
-                                              "order_management.fulfillment.shipment"
+domains/
+└── order_management/                              <-- Domain (key: order_management)
+    ├── domain.json
+    └── subdomains/
+        └── fulfillment/                           <-- Subdomain (key: fulfillment)
+            ├── subdomain.json                     <-- You are here
+            ├── class_associations/
+            │   └── *.assoc.json                   <-- Subdomain-level associations
+            └── classes/
+                ├── shipment/
+                │   ├── class.json
+                │   └── state_machine.json
+                └── package/
+                    └── class.json
 ```
 
 ## Related Errors

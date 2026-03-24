@@ -1,8 +1,10 @@
 package model_domain
 
 import (
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/pkg/errors"
 )
 
 // When a domain enforces requirements on another domain.
@@ -13,60 +15,54 @@ type Association struct {
 	UmlComment        string
 }
 
-func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlComment string) (association Association, err error) {
-	association = Association{
+func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlComment string) Association {
+	return Association{
 		Key:               key,
 		ProblemDomainKey:  problemDomainKey,
 		SolutionDomainKey: solutionDomainKey,
 		UmlComment:        umlComment,
 	}
-
-	if err = association.Validate(); err != nil {
-		return Association{}, err
-	}
-
-	return association, nil
 }
 
 // Validate validates the domain Association struct.
-func (a *Association) Validate() error {
+func (a *Association) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := a.Key.Validate(); err != nil {
-		return err
+	if err := a.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.DassocKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_DOMAIN_ASSOCIATION {
-		return errors.Errorf("Key: invalid key type '%s' for domain association", a.Key.KeyType)
+		return coreerr.NewWithValues(ctx, coreerr.DassocKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for domain association", a.Key.KeyType), "Key", a.Key.KeyType, identity.KEY_TYPE_DOMAIN_ASSOCIATION)
 	}
 	// Validate ProblemDomainKey.
-	if err := a.ProblemDomainKey.Validate(); err != nil {
-		return errors.Wrap(err, "ProblemDomainKey")
+	if err := a.ProblemDomainKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.DassocProblemkeyInvalid, fmt.Sprintf("ProblemDomainKey: %s", err.Error()), "ProblemDomainKey")
 	}
 	if a.ProblemDomainKey.KeyType != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("ProblemDomainKey: invalid key type '%s' for domain", a.ProblemDomainKey.KeyType)
+		return coreerr.NewWithValues(ctx, coreerr.DassocProblemkeyType, fmt.Sprintf("ProblemDomainKey: invalid key type '%s' for domain", a.ProblemDomainKey.KeyType), "ProblemDomainKey", a.ProblemDomainKey.KeyType, identity.KEY_TYPE_DOMAIN)
 	}
 	// Validate SolutionDomainKey.
-	if err := a.SolutionDomainKey.Validate(); err != nil {
-		return errors.Wrap(err, "SolutionDomainKey")
+	if err := a.SolutionDomainKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.DassocSolutionkeyInvalid, fmt.Sprintf("SolutionDomainKey: %s", err.Error()), "SolutionDomainKey")
 	}
 	if a.SolutionDomainKey.KeyType != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("SolutionDomainKey: invalid key type '%s' for domain", a.SolutionDomainKey.KeyType)
+		return coreerr.NewWithValues(ctx, coreerr.DassocSolutionkeyType, fmt.Sprintf("SolutionDomainKey: invalid key type '%s' for domain", a.SolutionDomainKey.KeyType), "SolutionDomainKey", a.SolutionDomainKey.KeyType, identity.KEY_TYPE_DOMAIN)
 	}
 	// ProblemDomainKey and SolutionDomainKey cannot be the same.
 	if a.ProblemDomainKey == a.SolutionDomainKey {
-		return errors.New("ProblemDomainKey and SolutionDomainKey cannot be the same")
+		return coreerr.New(ctx, coreerr.DassocSameDomains, "ProblemDomainKey and SolutionDomainKey cannot be the same", "ProblemDomainKey")
 	}
 	return nil
 }
 
 // ValidateWithParent validates the domain Association, its key's parent relationship, and all children.
 // The parent must be nil since domain associations are root-level entities with no parent.
-func (a *Association) ValidateWithParent(parent *identity.Key) error {
+func (a *Association) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
 	// Validate the object itself.
-	if err := a.Validate(); err != nil {
+	if err := a.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := a.Key.ValidateParent(parent); err != nil {
+	if err := a.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 	// Association has no children with keys that need validation.
@@ -76,12 +72,12 @@ func (a *Association) ValidateWithParent(parent *identity.Key) error {
 // ValidateReferences validates that the association's domain keys reference real domains.
 // - ProblemDomainKey must exist in the domains map
 // - SolutionDomainKey must exist in the domains map.
-func (a *Association) ValidateReferences(domains map[identity.Key]bool) error {
+func (a *Association) ValidateReferences(ctx *coreerr.ValidationContext, domains map[identity.Key]bool) error {
 	if !domains[a.ProblemDomainKey] {
-		return errors.Errorf("domain association '%s' references non-existent problem domain '%s'", a.Key.String(), a.ProblemDomainKey.String())
+		return coreerr.NewWithValues(ctx, coreerr.DassocProblemNotfound, fmt.Sprintf("domain association '%s' references non-existent problem domain '%s'", a.Key.String(), a.ProblemDomainKey.String()), "ProblemDomainKey", a.ProblemDomainKey.String(), "")
 	}
 	if !domains[a.SolutionDomainKey] {
-		return errors.Errorf("domain association '%s' references non-existent solution domain '%s'", a.Key.String(), a.SolutionDomainKey.String())
+		return coreerr.NewWithValues(ctx, coreerr.DassocSolutionNotfound, fmt.Sprintf("domain association '%s' references non-existent solution domain '%s'", a.Key.String(), a.SolutionDomainKey.String()), "SolutionDomainKey", a.SolutionDomainKey.String(), "")
 	}
 	return nil
 }

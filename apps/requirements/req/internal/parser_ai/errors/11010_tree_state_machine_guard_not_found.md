@@ -101,6 +101,10 @@ If no guard condition is needed, set it to null:
 }
 ```
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple state machine errors in a single bulk operation. States, events, guards, actions, and transitions are interconnected — a bulk change will often fix some references correctly while breaking others, creating more errors to fix later. Address each state machine error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E11008**: Transition state not found

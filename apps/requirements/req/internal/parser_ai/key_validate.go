@@ -79,7 +79,7 @@ func ValidateKey(key, keyType, filePath string) error {
 			ErrKeyInvalidFormat,
 			fmt.Sprintf("%s key is empty - keys must be non-empty and follow snake_case format", keyType),
 			filePath,
-		).WithField(keyType)
+		).WithField(keyType).WithHint("keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$")
 	}
 
 	if keyType == "domain_association_key" {
@@ -106,7 +106,7 @@ func ValidateKey(key, keyType, filePath string) error {
 		fmt.Sprintf("%s key '%s' has invalid format - keys must be lowercase snake_case (e.g., 'order_line'); %s",
 			keyType, key, suggestion),
 		filePath,
-	).WithField(keyType)
+	).WithField(keyType).WithHint("keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$")
 }
 
 // suggestKeyFix analyzes an invalid key and suggests how to fix it.
@@ -187,7 +187,7 @@ func ValidateAssociationFilename(filename string, level AssociationLevel, filePa
 			ErrAssocFilenameInvalidFormat,
 			"association filename is empty",
 			filePath,
-		).WithField("filename")
+		).WithField("filename").WithHint("first verify the association is at the correct level (subdomain/domain/model) for the two classes, then use the filename format for that level (from--to--name.assoc.json), then create any missing classes")
 	}
 
 	// Split by "--" to get the three main parts: from, to, name
@@ -198,7 +198,7 @@ func ValidateAssociationFilename(filename string, level AssociationLevel, filePa
 			fmt.Sprintf("association filename '%s' must have exactly 3 parts separated by '--' "+
 				"(from--to--name), found %d parts", filename, len(parts)),
 			filePath,
-		).WithField("filename")
+		).WithField("filename").WithHint("first verify the association is at the correct level (subdomain/domain/model) for the two classes, then use the filename format for that level (from--to--name.assoc.json), then create any missing classes")
 	}
 
 	fromPart := parts[0]
@@ -250,7 +250,7 @@ func validateKeyComponent(component, componentName, filePath string) error {
 			ErrAssocFilenameInvalidComponent,
 			fmt.Sprintf("association filename component '%s' is empty", componentName),
 			filePath,
-		).WithField(componentName)
+		).WithField(componentName).WithHint("each component must be lowercase snake_case")
 	}
 
 	if !keyPattern.MatchString(component) {
@@ -260,7 +260,7 @@ func validateKeyComponent(component, componentName, filePath string) error {
 			fmt.Sprintf("association filename component '%s' value '%s' is invalid - "+
 				"must be lowercase snake_case; %s", componentName, component, suggestion),
 			filePath,
-		).WithField(componentName)
+		).WithField(componentName).WithHint("each component must be lowercase snake_case")
 	}
 
 	return nil
@@ -273,7 +273,7 @@ func validatePathComponent(path, componentName string, expectedParts int, filePa
 			ErrAssocFilenameInvalidComponent,
 			fmt.Sprintf("association filename component '%s' is empty", componentName),
 			filePath,
-		).WithField(componentName)
+		).WithField(componentName).WithHint("each component must be lowercase snake_case")
 	}
 
 	parts := strings.Split(path, ".")
@@ -292,7 +292,7 @@ func validatePathComponent(path, componentName string, expectedParts int, filePa
 			fmt.Sprintf("association filename component '%s' has %d parts (expected %s format): '%s'",
 				componentName, len(parts), expectedDesc, path),
 			filePath,
-		).WithField(componentName)
+		).WithField(componentName).WithHint("first verify the association is at the correct level (subdomain/domain/model) for the two classes, then use the filename format for that level (from--to--name.assoc.json), then create any missing classes")
 	}
 
 	// Validate each part of the path

@@ -70,7 +70,7 @@ func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
 	model := t_buildMinimalModelTree()
 	// Add attribute and index with duplicate
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Attributes = map[string]*inputAttribute{
-		"id": {Name: "ID", DataTypeRules: "int"},
+		"id": {Name: "ID", DataTypeRules: "unconstrained"},
 	}
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Indexes = [][]string{{"id", "id"}}
 
@@ -1033,9 +1033,9 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	ok := errors.As(err, &parseErr)
 	suite.True(ok)
 	suite.Equal(ErrTreeSubdomainNoAssociations, parseErr.Code)
-	suite.Equal("associations", parseErr.Field)
+	suite.Equal("class_associations", parseErr.Field)
 	suite.Contains(parseErr.Message, "at least one association")
-	suite.Contains(parseErr.Message, "associations/") // Check for guidance about file location
+	suite.Contains(parseErr.Message, "class_associations/") // Check for guidance about file location
 }
 
 // TestCompletenessClassNoAttributes verifies error when class has no attributes.
@@ -1173,7 +1173,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			expectedCode: ErrTreeSubdomainNoAssociations,
 			shouldContain: []string{
 				"associations describe how classes relate",
-				"associations/",
+				"class_associations/",
 				".assoc.json",
 			},
 		},
@@ -1407,8 +1407,8 @@ func t_buildValidModelTree() *inputModel {
 								Name:     "Order",
 								ActorKey: "customer",
 								Attributes: map[string]*inputAttribute{
-									"id":     {Name: "ID", DataTypeRules: "int"},
-									"status": {Name: "Status", DataTypeRules: "string"},
+									"id":     {Name: "ID", DataTypeRules: "unconstrained"},
+									"status": {Name: "Status", DataTypeRules: "enum of active, pending, completed"},
 								},
 								Indexes: [][]string{{"id"}, {"status"}},
 								StateMachine: &inputStateMachine{
@@ -1518,7 +1518,7 @@ func t_buildCompleteClass() *inputClass {
 	return &inputClass{
 		Name: "Complete Class",
 		Attributes: map[string]*inputAttribute{
-			"id": {Name: "ID", DataTypeRules: "int"},
+			"id": {Name: "ID", DataTypeRules: "unconstrained"},
 		},
 		StateMachine: &inputStateMachine{
 			States: map[string]*inputState{

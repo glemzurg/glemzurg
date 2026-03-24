@@ -1,34 +1,37 @@
 # Domain Association Schema Violation (E17006)
 
-The domain association JSON is valid JSON but does not conform to the expected schema.
+The domain association JSON file does not conform to the expected schema.
 
 ## What Went Wrong
 
-The JSON was parsed successfully, but its structure does not match what is expected for a domain association. This typically means:
-- A required field is missing (`problem_domain_key` or `solution_domain_key`)
-- A field has the wrong type (e.g., a key is a number instead of a string)
-- An unknown/extra field is present
-- A required string field is empty
+The file contains valid JSON but violates the schema rules. Common causes:
+- A required field is missing
+- A field has the wrong type (e.g., number instead of string)
+- An unknown field is present (no additional properties allowed)
+- A string field is empty when a minimum length is required
 
-## Required Fields
+## How to Fix
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `problem_domain_key` | string | Yes | Key of the problem domain |
-| `solution_domain_key` | string | Yes | Key of the solution domain |
-| `uml_comment` | string | No | Optional UML comment |
+1. Run `req_check --schema domain_association` to see the full JSON schema
+2. Compare your file against the schema requirements
+3. Fix the specific violation mentioned in the error message
 
-## Correct Format
+## File Location
 
-```json
-{
-    "problem_domain_key": "billing",
-    "solution_domain_key": "payment_processing"
-}
-```
+Domain association files: `domain_associations/{key}.domain_assoc.json`.
 
-## Related Errors
+## How to Read the Error Message
 
-- **E17005**: The JSON itself is malformed (syntax error)
-- **E17001**: The `problem_domain_key` field is specifically missing
-- **E17003**: The `solution_domain_key` field is specifically missing
+The error message includes the JSON path to the failing field and the specific rule violated:
+
+| Error Pattern | Meaning | Fix |
+|--------------|---------|-----|
+| `missing properties: 'X'` | Required field X is absent | Add the field |
+| `expected string, but got number` | Wrong value type | Use a string in double quotes |
+| `length must be >= 1, but got 0` | Empty string not allowed | Provide at least one character |
+| `additionalProperties 'X' not allowed` | Unknown field present | Remove the field or check spelling |
+
+## Related
+
+- Run `req_check --schema domain_association` for the full schema
+- Run `req_check --tree` for expected directory structure

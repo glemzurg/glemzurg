@@ -10,9 +10,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -42,11 +41,7 @@ func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
 
 	// Validate the resulting model
 	if err := result.Validate(); err != nil {
-		return nil, convErr(
-			ErrConvModelValidation,
-			fmt.Sprintf("resulting model validation failed: %s", err.Error()),
-			"model.json",
-		)
+		return nil, mapValidationError(err)
 	}
 
 	return result, nil
@@ -98,11 +93,11 @@ func convertGlobalFunctionsMap(input map[string]*inputGlobalFunction) (map[ident
 }
 
 // convertNamedSetsMap converts the named sets map.
-func convertNamedSetsMap(input map[string]*inputNamedSet) (map[identity.Key]model_named_set.NamedSet, error) {
+func convertNamedSetsMap(input map[string]*inputNamedSet) (map[identity.Key]model_logic.NamedSet, error) {
 	if len(input) == 0 {
 		return nil, nil //nolint:nilnil // empty input is valid, not an error
 	}
-	namedSets := make(map[identity.Key]model_named_set.NamedSet)
+	namedSets := make(map[identity.Key]model_logic.NamedSet)
 	for key, ns := range input {
 		converted, err := convertNamedSetToModel(key, ns)
 		if err != nil {
@@ -196,44 +191,38 @@ func convertGlobalFunctionToModel(keyStr string, gf *inputGlobalFunction) (model
 		return model_logic.GlobalFunction{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert global function logic: %s", err.Error()), gfFile)
 	}
 
-	result, err := model_logic.NewGlobalFunction(key, gf.Name, gf.Parameters, logic)
-	if err != nil {
-		return model_logic.GlobalFunction{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create global function: %s", err.Error()), gfFile)
-	}
+	result := model_logic.NewGlobalFunction(key, gf.Name, gf.Parameters, logic)
 	return result, nil
 }
 
-// convertNamedSetToModel converts an inputNamedSet to a model_named_set.NamedSet.
-func convertNamedSetToModel(keyStr string, ns *inputNamedSet) (model_named_set.NamedSet, error) {
+// convertNamedSetToModel converts an inputNamedSet to a model_logic.NamedSet.
+func convertNamedSetToModel(keyStr string, ns *inputNamedSet) (model_logic.NamedSet, error) {
 	nsFile := fmt.Sprintf("named_sets/%s.nset.json", keyStr)
 
 	key, err := identity.NewNamedSetKey(keyStr)
 	if err != nil {
-		return model_named_set.NamedSet{}, convErr(
+		return model_logic.NamedSet{}, convErr(
 			ErrConvKeyConstruction,
 			fmt.Sprintf("failed to create named set key '%s': %s", keyStr, err.Error()),
 			nsFile,
 		).WithField("key")
 	}
 
-	spec, err := model_spec.NewExpressionSpec(ns.Notation, ns.Specification, nil)
+	spec, err := logic_spec.NewExpressionSpec(ns.Notation, ns.Specification, nil)
 	if err != nil {
-		return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set spec: %s", err.Error()), nsFile)
+		return model_logic.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set spec: %s", err.Error()), nsFile)
 	}
 
-	var typeSpec *model_spec.TypeSpec
+	var typeSpec *logic_spec.TypeSpec
 	if ns.TypeSpec != "" {
-		ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, ns.TypeSpec, nil)
+		ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, ns.TypeSpec, nil)
 		if err != nil {
-			return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set type spec: %s", err.Error()), nsFile)
+			return model_logic.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set type spec: %s", err.Error()), nsFile)
 		}
 		typeSpec = &ts
 	}
 
-	result, err := model_named_set.NewNamedSet(key, ns.Name, ns.Description, spec, typeSpec)
-	if err != nil {
-		return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set: %s", err.Error()), nsFile)
-	}
+	result := model_logic.NewNamedSet(key, ns.Name, ns.Description, spec, typeSpec)
 	return result, nil
 }
 
@@ -1136,10 +1125,7 @@ func convertSMGuardsToModel(sm *inputStateMachine, class *model_class.Class, cla
 			return convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert guard '%s' logic: %s", guardKeyStr, err.Error()), smFile)
 		}
 
-		converted, err := model_state.NewGuard(guardKey, guard.Name, guardLogic)
-		if err != nil {
-			return convErr(ErrConvModelValidation, fmt.Sprintf("failed to create guard '%s': %s", guardKeyStr, err.Error()), smFile)
-		}
+		converted := model_state.NewGuard(guardKey, guard.Name, guardLogic)
 
 		class.Guards[converted.Key] = converted
 	}
@@ -1331,24 +1317,21 @@ func resolveLogicType(input *inputLogic, defaultType string) string {
 
 // convertLogicToModel converts an inputLogic to a model_logic.Logic with the given key.
 func convertLogicToModel(input *inputLogic, logicType string, logicKey identity.Key) (model_logic.Logic, error) {
-	spec, err := model_spec.NewExpressionSpec(input.Notation, input.Specification, nil)
+	spec, err := logic_spec.NewExpressionSpec(input.Notation, input.Specification, nil)
 	if err != nil {
 		return model_logic.Logic{}, fmt.Errorf("failed to create expression spec: %w", err)
 	}
 
-	var targetTypeSpec *model_spec.TypeSpec
+	var targetTypeSpec *logic_spec.TypeSpec
 	if input.TargetTypeSpec != "" {
-		ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, input.TargetTypeSpec, nil)
+		ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, input.TargetTypeSpec, nil)
 		if err != nil {
 			return model_logic.Logic{}, fmt.Errorf("failed to create target type spec: %w", err)
 		}
 		targetTypeSpec = &ts
 	}
 
-	logic, err := model_logic.NewLogic(logicKey, logicType, input.Description, input.Target, spec, targetTypeSpec)
-	if err != nil {
-		return model_logic.Logic{}, err
-	}
+	logic := model_logic.NewLogic(logicKey, logicType, input.Description, input.Target, spec, targetTypeSpec)
 	return logic, nil
 }
 
@@ -1413,7 +1396,7 @@ func convertClassGeneralizationToModel(keyStr string, gen *inputClassGeneralizat
 
 // convertSubdomainAssociationToModel converts an inputClassAssociation at subdomain level to a model_class.Association.
 func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociation, subdomainKey identity.Key, classes map[identity.Key]model_class.Class, domainKeyStr, subdomainKeyStr string) (model_class.Association, error) {
-	assocFile := fmt.Sprintf("domains/%s/subdomains/%s/associations/%s.assoc.json", domainKeyStr, subdomainKeyStr, keyStr)
+	assocFile := fmt.Sprintf("domains/%s/subdomains/%s/class_associations/%s.assoc.json", domainKeyStr, subdomainKeyStr, keyStr)
 
 	// Find the class keys
 	var fromClassKey, toClassKey identity.Key
@@ -1494,7 +1477,7 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 
 // convertDomainClassAssociationToModel converts an inputClassAssociation at domain level to a model_class.Association.
 func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssociation, domainKey identity.Key, subdomains map[identity.Key]model_domain.Subdomain, domainKeyStr string) (model_class.Association, error) {
-	assocFile := fmt.Sprintf("domains/%s/associations/%s.assoc.json", domainKeyStr, keyStr)
+	assocFile := fmt.Sprintf("domains/%s/class_associations/%s.assoc.json", domainKeyStr, keyStr)
 
 	// Parse subdomain/class format
 	fromSubdomain, fromClass, err := parseDomainScopedKey(assoc.FromClassKey)
@@ -1593,7 +1576,7 @@ func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssoci
 
 // convertModelAssociationToModel converts an inputClassAssociation at model level to a model_class.Association.
 func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation, domains map[identity.Key]model_domain.Domain) (model_class.Association, error) {
-	assocFile := fmt.Sprintf("associations/%s.assoc.json", keyStr)
+	assocFile := fmt.Sprintf("class_associations/%s.assoc.json", keyStr)
 
 	// Parse domain/subdomain/class format
 	fromDomain, fromSubdomain, fromClass, err := parseModelScopedKey(assoc.FromClassKey)

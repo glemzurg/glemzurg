@@ -1,10 +1,12 @@
 package model_domain
 
 import (
+	"fmt"
 	"maps"
 
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
@@ -12,7 +14,7 @@ import (
 // Domain is a root category of the mode.
 type Domain struct {
 	Key        identity.Key
-	Name       string `validate:"required"`
+	Name       string
 	Details    string // Markdown.
 	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
 	UmlComment string
@@ -21,62 +23,56 @@ type Domain struct {
 	ClassAssociations map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
 }
 
-func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) (domain Domain, err error) {
-	domain = Domain{
+func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) Domain {
+	return Domain{
 		Key:        key,
 		Name:       name,
 		Details:    details,
 		Realized:   realized,
 		UmlComment: umlComment,
 	}
-
-	if err = domain.Validate(); err != nil {
-		return Domain{}, err
-	}
-
-	return domain, nil
 }
 
 // Validate validates the Domain struct.
-func (d *Domain) Validate() error {
+func (d *Domain) Validate(ctx *coreerr.ValidationContext) error {
 	// Validate the key.
-	if err := d.Key.Validate(); err != nil {
-		return err
+	if err := d.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.DomainKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if d.Key.KeyType != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("Key: invalid key type '%s' for domain", d.Key.KeyType)
+		return coreerr.NewWithValues(ctx, coreerr.DomainKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for domain", d.Key.KeyType), "Key", d.Key.KeyType, identity.KEY_TYPE_DOMAIN)
 	}
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(d); err != nil {
-		return err
+	// Validate Name required.
+	if d.Name == "" {
+		return coreerr.New(ctx, coreerr.DomainNameRequired, "Name is required", "Name")
 	}
 	return nil
 }
 
 // ValidateWithParent validates the Domain, its key's parent relationship, and all children.
 // The parent must be nil (domains are root-level entities).
-func (d *Domain) ValidateWithParent(parent *identity.Key) error {
-	return d.ValidateWithParentAndActorsAndClasses(parent, nil, nil)
+func (d *Domain) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
+	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, nil, nil)
 }
 
 // ValidateWithParentAndActors validates the Domain with access to actors for cross-reference validation.
 // The parent must be nil (domains are root-level entities).
 // The actors map is used to validate that class ActorKey references exist.
-func (d *Domain) ValidateWithParentAndActors(parent *identity.Key, actors map[identity.Key]bool) error {
-	return d.ValidateWithParentAndActorsAndClasses(parent, actors, nil)
+func (d *Domain) ValidateWithParentAndActors(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool) error {
+	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, actors, nil)
 }
 
 // ValidateWithParentAndActorsAndClasses validates the Domain with access to actors and classes for cross-reference validation.
 // The parent must be nil (domains are root-level entities).
 // The actors map is used to validate that class ActorKey references exist.
 // The classes map is used to validate that association class references exist.
-func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool) error {
+func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool) error {
 	// Validate the object itself.
-	if err := d.Validate(); err != nil {
+	if err := d.Validate(ctx); err != nil {
 		return err
 	}
 	// Validate the key has the correct parent.
-	if err := d.Key.ValidateParent(parent); err != nil {
+	if err := d.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
 
@@ -85,29 +81,31 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, act
 		// Single subdomain must have the key "default".
 		for subdomainKey := range d.Subdomains {
 			if subdomainKey.GetSubKey() != "default" {
-				return errors.Errorf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey())
+				return coreerr.NewWithValues(ctx, coreerr.DomainSubdomainSingleKey, fmt.Sprintf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey()), "Subdomains", subdomainKey.GetSubKey(), "default")
 			}
 		}
 	} else if len(d.Subdomains) > 1 {
 		// Multiple subdomains cannot have the key "default".
 		for subdomainKey := range d.Subdomains {
 			if subdomainKey.GetSubKey() == "default" {
-				return errors.Errorf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String())
+				return coreerr.NewWithValues(ctx, coreerr.DomainSubdomainMultiDefault, fmt.Sprintf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String()), "Subdomains", "default", "")
 			}
 		}
 	}
 
 	// Validate all children.
 	for _, subdomain := range d.Subdomains {
-		if err := subdomain.ValidateWithParentAndActorsAndClasses(&d.Key, actors, classes); err != nil {
+		childCtx := ctx.Child("subdomain", subdomain.Key.String())
+		if err := subdomain.ValidateWithParentAndActorsAndClasses(childCtx, &d.Key, actors, classes); err != nil {
 			return err
 		}
 	}
 	for _, classAssoc := range d.ClassAssociations {
-		if err := classAssoc.ValidateWithParent(&d.Key); err != nil {
+		assocCtx := ctx.Child("classAssociation", classAssoc.Key.String())
+		if err := classAssoc.ValidateWithParent(assocCtx, &d.Key); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(classes); err != nil {
+		if err := classAssoc.ValidateReferences(assocCtx, classes); err != nil {
 			return err
 		}
 	}

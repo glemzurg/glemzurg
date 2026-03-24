@@ -3,6 +3,7 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,7 +48,8 @@ func (suite *ParameterSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.param.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.param.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -57,28 +59,24 @@ func (suite *ParameterSuite) TestValidate() {
 	}
 }
 
-// TestNew tests that NewParameter maps parameters correctly and calls Validate.
+// TestNew tests that NewParameter maps parameters correctly.
 func (suite *ParameterSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	param, err := NewParameter("amount", "Nat")
 	suite.Require().NoError(err)
 	suite.Equal("amount", param.Name)
 	suite.Equal("Nat", param.DataTypeRules)
-	// DataType may or may not be set depending on whether the parser is available
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewParameter("", "Nat")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
 func (suite *ParameterSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	// Test that Validate is called.
 	param := Parameter{
 		Name:          "",
 		DataTypeRules: "Nat",
 	}
-	err := param.ValidateWithParent()
+	err := param.ValidateWithParent(ctx)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
@@ -86,6 +84,6 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 		Name:          "amount",
 		DataTypeRules: "Nat",
 	}
-	err = param.ValidateWithParent()
+	err = param.ValidateWithParent(ctx)
 	suite.Require().NoError(err)
 }

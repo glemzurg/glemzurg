@@ -21,3 +21,7 @@ Example
 
 - Invalid: `problem_domain_key: payments` when only `domains/orders` exists.
 - Fix: rename to `problem_domain_key: orders` or create the `domains/payments/domain.json` file.
+
+Important: Resolve each issue individually
+
+Do not attempt to fix multiple domain association errors in a single bulk operation. Each association is distinct — a bulk change will often fix some references correctly while breaking others, creating more errors to fix later. Address each error one at a time, verifying correctness before moving to the next.

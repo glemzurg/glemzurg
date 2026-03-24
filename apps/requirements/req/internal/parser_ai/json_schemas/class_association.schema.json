@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "association.schema.json",
   "title": "Association",
-  "description": "Schema for association JSON files that define relationships between classes. Association files are located in the 'associations/' directory at the model root (e.g., 'associations/order_has_items.assoc.json'). Associations connect two classes and define the cardinality (multiplicity) of the relationship. If validation fails, verify all required fields are present (name, from_class_key, from_multiplicity, to_class_key, to_multiplicity) and that class keys reference existing classes.",
+  "description": "Schema for association JSON files that define relationships between classes. The same schema is used at three directory levels, each with different class key scoping rules. Subdomain level (subdomains/{s}/class_associations/): both classes are in the same subdomain, use bare class keys like 'order'. Domain level (domains/{d}/class_associations/): classes are in different subdomains of the same domain, use 'subdomain/class' keys like 'checkout/order'. Model level (class_associations/): classes are in different domains, use 'domain/subdomain/class' keys like 'commerce/checkout/order'. The association filename encodes the two class keys and a name: '{from}--{to}--{name}.assoc.json'. Associations connect two classes and define the cardinality (multiplicity) of the relationship. If validation fails, verify all required fields are present (name, from_class_key, from_multiplicity, to_class_key, to_multiplicity) and that class keys reference existing classes using the correct scoping format for the directory level.",
   "type": "object",
   "properties": {
     "name": {
@@ -16,7 +16,7 @@
     },
     "from_class_key": {
       "type": "string",
-      "description": "Key referencing the source (from) class in the association. The class key is constructed from the domain path plus filename: for a class at 'order_management/order.class.json', the key is 'order_management.order'. For nested subdomains like 'order_management/fulfillment/shipment.class.json', the key is 'order_management.fulfillment.shipment'. If validation fails: verify the class file exists at the expected path and the key matches the domain.filename pattern exactly.",
+      "description": "Key referencing the source (from) class in the association. The format depends on the directory level: in a subdomain's class_associations/ use just the class key (e.g. 'order'); in a domain's class_associations/ use 'subdomain/class' (e.g. 'checkout/order'); in the model root class_associations/ use 'domain/subdomain/class' (e.g. 'commerce/checkout/order'). The key must match a class that exists in the model. If validation fails: check the scoping format matches the directory level and that the referenced class exists.",
       "minLength": 1
     },
     "from_multiplicity": {
@@ -26,7 +26,7 @@
     },
     "to_class_key": {
       "type": "string",
-      "description": "Key referencing the target (to) class in the association. The class key is constructed from the domain path plus filename: for a class at 'inventory/product.class.json', the key is 'inventory.product'. For nested subdomains, include all path segments separated by dots. If validation fails: verify the class file exists at the expected path and the key matches the domain.filename pattern exactly.",
+      "description": "Key referencing the target (to) class in the association. The format depends on the directory level: in a subdomain's class_associations/ use just the class key (e.g. 'line_item'); in a domain's class_associations/ use 'subdomain/class' (e.g. 'shipping/shipment'); in the model root class_associations/ use 'domain/subdomain/class' (e.g. 'logistics/shipping/shipment'). The key must match a class that exists in the model. If validation fails: check the scoping format matches the directory level and that the referenced class exists.",
       "minLength": 1
     },
     "to_multiplicity": {
@@ -36,7 +36,7 @@
     },
     "association_class_key": {
       "type": ["string", "null"],
-      "description": "Optional key referencing an association class that holds attributes about the relationship itself. For example, an 'Enrollment' class between 'Student' and 'Course' might hold 'grade' and 'enrollment_date'. The key follows the same domain.filename pattern as other class keys. Set to null or omit if there is no association class. If validation fails: verify the association class file exists and the key is correctly formatted."
+      "description": "Optional key referencing an association class that holds attributes about the relationship itself. For example, an 'Enrollment' class between 'Student' and 'Course' might hold 'grade' and 'enrollment_date'. The association class must exist in the same scope as the association. Use the same scoping format as from_class_key and to_class_key. Set to null or omit if there is no association class. If validation fails: verify the association class file exists and the key uses the correct scoping format for this directory level."
     },
     "uml_comment": {
       "type": "string",

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	met "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	met "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 

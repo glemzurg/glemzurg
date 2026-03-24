@@ -3,8 +3,9 @@ package model_class
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -44,7 +45,7 @@ func (suite *ClassSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -122,7 +123,8 @@ func (suite *ClassSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.class.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.class.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -142,8 +144,7 @@ func (suite *ClassSuite) TestNew() {
 	subclassOfKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2"))
 
 	// Test parameters are mapped correctly.
-	class, err := NewClass(key, "Name", "Details", &actorKey, &superclassOfKey, &subclassOfKey, "UmlComment")
-	suite.Require().NoError(err)
+	class := NewClass(key, "Name", "Details", &actorKey, &superclassOfKey, &subclassOfKey, "UmlComment")
 	suite.Equal(Class{
 		Key:             key,
 		Name:            "Name",
@@ -153,14 +154,11 @@ func (suite *ClassSuite) TestNew() {
 		SubclassOfKey:   &subclassOfKey,
 		UmlComment:      "UmlComment",
 	}, class)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewClass(key, "", "Details", nil, nil, nil, "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (suite *ClassSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	validKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
@@ -171,7 +169,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := class.ValidateWithParent(&subdomainKey)
+	err := class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - class key has subdomain1 as parent, but we pass other_subdomain.
@@ -179,11 +177,11 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = class.ValidateWithParent(&otherSubdomainKey)
+	err = class.ValidateWithParent(ctx, &otherSubdomainKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err)
 
 	// Test child Invariant validation propagates error.
@@ -191,10 +189,10 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}}, // Invalid: empty key
+			{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}}, // Invalid: empty key
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "invariant 0", "Should validate child Invariants")
 
 	// Test child Invariant with wrong parent key is caught.
@@ -204,10 +202,10 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+			model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "invariant 0", "Should catch invariant with wrong parent key")
 
 	// Test valid class with let in invariants.
@@ -217,11 +215,11 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
-			helper.Must(model_logic.NewLogic(letInvKey2, model_logic.LogicTypeAssessment, "Must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+			model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local total.", "total", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
+			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeAssessment, "Must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err, "Class with let in invariants should be valid")
 
 	// Test duplicate let target in class invariants.
@@ -229,11 +227,11 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
-			helper.Must(model_logic.NewLogic(letInvKey2, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+			model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local a.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
+			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeLet, "Local a again.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "duplicate let target \"a\"", "Should catch duplicate let target in class invariants")
 
 	// Test child Attribute validation propagates error.
@@ -245,7 +243,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			attrKey: {Key: attrKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Attributes")
 
 	// Test child Action validation propagates error.
@@ -257,7 +255,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			actionKey: {Key: actionKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Actions")
 
 	// Test child Query validation propagates error.
@@ -269,7 +267,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			queryKey: {Key: queryKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Queries")
 
 	// Test child Event validation propagates error.
@@ -281,7 +279,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			eventKey: {Key: eventKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Events")
 
 	// Test child Guard validation propagates error.
@@ -293,7 +291,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			guardKey: {Key: guardKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Guards")
 
 	// Test child State validation propagates error.
@@ -305,7 +303,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			stateKey: {Key: stateKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "Name", "Should validate child States")
 
 	// Test child Transition validation propagates error (bad event key).
@@ -317,20 +315,20 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			transitionKey: {Key: transitionKey, EventKey: identity.Key{}}, // Invalid: empty event key
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().Error(err, "Should validate child Transitions")
 
 	// Test valid class with all child types.
 	invKey := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
-	validInvariant := helper.Must(model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
-	validLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
-	validAction := helper.Must(model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil))
-	validEvent := helper.Must(model_state.NewEvent(eventKey, "Event", "", nil))
-	validState := helper.Must(model_state.NewState(stateKey, "State", "", ""))
-	validGuard := helper.Must(model_state.NewGuard(guardKey, "Guard", validLogic))
-	validQuery := helper.Must(model_state.NewQuery(queryKey, "Query", "", nil, nil, nil))
+	validInvariant := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	validLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	validAction := model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil)
+	validEvent := model_state.NewEvent(eventKey, "Event", "", nil)
+	validState := model_state.NewState(stateKey, "State", "", "")
+	validGuard := model_state.NewGuard(guardKey, "Guard", validLogic)
+	validQuery := model_state.NewQuery(queryKey, "Query", "", nil, nil, nil)
 	validAttr := Attribute{Key: attrKey, Name: "Attr"}
-	validTransition := helper.Must(model_state.NewTransition(transitionKey, &stateKey, eventKey, nil, nil, &stateKey, ""))
+	validTransition := model_state.NewTransition(transitionKey, &stateKey, eventKey, nil, nil, &stateKey, "")
 	class = Class{
 		Key:         validKey,
 		Name:        "Name",
@@ -343,54 +341,54 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Queries:     map[identity.Key]model_state.Query{queryKey: validQuery},
 		Transitions: map[identity.Key]model_state.Transition{transitionKey: validTransition},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().NoError(err, "Valid class with all children should pass")
 
 	// Test guard logic key mismatch is caught through class validation.
 	otherGuardKey := helper.Must(identity.NewGuardKey(validKey, "other_guard"))
-	mismatchedLogic := helper.Must(model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	mismatchedLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
 		Guards: map[identity.Key]model_state.Guard{
-			guardKey: helper.Must(model_state.NewGuard(guardKey, "Guard", mismatchedLogic)),
+			guardKey: model_state.NewGuard(guardKey, "Guard", mismatchedLogic),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch")
 
 	// Test action require key with wrong parent is caught.
 	otherActionKey := helper.Must(identity.NewActionKey(validKey, "other_action"))
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
-	wrongReqLogic := helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
 		Actions: map[identity.Key]model_state.Action{
-			actionKey: helper.Must(model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil)),
+			actionKey: model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
-	suite.Require().ErrorContains(err, "requires 0", "Should catch action require key with wrong parent")
+	err = class.ValidateWithParent(ctx, &subdomainKey)
+	suite.Require().ErrorContains(err, "requires[0]", "Should catch action require key with wrong parent")
 
 	// Test query guarantee key with wrong parent is caught.
 	otherQueryKey := helper.Must(identity.NewQueryKey(validKey, "other_query"))
 	wrongGuarKey := helper.Must(identity.NewQueryGuaranteeKey(otherQueryKey, "guar_1"))
-	wrongGuarLogic := helper.Must(model_logic.NewLogic(wrongGuarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	wrongGuarLogic := model_logic.NewLogic(wrongGuarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
 		Queries: map[identity.Key]model_state.Query{
-			queryKey: helper.Must(model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{wrongGuarLogic}, nil)),
+			queryKey: model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{wrongGuarLogic}, nil),
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
-	suite.Require().ErrorContains(err, "guarantee 0", "Should catch query guarantee key with wrong parent")
+	err = class.ValidateWithParent(ctx, &subdomainKey)
+	suite.Require().ErrorContains(err, "guarantees[0]", "Should catch query guarantee key with wrong parent")
 
 	// Test attribute derivation policy key with wrong parent is caught.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(validKey, "other_attr"))
 	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
-	wrongDerivLogic := helper.Must(model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeStateChange, "Computed.", "field", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	wrongDerivLogic := model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeStateChange, "Computed.", "field", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
@@ -398,7 +396,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &wrongDerivLogic},
 		},
 	}
-	err = class.ValidateWithParent(&subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey)
 	suite.Require().ErrorContains(err, "DerivationPolicy", "Should catch attribute derivation policy key with wrong parent")
 }
 
@@ -418,7 +416,7 @@ func (suite *ClassSuite) TestSetters() {
 	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "", "", "state1"))
 
 	invKey := helper.Must(identity.NewClassInvariantKey(classKey, "0"))
-	invariants := []model_logic.Logic{helper.Must(model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))}
+	invariants := []model_logic.Logic{model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)}
 	class.SetInvariants(invariants)
 	suite.Equal(invariants, class.Invariants)
 
@@ -426,11 +424,11 @@ func (suite *ClassSuite) TestSetters() {
 	class.SetAttributes(attrs)
 	suite.Equal(attrs, class.Attributes)
 
-	states := map[identity.Key]model_state.State{stateKey: helper.Must(model_state.NewState(stateKey, "State", "", ""))}
+	states := map[identity.Key]model_state.State{stateKey: model_state.NewState(stateKey, "State", "", "")}
 	class.SetStates(states)
 	suite.Equal(states, class.States)
 
-	events := map[identity.Key]model_state.Event{eventKey: helper.Must(model_state.NewEvent(eventKey, "Event", "", nil))}
+	events := map[identity.Key]model_state.Event{eventKey: model_state.NewEvent(eventKey, "Event", "", nil)}
 	class.SetEvents(events)
 	suite.Equal(events, class.Events)
 
@@ -438,11 +436,11 @@ func (suite *ClassSuite) TestSetters() {
 	class.SetGuards(guards)
 	suite.Equal(guards, class.Guards)
 
-	actions := map[identity.Key]model_state.Action{actionKey: helper.Must(model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil))}
+	actions := map[identity.Key]model_state.Action{actionKey: model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil)}
 	class.SetActions(actions)
 	suite.Equal(actions, class.Actions)
 
-	queries := map[identity.Key]model_state.Query{queryKey: helper.Must(model_state.NewQuery(queryKey, "Query", "", nil, nil, nil))}
+	queries := map[identity.Key]model_state.Query{queryKey: model_state.NewQuery(queryKey, "Query", "", nil, nil, nil)}
 	class.SetQueries(queries)
 	suite.Equal(queries, class.Queries)
 
@@ -581,7 +579,8 @@ func (suite *ClassSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.class.ValidateReferences(tt.actors, tt.generalizations)
+			ctx := coreerr.NewContext("test", "")
+			err := tt.class.ValidateReferences(ctx, tt.actors, tt.generalizations)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

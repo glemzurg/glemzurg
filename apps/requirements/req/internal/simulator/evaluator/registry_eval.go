@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 )
 
 // IRRegistryInterface allows the IR evaluator to look up custom function definitions.

@@ -23,8 +23,8 @@ your_model/
                 │   │   └── class.json
                 │   └── ebook/             <-- Each subclass must exist
                 │       └── class.json
-                └── generalizations/
-                    └── medium.gen.json    <-- References subclasses
+                └── class_generalizations/
+                    └── medium.cgen.json    <-- References subclasses
 ```
 
 ## How to Fix

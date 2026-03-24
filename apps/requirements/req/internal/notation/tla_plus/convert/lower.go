@@ -4,12 +4,40 @@ import (
 	"fmt"
 	"maps"
 	"math/big"
+	"sort"
 	"strings"
 
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
+
+// unresolvedError builds an error message for an unresolved name, including
+// "did you mean?" suggestions and a list of available names.
+func unresolvedError(kind, name string, candidates []string) error {
+	sort.Strings(candidates)
+	suggestions := SuggestSimilar(name, candidates, 3)
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "unresolved %s: %q", kind, name)
+	if len(suggestions) > 0 {
+		fmt.Fprintf(&b, " (did you mean %s?)", strings.Join(suggestions, ", "))
+	}
+	if len(candidates) > 0 {
+		fmt.Fprintf(&b, "; available: [%s]", strings.Join(candidates, ", "))
+	}
+	return fmt.Errorf("%s", b.String())
+}
+
+// mapKeys returns sorted keys from a map[string]T.
+func mapKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
 
 // LowerContext provides class-level context for semantic resolution during lowering.
 // Identity keys are pre-constructed from the model hierarchy and passed in, not built during lowering.
@@ -349,7 +377,23 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 		return &me.SetConstant{Kind: kind}, nil
 	}
 
-	return nil, fmt.Errorf("unresolved identifier: %q", name)
+	// Build list of all available names for error message.
+	var available []string
+	available = append(available, mapKeys(ctx.AttributeNames)...)
+	available = append(available, mapKeys(ctx.NamedSets)...)
+	for k := range ctx.Parameters {
+		available = append(available, k)
+	}
+	if ctx.localVars != nil {
+		for k := range ctx.localVars {
+			available = append(available, k)
+		}
+	}
+	// Add well-known set constants.
+	for k := range setConstantIdentifiers {
+		available = append(available, k)
+	}
+	return nil, unresolvedError("identifier", name, available)
 }
 
 func lowerExistingValue(ctx *LowerContext) (*me.PriorFieldValue, error) {
@@ -857,7 +901,7 @@ func lowerGlobalOrBuiltinFunctionCall(e *ast.FunctionCall, ctx *LowerContext) (m
 	name := e.Name.Value
 	key, ok := ctx.GlobalFunctions[name]
 	if !ok {
-		return nil, fmt.Errorf("unresolved global function: %q", name)
+		return nil, unresolvedError("global function", name, mapKeys(ctx.GlobalFunctions))
 	}
 	return &me.GlobalCall{FunctionKey: key, Args: args}, nil
 }
@@ -885,7 +929,10 @@ func lowerClassActionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression
 		if key, ok := ctx.QueryNames[name]; ok {
 			return &me.ActionCall{ActionKey: key, Args: args}, nil
 		}
-		return nil, fmt.Errorf("unresolved action/query: %q", name)
+		var available []string
+		available = append(available, mapKeys(ctx.ActionNames)...)
+		available = append(available, mapKeys(ctx.QueryNames)...)
+		return nil, unresolvedError("action/query", name, available)
 	}
 
 	// Cross-class action call: Domain!Subdomain!Class!Action or shorter scope paths.
@@ -893,7 +940,7 @@ func lowerClassActionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression
 	if key, ok := ctx.AllActions[fullName]; ok {
 		return &me.ActionCall{ActionKey: key, Args: args}, nil
 	}
-	return nil, fmt.Errorf("unresolved cross-class action: %q", fullName)
+	return nil, unresolvedError("cross-class action", fullName, mapKeys(ctx.AllActions))
 }
 
 func lowerBuiltinCall(e *ast.BuiltinCall, ctx *LowerContext) (*me.BuiltinCall, error) {
@@ -928,7 +975,7 @@ func lowerScopedCall(e *ast.ScopedCall, ctx *LowerContext) (me.Expression, error
 		name := "_" + e.FunctionName.Value
 		key, ok := ctx.GlobalFunctions[name]
 		if !ok {
-			return nil, fmt.Errorf("unresolved model-scope function: %q", name)
+			return nil, unresolvedError("model-scope function", name, mapKeys(ctx.GlobalFunctions))
 		}
 		return &me.GlobalCall{FunctionKey: key, Args: args}, nil
 	}
@@ -962,5 +1009,9 @@ func lowerScopedCall(e *ast.ScopedCall, ctx *LowerContext) (me.Expression, error
 	if key, ok := ctx.AllActions[fullName]; ok {
 		return &me.ActionCall{ActionKey: key, Args: args}, nil
 	}
-	return nil, fmt.Errorf("unresolved scoped call: %q", fullName)
+	var available []string
+	available = append(available, mapKeys(ctx.ActionNames)...)
+	available = append(available, mapKeys(ctx.QueryNames)...)
+	available = append(available, mapKeys(ctx.AllActions)...)
+	return nil, unresolvedError("scoped call", fullName, available)
 }

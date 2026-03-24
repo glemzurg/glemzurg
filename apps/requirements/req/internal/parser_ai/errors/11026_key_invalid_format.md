@@ -59,10 +59,10 @@ your_model/
 │       └── subdomains/
 │           └── default/             <- subdomain_key: "default"
 │               ├── subdomain.json
-│               ├── associations/
+│               ├── class_associations/
 │               │   └── order_lines.assoc.json  <- association_key: "order_lines"
-│               ├── generalizations/
-│               │   └── medium.gen.json         <- generalization_key: "medium"
+│               ├── class_generalizations/
+│               │   └── medium.cgen.json         <- generalization_key: "medium"
 │               └── classes/
 │                   └── book_order/             <- class_key: "book_order"
 │                       ├── class.json

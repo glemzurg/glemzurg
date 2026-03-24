@@ -80,13 +80,13 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	eventUpdateKey := mustKey("domain/d/subdomain/s/class/stuck/event/update")
 	transUpdateKey := mustKey("domain/d/subdomain/s/class/stuck/transition/update")
 
-	eventUpdate := helper.Must(model_state.NewEvent(eventUpdateKey, "update", "", nil))
+	eventUpdate := model_state.NewEvent(eventUpdateKey, "update", "", nil)
 
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 
-	transUpdate := helper.Must(model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, ""))
+	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -121,20 +121,20 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/counter/state/active/saction/do/do_count")
 	transCreateKey := mustKey("domain/d/subdomain/s/class/counter/transition/create")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil))
-	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil)
+	actionDo := model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
-	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
+	stateActionDo := model_state.NewStateAction(stateActionKey, actionDoKey, "do")
 
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateActive.SetActions([]model_state.StateAction{stateActionDo})
 
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,

@@ -12,11 +12,15 @@ Query files are located alongside their class files:
 
 ```
 your_model/
-├── model.json
-└── order_management/
-    ├── domain.json
-    ├── order.class.json
-    └── order.queries.json    <-- This file is missing the name field
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── classes/
+                    └── order/
+                        ├── class.json
+                        └── queries/
+                            └── get_order_total.json    <-- This file is missing the name field
 ```
 
 ## How to Fix

@@ -21,3 +21,7 @@ Example
 
 - Invalid: step references `event_key: confirm_order` but the class state machine defines only `confirm`.
 - Fix: either change the event key to `confirm` or add the `confirm_order` event to the class state machine.
+
+Important: Resolve each issue individually
+
+Do not attempt to fix multiple scenario step errors in a single bulk operation. Each step references distinct objects, events, and queries — a bulk change will often fix some steps correctly while breaking others, creating more errors to fix later. Address each step error one at a time, verifying correctness before moving to the next.

@@ -18,7 +18,7 @@ your_model/
 │   ├── customer.actor.json
 │   └── guest.actor.json
 └── actor_generalizations/
-    └── user_types.actor_gen.json    <-- This file is missing the "name" field
+    └── user_types.agen.json    <-- This file is missing the "name" field
 ```
 
 ## How to Fix

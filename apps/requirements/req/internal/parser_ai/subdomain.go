@@ -49,32 +49,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the subdomain schema and returns detailed errors if validation fails.
 func parseSubdomain(content []byte, filename string) (*inputSubdomain, error) {
-	var subdomain inputSubdomain
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &subdomain); err != nil {
-		return nil, NewParseError(
-			ErrSubdomainInvalidJSON,
-			"failed to parse subdomain JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrSubdomainInvalidJSON,
-			"failed to parse subdomain JSON for schema validation: "+err.Error(),
+			"failed to parse subdomain JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := subdomainSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrSubdomainSchemaViolation,
 			"subdomain JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(subdomainSchemaContent)
+		).WithHint("run: req_check --schema subdomain")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var subdomain inputSubdomain
+	if err := json.Unmarshal(content, &subdomain); err != nil {
+		return nil, NewParseError(
+			ErrSubdomainInvalidJSON,
+			"failed to parse subdomain JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields
@@ -94,7 +93,7 @@ func validateSubdomain(subdomain *inputSubdomain, filename string) error {
 			ErrSubdomainNameRequired,
 			"subdomain name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to subdomain.json")
 	}
 
 	// Name cannot be only whitespace
@@ -103,7 +102,7 @@ func validateSubdomain(subdomain *inputSubdomain, filename string) error {
 			ErrSubdomainNameEmpty,
 			"subdomain name cannot be empty or whitespace only, got '"+subdomain.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to subdomain.json")
 	}
 
 	return nil

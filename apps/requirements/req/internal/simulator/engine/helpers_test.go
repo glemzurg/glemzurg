@@ -5,7 +5,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -34,19 +34,19 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpec("self.amount + 10"), nil))
+	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpec("self.amount + 10"), nil)
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
-	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
-	actionClose := helper.Must(model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
+	eventClose := model_state.NewEvent(eventCloseKey, "close", "", nil)
+	actionClose := model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
-	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
-	stateClosed := helper.Must(model_state.NewState(stateClosedKey, "Closed", "", ""))
+	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
+	stateClosed := model_state.NewState(stateClosedKey, "Closed", "", "")
 
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
-	transClose := helper.Must(model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, ""))
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
+	transClose := model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
@@ -76,13 +76,13 @@ func testItemClass() (model_class.Class, identity.Key) {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/item/event/create")
 	transCreateKey := mustKey("domain/d/subdomain/s/class/item/transition/create")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Item", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Item", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -101,15 +101,15 @@ func testItemClass() (model_class.Class, identity.Key) {
 }
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
-func parsedSpec(tla string) model_spec.ExpressionSpec {
+func parsedSpec(tla string) logic_spec.ExpressionSpec {
 	pf := convert.NewExpressionParseFunc(nil)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
 // counterSpec parses a TLA+ expression in the context of the standard Counter class
 // with attribute: count.
-func counterSpec() model_spec.ExpressionSpec {
+func counterSpec() logic_spec.ExpressionSpec {
 	tla := "self.count + 1"
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	ctx := &convert.LowerContext{
@@ -119,13 +119,13 @@ func counterSpec() model_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
 // orderSpec parses a TLA+ expression in the context of the standard Order class
 // with attributes: amount, status.
-func orderSpec(tla string) model_spec.ExpressionSpec {
+func orderSpec(tla string) logic_spec.ExpressionSpec {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	ctx := &convert.LowerContext{
 		ClassKey: classKey,
@@ -135,7 +135,7 @@ func orderSpec(tla string) model_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
@@ -152,15 +152,15 @@ func testModel(classes ...struct {
 		classMap[c.key] = c.class
 	}
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
 	subdomain.Classes = classMap
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
+	model := core.NewModel("test", "Test", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

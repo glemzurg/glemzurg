@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strings"
 
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
@@ -33,7 +33,7 @@ type RaiseContext struct {
 	ActionScopePaths map[identity.Key]string
 }
 
-// Raise converts a model_expression.Expression tree into a TLA+ AST expression.
+// Raise converts a logic_expression.Expression tree into a TLA+ AST expression.
 // This is the inverse of Lower().
 //
 //complexity:cyclo:warn=60,fail=60 Simple routing switch.

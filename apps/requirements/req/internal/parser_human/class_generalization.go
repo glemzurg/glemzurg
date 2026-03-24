@@ -40,10 +40,7 @@ func parseClassGeneralization(subdomainKey identity.Key, generalizationSubKey, f
 		return model_class.Generalization{}, errors.WithStack(err)
 	}
 
-	generalization, err = model_class.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
-	if err != nil {
-		return model_class.Generalization{}, err
-	}
+	generalization = model_class.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
 	return generalization, nil
 }
 

@@ -12,9 +12,12 @@ Use case generalization files are located in the `use_case_generalizations/` dir
 
 ```
 your_model/
-├── model.json
-└── use_case_generalizations/
-    └── order_types.uc_gen.json    <-- This file has an empty subclass key
+└── domains/
+    └── order_management/
+        └── subdomains/
+            └── default/
+                └── use_case_generalizations/
+                    └── order_types.ucgen.json    <-- This file has an empty subclass key
 ```
 
 ## How to Fix
@@ -123,10 +126,10 @@ The error message includes the array index (0-based) of the problematic entry:
 
 ```bash
 # View the subclass_keys array
-cat order_types.uc_gen.json | jq '.subclass_keys'
+cat order_types.ucgen.json | jq '.subclass_keys'
 
 # Check for empty strings
-cat order_types.uc_gen.json | jq '.subclass_keys | map(select(. == "" or (. | test("^\\s*$"))))'
+cat order_types.ucgen.json | jq '.subclass_keys | map(select(. == "" or (. | test("^\\s*$"))))'
 ```
 
 ## Understanding Use Case Keys
@@ -137,7 +140,7 @@ Each subclass key must reference an existing use case file:
 subclass_keys: ["process_online_order", "process_in_store_order"]
                      |                        |
                      v                        v
-    use_cases/process_online_order.uc.json   use_cases/process_in_store_order.uc.json
+    use_cases/process_online_order/use_case.json   use_cases/process_in_store_order/use_case.json
 ```
 
 ## Complete Schema

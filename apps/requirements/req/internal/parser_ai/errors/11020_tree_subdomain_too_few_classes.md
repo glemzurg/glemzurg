@@ -69,7 +69,7 @@ Add a `class.json` file for each class:
 Create associations to show how classes relate:
 
 ```
-domains/{domain}/subdomains/{subdomain}/associations/order_has_line_items.assoc.json
+domains/{domain}/subdomains/{subdomain}/class_associations/order_has_line_items.assoc.json
 ```
 
 ```json

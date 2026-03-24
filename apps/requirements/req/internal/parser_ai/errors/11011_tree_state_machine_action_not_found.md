@@ -127,6 +127,10 @@ Each state-changing call becomes an action file. The action's `requires` capture
 
 **Read-only calls (GET, queries) become Query files, not Actions.**
 
+## Important: Resolve Each Issue Individually
+
+Do not attempt to fix multiple state machine errors in a single bulk operation. States, events, guards, actions, and transitions are interconnected — a bulk change will often fix some references correctly while breaking others, creating more errors to fix later. Address each state machine error one at a time, verifying correctness before moving to the next.
+
 ## Related Errors
 
 - **E11008**: Transition state not found

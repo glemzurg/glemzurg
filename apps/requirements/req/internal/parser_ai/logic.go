@@ -47,32 +47,31 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the logic schema and returns detailed errors if validation fails.
 func parseLogic(content []byte, filename string) (*inputLogic, error) {
-	var logic inputLogic
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &logic); err != nil {
-		return nil, NewParseError(
-			ErrLogicInvalidJSON,
-			"failed to parse logic JSON: "+err.Error(),
-			filename,
-		)
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrLogicInvalidJSON,
-			"failed to parse logic JSON for schema validation: "+err.Error(),
+			"failed to parse logic JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := logicSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrLogicSchemaViolation,
 			"logic JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(logicSchemaContent)
+		).WithHint("run: req_check --schema logic")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var logic inputLogic
+	if err := json.Unmarshal(content, &logic); err != nil {
+		return nil, NewParseError(
+			ErrLogicInvalidJSON,
+			"failed to parse logic JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules
@@ -92,7 +91,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 			ErrLogicDescriptionRequired,
 			"logic description is required, got ''",
 			filename,
-		).WithField("description")
+		).WithField("description").WithHint("add a non-empty \"description\" field")
 	}
 
 	// Description cannot be only whitespace
@@ -101,7 +100,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 			ErrLogicDescriptionEmpty,
 			"logic description cannot be empty or whitespace only, got '"+logic.Description+"'",
 			filename,
-		).WithField("description")
+		).WithField("description").WithHint("add a non-empty \"description\" field")
 	}
 
 	// Target validation based on logic type (when type is specified).
@@ -112,14 +111,14 @@ func validateLogic(logic *inputLogic, filename string) error {
 				ErrLogicTargetRequired,
 				"logic of type '"+logic.Type+"' requires a non-empty 'target' field — for state_change this is the attribute SubKey being set, for query this is the output identifier name, for let this is the local variable name",
 				filename,
-			).WithField("target")
+			).WithField("target").WithHint("state_change/query/let types require a non-empty \"target\" field")
 		}
 		if (logic.Type == _LOGIC_TYPE_QUERY || logic.Type == "let") && strings.HasPrefix(logic.Target, "_") {
 			return NewParseError(
 				ErrLogicTargetNoLeadUnderscore,
 				logic.Type+" logic target '"+logic.Target+"' cannot start with '_' — use a plain identifier name",
 				filename,
-			).WithField("target")
+			).WithField("target").WithHint("query/let target names cannot start with underscore")
 		}
 	case "assessment", "safety_rule", "value":
 		if logic.Target != "" {
@@ -127,7 +126,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 				ErrLogicTargetNotAllowed,
 				"logic of type '"+logic.Type+"' must not have a 'target' field, got '"+logic.Target+"' — only state_change, query, and let types use target",
 				filename,
-			).WithField("target")
+			).WithField("target").WithHint("assessment/safety_rule/value types must not have a \"target\" field")
 		}
 	}
 

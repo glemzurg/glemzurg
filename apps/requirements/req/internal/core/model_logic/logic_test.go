@@ -3,7 +3,8 @@ package model_logic
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -18,13 +19,13 @@ func TestLogicSuite(t *testing.T) {
 }
 
 // validSpec returns a valid ExpressionSpec for testing.
-func validSpec() model_spec.ExpressionSpec {
-	return model_spec.ExpressionSpec{Notation: NotationTLAPlus}
+func validSpec() logic_spec.ExpressionSpec {
+	return logic_spec.ExpressionSpec{Notation: NotationTLAPlus}
 }
 
 // validSpecWithBody returns a valid ExpressionSpec with a specification body.
-func validSpecWithBody(body string) model_spec.ExpressionSpec {
-	return model_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: body}
+func validSpecWithBody(body string) logic_spec.ExpressionSpec {
+	return logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: body}
 }
 
 // TestValidate tests all validation rules for Logic.
@@ -159,7 +160,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Spec:        model_spec.ExpressionSpec{},
+				Spec:        logic_spec.ExpressionSpec{},
 			},
 			errstr: "Notation",
 		},
@@ -169,7 +170,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Spec:        model_spec.ExpressionSpec{Notation: "Z"},
+				Spec:        logic_spec.ExpressionSpec{Notation: "Z"},
 			},
 			errstr: "Notation",
 		},
@@ -199,7 +200,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Spec:        model_spec.ExpressionSpec{Notation: "Alloy", Specification: "some spec"},
+				Spec:        logic_spec.ExpressionSpec{Notation: "Alloy", Specification: "some spec"},
 			},
 			errstr: "Notation",
 		},
@@ -303,7 +304,8 @@ func (s *LogicTestSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			err := tt.logic.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.logic.Validate(ctx)
 			if tt.errstr == "" {
 				s.Require().NoError(err)
 			} else {
@@ -321,8 +323,7 @@ func (s *LogicTestSuite) TestNew() {
 
 	// Test all parameters are mapped correctly (assessment — no target).
 	spec := validSpecWithBody("\\A p \\in Products : p.stock >= 0")
-	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", spec, nil)
-	s.Require().NoError(err)
+	logic := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", spec, nil)
 	s.Equal(Logic{
 		Key:         validKey,
 		Type:        LogicTypeAssessment,
@@ -331,8 +332,7 @@ func (s *LogicTestSuite) TestNew() {
 	}, logic)
 
 	// Test with empty specification (optional).
-	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", validSpec(), nil)
-	s.Require().NoError(err)
+	logic = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", validSpec(), nil)
 	s.Equal(Logic{
 		Key:         validKey2,
 		Type:        LogicTypeAssessment,
@@ -341,39 +341,22 @@ func (s *LogicTestSuite) TestNew() {
 	}, logic)
 
 	// Test state_change with target.
-	logic, err = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", validSpecWithBody("address"), nil)
-	s.Require().NoError(err)
+	logic = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", validSpecWithBody("address"), nil)
 	s.Equal("shipping", logic.Target)
 
 	// Test query with target.
-	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", validSpecWithBody("expr"), nil)
-	s.Require().NoError(err)
+	logic = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", validSpecWithBody("expr"), nil)
 	s.Equal("result", logic.Target)
 
 	// Test let with target.
-	logic, err = NewLogic(validKey, LogicTypeLet, "Local variable.", "myVar", validSpecWithBody("1 + 2"), nil)
-	s.Require().NoError(err)
+	logic = NewLogic(validKey, LogicTypeLet, "Local variable.", "myVar", validSpecWithBody("1 + 2"), nil)
 	s.Equal("myVar", logic.Target)
 	s.Equal(LogicTypeLet, logic.Type)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", validSpec(), nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "KeyType")
-
-	// Test that invalid notation fails.
-	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "", model_spec.ExpressionSpec{Notation: "Z"}, nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "Notation")
-
-	// Test that invalid kind fails.
-	_, err = NewLogic(validKey, "bogus", "Some description.", "", validSpec(), nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "Type")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (s *LogicTestSuite) TestValidateWithParent() {
+	ctx := coreerr.NewContext("test", "")
 	validKey := helper.Must(identity.NewInvariantKey("0"))
 
 	// Test valid case - invariant keys have nil parent.
@@ -383,7 +366,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Description: "Some description.",
 		Spec:        validSpec(),
 	}
-	err := logic.ValidateWithParent(nil)
+	err := logic.ValidateWithParent(ctx, nil)
 	s.Require().NoError(err)
 
 	// Test that Validate is called.
@@ -393,7 +376,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Description: "", // Invalid
 		Spec:        validSpec(),
 	}
-	err = logic.ValidateWithParent(nil)
+	err = logic.ValidateWithParent(ctx, nil)
 	s.Require().ErrorContains(err, "Description")
 
 	// Test that ValidateParent is called - invariant key should have nil parent.
@@ -404,7 +387,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Description: "Some description.",
 		Spec:        validSpec(),
 	}
-	err = logic.ValidateWithParent(&domainKey)
+	err = logic.ValidateWithParent(ctx, &domainKey)
 	s.Require().ErrorContains(err, "should not have a parent")
 
 	// Test with action require key and action parent.
@@ -419,10 +402,10 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Description: "Precondition.",
 		Spec:        validSpec(),
 	}
-	err = logic.ValidateWithParent(&actionKey)
+	err = logic.ValidateWithParent(ctx, &actionKey)
 	s.Require().NoError(err)
 
 	// Test wrong parent for action require key.
-	err = logic.ValidateWithParent(&classKey)
+	err = logic.ValidateWithParent(ctx, &classKey)
 	s.Require().Error(err)
 }

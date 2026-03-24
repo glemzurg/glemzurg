@@ -14,7 +14,7 @@ Actor generalization files are located in the `actor_generalizations/` directory
 your_model/
 ├── model.json
 └── actor_generalizations/
-    └── user_types.actor_gen.json    <-- This file has an empty subclass key
+    └── user_types.agen.json    <-- This file has an empty subclass key
 ```
 
 ## How to Fix
@@ -123,10 +123,10 @@ The error message includes the array index (0-based) of the problematic entry:
 
 ```bash
 # View the subclass_keys array
-cat user_types.actor_gen.json | jq '.subclass_keys'
+cat user_types.agen.json | jq '.subclass_keys'
 
 # Check for empty strings
-cat user_types.actor_gen.json | jq '.subclass_keys | map(select(. == "" or (. | test("^\\s*$"))))'
+cat user_types.agen.json | jq '.subclass_keys | map(select(. == "" or (. | test("^\\s*$"))))'
 ```
 
 ## Understanding Actor Keys

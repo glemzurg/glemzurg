@@ -5,9 +5,10 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -43,7 +44,7 @@ func (suite *DomainSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -64,7 +65,8 @@ func (suite *DomainSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			err := tt.domain.Validate()
+			ctx := coreerr.NewContext("test", "")
+			err := tt.domain.Validate(ctx)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -79,8 +81,8 @@ func (suite *DomainSuite) TestNew() {
 	key := helper.Must(identity.NewDomainKey("domain1"))
 
 	// Test parameters are mapped correctly.
-	domain, err := NewDomain(key, "Name", "Details", true, "UmlComment")
-	suite.Require().NoError(err)
+
+	domain := NewDomain(key, "Name", "Details", true, "UmlComment")
 	suite.Equal(Domain{
 		Key:        key,
 		Name:       "Name",
@@ -88,10 +90,6 @@ func (suite *DomainSuite) TestNew() {
 		Realized:   true,
 		UmlComment: "UmlComment",
 	}, domain)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewDomain(key, "", "Details", true, "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -99,12 +97,14 @@ func (suite *DomainSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewDomainKey("domain1"))
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test that Validate is called.
 	domain := Domain{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := domain.ValidateWithParent(nil)
+	err := domain.ValidateWithParent(ctx, nil)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domains should have nil parent.
@@ -112,11 +112,11 @@ func (suite *DomainSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = domain.ValidateWithParent(&otherDomainKey)
+	err = domain.ValidateWithParent(ctx, &otherDomainKey)
 	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = domain.ValidateWithParent(nil)
+	err = domain.ValidateWithParent(ctx, nil)
 	suite.Require().NoError(err)
 }
 
@@ -143,15 +143,15 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	// Create associations:
 	// 1. Domain-level association (bridges subdomains).
 	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2, "domain association"))
-	domainAssoc := helper.Must(model_class.NewAssociation(domainAssocKey, "Domain Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
+	domainAssoc := model_class.NewAssociation(domainAssocKey, "Domain Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")
 
 	// 2. Subdomain1-level association.
 	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1, "subdomain1 association"))
-	sub1Assoc := helper.Must(model_class.NewAssociation(sub1AssocKey, "Subdomain1 Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
+	sub1Assoc := model_class.NewAssociation(sub1AssocKey, "Subdomain1 Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")
 
 	// 3. Subdomain2-level association.
 	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2, "subdomain2 association"))
-	sub2Assoc := helper.Must(model_class.NewAssociation(sub2AssocKey, "Subdomain2 Association", "", model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
+	sub2Assoc := model_class.NewAssociation(sub2AssocKey, "Subdomain2 Association", "", model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")
 
 	// Test: associations are routed correctly.
 	err := domain.SetClassAssociations(map[identity.Key]model_class.Association{
@@ -178,7 +178,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain1"))
 	crossDomainClassKey := helper.Must(identity.NewClassKey(otherSubdomainKey, "class1"))
 	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, class1InSub1, crossDomainClassKey, "model level association"))
-	modelLevelAssoc := helper.Must(model_class.NewAssociation(modelLevelAssocKey, "Model Level Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
+	modelLevelAssoc := model_class.NewAssociation(modelLevelAssocKey, "Model Level Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")
 	err = domain.SetClassAssociations(map[identity.Key]model_class.Association{
 		modelLevelAssocKey: modelLevelAssoc,
 	})
@@ -189,7 +189,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	otherSubdomain2Key := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain2"))
 	crossDomainClassKey2 := helper.Must(identity.NewClassKey(otherSubdomain2Key, "class2"))
 	wrongDomainAssocKey := helper.Must(identity.NewClassAssociationKey(otherDomainKey, crossDomainClassKey, crossDomainClassKey2, "wrong domain association"))
-	wrongDomainAssoc := helper.Must(model_class.NewAssociation(wrongDomainAssocKey, "Wrong Domain Association", "", model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
+	wrongDomainAssoc := model_class.NewAssociation(wrongDomainAssocKey, "Wrong Domain Association", "", model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")
 	err = domain.SetClassAssociations(map[identity.Key]model_class.Association{
 		wrongDomainAssocKey: wrongDomainAssoc,
 	})
@@ -208,13 +208,13 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 
 	// Create associations at different levels.
 	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2, "domain association"))
-	domainAssoc := helper.Must(model_class.NewAssociation(domainAssocKey, "Domain Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
+	domainAssoc := model_class.NewAssociation(domainAssocKey, "Domain Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")
 
 	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1, "subdomain1 association"))
-	sub1Assoc := helper.Must(model_class.NewAssociation(sub1AssocKey, "Subdomain1 Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
+	sub1Assoc := model_class.NewAssociation(sub1AssocKey, "Subdomain1 Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")
 
 	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2, "subdomain2 association"))
-	sub2Assoc := helper.Must(model_class.NewAssociation(sub2AssocKey, "Subdomain2 Association", "", model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
+	sub2Assoc := model_class.NewAssociation(sub2AssocKey, "Subdomain2 Association", "", model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")
 
 	// Create domain with associations at all levels.
 	domain := Domain{
@@ -278,13 +278,13 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 	guarKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "guar_1"))
 
 	// Test valid full tree.
-	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
-	guard := helper.Must(model_state.NewGuard(guardKey, "Guard", guardLogic))
-	reqLogic := helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Req.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
-	action := helper.Must(model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{reqLogic}, nil, nil, nil))
-	guarLogic := helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
-	query := helper.Must(model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{guarLogic}, nil))
-	class := helper.Must(model_class.NewClass(classKey, "Class", "", nil, nil, nil, ""))
+	guardLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	guard := model_state.NewGuard(guardKey, "Guard", guardLogic)
+	reqLogic := model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	action := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{reqLogic}, nil, nil, nil)
+	guarLogic := model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	query := model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{guarLogic}, nil)
+	class := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
 	class.SetGuards(map[identity.Key]model_state.Guard{guardKey: guard})
 	class.SetActions(map[identity.Key]model_state.Action{actionKey: action})
 	class.SetQueries(map[identity.Key]model_state.Query{queryKey: query})
@@ -301,14 +301,15 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 			},
 		},
 	}
-	err := domain.ValidateWithParent(nil)
+	ctx := coreerr.NewContext("test", "")
+	err := domain.ValidateWithParent(ctx, nil)
 	suite.Require().NoError(err, "Valid full tree should pass")
 
 	// Test that a guard logic key mismatch deep in the tree is caught.
 	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
-	mismatchedGuardLogic := helper.Must(model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
-	mismatchedGuard := helper.Must(model_state.NewGuard(guardKey, "Guard", mismatchedGuardLogic))
-	mismatchedGuardClass := helper.Must(model_class.NewClass(classKey, "Class", "", nil, nil, nil, ""))
+	mismatchedGuardLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	mismatchedGuard := model_state.NewGuard(guardKey, "Guard", mismatchedGuardLogic)
+	mismatchedGuardClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
 	mismatchedGuardClass.SetGuards(map[identity.Key]model_state.Guard{guardKey: mismatchedGuard})
 	domain = Domain{
 		Key:  domainKey,
@@ -323,15 +324,15 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 			},
 		},
 	}
-	err = domain.ValidateWithParent(nil)
+	err = domain.ValidateWithParent(ctx, nil)
 	suite.Require().ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
 
 	// Test that an action require key with wrong parent deep in the tree is caught.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
-	wrongReqLogic := helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
-	wrongReqAction := helper.Must(model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil))
-	wrongReqClass := helper.Must(model_class.NewClass(classKey, "Class", "", nil, nil, nil, ""))
+	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongReqAction := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil)
+	wrongReqClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
 	wrongReqClass.SetActions(map[identity.Key]model_state.Action{actionKey: wrongReqAction})
 	domain = Domain{
 		Key:  domainKey,
@@ -346,8 +347,8 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 			},
 		},
 	}
-	err = domain.ValidateWithParent(nil)
-	suite.Require().ErrorContains(err, "requires 0", "Should catch action require key error in deep tree")
+	err = domain.ValidateWithParent(ctx, nil)
+	suite.Require().ErrorContains(err, "requires[0]", "Should catch action require key error in deep tree")
 }
 
 // TestValidateWithParentAndActorsAndClasses tests child validation propagation.
@@ -365,6 +366,8 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		classKey2: true,
 	}
 
+	ctx := coreerr.NewContext("test", "")
+
 	// Test invalid Subdomain child propagates error.
 	domain := Domain{
 		Key:  domainKey,
@@ -373,7 +376,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err := domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err := domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Subdomains")
 
 	// Test invalid ClassAssociation child propagates error.
@@ -386,7 +389,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			assocKey: {Key: assocKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().ErrorContains(err, "Name", "Should validate child ClassAssociations")
 
 	// Test valid domain with single subdomain named "default".
@@ -397,7 +400,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: "Subdomain"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().NoError(err, "Valid domain with single 'default' subdomain should pass")
 
 	// Test single subdomain with non-"default" key fails.
@@ -408,7 +411,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain1Key: {Key: subdomain1Key, Name: "Subdomain"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().ErrorContains(err, "must be 'default'", "Single subdomain must have key 'default'")
 
 	// Test multiple subdomains with "default" key fails.
@@ -420,7 +423,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain1Key:       {Key: subdomain1Key, Name: "Subdomain1"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().ErrorContains(err, "reserved for single-subdomain", "Multiple subdomains cannot include 'default'")
 
 	// Test multiple subdomains without "default" key passes.
@@ -432,6 +435,6 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain2Key: {Key: subdomain2Key, Name: "Subdomain2"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
 	suite.Require().NoError(err, "Multiple subdomains without 'default' should pass")
 }

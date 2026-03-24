@@ -2,13 +2,13 @@
     "name": "Process Payment",
     "details": "Charges the customer's payment method and records the transaction",
     "requires": [
-        {"description": "Order total must be greater than zero"},
-        {"description": "Customer payment method must be valid and active"},
-        {"description": "Order must not already be paid"}
+        {"description": "Order total must be greater than zero", "notation": "tla_plus"},
+        {"description": "Customer payment method must be valid and active", "notation": "tla_plus"},
+        {"description": "Order must not already be paid", "notation": "tla_plus"}
     ],
     "guarantees": [
-        {"description": "Payment has been charged to customer's payment method", "target": "payment_status"},
-        {"description": "Transaction record has been created", "target": "transaction"},
-        {"description": "Order payment status is set to paid", "target": "order_status"}
+        {"description": "Payment has been charged to customer's payment method", "target": "payment_status", "notation": "tla_plus"},
+        {"description": "Transaction record has been created", "target": "transaction", "notation": "tla_plus"},
+        {"description": "Order payment status is set to paid", "target": "order_status", "notation": "tla_plus"}
     ]
 }
