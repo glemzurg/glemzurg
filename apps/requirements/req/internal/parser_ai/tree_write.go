@@ -395,7 +395,7 @@ func writeUseCaseTree(useCase *inputUseCase, useCaseDir string) error {
 func classAssociationFilename(assoc *inputClassAssociation) string {
 	from := strings.ReplaceAll(assoc.FromClassKey, "/", ".")
 	to := strings.ReplaceAll(assoc.ToClassKey, "/", ".")
-	name := strings.ToLower(strings.ReplaceAll(assoc.Name, " ", "_"))
+	name := keyFromName(assoc.Name)
 	return fmt.Sprintf("%s--%s--%s.assoc.json", from, to, name)
 }
 

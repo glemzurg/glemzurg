@@ -308,6 +308,26 @@ func validatePathComponent(path, componentName string, expectedParts int, filePa
 	return nil
 }
 
+// validateAssocFilenameMatchesName checks that an association filename's name component matches the name field.
+// The filename has format "from--to--name" and the name component must equal keyFromName(assoc.Name).
+func validateAssocFilenameMatchesName(filenameKey, name, filePath string) error {
+	parts := strings.Split(filenameKey, "--")
+	if len(parts) != 3 {
+		return nil // Format errors are caught by ValidateAssociationFilename
+	}
+	nameComponent := parts[2]
+	expectedName := keyFromName(name)
+	if nameComponent != expectedName {
+		return NewParseError(
+			ErrAssocNameMismatch,
+			fmt.Sprintf("association filename name component '%s' does not match name '%s' - expected name component '%s'",
+				nameComponent, name, expectedName),
+			filePath,
+		).WithField("name").WithHint(fmt.Sprintf("rename the file so the name component (third part after '--') is '%s', or change the name field to match the current filename", expectedName))
+	}
+	return nil
+}
+
 // validateFilenameMatchesName checks that a filesystem key matches the expected key derived from the name field.
 // The expected key is derived by lowercasing the name and replacing spaces and hyphens with underscores.
 // entityType is used in error messages (e.g., "action", "query").

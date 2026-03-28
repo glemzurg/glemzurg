@@ -75,6 +75,7 @@ func allErrorCodes() map[int]string {
 		ErrAssocMultiplicityInvalid: "ErrAssocMultiplicityInvalid",
 		ErrAssocFilenameInvalid:     "ErrAssocFilenameInvalid",
 		ErrAssocDuplicateKey:        "ErrAssocDuplicateKey",
+		ErrAssocNameMismatch:        "ErrAssocNameMismatch",
 
 		// State machine errors (7xxx).
 		ErrStateMachineInvalidJSON:       "ErrStateMachineInvalidJSON",
@@ -391,6 +392,6 @@ func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
 	// 220 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 225,
+	s.Len(codes, 226,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }

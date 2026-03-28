@@ -313,6 +313,10 @@ func readModelClassAssociations(modelDir string, model *inputModel) error {
 			errs = append(errs, err)
 			continue
 		}
+		if err := validateAssocFilenameMatchesName(key, assoc.Name, filePath); err != nil {
+			errs = append(errs, err)
+			continue
+		}
 		model.ClassAssociations[key] = assoc
 	}
 	return errors.Join(errs...)
@@ -399,39 +403,9 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 	domain.Subdomains = make(map[string]*inputSubdomain)
 	domain.ClassAssociations = make(map[string]*inputClassAssociation)
 
-	// Read domain-level class associations
 	var errs []error
-	assocDir := filepath.Join(domainDir, "class_associations")
-	if entries, err := os.ReadDir(assocDir); err == nil {
-		for _, entry := range entries {
-			if entry.IsDir() {
-				continue
-			}
-			name := entry.Name()
-			if !strings.HasSuffix(name, ".assoc.json") {
-				continue
-			}
-			key := strings.TrimSuffix(name, ".assoc.json")
-			filePath := filepath.Join(assocDir, name)
-
-			// Validate association filename format (domain level: subdomain.class--subdomain.class--name)
-			if err := ValidateAssociationFilename(key, AssocLevelDomain, filePath); err != nil {
-				errs = append(errs, err)
-				continue
-			}
-
-			content, err := os.ReadFile(filePath)
-			if err != nil {
-				errs = append(errs, err)
-				continue
-			}
-			assoc, err := parseAssociation(content, filePath)
-			if err != nil {
-				errs = append(errs, err)
-				continue
-			}
-			domain.ClassAssociations[key] = assoc
-		}
+	if err := readDomainAssociations(domainDir, domain); err != nil {
+		errs = append(errs, err)
 	}
 
 	// Read subdomains
@@ -463,6 +437,47 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 	}
 
 	return domain, nil
+}
+
+// readDomainAssociations reads domain-level class association files.
+func readDomainAssociations(domainDir string, domain *inputDomain) error {
+	assocDir := filepath.Join(domainDir, "class_associations")
+	entries, err := os.ReadDir(assocDir)
+	if err != nil {
+		return nil
+	}
+	var errs []error
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".assoc.json") {
+			continue
+		}
+		key := strings.TrimSuffix(name, ".assoc.json")
+		filePath := filepath.Join(assocDir, name)
+		if err := ValidateAssociationFilename(key, AssocLevelDomain, filePath); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		assoc, err := parseAssociation(content, filePath)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if err := validateAssocFilenameMatchesName(key, assoc.Name, filePath); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		domain.ClassAssociations[key] = assoc
+	}
+	return errors.Join(errs...)
 }
 
 // readSubdomainTree reads a subdomain and its children from the filesystem.
@@ -537,6 +552,10 @@ func readSubdomainAssociations(subdomainDir string, subdomain *inputSubdomain) e
 		}
 		assoc, err := parseAssociation(content, filePath)
 		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if err := validateAssocFilenameMatchesName(key, assoc.Name, filePath); err != nil {
 			errs = append(errs, err)
 			continue
 		}
