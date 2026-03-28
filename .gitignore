@@ -39,3 +39,6 @@ go.work.sum
 
 # Binaries shared with other devcontainers.
 /bin/
+
+# Files that are used just to guide work.
+/ai-reference/
