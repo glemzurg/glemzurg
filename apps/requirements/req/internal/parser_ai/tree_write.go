@@ -405,5 +405,5 @@ func writeJSON(filename string, v any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filename, append(data, '\n'), 0600)
+	return os.WriteFile(filename, data, 0600)
 }

@@ -399,13 +399,13 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 	// Convert actions
 	for key, action := range class.Actions {
 		converted := convertActionFromModel(&action)
-		result.Actions[strings.ReplaceAll(key.SubKey, " ", "_")] = converted
+		result.Actions[keyFromName(key.SubKey)] = converted
 	}
 
 	// Convert queries
 	for key, query := range class.Queries {
 		converted := convertQueryFromModel(&query)
-		result.Queries[strings.ReplaceAll(key.SubKey, " ", "_")] = converted
+		result.Queries[keyFromName(key.SubKey)] = converted
 	}
 
 	return result
