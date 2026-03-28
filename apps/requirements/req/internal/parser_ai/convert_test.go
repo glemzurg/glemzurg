@@ -719,9 +719,9 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	suite.Require().NoError(err)
 
 	inputSubdomain := input.Domains["orders"].Subdomains["default"]
-	suite.Require().Contains(inputSubdomain.ClassAssociations, "order_lines")
+	suite.Require().Contains(inputSubdomain.ClassAssociations, "order--line_item--order_lines")
 
-	inputAssoc := inputSubdomain.ClassAssociations["order_lines"]
+	inputAssoc := inputSubdomain.ClassAssociations["order--line_item--order_lines"]
 	suite.Equal("Order Lines", inputAssoc.Name)
 	suite.Equal("order", inputAssoc.FromClassKey)
 	suite.Equal("1", inputAssoc.FromMultiplicity)
@@ -951,8 +951,8 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 	suite.Equal("product", gen.SuperclassKey)
 
 	// Verify association
-	suite.Require().Contains(subdomain.ClassAssociations, "order_lines")
-	assoc := subdomain.ClassAssociations["order_lines"]
+	suite.Require().Contains(subdomain.ClassAssociations, "order--line_item--order_lines")
+	assoc := subdomain.ClassAssociations["order--line_item--order_lines"]
 	suite.Equal("order", assoc.FromClassKey)
 	suite.Equal("1..*", assoc.ToMultiplicity)
 }
@@ -1063,9 +1063,9 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	suite.Require().NoError(err)
 
 	inputDomain := input.Domains["orders"]
-	suite.Require().Contains(inputDomain.ClassAssociations, "order_shipments")
+	suite.Require().Contains(inputDomain.ClassAssociations, "core.order--shipping.shipment--order_shipments")
 
-	inputAssoc := inputDomain.ClassAssociations["order_shipments"]
+	inputAssoc := inputDomain.ClassAssociations["core.order--shipping.shipment--order_shipments"]
 	suite.Equal("Order Shipments", inputAssoc.Name)
 	suite.Equal("core/order", inputAssoc.FromClassKey)
 	suite.Equal("shipping/shipment", inputAssoc.ToClassKey)
@@ -1190,9 +1190,9 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	input, err := ConvertFromModel(model)
 	suite.Require().NoError(err)
 
-	suite.Require().Contains(input.ClassAssociations, "order_products")
+	suite.Require().Contains(input.ClassAssociations, "orders.default.order--inventory.default.product--order_products")
 
-	inputAssoc := input.ClassAssociations["order_products"]
+	inputAssoc := input.ClassAssociations["orders.default.order--inventory.default.product--order_products"]
 	suite.Equal("Order Products", inputAssoc.Name)
 	suite.Equal("orders/default/order", inputAssoc.FromClassKey)
 	suite.Equal("inventory/default/product", inputAssoc.ToClassKey)

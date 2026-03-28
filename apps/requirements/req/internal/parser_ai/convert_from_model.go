@@ -2,6 +2,7 @@ package parser_ai
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
@@ -80,9 +81,10 @@ func convertDomainsAndAssociationsFromModel(model *core.Model, result *inputMode
 		converted := convertDomainAssocFromModel(&assoc)
 		result.DomainAssociations[key.SubKey+"."+key.SubKey2] = converted
 	}
-	for key, assoc := range model.ClassAssociations {
+	for _, assoc := range model.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, "")
-		result.ClassAssociations[key.SubKey3] = converted
+		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		result.ClassAssociations[mapKey] = converted
 	}
 }
 
@@ -157,9 +159,10 @@ func convertDomainFromModel(domain *model_domain.Domain) *inputDomain {
 	}
 
 	// Convert domain-level class associations
-	for key, assoc := range domain.ClassAssociations {
+	for _, assoc := range domain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_DOMAIN)
-		result.ClassAssociations[key.SubKey3] = converted
+		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		result.ClassAssociations[mapKey] = converted
 	}
 
 	return result
@@ -216,9 +219,10 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomai
 	}
 
 	// Convert subdomain-level class associations
-	for key, assoc := range subdomain.ClassAssociations {
+	for _, assoc := range subdomain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_SUBDOMAIN)
-		result.ClassAssociations[key.SubKey3] = converted
+		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		result.ClassAssociations[mapKey] = converted
 	}
 
 	return result
@@ -395,13 +399,13 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 	// Convert actions
 	for key, action := range class.Actions {
 		converted := convertActionFromModel(&action)
-		result.Actions[key.SubKey] = converted
+		result.Actions[strings.ReplaceAll(key.SubKey, " ", "_")] = converted
 	}
 
 	// Convert queries
 	for key, query := range class.Queries {
 		converted := convertQueryFromModel(&query)
-		result.Queries[key.SubKey] = converted
+		result.Queries[strings.ReplaceAll(key.SubKey, " ", "_")] = converted
 	}
 
 	return result
