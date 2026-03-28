@@ -178,11 +178,7 @@ func parseClassAttributes(class *model_class.Class, classKey identity.Key, yamlD
 	var attributesData map[string]any
 	attributesAny, found := yamlData["attributes"]
 	if found {
-		var ok bool
-		attributesData, ok = attributesAny.(map[string]any)
-		if !ok {
-			return errors.Errorf("attributes: expected mapping, got %T", attributesAny)
-		}
+		attributesData = attributesAny.(map[string]any)
 	}
 
 	attributes := make(map[identity.Key]model_class.Attribute)
@@ -222,11 +218,7 @@ func parseClassActions(class *model_class.Class, classKey identity.Key, yamlData
 	var actionsData map[string]any
 	actionsAny, found := yamlData["actions"]
 	if found {
-		var ok bool
-		actionsData, ok = actionsAny.(map[string]any)
-		if !ok {
-			return nil, errors.Errorf("actions: expected mapping, got %T", actionsAny)
-		}
+		actionsData = actionsAny.(map[string]any)
 	}
 
 	actions := make(map[identity.Key]model_state.Action)
@@ -249,11 +241,7 @@ func parseClassStates(class *model_class.Class, actionKeyLookup map[string]ident
 	var statesData map[string]any
 	statesAny, found := yamlData["states"]
 	if found {
-		var ok bool
-		statesData, ok = statesAny.(map[string]any)
-		if !ok {
-			return nil, errors.Errorf("states: expected mapping, got %T", statesAny)
-		}
+		statesData = statesAny.(map[string]any)
 	}
 
 	states := make(map[identity.Key]model_state.State)
@@ -276,11 +264,7 @@ func parseClassEvents(class *model_class.Class, classKey identity.Key, yamlData 
 	var eventsData map[string]any
 	eventsAny, found := yamlData["events"]
 	if found {
-		var ok bool
-		eventsData, ok = eventsAny.(map[string]any)
-		if !ok {
-			return nil, errors.Errorf("events: expected mapping, got %T", eventsAny)
-		}
+		eventsData = eventsAny.(map[string]any)
 	}
 
 	events := make(map[identity.Key]model_state.Event)
@@ -303,11 +287,7 @@ func parseClassGuards(class *model_class.Class, classKey identity.Key, yamlData 
 	var guardsData map[string]any
 	guardsAny, found := yamlData["guards"]
 	if found {
-		var ok bool
-		guardsData, ok = guardsAny.(map[string]any)
-		if !ok {
-			return nil, errors.Errorf("guards: expected mapping, got %T", guardsAny)
-		}
+		guardsData = guardsAny.(map[string]any)
 	}
 
 	guards := make(map[identity.Key]model_state.Guard)
@@ -329,11 +309,7 @@ func parseClassQueries(class *model_class.Class, classKey identity.Key, yamlData
 	var queriesData map[string]any
 	queriesAny, found := yamlData["queries"]
 	if found {
-		var ok bool
-		queriesData, ok = queriesAny.(map[string]any)
-		if !ok {
-			return errors.Errorf("queries: expected mapping, got %T", queriesAny)
-		}
+		queriesData = queriesAny.(map[string]any)
 	}
 
 	queries := make(map[identity.Key]model_state.Query)
@@ -657,15 +633,9 @@ func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identit
 
 		actionsAny, found := stateData["actions"]
 		if found {
-			actionsData, ok := actionsAny.([]any)
-			if !ok {
-				return model_state.State{}, errors.Errorf("state '%s' actions: expected sequence, got %T", name, actionsAny)
-			}
+			actionsData := actionsAny.([]any)
 			for _, actionAny := range actionsData {
-				actionData, ok := actionAny.(map[string]any)
-				if !ok {
-					return model_state.State{}, errors.Errorf("state '%s' action: expected mapping, got %T", name, actionAny)
-				}
+				actionData := actionAny.(map[string]any)
 
 				var actionKey identity.Key
 				actionName := ""

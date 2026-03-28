@@ -29,10 +29,7 @@ func (b *YamlBuilder) AddField(key string, value string) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	valueNode := createStringNode(value)
 
@@ -41,10 +38,7 @@ func (b *YamlBuilder) AddField(key string, value string) {
 
 // AddFieldAlways adds a key-value pair even if empty.
 func (b *YamlBuilder) AddFieldAlways(key string, value string) {
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	valueNode := createStringNode(value)
 
@@ -57,10 +51,7 @@ func (b *YamlBuilder) AddQuotedField(key string, value string) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	valueNode := &yaml.Node{
 		Kind:  yaml.ScalarNode,
@@ -77,10 +68,7 @@ func (b *YamlBuilder) AddBoolField(key string, value bool) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	valueNode := &yaml.Node{
 		Kind:  yaml.ScalarNode,
@@ -97,10 +85,7 @@ func (b *YamlBuilder) AddIntSliceField(key string, values []int) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	seqNode := &yaml.Node{
 		Kind:  yaml.SequenceNode,
@@ -123,10 +108,7 @@ func (b *YamlBuilder) AddUintSliceField(key string, values []uint) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	seqNode := &yaml.Node{
 		Kind:  yaml.SequenceNode,
@@ -150,10 +132,7 @@ func (b *YamlBuilder) AddSequenceField(key string, values []string) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	seqNode := &yaml.Node{
 		Kind: yaml.SequenceNode,
@@ -172,20 +151,14 @@ func (b *YamlBuilder) AddMappingField(key string, nested *YamlBuilder) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	b.node.Content = append(b.node.Content, keyNode, nested.node)
 }
 
 // AddMappingFieldAlways adds a field with a nested mapping value, even if empty.
 func (b *YamlBuilder) AddMappingFieldAlways(key string, nested *YamlBuilder) {
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	if nested == nil {
 		nested = NewYamlBuilder()
@@ -200,10 +173,7 @@ func (b *YamlBuilder) AddSequenceOfMappings(key string, items []*YamlBuilder) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	seqNode := &yaml.Node{
 		Kind: yaml.SequenceNode,
@@ -227,10 +197,7 @@ func (b *YamlBuilder) AddFlowMapping(key string, nested *YamlBuilder) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	flowNode := &yaml.Node{
 		Kind:    yaml.MappingNode,
@@ -247,10 +214,7 @@ func (b *YamlBuilder) AddRawNode(key string, node *yaml.Node) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	b.node.Content = append(b.node.Content, keyNode, node)
 }
@@ -262,10 +226,7 @@ func (b *YamlBuilder) AddFlowSequence(key string, items []*YamlBuilder) {
 		return
 	}
 
-	keyNode := &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: key,
-	}
+	keyNode := createKeyNode(key)
 
 	seqNode := &yaml.Node{
 		Kind: yaml.SequenceNode,
@@ -316,6 +277,17 @@ func (b *YamlBuilder) Node() *yaml.Node {
 // HasContent returns true if any content has been added.
 func (b *YamlBuilder) HasContent() bool {
 	return len(b.node.Content) > 0
+}
+
+// createKeyNode creates a yaml.Node for a YAML mapping key.
+// Always tags as !!str so that values like "null", "true", "false", and numbers
+// are emitted as quoted strings and parsed back as string keys.
+func createKeyNode(key string) *yaml.Node {
+	return &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: key,
+		Tag:   "!!str",
+	}
 }
 
 // createStringNode creates a yaml.Node for a string value.
