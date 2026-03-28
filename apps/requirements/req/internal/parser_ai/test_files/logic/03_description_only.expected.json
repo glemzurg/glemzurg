@@ -1,4 +1,5 @@
 {
+    "type": "assessment",
     "description": "The account balance must never go below zero during a transfer operation",
     "notation": "tla_plus"
 }

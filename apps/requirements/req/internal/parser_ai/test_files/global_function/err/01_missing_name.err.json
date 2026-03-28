@@ -1,5 +1,6 @@
 {
     "logic": {
+        "type": "value",
         "description": "Some logic"
     }
 }

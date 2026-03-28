@@ -1,7 +1,15 @@
 {
     "name": "Reserve Inventory",
     "requires": [
-        {"description": "Order must have at least one item", "notation": "tla_plus"},
-        {"description": "All items must be in stock", "notation": "tla_plus"}
+        {
+            "type": "assessment",
+            "description": "Order must have at least one item",
+            "notation": "tla_plus"
+        },
+        {
+            "type": "assessment",
+            "description": "All items must be in stock",
+            "notation": "tla_plus"
+        }
     ]
 }

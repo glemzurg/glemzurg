@@ -51,7 +51,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "description": "Optional logic kind discriminator.",
+                "description": "Required. The logic kind. Must be 'value' for derivation policies.",
                 "enum": ["value"]
               },
               "description": {
@@ -69,7 +69,7 @@
                 "description": "Optional formal specification in the given notation."
               }
             },
-            "required": ["description", "notation"],
+            "required": ["type", "description", "notation"],
             "additionalProperties": false
           },
           "nullable": {

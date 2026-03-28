@@ -19,7 +19,11 @@
         "total_amount": {
             "name": "Total Amount",
             "data_type_rules": "Positive decimal with 2 decimal places",
-            "derivation_policy": {"description": "Sum of all order line item amounts plus taxes minus discounts", "notation": "tla_plus"},
+            "derivation_policy": {
+                "type": "value",
+                "description": "Sum of all order line item amounts plus taxes minus discounts",
+                "notation": "tla_plus"
+            },
             "nullable": false
         },
         "status": {
@@ -29,7 +33,12 @@
         }
     },
     "indexes": [
-        ["order_number"],
-        ["order_date", "status"]
+        [
+            "order_number"
+        ],
+        [
+            "order_date",
+            "status"
+        ]
     ]
 }

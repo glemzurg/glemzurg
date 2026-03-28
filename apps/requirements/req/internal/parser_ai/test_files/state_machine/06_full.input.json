@@ -66,11 +66,19 @@
     "guards": {
         "is_valid": {
             "name": "Is Valid",
-            "logic": {"description": "Order passes all validation rules: total > 0, has items, valid addresses", "notation": "tla_plus"}
+            "logic": {
+                "type": "assessment",
+                "description": "Order passes all validation rules: total > 0, has items, valid addresses",
+                "notation": "tla_plus"
+            }
         },
         "under_limit": {
             "name": "Under Limit",
-            "logic": {"description": "Order total is under the auto-approval limit of $1000", "notation": "tla_plus"}
+            "logic": {
+                "type": "assessment",
+                "description": "Order total is under the auto-approval limit of $1000",
+                "notation": "tla_plus"
+            }
         }
     },
     "transitions": [

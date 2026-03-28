@@ -110,7 +110,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "description": "Optional logic kind discriminator.",
+                "description": "Required. The logic kind. Must be 'assessment' for guard conditions.",
                 "enum": ["assessment"]
               },
               "description": {
@@ -128,7 +128,7 @@
                 "description": "Optional formal specification in the given notation."
               }
             },
-            "required": ["description", "notation"],
+            "required": ["type", "description", "notation"],
             "additionalProperties": false
           }
         },

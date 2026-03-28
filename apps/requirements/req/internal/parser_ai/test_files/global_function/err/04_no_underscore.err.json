@@ -1,6 +1,7 @@
 {
     "name": "Max",
     "logic": {
+        "type": "value",
         "description": "Returns the maximum of two values"
     }
 }

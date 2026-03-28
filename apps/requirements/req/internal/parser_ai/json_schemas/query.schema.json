@@ -43,7 +43,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "description": "Optional logic kind discriminator. Use 'let' for local variable definitions.",
+            "description": "Required. The logic kind. Use 'assessment' for boolean preconditions, 'let' for local variable definitions.",
             "enum": ["assessment", "let"]
           },
           "description": {
@@ -71,7 +71,7 @@
             "description": "Optional formal specification in the given notation. Must not contain primed values."
           }
         },
-        "required": ["description", "notation"],
+        "required": ["type", "description", "notation"],
         "additionalProperties": false
       }
     },
@@ -83,7 +83,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "description": "Optional logic kind discriminator. Use 'let' for local variable definitions.",
+            "description": "Required. The logic kind. Use 'query' for named return values, 'let' for local variable definitions.",
             "enum": ["query", "let"]
           },
           "description": {
@@ -111,7 +111,7 @@
             "description": "Optional formal specification in the given notation. This must be only the value expression with no primed values. The output identifier is captured by the 'target' field."
           }
         },
-        "required": ["description", "target", "notation"],
+        "required": ["type", "description", "target", "notation"],
         "additionalProperties": false
       }
     }

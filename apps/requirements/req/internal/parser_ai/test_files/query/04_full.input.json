@@ -2,13 +2,40 @@
     "name": "Calculate Shipping Cost",
     "details": "Calculates the shipping cost based on order weight, destination, and selected shipping method",
     "requires": [
-        {"description": "Order must have at least one item", "notation": "tla_plus"},
-        {"description": "Shipping address must be valid", "notation": "tla_plus"},
-        {"description": "Shipping method must be selected", "notation": "tla_plus"}
+        {
+            "type": "assessment",
+            "description": "Order must have at least one item",
+            "notation": "tla_plus"
+        },
+        {
+            "type": "assessment",
+            "description": "Shipping address must be valid",
+            "notation": "tla_plus"
+        },
+        {
+            "type": "assessment",
+            "description": "Shipping method must be selected",
+            "notation": "tla_plus"
+        }
     ],
     "guarantees": [
-        {"description": "Returns the shipping cost in the order currency", "target": "shipping_cost", "notation": "tla_plus"},
-        {"description": "Returns zero if free shipping applies", "target": "free_shipping", "notation": "tla_plus"},
-        {"description": "Returns an error if shipping is not available to destination", "target": "shipping_error", "notation": "tla_plus"}
+        {
+            "type": "query",
+            "description": "Returns the shipping cost in the order currency",
+            "target": "shipping_cost",
+            "notation": "tla_plus"
+        },
+        {
+            "type": "query",
+            "description": "Returns zero if free shipping applies",
+            "target": "free_shipping",
+            "notation": "tla_plus"
+        },
+        {
+            "type": "query",
+            "description": "Returns an error if shipping is not available to destination",
+            "target": "shipping_error",
+            "notation": "tla_plus"
+        }
     ]
 }

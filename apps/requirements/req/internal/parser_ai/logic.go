@@ -13,7 +13,7 @@ const _LOGIC_TYPE_QUERY = "query"
 
 // inputLogic represents a formal logic specification in JSON.
 type inputLogic struct {
-	Type           string `json:"type,omitempty"`
+	Type           string `json:"type"`
 	Description    string `json:"description"`
 	Target         string `json:"target,omitempty"`
 	TargetTypeSpec string `json:"target_type_spec,omitempty"`
@@ -85,6 +85,15 @@ func parseLogic(content []byte, filename string) (*inputLogic, error) {
 // validateLogic validates an inputLogic struct.
 // The filename parameter is the path to the JSON file being parsed.
 func validateLogic(logic *inputLogic, filename string) error {
+	// Type is required.
+	if logic.Type == "" {
+		return NewParseError(
+			ErrLogicTypeRequired,
+			"logic type is required, got ''",
+			filename,
+		).WithField("type").WithHint("add a \"type\" field with one of: assessment, state_change, query, safety_rule, value, let")
+	}
+
 	// Description is required (schema enforces this, but we provide a clearer error)
 	if logic.Description == "" {
 		return NewParseError(
