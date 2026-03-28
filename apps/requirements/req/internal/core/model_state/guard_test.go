@@ -75,6 +75,15 @@ func (suite *GuardSuite) TestValidate() {
 			errstr: "Name",
 		},
 		{
+			testName: "error name with invalid chars",
+			guard: Guard{
+				Key:   validKey,
+				Name:  "Fail On Name/DOB",
+				Logic: model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
+			},
+			errstr: "GUARD_NAME_INVALID_CHARS",
+		},
+		{
 			testName: "error invalid logic missing key",
 			guard: Guard{
 				Key:  validKey,

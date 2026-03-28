@@ -91,7 +91,7 @@ go test ./internal/database/... -dbtests
 # ================================================
 
 # Build and install any executables.
-echo -e "\nINSTALL\n" ; go install ./...
+echo -e "\nINSTALL\n" ; go install -buildvcs=false ./...
 [ $? -ne 0 ] && exit 60
 
 # Indicate the command.

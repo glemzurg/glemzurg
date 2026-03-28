@@ -110,6 +110,7 @@ func allCodeConstants() map[string]Code {
 		"ActionKeyInvalid":               ActionKeyInvalid,
 		"ActionKeyTypeInvalid":           ActionKeyTypeInvalid,
 		"ActionNameRequired":             ActionNameRequired,
+		"ActionNameInvalidChars":         ActionNameInvalidChars,
 		"ActionRequiresTypeInvalid":      ActionRequiresTypeInvalid,
 		"ActionRequiresDuplicateLet":     ActionRequiresDuplicateLet,
 		"ActionGuaranteeTypeInvalid":     ActionGuaranteeTypeInvalid,
@@ -122,19 +123,22 @@ func allCodeConstants() map[string]Code {
 		"GuardKeyInvalid":       GuardKeyInvalid,
 		"GuardKeyTypeInvalid":   GuardKeyTypeInvalid,
 		"GuardNameRequired":     GuardNameRequired,
+		"GuardNameInvalidChars": GuardNameInvalidChars,
 		"GuardLogicInvalid":     GuardLogicInvalid,
 		"GuardLogicKeyMismatch": GuardLogicKeyMismatch,
 		"GuardLogicTypeInvalid": GuardLogicTypeInvalid,
 
 		// Event errors.
-		"EventKeyInvalid":     EventKeyInvalid,
-		"EventKeyTypeInvalid": EventKeyTypeInvalid,
-		"EventNameRequired":   EventNameRequired,
+		"EventKeyInvalid":       EventKeyInvalid,
+		"EventKeyTypeInvalid":   EventKeyTypeInvalid,
+		"EventNameRequired":     EventNameRequired,
+		"EventNameInvalidChars": EventNameInvalidChars,
 
 		// Query errors.
 		"QueryKeyInvalid":               QueryKeyInvalid,
 		"QueryKeyTypeInvalid":           QueryKeyTypeInvalid,
 		"QueryNameRequired":             QueryNameRequired,
+		"QueryNameInvalidChars":         QueryNameInvalidChars,
 		"QueryRequiresTypeInvalid":      QueryRequiresTypeInvalid,
 		"QueryRequiresDuplicateLet":     QueryRequiresDuplicateLet,
 		"QueryGuaranteeTypeInvalid":     QueryGuaranteeTypeInvalid,
@@ -142,9 +146,10 @@ func allCodeConstants() map[string]Code {
 		"QueryGuaranteeDuplicateTarget": QueryGuaranteeDuplicateTarget,
 
 		// State errors.
-		"StateKeyInvalid":     StateKeyInvalid,
-		"StateKeyTypeInvalid": StateKeyTypeInvalid,
-		"StateNameRequired":   StateNameRequired,
+		"StateKeyInvalid":       StateKeyInvalid,
+		"StateKeyTypeInvalid":   StateKeyTypeInvalid,
+		"StateNameRequired":     StateNameRequired,
+		"StateNameInvalidChars": StateNameInvalidChars,
 
 		// StateAction errors.
 		"StateactionKeyInvalid":       StateactionKeyInvalid,

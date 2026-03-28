@@ -93,6 +93,7 @@ const (
 	ActionKeyInvalid               Code = "ACTION_KEY_INVALID"                // Action key failed validation.
 	ActionKeyTypeInvalid           Code = "ACTION_KEY_TYPE_INVALID"           // Key is not KEY_TYPE_ACTION.
 	ActionNameRequired             Code = "ACTION_NAME_REQUIRED"              // Action Name is empty.
+	ActionNameInvalidChars         Code = "ACTION_NAME_INVALID_CHARS"         // Action Name contains characters outside A-Za-z0-9 space hyphen underscore.
 	ActionRequiresTypeInvalid      Code = "ACTION_REQUIRES_TYPE_INVALID"      // Requires logic type must be assessment or let.
 	ActionRequiresDuplicateLet     Code = "ACTION_REQUIRES_DUPLICATE_LET"     // Duplicate let target in Requires.
 	ActionGuaranteeTypeInvalid     Code = "ACTION_GUARANTEE_TYPE_INVALID"     // Guarantee logic type must be state_change or let.
@@ -107,6 +108,7 @@ const (
 	GuardKeyInvalid       Code = "GUARD_KEY_INVALID"        // Guard key failed validation.
 	GuardKeyTypeInvalid   Code = "GUARD_KEY_TYPE_INVALID"   // Key is not KEY_TYPE_GUARD.
 	GuardNameRequired     Code = "GUARD_NAME_REQUIRED"      // Guard Name is empty.
+	GuardNameInvalidChars Code = "GUARD_NAME_INVALID_CHARS" // Guard Name contains characters outside A-Za-z0-9 space hyphen underscore.
 	GuardLogicInvalid     Code = "GUARD_LOGIC_INVALID"      // Guard Logic failed validation.
 	GuardLogicKeyMismatch Code = "GUARD_LOGIC_KEY_MISMATCH" // Logic key doesn't match guard key.
 	GuardLogicTypeInvalid Code = "GUARD_LOGIC_TYPE_INVALID" // Logic type must be 'assessment'.
@@ -114,9 +116,10 @@ const (
 	// ---------------------------------------------------------------
 	// Event errors.
 
-	EventKeyInvalid     Code = "EVENT_KEY_INVALID"      // Event key failed validation.
-	EventKeyTypeInvalid Code = "EVENT_KEY_TYPE_INVALID" // Key is not KEY_TYPE_EVENT.
-	EventNameRequired   Code = "EVENT_NAME_REQUIRED"    // Event Name is empty.
+	EventKeyInvalid       Code = "EVENT_KEY_INVALID"        // Event key failed validation.
+	EventKeyTypeInvalid   Code = "EVENT_KEY_TYPE_INVALID"   // Key is not KEY_TYPE_EVENT.
+	EventNameRequired     Code = "EVENT_NAME_REQUIRED"      // Event Name is empty.
+	EventNameInvalidChars Code = "EVENT_NAME_INVALID_CHARS" // Event Name contains characters outside A-Za-z0-9 space hyphen underscore.
 
 	// ---------------------------------------------------------------
 	// Query errors.
@@ -124,6 +127,7 @@ const (
 	QueryKeyInvalid               Code = "QUERY_KEY_INVALID"                // Query key failed validation.
 	QueryKeyTypeInvalid           Code = "QUERY_KEY_TYPE_INVALID"           // Key is not KEY_TYPE_QUERY.
 	QueryNameRequired             Code = "QUERY_NAME_REQUIRED"              // Query Name is empty.
+	QueryNameInvalidChars         Code = "QUERY_NAME_INVALID_CHARS"         // Query Name contains characters outside A-Za-z0-9 space hyphen underscore.
 	QueryRequiresTypeInvalid      Code = "QUERY_REQUIRES_TYPE_INVALID"      // Requires logic type must be assessment or let.
 	QueryRequiresDuplicateLet     Code = "QUERY_REQUIRES_DUPLICATE_LET"     // Duplicate let target in Requires.
 	QueryGuaranteeTypeInvalid     Code = "QUERY_GUARANTEE_TYPE_INVALID"     // Guarantee logic type must be query or let.
@@ -133,9 +137,10 @@ const (
 	// ---------------------------------------------------------------
 	// State errors.
 
-	StateKeyInvalid     Code = "STATE_KEY_INVALID"      // State key failed validation.
-	StateKeyTypeInvalid Code = "STATE_KEY_TYPE_INVALID" // Key is not KEY_TYPE_STATE.
-	StateNameRequired   Code = "STATE_NAME_REQUIRED"    // State Name is empty.
+	StateKeyInvalid       Code = "STATE_KEY_INVALID"        // State key failed validation.
+	StateKeyTypeInvalid   Code = "STATE_KEY_TYPE_INVALID"   // Key is not KEY_TYPE_STATE.
+	StateNameRequired     Code = "STATE_NAME_REQUIRED"      // State Name is empty.
+	StateNameInvalidChars Code = "STATE_NAME_INVALID_CHARS" // State Name contains characters outside A-Za-z0-9 space hyphen underscore.
 
 	// ---------------------------------------------------------------
 	// StateAction errors (action references within states).

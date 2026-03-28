@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"fmt"
+	"html"
 	"net/http"
 	"strings"
 	"sync"
@@ -127,13 +128,14 @@ func (s *Server) homeHandler(w http.ResponseWriter, _ *http.Request) {
 	var list strings.Builder
 	list.WriteString("<ul>")
 	for _, model := range models {
-		list.WriteString(fmt.Sprintf("<li><a href=\"/%s/model.md\">%s</a></li>", model, model))
+		escaped := html.EscapeString(model)
+		list.WriteString(fmt.Sprintf("<li><a href=\"/%s/model.md\">%s</a></li>", escaped, escaped))
 	}
 	list.WriteString("</ul>")
 
-	html := "<html><body><h1>Models</h1>" + list.String() + "</body></html>"
+	page := "<html><body><h1>Models</h1>" + list.String() + "</body></html>"
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(html))
+	_, _ = w.Write([]byte(page))
 }
 
 // renderMD renders a Markdown file from the in-memory store as HTML.
@@ -146,16 +148,19 @@ func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
 
 	mdHTML := markdown.ToHTML(data, nil, nil)
 
+	escapedModel := html.EscapeString(model)
+	escapedFile := html.EscapeString(file)
+
 	script := fmt.Sprintf(`
 <script>
 const evtSource = new EventSource("/events/%s/%s");
 evtSource.onmessage = () => location.reload();
 </script>
-`, model, file)
+`, escapedModel, escapedFile)
 
-	html := fmt.Sprintf(`<html><head><link rel="stylesheet" href="/%s/style.css">%s</head><body>%s</body></html>`, model, script, mdHTML)
+	page := fmt.Sprintf(`<html><head><link rel="stylesheet" href="/%s/style.css">%s</head><body>%s</body></html>`, escapedModel, script, mdHTML)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(html))
+	_, _ = w.Write([]byte(page)) //nolint:gosec // mdHTML is intentionally rendered HTML from markdown
 }
 
 // serveSVG serves an SVG file from the in-memory store.

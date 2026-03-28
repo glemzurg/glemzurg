@@ -40,6 +40,9 @@ func (s *State) Validate(ctx *coreerr.ValidationContext) error {
 	if s.Name == "" {
 		return coreerr.New(ctx, coreerr.StateNameRequired, "Name is required", "Name")
 	}
+	if badChar := coreerr.ValidateNameChars(s.Name); badChar != "" {
+		return coreerr.NewWithValues(ctx, coreerr.StateNameInvalidChars, fmt.Sprintf("Name contains invalid character %q", badChar), "Name", s.Name, "A-Za-z0-9 space hyphen underscore")
+	}
 
 	return nil
 }

@@ -38,6 +38,9 @@ func (e *Event) Validate(ctx *coreerr.ValidationContext) error {
 	if e.Name == "" {
 		return coreerr.New(ctx, coreerr.EventNameRequired, "Name is required", "Name")
 	}
+	if badChar := coreerr.ValidateNameChars(e.Name); badChar != "" {
+		return coreerr.NewWithValues(ctx, coreerr.EventNameInvalidChars, fmt.Sprintf("Name contains invalid character %q", badChar), "Name", e.Name, "A-Za-z0-9 space hyphen underscore")
+	}
 
 	return nil
 }

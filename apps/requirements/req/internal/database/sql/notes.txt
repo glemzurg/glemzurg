@@ -37,6 +37,17 @@ GRANT
 
 ===============================================
 
+// Unit test database.
+
+sudo -u postgres psql
+
+postgres=# create database unit_test;
+CREATE DATABASE
+
+// the postgres user runs the unit tests in the devcontainer
+
+===============================================
+
 // Test the unit test user can operate on database.
 
 // The code-driven user for postgres must be a user in the system.

@@ -113,6 +113,14 @@ func (suite *ActionSuite) TestValidate() {
 			errstr: "Name",
 		},
 		{
+			testName: "error name with invalid chars",
+			action: Action{
+				Key:  validKey,
+				Name: "Fail On Name/DOB",
+			},
+			errstr: "ACTION_NAME_INVALID_CHARS",
+		},
+		{
 			testName: "error blank name with logic fields set",
 			action: Action{
 				Key:  validKey,

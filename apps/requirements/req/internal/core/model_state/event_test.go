@@ -68,6 +68,14 @@ func (suite *EventSuite) TestValidate() {
 			},
 			errstr: "Name",
 		},
+		{
+			testName: "error name with invalid chars",
+			event: Event{
+				Key:  validKey,
+				Name: "Fail On Name/DOB",
+			},
+			errstr: "EVENT_NAME_INVALID_CHARS",
+		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {

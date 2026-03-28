@@ -99,6 +99,14 @@ func (suite *QuerySuite) TestValidate() {
 			errstr: "Name",
 		},
 		{
+			testName: "error name with invalid chars",
+			query: Query{
+				Key:  validKey,
+				Name: "Fail On Name/DOB",
+			},
+			errstr: "QUERY_NAME_INVALID_CHARS",
+		},
+		{
 			testName: "error blank name with logic fields set",
 			query: Query{
 				Key:  validKey,

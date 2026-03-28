@@ -47,6 +47,9 @@ func (a *Action) Validate(ctx *coreerr.ValidationContext) error {
 	if a.Name == "" {
 		return coreerr.New(ctx, coreerr.ActionNameRequired, "Name is required", "Name")
 	}
+	if badChar := coreerr.ValidateNameChars(a.Name); badChar != "" {
+		return coreerr.NewWithValues(ctx, coreerr.ActionNameInvalidChars, fmt.Sprintf("Name contains invalid character %q", badChar), "Name", a.Name, "A-Za-z0-9 space hyphen underscore")
+	}
 
 	reqLetTargets := make(map[string]bool)
 	for i, req := range a.Requires {
