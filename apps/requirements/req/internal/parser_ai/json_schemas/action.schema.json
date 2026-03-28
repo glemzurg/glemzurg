@@ -7,8 +7,9 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "The display name of the action (e.g., 'Send Confirmation Email', 'Reserve Inventory', 'Calculate Total'). This is the human-readable name shown in state diagrams and documentation. Use verb phrases that describe what the action does. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
-      "minLength": 1
+      "description": "The display name of the action (e.g., 'Send Confirmation Email', 'Reserve Inventory', 'Calculate Total'). This is the human-readable name shown in state diagrams and documentation. Use verb phrases that describe what the action does. Must be non-empty. Only letters (A-Z, a-z), digits (0-9), spaces, hyphens, and underscores are allowed. If validation fails: remove any characters that are not in this set.",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9 _-]+$"
     },
     "details": {
       "type": "string",
