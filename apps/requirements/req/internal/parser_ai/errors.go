@@ -91,6 +91,9 @@ const (
 	ErrTransitionActionNotFound      = 7024
 	ErrTransitionInitialToFinal      = 7025
 	ErrEventParamDataTypeUnparseable = 7026 // Event parameter data_type_rules could not be parsed
+	ErrStateDuplicateName            = 7027
+	ErrEventDuplicateName            = 7028
+	ErrGuardDuplicateName            = 7029
 
 	// Action errors (8xxx).
 	ErrActionNameRequired    = 8001
@@ -99,6 +102,7 @@ const (
 	ErrActionSchemaViolation = 8004
 	ErrActionDuplicateKey    = 8005
 	ErrActionFilenameInvalid = 8006
+	ErrActionDuplicateName   = 8007
 
 	// Query errors (9xxx).
 	ErrQueryNameRequired    = 9001
@@ -107,6 +111,7 @@ const (
 	ErrQuerySchemaViolation = 9004
 	ErrQueryDuplicateKey    = 9005
 	ErrQueryFilenameInvalid = 9006
+	ErrQueryDuplicateName   = 9007
 
 	// Class generalization errors (10xxx).
 	ErrClassGenNameRequired         = 10001

@@ -363,6 +363,11 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		return err
 	}
 
+	// Validate name uniqueness across actions, queries, states, events, guards
+	if err := validateClassNameUniqueness(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
 	// Validate state machine if present
 	if class.StateMachine != nil {
 		if err := validateStateMachineTree(class, domainKey, subdomainKey, classKey); err != nil {
@@ -1436,6 +1441,84 @@ func validateUseCaseGeneralizationTree(subdomain *inputSubdomain, domainKey, sub
 					genKey, gen.SuperclassKey),
 				genPath,
 			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("superclass cannot also appear in subclass_keys")
+		}
+	}
+
+	return nil
+}
+
+// validateClassNameUniqueness checks that action names, query names, state names,
+// event names, and guard names are unique within a class.
+func validateClassNameUniqueness(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	// Validate action name uniqueness.
+	actionNames := make(map[string]string) // name -> first key
+	for key, action := range class.Actions {
+		if first, ok := actionNames[action.Name]; ok {
+			actionPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/actions/%s.json", domainKey, subdomainKey, classKey, key)
+			return NewParseError(
+				ErrActionDuplicateName,
+				fmt.Sprintf("class '%s' has duplicate action name '%s' — keys '%s' and '%s' both use this name", classKey, action.Name, first, key),
+				actionPath,
+			).WithField("name").WithHint("each action within a class must have a unique \"name\" value")
+		}
+		actionNames[action.Name] = key
+	}
+
+	// Validate query name uniqueness.
+	queryNames := make(map[string]string) // name -> first key
+	for key, query := range class.Queries {
+		if first, ok := queryNames[query.Name]; ok {
+			queryPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/queries/%s.json", domainKey, subdomainKey, classKey, key)
+			return NewParseError(
+				ErrQueryDuplicateName,
+				fmt.Sprintf("class '%s' has duplicate query name '%s' — keys '%s' and '%s' both use this name", classKey, query.Name, first, key),
+				queryPath,
+			).WithField("name").WithHint("each query within a class must have a unique \"name\" value")
+		}
+		queryNames[query.Name] = key
+	}
+
+	// Validate state machine name uniqueness (states, events, guards).
+	if class.StateMachine != nil {
+		smPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKey, subdomainKey, classKey)
+
+		// State name uniqueness.
+		stateNames := make(map[string]string)
+		for key, state := range class.StateMachine.States {
+			if first, ok := stateNames[state.Name]; ok {
+				return NewParseError(
+					ErrStateDuplicateName,
+					fmt.Sprintf("class '%s' has duplicate state name '%s' — keys '%s' and '%s' both use this name", classKey, state.Name, first, key),
+					smPath,
+				).WithField("states." + key + ".name").WithHint("each state within a state machine must have a unique \"name\" value")
+			}
+			stateNames[state.Name] = key
+		}
+
+		// Event name uniqueness.
+		eventNames := make(map[string]string)
+		for key, event := range class.StateMachine.Events {
+			if first, ok := eventNames[event.Name]; ok {
+				return NewParseError(
+					ErrEventDuplicateName,
+					fmt.Sprintf("class '%s' has duplicate event name '%s' — keys '%s' and '%s' both use this name", classKey, event.Name, first, key),
+					smPath,
+				).WithField("events." + key + ".name").WithHint("each event within a state machine must have a unique \"name\" value")
+			}
+			eventNames[event.Name] = key
+		}
+
+		// Guard name uniqueness.
+		guardNames := make(map[string]string)
+		for key, guard := range class.StateMachine.Guards {
+			if first, ok := guardNames[guard.Name]; ok {
+				return NewParseError(
+					ErrGuardDuplicateName,
+					fmt.Sprintf("class '%s' has duplicate guard name '%s' — keys '%s' and '%s' both use this name", classKey, guard.Name, first, key),
+					smPath,
+				).WithField("guards." + key + ".name").WithHint("each guard within a state machine must have a unique \"name\" value")
+			}
+			guardNames[guard.Name] = key
 		}
 	}
 

@@ -1540,3 +1540,124 @@ func t_buildCompleteClass() *inputClass {
 		Queries: map[string]*inputQuery{},
 	}
 }
+
+// TestActionDuplicateName verifies error when two actions have the same name.
+func (suite *TreeValidateSuite) TestActionDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.Actions = map[string]*inputAction{
+		"action_a": {Name: "Do Something"},
+		"action_b": {Name: "Do Something"},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrActionDuplicateName, parseErr.Code)
+	suite.Equal("name", parseErr.Field)
+	suite.Contains(parseErr.Message, "duplicate action name")
+	suite.Contains(parseErr.Message, "Do Something")
+}
+
+// TestQueryDuplicateName verifies error when two queries have the same name.
+func (suite *TreeValidateSuite) TestQueryDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.Queries = map[string]*inputQuery{
+		"query_a": {Name: "Get Items"},
+		"query_b": {Name: "Get Items"},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrQueryDuplicateName, parseErr.Code)
+	suite.Equal("name", parseErr.Field)
+	suite.Contains(parseErr.Message, "duplicate query name")
+	suite.Contains(parseErr.Message, "Get Items")
+}
+
+// TestStateDuplicateName verifies error when two states have the same name.
+func (suite *TreeValidateSuite) TestStateDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"state_a": {Name: "Active"},
+			"state_b": {Name: "Active"},
+		},
+		Events:      map[string]*inputEvent{},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrStateDuplicateName, parseErr.Code)
+	suite.Contains(parseErr.Message, "duplicate state name")
+	suite.Contains(parseErr.Message, "Active")
+}
+
+// TestEventDuplicateName verifies error when two events have the same name.
+func (suite *TreeValidateSuite) TestEventDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{
+			"event_a": {Name: "Submit"},
+			"event_b": {Name: "Submit"},
+		},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrEventDuplicateName, parseErr.Code)
+	suite.Contains(parseErr.Message, "duplicate event name")
+	suite.Contains(parseErr.Message, "Submit")
+}
+
+// TestGuardDuplicateName verifies error when two guards have the same name.
+func (suite *TreeValidateSuite) TestGuardDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{},
+		Guards: map[string]*inputGuard{
+			"guard_a": {Name: "Is Ready", Logic: inputLogic{Description: "check readiness"}},
+			"guard_b": {Name: "Is Ready", Logic: inputLogic{Description: "another check"}},
+		},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrGuardDuplicateName, parseErr.Code)
+	suite.Contains(parseErr.Message, "duplicate guard name")
+	suite.Contains(parseErr.Message, "Is Ready")
+}

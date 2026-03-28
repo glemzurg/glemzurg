@@ -103,6 +103,9 @@ func allErrorCodes() map[int]string {
 		ErrTransitionActionNotFound:      "ErrTransitionActionNotFound",
 		ErrTransitionInitialToFinal:      "ErrTransitionInitialToFinal",
 		ErrEventParamDataTypeUnparseable: "ErrEventParamDataTypeUnparseable",
+		ErrStateDuplicateName:            "ErrStateDuplicateName",
+		ErrEventDuplicateName:            "ErrEventDuplicateName",
+		ErrGuardDuplicateName:            "ErrGuardDuplicateName",
 
 		// Action errors (8xxx).
 		ErrActionNameRequired:    "ErrActionNameRequired",
@@ -111,6 +114,7 @@ func allErrorCodes() map[int]string {
 		ErrActionSchemaViolation: "ErrActionSchemaViolation",
 		ErrActionDuplicateKey:    "ErrActionDuplicateKey",
 		ErrActionFilenameInvalid: "ErrActionFilenameInvalid",
+		ErrActionDuplicateName:   "ErrActionDuplicateName",
 
 		// Query errors (9xxx).
 		ErrQueryNameRequired:    "ErrQueryNameRequired",
@@ -119,6 +123,7 @@ func allErrorCodes() map[int]string {
 		ErrQuerySchemaViolation: "ErrQuerySchemaViolation",
 		ErrQueryDuplicateKey:    "ErrQueryDuplicateKey",
 		ErrQueryFilenameInvalid: "ErrQueryFilenameInvalid",
+		ErrQueryDuplicateName:   "ErrQueryDuplicateName",
 
 		// Class generalization errors (10xxx).
 		ErrClassGenNameRequired:         "ErrClassGenNameRequired",
@@ -386,6 +391,6 @@ func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
 	// 220 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 220,
+	s.Len(codes, 225,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }
