@@ -251,7 +251,7 @@ func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][
 				qb.WriteString(", ")
 			}
 			base := i * 10
-			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
+			fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
 			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, dataTypeKey(attr), derivationPolicyKey(attr), attr.Nullable, attr.UmlComment)
 			i++
 		}

@@ -38,9 +38,6 @@ linters:
           - revive
         path: .*_test\.go$
       - linters:
-          - staticcheck
-        text: "QF1012"
-      - linters:
           - revive
         text: "var-naming: don't use an underscore in package name"
       - linters:

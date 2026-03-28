@@ -180,7 +180,7 @@ func AddScenarios(dbOrTx DbOrTx, modelKey string, scenarios map[identity.Key][]m
 				queryBuilder.WriteString(", ")
 			}
 			base := i * 5
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
 			args = append(args, modelKey, scenario.Key.String(), scenario.Name, useCaseKey.String(), scenario.Details)
 			i++
 		}

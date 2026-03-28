@@ -183,7 +183,7 @@ func AddGuards(dbOrTx DbOrTx, modelKey string, guards map[identity.Key][]model_s
 				queryBuilder.WriteString(", ")
 			}
 			base := i * 4
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
 
 			args = append(args, modelKey, classKey.String(), guard.Key.String(), guard.Name)
 			i++

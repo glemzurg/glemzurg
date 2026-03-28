@@ -421,9 +421,9 @@ func AddSteps(dbOrTx DbOrTx, modelKey string, rows []stepRow) (err error) {
 			queryBuilder.WriteString(", ")
 		}
 		base := i * 14
-		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 			base+1, base+2, base+3, base+4, base+5, base+6, base+7,
-			base+8, base+9, base+10, base+11, base+12, base+13, base+14))
+			base+8, base+9, base+10, base+11, base+12, base+13, base+14)
 
 		// Handle optional key pointers.
 		var parentStepKeyPtr *string

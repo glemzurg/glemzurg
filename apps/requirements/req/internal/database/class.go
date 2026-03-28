@@ -244,7 +244,7 @@ func AddClasses(dbOrTx DbOrTx, modelKey string, classes map[identity.Key][]model
 				queryBuilder.WriteString(", ")
 			}
 			base := i * 9
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
 
 			// Handle optional key pointers.
 			var actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr *string

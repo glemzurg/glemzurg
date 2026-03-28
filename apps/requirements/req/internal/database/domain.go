@@ -167,7 +167,7 @@ func AddDomains(dbOrTx DbOrTx, modelKey string, domains []model_domain.Domain) (
 			qb.WriteString(", ")
 		}
 		base := i * 6
-		qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6))
+		fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
 		args = append(args, modelKey, domain.Key.String(), domain.Name, domain.Details, domain.Realized, domain.UmlComment)
 	}
 

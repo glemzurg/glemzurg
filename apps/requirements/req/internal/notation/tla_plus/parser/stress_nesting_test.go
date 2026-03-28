@@ -111,7 +111,7 @@ func (s *StressNestingTestSuite) TestDeepNestedIF() {
 			}
 			b.WriteString("1")
 			for i := range tt.depth {
-				b.WriteString(fmt.Sprintf(" ELSE %d", i+2))
+				fmt.Fprintf(&b, " ELSE %d", i+2)
 			}
 			_, err := ParseExpression(b.String())
 			s.Require().NoError(err, "should parse %d-level nested IF", tt.depth)
@@ -135,9 +135,9 @@ func (s *StressNestingTestSuite) TestDeepNestedTuples() {
 			// Build: <<1, <<2, <<3, <<4>>>>>>
 			var b strings.Builder
 			for i := range tt.depth {
-				b.WriteString(fmt.Sprintf("<<%d, ", i+1))
+				fmt.Fprintf(&b, "<<%d, ", i+1)
 			}
-			b.WriteString(fmt.Sprintf("%d", tt.depth+1))
+			fmt.Fprintf(&b, "%d", tt.depth+1)
 			for range tt.depth {
 				b.WriteString(">>")
 			}
@@ -162,9 +162,9 @@ func (s *StressNestingTestSuite) TestDeepNestedSets() {
 			// Build: {1, {2, {3, {4}}}}
 			var b strings.Builder
 			for i := range tt.depth {
-				b.WriteString(fmt.Sprintf("{%d, ", i+1))
+				fmt.Fprintf(&b, "{%d, ", i+1)
 			}
-			b.WriteString(fmt.Sprintf("%d", tt.depth+1))
+			fmt.Fprintf(&b, "%d", tt.depth+1)
 			for range tt.depth {
 				b.WriteString("}")
 			}
@@ -205,7 +205,7 @@ func (s *StressNestingTestSuite) TestDeepNestedArithmetic() {
 			b.WriteString(strings.Repeat("(", depth-1))
 			b.WriteString("1 + 2")
 			for i := 3; i <= depth; i++ {
-				b.WriteString(fmt.Sprintf(") + %d", i))
+				fmt.Fprintf(&b, ") + %d", i)
 			}
 			b.WriteString(")")
 			_, err := ParseExpression(b.String())

@@ -227,7 +227,7 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 			queryBuilder.WriteString(", ")
 		}
 		base := i * 10
-		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
 
 		// Handle optional key pointers.
 		var superclassOfKeyPtr, subclassOfKeyPtr *string

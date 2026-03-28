@@ -225,7 +225,7 @@ func AddActionParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key
 			}
 
 			base := i * 7
-			sqlQueryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7))
+			fmt.Fprintf(&sqlQueryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
 			args = append(args, modelKey, actionKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
 			i++
 		}

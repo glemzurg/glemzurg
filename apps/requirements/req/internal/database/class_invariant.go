@@ -139,7 +139,7 @@ func AddClassInvariants(dbOrTx DbOrTx, modelKey string, classInvariants map[iden
 				qb.WriteString(", ")
 			}
 			first = false
-			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3))
+			fmt.Fprintf(&qb, "($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3)
 			args = append(args, modelKey, classKey.String(), logicKey.String())
 			argIdx += 3
 		}

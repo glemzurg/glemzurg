@@ -195,7 +195,7 @@ func AddUseCaseGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations m
 				queryBuilder.WriteString(", ")
 			}
 			base := i * 8
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
 
 			args = append(args, modelKey, subdomainKey.String(), gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
 			i++

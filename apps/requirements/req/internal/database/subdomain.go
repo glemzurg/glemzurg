@@ -187,7 +187,7 @@ func AddSubdomains(dbOrTx DbOrTx, modelKey string, subdomains map[identity.Key][
 				queryBuilder.WriteString(", ")
 			}
 			base := i * 6
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
 
 			args = append(args, modelKey, domainKey.String(), subdomain.Key.String(), subdomain.Name, subdomain.Details, subdomain.UmlComment)
 			i++

@@ -225,7 +225,7 @@ func AddEventParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 			}
 
 			base := i * 7
-			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7))
+			fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
 			args = append(args, modelKey, eventKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
 			i++
 		}

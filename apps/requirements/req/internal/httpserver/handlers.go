@@ -129,7 +129,7 @@ func (s *Server) homeHandler(w http.ResponseWriter, _ *http.Request) {
 	list.WriteString("<ul>")
 	for _, model := range models {
 		escaped := html.EscapeString(model)
-		list.WriteString(fmt.Sprintf("<li><a href=\"/%s/model.md\">%s</a></li>", escaped, escaped))
+		fmt.Fprintf(&list, "<li><a href=\"/%s/model.md\">%s</a></li>", escaped, escaped)
 	}
 	list.WriteString("</ul>")
 
@@ -151,16 +151,19 @@ func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
 	escapedModel := html.EscapeString(model)
 	escapedFile := html.EscapeString(file)
 
-	script := fmt.Sprintf(`
-<script>
-const evtSource = new EventSource("/events/%s/%s");
-evtSource.onmessage = () => location.reload();
-</script>
-`, escapedModel, escapedFile)
+	var buf strings.Builder
+	buf.WriteString(`<html><head><link rel="stylesheet" href="/`)
+	buf.WriteString(escapedModel)
+	buf.WriteString(`/style.css"><script>const evtSource = new EventSource("/events/`)
+	buf.WriteString(escapedModel)
+	buf.WriteString(`/`)
+	buf.WriteString(escapedFile)
+	buf.WriteString(`");evtSource.onmessage = () => location.reload();</script></head><body>`)
+	buf.Write(mdHTML)
+	buf.WriteString(`</body></html>`)
 
-	page := fmt.Sprintf(`<html><head><link rel="stylesheet" href="/%s/style.css">%s</head><body>%s</body></html>`, escapedModel, script, mdHTML)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(page)) //nolint:gosec // mdHTML is intentionally rendered HTML from markdown
+	_, _ = w.Write([]byte(buf.String()))
 }
 
 // serveSVG serves an SVG file from the in-memory store.
