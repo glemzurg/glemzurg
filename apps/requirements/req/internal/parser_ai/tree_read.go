@@ -806,6 +806,10 @@ func readClassActions(classDir string, class *inputClass) error {
 			errs = append(errs, err)
 			continue
 		}
+		if err := validateFilenameMatchesName(key, action.Name, "action", ErrActionFilenameInvalid, filePath); err != nil {
+			errs = append(errs, err)
+			continue
+		}
 		class.Actions[key] = action
 	}
 	return errors.Join(errs...)
@@ -840,6 +844,10 @@ func readClassQueries(classDir string, class *inputClass) error {
 		}
 		query, err := parseQuery(content, filePath)
 		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if err := validateFilenameMatchesName(key, query.Name, "query", ErrQueryFilenameInvalid, filePath); err != nil {
 			errs = append(errs, err)
 			continue
 		}

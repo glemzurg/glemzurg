@@ -308,6 +308,31 @@ func validatePathComponent(path, componentName string, expectedParts int, filePa
 	return nil
 }
 
+// validateFilenameMatchesName checks that a filesystem key matches the expected key derived from the name field.
+// The expected key is derived by lowercasing the name and replacing spaces and hyphens with underscores.
+// entityType is used in error messages (e.g., "action", "query").
+func validateFilenameMatchesName(key, name, entityType string, errCode int, filePath string) error {
+	expectedKey := keyFromName(name)
+	if key != expectedKey {
+		return NewParseError(
+			errCode,
+			fmt.Sprintf("%s filename '%s.json' does not match name '%s' - expected filename '%s.json'",
+				entityType, key, name, expectedKey),
+			filePath,
+		).WithField("name").WithHint(fmt.Sprintf("rename the file to '%s.json' or change the name field to match the current filename", expectedKey))
+	}
+	return nil
+}
+
+// keyFromName derives a filesystem key from a name field.
+// It lowercases the name and replaces spaces and hyphens with underscores.
+func keyFromName(name string) string {
+	key := strings.ToLower(name)
+	key = strings.ReplaceAll(key, " ", "_")
+	key = strings.ReplaceAll(key, "-", "_")
+	return key
+}
+
 // NormalizeToKey converts a human-readable name to a valid key.
 // This is a helper function for suggesting fixes.
 // Examples:
