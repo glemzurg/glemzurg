@@ -523,19 +523,13 @@ func convertTransitionFromModel(transition *model_state.Transition) inputTransit
 	// Handle from state (nil for initial transitions)
 	if transition.FromStateKey != nil {
 		fromKey := keyFromName(transition.FromStateKey.SubKey)
-		// Check if it's "initial" (meaning no from state)
-		if fromKey != "initial" {
-			result.FromStateKey = &fromKey
-		}
+		result.FromStateKey = &fromKey
 	}
 
 	// Handle to state (nil for final transitions)
 	if transition.ToStateKey != nil {
 		toKey := keyFromName(transition.ToStateKey.SubKey)
-		// Check if it's "final" (meaning no to state)
-		if toKey != "final" {
-			result.ToStateKey = &toKey
-		}
+		result.ToStateKey = &toKey
 	}
 
 	// Handle guard key

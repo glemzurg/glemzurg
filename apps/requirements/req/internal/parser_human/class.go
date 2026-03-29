@@ -976,8 +976,13 @@ func transitionFromYamlData(lookups parseKeyLookups, classKey identity.Key, tran
 	actionName := yamlStringField(transitionData, "action")
 	toStateName := yamlStringField(transitionData, "to")
 
-	// Construct the transition key using the component names.
-	transitionKey, err := identity.NewTransitionKey(classKey, fromStateName, eventName, guardName, actionName, toStateName)
+	// Construct the transition key using the component names (normalized).
+	transitionKey, err := identity.NewTransitionKey(classKey,
+		identity.NormalizeSubKey(fromStateName),
+		identity.NormalizeSubKey(eventName),
+		identity.NormalizeSubKey(guardName),
+		identity.NormalizeSubKey(actionName),
+		identity.NormalizeSubKey(toStateName))
 	if err != nil {
 		return model_state.Transition{}, errors.WithStack(err)
 	}

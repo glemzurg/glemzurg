@@ -144,9 +144,6 @@ func prependMarkdownSubtitle(title, markdown string) string {
 
 func prependMarkdownHeading(prefix, title, markdown string) string {
 	trimmed := strings.TrimSpace(markdown)
-	if trimmed != "" && _genericFileTitleRegexp.MatchString(strings.SplitN(trimmed, "\n", 2)[0]) {
-		return trimmed
-	}
 	if trimmed == "" {
 		return prefix + title
 	}

@@ -1257,6 +1257,61 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 	suite.Equal("Order Products", assoc.Name)
 }
 
+// TestConvertTransitionFromModelInitial tests that initial transitions (nil FromStateKey) produce no from_state_key.
+func (suite *ConvertSuite) TestConvertTransitionFromModelInitial() {
+	classKey := helper.Must(identity.NewClassKey(
+		helper.Must(identity.NewSubdomainKey(
+			helper.Must(identity.NewDomainKey("d")), "s")), "c"))
+	eventKey := helper.Must(identity.NewEventKey(classKey, "start"))
+	toStateKey := helper.Must(identity.NewStateKey(classKey, "active"))
+	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "", "start", "", "", "active"))
+
+	transition := model_state.NewTransition(transitionKey, nil, eventKey, nil, nil, &toStateKey, "")
+	result := convertTransitionFromModel(&transition)
+
+	suite.Nil(result.FromStateKey, "initial transition should have nil FromStateKey")
+	suite.Require().NotNil(result.ToStateKey)
+	suite.Equal("active", *result.ToStateKey)
+	suite.Equal("start", result.EventKey)
+}
+
+// TestConvertTransitionFromModelFinal tests that final transitions (nil ToStateKey) produce no to_state_key.
+func (suite *ConvertSuite) TestConvertTransitionFromModelFinal() {
+	classKey := helper.Must(identity.NewClassKey(
+		helper.Must(identity.NewSubdomainKey(
+			helper.Must(identity.NewDomainKey("d")), "s")), "c"))
+	fromStateKey := helper.Must(identity.NewStateKey(classKey, "active"))
+	eventKey := helper.Must(identity.NewEventKey(classKey, "stop"))
+	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "active", "stop", "", "", ""))
+
+	transition := model_state.NewTransition(transitionKey, &fromStateKey, eventKey, nil, nil, nil, "")
+	result := convertTransitionFromModel(&transition)
+
+	suite.Require().NotNil(result.FromStateKey)
+	suite.Equal("active", *result.FromStateKey)
+	suite.Nil(result.ToStateKey, "final transition should have nil ToStateKey")
+	suite.Equal("stop", result.EventKey)
+}
+
+// TestConvertTransitionFromModelNamedInitialState tests that a real state named "initial" is preserved.
+func (suite *ConvertSuite) TestConvertTransitionFromModelNamedInitialState() {
+	classKey := helper.Must(identity.NewClassKey(
+		helper.Must(identity.NewSubdomainKey(
+			helper.Must(identity.NewDomainKey("d")), "s")), "c"))
+	fromStateKey := helper.Must(identity.NewStateKey(classKey, "initial"))
+	eventKey := helper.Must(identity.NewEventKey(classKey, "go"))
+	toStateKey := helper.Must(identity.NewStateKey(classKey, "running"))
+	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "initial", "go", "", "", "running"))
+
+	transition := model_state.NewTransition(transitionKey, &fromStateKey, eventKey, nil, nil, &toStateKey, "")
+	result := convertTransitionFromModel(&transition)
+
+	suite.Require().NotNil(result.FromStateKey, "real state named 'initial' must not be stripped")
+	suite.Equal("initial", *result.FromStateKey)
+	suite.Require().NotNil(result.ToStateKey)
+	suite.Equal("running", *result.ToStateKey)
+}
+
 // TestConvertMultiplicityFormats tests various multiplicity format conversions.
 func (suite *ConvertSuite) TestConvertMultiplicityFormats() {
 	tests := []struct {
