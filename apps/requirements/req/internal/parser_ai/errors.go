@@ -95,6 +95,9 @@ const (
 	ErrStateDuplicateName            = 7027
 	ErrEventDuplicateName            = 7028
 	ErrGuardDuplicateName            = 7029
+	ErrStateKeyNameMismatch          = 7030
+	ErrEventKeyNameMismatch          = 7031
+	ErrGuardKeyNameMismatch          = 7032
 
 	// Action errors (8xxx).
 	ErrActionNameRequired    = 8001

@@ -368,6 +368,11 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		return err
 	}
 
+	// Validate state machine key-name consistency
+	if err := validateStateMachineKeyNameConsistency(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
 	// Validate state machine if present
 	if class.StateMachine != nil {
 		if err := validateStateMachineTree(class, domainKey, subdomainKey, classKey); err != nil {
@@ -1522,5 +1527,43 @@ func validateClassNameUniqueness(class *inputClass, domainKey, subdomainKey, cla
 		}
 	}
 
+	return nil
+}
+
+// validateStateMachineKeyNameConsistency checks that each state machine map key
+// matches keyFromName(name) for states, events, and guards.
+func validateStateMachineKeyNameConsistency(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	if class.StateMachine == nil {
+		return nil
+	}
+	smPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKey, subdomainKey, classKey)
+
+	for key, state := range class.StateMachine.States {
+		if expected := keyFromName(state.Name); key != expected {
+			return NewParseError(
+				ErrStateKeyNameMismatch,
+				fmt.Sprintf("state key '%s' does not match name '%s' — expected key '%s'", key, state.Name, expected),
+				smPath,
+			).WithField("states." + key).WithHint(fmt.Sprintf("rename the key to '%s' or change the name to match the key", expected))
+		}
+	}
+	for key, event := range class.StateMachine.Events {
+		if expected := keyFromName(event.Name); key != expected {
+			return NewParseError(
+				ErrEventKeyNameMismatch,
+				fmt.Sprintf("event key '%s' does not match name '%s' — expected key '%s'", key, event.Name, expected),
+				smPath,
+			).WithField("events." + key).WithHint(fmt.Sprintf("rename the key to '%s' or change the name to match the key", expected))
+		}
+	}
+	for key, guard := range class.StateMachine.Guards {
+		if expected := keyFromName(guard.Name); key != expected {
+			return NewParseError(
+				ErrGuardKeyNameMismatch,
+				fmt.Sprintf("guard key '%s' does not match name '%s' — expected key '%s'", key, guard.Name, expected),
+				smPath,
+			).WithField("guards." + key).WithHint(fmt.Sprintf("rename the key to '%s' or change the name to match the key", expected))
+		}
+	}
 	return nil
 }

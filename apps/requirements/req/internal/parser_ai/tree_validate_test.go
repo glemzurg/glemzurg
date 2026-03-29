@@ -1420,7 +1420,7 @@ func t_buildValidModelTree() *inputModel {
 										"confirm": {Name: "confirm"},
 									},
 									Guards: map[string]*inputGuard{
-										"has_items": {Name: "hasItems", Logic: inputLogic{Description: "Order has items", Notation: "tla_plus"}},
+										"has_items": {Name: "Has Items", Logic: inputLogic{Description: "Order has items", Notation: "tla_plus"}},
 									},
 									Transitions: []inputTransition{
 										{
@@ -1660,4 +1660,93 @@ func (suite *TreeValidateSuite) TestGuardDuplicateName() {
 	suite.Equal(ErrGuardDuplicateName, parseErr.Code)
 	suite.Contains(parseErr.Message, "duplicate guard name")
 	suite.Contains(parseErr.Message, "Is Ready")
+}
+
+// TestStateKeyNameMismatch verifies error when state map key doesn't match keyFromName(name).
+func (suite *TreeValidateSuite) TestStateKeyNameMismatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"wrong_key": {Name: "Pending Approval"},
+		},
+		Events:      map[string]*inputEvent{},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrStateKeyNameMismatch, parseErr.Code)
+	suite.Contains(parseErr.Message, "wrong_key")
+	suite.Contains(parseErr.Message, "pending_approval")
+}
+
+// TestEventKeyNameMismatch verifies error when event map key doesn't match keyFromName(name).
+func (suite *TreeValidateSuite) TestEventKeyNameMismatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{},
+		Events: map[string]*inputEvent{
+			"bad_key": {Name: "Submit Order"},
+		},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrEventKeyNameMismatch, parseErr.Code)
+	suite.Contains(parseErr.Message, "bad_key")
+	suite.Contains(parseErr.Message, "submit_order")
+}
+
+// TestGuardKeyNameMismatch verifies error when guard map key doesn't match keyFromName(name).
+func (suite *TreeValidateSuite) TestGuardKeyNameMismatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{},
+		Events: map[string]*inputEvent{},
+		Guards: map[string]*inputGuard{
+			"wrong": {Name: "Has Items", Logic: inputLogic{Description: "check items"}},
+		},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrGuardKeyNameMismatch, parseErr.Code)
+	suite.Contains(parseErr.Message, "wrong")
+	suite.Contains(parseErr.Message, "has_items")
+}
+
+// TestStateKeyNameMatch verifies that matching state key and name passes validation.
+func (suite *TreeValidateSuite) TestStateKeyNameMatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending_approval": {Name: "Pending Approval"},
+		},
+		Events:      map[string]*inputEvent{},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().NoError(err)
 }

@@ -107,6 +107,9 @@ func allErrorCodes() map[int]string {
 		ErrStateDuplicateName:            "ErrStateDuplicateName",
 		ErrEventDuplicateName:            "ErrEventDuplicateName",
 		ErrGuardDuplicateName:            "ErrGuardDuplicateName",
+		ErrStateKeyNameMismatch:          "ErrStateKeyNameMismatch",
+		ErrEventKeyNameMismatch:          "ErrEventKeyNameMismatch",
+		ErrGuardKeyNameMismatch:          "ErrGuardKeyNameMismatch",
 
 		// Action errors (8xxx).
 		ErrActionNameRequired:    "ErrActionNameRequired",
@@ -391,8 +394,8 @@ func (s *ErrorCoverageSuite) TestAllDocsAreNonEmpty() {
 // This test catches cases where a new constant is added to errors.go but not to allErrorCodes().
 func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
-	// 220 error codes as of current implementation.
+	// 230 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 227,
+	s.Len(codes, 230,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }
