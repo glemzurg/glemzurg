@@ -440,19 +440,19 @@ func convertStateMachineFromModel(class *model_class.Class) *inputStateMachine {
 	// Convert states
 	for key, state := range class.States {
 		converted := convertStateFromModel(&state)
-		sm.States[key.SubKey] = converted
+		sm.States[keyFromName(key.SubKey)] = converted
 	}
 
 	// Convert events
 	for key, event := range class.Events {
 		converted := convertEventFromModel(&event)
-		sm.Events[key.SubKey] = converted
+		sm.Events[keyFromName(key.SubKey)] = converted
 	}
 
 	// Convert guards
 	for key, guard := range class.Guards {
 		converted := convertGuardFromModel(&guard)
-		sm.Guards[key.SubKey] = converted
+		sm.Guards[keyFromName(key.SubKey)] = converted
 	}
 
 	// Convert transitions
@@ -476,7 +476,7 @@ func convertStateFromModel(state *model_state.State) *inputState {
 	// Convert state actions
 	for _, stateAction := range state.Actions {
 		converted := inputStateAction{
-			ActionKey: stateAction.ActionKey.SubKey,
+			ActionKey: keyFromName(stateAction.ActionKey.SubKey),
 			When:      stateAction.When,
 		}
 		result.Actions = append(result.Actions, converted)
@@ -516,13 +516,13 @@ func convertGuardFromModel(guard *model_state.Guard) *inputGuard {
 // convertTransitionFromModel converts a model_state.Transition to an inputTransition.
 func convertTransitionFromModel(transition *model_state.Transition) inputTransition {
 	result := inputTransition{
-		EventKey:   transition.EventKey.SubKey,
+		EventKey:   keyFromName(transition.EventKey.SubKey),
 		UMLComment: transition.UmlComment,
 	}
 
 	// Handle from state (nil for initial transitions)
 	if transition.FromStateKey != nil {
-		fromKey := transition.FromStateKey.SubKey
+		fromKey := keyFromName(transition.FromStateKey.SubKey)
 		// Check if it's "initial" (meaning no from state)
 		if fromKey != "initial" {
 			result.FromStateKey = &fromKey
@@ -531,7 +531,7 @@ func convertTransitionFromModel(transition *model_state.Transition) inputTransit
 
 	// Handle to state (nil for final transitions)
 	if transition.ToStateKey != nil {
-		toKey := transition.ToStateKey.SubKey
+		toKey := keyFromName(transition.ToStateKey.SubKey)
 		// Check if it's "final" (meaning no to state)
 		if toKey != "final" {
 			result.ToStateKey = &toKey
@@ -540,13 +540,13 @@ func convertTransitionFromModel(transition *model_state.Transition) inputTransit
 
 	// Handle guard key
 	if transition.GuardKey != nil {
-		guardKey := transition.GuardKey.SubKey
+		guardKey := keyFromName(transition.GuardKey.SubKey)
 		result.GuardKey = &guardKey
 	}
 
 	// Handle action key
 	if transition.ActionKey != nil {
-		actionKey := transition.ActionKey.SubKey
+		actionKey := keyFromName(transition.ActionKey.SubKey)
 		result.ActionKey = &actionKey
 	}
 

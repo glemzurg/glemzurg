@@ -386,6 +386,7 @@ func distillName(name string) string {
 	name = strings.TrimSpace(name)
 	name = strings.ToLower(name)
 	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.ReplaceAll(name, "-", "_")
 	name = strings.ReplaceAll(name, "/", "~")
 	return name
 }

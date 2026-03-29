@@ -35,6 +35,16 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 			subKey:   "",
 			errstr:   "sub key is required",
 		},
+		{
+			testName: "error space in subkey",
+			subKey:   "has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			subKey:   "has-hyphen",
+			errstr:   "must match pattern",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
@@ -170,6 +180,16 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 			subKey:   "",
 			errstr:   "sub key is required",
 		},
+		{
+			testName: "error space in subkey",
+			subKey:   "has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			subKey:   "has-hyphen",
+			errstr:   "must match pattern",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
@@ -255,6 +275,16 @@ func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
 			testName: "error blank",
 			subKey:   "",
 			errstr:   "sub key is required",
+		},
+		{
+			testName: "error space in subkey",
+			subKey:   "_has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			subKey:   "_has-hyphen",
+			errstr:   "must match pattern",
 		},
 	}
 	for _, tt := range tests {
@@ -1386,6 +1416,18 @@ func (suite *KeyTypeSuite) TestNewActionKey() {
 			subKey:   "",
 			errstr:   "sub key is required",
 		},
+		{
+			testName: "error space in subkey",
+			classKey: classKey,
+			subKey:   "has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			classKey: classKey,
+			subKey:   "has-hyphen",
+			errstr:   "must match pattern",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
@@ -1577,6 +1619,18 @@ func (suite *KeyTypeSuite) TestNewAttributeKey() {
 			classKey: classKey,
 			subKey:   "",
 			errstr:   "sub key is required",
+		},
+		{
+			testName: "error space in subkey",
+			classKey: classKey,
+			subKey:   "has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			classKey: classKey,
+			subKey:   "has-hyphen",
+			errstr:   "must match pattern",
 		},
 	}
 	for _, tt := range tests {

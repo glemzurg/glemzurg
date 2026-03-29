@@ -108,7 +108,7 @@ func parseOneGlobalFunction(gfMap map[string]any) (model_logic.GlobalFunction, e
 		name = n.(string)
 	}
 
-	gfKey, err := identity.NewGlobalFunctionKey(strings.ToLower(name))
+	gfKey, err := identity.NewGlobalFunctionKey(identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_logic.GlobalFunction{}, errors.WithStack(err)
 	}

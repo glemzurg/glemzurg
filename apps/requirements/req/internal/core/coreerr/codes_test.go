@@ -44,6 +44,7 @@ func allCodeConstants() map[string]Code {
 		// Key errors.
 		"KeyTypeInvalid":          KeyTypeInvalid,
 		"KeySubkeyRequired":       KeySubkeyRequired,
+		"KeySubkeyInvalidFormat":  KeySubkeyInvalidFormat,
 		"KeyParentkeyMustBeBlank": KeyParentkeyMustBeBlank,
 		"KeyParentkeyRequired":    KeyParentkeyRequired,
 		"KeyRootHasParent":        KeyRootHasParent,

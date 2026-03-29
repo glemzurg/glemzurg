@@ -107,7 +107,7 @@ func parseUseCaseScenarios(useCase *model_use_case.UseCase, subdomainKey, useCas
 	useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
 	scenariosMap := scenariosAny.(map[string]any)
 	for scenarioSubKey, scenarioDataAny := range scenariosMap {
-		scenarioKey, err := identity.NewScenarioKey(useCaseKey, strings.ToLower(scenarioSubKey))
+		scenarioKey, err := identity.NewScenarioKey(useCaseKey, identity.NormalizeSubKey(scenarioSubKey))
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -207,7 +207,7 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 		if found {
 			objectSubKey = keyAny.(string)
 		}
-		objectSubKey = strings.ToLower(objectSubKey)
+		objectSubKey = identity.NormalizeSubKey(objectSubKey)
 
 		nameAny, found := objectData["name"]
 		if found {

@@ -3,6 +3,7 @@ package identity
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
@@ -71,6 +72,32 @@ var validKeyTypes = map[string]bool{
 	KEY_TYPE_SCENARIO: true, KEY_TYPE_SCENARIO_OBJECT: true, KEY_TYPE_SCENARIO_STEP: true,
 }
 
+// identifierPattern is the regex that SubKeys must match for key types that become filenames/directories.
+var identifierPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+
+// identifierSubKeyTypes lists key types whose SubKey must be a valid identifier (matches identifierPattern).
+// Key types NOT in this set have special SubKey formats (integers, composites, class paths).
+var identifierSubKeyTypes = map[string]bool{
+	KEY_TYPE_ACTOR:                   true,
+	KEY_TYPE_ACTOR_GENERALIZATION:    true,
+	KEY_TYPE_NAMED_SET:               true,
+	KEY_TYPE_DOMAIN:                  true,
+	KEY_TYPE_GLOBAL_FUNCTION:         true,
+	KEY_TYPE_SUBDOMAIN:               true,
+	KEY_TYPE_CLASS:                   true,
+	KEY_TYPE_CLASS_GENERALIZATION:    true,
+	KEY_TYPE_USE_CASE:                true,
+	KEY_TYPE_USE_CASE_GENERALIZATION: true,
+	KEY_TYPE_ATTRIBUTE:               true,
+	KEY_TYPE_STATE:                   true,
+	KEY_TYPE_EVENT:                   true,
+	KEY_TYPE_GUARD:                   true,
+	KEY_TYPE_ACTION:                  true,
+	KEY_TYPE_QUERY:                   true,
+	KEY_TYPE_SCENARIO:                true,
+	KEY_TYPE_SCENARIO_OBJECT:         true,
+}
+
 // Validate validates the Key struct.
 func (k *Key) Validate() error {
 	ctx := coreerr.NewContext("key", k.KeyType+"/"+k.SubKey)
@@ -87,6 +114,15 @@ func (k *Key) ValidateWithContext(ctx *coreerr.ValidationContext) error {
 	}
 	if k.SubKey == "" {
 		return coreerr.NewWithValues(ctx, coreerr.KeySubkeyRequired, "sub key is required", "SubKey", "", "non-empty sub key")
+	}
+
+	// Validate SubKey format for key types that require identifier SubKeys.
+	if identifierSubKeyTypes[k.KeyType] {
+		if !identifierPattern.MatchString(k.SubKey) {
+			return coreerr.NewWithValues(ctx, coreerr.KeySubkeyInvalidFormat,
+				fmt.Sprintf("sub key '%s' must match pattern [a-z][a-z0-9_]* for key type '%s'", k.SubKey, k.KeyType),
+				"SubKey", k.SubKey, "a value matching ^[a-z][a-z0-9_]*$")
+		}
 	}
 
 	// Custom ParentKey validation (context-dependent on KeyType).

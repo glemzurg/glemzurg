@@ -10,6 +10,7 @@ const (
 
 	KeyTypeInvalid          Code = "KEY_TYPE_INVALID"            // KeyType is not in the allowed set.
 	KeySubkeyRequired       Code = "KEY_SUBKEY_REQUIRED"         // SubKey is empty.
+	KeySubkeyInvalidFormat  Code = "KEY_SUBKEY_INVALID_FORMAT"   // SubKey doesn't match identifier pattern.
 	KeyParentkeyMustBeBlank Code = "KEY_PARENTKEY_MUST_BE_BLANK" // Root-level key type has a non-blank ParentKey.
 	KeyParentkeyRequired    Code = "KEY_PARENTKEY_REQUIRED"      // Non-root key type has a blank ParentKey.
 	KeyRootHasParent        Code = "KEY_ROOT_HAS_PARENT"         // Root-level key type was given a parent.

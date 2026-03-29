@@ -183,7 +183,7 @@ func parseClassAttributes(class *model_class.Class, classKey identity.Key, yamlD
 
 	attributes := make(map[identity.Key]model_class.Attribute)
 	for attrSubKey, attributeAny := range attributesData {
-		attribute, err := attributeFromYamlData(classKey, attrSubKey, attributeAny)
+		attribute, err := attributeFromYamlData(classKey, identity.NormalizeSubKey(attrSubKey), attributeAny)
 		if err != nil {
 			return err
 		}
@@ -607,7 +607,7 @@ func determineAssociationParent(subdomainKey, fromClassKey, toClassKey identity.
 
 func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identity.Key, name string, stateAny any) (state model_state.State, err error) {
 	// Construct the state key.
-	stateKey, err := identity.NewStateKey(classKey, strings.ToLower(name))
+	stateKey, err := identity.NewStateKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.State{}, errors.WithStack(err)
 	}
@@ -685,7 +685,7 @@ func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identit
 
 func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event model_state.Event, err error) {
 	// Construct the event key.
-	eventKey, err := identity.NewEventKey(classKey, strings.ToLower(name))
+	eventKey, err := identity.NewEventKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.Event{}, errors.WithStack(err)
 	}
@@ -734,7 +734,7 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 
 func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard model_state.Guard, err error) {
 	// Construct the guard key.
-	guardKey, err := identity.NewGuardKey(classKey, strings.ToLower(name))
+	guardKey, err := identity.NewGuardKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.Guard{}, errors.WithStack(err)
 	}
@@ -772,7 +772,7 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 
 func actionFromYamlData(classKey identity.Key, name string, actionAny any) (action model_state.Action, err error) {
 	// Construct the action key.
-	actionKey, err := identity.NewActionKey(classKey, strings.ToLower(name))
+	actionKey, err := identity.NewActionKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.Action{}, errors.WithStack(err)
 	}
@@ -846,7 +846,7 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 
 func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query model_state.Query, err error) {
 	// Construct the query key.
-	queryKey, err := identity.NewQueryKey(classKey, strings.ToLower(name))
+	queryKey, err := identity.NewQueryKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.Query{}, errors.WithStack(err)
 	}
