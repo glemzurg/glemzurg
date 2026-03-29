@@ -2,6 +2,7 @@ package test_helper
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
@@ -344,7 +345,122 @@ func GetStrictTestModel() core.Model {
 		model.Domains[domainKey] = domain
 	}
 
+	// Ensure all entity names match their keys via keyFromName.
+	// The AI parser validates that keys are derived from names; the base model
+	// may have names that don't match keys (which is fine for the human parser).
+	fixStrictModelNames(&model)
+
 	return model
+}
+
+// fixStrictModelNames ensures all entity names in the model produce the correct key
+// when passed through the AI parser's keyFromName function (lowercase, spaces/hyphens to underscores).
+// This is required because the AI parser validates key-name consistency.
+func fixStrictModelNames(model *core.Model) {
+	// Fix domain names.
+	for domainKey, domain := range model.Domains {
+		expectedName := nameFromKey(domainKey.SubKey)
+		if domain.Name != expectedName {
+			domain.Name = expectedName
+		}
+
+		// Fix subdomain names.
+		for subdomainKey, subdomain := range domain.Subdomains {
+			expectedName := nameFromKey(subdomainKey.SubKey)
+			if subdomain.Name != expectedName {
+				subdomain.Name = expectedName
+			}
+
+			// Fix class names.
+			for classKey, class := range subdomain.Classes {
+				expectedName := nameFromKey(classKey.SubKey)
+				if class.Name != expectedName {
+					class.Name = expectedName
+				}
+
+				// Fix attribute names.
+				for attrKey, attr := range class.Attributes {
+					expectedName := nameFromKey(attrKey.SubKey)
+					if attr.Name != expectedName {
+						attr.Name = expectedName
+						class.Attributes[attrKey] = attr
+					}
+				}
+
+				subdomain.Classes[classKey] = class
+			}
+
+			// Fix use case names.
+			for ucKey, uc := range subdomain.UseCases {
+				expectedName := nameFromKey(ucKey.SubKey)
+				if uc.Name != expectedName {
+					uc.Name = expectedName
+					subdomain.UseCases[ucKey] = uc
+				}
+
+				// Fix scenario names.
+				for scenKey, scen := range uc.Scenarios {
+					expectedName := nameFromKey(scenKey.SubKey)
+					if scen.Name != expectedName {
+						scen.Name = expectedName
+						uc.Scenarios[scenKey] = scen
+					}
+				}
+			}
+
+			domain.Subdomains[subdomainKey] = subdomain
+		}
+
+		model.Domains[domainKey] = domain
+	}
+
+	// Fix actor names.
+	for actorKey, actor := range model.Actors {
+		expectedName := nameFromKey(actorKey.SubKey)
+		if actor.Name != expectedName {
+			actor.Name = expectedName
+			model.Actors[actorKey] = actor
+		}
+	}
+
+	// Fix actor generalization names.
+	for agKey, ag := range model.ActorGeneralizations {
+		expectedName := nameFromKey(agKey.SubKey)
+		if ag.Name != expectedName {
+			ag.Name = expectedName
+			model.ActorGeneralizations[agKey] = ag
+		}
+	}
+
+	// Fix global function names (names start with "_", keys start with "_" on filesystem but SubKey has _ stripped).
+	for gfKey, gf := range model.GlobalFunctions {
+		expectedName := "_" + nameFromKey(gfKey.SubKey)
+		if gf.Name != expectedName {
+			gf.Name = expectedName
+			model.GlobalFunctions[gfKey] = gf
+		}
+	}
+
+	// Fix named set names (names start with "_", keys do NOT have "_" prefix).
+	for nsKey, ns := range model.NamedSets {
+		expectedName := "_" + nameFromKey(nsKey.SubKey)
+		if ns.Name != expectedName {
+			ns.Name = expectedName
+			model.NamedSets[nsKey] = ns
+		}
+	}
+}
+
+// nameFromKey converts a snake_case key to a Title Case name where keyFromName(result) == key.
+// Example: "domain_b" -> "Domain B", "customer_class" -> "Customer Class".
+func nameFromKey(key string) string {
+	parts := strings.Split(key, "_")
+	for i, part := range parts {
+		if len(part) > 0 {
+			parts[i] = strings.ToUpper(part[:1]) + part[1:]
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 func buildTestModel() (core.Model, error) {

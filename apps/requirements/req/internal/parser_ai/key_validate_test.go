@@ -401,3 +401,144 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPathDepth() {
 		})
 	}
 }
+
+// TestValidateFilenameMatchesName verifies key-name consistency for file-based entities.
+func (suite *KeyValidateSuite) TestValidateFilenameMatchesName() {
+	tests := []struct {
+		name    string
+		key     string
+		nameVal string
+		wantErr bool
+		errCode int
+	}{
+		{"match simple", "customer", "Customer", false, 0},
+		{"match multi-word", "book_order", "Book Order", false, 0},
+		{"match with hyphen", "line_item", "Line-Item", false, 0},
+		{"mismatch", "wrong_key", "Customer", true, ErrActorKeyNameMismatch},
+		{"mismatch multi-word", "bad", "Order Total", true, ErrActorKeyNameMismatch},
+	}
+	for _, tc := range tests {
+		suite.Run(tc.name, func() {
+			err := validateFilenameMatchesName(tc.key, tc.nameVal, "actor", ErrActorKeyNameMismatch, "test.json")
+			if tc.wantErr {
+				suite.Require().Error(err)
+				var parseErr *ParseError
+				ok := errors.As(err, &parseErr)
+				suite.True(ok)
+				suite.Equal(tc.errCode, parseErr.Code)
+			} else {
+				suite.NoError(err)
+			}
+		})
+	}
+}
+
+// TestValidateDirMatchesName verifies key-name consistency for directory-based entities.
+func (suite *KeyValidateSuite) TestValidateDirMatchesName() {
+	tests := []struct {
+		name    string
+		key     string
+		nameVal string
+		wantErr bool
+	}{
+		{"match", "order_management", "Order Management", false},
+		{"mismatch", "domain_b", "Logistics", true},
+	}
+	for _, tc := range tests {
+		suite.Run(tc.name, func() {
+			err := validateDirMatchesName(tc.key, tc.nameVal, "domain", ErrDomainKeyNameMismatch, "test.json")
+			if tc.wantErr {
+				suite.Require().Error(err)
+				var parseErr *ParseError
+				ok := errors.As(err, &parseErr)
+				suite.True(ok)
+				suite.Equal(ErrDomainKeyNameMismatch, parseErr.Code)
+			} else {
+				suite.NoError(err)
+			}
+		})
+	}
+}
+
+// TestValidateMapKeyMatchesName verifies key-name consistency for map-based entities.
+func (suite *KeyValidateSuite) TestValidateMapKeyMatchesName() {
+	tests := []struct {
+		name    string
+		key     string
+		nameVal string
+		wantErr bool
+	}{
+		{"match", "order_total", "Order Total", false},
+		{"mismatch", "wrong_key", "Order Total", true},
+	}
+	for _, tc := range tests {
+		suite.Run(tc.name, func() {
+			err := validateMapKeyMatchesName(tc.key, tc.nameVal, "attribute", ErrClassAttrKeyNameMismatch, "test.json")
+			if tc.wantErr {
+				suite.Require().Error(err)
+				var parseErr *ParseError
+				ok := errors.As(err, &parseErr)
+				suite.True(ok)
+				suite.Equal(ErrClassAttrKeyNameMismatch, parseErr.Code)
+			} else {
+				suite.NoError(err)
+			}
+		})
+	}
+}
+
+// TestValidatePrefixedFilenameMatchesName verifies key-name consistency for prefixed entities like global functions.
+func (suite *KeyValidateSuite) TestValidatePrefixedFilenameMatchesName() {
+	tests := []struct {
+		name    string
+		key     string
+		nameVal string
+		wantErr bool
+	}{
+		{"match simple", "_max", "_Max", false},
+		{"match multi-word", "_set_of_values", "_Set Of Values", false},
+		{"mismatch", "_wrong", "_Max", true},
+	}
+	for _, tc := range tests {
+		suite.Run(tc.name, func() {
+			err := validatePrefixedFilenameMatchesName(tc.key, tc.nameVal, "_", "global function", ".json", ErrGlobalFuncKeyNameMismatch, "test.json")
+			if tc.wantErr {
+				suite.Require().Error(err)
+				var parseErr *ParseError
+				ok := errors.As(err, &parseErr)
+				suite.True(ok)
+				suite.Equal(ErrGlobalFuncKeyNameMismatch, parseErr.Code)
+			} else {
+				suite.NoError(err)
+			}
+		})
+	}
+}
+
+// TestValidateNamedSetFilenameMatchesName verifies key-name consistency for named sets.
+func (suite *KeyValidateSuite) TestValidateNamedSetFilenameMatchesName() {
+	tests := []struct {
+		name    string
+		key     string
+		nameVal string
+		wantErr bool
+	}{
+		{"match", "valid_statuses", "_Valid Statuses", false},
+		{"match no space", "max", "_Max", false},
+		{"mismatch", "wrong_key", "_Valid Statuses", true},
+	}
+	for _, tc := range tests {
+		suite.Run(tc.name, func() {
+			err := validateNamedSetFilenameMatchesName(tc.key, tc.nameVal, ErrNamedSetKeyNameMismatch, "test.nset.json")
+			if tc.wantErr {
+				suite.Require().Error(err)
+				var parseErr *ParseError
+				ok := errors.As(err, &parseErr)
+				suite.True(ok)
+				suite.Equal(ErrNamedSetKeyNameMismatch, parseErr.Code)
+			} else {
+				suite.NoError(err)
+			}
+		})
+	}
+}

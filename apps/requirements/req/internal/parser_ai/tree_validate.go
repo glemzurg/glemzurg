@@ -358,6 +358,11 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		}
 	}
 
+	// Validate attribute key-name consistency
+	if err := validateAttributeKeyNameConsistency(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
 	// Validate attribute data_type_rules are parseable
 	if err := validateClassDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
 		return err
@@ -1527,6 +1532,18 @@ func validateClassNameUniqueness(class *inputClass, domainKey, subdomainKey, cla
 		}
 	}
 
+	return nil
+}
+
+// validateAttributeKeyNameConsistency checks that each attribute map key
+// matches keyFromName(name).
+func validateAttributeKeyNameConsistency(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
+	for key, attr := range class.Attributes {
+		if err := validateMapKeyMatchesName(key, attr.Name, "attribute", ErrClassAttrKeyNameMismatch, classPath); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

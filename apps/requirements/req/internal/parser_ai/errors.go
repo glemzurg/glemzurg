@@ -10,14 +10,16 @@ const (
 	ErrModelSchemaViolation = 1004
 
 	// Actor errors (2xxx).
-	ErrActorNameRequired    = 2001
-	ErrActorNameEmpty       = 2002
-	ErrActorTypeRequired    = 2003
-	ErrActorTypeInvalid     = 2004
-	ErrActorInvalidJSON     = 2005
-	ErrActorSchemaViolation = 2006
-	ErrActorDuplicateKey    = 2007
-	ErrActorFilenameInvalid = 2008
+	ErrActorNameRequired       = 2001
+	ErrActorNameEmpty          = 2002
+	ErrActorTypeRequired       = 2003
+	ErrActorTypeInvalid        = 2004
+	ErrActorInvalidJSON        = 2005
+	ErrActorSchemaViolation    = 2006
+	ErrActorDuplicateKey       = 2007
+	ErrActorFilenameInvalid    = 2008
+	ErrActorKeyNameMismatch    = 2009 // Actor filename does not match keyFromName(name)
+	ErrActorGenKeyNameMismatch = 2010 // Actor generalization filename does not match keyFromName(name)
 
 	// Domain errors (3xxx).
 	ErrDomainNameRequired    = 3001
@@ -26,6 +28,7 @@ const (
 	ErrDomainSchemaViolation = 3004
 	ErrDomainDuplicateKey    = 3005
 	ErrDomainDirInvalid      = 3006
+	ErrDomainKeyNameMismatch = 3007 // Domain directory name does not match keyFromName(name)
 
 	// Subdomain errors (4xxx).
 	ErrSubdomainNameRequired    = 4001
@@ -34,6 +37,7 @@ const (
 	ErrSubdomainSchemaViolation = 4004
 	ErrSubdomainDuplicateKey    = 4005
 	ErrSubdomainDirInvalid      = 4006
+	ErrSubdomainKeyNameMismatch = 4007 // Subdomain directory name does not match keyFromName(name)
 
 	// Class errors (5xxx).
 	ErrClassNameRequired        = 5001
@@ -42,11 +46,13 @@ const (
 	ErrClassSchemaViolation     = 5004
 	ErrClassDuplicateKey        = 5005
 	ErrClassDirInvalid          = 5006
+	ErrClassKeyNameMismatch     = 5012 // Class directory name does not match keyFromName(name)
 	ErrClassActorNotFound       = 5007
 	ErrClassAttributeNameEmpty  = 5008
 	ErrClassIndexInvalid        = 5009
 	ErrClassIndexAttrNotFound   = 5010
 	ErrClassDataTypeUnparseable = 5011 // Attribute data_type_rules could not be parsed
+	ErrClassAttrKeyNameMismatch = 5013 // Attribute map key does not match keyFromName(name)
 
 	// Association errors (6xxx).
 	ErrAssocNameRequired        = 6001
@@ -131,6 +137,7 @@ const (
 	ErrClassGenFilenameInvalid      = 10011
 	ErrClassGenSubclassDuplicate    = 10012
 	ErrClassGenSuperclassIsSubclass = 10013
+	ErrClassGenKeyNameMismatch      = 10014 // Class generalization filename does not match keyFromName(name)
 
 	// Actor generalization errors (12xxx).
 	ErrActorGenNameRequired       = 12001
@@ -149,6 +156,7 @@ const (
 	ErrUseCaseGenSuperclassRequired = 13005
 	ErrUseCaseGenSubclassesRequired = 13006
 	ErrUseCaseGenSubclassesEmpty    = 13007
+	ErrUseCaseGenKeyNameMismatch    = 13008 // Use case generalization filename does not match keyFromName(name)
 
 	// Logic errors (14xxx).
 	ErrLogicDescriptionRequired    = 14001
@@ -175,6 +183,7 @@ const (
 	ErrGlobalFuncNameNoUnderscore = 16005
 	ErrGlobalFuncParamEmpty       = 16006
 	ErrGlobalFuncLogicRequired    = 16007
+	ErrGlobalFuncKeyNameMismatch  = 16008 // Global function filename does not match keyFromName(name)
 
 	// Domain association errors (17xxx).
 	ErrDomainAssocProblemKeyRequired  = 17001
@@ -244,12 +253,14 @@ const (
 	ErrUseCaseSchemaViolation = 18004
 	ErrUseCaseLevelRequired   = 18005
 	ErrUseCaseLevelInvalid    = 18006
+	ErrUseCaseKeyNameMismatch = 18007 // Use case directory name does not match keyFromName(name)
 
 	// Scenario errors (19xxx).
 	ErrScenarioNameRequired    = 19001
 	ErrScenarioNameEmpty       = 19002
 	ErrScenarioInvalidJSON     = 19003
 	ErrScenarioSchemaViolation = 19004
+	ErrScenarioKeyNameMismatch = 19005 // Scenario filename does not match keyFromName(name)
 
 	// Use case shared errors (20xxx).
 	ErrUseCaseSharedShareTypeRequired = 20001
@@ -263,6 +274,7 @@ const (
 	ErrNamedSetInvalidJSON      = 22003
 	ErrNamedSetSchemaViolation  = 22004
 	ErrNamedSetNameNoUnderscore = 22005
+	ErrNamedSetKeyNameMismatch  = 22006 // Named set filename does not match keyFromName(name)
 
 	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion.
 	ErrConvKeyConstruction       = 21001 // Identity key construction failed during conversion

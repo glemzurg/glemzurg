@@ -22,14 +22,16 @@ func allErrorCodes() map[int]string {
 		ErrModelSchemaViolation: "ErrModelSchemaViolation",
 
 		// Actor errors (2xxx).
-		ErrActorNameRequired:    "ErrActorNameRequired",
-		ErrActorNameEmpty:       "ErrActorNameEmpty",
-		ErrActorTypeRequired:    "ErrActorTypeRequired",
-		ErrActorTypeInvalid:     "ErrActorTypeInvalid",
-		ErrActorInvalidJSON:     "ErrActorInvalidJSON",
-		ErrActorSchemaViolation: "ErrActorSchemaViolation",
-		ErrActorDuplicateKey:    "ErrActorDuplicateKey",
-		ErrActorFilenameInvalid: "ErrActorFilenameInvalid",
+		ErrActorNameRequired:       "ErrActorNameRequired",
+		ErrActorNameEmpty:          "ErrActorNameEmpty",
+		ErrActorTypeRequired:       "ErrActorTypeRequired",
+		ErrActorTypeInvalid:        "ErrActorTypeInvalid",
+		ErrActorInvalidJSON:        "ErrActorInvalidJSON",
+		ErrActorSchemaViolation:    "ErrActorSchemaViolation",
+		ErrActorDuplicateKey:       "ErrActorDuplicateKey",
+		ErrActorFilenameInvalid:    "ErrActorFilenameInvalid",
+		ErrActorKeyNameMismatch:    "ErrActorKeyNameMismatch",
+		ErrActorGenKeyNameMismatch: "ErrActorGenKeyNameMismatch",
 
 		// Domain errors (3xxx).
 		ErrDomainNameRequired:    "ErrDomainNameRequired",
@@ -38,6 +40,7 @@ func allErrorCodes() map[int]string {
 		ErrDomainSchemaViolation: "ErrDomainSchemaViolation",
 		ErrDomainDuplicateKey:    "ErrDomainDuplicateKey",
 		ErrDomainDirInvalid:      "ErrDomainDirInvalid",
+		ErrDomainKeyNameMismatch: "ErrDomainKeyNameMismatch",
 
 		// Subdomain errors (4xxx).
 		ErrSubdomainNameRequired:    "ErrSubdomainNameRequired",
@@ -46,6 +49,7 @@ func allErrorCodes() map[int]string {
 		ErrSubdomainSchemaViolation: "ErrSubdomainSchemaViolation",
 		ErrSubdomainDuplicateKey:    "ErrSubdomainDuplicateKey",
 		ErrSubdomainDirInvalid:      "ErrSubdomainDirInvalid",
+		ErrSubdomainKeyNameMismatch: "ErrSubdomainKeyNameMismatch",
 
 		// Class errors (5xxx).
 		ErrClassNameRequired:        "ErrClassNameRequired",
@@ -59,6 +63,8 @@ func allErrorCodes() map[int]string {
 		ErrClassIndexInvalid:        "ErrClassIndexInvalid",
 		ErrClassIndexAttrNotFound:   "ErrClassIndexAttrNotFound",
 		ErrClassDataTypeUnparseable: "ErrClassDataTypeUnparseable",
+		ErrClassKeyNameMismatch:     "ErrClassKeyNameMismatch",
+		ErrClassAttrKeyNameMismatch: "ErrClassAttrKeyNameMismatch",
 
 		// Association errors (6xxx).
 		ErrAssocNameRequired:        "ErrAssocNameRequired",
@@ -143,6 +149,7 @@ func allErrorCodes() map[int]string {
 		ErrClassGenFilenameInvalid:      "ErrClassGenFilenameInvalid",
 		ErrClassGenSubclassDuplicate:    "ErrClassGenSubclassDuplicate",
 		ErrClassGenSuperclassIsSubclass: "ErrClassGenSuperclassIsSubclass",
+		ErrClassGenKeyNameMismatch:      "ErrClassGenKeyNameMismatch",
 
 		// Tree validation errors (11xxx).
 		ErrTreeClassActorNotFound:           "ErrTreeClassActorNotFound",
@@ -199,6 +206,7 @@ func allErrorCodes() map[int]string {
 		ErrUseCaseGenSuperclassRequired: "ErrUseCaseGenSuperclassRequired",
 		ErrUseCaseGenSubclassesRequired: "ErrUseCaseGenSubclassesRequired",
 		ErrUseCaseGenSubclassesEmpty:    "ErrUseCaseGenSubclassesEmpty",
+		ErrUseCaseGenKeyNameMismatch:    "ErrUseCaseGenKeyNameMismatch",
 
 		// Logic errors (14xxx).
 		ErrLogicDescriptionRequired:    "ErrLogicDescriptionRequired",
@@ -225,6 +233,7 @@ func allErrorCodes() map[int]string {
 		ErrGlobalFuncNameNoUnderscore: "ErrGlobalFuncNameNoUnderscore",
 		ErrGlobalFuncParamEmpty:       "ErrGlobalFuncParamEmpty",
 		ErrGlobalFuncLogicRequired:    "ErrGlobalFuncLogicRequired",
+		ErrGlobalFuncKeyNameMismatch:  "ErrGlobalFuncKeyNameMismatch",
 
 		// Domain association errors (17xxx).
 		ErrDomainAssocProblemKeyRequired:  "ErrDomainAssocProblemKeyRequired",
@@ -241,12 +250,14 @@ func allErrorCodes() map[int]string {
 		ErrUseCaseSchemaViolation: "ErrUseCaseSchemaViolation",
 		ErrUseCaseLevelRequired:   "ErrUseCaseLevelRequired",
 		ErrUseCaseLevelInvalid:    "ErrUseCaseLevelInvalid",
+		ErrUseCaseKeyNameMismatch: "ErrUseCaseKeyNameMismatch",
 
 		// Scenario errors (19xxx).
 		ErrScenarioNameRequired:    "ErrScenarioNameRequired",
 		ErrScenarioNameEmpty:       "ErrScenarioNameEmpty",
 		ErrScenarioInvalidJSON:     "ErrScenarioInvalidJSON",
 		ErrScenarioSchemaViolation: "ErrScenarioSchemaViolation",
+		ErrScenarioKeyNameMismatch: "ErrScenarioKeyNameMismatch",
 
 		// Use case shared errors (20xxx).
 		ErrUseCaseSharedShareTypeRequired: "ErrUseCaseSharedShareTypeRequired",
@@ -290,6 +301,7 @@ func allErrorCodes() map[int]string {
 		ErrNamedSetInvalidJSON:      "ErrNamedSetInvalidJSON",
 		ErrNamedSetSchemaViolation:  "ErrNamedSetSchemaViolation",
 		ErrNamedSetNameNoUnderscore: "ErrNamedSetNameNoUnderscore",
+		ErrNamedSetKeyNameMismatch:  "ErrNamedSetKeyNameMismatch",
 	}
 }
 
@@ -394,8 +406,8 @@ func (s *ErrorCoverageSuite) TestAllDocsAreNonEmpty() {
 // This test catches cases where a new constant is added to errors.go but not to allErrorCodes().
 func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
-	// 230 error codes as of current implementation.
+	// 242 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 230,
+	s.Len(codes, 242,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }

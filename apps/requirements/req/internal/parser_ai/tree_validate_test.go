@@ -1750,3 +1750,34 @@ func (suite *TreeValidateSuite) TestStateKeyNameMatch() {
 	err := validateModelTree(model)
 	suite.Require().NoError(err)
 }
+
+// TestAttributeKeyNameMismatch verifies error when attribute map key doesn't match keyFromName(name).
+func (suite *TreeValidateSuite) TestAttributeKeyNameMismatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.Attributes = map[string]*inputAttribute{
+		"wrong_key": {Name: "Order Total"},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrClassAttrKeyNameMismatch, parseErr.Code)
+	suite.Contains(parseErr.Message, "wrong_key")
+	suite.Contains(parseErr.Message, "order_total")
+}
+
+// TestAttributeKeyNameMatch verifies no error when attribute map key matches keyFromName(name).
+func (suite *TreeValidateSuite) TestAttributeKeyNameMatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.Attributes = map[string]*inputAttribute{
+		"order_total": {Name: "Order Total"},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().NoError(err)
+}

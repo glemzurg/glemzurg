@@ -344,6 +344,68 @@ func validateFilenameMatchesName(key, name, entityType string, errCode int, file
 	return nil
 }
 
+// validateDirMatchesName checks that a directory key matches the expected key derived from the name field.
+// entityType is used in error messages (e.g., "domain", "subdomain", "class").
+func validateDirMatchesName(key, name, entityType string, errCode int, filePath string) error {
+	expectedKey := keyFromName(name)
+	if key != expectedKey {
+		return NewParseError(
+			errCode,
+			fmt.Sprintf("%s directory '%s' does not match name '%s' - expected directory '%s'",
+				entityType, key, name, expectedKey),
+			filePath,
+		).WithField("name").WithHint(fmt.Sprintf("rename the directory to '%s' or change the name field to match the current directory", expectedKey))
+	}
+	return nil
+}
+
+// validateMapKeyMatchesName checks that a map key matches the expected key derived from the name field.
+// entityType is used in error messages (e.g., "attribute").
+func validateMapKeyMatchesName(key, name, entityType string, errCode int, filePath string) error {
+	expectedKey := keyFromName(name)
+	if key != expectedKey {
+		return NewParseError(
+			errCode,
+			fmt.Sprintf("%s key '%s' does not match name '%s' — expected key '%s'", entityType, key, name, expectedKey),
+			filePath,
+		).WithField(entityType + "s." + key).WithHint(fmt.Sprintf("rename the key to '%s' or change the name to match the key", expectedKey))
+	}
+	return nil
+}
+
+// validatePrefixedFilenameMatchesName checks that a prefixed filename key matches the expected key.
+// Used for entities like global functions where the key has a prefix (e.g., "_") that the name also has.
+// The prefix is stripped from both key and name before comparison.
+func validatePrefixedFilenameMatchesName(key, name, prefix, entityType, extension string, errCode int, filePath string) error {
+	nameWithoutPrefix := strings.TrimPrefix(name, prefix)
+	expectedKey := prefix + keyFromName(nameWithoutPrefix)
+	if key != expectedKey {
+		return NewParseError(
+			errCode,
+			fmt.Sprintf("%s filename '%s%s' does not match name '%s' - expected filename '%s%s'",
+				entityType, key, extension, name, expectedKey, extension),
+			filePath,
+		).WithField("name").WithHint(fmt.Sprintf("rename the file to '%s%s' or change the name field to match the current filename", expectedKey, extension))
+	}
+	return nil
+}
+
+// validateNamedSetFilenameMatchesName checks that a named set filename key matches the expected key.
+// Named set names start with "_" but the filename does not include the "_" prefix.
+func validateNamedSetFilenameMatchesName(key, name string, errCode int, filePath string) error {
+	nameWithoutPrefix := strings.TrimPrefix(name, "_")
+	expectedKey := keyFromName(nameWithoutPrefix)
+	if key != expectedKey {
+		return NewParseError(
+			errCode,
+			fmt.Sprintf("named set filename '%s.nset.json' does not match name '%s' - expected filename '%s.nset.json'",
+				key, name, expectedKey),
+			filePath,
+		).WithField("name").WithHint(fmt.Sprintf("rename the file to '%s.nset.json' or change the name field to match the current filename", expectedKey))
+	}
+	return nil
+}
+
 // keyFromName derives a filesystem key from a name field.
 // It lowercases the name and replaces spaces and hyphens with underscores.
 func keyFromName(name string) string {
