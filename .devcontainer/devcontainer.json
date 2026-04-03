@@ -19,7 +19,7 @@
 	// The host environment variable GLEMZURG_DATA_PATH should point to the
 	// folder on the host machine that the tools can read from and write to.
 	"mounts": [
-		"source=${localEnv:GLEMZURG_DATA_PATH},target=/data,type=bind"
+		"source=${localEnv:GLEMZURG_DATA_PATH},target=/workspaces/glemzurg/data_sandbox,type=bind"
 	],
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
