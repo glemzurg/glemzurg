@@ -21,7 +21,7 @@ const (
 )
 
 // SourceExtensionsYAML defines file extensions for YAML format.
-var SourceExtensionsYAML = []string{".class", ".domain", ".model"}
+var SourceExtensionsYAML = []string{".actor", ".class", ".domain", ".generalization", ".model", ".subdomain", ".uc"}
 
 // SourceExtensionsJSON defines file extensions for JSON format.
 var SourceExtensionsJSON = []string{".json"}
