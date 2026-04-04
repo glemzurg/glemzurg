@@ -27,5 +27,6 @@ attributes:
     speed:
         name: Speed
         rules: unconstrained
+        type_spec: Nat
         derivation:
             description: No specification yet.

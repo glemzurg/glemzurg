@@ -79,6 +79,10 @@
           "uml_comment": {
             "type": "string",
             "description": "Optional UML comment for diagram annotations specific to this attribute. Appears as a note in generated UML diagrams."
+          },
+          "type_spec": {
+            "type": "string",
+            "description": "Optional type specification for the attribute's data type in TLA+ notation. Provides a precise formal type for the attribute (e.g., 'Nat', 'SUBSET STRING', 'Int'). Only meaningful when data_type_rules can be parsed into a data type."
           }
         },
         "required": ["name"],

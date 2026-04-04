@@ -17,6 +17,7 @@ type inputAttribute struct {
 	DerivationPolicy *inputLogic `json:"derivation_policy,omitempty"`
 	Nullable         bool        `json:"nullable,omitempty"`
 	UMLComment       string      `json:"uml_comment,omitempty"`
+	TypeSpec         string      `json:"type_spec,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Invariants []inputLogic `json:"-"`

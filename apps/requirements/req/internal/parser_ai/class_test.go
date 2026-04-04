@@ -54,6 +54,7 @@ func (suite *ClassSuite) TestParseClassFiles() {
 					suite.Equal(expectedAttr.DerivationPolicy, actualAttr.DerivationPolicy, testName+" attribute '"+key+"' derivation_policy")
 					suite.Equal(expectedAttr.Nullable, actualAttr.Nullable, testName+" attribute '"+key+"' nullable")
 					suite.Equal(expectedAttr.UMLComment, actualAttr.UMLComment, testName+" attribute '"+key+"' uml_comment")
+					suite.Equal(expectedAttr.TypeSpec, actualAttr.TypeSpec, testName+" attribute '"+key+"' type_spec")
 				}
 			}
 		})

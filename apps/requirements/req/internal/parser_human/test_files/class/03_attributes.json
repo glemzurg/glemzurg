@@ -44,6 +44,10 @@
                 "CollectionType": "atomic",
                 "Atomic": {
                     "ConstraintType": "unconstrained"
+                },
+                "TypeSpec": {
+                    "Notation": "tla_plus",
+                    "Specification": "Nat"
                 }
             }
         }

@@ -29,7 +29,8 @@
         "status": {
             "name": "Status",
             "data_type_rules": "Enum: pending, confirmed, shipped, delivered, cancelled",
-            "nullable": false
+            "nullable": false,
+            "type_spec": "STRING"
         }
     },
     "indexes": [

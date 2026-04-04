@@ -376,36 +376,9 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			dataTypeRules = dataTypeRulesAny.(string)
 		}
 
-		// Parse derivation policy as *model_logic.Logic.
-		var derivationPolicy *model_logic.Logic
-		derivationAny, found := attributeData["derivation"]
-		if found {
-			derivationMap, ok := derivationAny.(map[string]any)
-			if ok {
-				description := ""
-				if descAny, ok := derivationMap["description"]; ok {
-					description = descAny.(string)
-				}
-				specification := ""
-				if specAny, ok := derivationMap["specification"]; ok {
-					specification = specAny.(string)
-				}
-				// Construct the derivation key as a child of the attribute key.
-				attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
-				if err != nil {
-					return model_class.Attribute{}, errors.WithStack(err)
-				}
-				derivKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
-				if err != nil {
-					return model_class.Attribute{}, errors.WithStack(err)
-				}
-				spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
-				if err != nil {
-					return model_class.Attribute{}, errors.Wrap(err, "derivation expression spec")
-				}
-				logic := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
-				derivationPolicy = &logic
-			}
+		derivationPolicy, err := attributeDerivationFromYamlData(classKey, attrSubKey, attributeData)
+		if err != nil {
+			return model_class.Attribute{}, err
 		}
 
 		nullable := false
@@ -414,20 +387,11 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			nullable = nullableAny.(bool)
 		}
 
-		umlComment := ""
-		umlCommentAny, found := attributeData["uml_comment"]
-		if found {
-			umlComment = umlCommentAny.(string)
-		}
+		annotations := attributeAnnotationsFromYamlData(attributeData)
 
-		var indexNums []uint
-		indexNumsAny, found := attributeData["index_nums"]
-		if found {
-			indexNumsAnyList := indexNumsAny.([]any)
-			for _, indexNumAny := range indexNumsAnyList {
-				indexNumInt := indexNumAny.(int)
-				indexNums = append(indexNums, uint(indexNumInt)) //nolint:gosec // indexNumInt is a small index from parsed YAML data, no overflow risk
-			}
+		typeSpec, err := attributeTypeSpecFromYamlData(attributeData)
+		if err != nil {
+			return model_class.Attribute{}, err
 		}
 
 		// Construct the identity key for this attribute.
@@ -436,10 +400,12 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			return model_class.Attribute{}, errors.WithStack(err)
 		}
 
-		attribute, err = model_class.NewAttribute(attrKey, name, details, dataTypeRules, derivationPolicy, nullable,
-			model_class.AttributeAnnotations{UmlComment: umlComment, IndexNums: indexNums})
+		attribute, err = model_class.NewAttribute(attrKey, name, details, dataTypeRules, derivationPolicy, nullable, annotations)
 		if err != nil {
 			return model_class.Attribute{}, err
+		}
+		if typeSpec != nil && attribute.DataType != nil {
+			attribute.DataType.TypeSpec = typeSpec
 		}
 
 		// Parse attribute invariants.
@@ -454,6 +420,75 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 	}
 
 	return attribute, nil
+}
+
+// attributeDerivationFromYamlData parses the derivation policy from attribute YAML data.
+// Returns a nil pointer with no error when there is no derivation to parse.
+func attributeDerivationFromYamlData(classKey identity.Key, attrSubKey string, attributeData map[string]any) (*model_logic.Logic, error) { //nolint:nilnil // nil pointer means no derivation present
+	derivationAny, found := attributeData["derivation"]
+	if !found {
+		return nil, nil //nolint:nilnil // nil pointer means no derivation present
+	}
+	derivationMap, ok := derivationAny.(map[string]any)
+	if !ok {
+		return nil, nil //nolint:nilnil // nil pointer means no derivation present
+	}
+	description := ""
+	if descAny, ok := derivationMap["description"]; ok {
+		description = descAny.(string)
+	}
+	specification := ""
+	if specAny, ok := derivationMap["specification"]; ok {
+		specification = specAny.(string)
+	}
+	attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	derivKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "derivation expression spec")
+	}
+	logic := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
+	return &logic, nil
+}
+
+// attributeAnnotationsFromYamlData parses annotation fields (uml_comment, index_nums) from attribute YAML data.
+func attributeAnnotationsFromYamlData(attributeData map[string]any) model_class.AttributeAnnotations {
+	umlComment := ""
+	umlCommentAny, found := attributeData["uml_comment"]
+	if found {
+		umlComment = umlCommentAny.(string)
+	}
+
+	var indexNums []uint
+	indexNumsAny, found := attributeData["index_nums"]
+	if found {
+		indexNumsAnyList := indexNumsAny.([]any)
+		for _, indexNumAny := range indexNumsAnyList {
+			indexNumInt := indexNumAny.(int)
+			indexNums = append(indexNums, uint(indexNumInt)) //nolint:gosec // indexNumInt is a small index from parsed YAML data, no overflow risk
+		}
+	}
+
+	return model_class.AttributeAnnotations{UmlComment: umlComment, IndexNums: indexNums}
+}
+
+// attributeTypeSpecFromYamlData parses the optional type_spec field from attribute YAML data.
+func attributeTypeSpecFromYamlData(attributeData map[string]any) (*logic_spec.TypeSpec, error) {
+	tsStr, ok := attributeData["type_spec"].(string)
+	if !ok || tsStr == "" {
+		return nil, nil //nolint:nilnil // nil pointer means no type spec present
+	}
+	ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "attribute type spec")
+	}
+	return &ts, nil
 }
 
 func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int, associationAny any) (association model_class.Association, err error) {
@@ -1144,6 +1179,9 @@ func generateClassAttributesYaml(builder *YamlBuilder, class model_class.Class) 
 		attrBuilder.AddField("name", attr.Name)
 		attrBuilder.AddField("details", attr.Details)
 		attrBuilder.AddField("rules", attr.DataTypeRules)
+		if attr.DataType != nil && attr.DataType.TypeSpec != nil && attr.DataType.TypeSpec.Specification != "" {
+			attrBuilder.AddField("type_spec", attr.DataType.TypeSpec.Specification)
+		}
 		attrBuilder.AddBoolField("nullable", attr.Nullable)
 		if attr.DerivationPolicy != nil {
 			derivBuilder := NewYamlBuilder()

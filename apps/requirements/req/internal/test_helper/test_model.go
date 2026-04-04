@@ -1611,6 +1611,11 @@ func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 	if err != nil {
 		return a, err
 	}
+	statusTypeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil)
+	if err != nil {
+		return a, err
+	}
+	a.status.DataType.TypeSpec = &statusTypeSpec
 
 	a.productName, err = model_class.NewAttribute(k.attrProductName, "Product Name", "Name of the product.", "unconstrained", nil, false,
 		model_class.AttributeAnnotations{})

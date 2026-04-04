@@ -424,6 +424,9 @@ func convertAttributeFromModel(attr *model_class.Attribute) *inputAttribute {
 		dp := convertLogicFromModel(attr.DerivationPolicy)
 		result.DerivationPolicy = &dp
 	}
+	if attr.DataType != nil && attr.DataType.TypeSpec != nil && attr.DataType.TypeSpec.Specification != "" {
+		result.TypeSpec = attr.DataType.TypeSpec.Specification
+	}
 	result.Invariants = convertLogicsFromModel(attr.Invariants)
 	return result
 }

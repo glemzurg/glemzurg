@@ -1,6 +1,7 @@
 package parser_ai
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
@@ -983,21 +985,28 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 		UmlComment:    attr.UMLComment,
 		IndexNums:     indexNums,
 	}
-	if attr.DerivationPolicy != nil {
-		dpKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
-		if err != nil {
-			return model_class.Attribute{}, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create derivation key for attribute '%s': %s", keyStr, err.Error()),
-				classFile,
-			).WithField(fmt.Sprintf("attributes.%s.derivation_policy", keyStr))
-		}
-		dp, err := convertLogicToModel(attr.DerivationPolicy, model_logic.LogicTypeValue, dpKey)
-		if err != nil {
-			return model_class.Attribute{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert derivation policy for attribute '%s': %s", keyStr, err.Error()), classFile)
-		}
-		result.DerivationPolicy = &dp
+
+	// Parse the data type rules.
+	parsedDataType, err := convertAttributeDataType(attrKey, attr, keyStr, classFile)
+	if err != nil {
+		return model_class.Attribute{}, err
 	}
+	result.DataType = parsedDataType
+
+	// Parse optional type_spec and attach to the DataType.
+	typeSpec, err := convertAttributeTypeSpec(attr, keyStr, classFile)
+	if err != nil {
+		return model_class.Attribute{}, err
+	}
+	if typeSpec != nil && result.DataType != nil {
+		result.DataType.TypeSpec = typeSpec
+	}
+
+	derivationPolicy, err := convertAttributeDerivation(attr, attrKey, keyStr, classFile)
+	if err != nil {
+		return model_class.Attribute{}, err
+	}
+	result.DerivationPolicy = derivationPolicy
 
 	// Convert attribute invariants
 	attrInvariants, err := convertLogicsToModel(attr.Invariants, model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
@@ -1007,6 +1016,55 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 	result.SetInvariants(attrInvariants)
 
 	return result, nil
+}
+
+// convertAttributeDerivation converts the derivation policy for an attribute.
+// Returns a nil pointer with no error when there is no derivation policy.
+func convertAttributeDerivation(attr *inputAttribute, attrKey identity.Key, keyStr, classFile string) (*model_logic.Logic, error) { //nolint:nilnil // nil pointer means no derivation policy present
+	if attr.DerivationPolicy == nil {
+		return nil, nil //nolint:nilnil // nil pointer means no derivation policy present
+	}
+	dpKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
+	if err != nil {
+		return nil, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create derivation key for attribute '%s': %s", keyStr, err.Error()),
+			classFile,
+		).WithField(fmt.Sprintf("attributes.%s.derivation_policy", keyStr))
+	}
+	dp, err := convertLogicToModel(attr.DerivationPolicy, model_logic.LogicTypeValue, dpKey)
+	if err != nil {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert derivation policy for attribute '%s': %s", keyStr, err.Error()), classFile)
+	}
+	return &dp, nil
+}
+
+// convertAttributeTypeSpec parses the optional type_spec for an attribute.
+// Returns a nil pointer with no error when there is no type spec.
+func convertAttributeTypeSpec(attr *inputAttribute, keyStr, classFile string) (*logic_spec.TypeSpec, error) { //nolint:nilnil // nil pointer means no type spec present
+	if attr.TypeSpec == "" {
+		return nil, nil //nolint:nilnil // nil pointer means no type spec present
+	}
+	ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, attr.TypeSpec, nil)
+	if err != nil {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create type spec for attribute '%s': %s", keyStr, err.Error()), classFile)
+	}
+	return &ts, nil
+}
+
+// convertAttributeDataType parses the data type rules for an attribute.
+// Returns a nil pointer with no error when there are no data type rules to parse.
+func convertAttributeDataType(attrKey identity.Key, attr *inputAttribute, keyStr, classFile string) (*model_data_type.DataType, error) { //nolint:nilnil // nil pointer means no data type rules present
+	if attr.DataTypeRules == "" {
+		return nil, nil //nolint:nilnil // nil pointer means no data type rules present
+	}
+	dataTypeKey := attrKey.String()
+	parsedDataType, err := model_data_type.New(dataTypeKey, attr.DataTypeRules, nil)
+	var parseError *model_data_type.CannotParseError
+	if err != nil && !errors.As(err, &parseError) {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to parse data type for attribute '%s': %s", keyStr, err.Error()), classFile)
+	}
+	return parsedDataType, nil
 }
 
 // convertStateMachineToModel converts an inputStateMachine to populate a Class's state machine fields.
