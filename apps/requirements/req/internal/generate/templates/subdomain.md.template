@@ -6,6 +6,28 @@
 
 {{ .Subdomain.Details }}
 
+## Classes
+
+The classes of this subdomain.
+
+![er]({{ filename "subdomain" .Subdomain.Key "classes" ".svg" }})
+
+{{ range .Classes -}}
+- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ end }}
+
+{{ if ne .Subdomain.Generalizations nil -}}
+### Generalizations
+
+The class generalizations of this subdomain.
+
+{{ range .Subdomain.Generalizations -}}
+{{- $super := generalization_superclass $reqs .Key -}}
+{{- $subs := generalization_subclasses $reqs .Key -}}
+- **{{ .Name }}.** {{ .Details }}
+    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}
 ## Use Cases
 
 ![er]({{ filename "subdomain" .Subdomain.Key "use-cases" ".svg" }})
@@ -35,27 +57,5 @@ The use case generalizations of this subdomain.
 {{- $mudUC := use_case_lookup $reqs $mudKey -}}
 - [{{ $seaUC.Name }}]({{ filename "use_case" $seaKey "" ".md" }}) «{{ $share.ShareType }}» [{{ $mudUC.Name }}]({{ filename "use_case" $mudKey "" ".md" }})
 {{ end -}}
-{{ end }}
-{{- end }}
-## Classes
-
-The classes of this subdomain.
-
-![er]({{ filename "subdomain" .Subdomain.Key "classes" ".svg" }})
-
-{{ range .Classes -}}
-- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
-{{ end }}
-
-{{ if ne .Subdomain.Generalizations nil -}}
-### Generalizations
-
-The class generalizations of this subdomain.
-
-{{ range .Subdomain.Generalizations -}}
-{{- $super := generalization_superclass $reqs .Key -}}
-{{- $subs := generalization_subclasses $reqs .Key -}}
-- **{{ .Name }}.** {{ .Details }}
-    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ end }}{{ else }}???{{ end }}
 {{ end }}
 {{- end }}

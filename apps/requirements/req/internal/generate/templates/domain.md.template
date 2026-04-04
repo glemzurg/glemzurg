@@ -20,14 +20,6 @@ The subdomains of this domain.
 {{ end }}
 
 {{ else }}
-## Use Cases
-
-![er]({{ filename "domain" .Domain.Key "use-cases" ".svg" }})
-
-{{ range $domainUseCases -}}
-- **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
-{{ end }}
-
 ## Classes
 
 The classes of this domain.
@@ -36,6 +28,14 @@ The classes of this domain.
 
 {{ range $domainClasses -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ end }}
+
+## Use Cases
+
+![er]({{ filename "domain" .Domain.Key "use-cases" ".svg" }})
+
+{{ range $domainUseCases -}}
+- **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
 {{ end }}
 
