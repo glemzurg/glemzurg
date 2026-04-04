@@ -89,6 +89,9 @@ func (sw *SourceWatcher) eventLoop() {
 			if !ok {
 				return
 			}
+			if event.Op&fsnotify.Create != 0 {
+				sw.handleCreateEvent(event.Name)
+			}
 			if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 				sw.handleFileChange(event.Name)
 			}
@@ -97,6 +100,20 @@ func (sw *SourceWatcher) eventLoop() {
 				return
 			}
 			log.Println("watcher error:", err)
+		}
+	}
+}
+
+// handleCreateEvent adds newly created directories to the watcher.
+func (sw *SourceWatcher) handleCreateEvent(path string) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	if info.IsDir() {
+		err = sw.watcher.Add(path)
+		if err != nil {
+			log.Println("watcher add error:", err)
 		}
 	}
 }

@@ -32,7 +32,7 @@
 
 	// Add tool to document postgres database schemas.
 	// Add beads (bd) distributed graph issue tracker for AI agents.
-	"postCreateCommand": "sudo apt-get update -y && curl -L https://github.com/k1LoW/tbls/releases/download/v1.92.1/tbls_1.92.1-1_amd64.deb -o tbls.deb && sudo dpkg -i tbls.deb && rm tbls.deb && curl -L https://github.com/gastownhall/beads/releases/download/v1.0.0/beads_1.0.0_linux_amd64.tar.gz -o beads.tar.gz && tar xzf beads.tar.gz bd && sudo mv bd /usr/local/bin/bd && rm beads.tar.gz"
+	"postCreateCommand": "sudo apt-get update -y && curl -L https://github.com/k1LoW/tbls/releases/download/v1.92.1/tbls_1.92.1-1_amd64.deb -o tbls.deb && sudo dpkg -i tbls.deb && rm tbls.deb && curl -L https://github.com/gastownhall/beads/releases/download/v1.0.0/beads_1.0.0_linux_amd64.tar.gz -o beads.tar.gz && tar xzf beads.tar.gz bd && sudo mv bd /usr/local/bin/bd && rm beads.tar.gz && go install github.com/glemzurg/go-complexity-lint/cmd/go-complexity-lint@latest"
 
 	// Configure tool-specific properties.
 	// "customizations": {},
