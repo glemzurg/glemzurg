@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "glemzurg",
+  "project_id": "0e8a3430-2b2e-48ce-b2e5-2227b889c5e6"
+}

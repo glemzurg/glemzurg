@@ -45,3 +45,8 @@ go.work.sum
 
 # A sandbox with data files from another repo.
 /data_sandbox/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
