@@ -1,0 +1,28 @@
+{{- $reqs := .Reqs -}}
+classDiagram
+{{ range .Generalizations -}}
+{{- $superclass := generalization_superclass $reqs .Key -}}
+{{- $subclasses := generalization_subclasses $reqs .Key -}}
+{{ range $subclasses -}}
+    {{ nodeid "class" $superclass.Key }} <|-- {{ nodeid "class" .Key }}
+{{ end -}}
+{{ end -}}
+{{ range .Classes -}}
+{{- $class := class_lookup $reqs .Key -}}
+    class {{ nodeid "class" .Key }}["{{ if ne .ActorKey nil }}<<actor>> {{ end }}{{ .Name }}"] {
+{{- range .Attributes }}
+        {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }}
+{{- end }}
+    }
+{{ end -}}
+{{ range .Associations -}}
+{{ $fromClassKey := nodeid "class" .FromClassKey -}}
+{{ $fromMultiplicity := multiplicity .FromMultiplicity -}}
+{{ $toClassKey := nodeid "class" .ToClassKey -}}
+{{ $toMultiplicity := multiplicity .ToMultiplicity -}}
+    {{ $fromClassKey }} "{{ $fromMultiplicity }}" --> "{{ $toMultiplicity }}" {{ $toClassKey }} : {{ .Name }}
+{{ if ne .AssociationClassKey nil -}}
+{{ $associationClassKey := nodeid "class" .AssociationClassKey -}}
+    {{ $associationClassKey }} ..> {{ $fromClassKey }}
+{{ end -}}
+{{ end -}}

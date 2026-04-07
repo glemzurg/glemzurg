@@ -13,7 +13,9 @@
 
 The subdomains of this domain.
 
-![er]({{ filename "domain" .Domain.Key "subdomains" ".svg" }})
+```mermaid
+{{ .SubdomainsDiagram }}
+```
 
 {{ range .Subdomains -}}
 - **[{{ .Name }}]({{ filename "subdomain" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
@@ -24,7 +26,9 @@ The subdomains of this domain.
 
 The classes of this domain.
 
-![er]({{ filename "domain" .Domain.Key "classes" ".svg" }})
+```mermaid
+{{ .ClassesDiagram }}
+```
 
 {{ range $domainClasses -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
@@ -32,7 +36,9 @@ The classes of this domain.
 
 ## Use Cases
 
-![er]({{ filename "domain" .Domain.Key "use-cases" ".svg" }})
+```mermaid
+{{ .UseCasesDiagram }}
+```
 
 {{ range $domainUseCases -}}
 - **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}

@@ -1,0 +1,10 @@
+graph TD
+{{ range .Domains -}}
+{{ $domainKey := nodeid "domain" .Key -}}
+    {{ $domainKey }}["{{ if .Realized }}<<realized>><br/>{{ end }}{{ .Name }}"]
+{{ end -}}
+{{ range .Associations -}}
+{{ $problemDomainKey := nodeid "domain" .ProblemDomainKey -}}
+{{ $solutionDomainKey := nodeid "domain" .SolutionDomainKey -}}
+    {{ $problemDomainKey }} -.-> {{ $solutionDomainKey }}
+{{ end -}}

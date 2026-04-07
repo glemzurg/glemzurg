@@ -1,0 +1,5 @@
+graph TD
+{{ range .Subdomains -}}
+{{ $subdomainKey := nodeid "subdomain" .Key -}}
+    {{ $subdomainKey }}["{{ .Name }}"]
+{{ end -}}

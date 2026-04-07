@@ -10,7 +10,9 @@
 
 The classes of this subdomain.
 
-![er]({{ filename "subdomain" .Subdomain.Key "classes" ".svg" }})
+```mermaid
+{{ .ClassesDiagram }}
+```
 
 {{ range .Classes -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
@@ -30,7 +32,9 @@ The class generalizations of this subdomain.
 {{- end }}
 ## Use Cases
 
-![er]({{ filename "subdomain" .Subdomain.Key "use-cases" ".svg" }})
+```mermaid
+{{ .UseCasesDiagram }}
+```
 
 {{ range .UseCases -}}
 - **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}

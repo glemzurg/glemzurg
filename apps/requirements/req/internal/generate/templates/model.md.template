@@ -29,7 +29,9 @@ The actor generalizations of this model.
 
 The domains of this model.
 
-![er](domains.svg)
+```mermaid
+{{ .DomainsDiagram }}
+```
 
 {{ range .Domains -}}
 - **[{{ if .Realized }}«realized» {{ end }}{{ .Name }}]({{ filename "domain" .Key "" ".md" }}).** {{ first_md_sentence .Details }}

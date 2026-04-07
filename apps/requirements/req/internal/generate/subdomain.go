@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func generateSubdomainMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain, subdomain model_domain.Subdomain) (contents string, err error) {
+func generateSubdomainMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain, subdomain model_domain.Subdomain, classesDiagram, useCasesDiagram string) (contents string, err error) {
 	// Gather classes for sorting.
 	var allClasses []model_class.Class
 	for _, class := range subdomain.Classes {
@@ -32,19 +32,23 @@ func generateSubdomainMdContents(reqs *req_flat.Requirements, model core.Model, 
 	})
 
 	contents, err = generateFromTemplate(_subdomainMdTemplate, struct {
-		Reqs      *req_flat.Requirements
-		Model     core.Model
-		Domain    model_domain.Domain
-		Subdomain model_domain.Subdomain
-		Classes   []model_class.Class
-		UseCases  []model_use_case.UseCase
+		Reqs            *req_flat.Requirements
+		Model           core.Model
+		Domain          model_domain.Domain
+		Subdomain       model_domain.Subdomain
+		Classes         []model_class.Class
+		UseCases        []model_use_case.UseCase
+		ClassesDiagram  string
+		UseCasesDiagram string
 	}{
-		Reqs:      reqs,
-		Model:     model,
-		Domain:    domain,
-		Subdomain: subdomain,
-		Classes:   allClasses,
-		UseCases:  allUseCases,
+		Reqs:            reqs,
+		Model:           model,
+		Domain:          domain,
+		Subdomain:       subdomain,
+		Classes:         allClasses,
+		UseCases:        allUseCases,
+		ClassesDiagram:  classesDiagram,
+		UseCasesDiagram: useCasesDiagram,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)

@@ -1,0 +1,22 @@
+{{- $reqs := .Reqs -}}
+flowchart LR
+    subgraph {{ nodeid "domain" .Domain.Key }}["{{ .Domain.Name }}"]
+{{ range .UseCases -}}
+{{ $useCaseNode := nodeid "use_case" .Key -}}
+        {{ $useCaseNode }}(["{{ if ne .Level "sea" }}<<{{ .Level }}>> {{ end }}{{ .Name }}"])
+{{ end -}}
+    end
+{{ range .Actors -}}
+{{ $actorKey := nodeid "actor" .Key -}}
+    {{ $actorKey }}["<<{{ .Type }}>><br/>{{ .Name }}"]
+{{ end -}}
+{{ range .UseCases -}}
+{{ $useCaseNode := nodeid "use_case" .Key -}}
+{{ range $classKey, $actor := .Actors -}}
+{{- $actorKey := class_actor_key $reqs $classKey -}}
+{{- if $actorKey -}}
+{{ $actorNode := nodeid "actor" $actorKey -}}
+    {{ $actorNode }} --> {{ $useCaseNode }}
+{{ end -}}
+{{ end -}}
+{{ end -}}

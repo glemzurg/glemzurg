@@ -37,17 +37,17 @@ var _templateFS embed.FS
 
 // _templateRegistry maps template filenames to pointers where the parsed templates should be stored.
 var _templateRegistry = map[string]**template.Template{
-	"model.md.template":        &_modelMdTemplate,
-	"actor.md.template":        &_actorMdTemplate,
-	"domain.md.template":       &_domainMdTemplate,
-	"domains.dot.template":     &_domainsDotTemplate,
-	"use_cases.dot.template":   &_useCasesDotTemplate,
-	"classes.dot.template":     &_classesDotTemplate,
-	"class.md.template":        &_classMdTemplate,
-	"class-state.dot.template": &_classStateDotTemplate,
-	"use_case.md.template":     &_useCaseMdTemplate,
-	"subdomain.md.template":    &_subdomainMdTemplate,
-	"subdomains.dot.template":  &_subdomainsDotTemplate,
+	"model.md.template":            &_modelMdTemplate,
+	"actor.md.template":            &_actorMdTemplate,
+	"domain.md.template":           &_domainMdTemplate,
+	"domains.mermaid.template":     &_domainsMermaidTemplate,
+	"use_cases.mermaid.template":   &_useCasesMermaidTemplate,
+	"classes.mermaid.template":     &_classesMermaidTemplate,
+	"class.md.template":            &_classMdTemplate,
+	"class-state.mermaid.template": &_classStateMermaidTemplate,
+	"use_case.md.template":         &_useCaseMdTemplate,
+	"subdomain.md.template":        &_subdomainMdTemplate,
+	"subdomains.mermaid.template":  &_subdomainsMermaidTemplate,
 }
 
 func init() {
@@ -106,23 +106,23 @@ func parseAndRegisterTemplate(path string) error {
 var _modelMdTemplate *template.Template
 var _actorMdTemplate *template.Template
 var _domainMdTemplate *template.Template
-var _domainsDotTemplate *template.Template  // DOT input to GraphViz for SVG UML diagram.
-var _useCasesDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
-var _classesDotTemplate *template.Template  // DOT input to GraphViz for SVG UML diagram.
+var _domainsMermaidTemplate *template.Template
+var _useCasesMermaidTemplate *template.Template
+var _classesMermaidTemplate *template.Template
 var _classMdTemplate *template.Template
-var _classStateDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
+var _classStateMermaidTemplate *template.Template
 var _useCaseMdTemplate *template.Template
 var _subdomainMdTemplate *template.Template
-var _subdomainsDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
+var _subdomainsMermaidTemplate *template.Template
 
 // Define some function for our templates.
 var _funcMap = template.FuncMap{
 	"nodeid": func(idtype string, key identity.Key) string {
 		keyStr := key.String()
-		// Replace / with _
+		// Replace characters that are invalid in Mermaid node IDs.
 		keyStr = strings.ReplaceAll(keyStr, "/", "_")
-		// Replace - with _
 		keyStr = strings.ReplaceAll(keyStr, "-", "_")
+		keyStr = strings.ReplaceAll(keyStr, ".", "_")
 		return idtype + "_" + keyStr
 	},
 

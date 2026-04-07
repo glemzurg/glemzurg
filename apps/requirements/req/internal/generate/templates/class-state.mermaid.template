@@ -1,0 +1,15 @@
+{{- $reqs := .Reqs -}}
+{{ $eventNameLookup := .EventNameLookup -}}
+{{ $guardDetailsLookup := .GuardDetailsLookup -}}
+{{ $actionNameLookup := .ActionNameLookup -}}
+stateDiagram-v2
+    direction LR
+{{ range .Class.States -}}
+{{ $stateKey := nodeid "state" .Key -}}
+    state "{{ .Name }}{{ range .Actions }}\n{{ .When }}/{{ lookup $actionNameLookup .ActionKey }}{{ end }}" as {{ $stateKey }}
+{{ end -}}
+{{ range .Class.Transitions -}}
+{{ $fromStateKey := "[*]" }}{{ if ne .FromStateKey nil }}{{ $fromStateKey = nodeid "state" .FromStateKey }}{{ end -}}
+{{ $toStateKey := "[*]" }}{{ if ne .ToStateKey nil }}{{ $toStateKey = nodeid "state" .ToStateKey }}{{ end -}}
+    {{ $fromStateKey }} --> {{ $toStateKey }} : {{ lookup $eventNameLookup .EventKey }}{{ if ne .GuardKey nil }} [{{ lookup $guardDetailsLookup .GuardKey }}]{{ end }}{{ if ne .ActionKey nil }} / {{ lookup $actionNameLookup .ActionKey }}{{ end }}
+{{ end -}}

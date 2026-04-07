@@ -88,12 +88,16 @@ This is an actor:
 
 ## Relations
 
-![er]({{ filename "class" .Class.Key "" ".svg" }})
+```mermaid
+{{ .ClassesDiagram }}
+```
 
 # State Machine
 
-{{ if ne .Class.States nil -}}
-![er]({{ filename "class" .Class.Key "states" ".svg" }})
+{{ if ne .StateDiagram "" -}}
+```mermaid
+{{ .StateDiagram }}
+```
 {{- end }}
 
 ## State and Event Descriptions
