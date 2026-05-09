@@ -91,9 +91,9 @@ func (c *Class) Validate(ctx *coreerr.ValidationContext) error {
 
 // ValidateReferences validates that the class's reference keys point to valid entities.
 // - ActorKey must exist in the actors map
-// - SuperclassOfKey must exist in the generalizations map and be in the same subdomain
-// - SubclassOfKey must exist in the generalizations map and be in the same subdomain.
-func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[identity.Key]bool, generalizations map[identity.Key]bool) error {
+// - SuperclassOfKey must exist in the localGeneralizations map and be in the same subdomain
+// - SubclassOfKey must exist in the allGeneralizations map (may be in any subdomain).
+func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[identity.Key]bool, localGeneralizations map[identity.Key]bool, allGeneralizations map[identity.Key]bool) error {
 	// Validate ActorKey references a real actor.
 	if c.ActorKey != nil {
 		if !actors[*c.ActorKey] {
@@ -106,7 +106,7 @@ func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[id
 
 	// Validate SuperclassOfKey references a real generalization in the same subdomain.
 	if c.SuperclassOfKey != nil {
-		if !generalizations[*c.SuperclassOfKey] {
+		if !localGeneralizations[*c.SuperclassOfKey] {
 			return coreerr.NewWithValues(ctx, coreerr.ClassSupergenNotfound, fmt.Sprintf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SuperclassOfKey.String()), "SuperclassOfKey", c.SuperclassOfKey.String(), "")
 		}
 		// Check same subdomain.
@@ -116,15 +116,11 @@ func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[id
 		}
 	}
 
-	// Validate SubclassOfKey references a real generalization in the same subdomain.
+	// Validate SubclassOfKey references a real generalization anywhere in the model.
+	// Subclasses may reference generalizations in other domains/subdomains.
 	if c.SubclassOfKey != nil {
-		if !generalizations[*c.SubclassOfKey] {
+		if !allGeneralizations[*c.SubclassOfKey] {
 			return coreerr.NewWithValues(ctx, coreerr.ClassSubgenNotfound, fmt.Sprintf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SubclassOfKey.String()), "SubclassOfKey", c.SubclassOfKey.String(), "")
-		}
-		// Check same subdomain.
-		generalizationSubdomainKey := c.SubclassOfKey.ParentKey
-		if classSubdomainKey != generalizationSubdomainKey {
-			return coreerr.NewWithValues(ctx, coreerr.ClassSubgenWrongSubdomain, fmt.Sprintf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SubclassOfKey.String()), "SubclassOfKey", c.SubclassOfKey.String(), "")
 		}
 	}
 

@@ -889,13 +889,15 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		result.ActorKey = &actorKey
 	}
 
-	// Find generalization references for this class
+	// Find generalization references for this class.
+	// SubclassKeys may contain short keys (local) or full key paths (cross-domain).
+	classFullKey := classKey.String()
 	for genKeyStr, gen := range generalizations {
 		genKey := genKeyMap[genKeyStr]
 		if gen.SuperclassKey == keyStr {
 			result.SuperclassOfKey = &genKey
 		}
-		if slices.Contains(gen.SubclassKeys, keyStr) {
+		if slices.Contains(gen.SubclassKeys, keyStr) || slices.Contains(gen.SubclassKeys, classFullKey) {
 			result.SubclassOfKey = &genKey
 		}
 	}

@@ -376,7 +376,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err := domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
+	err := domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes, nil, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Subdomains")
 
 	// Test invalid ClassAssociation child propagates error.
@@ -389,7 +389,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			assocKey: {Key: assocKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes, nil, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child ClassAssociations")
 
 	// Test valid domain with single subdomain named "default".
@@ -400,7 +400,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: "Subdomain"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes, nil, nil)
 	suite.Require().NoError(err, "Valid domain with single 'default' subdomain should pass")
 
 	// Test single subdomain with non-"default" key fails.
@@ -411,7 +411,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain1Key: {Key: subdomain1Key, Name: "Subdomain"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes, nil, nil)
 	suite.Require().ErrorContains(err, "must be 'default'", "Single subdomain must have key 'default'")
 
 	// Test multiple subdomains with "default" key fails.
@@ -423,7 +423,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain1Key:       {Key: subdomain1Key, Name: "Subdomain1"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes, nil, nil)
 	suite.Require().ErrorContains(err, "reserved for single-subdomain", "Multiple subdomains cannot include 'default'")
 
 	// Test multiple subdomains without "default" key passes.
@@ -435,6 +435,6 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			subdomain2Key: {Key: subdomain2Key, Name: "Subdomain2"},
 		},
 	}
-	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes)
+	err = domain.ValidateWithParentAndActorsAndClasses(ctx, nil, actors, classes, nil, nil)
 	suite.Require().NoError(err, "Multiple subdomains without 'default' should pass")
 }

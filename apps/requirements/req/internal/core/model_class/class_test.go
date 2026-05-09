@@ -465,16 +465,21 @@ func (suite *ClassSuite) TestValidateReferences() {
 	actors := map[identity.Key]bool{
 		actorKey: true,
 	}
-	generalizations := map[identity.Key]bool{
+	localGeneralizations := map[identity.Key]bool{
 		genKey: true,
+	}
+	allGeneralizations := map[identity.Key]bool{
+		genKey:              true,
+		genInOtherSubdomain: true,
 	}
 
 	tests := []struct {
-		testName        string
-		class           Class
-		actors          map[identity.Key]bool
-		generalizations map[identity.Key]bool
-		errstr          string
+		testName             string
+		class                Class
+		actors               map[identity.Key]bool
+		localGeneralizations map[identity.Key]bool
+		allGeneralizations   map[identity.Key]bool
+		errstr               string
 	}{
 		{
 			testName: "valid class with no references",
@@ -482,8 +487,9 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Key:  classKey,
 				Name: "Name",
 			},
-			actors:          actors,
-			generalizations: generalizations,
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
 		},
 		{
 			testName: "valid class with ActorKey reference",
@@ -492,8 +498,9 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:     "Name",
 				ActorKey: &actorKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
 		},
 		{
 			testName: "error ActorKey references non-existent actor",
@@ -502,9 +509,10 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:     "Name",
 				ActorKey: &nonExistentActorKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
-			errstr:          "references non-existent actor",
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
+			errstr:               "references non-existent actor",
 		},
 		{
 			testName: "valid class with SuperclassOfKey reference",
@@ -513,8 +521,9 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:            "Name",
 				SuperclassOfKey: &genKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
 		},
 		{
 			testName: "error SuperclassOfKey references non-existent generalization",
@@ -523,9 +532,10 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:            "Name",
 				SuperclassOfKey: &nonExistentGenKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
-			errstr:          "references non-existent generalization",
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
+			errstr:               "references non-existent generalization",
 		},
 		{
 			testName: "error SuperclassOfKey references generalization in different subdomain",
@@ -534,22 +544,32 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:            "Name",
 				SuperclassOfKey: &genInOtherSubdomain,
 			},
-			actors: actors,
-			generalizations: map[identity.Key]bool{
-				genKey:              true,
-				genInOtherSubdomain: true,
-			},
-			errstr: "must be in the same subdomain",
+			actors:               actors,
+			localGeneralizations: allGeneralizations,
+			allGeneralizations:   allGeneralizations,
+			errstr:               "must be in the same subdomain",
 		},
 		{
-			testName: "valid class with SubclassOfKey reference",
+			testName: "valid class with SubclassOfKey in same subdomain",
 			class: Class{
 				Key:           classKey,
 				Name:          "Name",
 				SubclassOfKey: &genKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
+		},
+		{
+			testName: "valid class with SubclassOfKey in different subdomain",
+			class: Class{
+				Key:           classKey,
+				Name:          "Name",
+				SubclassOfKey: &genInOtherSubdomain,
+			},
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
 		},
 		{
 			testName: "error SubclassOfKey references non-existent generalization",
@@ -558,29 +578,16 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:          "Name",
 				SubclassOfKey: &nonExistentGenKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
-			errstr:          "references non-existent generalization",
-		},
-		{
-			testName: "error SubclassOfKey references generalization in different subdomain",
-			class: Class{
-				Key:           classKey,
-				Name:          "Name",
-				SubclassOfKey: &genInOtherSubdomain,
-			},
-			actors: actors,
-			generalizations: map[identity.Key]bool{
-				genKey:              true,
-				genInOtherSubdomain: true,
-			},
-			errstr: "must be in the same subdomain",
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
+			errstr:               "references non-existent generalization",
 		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
 			ctx := coreerr.NewContext("test", "")
-			err := tt.class.ValidateReferences(ctx, tt.actors, tt.generalizations)
+			err := tt.class.ValidateReferences(ctx, tt.actors, tt.localGeneralizations, tt.allGeneralizations)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

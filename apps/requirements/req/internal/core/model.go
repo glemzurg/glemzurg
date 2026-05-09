@@ -191,9 +191,11 @@ func (m *Model) validateDomains(ctx *coreerr.ValidationContext) error {
 		actorKeys[actorKey] = true
 	}
 	classKeys := m.buildClassKeys()
+	allGeneralizations := m.buildGeneralizationKeys()
+	allClasses := m.buildAllClasses()
 	for _, domain := range m.Domains {
 		childCtx := ctx.Child("domain", domain.Key.String())
-		if err := domain.ValidateWithParentAndActorsAndClasses(childCtx, nil, actorKeys, classKeys); err != nil {
+		if err := domain.ValidateWithParentAndActorsAndClasses(childCtx, nil, actorKeys, classKeys, allGeneralizations, allClasses); err != nil {
 			return err
 		}
 	}
@@ -210,6 +212,28 @@ func (m *Model) buildClassKeys() map[identity.Key]bool {
 		}
 	}
 	return classKeys
+}
+
+func (m *Model) buildGeneralizationKeys() map[identity.Key]bool {
+	genKeys := make(map[identity.Key]bool)
+	for _, domain := range m.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for genKey := range subdomain.Generalizations {
+				genKeys[genKey] = true
+			}
+		}
+	}
+	return genKeys
+}
+
+func (m *Model) buildAllClasses() map[identity.Key]model_class.Class {
+	allClasses := make(map[identity.Key]model_class.Class)
+	for _, domain := range m.Domains {
+		for _, subdomain := range domain.Subdomains {
+			maps.Copy(allClasses, subdomain.Classes)
+		}
+	}
+	return allClasses
 }
 
 func (m *Model) validateDomainAssociations(ctx *coreerr.ValidationContext) error {

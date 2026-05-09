@@ -2,6 +2,7 @@ package parser_ai
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -71,10 +72,22 @@ func convertTopLevelCollectionsFromModel(model *core.Model, result *inputModel) 
 	}
 }
 
+// buildAllModelClasses collects all classes from all subdomains across all domains.
+func buildAllModelClasses(model *core.Model) map[identity.Key]model_class.Class {
+	allClasses := make(map[identity.Key]model_class.Class)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			maps.Copy(allClasses, subdomain.Classes)
+		}
+	}
+	return allClasses
+}
+
 // convertDomainsAndAssociationsFromModel converts domains, domain associations, and class associations from model to input.
 func convertDomainsAndAssociationsFromModel(model *core.Model, result *inputModel) {
+	allClasses := buildAllModelClasses(model)
 	for key, domain := range model.Domains {
-		converted := convertDomainFromModel(&domain)
+		converted := convertDomainFromModel(&domain, allClasses)
 		result.Domains[key.SubKey] = converted
 	}
 	for key, assoc := range model.DomainAssociations {
@@ -142,7 +155,7 @@ func convertDomainAssocFromModel(assoc *model_domain.Association) *inputDomainAs
 }
 
 // convertDomainFromModel converts a model_domain.Domain to an inputDomain.
-func convertDomainFromModel(domain *model_domain.Domain) *inputDomain {
+func convertDomainFromModel(domain *model_domain.Domain, allClasses map[identity.Key]model_class.Class) *inputDomain {
 	result := &inputDomain{
 		Name:              domain.Name,
 		Details:           domain.Details,
@@ -154,7 +167,7 @@ func convertDomainFromModel(domain *model_domain.Domain) *inputDomain {
 
 	// Convert subdomains
 	for key, subdomain := range domain.Subdomains {
-		converted := convertSubdomainFromModel(&subdomain)
+		converted := convertSubdomainFromModel(&subdomain, allClasses)
 		result.Subdomains[key.SubKey] = converted
 	}
 
@@ -169,7 +182,7 @@ func convertDomainFromModel(domain *model_domain.Domain) *inputDomain {
 }
 
 // convertSubdomainFromModel converts a model_domain.Subdomain to an inputSubdomain.
-func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomain {
+func convertSubdomainFromModel(subdomain *model_domain.Subdomain, allClasses map[identity.Key]model_class.Class) *inputSubdomain {
 	result := &inputSubdomain{
 		Name:                   subdomain.Name,
 		Details:                subdomain.Details,
@@ -190,7 +203,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomai
 
 	// Convert generalizations
 	for key, gen := range subdomain.Generalizations {
-		converted := convertClassGeneralizationFromModel(&gen, subdomain.Classes)
+		converted := convertClassGeneralizationFromModel(&gen, subdomain.Classes, allClasses)
 		result.ClassGeneralizations[key.SubKey] = converted
 	}
 
@@ -632,8 +645,8 @@ func convertParametersFromModel(params []model_state.Parameter) []inputParameter
 }
 
 // convertClassGeneralizationFromModel converts a model_class.Generalization to an inputClassGeneralization.
-// It needs the classes map to find which classes reference this class generalization.
-func convertClassGeneralizationFromModel(gen *model_class.Generalization, classes map[identity.Key]model_class.Class) *inputClassGeneralization {
+// It needs the local classes map for the superclass and allClasses for subclasses (which may be cross-domain).
+func convertClassGeneralizationFromModel(gen *model_class.Generalization, localClasses map[identity.Key]model_class.Class, allClasses map[identity.Key]model_class.Class) *inputClassGeneralization {
 	result := &inputClassGeneralization{
 		Name:         gen.Name,
 		Details:      gen.Details,
@@ -643,15 +656,24 @@ func convertClassGeneralizationFromModel(gen *model_class.Generalization, classe
 		SubclassKeys: []string{},
 	}
 
-	// Find superclass and subclasses by examining class references
-	for key, class := range classes {
-		if class.SuperclassOfKey != nil && class.SuperclassOfKey.SubKey == gen.Key.SubKey {
-			// This class is the superclass of this generalization
+	// Find superclass from local subdomain classes.
+	for key, class := range localClasses {
+		if class.SuperclassOfKey != nil && *class.SuperclassOfKey == gen.Key {
 			result.SuperclassKey = key.SubKey
 		}
-		if class.SubclassOfKey != nil && class.SubclassOfKey.SubKey == gen.Key.SubKey {
-			// This class is a subclass of this generalization
-			result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
+	}
+
+	// Find subclasses from all model classes (may be cross-domain).
+	genSubdomainKey := gen.Key.ParentKey
+	for key, class := range allClasses {
+		if class.SubclassOfKey != nil && *class.SubclassOfKey == gen.Key {
+			// Use SubKey for local classes, full key path for cross-subdomain classes.
+			classSubdomainKey := key.ParentKey
+			if classSubdomainKey == genSubdomainKey {
+				result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
+			} else {
+				result.SubclassKeys = append(result.SubclassKeys, key.String())
+			}
 		}
 	}
 

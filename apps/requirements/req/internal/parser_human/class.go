@@ -1163,7 +1163,14 @@ func generateClassTopLevelFields(builder *YamlBuilder, class model_class.Class) 
 		builder.AddField("superclass_of_key", class.SuperclassOfKey.SubKey)
 	}
 	if class.SubclassOfKey != nil {
-		builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey)
+		// Use full key path for cross-subdomain references, SubKey for local references.
+		classSubdomainKey := class.Key.ParentKey
+		genSubdomainKey := class.SubclassOfKey.ParentKey
+		if classSubdomainKey != genSubdomainKey {
+			builder.AddField("subclass_of_key", class.SubclassOfKey.String())
+		} else {
+			builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey)
+		}
 	}
 }
 
