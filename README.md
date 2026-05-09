@@ -2,9 +2,28 @@
 
 Tools for modeling and generating software requirements and documentation.
 
-## Environment Variable: GLEMZURG_DATA_PATH
+## Data Sandbox Directory
 
-This environment variable must be set on the host for the dev container to launch properly. It specifies the path to the data directory used by the application. If missing you will get a cryptic error about a malformed devcontainer.json.
+The tools in this repo read from and write to `data_sandbox/` at the repo root (for example, requirements documents to process). Rather than committing your working data into the repo, point `data_sandbox/` at a directory of your choice on the host using a symbolic link.
+
+On the **host** (not inside the dev container), from the repo root:
+
+```bash
+# Remove the placeholder directory if present (it should be empty).
+rmdir data_sandbox
+
+# Create a symbolic link to wherever you keep your data on the host.
+ln -s /absolute/path/to/your/data data_sandbox
+```
+
+On Windows (PowerShell, run as Administrator or with Developer Mode enabled):
+
+```powershell
+Remove-Item data_sandbox
+New-Item -ItemType SymbolicLink -Path data_sandbox -Target "C:\absolute\path\to\your\data"
+```
+
+The symlink is followed transparently by the dev container because the workspace folder is bind-mounted from the host. The `data_sandbox` symlink is git-ignored so it does not get committed.
 
 ## Go Built Files
 

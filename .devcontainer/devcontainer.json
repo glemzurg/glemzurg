@@ -15,13 +15,6 @@
 		"--label=glemzurg"  // Unique label for shelling into see: scripts/terminal.sh
 	], 
 
-	// The input and output files from the tools are on the host machine.
-	// The host environment variable GLEMZURG_DATA_PATH should point to the
-	// folder on the host machine that the tools can read from and write to.
-	"mounts": [
-		"source=${localEnv:GLEMZURG_DATA_PATH},target=/workspaces/glemzurg/data_sandbox,type=bind"
-	],
-
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 
