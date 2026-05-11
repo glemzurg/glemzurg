@@ -2,10 +2,11 @@
 # Bind-mount the host data directory onto the repo's data_sandbox/ placeholder
 # so the dev container sees the data at /workspaces/glemzurg/data_sandbox.
 #
-# Run this on the HOST (not inside the dev container), from the repo root,
-# before opening / starting the dev container. The dev container itself never
-# needs this mount: it loads cleanly whether or not the mount is active, and
-# data_sandbox/ is simply empty when no host data is bound.
+# Invoked automatically by the dev container's initializeCommand on the HOST
+# before each build/start, so the host mount is always in place when Docker
+# creates its own bind mount of the workspace. The script is a no-op when
+# GLEMZURG_DATA_PATH is unset, missing, or already mounted, so the dev
+# container loads cleanly on every host whether or not data is provided.
 #
 # The source path comes from $GLEMZURG_DATA_PATH so each host can point to its
 # own data location without changing repo files.

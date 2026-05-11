@@ -13,7 +13,14 @@
 	"runArgs": [
 		"--name=glemzurg-dev-container",  // Unique name for to avoid collision with other devcontainers.
 		"--label=glemzurg"  // Unique label for shelling into see: scripts/terminal.sh
-	], 
+	],
+
+	// Bind-mount the host data directory onto data_sandbox/ before Docker creates
+	// the workspace mount, so writes inside the container land on the host data
+	// set. The script reads $GLEMZURG_DATA_PATH on the host and is a no-op when
+	// the variable is unset, so the container loads on every host whether or not
+	// data is provided. May prompt for sudo on the host.
+	"initializeCommand": "./scripts/mount-data-sandbox.sh",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
