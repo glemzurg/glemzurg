@@ -4,26 +4,28 @@ Tools for modeling and generating software requirements and documentation.
 
 ## Data Sandbox Directory
 
-The tools in this repo read from and write to `data_sandbox/` at the repo root (for example, requirements documents to process). Rather than committing your working data into the repo, point `data_sandbox/` at a directory of your choice on the host using a symbolic link.
+The tools in this repo read from and write to `data_sandbox/` at the repo root (for example, requirements documents to process). The directory is committed as an empty placeholder so the dev container always starts cleanly. Working data is supplied per-host by bind-mounting an arbitrary host directory over the placeholder; the contents of `data_sandbox/` (other than `.gitkeep`) are git-ignored.
 
-On the **host** (not inside the dev container), from the repo root:
+The dev container itself does not declare any optional mount, so it loads on every host whether or not data is provided.
+
+### Linux / macOS host
+
+Set the host environment variable `GLEMZURG_DATA_PATH` to the directory containing your data, then run the helper from the repo root **on the host** (not inside the dev container) before starting the container:
 
 ```bash
-# Remove the placeholder directory if present (it should be empty).
-rmdir data_sandbox
-
-# Create a symbolic link to wherever you keep your data on the host.
-ln -s /absolute/path/to/your/data data_sandbox
+export GLEMZURG_DATA_PATH=/absolute/path/to/your/data
+./scripts/mount-data-sandbox.sh
 ```
 
-On Windows (PowerShell, run as Administrator or with Developer Mode enabled):
+The script bind-mounts `$GLEMZURG_DATA_PATH` onto `data_sandbox/` if the path exists and is not already mounted, and otherwise leaves the placeholder empty. To detach later:
 
-```powershell
-Remove-Item data_sandbox
-New-Item -ItemType SymbolicLink -Path data_sandbox -Target "C:\absolute\path\to\your\data"
+```bash
+sudo umount data_sandbox
 ```
 
-The symlink is followed transparently by the dev container because the workspace folder is bind-mounted from the host. The `data_sandbox` symlink is git-ignored so it does not get committed.
+### Windows host
+
+Bind mounts are a Linux kernel feature. On Windows, run the helper above from inside WSL against a WSL path, or place your data directly in `data_sandbox/` on the host.
 
 ## Go Built Files
 

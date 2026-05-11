@@ -46,8 +46,11 @@ go.work.sum
 # Files that are used just to guide work.
 /ai-reference/
 
-# A sandbox with data files from another repo.
-/data_sandbox/
+# A sandbox with data files from another repo. The directory itself is tracked
+# (via .gitkeep) so it exists with the correct ownership on every clone and can
+# serve as a stable bind-mount target; its contents are ignored.
+/data_sandbox/*
+!/data_sandbox/.gitkeep
 
 # Beads / Dolt files (added by bd init)
 .dolt/
