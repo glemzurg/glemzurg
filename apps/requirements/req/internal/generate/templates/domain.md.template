@@ -26,20 +26,22 @@ The subdomains of this domain.
 
 The classes of this domain.
 
+{{ if ne .ClassesDiagram "" }}
 ```mermaid
 {{ .ClassesDiagram }}
 ```
-
+{{ end }}
 {{ range $domainClasses -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
 
 ## Use Cases
 
+{{ if ne .UseCasesDiagram "" }}
 ```mermaid
 {{ .UseCasesDiagram }}
 ```
-
+{{ end }}
 {{ range $domainUseCases -}}
 - **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}

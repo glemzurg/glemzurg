@@ -226,18 +226,29 @@ func gatherDomainClasses(domain model_domain.Domain) []model_class.Class {
 }
 
 // buildClassesDiagram generates a Mermaid class diagram for a set of classes.
+// Returns an empty string when there is nothing to render so the template can
+// omit the mermaid fence; an empty `classDiagram` block is a syntax error in
+// Mermaid 11+.
 func buildClassesDiagram(reqs *req_flat.Requirements, classes []model_class.Class) (string, error) {
 	generalizations, allClasses, associations := reqs.RegardingClasses(classes)
+	if len(generalizations) == 0 && len(allClasses) == 0 && len(associations) == 0 {
+		return "", nil
+	}
 	return generateClassesMermaidContents(reqs, generalizations, allClasses, associations)
 }
 
 // buildUseCasesDiagram generates a Mermaid use case diagram for a domain.
+// Returns an empty string when no use cases exist; rendering an empty subgraph
+// produces a Mermaid syntax error.
 func buildUseCasesDiagram(reqs *req_flat.Requirements, domain model_domain.Domain) (string, error) {
 	var useCases []model_use_case.UseCase
 	for _, subdomain := range domain.Subdomains {
 		for _, useCase := range subdomain.UseCases {
 			useCases = append(useCases, useCase)
 		}
+	}
+	if len(useCases) == 0 {
+		return "", nil
 	}
 	relevantUseCases, relevantActors, err := reqs.RegardingUseCases(useCases)
 	if err != nil {
@@ -298,10 +309,15 @@ func generateSingleSubdomainFiles(reqs *req_flat.Requirements, writer ContentWri
 }
 
 // buildSubdomainUseCasesDiagram generates a Mermaid use case diagram for a subdomain.
+// Returns an empty string when no use cases exist; rendering an empty subgraph
+// produces a Mermaid syntax error.
 func buildSubdomainUseCasesDiagram(reqs *req_flat.Requirements, domain model_domain.Domain, subdomain model_domain.Subdomain) (string, error) {
 	var useCases []model_use_case.UseCase
 	for _, useCase := range subdomain.UseCases {
 		useCases = append(useCases, useCase)
+	}
+	if len(useCases) == 0 {
+		return "", nil
 	}
 	relevantUseCases, relevantActors, err := reqs.RegardingUseCases(useCases)
 	if err != nil {

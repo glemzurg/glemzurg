@@ -10,10 +10,11 @@
 
 The classes of this subdomain.
 
+{{ if ne .ClassesDiagram "" }}
 ```mermaid
 {{ .ClassesDiagram }}
 ```
-
+{{ end }}
 {{ range .Classes -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
@@ -32,10 +33,11 @@ The class generalizations of this subdomain.
 {{- end }}
 ## Use Cases
 
+{{ if ne .UseCasesDiagram "" }}
 ```mermaid
 {{ .UseCasesDiagram }}
 ```
-
+{{ end }}
 {{ range .UseCases -}}
 - **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
