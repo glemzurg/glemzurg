@@ -59,6 +59,14 @@ const (
 	KEY_TYPE_QUERY_REQUIRE   = "qrequire"
 	KEY_TYPE_QUERY_GUARANTEE = "qguarantee"
 
+	// Keys with action, query, or event parents.
+	KEY_TYPE_PARAMETER = "parameter"
+
+	// Keys with attribute, parameter, or data_type parents.
+	// SubKey is empty at the root of an owner (the data type that owns the attribute/parameter)
+	// and is the record-field name at nested levels (when the parent is itself a data_type).
+	KEY_TYPE_DATA_TYPE = "datatype"
+
 	// Keys with use case parents.
 	KEY_TYPE_SCENARIO = "scenario"
 
@@ -470,4 +478,53 @@ func NewQueryGuaranteeKey(queryKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'qguarantee' key", queryKey.GetKeyType())
 	}
 	return newKey(queryKey.String(), KEY_TYPE_QUERY_GUARANTEE, subKey)
+}
+
+// NewParameterKey creates a parameter key. The parent must be an action, query, or event —
+// the three owner types of Parameter today (see model_state/{action,query,event}.go).
+func NewParameterKey(parentKey Key, subKey string) (key Key, err error) {
+	switch parentKey.GetKeyType() {
+	case KEY_TYPE_ACTION, KEY_TYPE_QUERY, KEY_TYPE_EVENT:
+		// OK.
+	default:
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'parameter' key", parentKey.GetKeyType())
+	}
+	return newKey(parentKey.String(), KEY_TYPE_PARAMETER, subKey)
+}
+
+// DATA_TYPE_ROOT_SUBKEY is the sentinel subKey used for the data_type key that sits at
+// the root of an owner (attribute or parameter). The owner's key already disambiguates,
+// so the data_type key needs a stable, identifier-shaped subKey here. Nested record-field
+// data_types use the field name instead.
+const DATA_TYPE_ROOT_SUBKEY = "self"
+
+// NewDataTypeKey creates a data_type key.
+//
+// Allowed parents:
+//   - KEY_TYPE_ATTRIBUTE  — the attribute owns this data type (root of the chain).
+//     subKey must be DATA_TYPE_ROOT_SUBKEY.
+//   - KEY_TYPE_PARAMETER  — the parameter owns this data type (root of the chain).
+//     subKey must be DATA_TYPE_ROOT_SUBKEY.
+//   - KEY_TYPE_DATA_TYPE  — this data type is a nested record-field child;
+//     subKey is the field name. Chained recursively for arbitrary record nesting depth.
+func NewDataTypeKey(parentKey Key, subKey string) (key Key, err error) {
+	switch parentKey.GetKeyType() {
+	case KEY_TYPE_ATTRIBUTE, KEY_TYPE_PARAMETER:
+		if strings.TrimSpace(subKey) == "" {
+			subKey = DATA_TYPE_ROOT_SUBKEY
+		}
+		if subKey != DATA_TYPE_ROOT_SUBKEY {
+			return Key{}, errors.Errorf("root 'datatype' key under '%s' parent requires subKey '%s', got '%s'", parentKey.GetKeyType(), DATA_TYPE_ROOT_SUBKEY, subKey)
+		}
+	case KEY_TYPE_DATA_TYPE:
+		if strings.TrimSpace(subKey) == "" {
+			return Key{}, errors.Errorf("nested 'datatype' key requires a non-empty subKey (the field name)")
+		}
+		if subKey == DATA_TYPE_ROOT_SUBKEY {
+			return Key{}, errors.Errorf("nested 'datatype' key subKey cannot be the reserved root sentinel '%s'", DATA_TYPE_ROOT_SUBKEY)
+		}
+	default:
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'datatype' key", parentKey.GetKeyType())
+	}
+	return newKey(parentKey.String(), KEY_TYPE_DATA_TYPE, subKey)
 }

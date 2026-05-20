@@ -70,6 +70,8 @@ var validKeyTypes = map[string]bool{
 	KEY_TYPE_ACTION_REQUIRE: true, KEY_TYPE_ACTION_GUARANTEE: true, KEY_TYPE_ACTION_SAFETY: true,
 	KEY_TYPE_QUERY_REQUIRE: true, KEY_TYPE_QUERY_GUARANTEE: true,
 	KEY_TYPE_SCENARIO: true, KEY_TYPE_SCENARIO_OBJECT: true, KEY_TYPE_SCENARIO_STEP: true,
+	KEY_TYPE_PARAMETER: true,
+	KEY_TYPE_DATA_TYPE: true,
 }
 
 // identifierPattern is the regex that SubKeys must match for key types that become filenames/directories.
@@ -96,6 +98,8 @@ var identifierSubKeyTypes = map[string]bool{
 	KEY_TYPE_QUERY:                   true,
 	KEY_TYPE_SCENARIO:                true,
 	KEY_TYPE_SCENARIO_OBJECT:         true,
+	KEY_TYPE_PARAMETER:               true,
+	KEY_TYPE_DATA_TYPE:               true, // subKey is either "self" (root) or a field-name identifier.
 }
 
 // Validate validates the Key struct.
@@ -239,6 +243,12 @@ func (k *Key) ValidateParentWithContext(ctx *coreerr.ValidationContext, parent *
 	case KEY_TYPE_QUERY_REQUIRE, KEY_TYPE_QUERY_GUARANTEE:
 		return k.validateRequiredParent(ctx, parent, KEY_TYPE_QUERY)
 
+	case KEY_TYPE_PARAMETER:
+		return k.validateRequiredParentOneOf(ctx, parent, KEY_TYPE_ACTION, KEY_TYPE_QUERY, KEY_TYPE_EVENT)
+
+	case KEY_TYPE_DATA_TYPE:
+		return k.validateRequiredParentOneOf(ctx, parent, KEY_TYPE_ATTRIBUTE, KEY_TYPE_PARAMETER, KEY_TYPE_DATA_TYPE)
+
 	case KEY_TYPE_ATTRIBUTE_DERIVATION, KEY_TYPE_ATTRIBUTE_INVARIANT:
 		return k.validateRequiredParent(ctx, parent, KEY_TYPE_ATTRIBUTE)
 
@@ -263,6 +273,36 @@ func (k *Key) validateRootParent(ctx *coreerr.ValidationContext, parent *Key) er
 		return coreerr.NewWithValues(ctx, coreerr.KeyRootHasParentkey,
 			fmt.Sprintf("key type '%s' should have empty parentKey, but got '%s'", k.KeyType, k.ParentKey),
 			"ParentKey", k.ParentKey, "blank")
+	}
+	return nil
+}
+
+// validateRequiredParentOneOf validates that a key has a parent whose KeyType is one of the
+// allowed types, with matching key value. Used for key types that accept multiple parent shapes
+// (e.g., parameter, which can hang off an action, query, or event).
+func (k *Key) validateRequiredParentOneOf(ctx *coreerr.ValidationContext, parent *Key, allowed ...string) error {
+	expected := strings.Join(allowed, " | ")
+	if parent == nil {
+		return coreerr.NewWithValues(ctx, coreerr.KeyNoParent,
+			fmt.Sprintf("key type '%s' requires a parent of type '%s'", k.KeyType, expected),
+			"Parent", "", expected)
+	}
+	matched := false
+	for _, t := range allowed {
+		if parent.KeyType == t {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return coreerr.NewWithValues(ctx, coreerr.KeyWrongParentType,
+			fmt.Sprintf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, expected, parent.KeyType),
+			"Parent", parent.KeyType, expected)
+	}
+	if k.ParentKey != parent.String() {
+		return coreerr.NewWithValues(ctx, coreerr.KeyParentkeyMismatch,
+			fmt.Sprintf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String()),
+			"ParentKey", k.ParentKey, parent.String())
 	}
 	return nil
 }

@@ -85,8 +85,10 @@ const (
 	// ---------------------------------------------------------------
 	// Parameter errors.
 
-	ParamNameRequired      Code = "PARAM_NAME_REQUIRED"      // Parameter Name is empty.
-	ParamDatatypesRequired Code = "PARAM_DATATYPES_REQUIRED" // Parameter DataTypes is empty.
+	ParamKeyInvalid          Code = "PARAM_KEY_INVALID"           // Parameter key failed validation.
+	ParamKeyTypeInvalid      Code = "PARAM_KEY_TYPE_INVALID"      // Parameter key is not KEY_TYPE_PARAMETER.
+	ParamNameRequired        Code = "PARAM_NAME_REQUIRED"         // Parameter Name is empty.
+	ParamDatatypesRequired   Code = "PARAM_DATATYPES_REQUIRED"    // Parameter DataTypes is empty.
 	ParamDatatypeKeyMismatch Code = "PARAM_DATATYPE_KEY_MISMATCH" // Parameter DataType.Key does not match Parameter.Name.
 
 	// ---------------------------------------------------------------
