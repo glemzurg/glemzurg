@@ -46,8 +46,11 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 
 	// Parse the data type rules into a DataType object if possible.
 	if attribute.DataTypeRules != "" {
-		// Use the attribute key as the key of this data type.
-		dataTypeKey := attribute.Key.String()
+		// Root data type identity.Key parented by this attribute's key.
+		dataTypeKey, err := identity.NewDataTypeKey(attribute.Key, "")
+		if err != nil {
+			return Attribute{}, errors.Wrap(err, "attribute data type key")
+		}
 		parsedDataType, err := model_data_type.New(dataTypeKey, attribute.DataTypeRules, nil)
 
 		// Only an error if it is not a parse error.

@@ -238,6 +238,7 @@ func (suite *AttributeSuite) TestNew() {
 	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivParsedPolicy, true,
 		AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
 	suite.Require().NoError(err)
+	expectedDtKey := helper.Must(identity.NewDataTypeKey(attrParsedKey, ""))
 	suite.Equal(Attribute{
 		Key:              attrParsedKey,
 		Name:             "NameParsed",
@@ -248,7 +249,7 @@ func (suite *AttributeSuite) TestNew() {
 		UmlComment:       "UmlComment",
 		IndexNums:        []uint{1, 2},
 		DataType: &model_data_type.DataType{
-			Key:            attrParsedKey.String(),
+			Key:            expectedDtKey.String(),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
 				ConstraintType: "unconstrained",
