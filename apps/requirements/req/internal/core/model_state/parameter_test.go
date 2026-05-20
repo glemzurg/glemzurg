@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -45,6 +46,41 @@ func (suite *ParameterSuite) TestValidate() {
 			},
 			errstr: "DataTypeRules",
 		},
+		{
+			testName: "valid parameter with data type key matching name",
+			param: Parameter{
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				DataType: &model_data_type.DataType{
+					Key:            "amount",
+					CollectionType: model_data_type.COLLECTION_TYPE_ATOMIC,
+				},
+			},
+		},
+		{
+			testName: "error data type key does not match parameter name",
+			param: Parameter{
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				DataType: &model_data_type.DataType{
+					Key:            "different",
+					CollectionType: model_data_type.COLLECTION_TYPE_ATOMIC,
+				},
+			},
+			errstr: "DataType.Key",
+		},
+		{
+			testName: "error data type key empty when parameter has name",
+			param: Parameter{
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				DataType: &model_data_type.DataType{
+					Key:            "",
+					CollectionType: model_data_type.COLLECTION_TYPE_ATOMIC,
+				},
+			},
+			errstr: "DataType.Key",
+		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
@@ -66,6 +102,20 @@ func (suite *ParameterSuite) TestNew() {
 	suite.Require().NoError(err)
 	suite.Equal("amount", param.Name)
 	suite.Equal("Nat", param.DataTypeRules)
+}
+
+// TestNewSetsDataTypeKeyToName verifies that NewParameter sets the parsed
+// DataType.Key to match the Parameter.Name. This invariant is what allows
+// the parameter and its data type to share a key in the database.
+func (suite *ParameterSuite) TestNewSetsDataTypeKeyToName() {
+	param, err := NewParameter("amount", "unconstrained")
+	suite.Require().NoError(err)
+	suite.Require().NotNil(param.DataType, "NewParameter should parse DataTypeRules into a DataType")
+	suite.Equal(param.Name, param.DataType.Key, "DataType.Key must equal Parameter.Name")
+
+	// Also confirm Validate accepts the constructed parameter.
+	ctx := coreerr.NewContext("test", "")
+	suite.Require().NoError(param.Validate(ctx))
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.

@@ -104,8 +104,9 @@ func allCodeConstants() map[string]Code {
 		"NsetTypespecInvalid": NsetTypespecInvalid,
 
 		// Parameter errors.
-		"ParamNameRequired":      ParamNameRequired,
-		"ParamDatatypesRequired": ParamDatatypesRequired,
+		"ParamNameRequired":        ParamNameRequired,
+		"ParamDatatypesRequired":   ParamDatatypesRequired,
+		"ParamDatatypeKeyMismatch": ParamDatatypeKeyMismatch,
 
 		// Action errors.
 		"ActionKeyInvalid":               ActionKeyInvalid,

@@ -2,6 +2,7 @@ package model_state
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -44,12 +45,26 @@ func isCannotParseError(err error, target **model_data_type.CannotParseError) bo
 }
 
 // Validate validates the Parameter struct.
+//
+// A Parameter has exactly one DataType, so the DataType's Key must match
+// the Parameter's Name. Sharing the key keeps both uniquely identifiable
+// (and matched) in the database.
 func (p *Parameter) Validate(ctx *coreerr.ValidationContext) error {
 	if p.Name == "" {
 		return coreerr.New(ctx, coreerr.ParamNameRequired, "Name is required", "Name")
 	}
 	if p.DataTypeRules == "" {
 		return coreerr.New(ctx, coreerr.ParamDatatypesRequired, "DataTypeRules is required", "DataTypeRules")
+	}
+	if p.DataType != nil && p.DataType.Key != p.Name {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.ParamDatatypeKeyMismatch,
+			fmt.Sprintf("DataType.Key %q must match Parameter.Name %q", p.DataType.Key, p.Name),
+			"DataType.Key",
+			p.DataType.Key,
+			p.Name,
+		)
 	}
 	return nil
 }
