@@ -254,8 +254,8 @@ func (suite *QuerySuite) TestNew() {
 
 	// Test all parameters are mapped correctly.
 	params := []Parameter{
-		helper.Must(NewParameter("ParamA", "Nat")),
-		helper.Must(NewParameter("ParamB", "Int")),
+		helper.Must(NewParameter(key, "ParamA", "Nat")),
+		helper.Must(NewParameter(key, "ParamB", "Int")),
 	}
 	query := NewQuery(key, "Name", "Details",
 		requires, guarantees, params)
@@ -266,8 +266,8 @@ func (suite *QuerySuite) TestNew() {
 		Requires:   requires,
 		Guarantees: guarantees,
 		Parameters: []Parameter{
-			helper.Must(NewParameter("ParamA", "Nat")),
-			helper.Must(NewParameter("ParamB", "Int")),
+			helper.Must(NewParameter(key, "ParamA", "Nat")),
+			helper.Must(NewParameter(key, "ParamB", "Int")),
 		},
 	}, query)
 
@@ -344,18 +344,18 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Parameters: []Parameter{
-			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
+			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name (and missing key)
 		},
 	}
 	err = query.ValidateWithParent(ctx, &classKey)
-	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
+	suite.Require().Error(err, "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
 	query = Query{
 		Key:  validKey,
 		Name: "Name",
 		Parameters: []Parameter{
-			helper.Must(NewParameter("param1", "Nat")),
+			helper.Must(NewParameter(validKey, "param1", "Nat")),
 		},
 	}
 	err = query.ValidateWithParent(ctx, &classKey)

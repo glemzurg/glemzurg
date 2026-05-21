@@ -113,7 +113,7 @@ func (q *Query) ValidateWithParent(ctx *coreerr.ValidationContext, parent *ident
 	// Validate all children.
 	for i := range q.Parameters {
 		childCtx := ctx.Child("parameter", fmt.Sprintf("%d", i))
-		if err := q.Parameters[i].ValidateWithParent(childCtx); err != nil {
+		if err := q.Parameters[i].ValidateWithParent(childCtx, &q.Key); err != nil {
 			return err
 		}
 	}

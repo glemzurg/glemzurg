@@ -329,8 +329,8 @@ func (suite *ActionSuite) TestNew() {
 
 	// Test all parameters are mapped correctly.
 	params := []Parameter{
-		helper.Must(NewParameter("ParamA", "Nat")),
-		helper.Must(NewParameter("ParamB", "Int")),
+		helper.Must(NewParameter(key, "ParamA", "Nat")),
+		helper.Must(NewParameter(key, "ParamB", "Int")),
 	}
 
 	action := NewAction(key, "Name", "Details",
@@ -343,8 +343,8 @@ func (suite *ActionSuite) TestNew() {
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,
 		Parameters: []Parameter{
-			helper.Must(NewParameter("ParamA", "Nat")),
-			helper.Must(NewParameter("ParamB", "Int")),
+			helper.Must(NewParameter(key, "ParamA", "Nat")),
+			helper.Must(NewParameter(key, "ParamB", "Int")),
 		},
 	}, action)
 
@@ -427,18 +427,18 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Parameters: []Parameter{
-			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
+			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name (and missing key)
 		},
 	}
 	err = action.ValidateWithParent(ctx, &classKey)
-	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
+	suite.Require().Error(err, "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
 	action = Action{
 		Key:  validKey,
 		Name: "Name",
 		Parameters: []Parameter{
-			helper.Must(NewParameter("param1", "Nat")),
+			helper.Must(NewParameter(validKey, "param1", "Nat")),
 		},
 	}
 	err = action.ValidateWithParent(ctx, &classKey)

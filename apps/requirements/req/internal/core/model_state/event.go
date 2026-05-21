@@ -59,7 +59,7 @@ func (e *Event) ValidateWithParent(ctx *coreerr.ValidationContext, parent *ident
 	// Validate all children.
 	for i := range e.Parameters {
 		childCtx := ctx.Child("parameter", fmt.Sprintf("%d", i))
-		if err := e.Parameters[i].ValidateWithParent(childCtx); err != nil {
+		if err := e.Parameters[i].ValidateWithParent(childCtx, &e.Key); err != nil {
 			return err
 		}
 	}

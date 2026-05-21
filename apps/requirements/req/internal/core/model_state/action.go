@@ -138,7 +138,7 @@ func (a *Action) ValidateWithParent(ctx *coreerr.ValidationContext, parent *iden
 	// Validate all children.
 	for i := range a.Parameters {
 		childCtx := ctx.Child("parameter", fmt.Sprintf("%d", i))
-		if err := a.Parameters[i].ValidateWithParent(childCtx); err != nil {
+		if err := a.Parameters[i].ValidateWithParent(childCtx, &a.Key); err != nil {
 			return err
 		}
 	}
