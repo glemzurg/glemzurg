@@ -249,7 +249,7 @@ func (suite *AttributeSuite) TestNew() {
 		UmlComment:       "UmlComment",
 		IndexNums:        []uint{1, 2},
 		DataType: &model_data_type.DataType{
-			Key:            expectedDtKey.String(),
+			Key:            expectedDtKey,
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
 				ConstraintType: "unconstrained",
