@@ -62,7 +62,6 @@ func allErrorCodes() map[int]string {
 		ErrClassAttributeNameEmpty:  "ErrClassAttributeNameEmpty",
 		ErrClassIndexInvalid:        "ErrClassIndexInvalid",
 		ErrClassIndexAttrNotFound:   "ErrClassIndexAttrNotFound",
-		ErrClassDataTypeUnparseable: "ErrClassDataTypeUnparseable",
 		ErrClassKeyNameMismatch:     "ErrClassKeyNameMismatch",
 		ErrClassAttrKeyNameMismatch: "ErrClassAttrKeyNameMismatch",
 
@@ -109,7 +108,6 @@ func allErrorCodes() map[int]string {
 		ErrTransitionGuardNotFound:       "ErrTransitionGuardNotFound",
 		ErrTransitionActionNotFound:      "ErrTransitionActionNotFound",
 		ErrTransitionInitialToFinal:      "ErrTransitionInitialToFinal",
-		ErrEventParamDataTypeUnparseable: "ErrEventParamDataTypeUnparseable",
 		ErrStateDuplicateName:            "ErrStateDuplicateName",
 		ErrEventDuplicateName:            "ErrEventDuplicateName",
 		ErrGuardDuplicateName:            "ErrGuardDuplicateName",
@@ -219,11 +217,10 @@ func allErrorCodes() map[int]string {
 		ErrLogicTypeRequired:           "ErrLogicTypeRequired",
 
 		// Parameter errors (15xxx).
-		ErrParamNameRequired:        "ErrParamNameRequired",
-		ErrParamNameEmpty:           "ErrParamNameEmpty",
-		ErrParamInvalidJSON:         "ErrParamInvalidJSON",
-		ErrParamSchemaViolation:     "ErrParamSchemaViolation",
-		ErrParamDataTypeUnparseable: "ErrParamDataTypeUnparseable",
+		ErrParamNameRequired:    "ErrParamNameRequired",
+		ErrParamNameEmpty:       "ErrParamNameEmpty",
+		ErrParamInvalidJSON:     "ErrParamInvalidJSON",
+		ErrParamSchemaViolation: "ErrParamSchemaViolation",
 
 		// Global function errors (16xxx).
 		ErrGlobalFuncNameRequired:     "ErrGlobalFuncNameRequired",
@@ -406,8 +403,8 @@ func (s *ErrorCoverageSuite) TestAllDocsAreNonEmpty() {
 // This test catches cases where a new constant is added to errors.go but not to allErrorCodes().
 func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
-	// 242 error codes as of current implementation.
+	// 239 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 242,
+	s.Len(codes, 239,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }

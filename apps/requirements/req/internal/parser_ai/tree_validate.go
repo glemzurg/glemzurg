@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 )
 
 // sortedKeys returns sorted keys from a map.
@@ -363,11 +361,6 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		return err
 	}
 
-	// Validate attribute data_type_rules are parseable
-	if err := validateClassDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
-		return err
-	}
-
 	// Validate name uniqueness across actions, queries, states, events, guards
 	if err := validateClassNameUniqueness(class, domainKey, subdomainKey, classKey); err != nil {
 		return err
@@ -385,112 +378,6 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		}
 	}
 
-	return nil
-}
-
-// dataTypeHint is the concise hint shown for data type parse errors.
-const dataTypeHint = "valid types: unconstrained, enum of v1, v2, v3, [1..100] at 1 unit, ordered/unordered/stack/queue of <type>, { field: <type> }. integers and floats are spans e.g. [0..unconstrained] at 1 count or [0..unconstrained] at 0.01 dollars. booleans are enum of true, false. strings are unconstrained for free text, enum of x, y for a fixed set, or ref from Source Name for externally documented values (e.g. ISO codes)"
-
-// validateClassDataTypes validates that all attribute data_type_rules in a class are parseable.
-func validateClassDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
-	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
-
-	// Validate attribute data_type_rules
-	for attrKey, attr := range class.Attributes {
-		if attr.DataTypeRules == "" {
-			continue
-		}
-		_, err := model_data_type.New(attrKey, attr.DataTypeRules, nil)
-		if err != nil {
-			return NewParseError(
-				ErrClassDataTypeUnparseable,
-				fmt.Sprintf("class '%s' attribute '%s' data_type_rules could not be parsed: %s", classKey, attrKey, err.Error()),
-				classPath,
-			).WithField(fmt.Sprintf("attributes.%s.data_type_rules", attrKey)).WithHint(dataTypeHint)
-		}
-	}
-
-	// Validate action parameter data_type_rules
-	if err := validateActionParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
-		return err
-	}
-
-	// Validate query parameter data_type_rules
-	if err := validateQueryParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
-		return err
-	}
-
-	// Validate event parameter data_type_rules
-	if err := validateEventParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// validateActionParamDataTypes validates data_type_rules on action parameters.
-func validateActionParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
-	for actionKey, action := range class.Actions {
-		for i, param := range action.Parameters {
-			if param.DataTypeRules == "" {
-				continue
-			}
-			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
-			if err != nil {
-				actionPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/actions/%s.json", domainKey, subdomainKey, classKey, actionKey)
-				return NewParseError(
-					ErrParamDataTypeUnparseable,
-					fmt.Sprintf("action '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", actionKey, i, param.Name, err.Error()),
-					actionPath,
-				).WithField(fmt.Sprintf("parameters[%d].data_type_rules", i)).WithHint(dataTypeHint)
-			}
-		}
-	}
-	return nil
-}
-
-// validateQueryParamDataTypes validates data_type_rules on query parameters.
-func validateQueryParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
-	for queryKey, query := range class.Queries {
-		for i, param := range query.Parameters {
-			if param.DataTypeRules == "" {
-				continue
-			}
-			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
-			if err != nil {
-				queryPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/queries/%s.json", domainKey, subdomainKey, classKey, queryKey)
-				return NewParseError(
-					ErrParamDataTypeUnparseable,
-					fmt.Sprintf("query '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", queryKey, i, param.Name, err.Error()),
-					queryPath,
-				).WithField(fmt.Sprintf("parameters[%d].data_type_rules", i)).WithHint(dataTypeHint)
-			}
-		}
-	}
-	return nil
-}
-
-// validateEventParamDataTypes validates data_type_rules on event parameters.
-func validateEventParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
-	if class.StateMachine == nil {
-		return nil
-	}
-	for eventKey, event := range class.StateMachine.Events {
-		for i, param := range event.Parameters {
-			if param.DataTypeRules == "" {
-				continue
-			}
-			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
-			if err != nil {
-				smPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKey, subdomainKey, classKey)
-				return NewParseError(
-					ErrEventParamDataTypeUnparseable,
-					fmt.Sprintf("event '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", eventKey, i, param.Name, err.Error()),
-					smPath,
-				).WithField(fmt.Sprintf("events.%s.parameters[%d].data_type_rules", eventKey, i)).WithHint(dataTypeHint)
-			}
-		}
-	}
 	return nil
 }
 

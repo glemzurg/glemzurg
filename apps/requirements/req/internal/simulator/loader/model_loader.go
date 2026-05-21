@@ -8,6 +8,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/pkg/errors"
 )
 
@@ -60,7 +61,10 @@ func reParseDataTypes(model *core.Model) error {
 			for classKey, class := range subdomain.Classes {
 				for attrKey, attr := range class.Attributes {
 					if attr.DataType == nil && attr.DataTypeRules != "" {
-						dataTypeKey := attr.Key.String()
+						dataTypeKey, err := identity.NewDataTypeKey(attr.Key, "")
+						if err != nil {
+							return fmt.Errorf("attribute %s: %w", attr.Name, err)
+						}
 						parsedDataType, err := model_data_type.New(dataTypeKey, attr.DataTypeRules, nil)
 
 						// Only an error if it is not a parse error.

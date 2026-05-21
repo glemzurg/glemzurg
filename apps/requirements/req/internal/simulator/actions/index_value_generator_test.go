@@ -21,7 +21,7 @@ func spanAttrDef(name string, lower, upper int) *model_class.Attribute {
 	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false,
 		model_class.AttributeAnnotations{IndexNums: []uint{1}}))
 	attr.DataType = &model_data_type.DataType{
-		Key:            attr.Key.String(),
+		Key:            helper.Must(identity.NewDataTypeKey(attr.Key, "")),
 		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
 			ConstraintType: "span",
@@ -45,7 +45,7 @@ func enumAttrDef(name string, values []string) *model_class.Attribute {
 		enums[i] = model_data_type.AtomicEnum{Value: v, SortOrder: i}
 	}
 	attr.DataType = &model_data_type.DataType{
-		Key:            attr.Key.String(),
+		Key:            helper.Must(identity.NewDataTypeKey(attr.Key, "")),
 		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
 			ConstraintType: "enumeration",

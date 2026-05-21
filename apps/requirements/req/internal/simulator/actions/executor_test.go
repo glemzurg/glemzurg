@@ -322,7 +322,7 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 		nil,
 	)
 
-	actionParams := []model_state.Parameter{helper.Must(model_state.NewParameter("amount", "[0,1000]"))}
+	actionParams := []model_state.Parameter{helper.Must(model_state.NewParameter(actionKey, "amount", "[0,1000]"))}
 	action := model_state.NewAction(actionKey, "set_amount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, actionParams)
 	action = lowerAction(action, classKey)
 
@@ -880,9 +880,10 @@ func (s *ActionsSuite) TestGetStateEnumValues() {
 func (s *ActionsSuite) TestBindParametersSuccess() {
 	binder := NewParameterBinder()
 
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
 	paramDefs := []model_state.Parameter{
-		helper.Must(model_state.NewParameter("amount", "[0,100]")),
-		helper.Must(model_state.NewParameter("name", "string")),
+		helper.Must(model_state.NewParameter(ak, "amount", "[0,100]")),
+		helper.Must(model_state.NewParameter(ak, "name", "string")),
 	}
 
 	values := map[string]object.Object{
@@ -900,8 +901,9 @@ func (s *ActionsSuite) TestBindParametersSuccess() {
 func (s *ActionsSuite) TestBindParametersMissing() {
 	binder := NewParameterBinder()
 
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
 	paramDefs := []model_state.Parameter{
-		helper.Must(model_state.NewParameter("amount", "[0,100]")),
+		helper.Must(model_state.NewParameter(ak, "amount", "[0,100]")),
 	}
 
 	values := map[string]object.Object{} // missing amount
@@ -918,9 +920,10 @@ func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 	lowerValue := 10
 	higherValue := 20
 
-	countParam := helper.Must(model_state.NewParameter("count", "[10, 20]"))
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
+	countParam := helper.Must(model_state.NewParameter(ak, "count", "[10, 20]"))
 	countParam.DataType = &model_data_type.DataType{
-		Key:            "count",
+		Key:            helper.Must(identity.NewDataTypeKey(countParam.Key, "")),
 		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
 			ConstraintType: "span",
@@ -949,9 +952,10 @@ func (s *ActionsSuite) TestGenerateRandomParametersEnum() {
 	binder := NewParameterBinder()
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
 
-	colorParam := helper.Must(model_state.NewParameter("color", "{red, green, blue}"))
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
+	colorParam := helper.Must(model_state.NewParameter(ak, "color", "{red, green, blue}"))
 	colorParam.DataType = &model_data_type.DataType{
-		Key:            "color",
+		Key:            helper.Must(identity.NewDataTypeKey(colorParam.Key, "")),
 		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
 			ConstraintType: "enumeration",
@@ -979,8 +983,9 @@ func (s *ActionsSuite) TestGenerateRandomParametersNoType() {
 	binder := NewParameterBinder()
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
 
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
 	paramDefs := []model_state.Parameter{
-		helper.Must(model_state.NewParameter("x", "unknown")),
+		helper.Must(model_state.NewParameter(ak, "x", "unknown")),
 	}
 
 	result := binder.GenerateRandomParameters(paramDefs, rng)

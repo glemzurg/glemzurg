@@ -323,7 +323,7 @@ func GetStrictTestModel() core.Model {
 					for i := range event.Parameters {
 						if event.Parameters[i].DataTypeRules != "" && event.Parameters[i].DataType == nil {
 							// Unparseable — replace with unconstrained.
-							p, err := model_state.NewParameter(event.Parameters[i].Name, "unconstrained")
+							p, err := model_state.NewParameter(event.Key, event.Parameters[i].Name, "unconstrained")
 							if err != nil {
 								panic(fmt.Sprintf("failed to create replacement parameter: %v", err))
 							}
@@ -481,7 +481,7 @@ func buildTestModel() (core.Model, error) {
 		return core.Model{}, err
 	}
 
-	params, err := buildParameters()
+	params, err := buildParameters(k)
 	if err != nil {
 		return core.Model{}, err
 	}
@@ -1363,59 +1363,99 @@ func buildNamedSets(k testKeys) (map[identity.Key]model_logic.NamedSet, error) {
 // Parameters
 // =========================================================================
 
+// testParams holds per-owner parameter slices. Each parameter now has its own
+// identity.Key parented by its owning action / query / event, so previously
+// shared parameter values (e.g., "quantity" reused across an event and an action)
+// are constructed once per owner.
 type testParams struct {
-	quantity, productID, reason model_state.Parameter
-	priority, tags, items       model_state.Parameter
-	format                      model_state.Parameter
-	unparseable                 model_state.Parameter
-	unconstrainedBound          model_state.Parameter
+	eventSubmit   []model_state.Parameter
+	eventFulfill  []model_state.Parameter
+	actionProcess []model_state.Parameter
+	actionNotify  []model_state.Parameter
+	queryStatus   []model_state.Parameter
+	queryHistory  []model_state.Parameter
 }
 
-func buildParameters() (testParams, error) {
+func buildParameters(k testKeys) (testParams, error) {
 	var p testParams
-	var err error
 
-	// Diverse parseable DataTypeRules.
-	p.quantity, err = model_state.NewParameter("quantity", "[1 .. 10000] at 1 unit")
-	if err != nil {
-		return p, err
-	}
-	p.productID, err = model_state.NewParameter("product_id", "ref from domain_a>subdomain_a>product")
-	if err != nil {
-		return p, err
-	}
-	p.reason, err = model_state.NewParameter("reason", "enum of out_of_stock, changed_mind, defective")
-	if err != nil {
-		return p, err
-	}
-	p.priority, err = model_state.NewParameter("priority", "ordered enum of low, medium, high, critical")
-	if err != nil {
-		return p, err
-	}
-	p.tags, err = model_state.NewParameter("tags", "unique unordered of unconstrained")
-	if err != nil {
-		return p, err
-	}
-	p.items, err = model_state.NewParameter("items", "1-100 ordered of obj of some_class")
-	if err != nil {
-		return p, err
-	}
-	p.format, err = model_state.NewParameter("format", "unconstrained")
-	if err != nil {
-		return p, err
+	mk := func(parent identity.Key, name, rules string) (model_state.Parameter, error) {
+		return model_state.NewParameter(parent, name, rules)
 	}
 
-	// Unparseable DataTypeRules: results in nil DataType (CannotParseError silently swallowed).
-	p.unparseable, err = model_state.NewParameter("unparseable_field", "Int")
+	// eventSubmit: quantity, productID, reason.
+	quantitySubmit, err := mk(k.eventSubmit, "quantity", "[1 .. 10000] at 1 unit")
 	if err != nil {
 		return p, err
 	}
+	productIDSubmit, err := mk(k.eventSubmit, "product_id", "ref from domain_a>subdomain_a>product")
+	if err != nil {
+		return p, err
+	}
+	reasonSubmit, err := mk(k.eventSubmit, "reason", "enum of out_of_stock, changed_mind, defective")
+	if err != nil {
+		return p, err
+	}
+	p.eventSubmit = []model_state.Parameter{quantitySubmit, productIDSubmit, reasonSubmit}
 
-	// Span with unconstrained lower bound.
-	p.unconstrainedBound, err = model_state.NewParameter("unconstrained_bound", "(unconstrained .. 100] at 1 unit")
+	// eventFulfill: reason, unparseable (Int → unparseable).
+	reasonFulfill, err := mk(k.eventFulfill, "reason", "enum of out_of_stock, changed_mind, defective")
 	if err != nil {
 		return p, err
 	}
+	unparseableFulfill, err := mk(k.eventFulfill, "unparseable_field", "Int")
+	if err != nil {
+		return p, err
+	}
+	p.eventFulfill = []model_state.Parameter{reasonFulfill, unparseableFulfill}
+
+	// actionProcess: quantity, priority, tags.
+	quantityProcess, err := mk(k.actionProcess, "quantity", "[1 .. 10000] at 1 unit")
+	if err != nil {
+		return p, err
+	}
+	priorityProcess, err := mk(k.actionProcess, "priority", "ordered enum of low, medium, high, critical")
+	if err != nil {
+		return p, err
+	}
+	tagsProcess, err := mk(k.actionProcess, "tags", "unique unordered of unconstrained")
+	if err != nil {
+		return p, err
+	}
+	p.actionProcess = []model_state.Parameter{quantityProcess, priorityProcess, tagsProcess}
+
+	// actionNotify: format, unconstrained_bound (span with unconstrained lower bound).
+	formatNotify, err := mk(k.actionNotify, "format", "unconstrained")
+	if err != nil {
+		return p, err
+	}
+	unconstrainedBoundNotify, err := mk(k.actionNotify, "unconstrained_bound", "(unconstrained .. 100] at 1 unit")
+	if err != nil {
+		return p, err
+	}
+	p.actionNotify = []model_state.Parameter{formatNotify, unconstrainedBoundNotify}
+
+	// queryStatus: productID, items, format.
+	productIDStatus, err := mk(k.queryStatus, "product_id", "ref from domain_a>subdomain_a>product")
+	if err != nil {
+		return p, err
+	}
+	itemsStatus, err := mk(k.queryStatus, "items", "1-100 ordered of obj of some_class")
+	if err != nil {
+		return p, err
+	}
+	formatStatus, err := mk(k.queryStatus, "format", "unconstrained")
+	if err != nil {
+		return p, err
+	}
+	p.queryStatus = []model_state.Parameter{productIDStatus, itemsStatus, formatStatus}
+
+	// queryHistory: format.
+	formatHistory, err := mk(k.queryHistory, "format", "unconstrained")
+	if err != nil {
+		return p, err
+	}
+	p.queryHistory = []model_state.Parameter{formatHistory}
 
 	return p, nil
 }
@@ -1461,10 +1501,10 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// eventSubmit: rich (3 parameters).
 	eventSubmit := model_state.NewEvent(k.eventSubmit, "Submit", "Customer submits the order.",
-		[]model_state.Parameter{p.quantity, p.productID, p.reason})
+		p.eventSubmit)
 
 	eventFulfill := model_state.NewEvent(k.eventFulfill, "Fulfill", "Order is fulfilled.",
-		[]model_state.Parameter{p.reason, p.unparseable})
+		p.eventFulfill)
 
 	// eventCancel: empty parent (nil parameters).
 	eventCancel := model_state.NewEvent(k.eventCancel, "Cancel", "Order is cancelled.", nil)
@@ -1495,7 +1535,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 		[]model_logic.Logic{l.actionRequireLet, l.actionRequire1, l.actionRequire2, l.actionRequire3},
 		[]model_logic.Logic{l.actionGuarLet, l.actionGuarantee1, l.actionGuarantee2, l.actionGuarantee3},
 		[]model_logic.Logic{l.actionSafetyLet, l.actionSafety1, l.actionSafety2, l.actionSafety3},
-		[]model_state.Parameter{p.quantity, p.priority, p.tags},
+		p.actionProcess,
 	)
 
 	// actionShip: empty parent (nil for all slices).
@@ -1506,7 +1546,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	actionNotify := model_state.NewAction(
 		k.actionNotify, "Notify Customer", "Sends notification to customer.",
-		nil, nil, nil, []model_state.Parameter{p.format, p.unconstrainedBound},
+		nil, nil, nil, p.actionNotify,
 	)
 
 	sm.actions = map[identity.Key]model_state.Action{
@@ -1522,7 +1562,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 		k.queryStatus, "Get Status", "Returns the current status of the order.",
 		[]model_logic.Logic{l.queryRequireLet, l.queryRequire1, l.queryRequire2, l.queryRequire3},
 		[]model_logic.Logic{l.queryGuarLet, l.queryGuarantee1, l.queryGuarantee2, l.queryGuarantee3},
-		[]model_state.Parameter{p.productID, p.items, p.format},
+		p.queryStatus,
 	)
 
 	// queryCount: empty parent (nil for all slices).
@@ -1533,7 +1573,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	queryHistory := model_state.NewQuery(
 		k.queryHistory, "Get History", "Returns order history.",
-		nil, nil, []model_state.Parameter{p.format},
+		nil, nil, p.queryHistory,
 	)
 
 	sm.queries = map[identity.Key]model_state.Query{

@@ -40,7 +40,7 @@
             "UmlComment": "",
             "IndexNums": null,
             "DataType": {
-                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/speed",
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/speed/datatype/self",
                 "CollectionType": "atomic",
                 "Atomic": {
                     "ConstraintType": "unconstrained"

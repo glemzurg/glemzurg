@@ -749,7 +749,7 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 				}
 				paramName, _ := paramMap["name"].(string)
 				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(paramName, paramRules)
+				param, err := model_state.NewParameter(eventKey, paramName, paramRules)
 				if err != nil {
 					return model_state.Event{}, errors.Wrapf(err, "event '%s' parameter '%s'", name, paramName)
 				}
@@ -840,7 +840,7 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 				}
 				paramName, _ := paramMap["name"].(string)
 				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(paramName, paramRules)
+				param, err := model_state.NewParameter(actionKey, paramName, paramRules)
 				if err != nil {
 					return model_state.Action{}, errors.Wrapf(err, "action '%s' parameter '%s'", name, paramName)
 				}
@@ -912,7 +912,7 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 				}
 				paramName, _ := paramMap["name"].(string)
 				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(paramName, paramRules)
+				param, err := model_state.NewParameter(queryKey, paramName, paramRules)
 				if err != nil {
 					return model_state.Query{}, errors.Wrapf(err, "query '%s' parameter '%s'", name, paramName)
 				}

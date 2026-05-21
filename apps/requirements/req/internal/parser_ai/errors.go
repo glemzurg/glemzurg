@@ -51,7 +51,6 @@ const (
 	ErrClassAttributeNameEmpty  = 5008
 	ErrClassIndexInvalid        = 5009
 	ErrClassIndexAttrNotFound   = 5010
-	ErrClassDataTypeUnparseable = 5011 // Attribute data_type_rules could not be parsed
 	ErrClassAttrKeyNameMismatch = 5013 // Attribute map key does not match keyFromName(name)
 
 	// Association errors (6xxx).
@@ -97,7 +96,6 @@ const (
 	ErrTransitionGuardNotFound       = 7023
 	ErrTransitionActionNotFound      = 7024
 	ErrTransitionInitialToFinal      = 7025
-	ErrEventParamDataTypeUnparseable = 7026 // Event parameter data_type_rules could not be parsed
 	ErrStateDuplicateName            = 7027
 	ErrEventDuplicateName            = 7028
 	ErrGuardDuplicateName            = 7029
@@ -169,11 +167,10 @@ const (
 	ErrLogicTypeRequired           = 14008
 
 	// Parameter errors (15xxx).
-	ErrParamNameRequired        = 15001
-	ErrParamNameEmpty           = 15002
-	ErrParamInvalidJSON         = 15003
-	ErrParamSchemaViolation     = 15004
-	ErrParamDataTypeUnparseable = 15005 // Parameter data_type_rules could not be parsed
+	ErrParamNameRequired    = 15001
+	ErrParamNameEmpty       = 15002
+	ErrParamInvalidJSON     = 15003
+	ErrParamSchemaViolation = 15004
 
 	// Global function errors (16xxx).
 	ErrGlobalFuncNameRequired     = 16001

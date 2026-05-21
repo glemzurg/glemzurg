@@ -1060,7 +1060,10 @@ func convertAttributeDataType(attrKey identity.Key, attr *inputAttribute, keyStr
 	if attr.DataTypeRules == "" {
 		return nil, nil //nolint:nilnil // nil pointer means no data type rules present
 	}
-	dataTypeKey := attrKey.String()
+	dataTypeKey, err := identity.NewDataTypeKey(attrKey, "")
+	if err != nil {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to build datatype key for attribute '%s': %s", keyStr, err.Error()), classFile)
+	}
 	parsedDataType, err := model_data_type.New(dataTypeKey, attr.DataTypeRules, nil)
 	var parseError *model_data_type.CannotParseError
 	if err != nil && !errors.As(err, &parseError) {
@@ -1157,10 +1160,15 @@ func convertSMEventsToModel(sm *inputStateMachine, class *model_class.Class, cla
 		}
 
 		for _, param := range event.Parameters {
-			converted.Parameters = append(converted.Parameters, model_state.Parameter{
-				Name:          param.Name,
-				DataTypeRules: param.DataTypeRules,
-			})
+			builtParam, err := model_state.NewParameter(eventKey, param.Name, param.DataTypeRules)
+			if err != nil {
+				return convErr(
+					ErrConvModelValidation,
+					fmt.Sprintf("failed to construct event parameter '%s': %s", param.Name, err.Error()),
+					smFile,
+				).WithField(fmt.Sprintf("events.%s.parameters.%s", eventKeyStr, param.Name))
+			}
+			converted.Parameters = append(converted.Parameters, builtParam)
 		}
 
 		class.Events[converted.Key] = converted
@@ -1323,11 +1331,16 @@ func convertActionToModel(keyStr string, action *inputAction, classKey identity.
 		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action safety rules: %s", err.Error()), actionFile)
 	}
 
+	parameters, err := convertParametersToModel(action.Parameters, actionKey)
+	if err != nil {
+		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action parameters: %s", err.Error()), actionFile)
+	}
+
 	return model_state.Action{
 		Key:         actionKey,
 		Name:        action.Name,
 		Details:     action.Details,
-		Parameters:  convertParametersToModel(action.Parameters),
+		Parameters:  parameters,
 		Requires:    requires,
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,
@@ -1356,11 +1369,16 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 		return model_state.Query{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert query guarantees: %s", err.Error()), queryFile)
 	}
 
+	parameters, err := convertParametersToModel(query.Parameters, queryKey)
+	if err != nil {
+		return model_state.Query{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert query parameters: %s", err.Error()), queryFile)
+	}
+
 	return model_state.Query{
 		Key:        queryKey,
 		Name:       query.Name,
 		Details:    query.Details,
-		Parameters: convertParametersToModel(query.Parameters),
+		Parameters: parameters,
 		Requires:   requires,
 		Guarantees: guarantees,
 	}, nil
@@ -1416,19 +1434,21 @@ func convertLogicsToModel(logics []inputLogic, logicType string, parentKey ident
 	return result, nil
 }
 
-// convertParametersToModel converts a slice of inputParameter to a slice of model_state.Parameter.
-func convertParametersToModel(params []inputParameter) []model_state.Parameter {
+// convertParametersToModel converts a slice of inputParameter to a slice of model_state.Parameter,
+// parenting each parameter's identity.Key under the given owner key (action/query/event).
+func convertParametersToModel(params []inputParameter, parentKey identity.Key) ([]model_state.Parameter, error) {
 	if len(params) == 0 {
-		return nil
+		return nil, nil
 	}
 	result := make([]model_state.Parameter, len(params))
 	for i, param := range params {
-		result[i] = model_state.Parameter{
-			Name:          param.Name,
-			DataTypeRules: param.DataTypeRules,
+		built, err := model_state.NewParameter(parentKey, param.Name, param.DataTypeRules)
+		if err != nil {
+			return nil, fmt.Errorf("parameter %d (%s): %w", i, param.Name, err)
 		}
+		result[i] = built
 	}
-	return result
+	return result, nil
 }
 
 // convertClassGeneralizationToModel converts an inputClassGeneralization to a model_class.Generalization.
