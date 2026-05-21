@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -25,46 +26,47 @@ func (suite *DataTypeSuite) TestValidate() {
 		ConstraintType: "unknown",
 	}
 
+	validKey := t_dtKey("k")
 	tests := []struct {
-		key            string
+		key            identity.Key
 		collectionType string
 		atomic         *Atomic
 		errstr         string
 	}{
 		// OK.
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "atomic",
 			atomic:         atomic,
 		},
 
 		// Error states.
 		{
-			key:            "",
+			key:            identity.Key{}, // zero-value: unallocated
 			collectionType: "atomic",
 			atomic:         atomic,
 			errstr:         `Key`,
 		},
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "",
 			atomic:         atomic,
 			errstr:         `CollectionType`,
 		},
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "unknown",
 			atomic:         atomic,
 			errstr:         `CollectionType`,
 		},
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "atomic",
 			atomic:         nil,
 			errstr:         `atomic is required for atomic collection type`,
 		},
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "atomic",
 			atomic:         atomicInvalid,
 			errstr:         `ConstraintType`,
@@ -100,7 +102,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "valid collection no multiplicity",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "stack",
 				CollectionUnique: &falseValue,
 				Atomic:           atomic,
@@ -109,7 +111,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "valid collection with min and max",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "ordered",
 				CollectionUnique: &trueValue,
 				CollectionMin:    intPtr(2),
@@ -120,7 +122,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "valid collection with min only",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "unordered",
 				CollectionUnique: &falseValue,
 				CollectionMin:    intPtr(3),
@@ -130,7 +132,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "valid collection with max only",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "queue",
 				CollectionUnique: &falseValue,
 				CollectionMax:    intPtr(7),
@@ -142,7 +144,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "collection missing CollectionUnique",
 			dt: DataType{
-				Key:            "Key",
+				Key:            t_dtKey("k"),
 				CollectionType: "stack",
 				Atomic:         atomic,
 			},
@@ -151,7 +153,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "collection CollectionMin less than 1",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "stack",
 				CollectionUnique: &falseValue,
 				CollectionMin:    intPtr(0),
@@ -162,7 +164,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "collection CollectionMax less than 1",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "stack",
 				CollectionUnique: &falseValue,
 				CollectionMax:    intPtr(0),
@@ -173,7 +175,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "collection max less than min",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "stack",
 				CollectionUnique: &falseValue,
 				CollectionMin:    intPtr(5),
@@ -187,7 +189,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "atomic with CollectionUnique",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "atomic",
 				CollectionUnique: &falseValue,
 				Atomic:           atomic,
@@ -197,7 +199,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "atomic with CollectionMin",
 			dt: DataType{
-				Key:            "Key",
+				Key:            t_dtKey("k"),
 				CollectionType: "atomic",
 				CollectionMin:  intPtr(1),
 				Atomic:         atomic,
@@ -207,11 +209,11 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "record with CollectionMax",
 			dt: DataType{
-				Key:            "Key",
+				Key:            t_dtKey("k"),
 				CollectionType: "record",
 				CollectionMax:  intPtr(1),
 				RecordFields: []Field{
-					{Name: "f", FieldDataType: &DataType{Key: "f", CollectionType: "atomic", Atomic: atomic}},
+					{Name: "f", FieldDataType: &DataType{Key: t_dtKey("f"), CollectionType: "atomic", Atomic: atomic}},
 				},
 			},
 			errstr: "collection max must be nil for non-collection types",
@@ -230,7 +232,7 @@ func (suite *DataTypeSuite) TestValidate() {
 }
 
 func TestNewBlank(t *testing.T) {
-	key := "key"
+	key := t_dtKey("k")
 
 	tests := []struct {
 		name         string
@@ -279,7 +281,7 @@ func TestNewBlank(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	key := "key"
+	key := t_dtKey("k")
 
 	tests := []struct {
 		name         string
@@ -793,7 +795,7 @@ func TestParseRecords(t *testing.T) {
 
 func TestNewUnparsable(t *testing.T) {
 	// If we cannot parse the text, no error but instead just a nil result.
-	result, err := New("key", "this cannot be parsed so it is just an unparsable blob", nil)
+	result, err := New(t_dtKey("k"), "this cannot be parsed so it is just an unparsable blob", nil)
 	var targetType *CannotParseError
 	require.ErrorAs(t, err, &targetType)
 	require.ErrorContains(t, err, "failed to parse")
@@ -802,7 +804,7 @@ func TestNewUnparsable(t *testing.T) {
 
 func TestNewInvalid(t *testing.T) {
 	// Key is required.
-	result, err := New("", "", nil)
+	result, err := New(identity.Key{}, "", nil)
 	require.ErrorContains(t, err, "Key")
 	assert.Nil(t, result)
 }
@@ -972,7 +974,7 @@ func (suite *DataTypeSuite) TestUnpackNested() {
 
 	// Create the root DataType with the child as a field
 	root := DataType{
-		Key:            "root",
+		Key:            t_dtKey("root"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
@@ -985,46 +987,50 @@ func (suite *DataTypeSuite) TestUnpackNested() {
 	// Flatten the nested structure.
 	result := root.UnpackNested()
 
-	// Verify the result
+	// Verify the result.
 	suite.Len(result, 3)
 
-	// Deepest first: grandchild, child, root
-	suite.Equal("root/child/grandchild", result[0].Key)
+	rootKey := t_dtKey("root")
+	childKey := t_nestedDtKey(rootKey, "child")
+	grandchildKey := t_nestedDtKey(childKey, "grandchild")
+
+	// Deepest first: grandchild, child, root.
+	suite.Equal(grandchildKey, result[0].Key)
 	suite.Equal("atomic", result[0].CollectionType)
 
-	suite.Equal("root/child", result[1].Key)
+	suite.Equal(childKey, result[1].Key)
 	suite.Equal("record", result[1].CollectionType)
 
-	suite.Equal("root", result[2].Key)
+	suite.Equal(rootKey, result[2].Key)
 	suite.Equal("record", result[2].CollectionType)
 }
 
 func (suite *DataTypeSuite) TestSortDataTypesByKeyLengthDesc() {
 	dataTypes := []DataType{
-		{Key: "a"},
-		{Key: "bb"},
-		{Key: "ccc"},
-		{Key: "dddd"},
+		{Key: t_dtKey("a")},
+		{Key: t_dtKey("bb")},
+		{Key: t_dtKey("ccc")},
+		{Key: t_dtKey("dddd")},
 	}
 
 	SortDataTypesByKeyLengthDesc(dataTypes)
 
-	suite.Equal("dddd", dataTypes[0].Key)
-	suite.Equal("ccc", dataTypes[1].Key)
-	suite.Equal("bb", dataTypes[2].Key)
-	suite.Equal("a", dataTypes[3].Key)
+	suite.Equal(t_dtKey("dddd"), dataTypes[0].Key)
+	suite.Equal(t_dtKey("ccc"), dataTypes[1].Key)
+	suite.Equal(t_dtKey("bb"), dataTypes[2].Key)
+	suite.Equal(t_dtKey("a"), dataTypes[3].Key)
 }
 
 func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	// Create test DataTypes
 	atomic := DataType{
-		Key:            "atomic_key",
+		Key:            t_dtKey("atomic_key"),
 		CollectionType: "atomic",
 		Atomic:         &Atomic{ConstraintType: "unconstrained"},
 	}
 
 	atomicSpan := DataType{
-		Key:            "atomic_span_key",
+		Key:            t_dtKey("atomic_span_key"),
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "span",
@@ -1036,7 +1042,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	}
 
 	atomicEnum := DataType{
-		Key:            "atomic_enum_key",
+		Key:            t_dtKey("atomic_enum_key"),
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "enumeration",
@@ -1048,12 +1054,12 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	}
 
 	record := DataType{
-		Key:            "record_key",
+		Key:            t_dtKey("record_key"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
 				Name:          "name",
-				FieldDataType: &DataType{Key: "field_type"},
+				FieldDataType: &DataType{Key: t_dtKey("field_type")},
 			},
 		},
 	}
@@ -1062,25 +1068,30 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 
 	fieldMap, atomicMap, atomicSpanMap, atomicEnumMap := ExtractDatabaseObjects(dataTypes)
 
+	recordKeyStr := t_dtKey("record_key").String()
+	atomicKeyStr := t_dtKey("atomic_key").String()
+	atomicSpanKeyStr := t_dtKey("atomic_span_key").String()
+	atomicEnumKeyStr := t_dtKey("atomic_enum_key").String()
+
 	suite.Equal(map[string][]Field{
-		"record_key": {
+		recordKeyStr: {
 			{
 				Name:          "name",
-				FieldDataType: &DataType{Key: "field_type"},
+				FieldDataType: &DataType{Key: t_dtKey("field_type")},
 			},
 		},
 	}, fieldMap)
 
 	suite.Equal(map[string]Atomic{
-		"atomic_key": {ConstraintType: "unconstrained"},
-		"atomic_span_key": Atomic{
+		atomicKeyStr: {ConstraintType: "unconstrained"},
+		atomicSpanKeyStr: Atomic{
 			ConstraintType: "span",
 			Span: &AtomicSpan{
 				LowerType:  "unconstrained",
 				HigherType: "unconstrained",
 			},
 		},
-		"atomic_enum_key": Atomic{
+		atomicEnumKeyStr: Atomic{
 			ConstraintType: "enumeration",
 			Enums: []AtomicEnum{
 				{Value: "ValueA"},
@@ -1090,11 +1101,11 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	}, atomicMap)
 
 	suite.Equal(map[string]AtomicSpan{
-		"atomic_span_key": {LowerType: "unconstrained", HigherType: "unconstrained"},
+		atomicSpanKeyStr: {LowerType: "unconstrained", HigherType: "unconstrained"},
 	}, atomicSpanMap)
 
 	suite.Equal(map[string][]AtomicEnum{
-		"atomic_enum_key": {
+		atomicEnumKeyStr: {
 			{Value: "ValueA"},
 			{Value: "ValueB"},
 		},
@@ -1104,32 +1115,37 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	// Create base DataTypes (only Key and CollectionType)
 	baseDataTypes := []DataType{
-		{Key: "atomic_key", CollectionType: "atomic"},
-		{Key: "atomic_span_key", CollectionType: "atomic"},
-		{Key: "atomic_enum_key", CollectionType: "atomic"},
-		{Key: "record_key", CollectionType: "record"},
+		{Key: t_dtKey("atomic_key"), CollectionType: "atomic"},
+		{Key: t_dtKey("atomic_span_key"), CollectionType: "atomic"},
+		{Key: t_dtKey("atomic_enum_key"), CollectionType: "atomic"},
+		{Key: t_dtKey("record_key"), CollectionType: "record"},
 	}
 
-	// Create the maps with the same data as TestExtractDatabaseObjects
+	// Create the maps with the same data as TestExtractDatabaseObjects.
+	// Map keys are the .String() form of identity.Key (same as what ExtractDatabaseObjects produces).
+	recordKeyStr := t_dtKey("record_key").String()
+	atomicKeyStr := t_dtKey("atomic_key").String()
+	atomicSpanKeyStr := t_dtKey("atomic_span_key").String()
+	atomicEnumKeyStr := t_dtKey("atomic_enum_key").String()
 	fieldMap := map[string][]Field{
-		"record_key": {
+		recordKeyStr: {
 			{
 				Name:          "name",
-				FieldDataType: &DataType{Key: "field_type"},
+				FieldDataType: &DataType{Key: t_dtKey("field_type")},
 			},
 		},
 	}
 
 	atomicMap := map[string]Atomic{
-		"atomic_key": {ConstraintType: "unconstrained"},
-		"atomic_span_key": Atomic{
+		atomicKeyStr: {ConstraintType: "unconstrained"},
+		atomicSpanKeyStr: Atomic{
 			ConstraintType: "span",
 			Span: &AtomicSpan{
 				LowerType:  "unconstrained",
 				HigherType: "unconstrained",
 			},
 		},
-		"atomic_enum_key": Atomic{
+		atomicEnumKeyStr: Atomic{
 			ConstraintType: "enumeration",
 			Enums: []AtomicEnum{
 				{Value: "ValueA"},
@@ -1139,11 +1155,11 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	}
 
 	atomicSpanMap := map[string]AtomicSpan{
-		"atomic_span_key": {LowerType: "unconstrained", HigherType: "unconstrained"},
+		atomicSpanKeyStr: {LowerType: "unconstrained", HigherType: "unconstrained"},
 	}
 
 	atomicEnumMap := map[string][]AtomicEnum{
-		"atomic_enum_key": {
+		atomicEnumKeyStr: {
 			{Value: "ValueA"},
 			{Value: "ValueB"},
 		},
@@ -1155,7 +1171,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	// Verify the result is sorted by key length descending and components are attached
 	suite.Equal([]DataType{
 		{
-			Key:            "atomic_enum_key",
+			Key:            t_dtKey("atomic_enum_key"),
 			CollectionType: "atomic",
 			Atomic: &Atomic{
 				ConstraintType: "enumeration",
@@ -1163,7 +1179,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 			},
 		},
 		{
-			Key:            "atomic_span_key",
+			Key:            t_dtKey("atomic_span_key"),
 			CollectionType: "atomic",
 			Atomic: &Atomic{
 				ConstraintType: "span",
@@ -1171,17 +1187,17 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 			},
 		},
 		{
-			Key:            "atomic_key",
+			Key:            t_dtKey("atomic_key"),
 			CollectionType: "atomic",
 			Atomic:         &Atomic{ConstraintType: "unconstrained"},
 		},
 		{
-			Key:            "record_key",
+			Key:            t_dtKey("record_key"),
 			CollectionType: "record",
 			RecordFields: []Field{
 				{
 					Name:          "name",
-					FieldDataType: &DataType{Key: "field_type"},
+					FieldDataType: &DataType{Key: t_dtKey("field_type")},
 				},
 			},
 		},
@@ -1191,13 +1207,13 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 	// Create a three-deep nested structure
 	grandchild := DataType{
-		Key:            "grandchild",
+		Key:            t_dtKey("grandchild"),
 		CollectionType: "atomic",
 		Atomic:         &Atomic{ConstraintType: "unconstrained"},
 	}
 
 	child := DataType{
-		Key:            "child",
+		Key:            t_dtKey("child"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
@@ -1208,7 +1224,7 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 	}
 
 	root := DataType{
-		Key:            "root1",
+		Key:            t_dtKey("root1"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
@@ -1222,13 +1238,13 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 
 	// Create a three-deep nested structure
 	grandchild2 := DataType{
-		Key:            "grandchild2",
+		Key:            t_dtKey("grandchild2"),
 		CollectionType: "atomic",
 		Atomic:         &Atomic{ConstraintType: "unconstrained"},
 	}
 
 	child2 := DataType{
-		Key:            "child2",
+		Key:            t_dtKey("child2"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
@@ -1239,7 +1255,7 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 	}
 
 	root2 := DataType{
-		Key:            "root2",
+		Key:            t_dtKey("root2"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{

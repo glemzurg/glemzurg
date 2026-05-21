@@ -11,6 +11,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 const (
@@ -32,8 +33,13 @@ var _validCollectionTypes = map[string]bool{
 }
 
 // DataType represents the main data type structure.
+//
+// Key is a KEY_TYPE_DATA_TYPE identity.Key produced via identity.NewDataTypeKey.
+// The zero-value identity.Key{} is the legal "unallocated" state used for partial
+// DataTypes (e.g., stubs constructed during database scan before the full data is
+// stitched in). Validate() requires a fully-formed key.
 type DataType struct {
-	Key              string
+	Key              identity.Key
 	CollectionType   string
 	CollectionUnique *bool
 	CollectionMin    *int
@@ -43,8 +49,9 @@ type DataType struct {
 	TypeSpec         *logic_spec.TypeSpec // Optional precise type specification.
 }
 
-// New creates a new DataType by parsing the input text.
-func New(key, text string, typeSpec *logic_spec.TypeSpec) (dataType *DataType, err error) {
+// New creates a new DataType by parsing the input text. The key must be a valid
+// KEY_TYPE_DATA_TYPE identity.Key produced via identity.NewDataTypeKey.
+func New(key identity.Key, text string, typeSpec *logic_spec.TypeSpec) (dataType *DataType, err error) {
 	// If this is blank then it is an unconstrained data type.
 	if strings.TrimSpace(text) == "" {
 		dataType = &DataType{
@@ -86,8 +93,13 @@ func New(key, text string, typeSpec *logic_spec.TypeSpec) (dataType *DataType, e
 	dataType.Key = key
 	dataType.TypeSpec = typeSpec
 
+	// Propagate the parent identity.Key down through nested record-field data types.
+	if err = dataType.assignNestedKeys(); err != nil {
+		return nil, err
+	}
+
 	// Validate the data type.
-	ctx := coreerr.NewContext("datatype", key)
+	ctx := coreerr.NewContext("datatype", key.String())
 	if err = dataType.Validate(ctx); err != nil {
 		return nil, err
 	}
@@ -95,11 +107,40 @@ func New(key, text string, typeSpec *logic_spec.TypeSpec) (dataType *DataType, e
 	return dataType, nil
 }
 
+// assignNestedKeys walks the record-field children and assigns each child's FieldDataType.Key
+// via NewDataTypeKey(parent, fieldName), recursively. The parent is taken from d.Key, so
+// it must already be set before this is called.
+func (d *DataType) assignNestedKeys() error {
+	for i := range d.RecordFields {
+		field := &d.RecordFields[i]
+		if field.FieldDataType == nil {
+			continue
+		}
+		childKey, err := identity.NewDataTypeKey(d.Key, field.Name)
+		if err != nil {
+			return pkgerrors.Wrapf(err, "field '%s'", field.Name)
+		}
+		field.FieldDataType.Key = childKey
+		if err := field.FieldDataType.assignNestedKeys(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Validate validates the DataType struct.
 func (d DataType) Validate(ctx *coreerr.ValidationContext) error {
-	// Key: required.
-	if d.Key == "" {
+	// Key must be a fully-formed KEY_TYPE_DATA_TYPE identity.Key. Zero-value Key{}
+	// (KeyType=="") is rejected here even though it is the legal "unallocated" state
+	// during construction; full DataTypes must have keys.
+	if d.Key.KeyType == "" {
 		return coreerr.New(ctx, coreerr.DtypeKeyRequired, "Key is required", "Key")
+	}
+	if err := d.Key.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.DtypeKeyRequired, fmt.Sprintf("Key: %s", err.Error()), "Key")
+	}
+	if d.Key.KeyType != identity.KEY_TYPE_DATA_TYPE {
+		return coreerr.NewWithValues(ctx, coreerr.DtypeKeyRequired, fmt.Sprintf("Key: invalid key type '%s' for datatype", d.Key.KeyType), "Key", d.Key.KeyType, identity.KEY_TYPE_DATA_TYPE)
 	}
 	// CollectionType: required and must be valid.
 	if d.CollectionType == "" {
@@ -236,42 +277,43 @@ func (d DataType) String() string {
 }
 
 // UnpackNested unpacks all nested datatypes in the RecordFields data structures.
-// Each nested datatype is given a key based on the path: root Key + "/" + field name + ...
+// Each nested datatype's key is set via identity.NewDataTypeKey(parent, fieldName) at
+// every level so the full ownership path is encoded in the key.
 // The order of the list is the deepest children first (post-order traversal), with the root last.
 func (d DataType) UnpackNested() []DataType {
 	var result []DataType
 	for _, field := range d.RecordFields {
 		child := field.FieldDataType
 		if child != nil {
-			// Set the key for the child
-			child.Key = d.Key + "/" + field.Name
-			// Recurse on the child
+			childKey, err := identity.NewDataTypeKey(d.Key, field.Name)
+			if err != nil {
+				panic(pkgerrors.Wrapf(err, "UnpackNested: failed to build nested key for field '%s'", field.Name))
+			}
+			child.Key = childKey
 			nested := child.UnpackNested()
 			result = append(result, nested...)
 		}
 	}
-	// Add the root itself last
 	result = append(result, d)
 	return result
 }
 
-// SortDataTypesByKeyLengthDesc sorts a slice of DataType by key length in descending order (longest keys first).
+// SortDataTypesByKeyLengthDesc sorts a slice of DataType by key string length in descending
+// order (longest keys first). Children have longer keys than their parents, so this order
+// avoids foreign-key violations on insert.
 func SortDataTypesByKeyLengthDesc(dataTypes []DataType) {
 	sort.Slice(dataTypes, func(i, j int) bool {
-		// Sort by key length descending first.
-		// Children data types have longer keys than their parents.
-		// So we can insert them first to ensure there are no foreign key violations.
-		if len(dataTypes[i].Key) != len(dataTypes[j].Key) {
-			return len(dataTypes[i].Key) > len(dataTypes[j].Key)
+		li := len(dataTypes[i].Key.String())
+		lj := len(dataTypes[j].Key.String())
+		if li != lj {
+			return li > lj
 		}
-
-		// In case of a tie, sorty by key lexicographically.
-		return dataTypes[i].Key < dataTypes[j].Key
+		return dataTypes[i].Key.String() < dataTypes[j].Key.String()
 	})
 }
 
 // ExtractDatabaseObjects walks a slice of DataType and extracts database-suitable objects.
-// Returns maps keyed by datatype key containing atomic enums, atomic spans, atomics, and fields.
+// Returns maps keyed by datatype key string containing atomic enums, atomic spans, atomics, and fields.
 func ExtractDatabaseObjects(dataTypes []DataType) (map[string][]Field, map[string]Atomic, map[string]AtomicSpan, map[string][]AtomicEnum) {
 	atomicEnumMap := make(map[string][]AtomicEnum)
 	atomicSpanMap := make(map[string]AtomicSpan)
@@ -279,48 +321,44 @@ func ExtractDatabaseObjects(dataTypes []DataType) (map[string][]Field, map[strin
 	fieldMap := make(map[string][]Field)
 
 	for _, d := range dataTypes {
-		// Collect fields for records.
+		ks := d.Key.String()
 		if len(d.RecordFields) > 0 {
-			fieldMap[d.Key] = d.RecordFields
+			fieldMap[ks] = d.RecordFields
 		}
-
-		// Collect Atomics and their parts.
 		if d.Atomic != nil {
 			if d.Atomic.Span != nil {
-				atomicSpanMap[d.Key] = *d.Atomic.Span
+				atomicSpanMap[ks] = *d.Atomic.Span
 			}
 			if len(d.Atomic.Enums) > 0 {
-				atomicEnumMap[d.Key] = d.Atomic.Enums
+				atomicEnumMap[ks] = d.Atomic.Enums
 			}
-			atomicMap[d.Key] = *d.Atomic
+			atomicMap[ks] = *d.Atomic
 		}
 	}
 
 	return fieldMap, atomicMap, atomicSpanMap, atomicEnumMap
 }
 
-// ReconstituteDataTypes takes a slice of DataType (with keys and collection types set) and maps of components,
-// and reconstitutes the DataTypes by attaching the Atomics, Fields, AtomicSpans, and AtomicEnums from the maps.
-// Returns a flat list sorted by key length descending.
+// ReconstituteDataTypes attaches Atomics / Fields / AtomicSpans / AtomicEnums from the per-key
+// maps back into the corresponding DataType. Returns a flat list sorted by key length descending.
 func ReconstituteDataTypes(dataTypes []DataType, fieldMap map[string][]Field, atomicMap map[string]Atomic, atomicSpanMap map[string]AtomicSpan, atomicEnumMap map[string][]AtomicEnum) []DataType {
 	result := make([]DataType, len(dataTypes))
 	for i, dt := range dataTypes {
-		result[i] = dt // copy the base DataType
-		if fields, ok := fieldMap[dt.Key]; ok {
+		result[i] = dt
+		ks := dt.Key.String()
+		if fields, ok := fieldMap[ks]; ok {
 			result[i].RecordFields = fields
 		}
-		if atomic, ok := atomicMap[dt.Key]; ok {
+		if atomic, ok := atomicMap[ks]; ok {
 			result[i].Atomic = &atomic
-			// Attach spans and enums to the atomic
-			if span, ok := atomicSpanMap[dt.Key]; ok {
+			if span, ok := atomicSpanMap[ks]; ok {
 				result[i].Atomic.Span = &span
 			}
-			if enums, ok := atomicEnumMap[dt.Key]; ok {
+			if enums, ok := atomicEnumMap[ks]; ok {
 				result[i].Atomic.Enums = enums
 			}
 		}
 	}
-	// Sort by key length descending
 	SortDataTypesByKeyLengthDesc(result)
 	return result
 }
@@ -335,41 +373,39 @@ func FlattenDataTypes(dataTypes []DataType) []DataType {
 	return result
 }
 
-// ReconstructNestedDataTypes takes a flat slice of DataType (output of FlattenDataTypes), rebuilds the nested structure by attaching child DataTypes to their parent records, and returns the root DataTypes.
+// ReconstructNestedDataTypes takes a flat slice of DataType (output of FlattenDataTypes),
+// rebuilds the nested structure by attaching child DataTypes to their parent records, and
+// returns the root DataTypes.
 func ReconstructNestedDataTypes(flatDataTypes []DataType) []DataType {
-	// Create a map for quick lookup
 	dtMap := make(map[string]*DataType)
 	for i := range flatDataTypes {
-		dtMap[flatDataTypes[i].Key] = &flatDataTypes[i]
+		dtMap[flatDataTypes[i].Key.String()] = &flatDataTypes[i]
 	}
 
-	// Track which DataTypes are children (attached to a parent)
 	isChild := make(map[string]bool)
 
-	// Attach nested DataTypes to fields
 	for _, dt := range flatDataTypes {
 		if dt.CollectionType == COLLECTION_TYPE_RECORD {
 			for i := range dt.RecordFields {
 				field := &dt.RecordFields[i]
-				if field.FieldDataType != nil && field.FieldDataType.Key != "" {
-					if nested, ok := dtMap[field.FieldDataType.Key]; ok {
+				if field.FieldDataType != nil && field.FieldDataType.Key.KeyType != "" {
+					childKeyStr := field.FieldDataType.Key.String()
+					if nested, ok := dtMap[childKeyStr]; ok {
 						field.FieldDataType = nested
-						isChild[field.FieldDataType.Key] = true
+						isChild[childKeyStr] = true
 					}
 				}
 			}
 		}
 	}
 
-	// Collect roots (DataTypes that are not children
 	var roots []DataType
 	for _, dt := range flatDataTypes {
-		if !isChild[dt.Key] {
+		if !isChild[dt.Key.String()] {
 			roots = append(roots, dt)
 		}
 	}
 
 	SortDataTypesByKeyLengthDesc(roots)
-
 	return roots
 }
