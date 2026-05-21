@@ -152,7 +152,9 @@ func (k *Key) ValidateWithContext(ctx *coreerr.ValidationContext) error {
 }
 
 // String returns the string representation of the key.
-func (k *Key) String() string {
+// Value receiver so it can be called on non-addressable values (e.g., function return values
+// like NewDataTypeKey(...).String()) and also satisfies fmt.Stringer for both Key and *Key.
+func (k Key) String() string {
 	var result string
 	if k.ParentKey != "" {
 		result = k.ParentKey + "/" + k.KeyType + "/" + k.SubKey
