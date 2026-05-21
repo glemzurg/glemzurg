@@ -24,12 +24,6 @@ func scanModel(scanner Scanner, model *core.Model) (err error) {
 
 // LoadModel loads a model from the database.
 func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
-	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return core.Model{}, err
-	}
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -58,10 +52,7 @@ func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
 // AddModel adds a model to the database.
 func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err := preenKey(model.Key)
-	if err != nil {
-		return err
-	}
+	modelKey := model.Key
 
 	// Add the data.
 	err = dbExec(dbOrTx, `
@@ -90,10 +81,7 @@ func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
 // UpdateModel updates a model in the database.
 func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err := preenKey(model.Key)
-	if err != nil {
-		return err
-	}
+	modelKey := model.Key
 
 	// Update the data.
 	err = dbExec(dbOrTx, `
@@ -117,10 +105,6 @@ func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
 // RemoveModel deletes a model from the database.
 func RemoveModel(dbOrTx DbOrTx, modelKey string) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
 
 	// Delete the data.
 	err = dbExec(dbOrTx, `

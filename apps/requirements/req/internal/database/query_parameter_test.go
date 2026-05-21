@@ -171,10 +171,9 @@ func (suite *QueryParameterSuite) TestQuery() {
 //==================================================
 
 func t_AddQueryParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey identity.Key, name string) (param model_state.Parameter) {
-	paramKey, err := preenKey(name)
-	require.NoError(t, err)
+	paramKey := identity.NormalizeSubKey(name)
 
-	err = AddQueryParameter(dbOrTx, modelKey, queryKey, model_state.Parameter{
+	err := AddQueryParameter(dbOrTx, modelKey, queryKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})

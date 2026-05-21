@@ -171,10 +171,9 @@ func (suite *EventParameterSuite) TestQuery() {
 //==================================================
 
 func t_AddEventParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, eventKey identity.Key, name string) (param model_state.Parameter) {
-	paramKey, err := preenKey(name)
-	require.NoError(t, err)
+	paramKey := identity.NormalizeSubKey(name)
 
-	err = AddEventParameter(dbOrTx, modelKey, eventKey, model_state.Parameter{
+	err := AddEventParameter(dbOrTx, modelKey, eventKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})

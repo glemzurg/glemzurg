@@ -14,13 +14,9 @@ import (
 
 // parameterDataTypeKey extracts the data type key string for database storage.
 // Returns nil if no data type is set.
-// The key is preened to match how BulkInsertDataTypes stores data type keys.
 func parameterDataTypeKey(param model_state.Parameter) *string {
 	if param.DataType != nil {
-		s, err := preenKey(param.DataType.Key)
-		if err != nil {
-			return nil
-		}
+		s := param.DataType.Key.String()
 		return &s
 	}
 	return nil
@@ -29,7 +25,7 @@ func parameterDataTypeKey(param model_state.Parameter) *string {
 // Populate a golang struct from a database row.
 func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model_state.Parameter, sortOrder *int) (err error) {
 	var queryKeyStr string
-	var parameterKeyStr string // Read but not used on the struct (it's derived from Name via preenKey).
+	var parameterKeyStr string // Read but not used on the struct.
 	var dataTypeRules sql.NullString
 	var dataTypeKey sql.NullString
 
@@ -61,7 +57,11 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 	// Create a stub DataType with just the key if present.
 	// The full DataType is stitched in top_level_requirements.go from the data_type table.
 	if dataTypeKey.Valid {
-		param.DataType = &model_data_type.DataType{Key: dataTypeKey.String}
+		parsedKey, parseErr := identity.ParseKey(dataTypeKey.String)
+		if parseErr != nil {
+			return errors.Wrapf(parseErr, "failed to parse data type key '%s'", dataTypeKey.String)
+		}
+		param.DataType = &model_data_type.DataType{Key: parsedKey}
 	}
 
 	return nil
@@ -115,10 +115,7 @@ func AddQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, pa
 
 // UpdateQueryParameter updates a query parameter in the database.
 func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
-	paramKey, err := preenKey(param.Name)
-	if err != nil {
-		return errors.Wrapf(err, "parameter name '%s'", param.Name)
-	}
+	paramKey := param.Key.SubKey
 
 	// Update the data.
 	err = dbExec(dbOrTx, `
@@ -233,10 +230,7 @@ func AddQueryParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 				qb.WriteString(", ")
 			}
 
-			paramKey, err := preenKey(param.Name)
-			if err != nil {
-				return errors.Wrapf(err, "parameter name '%s'", param.Name)
-			}
+			paramKey := param.Key.SubKey
 
 			base := i * 7
 			fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)

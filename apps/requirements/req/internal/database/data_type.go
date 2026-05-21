@@ -6,6 +6,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -23,9 +24,10 @@ func collectionMinForDB(minVal *int) *int {
 func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err error) {
 	var tsNotation *string
 	var tsSpecification *string
+	var dataTypeKeyStr string
 
 	if err = scanner.Scan(
-		&dataType.Key,
+		&dataTypeKeyStr,
 		&dataType.CollectionType,
 		&dataType.CollectionUnique,
 		&dataType.CollectionMin,
@@ -37,6 +39,12 @@ func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err erro
 			err = ErrNotFound
 		}
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
+	}
+
+	// Parse the data_type_key column back into a typed identity.Key.
+	dataType.Key, err = identity.ParseKey(dataTypeKeyStr)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse data type key '%s'", dataTypeKeyStr)
 	}
 
 	// Reconstitute TypeSpec if present.
@@ -57,16 +65,6 @@ func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err erro
 
 // LoadDataType loads a data type from the database.
 func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_data_type.DataType, err error) {
-	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return model_data_type.DataType{}, err
-	}
-	dataTypeKey, err = preenKey(dataTypeKey)
-	if err != nil {
-		return model_data_type.DataType{}, err
-	}
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -101,15 +99,7 @@ func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_d
 
 // AddDataType adds a data type to the database.
 func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
-	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	dataTypeKey, err := preenKey(dataType.Key)
-	if err != nil {
-		return err
-	}
+	dataTypeKey := dataType.Key.String()
 
 	// Extract type spec fields.
 	var tsNotation *string
@@ -160,15 +150,7 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 
 // UpdateDataType updates a data type in the database.
 func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
-	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	dataTypeKey, err := preenKey(dataType.Key)
-	if err != nil {
-		return err
-	}
+	dataTypeKey := dataType.Key.String()
 
 	// Extract type spec fields.
 	var tsNotation *string
@@ -210,14 +192,6 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 // DeleteDataType deletes a data type from the database.
 func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	dataTypeKey, err = preenKey(dataTypeKey)
-	if err != nil {
-		return err
-	}
 
 	// Delete the data.
 	err = dbExec(dbOrTx, `
@@ -238,10 +212,6 @@ func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 // QueryDataTypes lists all data types for a model from the database.
 func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []model_data_type.DataType, err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
 
 	// Query the database.
 	dataTypes = []model_data_type.DataType{}
@@ -283,19 +253,12 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
 
 	// Prepare the args
 	args := make([]any, 0, len(dataTypes)*8)
 	valueStrings := make([]string, 0, len(dataTypes))
 	for i, dt := range dataTypes {
-		dataTypeKey, err := preenKey(dt.Key)
-		if err != nil {
-			return err
-		}
+		dataTypeKey := dt.Key.String()
 		var tsNotation *string
 		var tsSpecification *string
 		if dt.TypeSpec != nil {

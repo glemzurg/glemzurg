@@ -171,10 +171,9 @@ func (suite *ActionParameterSuite) TestQuery() {
 //==================================================
 
 func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, name string) (param model_state.Parameter) {
-	paramKey, err := preenKey(name)
-	require.NoError(t, err)
+	paramKey := identity.NormalizeSubKey(name)
 
-	err = AddActionParameter(dbOrTx, modelKey, actionKey, model_state.Parameter{
+	err := AddActionParameter(dbOrTx, modelKey, actionKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})

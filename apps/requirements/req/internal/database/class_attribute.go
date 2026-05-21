@@ -26,7 +26,7 @@ func derivationPolicyKey(attr model_class.Attribute) *string {
 // Returns nil if no data type is set.
 func dataTypeKey(attr model_class.Attribute) *string {
 	if attr.DataType != nil {
-		s := attr.DataType.Key
+		s := attr.DataType.Key.String()
 		return &s
 	}
 	return nil

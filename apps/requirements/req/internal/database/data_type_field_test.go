@@ -76,86 +76,86 @@ func (suite *DataTypeFieldSuite) TestLoad() {
 		"data_type_key": {
 			{
 				Name:          "NameA",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 			},
 			{
 				Name:          "NameB",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 			},
 		},
 	}, fields)
 }
 
 func (suite *DataTypeFieldSuite) TestAdd() {
-	err := AddField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Field{
+	err := AddField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), model_data_type.Field{
 		Name:          "NameA",
-		FieldDataType: &model_data_type.DataType{Key: "field_DATA_type_key"}, // Test case-insensitive..
+		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")}, // Test case-insensitive..
 	})
 	suite.Require().NoError(err)
 
-	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
+	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 			},
 		},
 	}, fields)
 }
 
 func (suite *DataTypeFieldSuite) TestUpdate() {
-	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
+	err := AddField(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Field{
 		Name:          "NameA",
-		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 	})
 	suite.Require().NoError(err)
 
-	err = UpdateField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Field{
+	err = UpdateField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), model_data_type.Field{
 		Name:          "NameA",
-		FieldDataType: &model_data_type.DataType{Key: "field_data_TYPE_key_b"}, // Test case-insensitive..
+		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")}, // Test case-insensitive..
 	})
 	suite.Require().NoError(err)
 
-	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
+	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 			},
 		},
 	}, fields)
 }
 
 func (suite *DataTypeFieldSuite) TestRemove() {
-	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
+	err := AddField(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Field{
 		Name:          "NameA",
-		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 	})
 	suite.Require().NoError(err)
 
-	err = RemoveField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), "NameA")
+	err = RemoveField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), "NameA")
 	suite.Require().NoError(err)
 
-	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
+	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(fields)
 }
 
 func (suite *DataTypeFieldSuite) TestQuery() {
-	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
+	err := AddField(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Field{
 		Name:          "NameB",
-		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},
+		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 	})
 	suite.Require().NoError(err)
 
 	// Add another data type and field
-	err = AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
+	err = AddField(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Field{
 		Name:          "NameA",
-		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 	})
 	suite.Require().NoError(err)
 
@@ -165,11 +165,11 @@ func (suite *DataTypeFieldSuite) TestQuery() {
 		"data_type_key": {
 			{
 				Name:          "NameA",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 			},
 			{
 				Name:          "NameB",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 			},
 		},
 	}, fields)
@@ -180,17 +180,17 @@ func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
 		"data_type_key": {
 			{
 				Name:          "NameA",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 			},
 			{
 				Name:          "NameB",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 			},
 		},
 		"data_type_key_b": {
 			{
 				Name:          "NameA",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 			},
 		},
 	})
@@ -202,17 +202,17 @@ func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
 		"data_type_key": {
 			{
 				Name:          "NameA",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 			},
 			{
 				Name:          "NameB",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 			},
 		},
 		"data_type_key_b": {
 			{
 				Name:          "NameA",
-				FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},
+				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 			},
 		},
 	}, fields)

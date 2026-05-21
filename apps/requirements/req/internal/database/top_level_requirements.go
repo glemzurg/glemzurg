@@ -396,7 +396,7 @@ func collectDataTypes(model core.Model, attributesMap map[identity.Key][]model_c
 	for _, attrs := range attributesMap {
 		for _, attr := range attrs {
 			if attr.DataType != nil {
-				dataTypes[attr.DataType.Key] = *attr.DataType
+				dataTypes[attr.DataType.Key.String()] = *attr.DataType
 			}
 		}
 	}
@@ -415,21 +415,21 @@ func collectParameterDataTypes(class model_class.Class, dataTypes map[string]mod
 	for _, query := range class.Queries {
 		for _, param := range query.Parameters {
 			if param.DataType != nil {
-				dataTypes[param.DataType.Key] = *param.DataType
+				dataTypes[param.DataType.Key.String()] = *param.DataType
 			}
 		}
 	}
 	for _, event := range class.Events {
 		for _, param := range event.Parameters {
 			if param.DataType != nil {
-				dataTypes[param.DataType.Key] = *param.DataType
+				dataTypes[param.DataType.Key.String()] = *param.DataType
 			}
 		}
 	}
 	for _, action := range class.Actions {
 		for _, param := range action.Parameters {
 			if param.DataType != nil {
-				dataTypes[param.DataType.Key] = *param.DataType
+				dataTypes[param.DataType.Key.String()] = *param.DataType
 			}
 		}
 	}
@@ -1362,7 +1362,7 @@ func stitchParamDataTypes(ds *readDomainStructure) {
 func stitchParameterDataTypes(params []model_state.Parameter, dataTypes map[string]model_data_type.DataType) {
 	for j, param := range params {
 		if param.DataType != nil {
-			if dt, ok := dataTypes[param.DataType.Key]; ok {
+			if dt, ok := dataTypes[param.DataType.Key.String()]; ok {
 				params[j].DataType = &dt
 			}
 		}
