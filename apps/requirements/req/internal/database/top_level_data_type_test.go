@@ -44,7 +44,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 	err := AddTopLevelDataTypes(suite.db, suite.model.Key, map[string]model_data_type.DataType{
 
 		// Unordered enumeration (enum of value1, value2).
-		"enum_type": {
+		t_rawDtKey("enum_type").String(): {
 			Key:            t_rawDtKey("enum_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -58,7 +58,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Ordered enumeration (ordered enum of low, medium, high, critical).
-		"ordered_enum_type": {
+		t_rawDtKey("ordered_enum_type").String(): {
 			Key:            t_rawDtKey("ordered_enum_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -74,7 +74,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Reference (ref from domain_a>subdomain_a>product).
-		"ref_type": {
+		t_rawDtKey("ref_type").String(): {
 			Key:            t_rawDtKey("ref_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -84,7 +84,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Atomic unconstrained.
-		"unconstrained_type": {
+		t_rawDtKey("unconstrained_type").String(): {
 			Key:            t_rawDtKey("unconstrained_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -93,7 +93,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Nested records.
-		"root1": {
+		t_rawDtKey("root1").String(): {
 			Key:            t_rawDtKey("root1"),
 			CollectionType: "record",
 			RecordFields: []model_data_type.Field{
@@ -115,7 +115,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"root2": {
+		t_rawDtKey("root2").String(): {
 			Key:            t_rawDtKey("root2"),
 			CollectionType: "record",
 			RecordFields: []model_data_type.Field{
@@ -138,7 +138,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Span with unconstrained bounds.
-		"span_type": {
+		t_rawDtKey("span_type").String(): {
 			Key:            t_rawDtKey("span_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -152,7 +152,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Span with closed numeric bounds ([1 .. 10000] at 1 unit).
-		"span_closed_type": {
+		t_rawDtKey("span_closed_type").String(): {
 			Key:            t_rawDtKey("span_closed_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -171,7 +171,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Span with unconstrained lower, closed higher ((unconstrained .. 100] at 1 unit).
-		"span_mixed_type": {
+		t_rawDtKey("span_mixed_type").String(): {
 			Key:            t_rawDtKey("span_mixed_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -188,7 +188,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Span with open lower, precision=0.01 ((0 .. 1000000] at 0.01 dollar).
-		"span_precision_type": {
+		t_rawDtKey("span_precision_type").String(): {
 			Key:            t_rawDtKey("span_precision_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -207,7 +207,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Unique unordered collection of unconstrained (unique unordered of unconstrained).
-		"unordered_collection_type": {
+		t_rawDtKey("unordered_collection_type").String(): {
 			Key:              t_rawDtKey("unordered_collection_type"),
 			CollectionType:   "unordered",
 			CollectionUnique: boolPtr(true),
@@ -218,7 +218,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Ordered collection with min/max, object atomic (1-100 ordered of obj of some_class).
-		"ordered_collection_type": {
+		t_rawDtKey("ordered_collection_type").String(): {
 			Key:            t_rawDtKey("ordered_collection_type"),
 			CollectionType: "ordered",
 			CollectionMin:  intPtr(1),
@@ -230,7 +230,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Ordered collection with min-only (3+ ordered of unconstrained).
-		"ordered_min_collection_type": {
+		t_rawDtKey("ordered_min_collection_type").String(): {
 			Key:            t_rawDtKey("ordered_min_collection_type"),
 			CollectionType: "ordered",
 			CollectionMin:  intPtr(3),
@@ -248,7 +248,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 	// Verify that loaded matches original.
 	suite.Equal(map[string]model_data_type.DataType{
 
-		"enum_type": {
+		t_rawDtKey("enum_type").String(): {
 			Key:            t_rawDtKey("enum_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -261,7 +261,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"ordered_enum_type": {
+		t_rawDtKey("ordered_enum_type").String(): {
 			Key:            t_rawDtKey("ordered_enum_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -276,7 +276,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"ref_type": {
+		t_rawDtKey("ref_type").String(): {
 			Key:            t_rawDtKey("ref_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -285,7 +285,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"unconstrained_type": {
+		t_rawDtKey("unconstrained_type").String(): {
 			Key:            t_rawDtKey("unconstrained_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -293,7 +293,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"root1": {
+		t_rawDtKey("root1").String(): {
 			Key:            t_rawDtKey("root1"),
 			CollectionType: "record",
 			RecordFields: []model_data_type.Field{
@@ -317,7 +317,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"root2": {
+		t_rawDtKey("root2").String(): {
 			Key:            t_rawDtKey("root2"),
 			CollectionType: "record",
 			RecordFields: []model_data_type.Field{
@@ -341,7 +341,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"span_type": {
+		t_rawDtKey("span_type").String(): {
 			Key:            t_rawDtKey("span_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -354,7 +354,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"span_closed_type": {
+		t_rawDtKey("span_closed_type").String(): {
 			Key:            t_rawDtKey("span_closed_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -372,7 +372,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"span_mixed_type": {
+		t_rawDtKey("span_mixed_type").String(): {
 			Key:            t_rawDtKey("span_mixed_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -388,7 +388,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"span_precision_type": {
+		t_rawDtKey("span_precision_type").String(): {
 			Key:            t_rawDtKey("span_precision_type"),
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
@@ -407,7 +407,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// CollectionMin=0 is written as NULL (0 means "no minimum"), loaded back as nil.
-		"unordered_collection_type": {
+		t_rawDtKey("unordered_collection_type").String(): {
 			Key:              t_rawDtKey("unordered_collection_type"),
 			CollectionType:   "unordered",
 			CollectionUnique: boolPtr(true),
@@ -416,7 +416,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"ordered_collection_type": {
+		t_rawDtKey("ordered_collection_type").String(): {
 			Key:            t_rawDtKey("ordered_collection_type"),
 			CollectionType: "ordered",
 			CollectionMin:  intPtr(1),
@@ -427,7 +427,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"ordered_min_collection_type": {
+		t_rawDtKey("ordered_min_collection_type").String(): {
 			Key:            t_rawDtKey("ordered_min_collection_type"),
 			CollectionType: "ordered",
 			CollectionMin:  intPtr(3),

@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -42,7 +41,7 @@ func (suite *DataTypeFieldSuite) SetupTest() {
 
 func (suite *DataTypeFieldSuite) TestLoad() {
 	// Nothing in database yet.
-	fields, err := LoadDataTypeFields(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
+	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(fields)
 
@@ -57,23 +56,23 @@ func (suite *DataTypeFieldSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'data_type_key',
+				$1,
 				'NameA',
-				'field_data_type_key'
+				$2
 			),
 			(
 				'model_key',
-				'data_type_key',
+				$1,
 				'NameB',
-				'field_data_type_key'
+				$2
 			)
-	`)
+	`, suite.dataType.Key.String(), t_rawDtKey("field_data_type_key").String())
 	suite.Require().NoError(err)
 
-	fields, err = LoadDataTypeFields(suite.db, strings.ToUpper(suite.model.Key), "data_TYPE_Key") // Test case-insensitive.
+	fields, err = LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.Field{
-		"data_type_key": {
+		suite.dataType.Key.String(): {
 			{
 				Name:          "NameA",
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
@@ -87,16 +86,16 @@ func (suite *DataTypeFieldSuite) TestLoad() {
 }
 
 func (suite *DataTypeFieldSuite) TestAdd() {
-	err := AddField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), model_data_type.Field{
+	err := AddField(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Field{
 		Name:          "NameA",
-		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")}, // Test case-insensitive..
+		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
 	})
 	suite.Require().NoError(err)
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.Field{
-		"data_type_key": {
+		suite.dataType.Key.String(): {
 			{
 				Name:          "NameA",
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
@@ -112,16 +111,16 @@ func (suite *DataTypeFieldSuite) TestUpdate() {
 	})
 	suite.Require().NoError(err)
 
-	err = UpdateField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), model_data_type.Field{
+	err = UpdateField(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Field{
 		Name:          "NameA",
-		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")}, // Test case-insensitive..
+		FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 	})
 	suite.Require().NoError(err)
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.Field{
-		"data_type_key": {
+		suite.dataType.Key.String(): {
 			{
 				Name:          "NameA",
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
@@ -137,7 +136,7 @@ func (suite *DataTypeFieldSuite) TestRemove() {
 	})
 	suite.Require().NoError(err)
 
-	err = RemoveField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), "NameA")
+	err = RemoveField(suite.db, suite.model.Key, suite.dataType.Key.String(), "NameA")
 	suite.Require().NoError(err)
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key.String())
@@ -159,10 +158,10 @@ func (suite *DataTypeFieldSuite) TestQuery() {
 	})
 	suite.Require().NoError(err)
 
-	fields, err := QueryFields(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	fields, err := QueryFields(suite.db, suite.model.Key)
 	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.Field{
-		"data_type_key": {
+		suite.dataType.Key.String(): {
 			{
 				Name:          "NameA",
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
@@ -176,8 +175,8 @@ func (suite *DataTypeFieldSuite) TestQuery() {
 }
 
 func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
-	err := BulkInsertFields(suite.db, strings.ToUpper(suite.model.Key), map[string][]model_data_type.Field{
-		"data_type_key": {
+	err := BulkInsertFields(suite.db, suite.model.Key, map[string][]model_data_type.Field{
+		suite.dataType.Key.String(): {
 			{
 				Name:          "NameA",
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
@@ -187,7 +186,7 @@ func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 			},
 		},
-		"data_type_key_b": {
+		suite.dataTypeB.Key.String(): {
 			{
 				Name:          "NameA",
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
@@ -199,7 +198,7 @@ func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
 	fields, err := QueryFields(suite.db, suite.model.Key)
 	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.Field{
-		"data_type_key": {
+		suite.dataType.Key.String(): {
 			{
 				Name:          "NameA",
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key")},
@@ -209,7 +208,7 @@ func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},
 			},
 		},
-		"data_type_key_b": {
+		suite.dataTypeB.Key.String(): {
 			{
 				Name:          "NameA",
 				FieldDataType: &model_data_type.DataType{Key: t_rawDtKey("field_data_type_key_b")},

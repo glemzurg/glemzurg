@@ -57,8 +57,8 @@ func (suite *AttributeSuite) SetupTest() {
 	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewAttributeDerivationKey(suite.attributeKeyB, "deriv")))
 
 	// Create data type rows (data type must exist before attribute references it via FK).
-	suite.dataType = t_AddDataType(suite.T(), suite.db, suite.model.Key, suite.attributeKey.String())
-	suite.dataTypeB = t_AddDataType(suite.T(), suite.db, suite.model.Key, suite.attributeKeyB.String())
+	suite.dataType = t_AddDataTypeForAttribute(suite.T(), suite.db, suite.model.Key, suite.attributeKey)
+	suite.dataTypeB = t_AddDataTypeForAttribute(suite.T(), suite.db, suite.model.Key, suite.attributeKeyB)
 }
 
 func (suite *AttributeSuite) TestLoad() {

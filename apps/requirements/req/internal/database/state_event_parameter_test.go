@@ -85,10 +85,7 @@ func (suite *EventParameterSuite) TestLoad() {
 }
 
 func (suite *EventParameterSuite) TestAdd() {
-	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
-		Name:          "Amount",
-		DataTypeRules: "Nat",
-	})
+	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, helper.Must(model_state.NewParameter(suite.eventKey, "Amount", "Nat")))
 	suite.Require().NoError(err)
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
@@ -100,16 +97,10 @@ func (suite *EventParameterSuite) TestAdd() {
 }
 
 func (suite *EventParameterSuite) TestUpdate() {
-	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
-		Name:          "Amount",
-		DataTypeRules: "Nat",
-	})
+	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, helper.Must(model_state.NewParameter(suite.eventKey, "Amount", "Nat")))
 	suite.Require().NoError(err)
 
-	err = UpdateEventParameter(suite.db, suite.model.Key, suite.eventKey, 2, model_state.Parameter{
-		Name:          "Amount",
-		DataTypeRules: "Int",
-	})
+	err = UpdateEventParameter(suite.db, suite.model.Key, suite.eventKey, 2, helper.Must(model_state.NewParameter(suite.eventKey, "Amount", "Int")))
 	suite.Require().NoError(err)
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
@@ -121,10 +112,7 @@ func (suite *EventParameterSuite) TestUpdate() {
 }
 
 func (suite *EventParameterSuite) TestRemove() {
-	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
-		Name:          "Amount",
-		DataTypeRules: "Nat",
-	})
+	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, helper.Must(model_state.NewParameter(suite.eventKey, "Amount", "Nat")))
 	suite.Require().NoError(err)
 
 	err = RemoveEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
@@ -138,14 +126,8 @@ func (suite *EventParameterSuite) TestRemove() {
 func (suite *EventParameterSuite) TestQuery() {
 	err := AddEventParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.eventKey: {
-			{
-				Name:          "Alpha",
-				DataTypeRules: "Nat",
-			},
-			{
-				Name:          "Bravo",
-				DataTypeRules: "Int",
-			},
+			helper.Must(model_state.NewParameter(suite.eventKey, "Alpha", "Nat")),
+			helper.Must(model_state.NewParameter(suite.eventKey, "Bravo", "Int")),
 		},
 	})
 	suite.Require().NoError(err)
@@ -171,15 +153,13 @@ func (suite *EventParameterSuite) TestQuery() {
 //==================================================
 
 func t_AddEventParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, eventKey identity.Key, name string) (param model_state.Parameter) {
-	paramKey := identity.NormalizeSubKey(name)
-
-	err := AddEventParameter(dbOrTx, modelKey, eventKey, model_state.Parameter{
-		Name:          name,
-		DataTypeRules: "Nat",
-	})
+	built, err := model_state.NewParameter(eventKey, name, "Nat")
 	require.NoError(t, err)
 
-	param, err = LoadEventParameter(dbOrTx, modelKey, eventKey, paramKey)
+	err = AddEventParameter(dbOrTx, modelKey, eventKey, built)
+	require.NoError(t, err)
+
+	param, err = LoadEventParameter(dbOrTx, modelKey, eventKey, built.Key.SubKey)
 	require.NoError(t, err)
 
 	return param

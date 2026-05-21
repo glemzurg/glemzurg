@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -42,7 +41,7 @@ func (suite *AtomicSpanSuite) SetupTest() {
 
 func (suite *AtomicSpanSuite) TestLoad() {
 	// Nothing in database yet.
-	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
+	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(parentDataTypeKey)
 	suite.Empty(span)
@@ -64,7 +63,7 @@ func (suite *AtomicSpanSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'data_type_key',
+				$1,
 				'closed',
 				1,
 				2,
@@ -74,12 +73,12 @@ func (suite *AtomicSpanSuite) TestLoad() {
 				'Units',
 				0.01
 			)
-	`)
+	`, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, span, err = LoadAtomicSpan(suite.db, strings.ToUpper(suite.model.Key), "data_Type_Key") // Test case-insensitive.
+	parentDataTypeKey, span, err = LoadAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.AtomicSpan{
 		LowerType:         "closed",
 		LowerValue:        t_IntPtr(1),
@@ -93,7 +92,7 @@ func (suite *AtomicSpanSuite) TestLoad() {
 }
 
 func (suite *AtomicSpanSuite) TestAdd() {
-	err := AddAtomicSpan(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), model_data_type.AtomicSpan{ // Test case-insensitive.
+	err := AddAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.AtomicSpan{
 		LowerType:         "closed",
 		LowerValue:        t_IntPtr(1),
 		LowerDenominator:  t_IntPtr(2),
@@ -105,9 +104,9 @@ func (suite *AtomicSpanSuite) TestAdd() {
 	})
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, "data_type_key")
+	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.AtomicSpan{
 		LowerType:         "closed",
 		LowerValue:        t_IntPtr(1),
@@ -121,7 +120,7 @@ func (suite *AtomicSpanSuite) TestAdd() {
 }
 
 func (suite *AtomicSpanSuite) TestAddNulls() {
-	err := AddAtomicSpan(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), model_data_type.AtomicSpan{
+	err := AddAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.AtomicSpan{
 		LowerType:         "closed",
 		LowerValue:        nil,
 		LowerDenominator:  nil,
@@ -133,9 +132,9 @@ func (suite *AtomicSpanSuite) TestAddNulls() {
 	})
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, "data_type_key")
+	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.AtomicSpan{
 		LowerType:         "closed",
 		LowerValue:        nil,
@@ -161,7 +160,7 @@ func (suite *AtomicSpanSuite) TestUpdate() {
 	})
 	suite.Require().NoError(err)
 
-	err = UpdateAtomicSpan(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), model_data_type.AtomicSpan{
+	err = UpdateAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.AtomicSpan{
 		LowerType:         "open",
 		LowerValue:        t_IntPtr(10),
 		LowerDenominator:  t_IntPtr(20),
@@ -173,9 +172,9 @@ func (suite *AtomicSpanSuite) TestUpdate() {
 	})
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, "data_type_key")
+	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.AtomicSpan{
 		LowerType:         "open",
 		LowerValue:        t_IntPtr(10),
@@ -211,12 +210,12 @@ func (suite *AtomicSpanSuite) TestUpdateNulls() {
 		Units:             "UnitsX",
 		Precision:         0.001,
 	}
-	err = UpdateAtomicSpan(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String()), updatedSpan)
+	err = UpdateAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String(), updatedSpan)
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, "data_type_key")
+	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.AtomicSpan{
 		LowerType:         "open",
 		LowerValue:        nil,
@@ -242,7 +241,7 @@ func (suite *AtomicSpanSuite) TestRemove() {
 	})
 	suite.Require().NoError(err)
 
-	err = RemoveAtomicSpan(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key.String())) // Test case-insensitive.
+	err = RemoveAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 
 	_, _, err = LoadAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key.String())
@@ -274,10 +273,10 @@ func (suite *AtomicSpanSuite) TestQuery() {
 	})
 	suite.Require().NoError(err)
 
-	atomicSpans, err := QueryAtomicSpans(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	atomicSpans, err := QueryAtomicSpans(suite.db, suite.model.Key)
 	suite.Require().NoError(err)
 	suite.Equal(map[string]model_data_type.AtomicSpan{
-		"data_type_key": {
+		suite.dataType.Key.String(): {
 			LowerType:         "closed",
 			LowerValue:        t_IntPtr(1),
 			LowerDenominator:  t_IntPtr(2),
@@ -287,7 +286,7 @@ func (suite *AtomicSpanSuite) TestQuery() {
 			Units:             "Units",
 			Precision:         0.01,
 		},
-		"data_type_key_b": {
+		suite.dataTypeB.Key.String(): {
 			LowerType:         "open",
 			LowerValue:        t_IntPtr(10),
 			LowerDenominator:  t_IntPtr(20),
@@ -301,8 +300,8 @@ func (suite *AtomicSpanSuite) TestQuery() {
 }
 
 func (suite *AtomicSpanSuite) TestBulkInsertAtomicSpans() {
-	err := BulkInsertAtomicSpans(suite.db, strings.ToUpper(suite.model.Key), map[string]model_data_type.AtomicSpan{
-		"data_type_key": {
+	err := BulkInsertAtomicSpans(suite.db, suite.model.Key, map[string]model_data_type.AtomicSpan{
+		suite.dataType.Key.String(): {
 			LowerType:         "closed",
 			LowerValue:        t_IntPtr(1),
 			LowerDenominator:  t_IntPtr(2),
@@ -312,7 +311,7 @@ func (suite *AtomicSpanSuite) TestBulkInsertAtomicSpans() {
 			Units:             "Units",
 			Precision:         0.01,
 		},
-		"data_type_key_b": {
+		suite.dataTypeB.Key.String(): {
 			LowerType:         "open",
 			LowerValue:        t_IntPtr(10),
 			LowerDenominator:  t_IntPtr(20),
@@ -328,7 +327,7 @@ func (suite *AtomicSpanSuite) TestBulkInsertAtomicSpans() {
 	atomicSpans, err := QueryAtomicSpans(suite.db, suite.model.Key)
 	suite.Require().NoError(err)
 	suite.Equal(map[string]model_data_type.AtomicSpan{
-		"data_type_key": {
+		suite.dataType.Key.String(): {
 			LowerType:         "closed",
 			LowerValue:        t_IntPtr(1),
 			LowerDenominator:  t_IntPtr(2),
@@ -338,7 +337,7 @@ func (suite *AtomicSpanSuite) TestBulkInsertAtomicSpans() {
 			Units:             "Units",
 			Precision:         0.01,
 		},
-		"data_type_key_b": {
+		suite.dataTypeB.Key.String(): {
 			LowerType:         "open",
 			LowerValue:        t_IntPtr(10),
 			LowerDenominator:  t_IntPtr(20),

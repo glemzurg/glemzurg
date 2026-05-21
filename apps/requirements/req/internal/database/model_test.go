@@ -28,7 +28,7 @@ func (suite *ModelSuite) SetupTest() {
 
 func (suite *ModelSuite) TestLoad() {
 	// Nothing in database yet.
-	model, err := LoadModel(suite.db, "Key")
+	model, err := LoadModel(suite.db, "key")
 	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(model)
 
@@ -48,10 +48,10 @@ func (suite *ModelSuite) TestLoad() {
 	`)
 	suite.Require().NoError(err)
 
-	model, err = LoadModel(suite.db, "Key") // Test case-insensitive.
+	model, err = LoadModel(suite.db, "key")
 	suite.Require().NoError(err)
 	suite.Equal(core.Model{
-		Key:     "key", // Test case-insensitive.
+		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
 	}, model)
@@ -59,7 +59,7 @@ func (suite *ModelSuite) TestLoad() {
 
 func (suite *ModelSuite) TestAdd() {
 	err := AddModel(suite.db, core.Model{
-		Key:     "KeY", // Test case-insensitive.
+		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
 	})
@@ -68,7 +68,7 @@ func (suite *ModelSuite) TestAdd() {
 	model, err := LoadModel(suite.db, "key")
 	suite.Require().NoError(err)
 	suite.Equal(core.Model{
-		Key:     "key", // Test case-insensitive.
+		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
 	}, model)
@@ -76,14 +76,14 @@ func (suite *ModelSuite) TestAdd() {
 
 func (suite *ModelSuite) TestUpdate() {
 	err := AddModel(suite.db, core.Model{
-		Key:     "KeY", // Test case-insensitive.
+		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
 	})
 	suite.Require().NoError(err)
 
 	err = UpdateModel(suite.db, core.Model{
-		Key:     "kEy", // Test case-insensitive.
+		Key:     "key",
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
@@ -92,7 +92,7 @@ func (suite *ModelSuite) TestUpdate() {
 	model, err := LoadModel(suite.db, "key")
 	suite.Require().NoError(err)
 	suite.Equal(core.Model{
-		Key:     "key", // Test case-insensitive.
+		Key:     "key",
 		Name:    "NameX",
 		Details: "DetailsX",
 	}, model)
@@ -100,13 +100,13 @@ func (suite *ModelSuite) TestUpdate() {
 
 func (suite *ModelSuite) TestRemove() {
 	err := AddModel(suite.db, core.Model{
-		Key:     "KeY", // Test case-insensitive.
+		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
 	})
 	suite.Require().NoError(err)
 
-	err = RemoveModel(suite.db, "kEy") // Test case-insensitive.
+	err = RemoveModel(suite.db, "key")
 	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
