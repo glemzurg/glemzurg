@@ -16,6 +16,23 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// safeParseClass wraps parseClass and converts a panic into an error.
+//
+// The parser makes many type assertions on human-entered YAML (e.g. a
+// multiplicity written as a bare number instead of a quoted string). A bad
+// value can panic; recovering here turns that into a normal parse error so the
+// caller isolates the one class as a red error page instead of crashing.
+func safeParseClass(subdomainKey identity.Key, classSubKey, filename, contents string) (class model_class.Class, associations []model_class.Association, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			class = model_class.Class{}
+			associations = nil
+			err = errors.Errorf("malformed class content: %v", r)
+		}
+	}()
+	return parseClass(subdomainKey, classSubKey, filename, contents)
+}
+
 func parseClass(subdomainKey identity.Key, classSubKey, filename, contents string) (class model_class.Class, associations []model_class.Association, err error) {
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
@@ -491,6 +508,21 @@ func attributeTypeSpecFromYamlData(attributeData map[string]any) (*logic_spec.Ty
 	return &ts, nil
 }
 
+// yamlString reads an optional string field from a YAML map. It returns a clear
+// error when the field is present but not a string — the usual cause is a human
+// writing an unquoted value, e.g. `from_multiplicity: 1` instead of `"1"`.
+func yamlString(data map[string]any, field string) (string, error) {
+	v, found := data[field]
+	if !found {
+		return "", nil
+	}
+	s, ok := v.(string)
+	if !ok {
+		return "", errors.Errorf("field '%s' must be a quoted string value, got %T", field, v)
+	}
+	return s, nil
+}
+
 func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int, associationAny any) (association model_class.Association, err error) {
 	associationData, ok := associationAny.(map[string]any)
 	if ok {
@@ -499,38 +531,33 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 
 		_ = strconv.Itoa(index + 1) // Don't start at zero (kept for reference but key constructed differently now).
 
-		name := ""
-		nameAny, found := associationData["name"]
-		if found {
-			name = nameAny.(string)
+		name, err := yamlString(associationData, "name")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 
-		details := ""
-		detailsAny, found := associationData["details"]
-		if found {
-			details = detailsAny.(string)
+		details, err := yamlString(associationData, "details")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 
-		fromMultiplicityValue := ""
-		fromMultiplicityAny, found := associationData["from_multiplicity"]
-		if found {
-			fromMultiplicityValue = fromMultiplicityAny.(string)
+		fromMultiplicityValue, err := yamlString(associationData, "from_multiplicity")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 		fromMultiplicity, err := model_class.NewMultiplicity(fromMultiplicityValue)
 		if err != nil {
 			return model_class.Association{}, err
 		}
 
-		toClassKeyStr := ""
-		toClassKeyAny, found := associationData["to_class_key"]
-		if found {
-			toClassKeyStr = toClassKeyAny.(string)
+		toClassKeyStr, err := yamlString(associationData, "to_class_key")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 
-		toMultiplicityValue := ""
-		toMultiplicityAny, found := associationData["to_multiplicity"]
-		if found {
-			toMultiplicityValue = toMultiplicityAny.(string)
+		toMultiplicityValue, err := yamlString(associationData, "to_multiplicity")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 		toMultiplicity, err := model_class.NewMultiplicity(toMultiplicityValue)
 		if err != nil {
@@ -554,22 +581,21 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 
 		// Parse association class key if present (uses same relative format).
 		var associationClassKey *identity.Key
-		associationClassKeyAny, found := associationData["association_class_key"]
-		if found {
-			associationClassKeyStr := associationClassKeyAny.(string)
-			if associationClassKeyStr != "" {
-				key, err := resolveClassKeyFromRelative(subdomainKey, associationClassKeyStr)
-				if err != nil {
-					return model_class.Association{}, errors.WithStack(err)
-				}
-				associationClassKey = &key
+		associationClassKeyStr, err := yamlString(associationData, "association_class_key")
+		if err != nil {
+			return model_class.Association{}, err
+		}
+		if associationClassKeyStr != "" {
+			key, err := resolveClassKeyFromRelative(subdomainKey, associationClassKeyStr)
+			if err != nil {
+				return model_class.Association{}, errors.WithStack(err)
 			}
+			associationClassKey = &key
 		}
 
-		umlComment := ""
-		umlCommentAny, found := associationData["uml_comment"]
-		if found {
-			umlComment = umlCommentAny.(string)
+		umlComment, err := yamlString(associationData, "uml_comment")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 
 		assocKey, err := identity.NewClassAssociationKey(assocParentKey, fromClassKey, toClassKey, name)

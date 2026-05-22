@@ -97,6 +97,62 @@ func TestParseIsolatesBrokenClass(t *testing.T) {
 	}
 }
 
+// A multiplicity written as a bare number (from_multiplicity: 1 instead of "1")
+// must not panic — it is isolated as a per-class parse failure with a clear
+// message.
+func TestParseIsolatesMalformedMultiplicity(t *testing.T) {
+	tempDir := t.TempDir()
+	model := test_helper.GetTestModel()
+	if err := Write(model, tempDir); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+
+	// Find a class file with a quoted multiplicity and unquote it.
+	var corrupted string
+	_ = filepath.WalkDir(tempDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() || corrupted != "" || !strings.HasSuffix(path, ".class") {
+			return nil
+		}
+		body, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return nil
+		}
+		if strings.Contains(string(body), `from_multiplicity: "1"`) {
+			fixed := strings.Replace(string(body), `from_multiplicity: "1"`, `from_multiplicity: 1`, 1)
+			if os.WriteFile(path, []byte(fixed), 0644) == nil {
+				corrupted = path
+			}
+		}
+		return nil
+	})
+	if corrupted == "" {
+		t.Skip("test model has no class with from_multiplicity: \"1\"")
+	}
+
+	parsed, failures, err := Parse(tempDir)
+	if err != nil {
+		t.Fatalf("a malformed multiplicity should not abort the model, got: %v", err)
+	}
+	if len(failures) != 1 {
+		t.Fatalf("expected 1 parse failure, got %d", len(failures))
+	}
+	if !strings.Contains(failures[0].Err, "from_multiplicity") {
+		t.Errorf("expected a clear multiplicity error, got: %s", failures[0].Err)
+	}
+	// The class is still present as a placeholder.
+	found := false
+	for _, domain := range parsed.Domains {
+		for _, subdomain := range domain.Subdomains {
+			if _, ok := subdomain.Classes[failures[0].ClassKey]; ok {
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Errorf("expected placeholder class %s in the model", failures[0].ClassKey.String())
+	}
+}
+
 // A model with no broken files parses with zero failures.
 func TestParseNoFailuresOnCleanModel(t *testing.T) {
 	tempDir := t.TempDir()

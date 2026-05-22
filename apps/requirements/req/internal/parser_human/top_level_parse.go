@@ -356,32 +356,6 @@ func parseSubdomainFile(model *core.Model, ctx *parseContext, toParseFile fileTo
 	return nil
 }
 
-// parseClassFile handles parsing a .class file.
-func parseClassFile(model *core.Model, ctx *parseContext, toParseFile fileToParse, contents string) error {
-	entityDesc := "class '" + toParseFile.Class + "'"
-	domain, subdomain, domainKey, subdomainKey, err := lookupSubdomain(model, ctx, toParseFile, entityDesc)
-	if err != nil {
-		return err
-	}
-
-	classSubKey := toParseFile.Class
-	if idx := len(toParseFile.Domain) + 1; idx < len(toParseFile.Class) {
-		classSubKey = toParseFile.Class[idx:]
-	}
-
-	class, associations, err := parseClass(subdomainKey, classSubKey, toParseFile.PathRel, contents)
-	if err != nil {
-		return err
-	}
-
-	for _, assoc := range associations {
-		ctx.allClassAssociations[assoc.Key] = assoc
-	}
-
-	addClassToSubdomain(model, domainKey, subdomainKey, domain, subdomain, class)
-	return nil
-}
-
 // parseClassFileResilient parses a .class file. If the class body fails to
 // parse, it does not abort the model: a placeholder empty class is added (so
 // the class still lists, unpopulated, on its domain page) and a ParseFailure
@@ -399,7 +373,7 @@ func parseClassFileResilient(model *core.Model, ctx *parseContext, toParseFile f
 		classSubKey = toParseFile.Class[idx:]
 	}
 
-	class, associations, parseErr := parseClass(subdomainKey, classSubKey, toParseFile.PathRel, contents)
+	class, associations, parseErr := safeParseClass(subdomainKey, classSubKey, toParseFile.PathRel, contents)
 	if parseErr != nil {
 		// Isolate the failure: place a valid empty class so the rest of the
 		// model still parses, validates, and renders.
