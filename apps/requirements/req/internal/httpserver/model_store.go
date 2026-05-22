@@ -10,41 +10,67 @@ import (
 
 // ModelStore manages in-memory models and their generated markdown content.
 type ModelStore struct {
-	mu       sync.RWMutex
-	models   map[string]*core.Model       // Keyed by model name
-	markdown map[string]map[string][]byte // model -> file -> content
-	css      map[string][]byte            // model -> CSS content
-	svg      map[string]map[string][]byte // model -> file -> SVG content
+	mu          sync.RWMutex
+	models      map[string]*core.Model       // Keyed by model name
+	markdown    map[string]map[string][]byte // model -> file -> content
+	css         map[string][]byte            // model -> CSS content
+	svg         map[string]map[string][]byte // model -> file -> SVG content
+	modelErrors map[string]string            // model -> last generation error message
 }
 
 // NewModelStore creates a new model store.
 func NewModelStore() *ModelStore {
 	return &ModelStore{
-		models:   make(map[string]*core.Model),
-		markdown: make(map[string]map[string][]byte),
-		css:      make(map[string][]byte),
-		svg:      make(map[string]map[string][]byte),
+		models:      make(map[string]*core.Model),
+		markdown:    make(map[string]map[string][]byte),
+		css:         make(map[string][]byte),
+		svg:         make(map[string]map[string][]byte),
+		modelErrors: make(map[string]string),
 	}
 }
 
-// SetModel stores a model and regenerates its content.
-func (s *ModelStore) SetModel(name string, model *core.Model) error {
+// SetModel stores a model and regenerates its content. On success it clears any
+// previously recorded generation error for that model.
+//
+// classErrors maps a class key string to a parse-error message; those classes'
+// pages render as red-bold error blocks. Pass nil when there are no failures.
+func (s *ModelStore) SetModel(name string, model *core.Model, classErrors map[string]string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.models[name] = model
-
 	// Generate markdown content in memory
-	mdContent, svgContent, cssContent, err := s.generateContent(model)
+	mdContent, svgContent, cssContent, err := s.generateContent(model, classErrors)
 	if err != nil {
 		return err
 	}
 
+	s.models[name] = model
 	s.markdown[name] = mdContent
 	s.svg[name] = svgContent
 	s.css[name] = cssContent
+	delete(s.modelErrors, name) // Recovery: a successful generation clears the error.
 
 	return nil
+}
+
+// SetModelError records a generation failure for a model. The model's previously
+// generated content (if any) is left in place; renderMD shows the error instead.
+func (s *ModelStore) SetModelError(name string, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	msg := "unknown error"
+	if err != nil {
+		msg = err.Error()
+	}
+	s.modelErrors[name] = msg
+}
+
+// GetModelError returns the recorded generation error for a model, if any.
+func (s *ModelStore) GetModelError(name string) (string, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	msg, ok := s.modelErrors[name]
+	return msg, ok
 }
 
 // GetModel returns a model by name.
@@ -99,14 +125,14 @@ func (s *ModelStore) ListModels() []string {
 }
 
 // generateContent generates markdown, SVG, and CSS content for a model.
-func (s *ModelStore) generateContent(model *core.Model) (map[string][]byte, map[string][]byte, []byte, error) {
+func (s *ModelStore) generateContent(model *core.Model, classErrors map[string]string) (map[string][]byte, map[string][]byte, []byte, error) {
 	// Use the generate package to create content in memory
 	collector := &ContentCollector{
 		Markdown: make(map[string][]byte),
 		SVG:      make(map[string][]byte),
 	}
 
-	err := generate.GenerateMdToWriter(*model, collector)
+	err := generate.GenerateMdToWriter(*model, collector, classErrors)
 	if err != nil {
 		return nil, nil, nil, err
 	}

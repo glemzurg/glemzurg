@@ -133,47 +133,92 @@ func main() {
 }
 
 // processConversion handles the input/output conversion based on formats.
-func processConversion(_, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) error {
+//
+// A catastrophic failure (e.g. an unreadable model) still writes a whole-model
+// red-bold error document to <output>/model.md. Localized per-class parse
+// failures are NOT catastrophic: the full output is generated with red-bold
+// error blocks on the affected class pages, and processConversion returns a
+// non-nil error only so the caller logs it and exits non-zero.
+func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) error {
+	failures, err := runConversion(debug, skipDB, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat)
+	if err != nil {
+		if outputFormat == OutputFormatMD {
+			outputPath := filepath.Join(rootOutputPath, model)
+			if writeErr := writeErrorMarkdown(outputPath, err); writeErr != nil {
+				log.Printf("Error: also failed to write error markdown: %v", writeErr)
+			}
+		}
+		return err
+	}
+	if len(failures) > 0 {
+		for _, f := range failures {
+			log.Printf("Parse failure: %s: %s", f.Path, f.Err)
+		}
+		return fmt.Errorf("%d class file(s) failed to parse — see the generated error pages", len(failures))
+	}
+	return nil
+}
+
+// writeErrorMarkdown writes a red-bold error document to <outputPath>/model.md.
+func writeErrorMarkdown(outputPath string, genErr error) error {
+	if err := os.MkdirAll(outputPath, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(outputPath, "model.md"), generate.ErrorMarkdown(genErr), 0644)
+}
+
+// runConversion performs the input/output conversion based on formats.
+//
+// It returns the per-class parse failures (if any) separately from err. A
+// non-nil err is a catastrophic failure; a non-empty failures slice with a nil
+// err means the output was generated with per-class error blocks.
+func runConversion(_, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) ([]parser_human.ParseFailure, error) {
 	sourcePath := filepath.Join(rootSourcePath, model)
 	outputPath := filepath.Join(rootOutputPath, model)
 
 	// Step 1: Read the input model into core.Model
 	var parsedModel *core.Model
+	var failures []parser_human.ParseFailure
 
 	switch inputFormat {
 	case InputFormatDataYAML:
 		log.Println("Reading model from data/yaml format...")
-		m, err := parser_human.Parse(sourcePath)
+		m, parseFailures, err := parser_human.Parse(sourcePath)
 		if err != nil {
-			return fmt.Errorf("failed to parse data/yaml model: %w", err)
+			return nil, fmt.Errorf("failed to parse data/yaml model: %w", err)
 		}
 		parsedModel = &m
+		failures = parseFailures
 
 	case InputFormatAIJSON:
 		log.Println("Reading model from ai/json format...")
 		m, err := parser_ai.ReadModel(sourcePath)
 		if err != nil {
-			return fmt.Errorf("failed to read ai/json model: %w", err)
+			return nil, fmt.Errorf("failed to read ai/json model: %w", err)
 		}
 		parsedModel = &m
 	}
 
-	// Step 2: Optionally validate through database
-	if !skipDB && outputFormat == OutputFormatMD {
+	// Step 2: Optionally validate through database. Skipped when there are
+	// parse failures — the model is known-partial (placeholder classes), so the
+	// database round-trip would reject it.
+	if !skipDB && outputFormat == OutputFormatMD && len(failures) == 0 {
 		db, err := database.NewDb()
 		if err != nil {
-			return fmt.Errorf("failed to create database: %w", err)
+			return nil, fmt.Errorf("failed to create database: %w", err)
 		}
 		log.Println("Exercising data model through database...")
 		err = database.WriteModel(db, *parsedModel)
 		if err != nil {
-			return fmt.Errorf("failed to write model to database: %w", err)
+			return nil, fmt.Errorf("failed to write model to database: %w", err)
 		}
 		m, err := database.ReadModel(db, parsedModel.Key)
 		if err != nil {
-			return fmt.Errorf("failed to read model from database: %w", err)
+			return nil, fmt.Errorf("failed to read model from database: %w", err)
 		}
 		parsedModel = &m
+	} else if len(failures) > 0 {
+		log.Printf("Skipping database step: %d class file(s) failed to parse", len(failures))
 	}
 
 	// Step 3: Write the output in the desired format
@@ -181,31 +226,44 @@ func processConversion(_, skipDB bool, rootSourcePath, rootOutputPath, model, in
 	case OutputFormatMD:
 		log.Println("Generating markdown output...")
 		// Use the already-parsed model to generate markdown
-		err := generate.GenerateMdFromModel(outputPath, *parsedModel)
+		err := generate.GenerateMdFromModel(outputPath, *parsedModel, classErrorMap(failures))
 		if err != nil {
-			return fmt.Errorf("failed to generate markdown: %w", err)
+			return nil, fmt.Errorf("failed to generate markdown: %w", err)
 		}
 
 	case OutputFormatAIJSON:
 		log.Println("Converting to ai/json format...")
 		if err := os.MkdirAll(outputPath, 0755); err != nil {
-			return fmt.Errorf("failed to create output directory: %w", err)
+			return nil, fmt.Errorf("failed to create output directory: %w", err)
 		}
 		if err := parser_ai.WriteModel(*parsedModel, outputPath); err != nil {
-			return fmt.Errorf("failed to write ai/json model: %w", err)
+			return nil, fmt.Errorf("failed to write ai/json model: %w", err)
 		}
 		log.Printf("Model written to: %s", outputPath)
 
 	case OutputFormatDataYAML:
 		log.Println("Converting to data/yaml format...")
 		if err := parser_human.Write(*parsedModel, outputPath); err != nil {
-			return fmt.Errorf("failed to write data/yaml model: %w", err)
+			return nil, fmt.Errorf("failed to write data/yaml model: %w", err)
 		}
 		log.Printf("Model written to: %s", outputPath)
 	}
 
 	log.Println("Done!")
-	return nil
+	return failures, nil
+}
+
+// classErrorMap converts parser failures into a class-key -> error-message map
+// for the generator. Returns nil when there are no failures.
+func classErrorMap(failures []parser_human.ParseFailure) map[string]string {
+	if len(failures) == 0 {
+		return nil
+	}
+	m := make(map[string]string, len(failures))
+	for _, f := range failures {
+		m[f.ClassKey.String()] = f.Err
+	}
+	return m
 }
 
 // runHTTPServer starts the HTTP server in watch mode, serving in-memory generated content for a single model.
@@ -223,10 +281,12 @@ func runHTTPServer(rootSourcePath, model, port, inputFormat string) {
 		log.Fatalf("Failed to create source watcher: %v", err)
 	}
 
-	// Load the model
+	// Load the model. A load failure is non-fatal: the watcher has already
+	// recorded the error in the store, so the server still starts and the
+	// web display shows the error page. Fixing the source recovers it live.
 	log.Printf("Loading model %s...", model)
 	if err := watcher.LoadModel(); err != nil {
-		log.Fatalf("Failed to load model: %v", err)
+		log.Printf("Failed to load model (serving error page): %v", err)
 	}
 
 	// Start watching for changes

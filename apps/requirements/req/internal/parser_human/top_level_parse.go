@@ -19,31 +19,46 @@ import (
 // _DEFAULT_SUBDOMAIN_NAME is the name used for the default subdomain created for each domain.
 const _DEFAULT_SUBDOMAIN_NAME = "default"
 
-func Parse(modelPath string) (model core.Model, err error) {
+// Parse reads a model from its source directory.
+//
+// A parse failure in a single .class file does not abort the whole model: that
+// class becomes an empty placeholder and its error is returned in the
+// []ParseFailure slice, so every other entity still renders. A failure in a
+// .model / .domain / .subdomain file (entities that others depend on) or a
+// filesystem walk error is catastrophic and returned as the error.
+func Parse(modelPath string) (model core.Model, failures []ParseFailure, err error) {
 	log.Printf("Parse files in '%s'", modelPath)
 
 	// First, gather every thing we expect we need to parse, and what kind of entity it is.
 
 	toParseFiles, err := findFilesToParse(modelPath)
 	if err != nil {
-		return core.Model{}, errors.WithStack(err)
+		return core.Model{}, nil, errors.WithStack(err)
 	}
 
 	for _, toParseFile := range toParseFiles {
 		log.Println("   walk:", toParseFile.String())
 	}
 
-	model, err = parseForDatabase(modelPath, toParseFiles)
+	model, failures, err = parseForDatabase(modelPath, toParseFiles)
 	if err != nil {
-		return core.Model{}, errors.WithStack(err)
+		return core.Model{}, nil, errors.WithStack(err)
 	}
 
 	// Verify the model is well-formed after the parse.
 	if err = model.Validate(); err != nil {
-		return core.Model{}, errors.WithStack(err)
+		// With parse failures the model is known-partial — a placeholder class
+		// can, for example, drop a generalization's superclass linkage. Treat
+		// that validation error as a symptom, not catastrophic: hand back the
+		// partial model + failures so the rest still renders.
+		if len(failures) > 0 {
+			log.Printf("   model validation reported issues (expected with %d parse failure(s)): %v", len(failures), err)
+			return model, failures, nil
+		}
+		return core.Model{}, nil, errors.WithStack(err)
 	}
 
-	return model, nil
+	return model, failures, nil
 }
 
 func findFilesToParse(modelPath string) (toParseFiles []fileToParse, err error) {
@@ -94,7 +109,7 @@ type parseContext struct {
 	allClassAssociations map[identity.Key]model_class.Association
 }
 
-func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.Model, err error) {
+func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.Model, failures []ParseFailure, err error) {
 	// Ensure are sorted in the order by which they may need information from prior objects.
 	sortFilesToParse(filesToParse)
 
@@ -105,26 +120,29 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 	}
 
 	// Parse each file according to its type.
-	model, err = parseAllFiles(modelKey, filesToParse, ctx)
+	model, failures, err = parseAllFiles(modelKey, filesToParse, ctx)
 	if err != nil {
-		return core.Model{}, err
+		return core.Model{}, nil, err
 	}
 
 	// Post-processing: finalize the model.
 	if err := finalizeModel(&model, ctx); err != nil {
-		return core.Model{}, err
+		return core.Model{}, nil, err
 	}
 
-	return model, nil
+	return model, failures, nil
 }
 
 // parseAllFiles reads and parses each file in order, dispatching by file type.
-func parseAllFiles(modelKey string, filesToParse []fileToParse, ctx *parseContext) (core.Model, error) {
+// A .class file that fails to parse is isolated (placeholder class + recorded
+// failure) so it does not abort the rest of the model.
+func parseAllFiles(modelKey string, filesToParse []fileToParse, ctx *parseContext) (core.Model, []ParseFailure, error) {
 	var model core.Model
+	var failures []ParseFailure
 	for _, toParseFile := range filesToParse {
 		contentBytes, err := os.ReadFile(toParseFile.PathAbs)
 		if err != nil {
-			return core.Model{}, errors.WithStack(err)
+			return core.Model{}, nil, errors.WithStack(err)
 		}
 		contents := string(contentBytes)
 
@@ -140,17 +158,22 @@ func parseAllFiles(modelKey string, filesToParse []fileToParse, ctx *parseContex
 		case _EXT_SUBDOMAIN:
 			err = parseSubdomainFile(&model, ctx, toParseFile, contents)
 		case _EXT_CLASS:
-			err = parseClassFile(&model, ctx, toParseFile, contents)
+			var failure *ParseFailure
+			failure, err = parseClassFileResilient(&model, ctx, toParseFile, contents)
+			if failure != nil {
+				log.Printf("   parse failure: %s: %s", failure.Path, failure.Err)
+				failures = append(failures, *failure)
+			}
 		case _EXT_USE_CASE:
 			err = parseUseCaseFile(&model, ctx, toParseFile, contents)
 		default:
 			err = errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))
 		}
 		if err != nil {
-			return core.Model{}, err
+			return core.Model{}, nil, err
 		}
 	}
-	return model, nil
+	return model, failures, nil
 }
 
 // finalizeModel performs post-processing on the parsed model.
@@ -355,12 +378,68 @@ func parseClassFile(model *core.Model, ctx *parseContext, toParseFile fileToPars
 		ctx.allClassAssociations[assoc.Key] = assoc
 	}
 
+	addClassToSubdomain(model, domainKey, subdomainKey, domain, subdomain, class)
+	return nil
+}
+
+// parseClassFileResilient parses a .class file. If the class body fails to
+// parse, it does not abort the model: a placeholder empty class is added (so
+// the class still lists, unpopulated, on its domain page) and a ParseFailure
+// is returned. A failure that prevents even placing the class (e.g. its
+// subdomain is missing) is returned as a hard error.
+func parseClassFileResilient(model *core.Model, ctx *parseContext, toParseFile fileToParse, contents string) (*ParseFailure, error) {
+	entityDesc := "class '" + toParseFile.Class + "'"
+	domain, subdomain, domainKey, subdomainKey, err := lookupSubdomain(model, ctx, toParseFile, entityDesc)
+	if err != nil {
+		return nil, err
+	}
+
+	classSubKey := toParseFile.Class
+	if idx := len(toParseFile.Domain) + 1; idx < len(toParseFile.Class) {
+		classSubKey = toParseFile.Class[idx:]
+	}
+
+	class, associations, parseErr := parseClass(subdomainKey, classSubKey, toParseFile.PathRel, contents)
+	if parseErr != nil {
+		// Isolate the failure: place a valid empty class so the rest of the
+		// model still parses, validates, and renders.
+		placeholder, phErr := placeholderClass(subdomainKey, classSubKey)
+		if phErr != nil {
+			return nil, parseErr // Can't place the class — surface the parse error.
+		}
+		addClassToSubdomain(model, domainKey, subdomainKey, domain, subdomain, placeholder)
+		return &ParseFailure{
+			ClassKey: placeholder.Key,
+			Name:     placeholder.Name,
+			Path:     toParseFile.PathRel,
+			Err:      parseErr.Error(),
+		}, nil
+	}
+
+	for _, assoc := range associations {
+		ctx.allClassAssociations[assoc.Key] = assoc
+	}
+	addClassToSubdomain(model, domainKey, subdomainKey, domain, subdomain, class)
+	return nil, nil
+}
+
+// addClassToSubdomain inserts a class into its subdomain and writes it back to the model.
+func addClassToSubdomain(model *core.Model, domainKey, subdomainKey identity.Key, domain model_domain.Domain, subdomain model_domain.Subdomain, class model_class.Class) {
 	if subdomain.Classes == nil {
 		subdomain.Classes = make(map[identity.Key]model_class.Class)
 	}
 	subdomain.Classes[class.Key] = class
 	updateSubdomain(model, domainKey, subdomainKey, domain, subdomain)
-	return nil
+}
+
+// placeholderClass builds a minimal valid empty class for a .class file that
+// failed to parse. The key matches what a successful parse would have produced.
+func placeholderClass(subdomainKey identity.Key, classSubKey string) (model_class.Class, error) {
+	classKey, err := identity.NewClassKey(subdomainKey, classSubKey)
+	if err != nil {
+		return model_class.Class{}, errors.WithStack(err)
+	}
+	return model_class.NewClass(classKey, classSubKey, "", nil, nil, nil, ""), nil
 }
 
 // parseUseCaseFile handles parsing a .use_case file.

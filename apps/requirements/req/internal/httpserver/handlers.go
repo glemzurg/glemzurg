@@ -1,12 +1,14 @@
 package httpserver
 
 import (
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
 	"strings"
 	"sync"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/gomarkdown/markdown"
 )
 
@@ -140,6 +142,15 @@ func (s *Server) homeHandler(w http.ResponseWriter, _ *http.Request) {
 
 // renderMD renders a Markdown file from the in-memory store as HTML.
 func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
+	// If the model failed to generate, render the error in place of content.
+	// A generation failure invalidates the whole model, so every .md page of
+	// that model shows the error page.
+	if msg, ok := s.store.GetModelError(model); ok {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write(generate.ErrorPageHTML(model, file, errors.New(msg)))
+		return
+	}
+
 	data, ok := s.store.GetMarkdown(model, file)
 	if !ok {
 		http.NotFound(w, nil)

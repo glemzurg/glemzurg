@@ -152,11 +152,24 @@ func (sw *SourceWatcher) debounceUpdate() {
 }
 
 // updateModel parses the source files and updates the model store.
+//
+// On any failure (parse error, or generation error inside SetModel) it records
+// the error in the store and notifies connected browsers, so the web display
+// reloads onto a red-bold error page instead of silently keeping stale content.
+// The error is still returned for logging.
 func (sw *SourceWatcher) updateModel() error {
+	var err error
 	if sw.inputFormat == InputFormatAIJSON {
-		return sw.updateModelFromJSON()
+		err = sw.updateModelFromJSON()
+	} else {
+		err = sw.updateModelFromYAML()
 	}
-	return sw.updateModelFromYAML()
+	if err != nil {
+		sw.store.SetModelError(sw.modelName, err)
+		sw.server.NotifyModel(sw.modelName)
+		return err
+	}
+	return nil
 }
 
 // updateModelFromJSON parses a model from parser_ai JSON format.
@@ -166,7 +179,7 @@ func (sw *SourceWatcher) updateModelFromJSON() error {
 		return err
 	}
 
-	err = sw.store.SetModel(sw.modelName, &parsedModel)
+	err = sw.store.SetModel(sw.modelName, &parsedModel, nil)
 	if err != nil {
 		return err
 	}
@@ -176,19 +189,37 @@ func (sw *SourceWatcher) updateModelFromJSON() error {
 }
 
 // updateModelFromYAML parses a model from YAML source files.
+//
+// A parse failure in a single .class file is not a catastrophic error: Parse
+// returns the partial model plus the per-class failures, which generation turns
+// into red-bold error blocks on those classes' pages.
 func (sw *SourceWatcher) updateModelFromYAML() error {
-	parsedModel, err := parser_human.Parse(sw.modelPath)
+	parsedModel, failures, err := parser_human.Parse(sw.modelPath)
 	if err != nil {
 		return err
 	}
 
-	err = sw.store.SetModel(sw.modelName, &parsedModel)
+	err = sw.store.SetModel(sw.modelName, &parsedModel, classErrorMap(failures))
 	if err != nil {
 		return err
 	}
 
 	sw.server.NotifyModel(sw.modelName)
 	return nil
+}
+
+// classErrorMap converts parser failures into a class-key -> error-message map
+// for the generator. Returns nil when there are no failures.
+func classErrorMap(failures []parser_human.ParseFailure) map[string]string {
+	if len(failures) == 0 {
+		return nil
+	}
+	m := make(map[string]string, len(failures))
+	for _, f := range failures {
+		log.Printf("parse failure: %s: %s", f.Path, f.Err)
+		m[f.ClassKey.String()] = f.Err
+	}
+	return m
 }
 
 // LoadModel loads the model from the source path into the store.
@@ -198,7 +229,7 @@ func (sw *SourceWatcher) LoadModel() error {
 
 // LoadModelFromData loads a model from a pre-parsed core.Model.
 func LoadModelFromData(store *ModelStore, server *Server, name string, model *core.Model) error {
-	err := store.SetModel(name, model)
+	err := store.SetModel(name, model, nil)
 	if err != nil {
 		return err
 	}

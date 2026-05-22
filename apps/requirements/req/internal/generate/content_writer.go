@@ -20,7 +20,11 @@ type ContentWriter interface {
 }
 
 // GenerateMdToWriter generates markdown documentation to a ContentWriter.
-func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter) error { //nolint:revive // public API name
+//
+// classErrors maps a class key string to a parse-error message. A class listed
+// there has its own page replaced with a red-bold error block; every other page
+// renders normally. Pass nil when there are no parse failures.
+func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter, classErrors map[string]string) error { //nolint:revive // public API name
 	// Create the flattened requirements from the model.
 	reqs := req_flat.NewRequirements(parsedModel)
 
@@ -28,11 +32,11 @@ func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter) error { //
 	reqs.PrepLookups()
 
 	// Generate files to writer.
-	return generateFilesToWriter(reqs, writer)
+	return generateFilesToWriter(reqs, writer, classErrors)
 }
 
 // generateFilesToWriter generates all files and writes them to the ContentWriter.
-func generateFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter, classErrors map[string]string) error {
 	// Write CSS
 	if err := writer.WriteCSS([]byte(_MD_CSS)); err != nil {
 		return err
@@ -64,7 +68,7 @@ func generateFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) er
 	}
 
 	// Generate class files
-	if err := generateClassFilesToWriter(reqs, writer); err != nil {
+	if err := generateClassFilesToWriter(reqs, writer, classErrors); err != nil {
 		return err
 	}
 
@@ -327,10 +331,20 @@ func buildSubdomainUseCasesDiagram(reqs *req_flat.Requirements, domain model_dom
 }
 
 // generateClassFilesToWriter generates class files to a ContentWriter.
-func generateClassFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateClassFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter, classErrors map[string]string) error {
 	classLookup, _ := reqs.ClassLookup()
 
 	for _, class := range classLookup {
+		classFilename := convertKeyToFilename("class", class.Key.String(), "", ".md")
+
+		// If this class's source file failed to parse, its page is the error.
+		if msg, failed := classErrors[class.Key.String()]; failed {
+			if err := writer.WriteMarkdown(classFilename, ClassErrorMarkdown(class.Name, msg)); err != nil {
+				return err
+			}
+			continue
+		}
+
 		// Generate classes Mermaid diagram.
 		generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
 		classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations)
@@ -348,7 +362,6 @@ func generateClassFilesToWriter(reqs *req_flat.Requirements, writer ContentWrite
 		}
 
 		// Generate class summary markdown with embedded diagrams.
-		classFilename := convertKeyToFilename("class", class.Key.String(), "", ".md")
 		classMdContents, err := generateClassMdContents(reqs, class, classesDiagram, stateDiagram)
 		if err != nil {
 			return err
