@@ -49,6 +49,11 @@ type Requirements struct {
 
 	// Prepared flag to avoid re-processing.
 	prepared bool
+
+	// associationClassKeys is the set of class-key strings that appear as
+	// AssociationClassKey on some class association anywhere in the model.
+	// Populated by PrepLookups.
+	associationClassKeys map[string]bool
 }
 
 // NewRequirements creates a Requirements from a Model, flattening the tree into lookups.
@@ -188,6 +193,21 @@ func (r *Requirements) PrepLookups() {
 		return
 	}
 	r.prepared = true
+
+	// Collect the set of class keys used as association classes.
+	r.associationClassKeys = map[string]bool{}
+	for _, assoc := range r.ClassAssociations {
+		if assoc.AssociationClassKey != nil {
+			r.associationClassKeys[assoc.AssociationClassKey.String()] = true
+		}
+	}
+}
+
+// IsAssociationClass reports whether the given class key is used as an
+// AssociationClassKey on any class association in the model.
+func (r *Requirements) IsAssociationClass(key identity.Key) bool {
+	r.PrepLookups()
+	return r.associationClassKeys[key.String()]
 }
 
 // ActorLookup returns actors by key (as string for template use).
@@ -763,12 +783,12 @@ func (r *Requirements) RegardingClasses(inClasses []model_class.Class) (generali
 	for _, generalization := range relevantGeneralizationLookup {
 		generalizations = append(generalizations, generalization)
 	}
+	// Include every relevant class as its own node. Classes in a generalization
+	// also need to be defined here so the generalization arrows (drawn by the
+	// template's generalization branch) reference nodes that have labels and
+	// attributes — otherwise mermaid renders only the raw node ID.
 	for _, class := range relevantClassLookup {
-		// Only include classes *not* in a generalization.
-		// The classes in a generalization will be drawn by the generalization code.
-		if class.SuperclassOfKey == nil && class.SubclassOfKey == nil {
-			classes = append(classes, class)
-		}
+		classes = append(classes, class)
 	}
 	for _, association := range relevantAssociationsLookup {
 		associations = append(associations, association)

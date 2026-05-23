@@ -9,7 +9,7 @@ classDiagram
 {{ end -}}
 {{ range .Classes -}}
 {{- $class := class_lookup $reqs .Key -}}
-    class {{ nodeid "class" .Key }}["{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}"] {
+    class {{ nodeid "class" .Key }}["{{ if ne .ActorKey nil }}«actor» {{ end }}{{ if is_association_class $reqs .Key }}«association class» {{ end }}{{ .Name }}"] {
 {{- range .Attributes }}
         {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }}
 {{- end }}
@@ -24,5 +24,6 @@ classDiagram
 {{ if ne .AssociationClassKey nil -}}
 {{ $associationClassKey := nodeid "class" .AssociationClassKey -}}
     {{ $associationClassKey }} ..> {{ $fromClassKey }}
+    {{ $associationClassKey }} ..> {{ $toClassKey }}
 {{ end -}}
 {{ end -}}

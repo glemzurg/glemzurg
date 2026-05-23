@@ -223,6 +223,9 @@ var _funcMap = template.FuncMap{
 		lookup, _ := reqs.ClassLookup()
 		return lookup[key.String()]
 	},
+	"is_association_class": func(reqs *req_flat.Requirements, key identity.Key) bool {
+		return reqs.IsAssociationClass(key)
+	},
 	"state_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.State) {
 		lookup := reqs.StateLookup()
 		return lookup[key.String()]
