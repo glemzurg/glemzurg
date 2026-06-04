@@ -15,6 +15,11 @@ classDiagram
 {{- end }}
     }
 {{ end -}}
+{{ range .Classes -}}
+{{ if is_association_class $reqs .Key -}}
+style {{ nodeid "class" .Key }} stroke:#333,stroke-dasharray:5 5
+{{ end -}}
+{{ end -}}
 {{ range .Associations -}}
 {{ if render_association_class_mermaid . -}}
 {{ $fromClassKey := nodeid "class" .FromClassKey -}}

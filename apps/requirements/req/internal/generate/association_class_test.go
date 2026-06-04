@@ -116,6 +116,14 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 		t.Errorf("expected %q on the association class node, got:\n%s", wantLabel, got)
 	}
 
+	wantStyle := "style " + cNode + " stroke:#333,stroke-dasharray:5 5"
+	if !strings.Contains(got, wantStyle) {
+		t.Errorf("expected dashed-box style on association class node, want %q in:\n%s", wantStyle, got)
+	}
+	if strings.Contains(got, ":::associationClass") || strings.Contains(got, "classDef associationClass") {
+		t.Errorf("should use style directive, not classDef/::: shorthand:\n%s", got)
+	}
+
 	for _, name := range []string{`"«association class» A"`, `"«association class» B"`} {
 		if strings.Contains(got, name) {
 			t.Errorf("endpoint class should not be tagged as association class: %s", name)
