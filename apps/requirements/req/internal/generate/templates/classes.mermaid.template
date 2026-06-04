@@ -16,14 +16,17 @@ classDiagram
     }
 {{ end -}}
 {{ range .Associations -}}
+{{ if render_association_class_mermaid . -}}
+{{ $fromClassKey := nodeid "class" .FromClassKey -}}
+{{ $toClassKey := nodeid "class" .ToClassKey -}}
+{{ $associationClassKey := nodeid "class" (association_class_key .) -}}
+    {{ $fromClassKey }} "{{ association_class_from_leg_from_multiplicity . }}" --> "{{ association_class_from_leg_to_multiplicity . }}" {{ $associationClassKey }} : {{ .Name }}
+{{ $associationClassKey }} "{{ association_class_to_leg_from_multiplicity . }}" --> "{{ association_class_to_leg_to_multiplicity . }}" {{ $toClassKey }}
+{{ else -}}
 {{ $fromClassKey := nodeid "class" .FromClassKey -}}
 {{ $fromMultiplicity := multiplicity .FromMultiplicity -}}
 {{ $toClassKey := nodeid "class" .ToClassKey -}}
 {{ $toMultiplicity := multiplicity .ToMultiplicity -}}
     {{ $fromClassKey }} "{{ $fromMultiplicity }}" --> "{{ $toMultiplicity }}" {{ $toClassKey }} : {{ .Name }}
-{{ if ne .AssociationClassKey nil -}}
-{{ $associationClassKey := nodeid "class" .AssociationClassKey -}}
-    {{ $associationClassKey }} ..> {{ $fromClassKey }}
-    {{ $associationClassKey }} ..> {{ $toClassKey }}
 {{ end -}}
 {{ end -}}

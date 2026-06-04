@@ -67,9 +67,8 @@ func buildAssocClassTestModel(t *testing.T) (model core.Model, aKey, bKey, cKey 
 	return model, aKey, bKey, cKey
 }
 
-// The class diagram on an endpoint's page renders the association class with
-// dashed lines to BOTH endpoints, and the association class's label carries
-// the «association class» annotation.
+// Association classes render as solid decomposed legs through the association class,
+// with the «association class» stereotype on the class node.
 func TestGenerateAssociationClassMermaid(t *testing.T) {
 	model, aKey, bKey, cKey := buildAssocClassTestModel(t)
 
@@ -89,23 +88,34 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	bNode := nodeIDFor("class", bKey)
 	cNode := nodeIDFor("class", cKey)
 
-	// Two dashed connections — one to each endpoint of the association.
-	wantFrom := cNode + " ..> " + aNode
-	wantTo := cNode + " ..> " + bNode
+	wantFrom := aNode + ` "1" --> "1..*" ` + cNode + ` : links`
+	wantTo := cNode + ` "1..*" --> "1" ` + bNode
 	if !strings.Contains(got, wantFrom) {
-		t.Errorf("missing dashed connection to from-endpoint: want %q in:\n%s", wantFrom, got)
+		t.Errorf("missing decomposed from→association-class leg: want %q in:\n%s", wantFrom, got)
 	}
 	if !strings.Contains(got, wantTo) {
-		t.Errorf("missing dashed connection to to-endpoint: want %q in:\n%s", wantTo, got)
+		t.Errorf("missing decomposed association-class→to leg: want %q in:\n%s", wantTo, got)
+	}
+	if strings.Contains(got, wantTo+` :`) {
+		t.Errorf("association-class→to leg should be unlabeled, got label after:\n%s", wantTo)
 	}
 
-	// The association class's node label carries the annotation.
+	direct := aNode + ` "1" --> "1" ` + bNode
+	if strings.Contains(got, direct) {
+		t.Errorf("should not render direct endpoint association %q when association class is set:\n%s", direct, got)
+	}
+
+	for _, dashed := range []string{cNode + " ..> " + aNode, cNode + " ..> " + bNode} {
+		if strings.Contains(got, dashed) {
+			t.Errorf("should not use dashed association-class links %q:\n%s", dashed, got)
+		}
+	}
+
 	wantLabel := `«association class» C`
 	if !strings.Contains(got, wantLabel) {
 		t.Errorf("expected %q on the association class node, got:\n%s", wantLabel, got)
 	}
 
-	// A and B (the endpoints) must NOT carry the annotation.
 	for _, name := range []string{`"«association class» A"`, `"«association class» B"`} {
 		if strings.Contains(got, name) {
 			t.Errorf("endpoint class should not be tagged as association class: %s", name)
