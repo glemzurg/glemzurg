@@ -14,6 +14,14 @@ Comments and commit-style prose must explain the **why** of the current code, no
 
 Example. Instead of "we removed `PRM_NO_KYC` because Topgolf doesn't use it", write "Topgolf players are presumed KYC-cleared at the partner side; the partner-service capability gate therefore distinguishes only `POINTS_ONLY` (jurisdiction / junior / guest) from `REAL_MONEY` (everything else)".
 
+## Model-agnostic Go
+
+Requirements tooling (`apps/requirements/req` and related packages) must not embed names, association labels, domain vocabulary, or other content from a specific model in production Go code.
+
+- Derive human-readable text from model data at runtime (association `name`, class `name`, multiplicity, `details`, and so on).
+- Do not hardcode model-specific strings in `switch` tables, constants, or formatters to special-case one domain.
+- Tests may use fixture models and sample paths; production code must behave correctly for any model that parses.
+
 ## Go `_test.go` files
 
 - Use the [testify](https://github.com/stretchr/testify) framework (`require` for fatal assertions, `assert` for non-fatal).

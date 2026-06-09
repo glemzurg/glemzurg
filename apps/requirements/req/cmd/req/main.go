@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/associationfacts"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
@@ -48,11 +50,15 @@ func main() {
 	//
 	// HTTP server mode (serves in-memory generated content for a single model):
 	//   $GOBIN/req -http -port 8080 -rootsource example/models -model model_a
+	//
+	// Association facts for human review of one subdomain:
+	//   $GOBIN/req -associationfacts -rootsource example/models -model model_a -subdomain domain/subdomain
 
 	var rootSourcePath, rootOutputPath, model string
 	var inputFormat, outputFormat string
 	var debug, skipDB bool
-	var httpMode bool
+	var httpMode, associationFactsMode bool
+	var subdomainPath string
 	var port string
 	flag.StringVar(&rootSourcePath, "rootsource", "", "the path to the source models")
 	flag.StringVar(&rootOutputPath, "rootoutput", "", "the path to output files")
@@ -62,6 +68,8 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "enable the debug level of logging")
 	flag.BoolVar(&skipDB, "skipdb", false, "skip database validation step")
 	flag.BoolVar(&httpMode, "http", false, "start HTTP server mode")
+	flag.BoolVar(&associationFactsMode, "associationfacts", false, "print human-readable class association facts for one subdomain")
+	flag.StringVar(&subdomainPath, "subdomain", "", "domain/subdomain path for -associationfacts (e.g. billing/ledger)")
 	flag.StringVar(&port, "port", "8080", "port for HTTP server (only used with -http)")
 	flag.Parse()
 
@@ -83,6 +91,24 @@ func main() {
 	_ = slog.SetLogLoggerLevel(slog.LevelInfo)
 	if debug {
 		_ = slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
+
+	// Association facts mode
+	if associationFactsMode {
+		if rootSourcePath == "" || model == "" || subdomainPath == "" {
+			associationFactsError("rootsource, model, and subdomain are required for -associationfacts")
+			flag.Usage()
+			os.Exit(1)
+		}
+		if inputFormat != InputFormatDataYAML {
+			associationFactsError("-associationfacts only supports input format data/yaml")
+			os.Exit(1)
+		}
+		if err := runAssociationFacts(rootSourcePath, model, subdomainPath); err != nil {
+			associationFactsError("%+v", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
 	}
 
 	// HTTP server mode
@@ -264,6 +290,52 @@ func classErrorMap(failures []parser_human.ParseFailure) map[string]string {
 		m[f.ClassKey.String()] = f.Err
 	}
 	return m
+}
+
+// associationFactsError writes a message to stderr so failures remain visible even when
+// parse logging is suppressed.
+func associationFactsError(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+}
+
+// withDiscardedLog runs fn while the standard log package writes nowhere.
+func withDiscardedLog(fn func()) {
+	log.SetOutput(io.Discard)
+	fn()
+	log.SetOutput(os.Stderr)
+}
+
+// runAssociationFacts parses a model and prints association fact strings for one subdomain.
+func runAssociationFacts(rootSourcePath, model, subdomainPath string) error {
+	sourcePath := filepath.Join(rootSourcePath, model)
+
+	var parsed core.Model
+	var failures []parser_human.ParseFailure
+	var err error
+	withDiscardedLog(func() {
+		parsed, failures, err = parser_human.Parse(sourcePath)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to parse model: %w", err)
+	}
+	if len(failures) > 0 {
+		return fmt.Errorf("%d class file(s) failed to parse", len(failures))
+	}
+
+	path, err := associationfacts.ParseSubdomainPath(subdomainPath)
+	if err != nil {
+		return err
+	}
+	subdomain, err := associationfacts.FindSubdomain(parsed, path)
+	if err != nil {
+		return err
+	}
+
+	facts := associationfacts.FactsForSubdomain(subdomain)
+	for _, fact := range facts {
+		fmt.Println(fact)
+	}
+	return nil
 }
 
 // runHTTPServer starts the HTTP server in watch mode, serving in-memory generated content for a single model.
