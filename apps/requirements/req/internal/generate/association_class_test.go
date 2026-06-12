@@ -88,8 +88,8 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	bNode := nodeIDFor("class", bKey)
 	cNode := nodeIDFor("class", cKey)
 
-	wantFrom := aNode + ` "1" --> "1..*" ` + cNode + ` : links`
-	wantTo := cNode + ` "1..*" --> "1" ` + bNode
+	wantFrom := aNode + ` "1" --> "1" ` + cNode + ` : links`
+	wantTo := cNode + ` "1" --> "1" ` + bNode
 	if !strings.Contains(got, wantFrom) {
 		t.Errorf("missing decomposed from→association-class leg: want %q in:\n%s", wantFrom, got)
 	}

@@ -5,20 +5,24 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// associationClassMiddleMultiplicity is the multiplicity shown on the association-class
-// side of each decomposed leg in class diagrams.
-const associationClassMiddleMultiplicity = "1..*"
+// associationClassFromLegFromMultiplicity is the multiplicity on the from-class end of the
+// from→association-class leg. Each association-class row belongs to exactly one from instance.
+func associationClassFromLegFromMultiplicity(_ model_class.Association) string {
+	return "1"
+}
 
-func associationClassFromLegFromMultiplicity(assoc model_class.Association) string {
+// associationClassFromLegToMultiplicity is the multiplicity on the association-class end
+// of the from→association-class leg: how many association-class rows per from instance,
+// which matches the parent association's to end.
+func associationClassFromLegToMultiplicity(assoc model_class.Association) string {
+	return assoc.ToMultiplicity.String()
+}
+
+// associationClassToLegFromMultiplicity is the multiplicity on the association-class end
+// of the association-class→to leg: how many association-class rows per to instance,
+// which matches the parent association's from end.
+func associationClassToLegFromMultiplicity(assoc model_class.Association) string {
 	return assoc.FromMultiplicity.String()
-}
-
-func associationClassFromLegToMultiplicity(_ model_class.Association) string {
-	return associationClassMiddleMultiplicity
-}
-
-func associationClassToLegFromMultiplicity(_ model_class.Association) string {
-	return associationClassMiddleMultiplicity
 }
 
 func associationClassToLegToMultiplicity(assoc model_class.Association) string {
@@ -26,17 +30,10 @@ func associationClassToLegToMultiplicity(assoc model_class.Association) string {
 }
 
 // associationClassToEndpointMultiplicity is the multiplicity on the far endpoint of the
-// association-class→to leg. A many-to-many endpoint association still decomposes to one
-// row per association-class instance on that leg.
-func associationClassToEndpointMultiplicity(to model_class.Multiplicity) string {
-	if to.LowerBound == 0 && to.HigherBound == 0 {
-		return "1"
-	}
-	value := to.String()
-	if value == "*" {
-		return "1"
-	}
-	return value
+// association-class→to leg. Each association-class instance links to exactly one to-class
+// instance regardless of how many to endpoints the parent association allows per from.
+func associationClassToEndpointMultiplicity(_ model_class.Multiplicity) string {
+	return "1"
 }
 
 // renderAssociationClassMermaid reports whether the association should be drawn as

@@ -11,9 +11,45 @@ import (
 func TestAssociationClassToEndpointMultiplicity(t *testing.T) {
 	t.Parallel()
 
-	one := helper.Must(model_class.NewMultiplicity("1"))
-	manyMany := helper.Must(model_class.NewMultiplicity("many..many"))
+	cases := []struct {
+		name string
+		mult string
+	}{
+		{name: "one", mult: "1"},
+		{name: "one_to_many", mult: "1..many"},
+		{name: "many_many", mult: "many..many"},
+		{name: "any", mult: "any"},
+	}
 
-	assert.Equal(t, "1", associationClassToEndpointMultiplicity(manyMany))
-	assert.Equal(t, "1", associationClassToEndpointMultiplicity(one))
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			m := helper.Must(model_class.NewMultiplicity(tc.mult))
+			assert.Equal(t, "1", associationClassToEndpointMultiplicity(m))
+		})
+	}
+}
+
+func TestAssociationClassLegMultiplicities(t *testing.T) {
+	t.Parallel()
+
+	one := helper.Must(model_class.NewMultiplicity("1"))
+	oneToMany := helper.Must(model_class.NewMultiplicity("1..many"))
+	anyMult := helper.Must(model_class.NewMultiplicity("any"))
+
+	assoc := model_class.Association{
+		FromMultiplicity: one,
+		ToMultiplicity:   oneToMany,
+	}
+
+	assert.Equal(t, "1", associationClassFromLegFromMultiplicity(assoc))
+	assert.Equal(t, "1..*", associationClassFromLegToMultiplicity(assoc))
+	assert.Equal(t, "1", associationClassToLegFromMultiplicity(assoc))
+	assert.Equal(t, "1", associationClassToLegToMultiplicity(assoc))
+
+	assoc.FromMultiplicity = anyMult
+	assoc.ToMultiplicity = anyMult
+	assert.Equal(t, "1", associationClassFromLegFromMultiplicity(assoc))
+	assert.Equal(t, "*", associationClassFromLegToMultiplicity(assoc))
+	assert.Equal(t, "*", associationClassToLegFromMultiplicity(assoc))
 }
