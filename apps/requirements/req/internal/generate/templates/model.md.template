@@ -2,14 +2,13 @@
 
 # {{ .Model.Name }}
 
-{{ .Model.Details }}
-
+{{ .Model.Details }}{{ unfinished_notes_block .Model.UnfinishedNotes }}
 ## Actors
 
 The actors of this model.
 
 {{ range .Actors -}}
-- **[{{ .Name }} <img src="{{ .Type }}.svg" width="7" height="15" />]({{ filename "actor" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+- **[{{ .Name }} <img src="{{ .Type }}.svg" width="7" height="15" />]({{ filename "actor" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
 
 {{ if ne .Model.ActorGeneralizations nil -}}
@@ -20,7 +19,7 @@ The actor generalizations of this model.
 {{ range .Model.ActorGeneralizations -}}
 {{- $super := actor_generalization_superclass $reqs .Key -}}
 {{- $subs := actor_generalization_subclasses $reqs .Key -}}
-- **{{ .Name }}.** {{ .Details }}
+- **{{ .Name }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ .Details }}
     - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ else }}???{{ end }}
 {{ end }}
 {{- end }}
@@ -34,7 +33,7 @@ The domains of this model.
 ```
 
 {{ range .Domains -}}
-- **[{{ if .Realized }}«realized» {{ end }}{{ .Name }}]({{ filename "domain" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+- **[{{ if .Realized }}«realized» {{ end }}{{ .Name }}]({{ filename "domain" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
 
 ## Invariants

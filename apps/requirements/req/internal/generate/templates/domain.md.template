@@ -6,8 +6,7 @@
 
 # {{ if .Domain.Realized }}«realized» {{ end }}{{ .Domain.Name }}
 
-{{ .Domain.Details }}
-
+{{ .Domain.Details }}{{ unfinished_notes_block .Domain.UnfinishedNotes }}
 {{ if gt (len .Domain.Subdomains) 1 }}
 ## Subdomains
 
@@ -18,7 +17,7 @@ The subdomains of this domain.
 ```
 
 {{ range .Subdomains -}}
-- **[{{ .Name }}]({{ filename "subdomain" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+- **[{{ .Name }}]({{ filename "subdomain" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
 
 {{ else }}
@@ -32,7 +31,7 @@ The classes of this domain.
 ```
 {{ end }}
 {{ range $domainClasses -}}
-- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
 
 ## Use Cases
@@ -43,7 +42,7 @@ The classes of this domain.
 ```
 {{ end }}
 {{ range $domainUseCases -}}
-- **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+- **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
 {{ end }}
 

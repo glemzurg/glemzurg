@@ -5,6 +5,26 @@ import (
 	"unicode"
 )
 
+const _unfinishedNotesGlyph = "\u2042" // ⁂ ASTERISM
+
+// unfinishedNotesBlock renders scratch notes as a single unformatted fenced block.
+// Empty or whitespace-only notes produce no output.
+func unfinishedNotesBlock(notes string) string {
+	trimmed := strings.TrimSpace(notes)
+	if trimmed == "" {
+		return ""
+	}
+	return "\n```\n" + trimmed + "\n```\n"
+}
+
+// unfinishedNotesMarker returns a red parenthesized ⁂ when notes are present.
+func unfinishedNotesMarker(notes string) string {
+	if strings.TrimSpace(notes) == "" {
+		return ""
+	}
+	return ` (<span class="unfinished-notes-marker">` + _unfinishedNotesGlyph + `</span>)`
+}
+
 // Skip the header and grab the first markdown paragraph as a summary for showing in table of contents pages.
 func firstMdParagraph(md string) string {
 	lines := strings.Split(md, "\n")

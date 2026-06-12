@@ -147,6 +147,8 @@ var _funcMap = template.FuncMap{
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},
+	"unfinished_notes_block":  unfinishedNotesBlock,
+	"unfinished_notes_marker": unfinishedNotesMarker,
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
