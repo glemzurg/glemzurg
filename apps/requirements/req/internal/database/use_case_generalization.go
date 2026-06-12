@@ -20,6 +20,7 @@ func scanUseCaseGeneralization(scanner Scanner, subdomainKeyPtr *identity.Key, g
 		&keyStr,
 		&generalization.Name,
 		&generalization.Details,
+		&generalization.UnfinishedNotes,
 		&generalization.IsComplete,
 		&generalization.IsStatic,
 		&generalization.UmlComment,
@@ -61,6 +62,7 @@ func LoadUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey
 			generalization_key ,
 			name               ,
 			details            ,
+			unfinished_notes   ,
 			is_complete        ,
 			is_static          ,
 			uml_comment
@@ -93,11 +95,12 @@ func UpdateUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalization 
 		UPDATE
 			use_case_generalization
 		SET
-			name        = $3 ,
-			details     = $4 ,
-			is_complete = $5 ,
-			is_static   = $6 ,
-			uml_comment = $7
+			name             = $3 ,
+			details          = $4 ,
+			unfinished_notes = $5 ,
+			is_complete      = $6 ,
+			is_static        = $7 ,
+			uml_comment      = $8
 		WHERE
 			model_key = $1
 		AND
@@ -106,6 +109,7 @@ func UpdateUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalization 
 		generalization.Key.String(),
 		generalization.Name,
 		generalization.Details,
+		generalization.UnfinishedNotes,
 		generalization.IsComplete,
 		generalization.IsStatic,
 		generalization.UmlComment)
@@ -157,6 +161,7 @@ func QueryUseCaseGeneralizations(dbOrTx DbOrTx, modelKey string) (generalization
 			generalization_key ,
 			name               ,
 			details            ,
+			unfinished_notes   ,
 			is_complete        ,
 			is_static          ,
 			uml_comment
@@ -186,18 +191,18 @@ func AddUseCaseGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations m
 
 	// Build the bulk insert query.
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`INSERT INTO use_case_generalization (model_key, subdomain_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `)
-	args := make([]any, 0, count*8)
+	queryBuilder.WriteString(`INSERT INTO use_case_generalization (model_key, subdomain_key, generalization_key, name, details, unfinished_notes, is_complete, is_static, uml_comment) VALUES `)
+	args := make([]any, 0, count*9)
 	i := 0
 	for subdomainKey, gens := range generalizations {
 		for _, gen := range gens {
 			if i > 0 {
 				queryBuilder.WriteString(", ")
 			}
-			base := i * 8
-			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+			base := i * 9
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
 
-			args = append(args, modelKey, subdomainKey.String(), gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
+			args = append(args, modelKey, subdomainKey.String(), gen.Key.String(), gen.Name, gen.Details, gen.UnfinishedNotes, gen.IsComplete, gen.IsStatic, gen.UmlComment)
 			i++
 		}
 	}

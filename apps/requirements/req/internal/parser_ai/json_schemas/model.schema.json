@@ -13,8 +13,14 @@
     "details": {
       "type": "string",
       "description": "Optional detailed description of the model. Use this to provide context about what the model represents, its scope, and any important assumptions. Can be multiple sentences or paragraphs."
+    },
+    "unfinished_notes": {
+      "type": "string",
+      "description": "Optional scratch notes not yet placed in final requirement locations."
     }
   },
-  "required": ["name"],
+  "required": [
+    "name"
+  ],
   "additionalProperties": false
 }

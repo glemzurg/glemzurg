@@ -5,6 +5,7 @@ CREATE TABLE model (
   model_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   PRIMARY KEY (model_key)
 );
 
@@ -12,6 +13,7 @@ COMMENT ON TABLE model IS 'A fully distinct semantic model, separate from all ot
 COMMENT ON COLUMN model.model_key IS 'The internal ID.';
 COMMENT ON COLUMN model.name IS 'The unique name of the model.';
 COMMENT ON COLUMN model.details IS 'A summary description.';
+COMMENT ON COLUMN model.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 
 --------------------------------------------------------------
 
@@ -112,6 +114,7 @@ CREATE TABLE domain (
   model_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   realized boolean NOT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, domain_key),
@@ -123,6 +126,7 @@ COMMENT ON COLUMN domain.domain_key IS 'The internal ID.';
 COMMENT ON COLUMN domain.model_key IS 'The model this domain is part of.';
 COMMENT ON COLUMN domain.name IS 'The unique name of the domain.';
 COMMENT ON COLUMN domain.details IS 'A summary description.';
+COMMENT ON COLUMN domain.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN domain.realized IS 'A realized domain is one with no semantic model, which is preexisting, and just design and later artifacts.';
 COMMENT ON COLUMN domain.uml_comment IS 'A comment that appears in the diagrams.';
 
@@ -134,6 +138,7 @@ CREATE TABLE subdomain (
   domain_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, subdomain_key),
   CONSTRAINT fk_subdomain_domain FOREIGN KEY (model_key, domain_key) REFERENCES domain (model_key, domain_key) ON DELETE CASCADE
@@ -144,6 +149,7 @@ COMMENT ON COLUMN subdomain.subdomain_key IS 'The internal ID.';
 COMMENT ON COLUMN subdomain.model_key IS 'The model this subdomain is part of.';
 COMMENT ON COLUMN subdomain.name IS 'The unique name of the subdomain.';
 COMMENT ON COLUMN subdomain.details IS 'A summary description.';
+COMMENT ON COLUMN subdomain.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN subdomain.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -176,6 +182,7 @@ CREATE TABLE actor_generalization (
   is_complete boolean DEFAULT NULL,
   is_static boolean DEFAULT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, generalization_key),
   CONSTRAINT fk_actor_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
@@ -188,6 +195,7 @@ COMMENT ON COLUMN actor_generalization.name IS 'The unique name of the generaliz
 COMMENT ON COLUMN actor_generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
 COMMENT ON COLUMN actor_generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
 COMMENT ON COLUMN actor_generalization.details IS 'A summary description.';
+COMMENT ON COLUMN actor_generalization.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN actor_generalization.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -200,6 +208,7 @@ CREATE TABLE actor (
   actor_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   actor_type actor_type NOT NULL,
   superclass_of_key text DEFAULT NULL,
   subclass_of_key text DEFAULT NULL,
@@ -215,6 +224,7 @@ COMMENT ON COLUMN actor.model_key IS 'The model this actor is part of.';
 COMMENT ON COLUMN actor.actor_key IS 'The internal ID.';
 COMMENT ON COLUMN actor.name IS 'The unique name of the actor.';
 COMMENT ON COLUMN actor.details IS 'A summary description.';
+COMMENT ON COLUMN actor.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN actor.actor_type IS 'Whether this actor is a person or a system.';
 COMMENT ON COLUMN actor.superclass_of_key IS 'The generalization this actor is a superclass of, if it is one.';
 COMMENT ON COLUMN actor.subclass_of_key IS 'The generalization this actor is a subclass of, if it is one.';
@@ -373,6 +383,7 @@ CREATE TABLE class_generalization (
   is_complete boolean DEFAULT NULL,
   is_static boolean DEFAULT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, generalization_key),
   CONSTRAINT fk_class_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
@@ -387,6 +398,7 @@ COMMENT ON COLUMN class_generalization.subdomain_key IS 'The subdomain this clas
 COMMENT ON COLUMN class_generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
 COMMENT ON COLUMN class_generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
 COMMENT ON COLUMN class_generalization.details IS 'A summary description.';
+COMMENT ON COLUMN class_generalization.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN class_generalization.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -400,6 +412,7 @@ CREATE TABLE class (
   superclass_of_key text DEFAULT NULL,
   subclass_of_key text DEFAULT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, class_key),
   CONSTRAINT fk_class_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
@@ -418,6 +431,7 @@ COMMENT ON COLUMN class.actor_key IS 'If this class is also an actor, which acto
 COMMENT ON COLUMN class.superclass_of_key IS 'The generalization this class is a superclass of, if it is one.';
 COMMENT ON COLUMN class.subclass_of_key IS 'The generalization this class is a subclass of, if it is one.';
 COMMENT ON COLUMN class.details IS 'A summary description.';
+COMMENT ON COLUMN class.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN class.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -858,6 +872,7 @@ CREATE TABLE use_case_generalization (
   is_complete boolean DEFAULT NULL,
   is_static boolean DEFAULT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, generalization_key),
   CONSTRAINT fk_use_case_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
@@ -872,6 +887,7 @@ COMMENT ON COLUMN use_case_generalization.subdomain_key IS 'The subdomain this u
 COMMENT ON COLUMN use_case_generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
 COMMENT ON COLUMN use_case_generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
 COMMENT ON COLUMN use_case_generalization.details IS 'A summary description.';
+COMMENT ON COLUMN use_case_generalization.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN use_case_generalization.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -889,6 +905,7 @@ CREATE TABLE use_case (
   use_case_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   level use_case_level NOT NULL,
   read_only boolean NOT NULL,
   subdomain_key text NOT NULL,
@@ -912,6 +929,7 @@ COMMENT ON COLUMN use_case.subdomain_key IS 'The subdomain this use case is part
 COMMENT ON COLUMN use_case.superclass_of_key IS 'The generalization this use case is a superclass of, if it is one.';
 COMMENT ON COLUMN use_case.subclass_of_key IS 'The generalization this use case is a subclass of, if it is one.';
 COMMENT ON COLUMN use_case.details IS 'A summary description.';
+COMMENT ON COLUMN use_case.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN use_case.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------

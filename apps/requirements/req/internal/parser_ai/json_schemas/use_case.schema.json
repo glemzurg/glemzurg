@@ -17,7 +17,11 @@
     "level": {
       "type": "string",
       "description": "The level of the use case. Must be one of: 'sky' (a high-level organizational user story), 'sea' (a straightforward user story), or 'mud' (a small, reusable part of another user story, e.g., a login flow). Mud-level use cases can be shared with sea-level use cases via use_case_shared files. If validation fails: ensure this is exactly 'sky', 'sea', or 'mud'.",
-      "enum": ["sky", "sea", "mud"]
+      "enum": [
+        "sky",
+        "sea",
+        "mud"
+      ]
     },
     "read_only": {
       "type": "boolean",
@@ -40,8 +44,15 @@
         },
         "additionalProperties": false
       }
+    },
+    "unfinished_notes": {
+      "type": "string",
+      "description": "Optional scratch notes not yet placed in final requirement locations."
     }
   },
-  "required": ["name", "level"],
+  "required": [
+    "name",
+    "level"
+  ],
   "additionalProperties": false
 }

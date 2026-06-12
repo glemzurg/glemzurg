@@ -25,12 +25,13 @@ type inputAttribute struct {
 
 // inputClass represents a class JSON file.
 type inputClass struct {
-	Name       string                     `json:"name"`
-	Details    string                     `json:"details,omitempty"`
-	ActorKey   string                     `json:"actor_key,omitempty"`
-	UMLComment string                     `json:"uml_comment,omitempty"`
-	Attributes map[string]*inputAttribute `json:"attributes,omitempty"`
-	Indexes    [][]string                 `json:"indexes,omitempty"`
+	Name            string                     `json:"name"`
+	Details         string                     `json:"details,omitempty"`
+	UnfinishedNotes string                     `json:"unfinished_notes,omitempty"`
+	ActorKey        string                     `json:"actor_key,omitempty"`
+	UMLComment      string                     `json:"uml_comment,omitempty"`
+	Attributes      map[string]*inputAttribute `json:"attributes,omitempty"`
+	Indexes         [][]string                 `json:"indexes,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Invariants   []inputLogic            `json:"-"`

@@ -19,6 +19,7 @@ func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
 		&keyStr,
 		&actor.Name,
 		&actor.Details,
+		&actor.UnfinishedNotes,
 		&actor.Type,
 		&superclassOfKeyPtr,
 		&subclassOfKeyPtr,
@@ -70,6 +71,7 @@ func LoadActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor mod
 			actor_key         ,
 			name              ,
 			details           ,
+			unfinished_notes  ,
 			actor_type        ,
 			superclass_of_key ,
 			subclass_of_key   ,
@@ -115,10 +117,11 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 		SET
 			name              = $3 ,
 			details           = $4 ,
-			actor_type        = $5 ,
-			superclass_of_key = $6 ,
-			subclass_of_key   = $7 ,
-			uml_comment       = $8
+			unfinished_notes  = $5 ,
+			actor_type        = $6 ,
+			superclass_of_key = $7 ,
+			subclass_of_key   = $8 ,
+			uml_comment       = $9
 		WHERE
 			model_key = $1
 		AND
@@ -127,6 +130,7 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 		actor.Key.String(),
 		actor.Name,
 		actor.Details,
+		actor.UnfinishedNotes,
 		actor.Type,
 		superclassOfKeyPtr,
 		subclassOfKeyPtr,
@@ -174,6 +178,7 @@ func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []model_actor.Actor, er
 				actor_key         ,
 				name              ,
 				details           ,
+				unfinished_notes  ,
 				actor_type        ,
 				superclass_of_key ,
 				subclass_of_key   ,
@@ -199,14 +204,14 @@ func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err 
 
 	// Build the bulk insert query.
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`INSERT INTO actor (model_key, actor_key, name, details, actor_type, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
-	args := make([]any, 0, len(actors)*8)
+	queryBuilder.WriteString(`INSERT INTO actor (model_key, actor_key, name, details, unfinished_notes, actor_type, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(actors)*9)
 	for i, actor := range actors {
 		if i > 0 {
 			queryBuilder.WriteString(", ")
 		}
-		base := i * 8
-		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+		base := i * 9
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
 
 		// Handle optional key pointers.
 		var superclassOfKeyPtr, subclassOfKeyPtr *string
@@ -219,7 +224,7 @@ func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err 
 			subclassOfKeyPtr = &s
 		}
 
-		args = append(args, modelKey, actor.Key.String(), actor.Name, actor.Details, actor.Type, superclassOfKeyPtr, subclassOfKeyPtr, actor.UmlComment)
+		args = append(args, modelKey, actor.Key.String(), actor.Name, actor.Details, actor.UnfinishedNotes, actor.Type, superclassOfKeyPtr, subclassOfKeyPtr, actor.UmlComment)
 	}
 
 	err = dbExec(dbOrTx, queryBuilder.String(), args...)

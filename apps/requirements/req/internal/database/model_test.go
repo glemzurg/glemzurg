@@ -37,13 +37,15 @@ func (suite *ModelSuite) TestLoad() {
 			(
 				model_key,
 				name,
-				details
+				details,
+				unfinished_notes
 			)
 		VALUES
 			(
 				'key',
 				'Name',
-				'Details'
+				'Details',
+				''
 			)
 	`)
 	suite.Require().NoError(err)

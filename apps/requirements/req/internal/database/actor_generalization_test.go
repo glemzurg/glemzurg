@@ -53,6 +53,7 @@ func (suite *ActorGeneralizationSuite) TestLoad() {
 				generalization_key,
 				name,
 				details,
+				unfinished_notes,
 				is_complete,
 				is_static,
 				uml_comment
@@ -63,6 +64,7 @@ func (suite *ActorGeneralizationSuite) TestLoad() {
 				'ageneralization/key',
 				'Name',
 				'Details',
+				'',
 				true,
 				false,
 				'UmlComment'

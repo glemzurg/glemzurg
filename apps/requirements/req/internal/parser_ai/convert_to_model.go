@@ -70,6 +70,7 @@ func convertModelScalars(input *inputModel, modelKey string) (*core.Model, error
 		Key:                  strings.TrimSpace(strings.ToLower(modelKey)),
 		Name:                 input.Name,
 		Details:              input.Details,
+		UnfinishedNotes:      input.UnfinishedNotes,
 		Invariants:           invariants,
 		GlobalFunctions:      globalFunctions,
 		NamedSets:            namedSets,
@@ -240,11 +241,12 @@ func convertActorToModel(keyStr string, actor *inputActor, actorGeneralizations 
 	}
 
 	result := model_actor.Actor{
-		Key:        key,
-		Name:       actor.Name,
-		Type:       actor.Type,
-		Details:    actor.Details,
-		UmlComment: actor.UMLComment,
+		Key:             key,
+		Name:            actor.Name,
+		Type:            actor.Type,
+		Details:         actor.Details,
+		UnfinishedNotes: actor.UnfinishedNotes,
+		UmlComment:      actor.UMLComment,
 	}
 
 	// Set SuperclassOfKey and SubclassOfKey from actor generalizations
@@ -276,12 +278,13 @@ func convertActorGeneralizationToModel(keyStr string, gen *inputActorGeneralizat
 	}
 
 	return model_actor.Generalization{
-		Key:        key,
-		Name:       gen.Name,
-		Details:    gen.Details,
-		IsComplete: gen.IsComplete,
-		IsStatic:   gen.IsStatic,
-		UmlComment: gen.UMLComment,
+		Key:             key,
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UmlComment:      gen.UMLComment,
 	}, nil
 }
 
@@ -339,6 +342,7 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 		Key:               domainKey,
 		Name:              domain.Name,
 		Details:           domain.Details,
+		UnfinishedNotes:   domain.UnfinishedNotes,
 		Realized:          domain.Realized,
 		UmlComment:        domain.UMLComment,
 		Subdomains:        make(map[identity.Key]model_domain.Subdomain),
@@ -398,6 +402,7 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 		Key:                    subdomainKey,
 		Name:                   subdomain.Name,
 		Details:                subdomain.Details,
+		UnfinishedNotes:        subdomain.UnfinishedNotes,
 		UmlComment:             subdomain.UMLComment,
 		Classes:                make(map[identity.Key]model_class.Class),
 		Generalizations:        make(map[identity.Key]model_class.Generalization),
@@ -534,14 +539,15 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, ctx useCaseConvConte
 	}
 
 	result := model_use_case.UseCase{
-		Key:        useCaseKey,
-		Name:       uc.Name,
-		Details:    uc.Details,
-		Level:      uc.Level,
-		ReadOnly:   uc.ReadOnly,
-		UmlComment: uc.UMLComment,
-		Actors:     make(map[identity.Key]model_use_case.Actor),
-		Scenarios:  make(map[identity.Key]model_scenario.Scenario),
+		Key:             useCaseKey,
+		Name:            uc.Name,
+		Details:         uc.Details,
+		UnfinishedNotes: uc.UnfinishedNotes,
+		Level:           uc.Level,
+		ReadOnly:        uc.ReadOnly,
+		UmlComment:      uc.UMLComment,
+		Actors:          make(map[identity.Key]model_use_case.Actor),
+		Scenarios:       make(map[identity.Key]model_scenario.Scenario),
 	}
 
 	// Set SuperclassOfKey and SubclassOfKey from use case generalizations
@@ -840,12 +846,13 @@ func convertUseCaseGeneralizationToModel(keyStr string, gen *inputUseCaseGeneral
 	}
 
 	return model_use_case.Generalization{
-		Key:        key,
-		Name:       gen.Name,
-		Details:    gen.Details,
-		IsComplete: gen.IsComplete,
-		IsStatic:   gen.IsStatic,
-		UmlComment: gen.UMLComment,
+		Key:             key,
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UmlComment:      gen.UMLComment,
 	}, nil
 }
 
@@ -863,17 +870,18 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 	}
 
 	result := model_class.Class{
-		Key:         classKey,
-		Name:        class.Name,
-		Details:     class.Details,
-		UmlComment:  class.UMLComment,
-		Attributes:  make(map[identity.Key]model_class.Attribute),
-		States:      make(map[identity.Key]model_state.State),
-		Events:      make(map[identity.Key]model_state.Event),
-		Guards:      make(map[identity.Key]model_state.Guard),
-		Actions:     make(map[identity.Key]model_state.Action),
-		Queries:     make(map[identity.Key]model_state.Query),
-		Transitions: make(map[identity.Key]model_state.Transition),
+		Key:             classKey,
+		Name:            class.Name,
+		Details:         class.Details,
+		UnfinishedNotes: class.UnfinishedNotes,
+		UmlComment:      class.UMLComment,
+		Attributes:      make(map[identity.Key]model_class.Attribute),
+		States:          make(map[identity.Key]model_state.State),
+		Events:          make(map[identity.Key]model_state.Event),
+		Guards:          make(map[identity.Key]model_state.Guard),
+		Actions:         make(map[identity.Key]model_state.Action),
+		Queries:         make(map[identity.Key]model_state.Query),
+		Transitions:     make(map[identity.Key]model_state.Transition),
 	}
 
 	// Set actor key if present
@@ -1465,12 +1473,13 @@ func convertClassGeneralizationToModel(keyStr string, gen *inputClassGeneralizat
 	}
 
 	return model_class.Generalization{
-		Key:        genKey,
-		Name:       gen.Name,
-		Details:    gen.Details,
-		IsComplete: gen.IsComplete,
-		IsStatic:   gen.IsStatic,
-		UmlComment: gen.UMLComment,
+		Key:             genKey,
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UmlComment:      gen.UMLComment,
 	}, nil
 }
 

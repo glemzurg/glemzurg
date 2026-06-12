@@ -52,7 +52,9 @@
               "type": {
                 "type": "string",
                 "description": "Required. The logic kind. Must be 'value' for derivation policies.",
-                "enum": ["value"]
+                "enum": [
+                  "value"
+                ]
               },
               "description": {
                 "type": "string",
@@ -62,14 +64,20 @@
               "notation": {
                 "type": "string",
                 "description": "Required. The formal notation system. Currently the only supported value is 'tla_plus'. Must always be present. If validation fails: ensure this is exactly 'tla_plus'.",
-                "enum": ["tla_plus"]
+                "enum": [
+                  "tla_plus"
+                ]
               },
               "specification": {
                 "type": "string",
                 "description": "Optional formal specification in the given notation."
               }
             },
-            "required": ["type", "description", "notation"],
+            "required": [
+              "type",
+              "description",
+              "notation"
+            ],
             "additionalProperties": false
           },
           "nullable": {
@@ -85,7 +93,9 @@
             "description": "Optional type specification for the attribute's data type in TLA+ notation. Provides a precise formal type for the attribute (e.g., 'Nat', 'SUBSET STRING', 'Int'). Only meaningful when data_type_rules can be parsed into a data type."
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "additionalProperties": false
       }
     },
@@ -100,8 +110,14 @@
         },
         "minItems": 1
       }
+    },
+    "unfinished_notes": {
+      "type": "string",
+      "description": "Optional scratch notes not yet placed in final requirement locations."
     }
   },
-  "required": ["name"],
+  "required": [
+    "name"
+  ],
   "additionalProperties": false
 }

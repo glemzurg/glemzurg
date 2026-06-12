@@ -60,6 +60,7 @@ func (suite *GeneralizationSuite) TestLoad() {
 				generalization_key,
 				name,
 				details,
+				unfinished_notes,
 				is_complete,
 				is_static,
 				uml_comment
@@ -71,6 +72,7 @@ func (suite *GeneralizationSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/cgeneralization/key',
 				'Name',
 				'Details',
+				'',
 				true,
 				false,
 				'UmlComment'

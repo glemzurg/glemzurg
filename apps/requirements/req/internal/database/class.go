@@ -21,6 +21,7 @@ func scanClass(scanner Scanner, subdomainKeyPtr *identity.Key, class *model_clas
 		&classKeyStr,
 		&class.Name,
 		&class.Details,
+		&class.UnfinishedNotes,
 		&actorKeyPtr,
 		&superclassOfKeyPtr,
 		&subclassOfKeyPtr,
@@ -86,6 +87,7 @@ func LoadClass(dbOrTx DbOrTx, modelKey string, classKey identity.Key) (subdomain
 			class_key         ,
 			name              ,
 			details           ,
+			unfinished_notes  ,
 			actor_key         ,
 			superclass_of_key ,
 			subclass_of_key   ,
@@ -138,10 +140,11 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 		SET
 			name              = $3 ,
 			details           = $4 ,
-			actor_key         = $5 ,
-			superclass_of_key = $6 ,
-			subclass_of_key   = $7 ,
-			uml_comment       = $8
+			unfinished_notes  = $5 ,
+			actor_key         = $6 ,
+			superclass_of_key = $7 ,
+			subclass_of_key   = $8 ,
+			uml_comment       = $9
 		WHERE
 			model_key = $1
 		AND
@@ -150,6 +153,7 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 		class.Key.String(),
 		class.Name,
 		class.Details,
+		class.UnfinishedNotes,
 		actorKeyPtr,
 		superclassOfKeyPtr,
 		subclassOfKeyPtr,
@@ -205,6 +209,7 @@ func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[identity.Key][]mo
 			class_key         ,
 			name              ,
 			details           ,
+			unfinished_notes  ,
 			actor_key         ,
 			superclass_of_key ,
 			subclass_of_key   ,
@@ -235,16 +240,16 @@ func AddClasses(dbOrTx DbOrTx, modelKey string, classes map[identity.Key][]model
 
 	// Build the bulk insert query.
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`INSERT INTO class (model_key, subdomain_key, class_key, name, details, actor_key, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
-	args := make([]any, 0, count*9)
+	queryBuilder.WriteString(`INSERT INTO class (model_key, subdomain_key, class_key, name, details, unfinished_notes, actor_key, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
+	args := make([]any, 0, count*10)
 	i := 0
 	for subdomainKey, classList := range classes {
 		for _, class := range classList {
 			if i > 0 {
 				queryBuilder.WriteString(", ")
 			}
-			base := i * 9
-			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			base := i * 10
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
 
 			// Handle optional key pointers.
 			var actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr *string
@@ -261,7 +266,7 @@ func AddClasses(dbOrTx DbOrTx, modelKey string, classes map[identity.Key][]model
 				subclassOfKeyPtr = &s
 			}
 
-			args = append(args, modelKey, subdomainKey.String(), class.Key.String(), class.Name, class.Details, actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr, class.UmlComment)
+			args = append(args, modelKey, subdomainKey.String(), class.Key.String(), class.Name, class.Details, class.UnfinishedNotes, actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr, class.UmlComment)
 			i++
 		}
 	}

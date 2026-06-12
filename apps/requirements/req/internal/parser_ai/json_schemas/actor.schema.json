@@ -13,7 +13,10 @@
     "type": {
       "type": "string",
       "description": "The type of actor. Must be one of: 'person' (a human user interacting with the system) or 'system' (an external software system that interacts with the system). If validation fails: ensure this is exactly 'person' or 'system'.",
-      "enum": ["person", "system"]
+      "enum": [
+        "person",
+        "system"
+      ]
     },
     "details": {
       "type": "string",
@@ -22,8 +25,15 @@
     "uml_comment": {
       "type": "string",
       "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the actor in generated UML diagrams. Use for diagram-specific clarifications."
+    },
+    "unfinished_notes": {
+      "type": "string",
+      "description": "Optional scratch notes not yet placed in final requirement locations."
     }
   },
-  "required": ["name", "type"],
+  "required": [
+    "name",
+    "type"
+  ],
   "additionalProperties": false
 }

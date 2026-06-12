@@ -12,6 +12,7 @@ func scanModel(scanner Scanner, model *core.Model) (err error) {
 		&model.Key,
 		&model.Name,
 		&model.Details,
+		&model.UnfinishedNotes,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -34,9 +35,10 @@ func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
 			return nil
 		},
 		`SELECT
-			model_key   ,
-			name        ,
-			details
+			model_key        ,
+			name             ,
+			details          ,
+			unfinished_notes
 		FROM
 			model
 		WHERE
@@ -58,19 +60,22 @@ func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
 	err = dbExec(dbOrTx, `
 		INSERT INTO model
 			(
-				model_key ,
-				name      ,
-				details
+				model_key        ,
+				name             ,
+				details          ,
+				unfinished_notes
 			)
 		VALUES
 			(
 				$1,
 				$2,
-				$3
+				$3,
+				$4
 			)`,
 		modelKey,
 		model.Name,
-		model.Details)
+		model.Details,
+		model.UnfinishedNotes)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -88,13 +93,15 @@ func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
 		UPDATE
 			model
 		SET
-			name    = $2 ,
-			details = $3
+			name             = $2 ,
+			details          = $3 ,
+			unfinished_notes = $4
 		WHERE
 			model_key = $1`,
 		modelKey,
 		model.Name,
-		model.Details)
+		model.Details,
+		model.UnfinishedNotes)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -134,9 +141,10 @@ func QueryModels(dbOrTx DbOrTx) (models []core.Model, err error) {
 			return nil
 		},
 		`SELECT
-			model_key   ,
-			name        ,
-			details
+			model_key        ,
+			name             ,
+			details          ,
+			unfinished_notes
 		FROM
 			model
 		ORDER BY model_key`)

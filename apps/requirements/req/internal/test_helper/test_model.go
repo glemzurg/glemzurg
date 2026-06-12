@@ -40,6 +40,51 @@ func parsedSpec(specification string) logic_spec.ExpressionSpec {
 	return spec
 }
 
+// Distinct unfinished-notes strings exercise parser and database round-trips.
+const (
+	notesModel              = "Model scratch: align glossary with downstream design docs."
+	notesDomainCommerce     = "Domain scratch (commerce): pending stakeholder review."
+	notesDomainLogistics    = "Domain scratch (logistics): route constraints TBD."
+	notesDomainExternal     = "Domain scratch (external): partner API matrix incomplete."
+	notesSubdomainOrders    = "Subdomain scratch (orders): split fulfillment use cases."
+	notesSubdomainWarehouse = "Subdomain scratch (warehouse): slotting rules draft."
+	notesSubdomainDefault   = "Subdomain scratch (default): placeholder cleanup needed."
+	notesSubdomainAnalytics = "Subdomain scratch (analytics): metric definitions pending."
+	notesActorGenCustomers  = "Actor-gen scratch (customers): junior role edge cases."
+	notesActorGenUsers      = "Actor-gen scratch (users): privilege model draft."
+	notesActorGenSystems    = "Actor-gen scratch (systems): failover actor mapping."
+	notesActorCustomer      = "Actor scratch (customer): guest checkout actor TBD."
+	notesActorGateway       = "Actor scratch (gateway): retry policy notes."
+	notesActorVip           = "Actor scratch (vip): entitlement tiers draft."
+	notesActorRegular       = "Actor scratch (regular): loyalty program linkage."
+	notesActorAnother       = "Actor scratch (another): duplicate detection rule."
+	notesClassGenVehicles   = "Class-gen scratch (vehicles): subtype completeness check."
+	notesClassGenProducts   = "Class-gen scratch (products): bundle SKU semantics."
+	notesClassGenOrders     = "Class-gen scratch (orders): partial shipment subclass."
+	notesClassOrder         = "Class scratch (order): cancellation window draft."
+	notesClassProduct       = "Class scratch (product): tax category mapping."
+	notesClassLineItem      = "Class scratch (line item): quantity split behavior."
+	notesClassCustomer      = "Class scratch (customer): address validation rule."
+	notesClassVehicle       = "Class scratch (vehicle): registration attribute TBD."
+	notesClassCar           = "Class scratch (car): insurance linkage draft."
+	notesClassWarehouse     = "Class scratch (warehouse): capacity invariant draft."
+	notesClassShelf         = "Class scratch (shelf): replenishment trigger."
+	notesClassAisle         = "Class scratch (aisle): pick-path optimization note."
+	notesClassSupplier      = "Class scratch (supplier): lead-time attribute."
+	notesClassShipment      = "Class scratch (shipment): tracking ID format."
+	notesClassRoute         = "Class scratch (route): multi-stop sequencing."
+	notesClassDummy         = "Class scratch (dummy): auto-generated filler."
+	notesUCGenManagement    = "Use-case-gen scratch (management): extend vs include."
+	notesUCGenView          = "Use-case-gen scratch (view): read-only boundary."
+	notesUCGenCancel        = "Use-case-gen scratch (cancel): compensation flow."
+	notesUCPlaceOrder       = "Use-case scratch (place order): payment timeout."
+	notesUCViewOrder        = "Use-case scratch (view order): PII masking rule."
+	notesUCManageOrder      = "Use-case scratch (manage order): bulk edit limits."
+	notesUCCancelOrder      = "Use-case scratch (cancel order): restocking fee."
+	notesUCViewOrders       = "Use-case scratch (view orders): pagination default."
+	notesUCCancelOrders     = "Use-case scratch (cancel orders): batch threshold."
+)
+
 // testKeys holds all identity keys used throughout the test model.
 type testKeys struct {
 	// Domains.
@@ -194,7 +239,7 @@ func GetStrictTestModel() core.Model {
 			if err != nil {
 				panic(fmt.Sprintf("failed to create default subdomain key: %v", err))
 			}
-			defaultSubdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", "", "")
+			defaultSubdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", notesSubdomainDefault, "")
 			domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 				defaultSubdomainKey: defaultSubdomain,
 			}
@@ -212,7 +257,7 @@ func GetStrictTestModel() core.Model {
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy class key: %v", err))
 					}
-					dummyClass := model_class.NewClass(dummyClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: fmt.Sprintf("Dummy Class %d", i), Details: "Dummy class to satisfy strict requirements.", UnfinishedNotes: "", UmlComment: ""})
+					dummyClass := model_class.NewClass(dummyClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: fmt.Sprintf("Dummy Class %d", i), Details: "Dummy class to satisfy strict requirements.", UnfinishedNotes: notesClassDummy, UmlComment: ""})
 					subdomain.Classes[dummyClassKey] = dummyClass
 				}
 			}
@@ -515,7 +560,7 @@ func buildTestModel() (core.Model, error) {
 	domains := buildDomains(k, subdomains)
 
 	// Assemble the model.
-	model := core.NewModel("test_model", "Test Model", "A comprehensive test model with every type represented.", "", logic.invariants, globalFuncs, namedSets)
+	model := core.NewModel("test_model", "Test Model", "A comprehensive test model with every type represented.", notesModel, logic.invariants, globalFuncs, namedSets)
 
 	model.Actors = actors
 	model.ActorGeneralizations = actorGens
@@ -1673,7 +1718,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	c.all = make(map[identity.Key]model_class.Class)
 
 	// Order class: rich, full state machine, 3 attributes.
-	classOrder := model_class.NewClass(k.classOrder, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "An order placed by a customer.", UnfinishedNotes: "", UmlComment: "the order class"})
+	classOrder := model_class.NewClass(k.classOrder, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "An order placed by a customer.", UnfinishedNotes: notesClassOrder, UmlComment: "the order class"})
 	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{
 		k.attrOrderDate: a.orderDate,
 		k.attrTotal:     a.total,
@@ -1690,7 +1735,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 
 	// Product class: empty parent for state machine (has attribute only).
 	// Superclass in product_types generalization. Linked to actorSystem.
-	classProduct := model_class.NewClass(k.classProduct, model_class.ClassLinks{ActorKey: &k.actorSystem, SuperclassOfKey: &k.classGen2, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "A product for sale.", UnfinishedNotes: "", UmlComment: ""})
+	classProduct := model_class.NewClass(k.classProduct, model_class.ClassLinks{ActorKey: &k.actorSystem, SuperclassOfKey: &k.classGen2, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "A product for sale.", UnfinishedNotes: notesClassProduct, UmlComment: ""})
 	classProduct.SetInvariants(l.classInvariants2)
 	classProduct.SetAttributes(map[identity.Key]model_class.Attribute{
 		k.attrProductName: a.productName,
@@ -1698,44 +1743,44 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	c.all[k.classProduct] = classProduct
 
 	// Line item: association class AND subclass in product_types generalization.
-	classLineItem := model_class.NewClass(k.classLineItem, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &k.classGen2}, model_class.ClassDetails{Name: "Line Item", Details: "A line item in an order.", UnfinishedNotes: "", UmlComment: ""})
+	classLineItem := model_class.NewClass(k.classLineItem, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &k.classGen2}, model_class.ClassDetails{Name: "Line Item", Details: "A line item in an order.", UnfinishedNotes: notesClassLineItem, UmlComment: ""})
 	c.all[k.classLineItem] = classLineItem
 
 	// Customer class: linked to actor.
-	classCustomer := model_class.NewClass(k.classCustomer, model_class.ClassLinks{ActorKey: &k.actorPerson, SuperclassOfKey: nil, SubclassOfKey: &k.classGen3}, model_class.ClassDetails{Name: "Customer", Details: "A customer in the system.", UnfinishedNotes: "", UmlComment: ""})
+	classCustomer := model_class.NewClass(k.classCustomer, model_class.ClassLinks{ActorKey: &k.actorPerson, SuperclassOfKey: nil, SubclassOfKey: &k.classGen3}, model_class.ClassDetails{Name: "Customer", Details: "A customer in the system.", UnfinishedNotes: notesClassCustomer, UmlComment: ""})
 	c.all[k.classCustomer] = classCustomer
 
 	// Vehicle: superclass in vehicle_types generalization. Linked to actorVip.
-	classVehicle := model_class.NewClass(k.classVehicle, model_class.ClassLinks{ActorKey: &k.actorVip, SuperclassOfKey: &k.classGen1, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Vehicle", Details: "A vehicle.", UnfinishedNotes: "", UmlComment: ""})
+	classVehicle := model_class.NewClass(k.classVehicle, model_class.ClassLinks{ActorKey: &k.actorVip, SuperclassOfKey: &k.classGen1, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Vehicle", Details: "A vehicle.", UnfinishedNotes: notesClassVehicle, UmlComment: ""})
 	c.all[k.classVehicle] = classVehicle
 
 	// Car: subclass in vehicle_types generalization. Superclass in order_types generalization.
-	classCar := model_class.NewClass(k.classCar, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &k.classGen3, SubclassOfKey: &k.classGen1}, model_class.ClassDetails{Name: "Car", Details: "A car is a type of vehicle.", UnfinishedNotes: "", UmlComment: ""})
+	classCar := model_class.NewClass(k.classCar, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &k.classGen3, SubclassOfKey: &k.classGen1}, model_class.ClassDetails{Name: "Car", Details: "A car is a type of vehicle.", UnfinishedNotes: notesClassCar, UmlComment: ""})
 	c.all[k.classCar] = classCar
 
 	// Warehouse (subdomain B).
-	classWarehouse := model_class.NewClass(k.classWarehouse, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Warehouse", Details: "A warehouse for storing products.", UnfinishedNotes: "", UmlComment: ""})
+	classWarehouse := model_class.NewClass(k.classWarehouse, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Warehouse", Details: "A warehouse for storing products.", UnfinishedNotes: notesClassWarehouse, UmlComment: ""})
 	classWarehouse.SetInvariants(l.classInvariants3)
 	c.all[k.classWarehouse] = classWarehouse
 
 	// Shelf (subdomain B).
-	classShelf := model_class.NewClass(k.classShelf, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shelf", Details: "A shelf in a warehouse.", UnfinishedNotes: "", UmlComment: ""})
+	classShelf := model_class.NewClass(k.classShelf, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shelf", Details: "A shelf in a warehouse.", UnfinishedNotes: notesClassShelf, UmlComment: ""})
 	c.all[k.classShelf] = classShelf
 
 	// Aisle (subdomain B).
-	classAisle := model_class.NewClass(k.classAisle, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Aisle", Details: "An aisle in a warehouse.", UnfinishedNotes: "", UmlComment: ""})
+	classAisle := model_class.NewClass(k.classAisle, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Aisle", Details: "An aisle in a warehouse.", UnfinishedNotes: notesClassAisle, UmlComment: ""})
 	c.all[k.classAisle] = classAisle
 
 	// Supplier (subdomain C / domain B).
-	classSupplier := model_class.NewClass(k.classSupplier, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Supplier", Details: "A supplier of products.", UnfinishedNotes: "", UmlComment: ""})
+	classSupplier := model_class.NewClass(k.classSupplier, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Supplier", Details: "A supplier of products.", UnfinishedNotes: notesClassSupplier, UmlComment: ""})
 	c.all[k.classSupplier] = classSupplier
 
 	// Shipment (subdomain C / domain B).
-	classShipment := model_class.NewClass(k.classShipment, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shipment", Details: "A shipment of goods.", UnfinishedNotes: "", UmlComment: ""})
+	classShipment := model_class.NewClass(k.classShipment, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shipment", Details: "A shipment of goods.", UnfinishedNotes: notesClassShipment, UmlComment: ""})
 	c.all[k.classShipment] = classShipment
 
 	// Route (subdomain C / domain B).
-	classRoute := model_class.NewClass(k.classRoute, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Route", Details: "A delivery route.", UnfinishedNotes: "", UmlComment: ""})
+	classRoute := model_class.NewClass(k.classRoute, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Route", Details: "A delivery route.", UnfinishedNotes: notesClassRoute, UmlComment: ""})
 	c.all[k.classRoute] = classRoute
 
 	return c
@@ -1754,15 +1799,15 @@ func buildClassGeneralizations(k testKeys) testGeneralizations {
 	g.all = make(map[identity.Key]model_class.Generalization)
 
 	// Pairwise: (T, F).
-	gen1 := model_class.NewGeneralization(k.classGen1, "Vehicle Types", "Specialization of vehicles.", "", true, false, "vehicle hierarchy")
+	gen1 := model_class.NewGeneralization(k.classGen1, "Vehicle Types", "Specialization of vehicles.", notesClassGenVehicles, true, false, "vehicle hierarchy")
 	g.all[k.classGen1] = gen1
 
 	// Pairwise: (F, F).
-	gen2 := model_class.NewGeneralization(k.classGen2, "Product Types", "Specialization of products.", "", false, false, "")
+	gen2 := model_class.NewGeneralization(k.classGen2, "Product Types", "Specialization of products.", notesClassGenProducts, false, false, "")
 	g.all[k.classGen2] = gen2
 
 	// Pairwise: (F, T).
-	gen3 := model_class.NewGeneralization(k.classGen3, "Order Types", "Specialization of orders.", "", false, true, "")
+	gen3 := model_class.NewGeneralization(k.classGen3, "Order Types", "Specialization of orders.", notesClassGenOrders, false, true, "")
 	g.all[k.classGen3] = gen3
 
 	return g
@@ -2026,7 +2071,7 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	ucActor3 := model_use_case.NewActor("vip handling")
 
 	// Place Order: sea level, subclass, rich (3 actors, 3 scenarios).
-	ucPlaceOrder := model_use_case.NewUseCase(k.ucPlaceOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSea, ReadOnly: false}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, model_use_case.UseCaseDetails{Name: "Place Order", Details: "Customer places an order.", UnfinishedNotes: "", UmlComment: "place order"})
+	ucPlaceOrder := model_use_case.NewUseCase(k.ucPlaceOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSea, ReadOnly: false}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, model_use_case.UseCaseDetails{Name: "Place Order", Details: "Customer places an order.", UnfinishedNotes: notesUCPlaceOrder, UmlComment: "place order"})
 	ucPlaceOrder.SetActors(map[identity.Key]model_use_case.Actor{
 		k.classCustomer: ucActor1,
 		k.classProduct:  ucActor2,
@@ -2035,20 +2080,20 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	ucPlaceOrder.SetScenarios(sc.placeOrderScenarios)
 
 	// View Order: mud level, read-only, has 1 scenario.
-	ucViewOrder := model_use_case.NewUseCase(k.ucViewOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelMud, ReadOnly: true}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, model_use_case.UseCaseDetails{Name: "View Order", Details: "View order details.", UnfinishedNotes: "", UmlComment: ""})
+	ucViewOrder := model_use_case.NewUseCase(k.ucViewOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelMud, ReadOnly: true}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, model_use_case.UseCaseDetails{Name: "View Order", Details: "View order details.", UnfinishedNotes: notesUCViewOrder, UmlComment: ""})
 	ucViewOrder.SetScenarios(sc.viewOrderScenarios)
 
 	// Manage Order: sky level, superclass.
-	ucManageOrder := model_use_case.NewUseCase(k.ucManageOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: false}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, model_use_case.UseCaseDetails{Name: "Manage Order", Details: "Manage orders.", UnfinishedNotes: "", UmlComment: ""})
+	ucManageOrder := model_use_case.NewUseCase(k.ucManageOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: false}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, model_use_case.UseCaseDetails{Name: "Manage Order", Details: "Manage orders.", UnfinishedNotes: notesUCManageOrder, UmlComment: ""})
 
 	// Cancel Order: empty parent (0 actors, 0 scenarios).
-	ucCancelOrder := model_use_case.NewUseCase(k.ucCancelOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelMud, ReadOnly: false}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, model_use_case.UseCaseDetails{Name: "Cancel Order", Details: "Customer cancels an order.", UnfinishedNotes: "", UmlComment: ""})
+	ucCancelOrder := model_use_case.NewUseCase(k.ucCancelOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelMud, ReadOnly: false}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, model_use_case.UseCaseDetails{Name: "Cancel Order", Details: "Customer cancels an order.", UnfinishedNotes: notesUCCancelOrder, UmlComment: ""})
 
 	// View Orders: sky level, superclass for ucGen2.
-	uc5 := model_use_case.NewUseCase(k.uc5, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: true}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, model_use_case.UseCaseDetails{Name: "View Orders", Details: "View multiple orders.", UnfinishedNotes: "", UmlComment: ""})
+	uc5 := model_use_case.NewUseCase(k.uc5, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: true}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, model_use_case.UseCaseDetails{Name: "View Orders", Details: "View multiple orders.", UnfinishedNotes: notesUCViewOrders, UmlComment: ""})
 
 	// Cancel Orders: sky level, superclass for ucGen3.
-	uc6 := model_use_case.NewUseCase(k.uc6, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: false}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, model_use_case.UseCaseDetails{Name: "Cancel Orders", Details: "Cancel multiple orders.", UnfinishedNotes: "", UmlComment: ""})
+	uc6 := model_use_case.NewUseCase(k.uc6, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: false}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, model_use_case.UseCaseDetails{Name: "Cancel Orders", Details: "Cancel multiple orders.", UnfinishedNotes: notesUCCancelOrders, UmlComment: ""})
 
 	u.useCases = map[identity.Key]model_use_case.UseCase{
 		k.ucPlaceOrder:  ucPlaceOrder,
@@ -2060,9 +2105,9 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	}
 
 	// Use case generalizations (3).
-	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", "", false, true, "")
-	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", "", true, false, "")
-	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", "", true, true, "")
+	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", notesUCGenManagement, false, true, "")
+	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", notesUCGenView, true, false, "")
+	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", notesUCGenCancel, true, true, "")
 	u.useCaseGens = map[identity.Key]model_use_case.Generalization{
 		k.ucGen1: ucGen1,
 		k.ucGen2: ucGen2,
@@ -2093,12 +2138,12 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 
 func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.Key]model_actor.Generalization) {
 	// Actors (4).
-	actorPerson := model_actor.NewActor(k.actorPerson, "person", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen3, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Customer", Details: "A person who buys things.", UnfinishedNotes: "", UmlComment: "main actor"})
+	actorPerson := model_actor.NewActor(k.actorPerson, "person", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen3, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Customer", Details: "A person who buys things.", UnfinishedNotes: notesActorCustomer, UmlComment: "main actor"})
 	// actorSystem: has BOTH SuperclassOfKey AND SubclassOfKey (different generalizations).
-	actorSystem := model_actor.NewActor(k.actorSystem, "system", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen2, SubclassOfKey: &k.actorGen3}, model_actor.ActorDetails{Name: "Payment Gateway", Details: "External payment system.", UnfinishedNotes: "", UmlComment: ""})
-	actorVip := model_actor.NewActor(k.actorVip, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: &k.actorGen2}, model_actor.ActorDetails{Name: "VIP Customer", Details: "A premium customer.", UnfinishedNotes: "", UmlComment: ""})
-	actor4 := model_actor.NewActor(k.actor4, "person", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen1, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Regular Customer", Details: "A regular customer.", UnfinishedNotes: "", UmlComment: ""})
-	actor5 := model_actor.NewActor(k.actor5, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: &k.actorGen1}, model_actor.ActorDetails{Name: "Another Customer", Details: "Another customer.", UnfinishedNotes: "", UmlComment: ""})
+	actorSystem := model_actor.NewActor(k.actorSystem, "system", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen2, SubclassOfKey: &k.actorGen3}, model_actor.ActorDetails{Name: "Payment Gateway", Details: "External payment system.", UnfinishedNotes: notesActorGateway, UmlComment: ""})
+	actorVip := model_actor.NewActor(k.actorVip, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: &k.actorGen2}, model_actor.ActorDetails{Name: "VIP Customer", Details: "A premium customer.", UnfinishedNotes: notesActorVip, UmlComment: ""})
+	actor4 := model_actor.NewActor(k.actor4, "person", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen1, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Regular Customer", Details: "A regular customer.", UnfinishedNotes: notesActorRegular, UmlComment: ""})
+	actor5 := model_actor.NewActor(k.actor5, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: &k.actorGen1}, model_actor.ActorDetails{Name: "Another Customer", Details: "Another customer.", UnfinishedNotes: notesActorAnother, UmlComment: ""})
 
 	actors := map[identity.Key]model_actor.Actor{
 		k.actorPerson: actorPerson,
@@ -2109,9 +2154,9 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 	}
 
 	// Actor generalizations (3). Pairwise: (T,T), (F,F), (T,F).
-	actorGen1 := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", "", true, true, "customer hierarchy")
-	actorGen2 := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", "", false, false, "")
-	actorGen3 := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", "", true, false, "")
+	actorGen1 := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", notesActorGenCustomers, true, true, "customer hierarchy")
+	actorGen2 := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", notesActorGenUsers, false, false, "")
+	actorGen3 := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", notesActorGenSystems, true, false, "")
 
 	actorGens := map[identity.Key]model_actor.Generalization{
 		k.actorGen1: actorGen1,
@@ -2150,7 +2195,7 @@ func buildSubdomains(
 	assocs testAssociations,
 ) map[identity.Key]model_domain.Subdomain {
 	// Subdomain A: rich (3+ classes, 3 generalizations, 4 use cases, 3 uc gens, 3 class assocs, 3 shares).
-	subdomainA := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", "", "order subdomain")
+	subdomainA := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", notesSubdomainOrders, "order subdomain")
 	subdomainA.Classes = map[identity.Key]model_class.Class{
 		k.classOrder:    classes.all[k.classOrder],
 		k.classProduct:  classes.all[k.classProduct],
@@ -2166,7 +2211,7 @@ func buildSubdomains(
 	subdomainA.UseCaseShares = uc.useCaseShares
 
 	// Subdomain B: has 3 classes (for domain-level associations).
-	subdomainB := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", "", "")
+	subdomainB := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", notesSubdomainWarehouse, "")
 	subdomainB.Classes = map[identity.Key]model_class.Class{
 		k.classWarehouse: classes.all[k.classWarehouse],
 		k.classShelf:     classes.all[k.classShelf],
@@ -2174,7 +2219,7 @@ func buildSubdomains(
 	}
 
 	// Subdomain C (domain B): has 3 classes (for model-level associations).
-	subdomainC := model_domain.NewSubdomain(k.subdomainC, "Default", "", "", "")
+	subdomainC := model_domain.NewSubdomain(k.subdomainC, "Default", "", notesSubdomainDefault, "")
 	subdomainC.Classes = map[identity.Key]model_class.Class{
 		k.classSupplier: classes.all[k.classSupplier],
 		k.classShipment: classes.all[k.classShipment],
@@ -2182,7 +2227,7 @@ func buildSubdomains(
 	}
 
 	// Subdomain D: empty parent (0 classes, 0 everything).
-	subdomainD := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", "", "")
+	subdomainD := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", notesSubdomainAnalytics, "")
 
 	return map[identity.Key]model_domain.Subdomain{
 		k.subdomainA: subdomainA,
@@ -2198,7 +2243,7 @@ func buildSubdomains(
 
 func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain) map[identity.Key]model_domain.Domain {
 	// Domain A: rich (3 subdomains: A, B, D).
-	domainA := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", "", false, "main domain")
+	domainA := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", notesDomainCommerce, false, "main domain")
 	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
 		k.subdomainA: subdomains[k.subdomainA],
 		k.subdomainB: subdomains[k.subdomainB],
@@ -2206,13 +2251,13 @@ func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain
 	}
 
 	// Domain B: single subdomain (special case).
-	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", "", true, "")
+	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", notesDomainLogistics, true, "")
 	domainB.Subdomains = map[identity.Key]model_domain.Subdomain{
 		k.subdomainC: subdomains[k.subdomainC],
 	}
 
 	// Domain C: empty parent (0 subdomains).
-	domainC := model_domain.NewDomain(k.domainC, "External", "External integrations.", "", false, "")
+	domainC := model_domain.NewDomain(k.domainC, "External", "External integrations.", notesDomainExternal, false, "")
 
 	return map[identity.Key]model_domain.Domain{
 		k.domainA: domainA,

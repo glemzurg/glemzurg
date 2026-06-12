@@ -10,9 +10,10 @@ import (
 
 // inputSubdomain represents a subdomain.json file.
 type inputSubdomain struct {
-	Name       string `json:"name"`
-	Details    string `json:"details,omitempty"`
-	UMLComment string `json:"uml_comment,omitempty"`
+	Name            string `json:"name"`
+	Details         string `json:"details,omitempty"`
+	UnfinishedNotes string `json:"unfinished_notes,omitempty"`
+	UMLComment      string `json:"uml_comment,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Classes                map[string]*inputClass                    `json:"-"`

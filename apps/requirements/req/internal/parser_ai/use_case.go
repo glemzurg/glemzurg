@@ -17,12 +17,13 @@ type inputUseCaseActor struct {
 // inputUseCase represents a use case JSON file.
 // Use cases are user stories for the system at various levels (sky/sea/mud).
 type inputUseCase struct {
-	Name       string                        `json:"name"`
-	Details    string                        `json:"details,omitempty"`
-	Level      string                        `json:"level"`
-	ReadOnly   bool                          `json:"read_only,omitempty"`
-	UMLComment string                        `json:"uml_comment,omitempty"`
-	Actors     map[string]*inputUseCaseActor `json:"actors,omitempty"`
+	Name            string                        `json:"name"`
+	Details         string                        `json:"details,omitempty"`
+	UnfinishedNotes string                        `json:"unfinished_notes,omitempty"`
+	Level           string                        `json:"level"`
+	ReadOnly        bool                          `json:"read_only,omitempty"`
+	UMLComment      string                        `json:"uml_comment,omitempty"`
+	Actors          map[string]*inputUseCaseActor `json:"actors,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Scenarios map[string]*inputScenario `json:"-"`

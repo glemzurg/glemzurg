@@ -53,6 +53,7 @@ func (suite *DomainSuite) TestLoad() {
 				domain_key,
 				name,
 				details,
+				unfinished_notes,
 				realized,
 				uml_comment
 			)
@@ -62,6 +63,7 @@ func (suite *DomainSuite) TestLoad() {
 				'domain/key',
 				'Name',
 				'Details',
+				'',
 				true,
 				'UmlComment'
 			)

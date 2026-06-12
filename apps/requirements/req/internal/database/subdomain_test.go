@@ -57,6 +57,7 @@ func (suite *SubdomainSuite) TestLoad() {
 				subdomain_key,
 				name,
 				details,
+				unfinished_notes,
 				uml_comment
 			)
 		VALUES
@@ -66,6 +67,7 @@ func (suite *SubdomainSuite) TestLoad() {
 				'domain/domain_key/subdomain/key',
 				'Name',
 				'Details',
+				'',
 				'UmlComment'
 			)
 	`)

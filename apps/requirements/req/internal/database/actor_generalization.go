@@ -18,6 +18,7 @@ func scanActorGeneralization(scanner Scanner, generalization *model_actor.Genera
 		&keyStr,
 		&generalization.Name,
 		&generalization.Details,
+		&generalization.UnfinishedNotes,
 		&generalization.IsComplete,
 		&generalization.IsStatic,
 		&generalization.UmlComment,
@@ -52,6 +53,7 @@ func LoadActorGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey i
 			generalization_key ,
 			name               ,
 			details            ,
+			unfinished_notes   ,
 			is_complete        ,
 			is_static          ,
 			uml_comment
@@ -82,11 +84,12 @@ func UpdateActorGeneralization(dbOrTx DbOrTx, modelKey string, generalization mo
 		UPDATE
 			actor_generalization
 		SET
-			name        = $3 ,
-			details     = $4 ,
-			is_complete = $5 ,
-			is_static   = $6 ,
-			uml_comment = $7
+			name             = $3 ,
+			details          = $4 ,
+			unfinished_notes = $5 ,
+			is_complete      = $6 ,
+			is_static        = $7 ,
+			uml_comment      = $8
 		WHERE
 			model_key = $1
 		AND
@@ -95,6 +98,7 @@ func UpdateActorGeneralization(dbOrTx DbOrTx, modelKey string, generalization mo
 		generalization.Key.String(),
 		generalization.Name,
 		generalization.Details,
+		generalization.UnfinishedNotes,
 		generalization.IsComplete,
 		generalization.IsStatic,
 		generalization.UmlComment)
@@ -141,6 +145,7 @@ func QueryActorGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations 
 			generalization_key ,
 			name               ,
 			details            ,
+			unfinished_notes   ,
 			is_complete        ,
 			is_static          ,
 			uml_comment
@@ -165,15 +170,15 @@ func AddActorGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations []m
 
 	// Build the bulk insert query.
 	var qb strings.Builder
-	qb.WriteString(`INSERT INTO actor_generalization (model_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `)
-	args := make([]any, 0, len(generalizations)*7)
+	qb.WriteString(`INSERT INTO actor_generalization (model_key, generalization_key, name, details, unfinished_notes, is_complete, is_static, uml_comment) VALUES `)
+	args := make([]any, 0, len(generalizations)*8)
 	for i, gen := range generalizations {
 		if i > 0 {
 			qb.WriteString(", ")
 		}
-		base := i * 7
-		fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
-		args = append(args, modelKey, gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
+		base := i * 8
+		fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+		args = append(args, modelKey, gen.Key.String(), gen.Name, gen.Details, gen.UnfinishedNotes, gen.IsComplete, gen.IsStatic, gen.UmlComment)
 	}
 
 	err = dbExec(dbOrTx, qb.String(), args...)

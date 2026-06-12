@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -112,8 +113,16 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 
 	// Process subdomains.
 	for _, subdomain := range domain.Subdomains {
-		if subdomain.Key.SubKey == "default" {
+		if subdomain.Key.SubKey == _DEFAULT_SUBDOMAIN_NAME {
 			// Default subdomain: write contents directly under domain directory (backward compatible).
+			// Persist metadata at the domain root when it would otherwise be lost on read.
+			if defaultSubdomainHasMetadata(subdomain) {
+				subdomainContent := generateSubdomainContent(subdomain)
+				subdomainPath := filepath.Join(domainDir, "this"+_EXT_SUBDOMAIN)
+				if err := os.WriteFile(subdomainPath, []byte(subdomainContent), 0600); err != nil {
+					return errors.Wrap(err, "failed to write default subdomain file")
+				}
+			}
 			if err := writeSubdomainContents(domainDir, subdomain, classAssocsByClass); err != nil {
 				return err
 			}
@@ -210,6 +219,15 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 	}
 
 	return nil
+}
+
+// defaultSubdomainHasMetadata reports whether a default subdomain carries fields that
+// parser_human does not infer from child files alone.
+func defaultSubdomainHasMetadata(subdomain model_domain.Subdomain) bool {
+	return strings.TrimSpace(subdomain.Details) != "" ||
+		strings.TrimSpace(subdomain.UnfinishedNotes) != "" ||
+		strings.TrimSpace(subdomain.UmlComment) != "" ||
+		(strings.TrimSpace(subdomain.Name) != "" && subdomain.Name != "Default")
 }
 
 // buildClassAssociationsLookup creates a map of class associations grouped by from class key.

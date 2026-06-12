@@ -20,6 +20,7 @@ func scanSubdomain(scanner Scanner, domainKeyPtr *identity.Key, subdomain *model
 		&subdomainKeyStr,
 		&subdomain.Name,
 		&subdomain.Details,
+		&subdomain.UnfinishedNotes,
 		&subdomain.UmlComment,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
@@ -55,10 +56,11 @@ func LoadSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) (d
 			return nil
 		},
 		`SELECT
-			domain_key    ,
-			subdomain_key ,
-			name          ,
-			details       ,
+			domain_key       ,
+			subdomain_key    ,
+			name             ,
+			details          ,
+			unfinished_notes ,
 			uml_comment
 		FROM
 			subdomain
@@ -89,9 +91,10 @@ func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subd
 		UPDATE
 			subdomain
 		SET
-			name        = $3 ,
-			details     = $4 ,
-			uml_comment = $5
+			name             = $3 ,
+			details          = $4 ,
+			unfinished_notes = $5 ,
+			uml_comment      = $6
 		WHERE
 			model_key = $1
 		AND
@@ -100,6 +103,7 @@ func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subd
 		subdomain.Key.String(),
 		subdomain.Name,
 		subdomain.Details,
+		subdomain.UnfinishedNotes,
 		subdomain.UmlComment)
 	if err != nil {
 		return errors.WithStack(err)
@@ -147,10 +151,11 @@ func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[identity.Ke
 			return nil
 		},
 		`SELECT
-				domain_key    ,
-				subdomain_key ,
-				name          ,
-				details       ,
+				domain_key       ,
+				subdomain_key    ,
+				name             ,
+				details          ,
+				unfinished_notes ,
 				uml_comment
 			FROM
 				subdomain
@@ -178,18 +183,18 @@ func AddSubdomains(dbOrTx DbOrTx, modelKey string, subdomains map[identity.Key][
 
 	// Build the bulk insert query.
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`INSERT INTO subdomain (model_key, domain_key, subdomain_key, name, details, uml_comment) VALUES `)
-	args := make([]any, 0, count*6)
+	queryBuilder.WriteString(`INSERT INTO subdomain (model_key, domain_key, subdomain_key, name, details, unfinished_notes, uml_comment) VALUES `)
+	args := make([]any, 0, count*7)
 	i := 0
 	for domainKey, subs := range subdomains {
 		for _, subdomain := range subs {
 			if i > 0 {
 				queryBuilder.WriteString(", ")
 			}
-			base := i * 6
-			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+			base := i * 7
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
 
-			args = append(args, modelKey, domainKey.String(), subdomain.Key.String(), subdomain.Name, subdomain.Details, subdomain.UmlComment)
+			args = append(args, modelKey, domainKey.String(), subdomain.Key.String(), subdomain.Name, subdomain.Details, subdomain.UnfinishedNotes, subdomain.UmlComment)
 			i++
 		}
 	}

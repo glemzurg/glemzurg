@@ -40,8 +40,16 @@
     "uml_comment": {
       "type": "string",
       "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the generalization triangle in generated UML diagrams. Use for diagram-specific clarifications about the inheritance relationship."
+    },
+    "unfinished_notes": {
+      "type": "string",
+      "description": "Optional scratch notes not yet placed in final requirement locations."
     }
   },
-  "required": ["name", "superclass_key", "subclass_keys"],
+  "required": [
+    "name",
+    "superclass_key",
+    "subclass_keys"
+  ],
   "additionalProperties": false
 }

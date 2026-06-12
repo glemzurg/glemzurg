@@ -31,6 +31,7 @@ func ConvertFromModel(model *core.Model) (*inputModel, error) { //nolint:revive 
 	result := &inputModel{
 		Name:                 model.Name,
 		Details:              model.Details,
+		UnfinishedNotes:      model.UnfinishedNotes,
 		Invariants:           convertLogicsFromModel(model.Invariants),
 		Actors:               make(map[string]*inputActor),
 		ActorGeneralizations: make(map[string]*inputActorGeneralization),
@@ -104,10 +105,11 @@ func convertDomainsAndAssociationsFromModel(model *core.Model, result *inputMode
 // convertActorFromModel converts a model_actor.Actor to an inputActor.
 func convertActorFromModel(actor *model_actor.Actor) *inputActor {
 	result := &inputActor{
-		Name:       actor.Name,
-		Type:       actor.Type,
-		Details:    actor.Details,
-		UMLComment: actor.UmlComment,
+		Name:            actor.Name,
+		Type:            actor.Type,
+		Details:         actor.Details,
+		UnfinishedNotes: actor.UnfinishedNotes,
+		UMLComment:      actor.UmlComment,
 	}
 	return result
 }
@@ -115,12 +117,13 @@ func convertActorFromModel(actor *model_actor.Actor) *inputActor {
 // convertActorGeneralizationFromModel converts a model_actor.Generalization to an inputActorGeneralization.
 func convertActorGeneralizationFromModel(gen *model_actor.Generalization, actors map[identity.Key]model_actor.Actor) *inputActorGeneralization {
 	result := &inputActorGeneralization{
-		Name:         gen.Name,
-		Details:      gen.Details,
-		IsComplete:   gen.IsComplete,
-		IsStatic:     gen.IsStatic,
-		UMLComment:   gen.UmlComment,
-		SubclassKeys: []string{},
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UMLComment:      gen.UmlComment,
+		SubclassKeys:    []string{},
 	}
 
 	// Find superclass and subclasses by examining actor references
@@ -159,6 +162,7 @@ func convertDomainFromModel(domain *model_domain.Domain, allClasses map[identity
 	result := &inputDomain{
 		Name:              domain.Name,
 		Details:           domain.Details,
+		UnfinishedNotes:   domain.UnfinishedNotes,
 		Realized:          domain.Realized,
 		UMLComment:        domain.UmlComment,
 		Subdomains:        make(map[string]*inputSubdomain),
@@ -186,6 +190,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, allClasses map
 	result := &inputSubdomain{
 		Name:                   subdomain.Name,
 		Details:                subdomain.Details,
+		UnfinishedNotes:        subdomain.UnfinishedNotes,
 		UMLComment:             subdomain.UmlComment,
 		Classes:                make(map[string]*inputClass),
 		ClassGeneralizations:   make(map[string]*inputClassGeneralization),
@@ -244,13 +249,14 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, allClasses map
 // convertUseCaseFromModel converts a model_use_case.UseCase to an inputUseCase.
 func convertUseCaseFromModel(uc *model_use_case.UseCase) *inputUseCase {
 	result := &inputUseCase{
-		Name:       uc.Name,
-		Details:    uc.Details,
-		Level:      uc.Level,
-		ReadOnly:   uc.ReadOnly,
-		UMLComment: uc.UmlComment,
-		Actors:     make(map[string]*inputUseCaseActor),
-		Scenarios:  make(map[string]*inputScenario),
+		Name:            uc.Name,
+		Details:         uc.Details,
+		UnfinishedNotes: uc.UnfinishedNotes,
+		Level:           uc.Level,
+		ReadOnly:        uc.ReadOnly,
+		UMLComment:      uc.UmlComment,
+		Actors:          make(map[string]*inputUseCaseActor),
+		Scenarios:       make(map[string]*inputScenario),
 	}
 
 	// Convert actors (keyed by class key)
@@ -343,12 +349,13 @@ func convertStepFromModel(step *model_scenario.Step) inputStep {
 // convertUseCaseGeneralizationFromModel converts a model_use_case.Generalization to an inputUseCaseGeneralization.
 func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, useCases map[identity.Key]model_use_case.UseCase) *inputUseCaseGeneralization {
 	result := &inputUseCaseGeneralization{
-		Name:         gen.Name,
-		Details:      gen.Details,
-		IsComplete:   gen.IsComplete,
-		IsStatic:     gen.IsStatic,
-		UMLComment:   gen.UmlComment,
-		SubclassKeys: []string{},
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UMLComment:      gen.UmlComment,
+		SubclassKeys:    []string{},
 	}
 
 	// Find superclass and subclasses by examining use case references
@@ -367,13 +374,14 @@ func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, u
 // convertClassFromModel converts a model_class.Class to an inputClass.
 func convertClassFromModel(class *model_class.Class) *inputClass {
 	result := &inputClass{
-		Name:       class.Name,
-		Details:    class.Details,
-		UMLComment: class.UmlComment,
-		Attributes: make(map[string]*inputAttribute),
-		Indexes:    [][]string{},
-		Actions:    make(map[string]*inputAction),
-		Queries:    make(map[string]*inputQuery),
+		Name:            class.Name,
+		Details:         class.Details,
+		UnfinishedNotes: class.UnfinishedNotes,
+		UMLComment:      class.UmlComment,
+		Attributes:      make(map[string]*inputAttribute),
+		Indexes:         [][]string{},
+		Actions:         make(map[string]*inputAction),
+		Queries:         make(map[string]*inputQuery),
 	}
 
 	// Set actor key if present
@@ -648,12 +656,13 @@ func convertParametersFromModel(params []model_state.Parameter) []inputParameter
 // It needs the local classes map for the superclass and allClasses for subclasses (which may be cross-domain).
 func convertClassGeneralizationFromModel(gen *model_class.Generalization, localClasses map[identity.Key]model_class.Class, allClasses map[identity.Key]model_class.Class) *inputClassGeneralization {
 	result := &inputClassGeneralization{
-		Name:         gen.Name,
-		Details:      gen.Details,
-		IsComplete:   gen.IsComplete,
-		IsStatic:     gen.IsStatic,
-		UMLComment:   gen.UmlComment,
-		SubclassKeys: []string{},
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UMLComment:      gen.UmlComment,
+		SubclassKeys:    []string{},
 	}
 
 	// Find superclass from local subdomain classes.
