@@ -82,7 +82,7 @@ func (suite *ClassSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/key',
 				'Name',
 				'Details',
-				'',
+				'UnfinishedNotes',
 				'actor/actor_key',
 				'domain/domain_key/subdomain/subdomain_key/cgeneralization/generalization_key',
 				'domain/domain_key/subdomain/subdomain_key/cgeneralization/generalization_key_b',
@@ -98,6 +98,7 @@ func (suite *ClassSuite) TestLoad() {
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 		ActorKey:        &suite.actor.Key,
 		SuperclassOfKey: &suite.generalization.Key,
 		SubclassOfKey:   &suite.generalizationB.Key,
@@ -110,6 +111,7 @@ func (suite *ClassSuite) TestAdd() {
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 		ActorKey:        &suite.actor.Key,
 		SuperclassOfKey: &suite.generalization.Key,
 		SubclassOfKey:   &suite.generalizationB.Key,
@@ -124,6 +126,7 @@ func (suite *ClassSuite) TestAdd() {
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 		ActorKey:        &suite.actor.Key,
 		SuperclassOfKey: &suite.generalization.Key,
 		SubclassOfKey:   &suite.generalizationB.Key,
@@ -136,6 +139,7 @@ func (suite *ClassSuite) TestAddNulls() {
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 		ActorKey:        nil, // No foreign key.
 		SuperclassOfKey: nil, // No foreign key.
 		SubclassOfKey:   nil, // No foreign key.
@@ -150,6 +154,7 @@ func (suite *ClassSuite) TestAddNulls() {
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 		ActorKey:        nil, // No foreign key.
 		SuperclassOfKey: nil, // No foreign key.
 		SubclassOfKey:   nil, // No foreign key.
@@ -162,6 +167,7 @@ func (suite *ClassSuite) TestUpdate() {
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 		ActorKey:        &suite.actor.Key,
 		SuperclassOfKey: &suite.generalization.Key,
 		SubclassOfKey:   &suite.generalizationB.Key,
@@ -173,6 +179,7 @@ func (suite *ClassSuite) TestUpdate() {
 		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
 		ActorKey:        &suite.actorB.Key,
 		SuperclassOfKey: &suite.generalizationB.Key,
 		SubclassOfKey:   &suite.generalization.Key,
@@ -187,6 +194,7 @@ func (suite *ClassSuite) TestUpdate() {
 		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
 		ActorKey:        &suite.actorB.Key,
 		SuperclassOfKey: &suite.generalizationB.Key,
 		SubclassOfKey:   &suite.generalization.Key,
@@ -199,6 +207,7 @@ func (suite *ClassSuite) TestUpdateNulls() {
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 		ActorKey:        &suite.actor.Key,
 		SuperclassOfKey: &suite.generalization.Key,
 		SubclassOfKey:   &suite.generalizationB.Key,
@@ -210,6 +219,7 @@ func (suite *ClassSuite) TestUpdateNulls() {
 		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
 		ActorKey:        nil, // No foreign key.
 		SuperclassOfKey: nil, // No foreign key.
 		SubclassOfKey:   nil, // No foreign key.
@@ -224,6 +234,7 @@ func (suite *ClassSuite) TestUpdateNulls() {
 		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
 		ActorKey:        nil, // No foreign key.
 		SuperclassOfKey: nil, // No foreign key.
 		SubclassOfKey:   nil, // No foreign key.
@@ -233,11 +244,12 @@ func (suite *ClassSuite) TestUpdateNulls() {
 
 func (suite *ClassSuite) TestRemove() {
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
-		Key:        suite.classKey,
-		Name:       "Name",
-		Details:    "Details",
-		ActorKey:   &suite.actor.Key,
-		UmlComment: "UmlComment",
+		Key:             suite.classKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		ActorKey:        &suite.actor.Key,
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
@@ -257,6 +269,7 @@ func (suite *ClassSuite) TestQuery() {
 				Key:             suite.classKeyB,
 				Name:            "NameX",
 				Details:         "DetailsX",
+				UnfinishedNotes: "UnfinishedNotesX",
 				ActorKey:        &suite.actorB.Key,
 				SuperclassOfKey: &suite.generalizationB.Key,
 				SubclassOfKey:   &suite.generalization.Key,
@@ -266,6 +279,7 @@ func (suite *ClassSuite) TestQuery() {
 				Key:             suite.classKey,
 				Name:            "Name",
 				Details:         "Details",
+				UnfinishedNotes: "UnfinishedNotes",
 				ActorKey:        &suite.actor.Key,
 				SuperclassOfKey: &suite.generalization.Key,
 				SubclassOfKey:   &suite.generalizationB.Key,
@@ -283,6 +297,7 @@ func (suite *ClassSuite) TestQuery() {
 				Key:             suite.classKey,
 				Name:            "Name",
 				Details:         "Details",
+				UnfinishedNotes: "UnfinishedNotes",
 				ActorKey:        &suite.actor.Key,
 				SuperclassOfKey: &suite.generalization.Key,
 				SubclassOfKey:   &suite.generalizationB.Key,
@@ -292,6 +307,7 @@ func (suite *ClassSuite) TestQuery() {
 				Key:             suite.classKeyB,
 				Name:            "NameX",
 				Details:         "DetailsX",
+				UnfinishedNotes: "UnfinishedNotesX",
 				ActorKey:        &suite.actorB.Key,
 				SuperclassOfKey: &suite.generalizationB.Key,
 				SubclassOfKey:   &suite.generalization.Key,
@@ -307,11 +323,12 @@ func (suite *ClassSuite) TestQuery() {
 
 func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, classKey identity.Key) (class model_class.Class) {
 	err := AddClass(dbOrTx, modelKey, subdomainKey, model_class.Class{
-		Key:        classKey,
-		Name:       classKey.String(),
-		Details:    "Details",
-		ActorKey:   nil, // No actor.
-		UmlComment: "UmlComment",
+		Key:             classKey,
+		Name:            classKey.String(),
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		ActorKey:        nil, // No actor.
+		UmlComment:      "UmlComment",
 	})
 	require.NoError(t, err)
 
@@ -324,10 +341,11 @@ func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey ident
 func (suite *ClassSuite) TestVerifyTestObjects() {
 	class := t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, suite.classKey)
 	suite.Equal(model_class.Class{
-		Key:        suite.classKey,
-		Name:       suite.classKey.String(),
-		Details:    "Details",
-		ActorKey:   nil, // No actor.
-		UmlComment: "UmlComment",
+		Key:             suite.classKey,
+		Name:            suite.classKey.String(),
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		ActorKey:        nil, // No actor.
+		UmlComment:      "UmlComment",
 	}, class)
 }

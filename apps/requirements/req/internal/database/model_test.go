@@ -45,7 +45,7 @@ func (suite *ModelSuite) TestLoad() {
 				'key',
 				'Name',
 				'Details',
-				''
+				'UnfinishedNotes'
 			)
 	`)
 	suite.Require().NoError(err)
@@ -53,58 +53,65 @@ func (suite *ModelSuite) TestLoad() {
 	model, err = LoadModel(suite.db, "key")
 	suite.Require().NoError(err)
 	suite.Equal(core.Model{
-		Key:     "key",
-		Name:    "Name",
-		Details: "Details",
+		Key:             "key",
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 	}, model)
 }
 
 func (suite *ModelSuite) TestAdd() {
 	err := AddModel(suite.db, core.Model{
-		Key:     "key",
-		Name:    "Name",
-		Details: "Details",
+		Key:             "key",
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 	})
 	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
 	suite.Require().NoError(err)
 	suite.Equal(core.Model{
-		Key:     "key",
-		Name:    "Name",
-		Details: "Details",
+		Key:             "key",
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 	}, model)
 }
 
 func (suite *ModelSuite) TestUpdate() {
 	err := AddModel(suite.db, core.Model{
-		Key:     "key",
-		Name:    "Name",
-		Details: "Details",
+		Key:             "key",
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 	})
 	suite.Require().NoError(err)
 
 	err = UpdateModel(suite.db, core.Model{
-		Key:     "key",
-		Name:    "NameX",
-		Details: "DetailsX",
+		Key:             "key",
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
 	})
 	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
 	suite.Require().NoError(err)
 	suite.Equal(core.Model{
-		Key:     "key",
-		Name:    "NameX",
-		Details: "DetailsX",
+		Key:             "key",
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
 	}, model)
 }
 
 func (suite *ModelSuite) TestRemove() {
 	err := AddModel(suite.db, core.Model{
-		Key:     "key",
-		Name:    "Name",
-		Details: "Details",
+		Key:             "key",
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 	})
 	suite.Require().NoError(err)
 
@@ -118,16 +125,18 @@ func (suite *ModelSuite) TestRemove() {
 
 func (suite *ModelSuite) TestQuery() {
 	err := AddModel(suite.db, core.Model{
-		Key:     "keyx",
-		Name:    "NameX",
-		Details: "DetailsX",
+		Key:             "keyx",
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
 	})
 	suite.Require().NoError(err)
 
 	err = AddModel(suite.db, core.Model{
-		Key:     "key",
-		Name:    "Name",
-		Details: "Details",
+		Key:             "key",
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 	})
 	suite.Require().NoError(err)
 
@@ -135,14 +144,16 @@ func (suite *ModelSuite) TestQuery() {
 	suite.Require().NoError(err)
 	suite.Equal([]core.Model{
 		{
-			Key:     "key",
-			Name:    "Name",
-			Details: "Details",
+			Key:             "key",
+			Name:            "Name",
+			Details:         "Details",
+			UnfinishedNotes: "UnfinishedNotes",
 		},
 		{
-			Key:     "keyx",
-			Name:    "NameX",
-			Details: "DetailsX",
+			Key:             "keyx",
+			Name:            "NameX",
+			Details:         "DetailsX",
+			UnfinishedNotes: "UnfinishedNotesX",
 		},
 	}, models)
 }
@@ -153,9 +164,10 @@ func (suite *ModelSuite) TestQuery() {
 
 func t_AddModel(t *testing.T, dbOrTx DbOrTx) (model core.Model) {
 	err := AddModel(dbOrTx, core.Model{
-		Key:     "model_key",
-		Name:    "Name",
-		Details: "Details",
+		Key:             "model_key",
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
 	})
 	require.NoError(t, err)
 

@@ -67,7 +67,7 @@ func (suite *SubdomainSuite) TestLoad() {
 				'domain/domain_key/subdomain/key',
 				'Name',
 				'Details',
-				'',
+				'UnfinishedNotes',
 				'UmlComment'
 			)
 	`)
@@ -77,19 +77,21 @@ func (suite *SubdomainSuite) TestLoad() {
 	suite.Require().NoError(err)
 	suite.Equal(suite.domain.Key, domainKey)
 	suite.Equal(model_domain.Subdomain{
-		Key:        suite.subdomainKey,
-		Name:       "Name",
-		Details:    "Details",
-		UmlComment: "UmlComment",
+		Key:             suite.subdomainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		UmlComment:      "UmlComment",
 	}, subdomain)
 }
 
 func (suite *SubdomainSuite) TestAdd() {
 	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
-		Key:        suite.subdomainKey,
-		Name:       "Name",
-		Details:    "Details",
-		UmlComment: "UmlComment",
+		Key:             suite.subdomainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
@@ -97,27 +99,30 @@ func (suite *SubdomainSuite) TestAdd() {
 	suite.Require().NoError(err)
 	suite.Equal(suite.domain.Key, domainKey)
 	suite.Equal(model_domain.Subdomain{
-		Key:        suite.subdomainKey,
-		Name:       "Name",
-		Details:    "Details",
-		UmlComment: "UmlComment",
+		Key:             suite.subdomainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		UmlComment:      "UmlComment",
 	}, subdomain)
 }
 
 func (suite *SubdomainSuite) TestUpdate() {
 	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
-		Key:        suite.subdomainKey,
-		Name:       "Name",
-		Details:    "Details",
-		UmlComment: "UmlComment",
+		Key:             suite.subdomainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
 	err = UpdateSubdomain(suite.db, suite.model.Key, model_domain.Subdomain{
-		Key:        suite.subdomainKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		UmlComment: "UmlCommentX",
+		Key:             suite.subdomainKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
+		UmlComment:      "UmlCommentX",
 	})
 	suite.Require().NoError(err)
 
@@ -125,19 +130,21 @@ func (suite *SubdomainSuite) TestUpdate() {
 	suite.Require().NoError(err)
 	suite.Equal(suite.domain.Key, domainKey)
 	suite.Equal(model_domain.Subdomain{
-		Key:        suite.subdomainKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		UmlComment: "UmlCommentX",
+		Key:             suite.subdomainKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
+		UmlComment:      "UmlCommentX",
 	}, subdomain)
 }
 
 func (suite *SubdomainSuite) TestRemove() {
 	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
-		Key:        suite.subdomainKey,
-		Name:       "Name",
-		Details:    "Details",
-		UmlComment: "UmlComment",
+		Key:             suite.subdomainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
@@ -154,16 +161,18 @@ func (suite *SubdomainSuite) TestQuery() {
 	err := AddSubdomains(suite.db, suite.model.Key, map[identity.Key][]model_domain.Subdomain{
 		suite.domain.Key: {
 			{
-				Key:        suite.subdomainKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				UmlComment: "UmlCommentX",
+				Key:             suite.subdomainKeyB,
+				Name:            "NameX",
+				Details:         "DetailsX",
+				UnfinishedNotes: "UnfinishedNotesX",
+				UmlComment:      "UmlCommentX",
 			},
 			{
-				Key:        suite.subdomainKey,
-				Name:       "Name",
-				Details:    "Details",
-				UmlComment: "UmlComment",
+				Key:             suite.subdomainKey,
+				Name:            "Name",
+				Details:         "Details",
+				UnfinishedNotes: "UnfinishedNotes",
+				UmlComment:      "UmlComment",
 			},
 		},
 	})
@@ -174,16 +183,18 @@ func (suite *SubdomainSuite) TestQuery() {
 	suite.Equal(map[identity.Key][]model_domain.Subdomain{
 		suite.domain.Key: {
 			{
-				Key:        suite.subdomainKey,
-				Name:       "Name",
-				Details:    "Details",
-				UmlComment: "UmlComment",
+				Key:             suite.subdomainKey,
+				Name:            "Name",
+				Details:         "Details",
+				UnfinishedNotes: "UnfinishedNotes",
+				UmlComment:      "UmlComment",
 			},
 			{
-				Key:        suite.subdomainKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				UmlComment: "UmlCommentX",
+				Key:             suite.subdomainKeyB,
+				Name:            "NameX",
+				Details:         "DetailsX",
+				UnfinishedNotes: "UnfinishedNotesX",
+				UmlComment:      "UmlCommentX",
 			},
 		},
 	}, subdomains)
@@ -195,10 +206,11 @@ func (suite *SubdomainSuite) TestQuery() {
 
 func t_AddSubdomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey identity.Key, subdomainKey identity.Key) (subdomain model_domain.Subdomain) {
 	err := AddSubdomain(dbOrTx, modelKey, domainKey, model_domain.Subdomain{
-		Key:        subdomainKey,
-		Name:       subdomainKey.String(),
-		Details:    "Details",
-		UmlComment: "UmlComment",
+		Key:             subdomainKey,
+		Name:            subdomainKey.String(),
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		UmlComment:      "UmlComment",
 	})
 	require.NoError(t, err)
 

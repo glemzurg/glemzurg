@@ -63,7 +63,7 @@ func (suite *DomainSuite) TestLoad() {
 				'domain/key',
 				'Name',
 				'Details',
-				'',
+				'UnfinishedNotes',
 				true,
 				'UmlComment'
 			)
@@ -73,72 +73,79 @@ func (suite *DomainSuite) TestLoad() {
 	domain, err = LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	suite.Require().NoError(err)
 	suite.Equal(model_domain.Domain{
-		Key:        suite.domainKey,
-		Name:       "Name",
-		Details:    "Details",
-		Realized:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.domainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		Realized:        true,
+		UmlComment:      "UmlComment",
 	}, domain)
 }
 
 func (suite *DomainSuite) TestAdd() {
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        suite.domainKey,
-		Name:       "Name",
-		Details:    "Details",
-		Realized:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.domainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		Realized:        true,
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	suite.Require().NoError(err)
 	suite.Equal(model_domain.Domain{
-		Key:        suite.domainKey,
-		Name:       "Name",
-		Details:    "Details",
-		Realized:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.domainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		Realized:        true,
+		UmlComment:      "UmlComment",
 	}, domain)
 }
 
 func (suite *DomainSuite) TestUpdate() {
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        suite.domainKey,
-		Name:       "Name",
-		Details:    "Details",
-		Realized:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.domainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		Realized:        true,
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
 	err = UpdateDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        suite.domainKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Realized:   false,
-		UmlComment: "UmlCommentX",
+		Key:             suite.domainKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
+		Realized:        false,
+		UmlComment:      "UmlCommentX",
 	})
 	suite.Require().NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	suite.Require().NoError(err)
 	suite.Equal(model_domain.Domain{
-		Key:        suite.domainKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Realized:   false,
-		UmlComment: "UmlCommentX",
+		Key:             suite.domainKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
+		Realized:        false,
+		UmlComment:      "UmlCommentX",
 	}, domain)
 }
 
 func (suite *DomainSuite) TestRemove() {
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        suite.domainKey,
-		Name:       "Name",
-		Details:    "Details",
-		Realized:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.domainKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		Realized:        true,
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
@@ -153,18 +160,20 @@ func (suite *DomainSuite) TestRemove() {
 func (suite *DomainSuite) TestQuery() {
 	err := AddDomains(suite.db, suite.model.Key, []model_domain.Domain{
 		{
-			Key:        suite.domainKeyB,
-			Name:       "NameX",
-			Details:    "DetailsX",
-			Realized:   false,
-			UmlComment: "UmlCommentX",
+			Key:             suite.domainKeyB,
+			Name:            "NameX",
+			Details:         "DetailsX",
+			UnfinishedNotes: "UnfinishedNotesX",
+			Realized:        false,
+			UmlComment:      "UmlCommentX",
 		},
 		{
-			Key:        suite.domainKey,
-			Name:       "Name",
-			Details:    "Details",
-			Realized:   true,
-			UmlComment: "UmlComment",
+			Key:             suite.domainKey,
+			Name:            "Name",
+			Details:         "Details",
+			UnfinishedNotes: "UnfinishedNotes",
+			Realized:        true,
+			UmlComment:      "UmlComment",
 		},
 	})
 	suite.Require().NoError(err)
@@ -173,18 +182,20 @@ func (suite *DomainSuite) TestQuery() {
 	suite.Require().NoError(err)
 	suite.Equal([]model_domain.Domain{
 		{
-			Key:        suite.domainKey,
-			Name:       "Name",
-			Details:    "Details",
-			Realized:   true,
-			UmlComment: "UmlComment",
+			Key:             suite.domainKey,
+			Name:            "Name",
+			Details:         "Details",
+			UnfinishedNotes: "UnfinishedNotes",
+			Realized:        true,
+			UmlComment:      "UmlComment",
 		},
 		{
-			Key:        suite.domainKeyB,
-			Name:       "NameX",
-			Details:    "DetailsX",
-			Realized:   false,
-			UmlComment: "UmlCommentX",
+			Key:             suite.domainKeyB,
+			Name:            "NameX",
+			Details:         "DetailsX",
+			UnfinishedNotes: "UnfinishedNotesX",
+			Realized:        false,
+			UmlComment:      "UmlCommentX",
 		},
 	}, domains)
 }
@@ -195,11 +206,12 @@ func (suite *DomainSuite) TestQuery() {
 
 func t_AddDomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (domain model_domain.Domain) {
 	err := AddDomain(dbOrTx, modelKey, model_domain.Domain{
-		Key:        domainKey,
-		Name:       domainKey.String(),
-		Details:    "Details",
-		Realized:   false,
-		UmlComment: "UmlComment",
+		Key:             domainKey,
+		Name:            domainKey.String(),
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		Realized:        false,
+		UmlComment:      "UmlComment",
 	})
 	require.NoError(t, err)
 
