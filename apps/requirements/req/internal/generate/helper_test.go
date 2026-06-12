@@ -25,17 +25,22 @@ func TestUnfinishedNotesBlock(t *testing.T) {
 		{
 			name:  "single line",
 			notes: "draft note",
-			want:  "\n```\ndraft note\n```\n",
+			want:  "\n```\n" + _unfinishedNotesGlyph + "\n\ndraft note\n```\n",
 		},
 		{
 			name:  "multiline preserved",
 			notes: "line one\nline two",
-			want:  "\n```\nline one\nline two\n```\n",
+			want:  "\n```\n" + _unfinishedNotesGlyph + "\n\nline one\nline two\n```\n",
 		},
 		{
 			name:  "trims outer whitespace",
 			notes: "  padded  ",
-			want:  "\n```\npadded\n```\n",
+			want:  "\n```\n" + _unfinishedNotesGlyph + "\n\npadded\n```\n",
+		},
+		{
+			name:  "literal content in fence",
+			notes: "<script>alert(1)</script>",
+			want:  "\n```\n" + _unfinishedNotesGlyph + "\n\n<script>alert(1)</script>\n```\n",
 		},
 	}
 
@@ -63,20 +68,15 @@ func TestUnfinishedNotesMarker(t *testing.T) {
 			want:  "",
 		},
 		{
-			name:  "red parenthesized asterism",
+			name:  "parenthesized asterism",
 			notes: "note",
-			want:  ` (<span class="unfinished-notes-marker">` + _unfinishedNotesGlyph + `</span>)`,
+			want:  " (" + _unfinishedNotesGlyph + ")",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := unfinishedNotesMarker(tc.notes)
-			assert.Equal(t, tc.want, got)
-			if tc.want != "" {
-				assert.Contains(t, got, "unfinished-notes-marker")
-				assert.Contains(t, got, _unfinishedNotesGlyph)
-			}
+			assert.Equal(t, tc.want, unfinishedNotesMarker(tc.notes))
 		})
 	}
 }

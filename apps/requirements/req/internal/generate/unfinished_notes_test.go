@@ -34,8 +34,7 @@ func TestGenerateUnfinishedNotesInMarkdown(t *testing.T) {
 	body := string(modelMD)
 	require.NotEmpty(t, model.UnfinishedNotes)
 	assert.Contains(t, body, unfinishedNotesBlock(model.UnfinishedNotes))
-	assert.Contains(t, body, `class="unfinished-notes-marker"`)
-	assert.Contains(t, body, _unfinishedNotesGlyph)
+	assert.Contains(t, body, unfinishedNotesMarker(model.UnfinishedNotes))
 
 	product, ok := findClassByName(model, "Product")
 	require.True(t, ok, "test model should include Product class")
@@ -47,8 +46,6 @@ func TestGenerateUnfinishedNotesInMarkdown(t *testing.T) {
 
 	productBody := string(productMD)
 	assert.Contains(t, productBody, unfinishedNotesBlock(product.UnfinishedNotes))
-	assert.Contains(t, productBody, `unfinished-notes-marker`)
-	assert.Contains(t, productBody, _unfinishedNotesGlyph)
 
 	require.NotNil(t, product.ActorKey)
 	actor, ok := model.Actors[*product.ActorKey]

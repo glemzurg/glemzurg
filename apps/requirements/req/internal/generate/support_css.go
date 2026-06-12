@@ -21,8 +21,4 @@ th, td {
   border: 1px solid #ccc;
   padding: 8px;
 }
-
-.unfinished-notes-marker {
-  color: red;
-}
 `
