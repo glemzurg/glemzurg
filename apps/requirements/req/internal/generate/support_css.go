@@ -21,4 +21,16 @@ th, td {
   border: 1px solid #ccc;
   padding: 8px;
 }
+
+.unfinished-notes-block {
+    color: maroon;               /* text color */
+    background-color: lightgrey; /* background */
+    border-left: 5px solid red;
+    padding: 15px;
+    font-family: monospace;
+}
+
+.unfinished-notes-glyph {
+  color: red;
+}
 `

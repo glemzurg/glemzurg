@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,28 +26,37 @@ func TestUnfinishedNotesBlock(t *testing.T) {
 		{
 			name:  "single line",
 			notes: "draft note",
-			want:  "\n```\n" + _unfinishedNotesGlyph + "\n\ndraft note\n```\n",
+			want: "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
+				_unfinishedNotesGlyph + "</span>\ndraft note\n</pre>\n",
 		},
 		{
 			name:  "multiline preserved",
 			notes: "line one\nline two",
-			want:  "\n```\n" + _unfinishedNotesGlyph + "\n\nline one\nline two\n```\n",
+			want: "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
+				_unfinishedNotesGlyph + "</span>\nline one\nline two\n</pre>\n",
 		},
 		{
 			name:  "trims outer whitespace",
 			notes: "  padded  ",
-			want:  "\n```\n" + _unfinishedNotesGlyph + "\n\npadded\n```\n",
+			want: "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
+				_unfinishedNotesGlyph + "</span>\npadded\n</pre>\n",
 		},
 		{
-			name:  "literal content in fence",
+			name:  "escapes HTML in notes",
 			notes: "<script>alert(1)</script>",
-			want:  "\n```\n" + _unfinishedNotesGlyph + "\n\n<script>alert(1)</script>\n```\n",
+			want: "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
+				_unfinishedNotesGlyph + "</span>\n&lt;script&gt;alert(1)&lt;/script&gt;\n</pre>\n",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, unfinishedNotesBlock(tc.notes))
+			got := unfinishedNotesBlock(tc.notes)
+			assert.Equal(t, tc.want, got)
+			if strings.TrimSpace(tc.notes) != "" {
+				assert.Contains(t, got, `class="unfinished-notes-glyph"`)
+				assert.Contains(t, got, _unfinishedNotesGlyph)
+			}
 		})
 	}
 }
@@ -68,15 +78,19 @@ func TestUnfinishedNotesMarker(t *testing.T) {
 			want:  "",
 		},
 		{
-			name:  "parenthesized asterism",
+			name:  "red parenthesized asterism",
 			notes: "note",
-			want:  " (" + _unfinishedNotesGlyph + ")",
+			want:  ` (<span class="unfinished-notes-glyph">` + _unfinishedNotesGlyph + `</span>)`,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, unfinishedNotesMarker(tc.notes))
+			got := unfinishedNotesMarker(tc.notes)
+			assert.Equal(t, tc.want, got)
+			if tc.want != "" {
+				assert.Contains(t, got, "unfinished-notes-glyph")
+			}
 		})
 	}
 }
