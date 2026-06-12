@@ -17,7 +17,7 @@ import (
 func indexTestModel(attrs map[identity.Key]model_class.Attribute) (*core.Model, identity.Key) {
 	classKey := mustKey("domain/d/subdomain/s/class/plane")
 
-	class := model_class.NewClass(classKey, "Plane", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Plane", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(attrs)
 
 	subdomainKey := mustKey("domain/d/subdomain/s")

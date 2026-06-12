@@ -65,7 +65,7 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 		return model_class.Class{}, nil, errors.WithStack(err)
 	}
 
-	class = model_class.NewClass(classKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), parsedFile.UnfinishedNotes, actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
+	class = model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: actorKey, SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, model_class.ClassDetails{Name: parsedFile.Title, Details: stripMarkdownTitle(parsedFile.Markdown), UnfinishedNotes: parsedFile.UnfinishedNotes, UmlComment: parsedFile.UmlComment})
 
 	// Parse and set class components from YAML data.
 	associations, err = parseClassComponents(&class, subdomainKey, classKey, yamlData)

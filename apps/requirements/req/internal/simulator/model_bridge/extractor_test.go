@@ -131,7 +131,7 @@ func (s *ExtractorTestSuite) TestExtractActionExpressions() {
 
 	action := model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq0, actionReq1}, []model_logic.Logic{actionGuar0}, nil, nil)
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
@@ -203,7 +203,7 @@ func (s *ExtractorTestSuite) TestExtractQueryExpressions() {
 
 	query := model_state.NewQuery(queryKey, "FindPending", "", []model_logic.Logic{queryReq0}, []model_logic.Logic{queryGuar0, queryGuar1}, nil)
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Queries = map[identity.Key]model_state.Query{queryKey: query}
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
@@ -265,7 +265,7 @@ func (s *ExtractorTestSuite) TestExtractGuardExpressions() {
 
 	guard := model_state.NewGuard(guardKey, "CanShip", guardLogic)
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Guards = map[identity.Key]model_state.Guard{guardKey: guard}
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
@@ -337,7 +337,7 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 	guard := model_state.NewGuard(guardKey, "LowStock", guardLogic)
 
 	// Assemble class
-	class := model_class.NewClass(classKey, "Product", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
 	class.Queries = map[identity.Key]model_state.Query{queryKey: query}
 	class.Guards = map[identity.Key]model_state.Guard{guardKey: guard}

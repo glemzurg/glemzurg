@@ -212,7 +212,7 @@ func GetStrictTestModel() core.Model {
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy class key: %v", err))
 					}
-					dummyClass := model_class.NewClass(dummyClassKey, fmt.Sprintf("Dummy Class %d", i), "Dummy class to satisfy strict requirements.", "", nil, nil, nil, "")
+					dummyClass := model_class.NewClass(dummyClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: fmt.Sprintf("Dummy Class %d", i), Details: "Dummy class to satisfy strict requirements.", UnfinishedNotes: "", UmlComment: ""})
 					subdomain.Classes[dummyClassKey] = dummyClass
 				}
 			}
@@ -1673,7 +1673,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	c.all = make(map[identity.Key]model_class.Class)
 
 	// Order class: rich, full state machine, 3 attributes.
-	classOrder := model_class.NewClass(k.classOrder, "Order", "An order placed by a customer.", "", nil, nil, nil, "the order class")
+	classOrder := model_class.NewClass(k.classOrder, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "An order placed by a customer.", UnfinishedNotes: "", UmlComment: "the order class"})
 	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{
 		k.attrOrderDate: a.orderDate,
 		k.attrTotal:     a.total,
@@ -1690,7 +1690,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 
 	// Product class: empty parent for state machine (has attribute only).
 	// Superclass in product_types generalization. Linked to actorSystem.
-	classProduct := model_class.NewClass(k.classProduct, "Product", "A product for sale.", "", &k.actorSystem, &k.classGen2, nil, "")
+	classProduct := model_class.NewClass(k.classProduct, model_class.ClassLinks{ActorKey: &k.actorSystem, SuperclassOfKey: &k.classGen2, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "A product for sale.", UnfinishedNotes: "", UmlComment: ""})
 	classProduct.SetInvariants(l.classInvariants2)
 	classProduct.SetAttributes(map[identity.Key]model_class.Attribute{
 		k.attrProductName: a.productName,
@@ -1698,44 +1698,44 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	c.all[k.classProduct] = classProduct
 
 	// Line item: association class AND subclass in product_types generalization.
-	classLineItem := model_class.NewClass(k.classLineItem, "Line Item", "A line item in an order.", "", nil, nil, &k.classGen2, "")
+	classLineItem := model_class.NewClass(k.classLineItem, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &k.classGen2}, model_class.ClassDetails{Name: "Line Item", Details: "A line item in an order.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classLineItem] = classLineItem
 
 	// Customer class: linked to actor.
-	classCustomer := model_class.NewClass(k.classCustomer, "Customer", "A customer in the system.", "", &k.actorPerson, nil, &k.classGen3, "")
+	classCustomer := model_class.NewClass(k.classCustomer, model_class.ClassLinks{ActorKey: &k.actorPerson, SuperclassOfKey: nil, SubclassOfKey: &k.classGen3}, model_class.ClassDetails{Name: "Customer", Details: "A customer in the system.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classCustomer] = classCustomer
 
 	// Vehicle: superclass in vehicle_types generalization. Linked to actorVip.
-	classVehicle := model_class.NewClass(k.classVehicle, "Vehicle", "A vehicle.", "", &k.actorVip, &k.classGen1, nil, "")
+	classVehicle := model_class.NewClass(k.classVehicle, model_class.ClassLinks{ActorKey: &k.actorVip, SuperclassOfKey: &k.classGen1, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Vehicle", Details: "A vehicle.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classVehicle] = classVehicle
 
 	// Car: subclass in vehicle_types generalization. Superclass in order_types generalization.
-	classCar := model_class.NewClass(k.classCar, "Car", "A car is a type of vehicle.", "", nil, &k.classGen3, &k.classGen1, "")
+	classCar := model_class.NewClass(k.classCar, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &k.classGen3, SubclassOfKey: &k.classGen1}, model_class.ClassDetails{Name: "Car", Details: "A car is a type of vehicle.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classCar] = classCar
 
 	// Warehouse (subdomain B).
-	classWarehouse := model_class.NewClass(k.classWarehouse, "Warehouse", "A warehouse for storing products.", "", nil, nil, nil, "")
+	classWarehouse := model_class.NewClass(k.classWarehouse, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Warehouse", Details: "A warehouse for storing products.", UnfinishedNotes: "", UmlComment: ""})
 	classWarehouse.SetInvariants(l.classInvariants3)
 	c.all[k.classWarehouse] = classWarehouse
 
 	// Shelf (subdomain B).
-	classShelf := model_class.NewClass(k.classShelf, "Shelf", "A shelf in a warehouse.", "", nil, nil, nil, "")
+	classShelf := model_class.NewClass(k.classShelf, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shelf", Details: "A shelf in a warehouse.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classShelf] = classShelf
 
 	// Aisle (subdomain B).
-	classAisle := model_class.NewClass(k.classAisle, "Aisle", "An aisle in a warehouse.", "", nil, nil, nil, "")
+	classAisle := model_class.NewClass(k.classAisle, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Aisle", Details: "An aisle in a warehouse.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classAisle] = classAisle
 
 	// Supplier (subdomain C / domain B).
-	classSupplier := model_class.NewClass(k.classSupplier, "Supplier", "A supplier of products.", "", nil, nil, nil, "")
+	classSupplier := model_class.NewClass(k.classSupplier, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Supplier", Details: "A supplier of products.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classSupplier] = classSupplier
 
 	// Shipment (subdomain C / domain B).
-	classShipment := model_class.NewClass(k.classShipment, "Shipment", "A shipment of goods.", "", nil, nil, nil, "")
+	classShipment := model_class.NewClass(k.classShipment, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shipment", Details: "A shipment of goods.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classShipment] = classShipment
 
 	// Route (subdomain C / domain B).
-	classRoute := model_class.NewClass(k.classRoute, "Route", "A delivery route.", "", nil, nil, nil, "")
+	classRoute := model_class.NewClass(k.classRoute, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Route", Details: "A delivery route.", UnfinishedNotes: "", UmlComment: ""})
 	c.all[k.classRoute] = classRoute
 
 	return c
@@ -2026,10 +2026,7 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	ucActor3 := model_use_case.NewActor("vip handling")
 
 	// Place Order: sea level, subclass, rich (3 actors, 3 scenarios).
-	ucPlaceOrder := model_use_case.NewUseCase(
-		k.ucPlaceOrder, "Place Order", "Customer places an order.",
-		"", "sea", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, "place order",
-	)
+	ucPlaceOrder := model_use_case.NewUseCase(k.ucPlaceOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSea, ReadOnly: false}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, model_use_case.UseCaseDetails{Name: "Place Order", Details: "Customer places an order.", UnfinishedNotes: "", UmlComment: "place order"})
 	ucPlaceOrder.SetActors(map[identity.Key]model_use_case.Actor{
 		k.classCustomer: ucActor1,
 		k.classProduct:  ucActor2,
@@ -2038,35 +2035,20 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	ucPlaceOrder.SetScenarios(sc.placeOrderScenarios)
 
 	// View Order: mud level, read-only, has 1 scenario.
-	ucViewOrder := model_use_case.NewUseCase(
-		k.ucViewOrder, "View Order", "View order details.",
-		"", "mud", true, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, "",
-	)
+	ucViewOrder := model_use_case.NewUseCase(k.ucViewOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelMud, ReadOnly: true}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, model_use_case.UseCaseDetails{Name: "View Order", Details: "View order details.", UnfinishedNotes: "", UmlComment: ""})
 	ucViewOrder.SetScenarios(sc.viewOrderScenarios)
 
 	// Manage Order: sky level, superclass.
-	ucManageOrder := model_use_case.NewUseCase(
-		k.ucManageOrder, "Manage Order", "Manage orders.",
-		"", "sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, "",
-	)
+	ucManageOrder := model_use_case.NewUseCase(k.ucManageOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: false}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, model_use_case.UseCaseDetails{Name: "Manage Order", Details: "Manage orders.", UnfinishedNotes: "", UmlComment: ""})
 
 	// Cancel Order: empty parent (0 actors, 0 scenarios).
-	ucCancelOrder := model_use_case.NewUseCase(
-		k.ucCancelOrder, "Cancel Order", "Customer cancels an order.",
-		"", "mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, "",
-	)
+	ucCancelOrder := model_use_case.NewUseCase(k.ucCancelOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelMud, ReadOnly: false}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, model_use_case.UseCaseDetails{Name: "Cancel Order", Details: "Customer cancels an order.", UnfinishedNotes: "", UmlComment: ""})
 
 	// View Orders: sky level, superclass for ucGen2.
-	uc5 := model_use_case.NewUseCase(
-		k.uc5, "View Orders", "View multiple orders.",
-		"", "sky", true, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, "",
-	)
+	uc5 := model_use_case.NewUseCase(k.uc5, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: true}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, model_use_case.UseCaseDetails{Name: "View Orders", Details: "View multiple orders.", UnfinishedNotes: "", UmlComment: ""})
 
 	// Cancel Orders: sky level, superclass for ucGen3.
-	uc6 := model_use_case.NewUseCase(
-		k.uc6, "Cancel Orders", "Cancel multiple orders.",
-		"", "sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, "",
-	)
+	uc6 := model_use_case.NewUseCase(k.uc6, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: false}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, model_use_case.UseCaseDetails{Name: "Cancel Orders", Details: "Cancel multiple orders.", UnfinishedNotes: "", UmlComment: ""})
 
 	u.useCases = map[identity.Key]model_use_case.UseCase{
 		k.ucPlaceOrder:  ucPlaceOrder,
@@ -2111,12 +2093,12 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 
 func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.Key]model_actor.Generalization) {
 	// Actors (4).
-	actorPerson := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "", "person", &k.actorGen3, nil, "main actor")
+	actorPerson := model_actor.NewActor(k.actorPerson, "person", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen3, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Customer", Details: "A person who buys things.", UnfinishedNotes: "", UmlComment: "main actor"})
 	// actorSystem: has BOTH SuperclassOfKey AND SubclassOfKey (different generalizations).
-	actorSystem := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "", "system", &k.actorGen2, &k.actorGen3, "")
-	actorVip := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "", "person", nil, &k.actorGen2, "")
-	actor4 := model_actor.NewActor(k.actor4, "Regular Customer", "A regular customer.", "", "person", &k.actorGen1, nil, "")
-	actor5 := model_actor.NewActor(k.actor5, "Another Customer", "Another customer.", "", "person", nil, &k.actorGen1, "")
+	actorSystem := model_actor.NewActor(k.actorSystem, "system", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen2, SubclassOfKey: &k.actorGen3}, model_actor.ActorDetails{Name: "Payment Gateway", Details: "External payment system.", UnfinishedNotes: "", UmlComment: ""})
+	actorVip := model_actor.NewActor(k.actorVip, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: &k.actorGen2}, model_actor.ActorDetails{Name: "VIP Customer", Details: "A premium customer.", UnfinishedNotes: "", UmlComment: ""})
+	actor4 := model_actor.NewActor(k.actor4, "person", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen1, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Regular Customer", Details: "A regular customer.", UnfinishedNotes: "", UmlComment: ""})
+	actor5 := model_actor.NewActor(k.actor5, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: &k.actorGen1}, model_actor.ActorDetails{Name: "Another Customer", Details: "Another customer.", UnfinishedNotes: "", UmlComment: ""})
 
 	actors := map[identity.Key]model_actor.Actor{
 		k.actorPerson: actorPerson,

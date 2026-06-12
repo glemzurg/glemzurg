@@ -64,7 +64,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	stateOpen.SetActions([]model_state.StateAction{stateActionExit})
 	stateClosed := model_state.NewState(stateClosedKey, "Closed", "", "")
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
@@ -112,7 +112,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 	stateOpen.SetActions([]model_state.StateAction{stateActionEntry})
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
@@ -149,7 +149,7 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
@@ -177,7 +177,7 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	bogusStateKey := mustKey("domain/d/subdomain/s/class/order/state/bogus")
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})

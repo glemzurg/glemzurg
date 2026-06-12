@@ -152,7 +152,7 @@ func buildTestModel(
 
 	transition := model_state.NewTransition(transKey, nil, eventKey, nil, nil, &toStateKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateKey: model_state.NewState(stateKey, "Open", "", ""),

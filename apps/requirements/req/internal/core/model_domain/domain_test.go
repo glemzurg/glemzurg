@@ -284,7 +284,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 	action := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{reqLogic}, nil, nil, nil)
 	guarLogic := model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	query := model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{guarLogic}, nil)
-	class := model_class.NewClass(classKey, "Class", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetGuards(map[identity.Key]model_state.Guard{guardKey: guard})
 	class.SetActions(map[identity.Key]model_state.Action{actionKey: action})
 	class.SetQueries(map[identity.Key]model_state.Query{queryKey: query})
@@ -309,7 +309,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
 	mismatchedGuardLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	mismatchedGuard := model_state.NewGuard(guardKey, "Guard", mismatchedGuardLogic)
-	mismatchedGuardClass := model_class.NewClass(classKey, "Class", "", "", nil, nil, nil, "")
+	mismatchedGuardClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	mismatchedGuardClass.SetGuards(map[identity.Key]model_state.Guard{guardKey: mismatchedGuard})
 	domain = Domain{
 		Key:  domainKey,
@@ -332,7 +332,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
 	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	wrongReqAction := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil)
-	wrongReqClass := model_class.NewClass(classKey, "Class", "", "", nil, nil, nil, "")
+	wrongReqClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	wrongReqClass.SetActions(map[identity.Key]model_state.Action{actionKey: wrongReqAction})
 	domain = Domain{
 		Key:  domainKey,

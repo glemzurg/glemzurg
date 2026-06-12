@@ -120,8 +120,8 @@ func TestFormatAssociationFact(t *testing.T) {
 
 			got := FormatAssociationFact(
 				assoc,
-				model_class.NewClass(fromKey, tc.fromName, "", "", nil, nil, nil, ""),
-				model_class.NewClass(toKey, tc.toName, "", "", nil, nil, nil, ""),
+				model_class.NewClass(fromKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: tc.fromName, Details: "", UnfinishedNotes: "", UmlComment: ""}),
+				model_class.NewClass(toKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: tc.toName, Details: "", UnfinishedNotes: "", UmlComment: ""}),
 				nil,
 			)
 

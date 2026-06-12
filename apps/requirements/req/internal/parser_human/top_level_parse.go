@@ -413,7 +413,7 @@ func placeholderClass(subdomainKey identity.Key, classSubKey string) (model_clas
 	if err != nil {
 		return model_class.Class{}, errors.WithStack(err)
 	}
-	return model_class.NewClass(classKey, classSubKey, "", "", nil, nil, nil, ""), nil
+	return model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: classSubKey, Details: "", UnfinishedNotes: "", UmlComment: ""}), nil
 }
 
 // parseUseCaseFile handles parsing a .use_case file.

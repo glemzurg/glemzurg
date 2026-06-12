@@ -41,7 +41,7 @@ func livenessOrderClass() (model_class.Class, identity.Key) {
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrAmountKey: attrAmount,
 	})
@@ -75,7 +75,7 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := model_class.NewClass(classKey, "Item", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrNameKey: attrName,
 	})
@@ -258,7 +258,7 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrDerivedKey: attrDerived,
 	})
@@ -408,7 +408,7 @@ func (s *LivenessCheckerSuite) TestNoSimulatableClasses_NoViolations() {
 	// Test the checker directly with an empty catalog.
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
-	statelessClass := model_class.NewClass(statelessKey, "Stateless", "", "", nil, nil, nil, "")
+	statelessClass := model_class.NewClass(statelessKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stateless", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	statelessClass.SetAttributes(map[identity.Key]model_class.Attribute{})
 	statelessClass.SetStates(map[identity.Key]model_state.State{})
 	statelessClass.SetEvents(map[identity.Key]model_state.Event{})

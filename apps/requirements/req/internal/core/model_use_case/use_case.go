@@ -12,6 +12,10 @@ const (
 	_USE_CASE_LEVEL_SKY = "sky" // A high-level organizational user story.
 	_USE_CASE_LEVEL_SEA = "sea" // A straight forward user story.
 	_USE_CASE_LEVEL_MUD = "mud" // A small, reusable part of another user story (e.g. a login flow).
+
+	UseCaseLevelSky = _USE_CASE_LEVEL_SKY
+	UseCaseLevelSea = _USE_CASE_LEVEL_SEA
+	UseCaseLevelMud = _USE_CASE_LEVEL_MUD
 )
 
 // UseCase is a user story for the system.
@@ -36,20 +40,31 @@ type GeneralizationRefs struct {
 	SubclassOfKey   *identity.Key
 }
 
-// NewUseCase wires identity, markdown, unfinished notes, level, read-only flag, and generalization refs.
-//
-//complexity:params:warn=8,fail=8 Flat constructor mirrors the human-authored file sections.
-func NewUseCase(key identity.Key, name, details, unfinishedNotes, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) UseCase {
+// UseCaseTraits holds level and read-only flags from use-case YAML.
+type UseCaseTraits struct {
+	Level    string
+	ReadOnly bool
+}
+
+// UseCaseDetails holds human-authored markdown fields from a use case file.
+type UseCaseDetails struct {
+	Name            string
+	Details         string
+	UnfinishedNotes string
+	UmlComment      string
+}
+
+func NewUseCase(key identity.Key, traits UseCaseTraits, genRefs GeneralizationRefs, details UseCaseDetails) UseCase {
 	return UseCase{
 		Key:             key,
-		Name:            name,
-		Details:         details,
-		UnfinishedNotes: unfinishedNotes,
-		Level:           level,
-		ReadOnly:        readOnly,
+		Name:            details.Name,
+		Details:         details.Details,
+		UnfinishedNotes: details.UnfinishedNotes,
+		Level:           traits.Level,
+		ReadOnly:        traits.ReadOnly,
 		SuperclassOfKey: genRefs.SuperclassOfKey,
 		SubclassOfKey:   genRefs.SubclassOfKey,
-		UmlComment:      umlComment,
+		UmlComment:      details.UmlComment,
 	}
 }
 

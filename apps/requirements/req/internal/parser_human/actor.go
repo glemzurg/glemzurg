@@ -50,7 +50,7 @@ func parseActor(actorSubKey, filename, contents string) (actor model_actor.Actor
 		return model_actor.Actor{}, errors.WithStack(err)
 	}
 
-	actor = model_actor.NewActor(actorKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), parsedFile.UnfinishedNotes, userType, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
+	actor = model_actor.NewActor(actorKey, userType, model_actor.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, model_actor.ActorDetails{Name: parsedFile.Title, Details: stripMarkdownTitle(parsedFile.Markdown), UnfinishedNotes: parsedFile.UnfinishedNotes, UmlComment: parsedFile.UmlComment})
 	return actor, nil
 }
 

@@ -60,7 +60,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false,
 		model_class.AttributeAnnotations{}))
 
-	class := model_class.NewClass(classKey, "Product", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrPriceKey:       attrPrice,
 		attrDoublePriceKey: attrDoublePrice,
@@ -106,7 +106,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	attrDerived := helper.Must(model_class.NewAttribute(attrKey, "derivedField", "", "", &derivationLogic, false,
 		model_class.AttributeAnnotations{}))
 
-	class := model_class.NewClass(classKey, "Product", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrKey: attrDerived,
 	})
@@ -142,7 +142,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "derivedField", "", "", &derivationLogic, false,
 		model_class.AttributeAnnotations{}))
 
-	class := model_class.NewClass(classKey, "Product", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrPriceKey:   attrPrice,
 		attrDerivedKey: attrDerived,
@@ -179,7 +179,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false,
 		model_class.AttributeAnnotations{}))
 
-	class := model_class.NewClass(classKey, "Product", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		attrPriceKey:       attrPrice,
 		attrDoublePriceKey: attrDoublePrice,

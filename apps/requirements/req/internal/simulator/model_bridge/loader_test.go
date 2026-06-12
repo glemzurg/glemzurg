@@ -171,7 +171,7 @@ func (s *LoaderTestSuite) TestLoadActionExpressions() {
 	action := model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil)
 
 	// Build class, subdomain, domain using constructors then set children
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
@@ -236,7 +236,7 @@ func (s *LoaderTestSuite) TestLoadQueryExpressions() {
 	query := model_state.NewQuery(queryKey, "FindPending", "", []model_logic.Logic{queryReq}, []model_logic.Logic{queryGuar0, queryGuar1}, nil)
 
 	// Build class, subdomain, domain using constructors then set children
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Queries = map[identity.Key]model_state.Query{queryKey: query}
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
@@ -292,7 +292,7 @@ func (s *LoaderTestSuite) TestLoadGuardExpressions() {
 	guard := model_state.NewGuard(guardKey, "CanShip", guardLogic)
 
 	// Build class, subdomain, domain using constructors then set children
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Guards = map[identity.Key]model_state.Guard{guardKey: guard}
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
@@ -361,7 +361,7 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	action := model_state.NewAction(actionKey, "Restock", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil)
 
 	// Build class, subdomain, domain using constructors then set children
-	class := model_class.NewClass(classKey, "Product", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Inventory", "", "", "")

@@ -30,19 +30,31 @@ type Class struct {
 	Transitions map[identity.Key]model_state.Transition
 }
 
-// NewClass wires identity, markdown, unfinished notes, actor/generalization links, and UML comment.
-//
-//complexity:params:warn=8,fail=8 Flat constructor mirrors the human-authored file sections.
-func NewClass(key identity.Key, name, details, unfinishedNotes string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Class {
+// ClassLinks holds optional actor and generalization key references.
+type ClassLinks struct {
+	ActorKey        *identity.Key
+	SuperclassOfKey *identity.Key
+	SubclassOfKey   *identity.Key
+}
+
+// ClassDetails holds human-authored markdown fields from a class file.
+type ClassDetails struct {
+	Name            string
+	Details         string
+	UnfinishedNotes string
+	UmlComment      string
+}
+
+func NewClass(key identity.Key, links ClassLinks, details ClassDetails) Class {
 	return Class{
 		Key:             key,
-		Name:            name,
-		Details:         details,
-		UnfinishedNotes: unfinishedNotes,
-		ActorKey:        actorKey,
-		SuperclassOfKey: superclassOfKey,
-		SubclassOfKey:   subclassOfKey,
-		UmlComment:      umlComment,
+		Name:            details.Name,
+		Details:         details.Details,
+		UnfinishedNotes: details.UnfinishedNotes,
+		ActorKey:        links.ActorKey,
+		SuperclassOfKey: links.SuperclassOfKey,
+		SubclassOfKey:   links.SubclassOfKey,
+		UmlComment:      details.UmlComment,
 	}
 }
 

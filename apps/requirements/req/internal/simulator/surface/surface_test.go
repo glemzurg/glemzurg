@@ -81,7 +81,7 @@ func testAssocKey(fromKey, toKey identity.Key, name string) identity.Key {
 
 // makeOrderClass builds a simple Order class with states and creation transition.
 func makeOrderClass() model_class.Class {
-	class := model_class.NewClass(orderClassKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(orderClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
 		orderStateOpenKey:   model_state.NewState(orderStateOpenKey, "Open", "", ""),
@@ -103,7 +103,7 @@ func makeOrderClass() model_class.Class {
 
 // makeItemClass builds a simple Item class with one state and creation.
 func makeItemClass() model_class.Class {
-	class := model_class.NewClass(itemClassKey, "Item", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(itemClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
 		itemStateActiveKey: model_state.NewState(itemStateActiveKey, "Active", "", ""),
@@ -122,7 +122,7 @@ func makeItemClass() model_class.Class {
 
 // makePaymentClass builds a simple Payment class in domain2.
 func makePaymentClass() model_class.Class {
-	class := model_class.NewClass(paymentClassKey, "Payment", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(paymentClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Payment", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
 		paymentStatePendingKey: model_state.NewState(paymentStatePendingKey, "Pending", "", ""),
@@ -142,7 +142,7 @@ func makePaymentClass() model_class.Class {
 // makeStatelessClass builds a class with no states (not simulatable).
 func makeStatelessClass() model_class.Class {
 	cKey := mustKey("domain/d/subdomain/s/class/stateless")
-	class := model_class.NewClass(cKey, "Stateless", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(cKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stateless", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{}
 	class.Events = map[identity.Key]model_state.Event{}

@@ -134,7 +134,7 @@ func createTestModel() *core.Model {
 	completeAction := model_state.NewAction(actionKey, "complete", "", requires, guarantees, nil, nil)
 
 	// Create the class
-	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		statusAttr.Key: statusAttr,
 		amountAttr.Key: amountAttr,
@@ -178,7 +178,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 		model_class.AttributeAnnotations{}))
 	attr.DataType = nil // Not parsed!
 
-	class := model_class.NewClass(classKey, "BadClass", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "BadClass", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Attributes = map[identity.Key]model_class.Attribute{
 		attr.Key: attr,
 	}
@@ -529,7 +529,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 		model_class.AttributeAnnotations{}))
 	attr.DataType = dataType
 
-	class := model_class.NewClass(classKey, "Test", "", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Test", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Attributes = map[identity.Key]model_class.Attribute{attr.Key: attr}
 
 	subdomainKey := mustKey("domain/d/subdomain/s")

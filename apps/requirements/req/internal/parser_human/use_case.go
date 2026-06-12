@@ -47,7 +47,7 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
-	useCase = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), parsedFile.UnfinishedNotes, level, readOnly, model_use_case.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, parsedFile.UmlComment)
+	useCase = model_use_case.NewUseCase(useCaseKey, model_use_case.UseCaseTraits{Level: level, ReadOnly: readOnly}, model_use_case.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, model_use_case.UseCaseDetails{Name: parsedFile.Title, Details: stripMarkdownTitle(parsedFile.Markdown), UnfinishedNotes: parsedFile.UnfinishedNotes, UmlComment: parsedFile.UmlComment})
 
 	// Parse actors.
 	if err := parseUseCaseActors(&useCase, subdomainKey, yamlData); err != nil {

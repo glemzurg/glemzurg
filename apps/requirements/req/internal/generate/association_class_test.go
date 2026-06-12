@@ -45,9 +45,9 @@ func buildAssocClassTestModel(t *testing.T) (model core.Model, aKey, bKey, cKey 
 		Key:  subdomainKey,
 		Name: "S X",
 		Classes: map[identity.Key]model_class.Class{
-			aKey: model_class.NewClass(aKey, "A", "", "", nil, nil, nil, ""),
-			bKey: model_class.NewClass(bKey, "B", "", "", nil, nil, nil, ""),
-			cKey: model_class.NewClass(cKey, "C", "", "", nil, nil, nil, ""),
+			aKey: model_class.NewClass(aKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "A", Details: "", UnfinishedNotes: "", UmlComment: ""}),
+			bKey: model_class.NewClass(bKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "B", Details: "", UnfinishedNotes: "", UmlComment: ""}),
+			cKey: model_class.NewClass(cKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "C", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		ClassAssociations: map[identity.Key]model_class.Association{
 			assocKey: assoc,
@@ -140,7 +140,7 @@ func TestGenerateNoAssociationClassAnnotation(t *testing.T) {
 	subdomain := model_domain.Subdomain{
 		Key: subdomainKey, Name: "S X",
 		Classes: map[identity.Key]model_class.Class{
-			xKey: model_class.NewClass(xKey, "X", "", "", nil, nil, nil, ""),
+			xKey: model_class.NewClass(xKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "X", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 	}
 	domain := model_domain.Domain{

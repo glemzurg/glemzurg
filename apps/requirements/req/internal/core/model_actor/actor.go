@@ -24,19 +24,30 @@ type Actor struct {
 	UmlComment      string
 }
 
-// NewActor wires identity, markdown, unfinished notes, actor type, and generalization keys.
-//
-//complexity:params:warn=8,fail=8 Flat constructor mirrors the human-authored file sections.
-func NewActor(key identity.Key, name, details, unfinishedNotes, userType string, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Actor {
+// GeneralizationRefs holds optional superclass/subclass generalization keys.
+type GeneralizationRefs struct {
+	SuperclassOfKey *identity.Key
+	SubclassOfKey   *identity.Key
+}
+
+// ActorDetails holds human-authored markdown fields from an actor file.
+type ActorDetails struct {
+	Name            string
+	Details         string
+	UnfinishedNotes string
+	UmlComment      string
+}
+
+func NewActor(key identity.Key, userType string, gen GeneralizationRefs, details ActorDetails) Actor {
 	return Actor{
 		Key:             key,
-		Name:            name,
-		Details:         details,
-		UnfinishedNotes: unfinishedNotes,
+		Name:            details.Name,
+		Details:         details.Details,
+		UnfinishedNotes: details.UnfinishedNotes,
 		Type:            userType,
-		SuperclassOfKey: superclassOfKey,
-		SubclassOfKey:   subclassOfKey,
-		UmlComment:      umlComment,
+		SuperclassOfKey: gen.SuperclassOfKey,
+		SubclassOfKey:   gen.SubclassOfKey,
+		UmlComment:      details.UmlComment,
 	}
 }
 

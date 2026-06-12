@@ -63,7 +63,7 @@ func (suite *ConvertSuite) TestConvertToModelMinimal() {
 func (suite *ConvertSuite) TestConvertFromModelWithActor() {
 	actorKey := helper.Must(identity.NewActorKey("customer"))
 
-	actor := model_actor.NewActor(actorKey, "Customer", "Customer details", "", "person", nil, nil, "")
+	actor := model_actor.NewActor(actorKey, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Customer", Details: "Customer details", UnfinishedNotes: "", UmlComment: ""})
 
 	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = map[identity.Key]model_actor.Actor{
@@ -128,7 +128,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 		model_class.AttributeAnnotations{}))
 
 	// Build class
-	orderClass := model_class.NewClass(classKey, "Order", "Order details", "", &actorKey, nil, nil, "")
+	orderClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: &actorKey, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "Order details", UnfinishedNotes: "", UmlComment: ""})
 	orderClass.SetAttributes(map[identity.Key]model_class.Attribute{
 		idAttrKey:     idAttr,
 		statusAttrKey: statusAttr,
@@ -147,7 +147,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 	}
 
 	// Build actor
-	actor := model_actor.NewActor(actorKey, "Customer", "", "", "person", nil, nil, "")
+	actor := model_actor.NewActor(actorKey, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Customer", Details: "", UnfinishedNotes: "", UmlComment: ""})
 
 	// Build model
 	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
@@ -275,7 +275,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	action := model_state.NewAction(actionKey, "Process", "Process the order", nil, nil, nil, nil)
 
 	// Build class
-	orderClass := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 	orderClass.SetStates(map[identity.Key]model_state.State{
 		stateKey1: state1,
@@ -433,7 +433,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	)
 
 	// Build class
-	orderClass := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 	orderClass.SetQueries(map[identity.Key]model_state.Query{
 		queryKey: query,
@@ -552,10 +552,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 	genKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "product_types"))
 
 	// Build classes
-	productClass := model_class.NewClass(productKey, "Product", "", "", nil, &genKey, nil, "")
+	productClass := model_class.NewClass(productKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &genKey, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	productClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
-	bookClass := model_class.NewClass(bookKey, "Book", "", "", nil, nil, &genKey, "")
+	bookClass := model_class.NewClass(bookKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &genKey}, model_class.ClassDetails{Name: "Book", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	bookClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
 	// Build generalization
@@ -677,10 +677,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, orderKey, lineItemKey, "order_lines"))
 
 	// Build classes
-	orderClass := model_class.NewClass(orderKey, "Order", "", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(orderKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
-	lineItemClass := model_class.NewClass(lineItemKey, "Line Item", "", "", nil, nil, nil, "")
+	lineItemClass := model_class.NewClass(lineItemKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Line Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	lineItemClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
 	// Build association
@@ -1020,10 +1020,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	assocKey := helper.Must(identity.NewClassAssociationKey(domainKey, orderKey, shipmentKey, "order_shipments"))
 
 	// Build classes
-	orderClass := model_class.NewClass(orderKey, "Order", "", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(orderKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
-	shipmentClass := model_class.NewClass(shipmentKey, "Shipment", "", "", nil, nil, nil, "")
+	shipmentClass := model_class.NewClass(shipmentKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shipment", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	shipmentClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
 	// Build subdomains
@@ -1143,10 +1143,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	assocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, orderKey, productKey, "order_products"))
 
 	// Build classes
-	orderClass := model_class.NewClass(orderKey, "Order", "", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(orderKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
-	productClass := model_class.NewClass(productKey, "Product", "", "", nil, nil, nil, "")
+	productClass := model_class.NewClass(productKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	productClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
 	// Build subdomains

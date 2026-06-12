@@ -275,7 +275,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		Key:  subdomainKey,
 		Name: "Name",
 		UseCases: map[identity.Key]model_use_case.UseCase{
-			useCaseKey: model_use_case.NewUseCase(useCaseKey, "UC1", "", "", "sea", false, model_use_case.GeneralizationRefs{}, ""),
+			useCaseKey: model_use_case.NewUseCase(useCaseKey, model_use_case.UseCaseTraits{Level: "sea", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "UC1", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		UseCaseShares: map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 			nonExistentUseCaseKey: {
@@ -291,7 +291,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		Key:  subdomainKey,
 		Name: "Name",
 		UseCases: map[identity.Key]model_use_case.UseCase{
-			useCaseKey: model_use_case.NewUseCase(useCaseKey, "UC1", "", "", "sea", false, model_use_case.GeneralizationRefs{}, ""),
+			useCaseKey: model_use_case.NewUseCase(useCaseKey, model_use_case.UseCaseTraits{Level: "sea", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "UC1", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		UseCaseShares: map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 			useCaseKey: {
@@ -310,13 +310,13 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			genKey: model_class.NewGeneralization(genKey, "Gen", "", "", false, false, ""),
 		},
 		Classes: map[identity.Key]model_class.Class{
-			classKey:  model_class.NewClass(classKey, "Class", "", "", nil, &genKey, nil, ""),
-			classKey2: model_class.NewClass(classKey2, "Class2", "", "", nil, nil, &genKey, ""),
-			classKey3: model_class.NewClass(classKey3, "Class3", "", "", nil, nil, &genKey, ""),
+			classKey:  model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &genKey, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""}),
+			classKey2: model_class.NewClass(classKey2, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &genKey}, model_class.ClassDetails{Name: "Class2", Details: "", UnfinishedNotes: "", UmlComment: ""}),
+			classKey3: model_class.NewClass(classKey3, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &genKey}, model_class.ClassDetails{Name: "Class3", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		UseCases: map[identity.Key]model_use_case.UseCase{
-			useCaseKey:  model_use_case.NewUseCase(useCaseKey, "UC1", "", "", "sea", false, model_use_case.GeneralizationRefs{}, ""),
-			useCaseKey2: model_use_case.NewUseCase(useCaseKey2, "UC2", "", "", "mud", false, model_use_case.GeneralizationRefs{}, ""),
+			useCaseKey:  model_use_case.NewUseCase(useCaseKey, model_use_case.UseCaseTraits{Level: "sea", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "UC1", Details: "", UnfinishedNotes: "", UmlComment: ""}),
+			useCaseKey2: model_use_case.NewUseCase(useCaseKey2, model_use_case.UseCaseTraits{Level: "mud", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "UC2", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		UseCaseShares: map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 			useCaseKey: {
@@ -358,7 +358,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	validAttr := helper.Must(model_class.NewAttribute(attrKey, "Attr", "", "", &derivLogic, false,
 		model_class.AttributeAnnotations{}))
 
-	validClass := model_class.NewClass(classKey, "Class", "", "", nil, nil, nil, "")
+	validClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	validClass.Guards = map[identity.Key]model_state.Guard{guardKey: validGuard}
 	validClass.Actions = map[identity.Key]model_state.Action{actionKey: validAction}
 	validClass.Queries = map[identity.Key]model_state.Query{queryKey: validQuery}
@@ -379,7 +379,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	mismatchGuardLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	mismatchGuard := model_state.NewGuard(guardKey, "Guard", mismatchGuardLogic)
 
-	mismatchGuardClass := model_class.NewClass(classKey, "Class", "", "", nil, nil, nil, "")
+	mismatchGuardClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	mismatchGuardClass.Guards = map[identity.Key]model_state.Guard{guardKey: mismatchGuard}
 
 	subdomain = Subdomain{
@@ -398,7 +398,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	wrongReqAction := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil)
 
-	wrongReqClass := model_class.NewClass(classKey, "Class", "", "", nil, nil, nil, "")
+	wrongReqClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	wrongReqClass.Actions = map[identity.Key]model_state.Action{actionKey: wrongReqAction}
 
 	subdomain = Subdomain{
@@ -418,7 +418,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	wrongDerivAttr := helper.Must(model_class.NewAttribute(attrKey, "Attr", "", "", &wrongDerivLogic, false,
 		model_class.AttributeAnnotations{}))
 
-	wrongDerivClass := model_class.NewClass(classKey, "Class", "", "", nil, nil, nil, "")
+	wrongDerivClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	wrongDerivClass.Attributes = map[identity.Key]model_class.Attribute{attrKey: wrongDerivAttr}
 
 	subdomain = Subdomain{
