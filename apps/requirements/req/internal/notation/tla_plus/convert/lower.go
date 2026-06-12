@@ -346,7 +346,7 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 	name := e.Value
 
 	// "self" → SelfRef.
-	if name == "self" {
+	if name == ast.IdentifierSelf {
 		return &me.SelfRef{}, nil
 	}
 
@@ -435,10 +435,10 @@ func lowerPrimed(e *ast.Primed, ctx *LowerContext) (*me.NextState, error) {
 // The parser produces Identifier nodes for these since they are not reserved
 // keywords in the PEG grammar, so lowerIdentifier must recognize them.
 var setConstantIdentifiers = map[string]me.SetConstantKind{
-	"Nat":     me.SetConstantNat,
-	"Int":     me.SetConstantInt,
-	"Real":    me.SetConstantReal,
-	"BOOLEAN": me.SetConstantBoolean,
+	ast.SetConstantNat:     me.SetConstantNat,
+	ast.SetConstantInt:     me.SetConstantInt,
+	ast.SetConstantReal:    me.SetConstantReal,
+	ast.SetConstantBoolean: me.SetConstantBoolean,
 }
 
 var arithOpMap = map[string]me.ArithOp{

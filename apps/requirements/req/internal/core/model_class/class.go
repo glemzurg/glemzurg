@@ -30,6 +30,9 @@ type Class struct {
 	Transitions map[identity.Key]model_state.Transition
 }
 
+// NewClass wires identity, markdown, unfinished notes, actor/generalization links, and UML comment.
+//
+//complexity:params:warn=8,fail=8 Flat constructor mirrors the human-authored file sections.
 func NewClass(key identity.Key, name, details, unfinishedNotes string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Class {
 	return Class{
 		Key:             key,

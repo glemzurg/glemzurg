@@ -12,12 +12,12 @@ import (
 )
 
 // nodeIDFor mirrors the template "nodeid" func: sanitize key string for mermaid.
-func nodeIDFor(idtype string, key identity.Key) string {
+func nodeIDFor(key identity.Key) string {
 	keyStr := key.String()
 	keyStr = strings.ReplaceAll(keyStr, "/", "_")
 	keyStr = strings.ReplaceAll(keyStr, "-", "_")
 	keyStr = strings.ReplaceAll(keyStr, ".", "_")
-	return idtype + "_" + keyStr
+	return "class_" + keyStr
 }
 
 // buildAssocClassTestModel returns a minimal model with three classes (A, B, C)
@@ -84,9 +84,9 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	}
 	got := string(body)
 
-	aNode := nodeIDFor("class", aKey)
-	bNode := nodeIDFor("class", bKey)
-	cNode := nodeIDFor("class", cKey)
+	aNode := nodeIDFor(aKey)
+	bNode := nodeIDFor(bKey)
+	cNode := nodeIDFor(cKey)
 
 	wantFrom := aNode + ` "1" --> "1" ` + cNode + ` : links`
 	wantTo := cNode + ` "1" --> "1" ` + bNode

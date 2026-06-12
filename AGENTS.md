@@ -90,35 +90,21 @@ Requirements tooling (`apps/requirements/req` and related packages) must not emb
 - Prefer table-driven tests. Each row is a named case (`name string` field) and the test body uses `t.Run(tc.name, ...)`.
 - Use table-driven tests even for two cases when more cases are likely to be added.
 
-## Complexity linter exceptions (`go-complexity-lint` only)
+## Complexity linter (`go-complexity-lint`)
 
 These rules apply **only** to [go-complexity-lint](https://github.com/glemzurg/go-complexity-lint). Do not use `//complexity:...` comments to silence **golangci-lint** or any other linter — for those, surface the warning and let the human decide (including `//nolint:...`).
 
-### Default: surface, don't suppress
+### Never add complexity exceptions
 
-For most `go-complexity-lint` findings (cyclomatic complexity, nesting depth, fan-out in non-constructors, etc.), **do not** add an inline `//complexity:...:warn=N,fail=N` override. Run the gate, leave the code as-is, and present the warning with the affected function and the lint's suggested counts. The human decides whether to refactor, raise the threshold project-wide, or accept a scoped override.
+**AI must never add `//complexity:...` directives** — not for constructors, routing switches, parameter counts, fan-out, or any other metric. That includes scoped overrides such as `//complexity:params:warn=8,fail=8` or `//complexity:fanout:warn=9,fail=9`. Do not add them proactively, do not add them to make `apps/requirements/req/build.sh` pass, and do not add them even if the human asks you to "just suppress it." Only a human maintainer may add or approve inline `go-complexity-lint` exceptions in this repo.
 
-### Exception: clean constructors with high fan-out
+When `go-complexity-lint` reports a finding:
 
-When fan-out is high but the function is an **understandable constructor** — a single `return` that wires subsystems with no branching — **ask the human** whether it should carry a scoped `go-complexity-lint` exclusion rather than reflexively refactoring or leaving the gate red.
+1. Run the gate and surface the warning with the affected function and the lint's suggested counts.
+2. Fix the code — refactor, split logic, or group related parameters into a coherent struct when appropriate.
+3. If a scoped override or project-wide threshold change is the right outcome, describe the trade-off and leave the decision to the human.
 
-A constructor exclusion looks like this (note the short rationale on the same line):
-
-```go
-// NewClass returns a Class with identity and generalization keys wired from parsed file data.
-//
-//complexity:fanout:warn=9,fail=9 Keep the constructor as a single flat return.
-func NewClass(key identity.Key, name, details, unfinishedNotes string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Class {
-	// ...
-}
-```
-
-- Apply only the metric that fired (e.g. `fanout` here — not cyclo or nestdepth).
-- Set `warn` and `fail` to the count the linter reported.
-- Add a one-line rationale after the directive explaining why the shape stays flat.
-- Add the comment only after the human approves.
-
-Do **not** use this pattern for routing switches, state machines, or functions with conditional logic — refactor those or surface the warning.
+Existing `//complexity:...` comments in the codebase are human-approved; do not extend that pattern or copy it into new code.
 
 ## Quality gate: `apps/requirements/req/build.sh`
 

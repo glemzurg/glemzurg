@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
@@ -11,6 +12,8 @@ import (
 )
 
 // Key uniquely identifies an entity in the model.
+//
+//nolint:recvcheck // value receivers implement fmt.Stringer and encoding; pointer receivers implement validation and unmarshaling.
 type Key struct {
 	ParentKey string `validate:"-"` // The parent entity's key.
 	KeyType   string // The type of the key, e.g., "class", "association".
@@ -289,14 +292,7 @@ func (k *Key) validateRequiredParentOneOf(ctx *coreerr.ValidationContext, parent
 			fmt.Sprintf("key type '%s' requires a parent of type '%s'", k.KeyType, expected),
 			"Parent", "", expected)
 	}
-	matched := false
-	for _, t := range allowed {
-		if parent.KeyType == t {
-			matched = true
-			break
-		}
-	}
-	if !matched {
+	if !slices.Contains(allowed, parent.KeyType) {
 		return coreerr.NewWithValues(ctx, coreerr.KeyWrongParentType,
 			fmt.Sprintf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, expected, parent.KeyType),
 			"Parent", parent.KeyType, expected)

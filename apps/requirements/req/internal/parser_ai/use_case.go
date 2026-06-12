@@ -121,7 +121,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 
 	// Level must be one of the valid values
 	switch uc.Level {
-	case "sky", "sea", "mud":
+	case useCaseLevelSky, useCaseLevelSea, useCaseLevelMud:
 		// valid
 	default:
 		return NewParseError(

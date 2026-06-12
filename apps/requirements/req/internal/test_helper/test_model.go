@@ -1372,79 +1372,75 @@ type testParams struct {
 func buildParameters(k testKeys) (testParams, error) {
 	var p testParams
 
-	mk := func(parent identity.Key, name, rules string) (model_state.Parameter, error) {
-		return model_state.NewParameter(parent, name, rules)
-	}
-
 	// eventSubmit: quantity, productID, reason.
-	quantitySubmit, err := mk(k.eventSubmit, "quantity", "[1 .. 10000] at 1 unit")
+	quantitySubmit, err := model_state.NewParameter(k.eventSubmit, "quantity", "[1 .. 10000] at 1 unit")
 	if err != nil {
 		return p, err
 	}
-	productIDSubmit, err := mk(k.eventSubmit, "product_id", "ref from domain_a>subdomain_a>product")
+	productIDSubmit, err := model_state.NewParameter(k.eventSubmit, "product_id", "ref from domain_a>subdomain_a>product")
 	if err != nil {
 		return p, err
 	}
-	reasonSubmit, err := mk(k.eventSubmit, "reason", "enum of out_of_stock, changed_mind, defective")
+	reasonSubmit, err := model_state.NewParameter(k.eventSubmit, "reason", "enum of out_of_stock, changed_mind, defective")
 	if err != nil {
 		return p, err
 	}
 	p.eventSubmit = []model_state.Parameter{quantitySubmit, productIDSubmit, reasonSubmit}
 
 	// eventFulfill: reason, unparseable (Int → unparseable).
-	reasonFulfill, err := mk(k.eventFulfill, "reason", "enum of out_of_stock, changed_mind, defective")
+	reasonFulfill, err := model_state.NewParameter(k.eventFulfill, "reason", "enum of out_of_stock, changed_mind, defective")
 	if err != nil {
 		return p, err
 	}
-	unparseableFulfill, err := mk(k.eventFulfill, "unparseable_field", "Int")
+	unparseableFulfill, err := model_state.NewParameter(k.eventFulfill, "unparseable_field", "Int")
 	if err != nil {
 		return p, err
 	}
 	p.eventFulfill = []model_state.Parameter{reasonFulfill, unparseableFulfill}
 
 	// actionProcess: quantity, priority, tags.
-	quantityProcess, err := mk(k.actionProcess, "quantity", "[1 .. 10000] at 1 unit")
+	quantityProcess, err := model_state.NewParameter(k.actionProcess, "quantity", "[1 .. 10000] at 1 unit")
 	if err != nil {
 		return p, err
 	}
-	priorityProcess, err := mk(k.actionProcess, "priority", "ordered enum of low, medium, high, critical")
+	priorityProcess, err := model_state.NewParameter(k.actionProcess, "priority", "ordered enum of low, medium, high, critical")
 	if err != nil {
 		return p, err
 	}
-	tagsProcess, err := mk(k.actionProcess, "tags", "unique unordered of unconstrained")
+	tagsProcess, err := model_state.NewParameter(k.actionProcess, "tags", "unique unordered of unconstrained")
 	if err != nil {
 		return p, err
 	}
 	p.actionProcess = []model_state.Parameter{quantityProcess, priorityProcess, tagsProcess}
 
 	// actionNotify: format, unconstrained_bound (span with unconstrained lower bound).
-	formatNotify, err := mk(k.actionNotify, "format", "unconstrained")
+	formatNotify, err := model_state.NewParameter(k.actionNotify, "format", "unconstrained")
 	if err != nil {
 		return p, err
 	}
-	unconstrainedBoundNotify, err := mk(k.actionNotify, "unconstrained_bound", "(unconstrained .. 100] at 1 unit")
+	unconstrainedBoundNotify, err := model_state.NewParameter(k.actionNotify, "unconstrained_bound", "(unconstrained .. 100] at 1 unit")
 	if err != nil {
 		return p, err
 	}
 	p.actionNotify = []model_state.Parameter{formatNotify, unconstrainedBoundNotify}
 
 	// queryStatus: productID, items, format.
-	productIDStatus, err := mk(k.queryStatus, "product_id", "ref from domain_a>subdomain_a>product")
+	productIDStatus, err := model_state.NewParameter(k.queryStatus, "product_id", "ref from domain_a>subdomain_a>product")
 	if err != nil {
 		return p, err
 	}
-	itemsStatus, err := mk(k.queryStatus, "items", "1-100 ordered of obj of some_class")
+	itemsStatus, err := model_state.NewParameter(k.queryStatus, "items", "1-100 ordered of obj of some_class")
 	if err != nil {
 		return p, err
 	}
-	formatStatus, err := mk(k.queryStatus, "format", "unconstrained")
+	formatStatus, err := model_state.NewParameter(k.queryStatus, "format", "unconstrained")
 	if err != nil {
 		return p, err
 	}
 	p.queryStatus = []model_state.Parameter{productIDStatus, itemsStatus, formatStatus}
 
 	// queryHistory: format.
-	formatHistory, err := mk(k.queryHistory, "format", "unconstrained")
+	formatHistory, err := model_state.NewParameter(k.queryHistory, "format", "unconstrained")
 	if err != nil {
 		return p, err
 	}
@@ -1907,13 +1903,13 @@ func buildScenarios(k testKeys) testScenarios {
 		StepType: "sequence",
 		Statements: []model_scenario.Step{
 			{
-				Key: k.step1, StepType: "leaf", LeafType: &leafEvent,
+				Key: k.step1, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafEvent,
 				Description:   "Customer submits order",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				EventKey: &k.eventSubmit,
 			},
 			{
-				Key: k.step2, StepType: "leaf", LeafType: &leafQuery,
+				Key: k.step2, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafQuery,
 				Description:   "Check order status",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				QueryKey: &k.queryStatus,
@@ -1922,7 +1918,7 @@ func buildScenarios(k testKeys) testScenarios {
 				Key: k.step3, StepType: "loop", Condition: "while items remain",
 				Statements: []model_scenario.Step{
 					{
-						Key: k.step4, StepType: "leaf", LeafType: &leafScenario,
+						Key: k.step4, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafScenario,
 						Description:   "Handle item",
 						FromObjectKey: &k.objOrder, ToObjectKey: &k.objProduct,
 						ScenarioKey: &k.scenarioError,
@@ -1936,7 +1932,7 @@ func buildScenarios(k testKeys) testScenarios {
 						Key: k.step6, StepType: "case", Condition: "order is valid",
 						Statements: []model_scenario.Step{
 							{
-								Key: k.step7, StepType: "leaf", LeafType: &leafEvent,
+								Key: k.step7, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafEvent,
 								Description:   "Process order",
 								FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 								EventKey: &k.eventFulfill,
@@ -1947,13 +1943,13 @@ func buildScenarios(k testKeys) testScenarios {
 						Key: k.step8, StepType: "case", Condition: "order is invalid",
 						Statements: []model_scenario.Step{
 							{
-								Key: k.step9, StepType: "leaf", LeafType: &leafQuery,
+								Key: k.step9, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafQuery,
 								Description:   "Get error details",
 								FromObjectKey: &k.objOrder, ToObjectKey: &k.objCustomer,
 								QueryKey: &k.queryStatus,
 							},
 							{
-								Key: k.step10, StepType: "leaf", LeafType: &leafDelete,
+								Key: k.step10, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafDelete,
 								FromObjectKey: &k.objOrder,
 							},
 						},
@@ -1961,19 +1957,19 @@ func buildScenarios(k testKeys) testScenarios {
 				},
 			},
 			{
-				Key: k.step11, StepType: "leaf", LeafType: &leafEvent,
+				Key: k.step11, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafEvent,
 				Description:   "Product triggers order update",
 				FromObjectKey: &k.objProduct, ToObjectKey: &k.objOrder,
 				EventKey: &k.eventCancel,
 			},
 			{
-				Key: k.step12, StepType: "leaf", LeafType: &leafQuery,
+				Key: k.step12, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafQuery,
 				Description:   "Order queries product details",
 				FromObjectKey: &k.objOrder, ToObjectKey: &k.objProduct,
 				QueryKey: &k.queryCount,
 			},
 			{
-				Key: k.step13, StepType: "leaf", LeafType: &leafScenario,
+				Key: k.step13, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafScenario,
 				Description:   "View the order details",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				ScenarioKey: &k.scenarioView,

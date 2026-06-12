@@ -190,7 +190,7 @@ func writeErrorMarkdown(outputPath string, genErr error) error {
 	if err := os.MkdirAll(outputPath, 0755); err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(outputPath, "model.md"), generate.ErrorMarkdown(genErr), 0644)
+	return os.WriteFile(filepath.Join(outputPath, "model.md"), generate.ErrorMarkdown(genErr), 0o644) //nolint:gosec // generated markdown is intentionally world-readable
 }
 
 // runConversion performs the input/output conversion based on formats.
@@ -333,7 +333,7 @@ func runAssociationFacts(rootSourcePath, model, subdomainPath string) error {
 
 	facts := associationfacts.FactsForSubdomain(subdomain)
 	for _, fact := range facts {
-		fmt.Println(fact)
+		_, _ = fmt.Fprintln(os.Stdout, fact)
 	}
 	return nil
 }

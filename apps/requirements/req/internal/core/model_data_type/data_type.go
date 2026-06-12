@@ -38,6 +38,8 @@ var _validCollectionTypes = map[string]bool{
 // The zero-value identity.Key{} is the legal "unallocated" state used for partial
 // DataTypes (e.g., stubs constructed during database scan before the full data is
 // stitched in). Validate() requires a fully-formed key.
+//
+//nolint:recvcheck // Validate uses a value receiver; nested key assignment uses a package helper.
 type DataType struct {
 	Key              identity.Key
 	CollectionType   string
@@ -94,7 +96,7 @@ func New(key identity.Key, text string, typeSpec *logic_spec.TypeSpec) (dataType
 	dataType.TypeSpec = typeSpec
 
 	// Propagate the parent identity.Key down through nested record-field data types.
-	if err = dataType.assignNestedKeys(); err != nil {
+	if err = assignNestedKeys(dataType); err != nil {
 		return nil, err
 	}
 
@@ -110,7 +112,7 @@ func New(key identity.Key, text string, typeSpec *logic_spec.TypeSpec) (dataType
 // assignNestedKeys walks the record-field children and assigns each child's FieldDataType.Key
 // via NewDataTypeKey(parent, fieldName), recursively. The parent is taken from d.Key, so
 // it must already be set before this is called.
-func (d *DataType) assignNestedKeys() error {
+func assignNestedKeys(d *DataType) error {
 	for i := range d.RecordFields {
 		field := &d.RecordFields[i]
 		if field.FieldDataType == nil {
@@ -121,7 +123,7 @@ func (d *DataType) assignNestedKeys() error {
 			return pkgerrors.Wrapf(err, "field '%s'", field.Name)
 		}
 		field.FieldDataType.Key = childKey
-		if err := field.FieldDataType.assignNestedKeys(); err != nil {
+		if err := assignNestedKeys(field.FieldDataType); err != nil {
 			return err
 		}
 	}

@@ -394,7 +394,7 @@ func parseClassFileResilient(model *core.Model, ctx *parseContext, toParseFile f
 		ctx.allClassAssociations[assoc.Key] = assoc
 	}
 	addClassToSubdomain(model, domainKey, subdomainKey, domain, subdomain, class)
-	return nil, nil
+	return nil, nil //nolint:nilnil // success: no resilient-parse failure to report
 }
 
 // addClassToSubdomain inserts a class into its subdomain and writes it back to the model.

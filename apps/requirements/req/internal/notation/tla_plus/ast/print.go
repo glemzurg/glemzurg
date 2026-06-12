@@ -27,9 +27,9 @@ func (p *printer) print(expr Expression) string {
 	// --- Literals ---
 	case *BooleanLiteral:
 		if e.Value {
-			return "TRUE"
+			return LiteralTrue
 		}
-		return "FALSE"
+		return LiteralFalse
 
 	case *NumberLiteral:
 		return e.String()

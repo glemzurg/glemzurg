@@ -18,6 +18,9 @@ const _BOUND_TYPE_UNCONSTRAINED = "unconstrained"
 // _BOUND_TYPE_CLOSED is the span bound type indicating an inclusive boundary.
 const _BOUND_TYPE_CLOSED = "closed"
 
+// _BOUND_TYPE_OPEN is the span bound type indicating an exclusive boundary.
+const _BOUND_TYPE_OPEN = "open"
+
 // DataTypeChecker validates attribute values against their data type constraints.
 // It checks:
 //   - Required (non-nullable) attributes are not nil
@@ -283,7 +286,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 					rangeStr,
 				)
 			}
-		case "open":
+		case _BOUND_TYPE_OPEN:
 			// Open: value > lower
 			if cmp <= 0 {
 				return NewSpanConstraintViolation(
@@ -314,7 +317,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 					rangeStr,
 				)
 			}
-		case "open":
+		case _BOUND_TYPE_OPEN:
 			// Open: value < higher
 			if cmp >= 0 {
 				return NewSpanConstraintViolation(

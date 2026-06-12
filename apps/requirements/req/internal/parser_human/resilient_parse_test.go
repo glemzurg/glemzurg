@@ -61,7 +61,7 @@ func TestParseIsolatesBrokenClass(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read class file: %v", err)
 	}
-	if err := os.WriteFile(classPath, append(orig, []byte("\nbroken_key: \"unterminated\n")...), 0644); err != nil {
+	if err := os.WriteFile(classPath, append(orig, []byte("\nbroken_key: \"unterminated\n")...), 0o644); err != nil { //nolint:gosec // test fixture corruption
 		t.Fatalf("corrupt class file: %v", err)
 	}
 
@@ -113,13 +113,13 @@ func TestParseIsolatesMalformedMultiplicity(t *testing.T) {
 		if err != nil || d.IsDir() || corrupted != "" || !strings.HasSuffix(path, ".class") {
 			return nil
 		}
-		body, readErr := os.ReadFile(path)
+		body, readErr := os.ReadFile(path) //nolint:gosec // test fixture walk over temp dir
 		if readErr != nil {
 			return nil
 		}
 		if strings.Contains(string(body), `from_multiplicity: "1"`) {
 			fixed := strings.Replace(string(body), `from_multiplicity: "1"`, `from_multiplicity: 1`, 1)
-			if os.WriteFile(path, []byte(fixed), 0644) == nil {
+			if os.WriteFile(path, []byte(fixed), 0o644) == nil { //nolint:gosec // test fixture corruption
 				corrupted = path
 			}
 		}

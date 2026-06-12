@@ -45,13 +45,13 @@ func ConvertToExpressionType(expr Expression) (logic_expression_type.ExpressionT
 // In the PEG grammar, Nat, Int, Real, BOOLEAN, STRING all parse as Identifiers.
 func convertIdentifier(id *Identifier) (logic_expression_type.ExpressionType, error) {
 	switch id.Value {
-	case "BOOLEAN":
+	case SetConstantBoolean:
 		return &logic_expression_type.BooleanType{}, nil
-	case "Nat", "Int":
+	case SetConstantNat, SetConstantInt:
 		return &logic_expression_type.IntegerType{}, nil
-	case "Real":
+	case SetConstantReal:
 		return &logic_expression_type.RationalType{}, nil
-	case "STRING":
+	case IdentifierString:
 		return &logic_expression_type.StringType{}, nil
 	default:
 		return nil, fmt.Errorf("unknown type identifier: %s", id.Value)
@@ -122,22 +122,22 @@ func convertFunctionCall(fc *FunctionCall) (logic_expression_type.ExpressionType
 	}
 
 	switch module {
-	case "_Seq":
+	case ModuleSeq:
 		switch name {
-		case "Seq":
+		case FuncSeq:
 			return &logic_expression_type.SequenceType{ElementType: elemType, Unique: false}, nil
-		case "SeqUnique":
+		case FuncSeqUnique:
 			return &logic_expression_type.SequenceType{ElementType: elemType, Unique: true}, nil
 		default:
 			return nil, fmt.Errorf("unknown _Seq function for type: %s", name)
 		}
-	case "_Set":
-		if name == "_Set" {
+	case ModuleSet:
+		if name == FuncSet {
 			return &logic_expression_type.SetType{ElementType: elemType}, nil
 		}
 		return nil, fmt.Errorf("unknown _Set function for type: %s", name)
-	case "_Bags":
-		if name == "_Bag" {
+	case ModuleBags:
+		if name == FuncBag {
 			return &logic_expression_type.BagType{ElementType: elemType}, nil
 		}
 		return nil, fmt.Errorf("unknown _Bags function for type: %s", name)

@@ -101,7 +101,7 @@ func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 
 	model := parts[0]
 	if len(parts) == 1 {
-		http.Redirect(w, r, fmt.Sprintf("/%s/model.md", model), http.StatusFound)
+		http.Redirect(w, r, fmt.Sprintf("/%s/model.md", model), http.StatusFound) //nolint:gosec // model name comes from the local store, not user input
 		return
 	}
 
@@ -147,7 +147,7 @@ func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
 	// that model shows the error page.
 	if msg, ok := s.store.GetModelError(model); ok {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write(generate.ErrorPageHTML(model, file, errors.New(msg)))
+		_, _ = w.Write(generate.ErrorPageHTML(model, file, errors.New(msg))) //nolint:gosec // error page HTML is escaped in generate.ErrorPageHTML
 		return
 	}
 

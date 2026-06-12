@@ -36,6 +36,9 @@ type GeneralizationRefs struct {
 	SubclassOfKey   *identity.Key
 }
 
+// NewUseCase wires identity, markdown, unfinished notes, level, read-only flag, and generalization refs.
+//
+//complexity:params:warn=8,fail=8 Flat constructor mirrors the human-authored file sections.
 func NewUseCase(key identity.Key, name, details, unfinishedNotes, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) UseCase {
 	return UseCase{
 		Key:             key,

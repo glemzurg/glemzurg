@@ -24,6 +24,9 @@ type Actor struct {
 	UmlComment      string
 }
 
+// NewActor wires identity, markdown, unfinished notes, actor type, and generalization keys.
+//
+//complexity:params:warn=8,fail=8 Flat constructor mirrors the human-authored file sections.
 func NewActor(key identity.Key, name, details, unfinishedNotes, userType string, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Actor {
 	return Actor{
 		Key:             key,

@@ -181,7 +181,7 @@ func validateSMStateActions(stateKey string, state *inputState, filename string)
 				filename,
 			).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i)).WithHint("\"when\" must be one of: entry, exit, do")
 		}
-		if action.When != "entry" && action.When != "exit" && action.When != "do" {
+		if action.When != stateActionWhenEntry && action.When != stateActionWhenExit && action.When != stateActionWhenDo {
 			return NewParseError(
 				ErrStateActionWhenInvalid,
 				fmt.Sprintf("state '%s' action[%d] when must be 'entry', 'exit', or 'do', got '%s'", stateKey, i, action.When),

@@ -75,7 +75,7 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 
 	// --- References ---
 	case *me.SelfRef:
-		return &ast.Identifier{Value: "self"}, nil
+		return &ast.Identifier{Value: ast.IdentifierSelf}, nil
 
 	case *me.AttributeRef:
 		return raiseAttributeRef(e, ctx)
@@ -227,10 +227,10 @@ var raiseBagCompareOp = map[me.BagCompareOp]string{
 }
 
 var raiseSetConstantKind = map[me.SetConstantKind]string{
-	me.SetConstantNat:     "Nat",
-	me.SetConstantInt:     "Int",
-	me.SetConstantReal:    "Real",
-	me.SetConstantBoolean: "BOOLEAN",
+	me.SetConstantNat:     ast.SetConstantNat,
+	me.SetConstantInt:     ast.SetConstantInt,
+	me.SetConstantReal:    ast.SetConstantReal,
+	me.SetConstantBoolean: ast.SetConstantBoolean,
 }
 
 var raiseQuantifierKind = map[me.QuantifierKind]string{

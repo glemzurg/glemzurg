@@ -4,6 +4,11 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
 
+const (
+	ShareTypeInclude = "include"
+	ShareTypeExtend  = "extend"
+)
+
 // UseCaseShared is how a mud-level use case related to a sea-level use case.
 type UseCaseShared struct {
 	ShareType  string
@@ -19,7 +24,7 @@ func NewUseCaseShared(shareType, umlComment string) UseCaseShared {
 
 // Validate validates the UseCaseShared struct.
 func (u *UseCaseShared) Validate(ctx *coreerr.ValidationContext) error {
-	if u.ShareType != "include" && u.ShareType != "extend" {
+	if u.ShareType != ShareTypeInclude && u.ShareType != ShareTypeExtend {
 		return coreerr.NewWithValues(ctx, coreerr.UshareSharetypeInvalid, "ShareType must be one of: include, extend", "ShareType", u.ShareType, "one of: include, extend")
 	}
 	return nil
