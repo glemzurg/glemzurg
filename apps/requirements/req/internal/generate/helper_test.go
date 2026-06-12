@@ -27,25 +27,25 @@ func TestUnfinishedNotesBlock(t *testing.T) {
 			name:  "single line",
 			notes: "draft note",
 			want: "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
-				_unfinishedNotesGlyph + "</span>\ndraft note\n</pre>\n",
+				_unfinishedNotesGlyph + "</span><br />\ndraft note\n</pre>\n",
 		},
 		{
 			name:  "multiline preserved",
 			notes: "line one\nline two",
 			want: "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
-				_unfinishedNotesGlyph + "</span>\nline one\nline two\n</pre>\n",
+				_unfinishedNotesGlyph + "</span><br />\nline one\nline two\n</pre>\n",
 		},
 		{
 			name:  "trims outer whitespace",
 			notes: "  padded  ",
 			want: "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
-				_unfinishedNotesGlyph + "</span>\npadded\n</pre>\n",
+				_unfinishedNotesGlyph + "</span><br />\npadded\n</pre>\n",
 		},
 		{
 			name:  "escapes HTML in notes",
 			notes: "<script>alert(1)</script>",
 			want: "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
-				_unfinishedNotesGlyph + "</span>\n&lt;script&gt;alert(1)&lt;/script&gt;\n</pre>\n",
+				_unfinishedNotesGlyph + "</span><br />\n&lt;script&gt;alert(1)&lt;/script&gt;\n</pre>\n",
 		},
 	}
 

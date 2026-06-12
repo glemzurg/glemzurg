@@ -8,10 +8,10 @@ import (
 
 const _unfinishedNotesGlyph = "\u2042" // ⁂ ASTERISM — block leader and list-item marker
 
-// unfinishedNotesBlock renders scratch notes as a preformatted block: a red ⁂
-// then the note text on the next line. HTML carries the leader color because
-// fenced code blocks cannot style inline glyphs. Empty or whitespace-only notes
-// produce no output.
+// unfinishedNotesBlock renders scratch notes as a preformatted block: a red ⁂,
+// then the note text on the next line via <br />. HTML carries the leader color
+// because fenced code blocks cannot style inline glyphs. Empty or whitespace-only
+// notes produce no output.
 func unfinishedNotesBlock(notes string) string {
 	trimmed := strings.TrimSpace(notes)
 	if trimmed == "" {
