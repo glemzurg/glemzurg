@@ -81,7 +81,7 @@ func testAssocKey(fromKey, toKey identity.Key, name string) identity.Key {
 
 // makeOrderClass builds a simple Order class with states and creation transition.
 func makeOrderClass() model_class.Class {
-	class := model_class.NewClass(orderClassKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(orderClassKey, "Order", "", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
 		orderStateOpenKey:   model_state.NewState(orderStateOpenKey, "Open", "", ""),
@@ -103,7 +103,7 @@ func makeOrderClass() model_class.Class {
 
 // makeItemClass builds a simple Item class with one state and creation.
 func makeItemClass() model_class.Class {
-	class := model_class.NewClass(itemClassKey, "Item", "", nil, nil, nil, "")
+	class := model_class.NewClass(itemClassKey, "Item", "", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
 		itemStateActiveKey: model_state.NewState(itemStateActiveKey, "Active", "", ""),
@@ -122,7 +122,7 @@ func makeItemClass() model_class.Class {
 
 // makePaymentClass builds a simple Payment class in domain2.
 func makePaymentClass() model_class.Class {
-	class := model_class.NewClass(paymentClassKey, "Payment", "", nil, nil, nil, "")
+	class := model_class.NewClass(paymentClassKey, "Payment", "", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
 		paymentStatePendingKey: model_state.NewState(paymentStatePendingKey, "Pending", "", ""),
@@ -142,7 +142,7 @@ func makePaymentClass() model_class.Class {
 // makeStatelessClass builds a class with no states (not simulatable).
 func makeStatelessClass() model_class.Class {
 	cKey := mustKey("domain/d/subdomain/s/class/stateless")
-	class := model_class.NewClass(cKey, "Stateless", "", nil, nil, nil, "")
+	class := model_class.NewClass(cKey, "Stateless", "", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{}
 	class.Events = map[identity.Key]model_state.Event{}
@@ -157,7 +157,7 @@ func makeStatelessClass() model_class.Class {
 func buildTwoDomainModel() *core.Model {
 	assocKey := testAssocKey(orderClassKey, itemClassKey, "order_items")
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		itemClassKey:  makeItemClass(),
@@ -166,22 +166,22 @@ func buildTwoDomainModel() *core.Model {
 		assocKey: model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, ""),
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "S2", "", "")
+	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "S2", "", "", "")
 	subdomain2.Classes = map[identity.Key]model_class.Class{
 		paymentClassKey: makePaymentClass(),
 	}
 
-	domain2 := model_domain.NewDomain(domain2Key, "D2", "", false, "")
+	domain2 := model_domain.NewDomain(domain2Key, "D2", "", "", false, "")
 	domain2.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomain2Key: subdomain2,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey:  domain,
 		domain2Key: domain2,
@@ -191,18 +191,18 @@ func buildTwoDomainModel() *core.Model {
 
 // buildSingleDomainModel creates a model with just Order and Item.
 func buildSingleDomainModel() *core.Model {
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		itemClassKey:  makeItemClass(),
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -390,18 +390,18 @@ func (s *ResolverSuite) TestResolve_ExcludeClass() {
 func (s *ResolverSuite) TestResolve_FiltersStatelessClasses() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		statelessKey:  makeStatelessClass(),
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -478,17 +478,17 @@ func (s *ResolverSuite) TestResolve_RealizedDomainExcluded() {
 func (s *ResolverSuite) TestResolve_NoSimulatableClasses_Error() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		statelessKey: makeStatelessClass(),
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

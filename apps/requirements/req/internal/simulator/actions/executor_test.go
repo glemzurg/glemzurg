@@ -132,7 +132,7 @@ func testOrderClass() (model_class.Class, identity.Key) {
 
 	transition := model_state.NewTransition(transKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   model_state.NewState(stateOpenKey, "Open", "", ""),
@@ -544,7 +544,7 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 
 	transition := model_state.NewTransition(transKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
@@ -586,7 +586,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 
 	transition := model_state.NewTransition(transKey, &stateOpenKey, eventDeleteKey, nil, nil, nil, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
@@ -674,7 +674,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	transApprove := model_state.NewTransition(transApproveKey, &stateOpenKey, eventReviewKey, &guardHighKey, nil, &stateApprovedKey, "")
 	transReject := model_state.NewTransition(transRejectKey, &stateOpenKey, eventReviewKey, &guardLowKey, nil, &stateRejectedKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:     model_state.NewState(stateOpenKey, "Open", "", ""),
@@ -745,7 +745,7 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	trans1 := model_state.NewTransition(trans1Key, &stateOpenKey, eventKey, &guardAlwaysKey1, nil, &stateAKey, "")
 	trans2 := model_state.NewTransition(trans2Key, &stateOpenKey, eventKey, &guardAlwaysKey2, nil, &stateBKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
@@ -795,7 +795,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 
 	trans := model_state.NewTransition(transKey, &stateOpenKey, eventKey, &guardNeverKey, nil, &stateAKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
@@ -833,7 +833,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 // ========================================================================
 
 func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
-	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/empty"), "Empty", "", nil, nil, nil, "")
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/empty"), "Empty", "", "", nil, nil, nil, "")
 	class.SetStates(map[identity.Key]model_state.State{})
 
 	err := ValidateClassForSimulation(class)
@@ -844,7 +844,7 @@ func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
 func (s *ActionsSuite) TestValidateClassForSimulationWithStates() {
 	stateKey := mustKey("domain/d/subdomain/s/class/c/state/s1")
 
-	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, "")
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", "", nil, nil, nil, "")
 	class.SetStates(map[identity.Key]model_state.State{
 		stateKey: model_state.NewState(stateKey, "S1", "", ""),
 	})
@@ -861,7 +861,7 @@ func (s *ActionsSuite) TestGetStateEnumValues() {
 	stateOpenKey := mustKey("domain/d/subdomain/s/class/c/state/open")
 	stateClosedKey := mustKey("domain/d/subdomain/s/class/c/state/closed")
 
-	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, "")
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", "", nil, nil, nil, "")
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateClosedKey: model_state.NewState(stateClosedKey, "Closed", "", ""),

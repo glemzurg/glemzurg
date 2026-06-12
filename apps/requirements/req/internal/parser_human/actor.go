@@ -50,7 +50,7 @@ func parseActor(actorSubKey, filename, contents string) (actor model_actor.Actor
 		return model_actor.Actor{}, errors.WithStack(err)
 	}
 
-	actor = model_actor.NewActor(actorKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), userType, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
+	actor = model_actor.NewActor(actorKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), parsedFile.UnfinishedNotes, userType, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 	return actor, nil
 }
 
@@ -62,5 +62,5 @@ func generateActorContent(actor model_actor.Actor) string {
 	if actor.SubclassOfKey != nil {
 		yamlStr += "subclass_of_key: " + actor.SubclassOfKey.SubKey + "\n"
 	}
-	return generateFileContent(prependMarkdownTitle(actor.Name, actor.Details), actor.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownTitle(actor.Name, actor.Details), actor.UnfinishedNotes, actor.UmlComment, yamlStr)
 }

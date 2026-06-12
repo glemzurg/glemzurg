@@ -22,9 +22,9 @@ func TestGenerateClassBoxesForGeneralizationParticipants(t *testing.T) {
 	parentKey := helper.Must(identity.NewClassKey(subdomainKey, "shape"))
 	childKey := helper.Must(identity.NewClassKey(subdomainKey, "circle"))
 
-	parent := model_class.NewClass(parentKey, "Shape", "", nil, &genKey, nil, "")
-	child := model_class.NewClass(childKey, "Circle", "", nil, nil, &genKey, "")
-	gen := model_class.NewGeneralization(genKey, "Shape Types", "", true, true, "")
+	parent := model_class.NewClass(parentKey, "Shape", "", "", nil, &genKey, nil, "")
+	child := model_class.NewClass(childKey, "Circle", "", "", nil, nil, &genKey, "")
+	gen := model_class.NewGeneralization(genKey, "Shape Types", "", "", true, true, "")
 
 	subdomain := model_domain.Subdomain{
 		Key:  subdomainKey,

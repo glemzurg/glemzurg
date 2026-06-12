@@ -26,7 +26,7 @@ func TestConvertSuite(t *testing.T) {
 
 // TestConvertFromModelMinimal tests converting a minimal valid core.Model to inputModel.
 func (suite *ConvertSuite) TestConvertFromModelMinimal() {
-	m := core.NewModel("testmodel", "Test Model", "Model details", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "Model details", "", nil, nil, nil)
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = make(map[identity.Key]model_domain.Domain)
 	model := &m
@@ -63,9 +63,9 @@ func (suite *ConvertSuite) TestConvertToModelMinimal() {
 func (suite *ConvertSuite) TestConvertFromModelWithActor() {
 	actorKey := helper.Must(identity.NewActorKey("customer"))
 
-	actor := model_actor.NewActor(actorKey, "Customer", "Customer details", "person", nil, nil, "")
+	actor := model_actor.NewActor(actorKey, "Customer", "Customer details", "", "person", nil, nil, "")
 
-	m := core.NewModel("testmodel", "Test Model", "", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = map[identity.Key]model_actor.Actor{
 		actorKey: actor,
 	}
@@ -128,29 +128,29 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 		model_class.AttributeAnnotations{}))
 
 	// Build class
-	orderClass := model_class.NewClass(classKey, "Order", "Order details", &actorKey, nil, nil, "")
+	orderClass := model_class.NewClass(classKey, "Order", "Order details", "", &actorKey, nil, nil, "")
 	orderClass.SetAttributes(map[identity.Key]model_class.Attribute{
 		idAttrKey:     idAttr,
 		statusAttrKey: statusAttr,
 	})
 
 	// Build subdomain
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		classKey: orderClass,
 	}
 
 	// Build domain
-	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
 	// Build actor
-	actor := model_actor.NewActor(actorKey, "Customer", "", "person", nil, nil, "")
+	actor := model_actor.NewActor(actorKey, "Customer", "", "", "person", nil, nil, "")
 
 	// Build model
-	m := core.NewModel("testmodel", "Test Model", "", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = map[identity.Key]model_actor.Actor{
 		actorKey: actor,
 	}
@@ -275,7 +275,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	action := model_state.NewAction(actionKey, "Process", "Process the order", nil, nil, nil, nil)
 
 	// Build class
-	orderClass := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 	orderClass.SetStates(map[identity.Key]model_state.State{
 		stateKey1: state1,
@@ -295,19 +295,19 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	})
 
 	// Build subdomain
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		classKey: orderClass,
 	}
 
 	// Build domain
-	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
 	// Build model
-	m := core.NewModel("testmodel", "Test Model", "", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -433,26 +433,26 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	)
 
 	// Build class
-	orderClass := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 	orderClass.SetQueries(map[identity.Key]model_state.Query{
 		queryKey: query,
 	})
 
 	// Build subdomain
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		classKey: orderClass,
 	}
 
 	// Build domain
-	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
 	// Build model
-	m := core.NewModel("testmodel", "Test Model", "", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -552,17 +552,17 @@ func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 	genKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "product_types"))
 
 	// Build classes
-	productClass := model_class.NewClass(productKey, "Product", "", nil, &genKey, nil, "")
+	productClass := model_class.NewClass(productKey, "Product", "", "", nil, &genKey, nil, "")
 	productClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
-	bookClass := model_class.NewClass(bookKey, "Book", "", nil, nil, &genKey, "")
+	bookClass := model_class.NewClass(bookKey, "Book", "", "", nil, nil, &genKey, "")
 	bookClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
 	// Build generalization
-	gen := model_class.NewGeneralization(genKey, "Product Types", "Types of products", false, false, "")
+	gen := model_class.NewGeneralization(genKey, "Product Types", "Types of products", "", false, false, "")
 
 	// Build subdomain
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		productKey: productClass,
 		bookKey:    bookClass,
@@ -572,13 +572,13 @@ func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 	}
 
 	// Build domain
-	domain := model_domain.NewDomain(domainKey, "Products", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Products", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
 	// Build model
-	m := core.NewModel("testmodel", "Test Model", "", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -677,10 +677,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, orderKey, lineItemKey, "order_lines"))
 
 	// Build classes
-	orderClass := model_class.NewClass(orderKey, "Order", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(orderKey, "Order", "", "", nil, nil, nil, "")
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
-	lineItemClass := model_class.NewClass(lineItemKey, "Line Item", "", nil, nil, nil, "")
+	lineItemClass := model_class.NewClass(lineItemKey, "Line Item", "", "", nil, nil, nil, "")
 	lineItemClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
 	// Build association
@@ -692,7 +692,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	)
 
 	// Build subdomain
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderKey:    orderClass,
 		lineItemKey: lineItemClass,
@@ -702,13 +702,13 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	}
 
 	// Build domain
-	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
 	// Build model
-	m := core.NewModel("testmodel", "Test Model", "", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -1020,17 +1020,17 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	assocKey := helper.Must(identity.NewClassAssociationKey(domainKey, orderKey, shipmentKey, "order_shipments"))
 
 	// Build classes
-	orderClass := model_class.NewClass(orderKey, "Order", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(orderKey, "Order", "", "", nil, nil, nil, "")
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
-	shipmentClass := model_class.NewClass(shipmentKey, "Shipment", "", nil, nil, nil, "")
+	shipmentClass := model_class.NewClass(shipmentKey, "Shipment", "", "", nil, nil, nil, "")
 	shipmentClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
 	// Build subdomains
-	subdomain1 := model_domain.NewSubdomain(subdomain1Key, "Core", "", "")
+	subdomain1 := model_domain.NewSubdomain(subdomain1Key, "Core", "", "", "")
 	subdomain1.Classes = map[identity.Key]model_class.Class{orderKey: orderClass}
 
-	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "Shipping", "", "")
+	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "Shipping", "", "", "")
 	subdomain2.Classes = map[identity.Key]model_class.Class{shipmentKey: shipmentClass}
 
 	// Build association
@@ -1042,7 +1042,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	)
 
 	// Build domain
-	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomain1Key: subdomain1,
 		subdomain2Key: subdomain2,
@@ -1052,7 +1052,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	}
 
 	// Build model
-	m := core.NewModel("testmodel", "Test Model", "", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -1143,26 +1143,26 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	assocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, orderKey, productKey, "order_products"))
 
 	// Build classes
-	orderClass := model_class.NewClass(orderKey, "Order", "", nil, nil, nil, "")
+	orderClass := model_class.NewClass(orderKey, "Order", "", "", nil, nil, nil, "")
 	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
-	productClass := model_class.NewClass(productKey, "Product", "", nil, nil, nil, "")
+	productClass := model_class.NewClass(productKey, "Product", "", "", nil, nil, nil, "")
 	productClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
 
 	// Build subdomains
-	subdomain1 := model_domain.NewSubdomain(subdomain1Key, "Core", "", "")
+	subdomain1 := model_domain.NewSubdomain(subdomain1Key, "Core", "", "", "")
 	subdomain1.Classes = map[identity.Key]model_class.Class{orderKey: orderClass}
 
-	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "Products", "", "")
+	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "Products", "", "", "")
 	subdomain2.Classes = map[identity.Key]model_class.Class{productKey: productClass}
 
 	// Build domains
-	domain1 := model_domain.NewDomain(domain1Key, "Orders", "", false, "")
+	domain1 := model_domain.NewDomain(domain1Key, "Orders", "", "", false, "")
 	domain1.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomain1Key: subdomain1,
 	}
 
-	domain2 := model_domain.NewDomain(domain2Key, "Inventory", "", false, "")
+	domain2 := model_domain.NewDomain(domain2Key, "Inventory", "", "", false, "")
 	domain2.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomain2Key: subdomain2,
 	}
@@ -1176,7 +1176,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	)
 
 	// Build model
-	m := core.NewModel("testmodel", "Test Model", "", nil, nil, nil)
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domain1Key: domain1,

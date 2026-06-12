@@ -326,7 +326,7 @@ func parseDomainFile(model *core.Model, ctx *parseContext, toParseFile fileToPar
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	subdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "", "")
+	subdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "", "", "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		defaultSubdomainKey: subdomain,
 	}
@@ -413,7 +413,7 @@ func placeholderClass(subdomainKey identity.Key, classSubKey string) (model_clas
 	if err != nil {
 		return model_class.Class{}, errors.WithStack(err)
 	}
-	return model_class.NewClass(classKey, classSubKey, "", nil, nil, nil, ""), nil
+	return model_class.NewClass(classKey, classSubKey, "", "", nil, nil, nil, ""), nil
 }
 
 // parseUseCaseFile handles parsing a .use_case file.

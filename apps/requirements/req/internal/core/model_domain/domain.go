@@ -13,23 +13,25 @@ import (
 
 // Domain is a root category of the mode.
 type Domain struct {
-	Key        identity.Key
-	Name       string
-	Details    string // Markdown.
-	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
-	UmlComment string
+	Key             identity.Key
+	Name            string
+	Details         string // Markdown.
+	UnfinishedNotes string // Scratch notes not yet placed in final requirement locations.
+	Realized        bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
+	UmlComment      string
 	// Children
 	Subdomains        map[identity.Key]Subdomain
 	ClassAssociations map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
 }
 
-func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) Domain {
+func NewDomain(key identity.Key, name, details, unfinishedNotes string, realized bool, umlComment string) Domain {
 	return Domain{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		Realized:   realized,
-		UmlComment: umlComment,
+		Key:             key,
+		Name:            name,
+		Details:         details,
+		UnfinishedNotes: unfinishedNotes,
+		Realized:        realized,
+		UmlComment:      umlComment,
 	}
 }
 

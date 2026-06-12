@@ -194,7 +194,7 @@ func GetStrictTestModel() core.Model {
 			if err != nil {
 				panic(fmt.Sprintf("failed to create default subdomain key: %v", err))
 			}
-			defaultSubdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", "")
+			defaultSubdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", "", "")
 			domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 				defaultSubdomainKey: defaultSubdomain,
 			}
@@ -212,7 +212,7 @@ func GetStrictTestModel() core.Model {
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy class key: %v", err))
 					}
-					dummyClass := model_class.NewClass(dummyClassKey, fmt.Sprintf("Dummy Class %d", i), "Dummy class to satisfy strict requirements.", nil, nil, nil, "")
+					dummyClass := model_class.NewClass(dummyClassKey, fmt.Sprintf("Dummy Class %d", i), "Dummy class to satisfy strict requirements.", "", nil, nil, nil, "")
 					subdomain.Classes[dummyClassKey] = dummyClass
 				}
 			}
@@ -515,14 +515,7 @@ func buildTestModel() (core.Model, error) {
 	domains := buildDomains(k, subdomains)
 
 	// Assemble the model.
-	model := core.NewModel(
-		"test_model",
-		"Test Model",
-		"A comprehensive test model with every type represented.",
-		logic.invariants,
-		globalFuncs,
-		namedSets,
-	)
+	model := core.NewModel("test_model", "Test Model", "A comprehensive test model with every type represented.", "", logic.invariants, globalFuncs, namedSets)
 
 	model.Actors = actors
 	model.ActorGeneralizations = actorGens
@@ -1684,7 +1677,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	c.all = make(map[identity.Key]model_class.Class)
 
 	// Order class: rich, full state machine, 3 attributes.
-	classOrder := model_class.NewClass(k.classOrder, "Order", "An order placed by a customer.", nil, nil, nil, "the order class")
+	classOrder := model_class.NewClass(k.classOrder, "Order", "An order placed by a customer.", "", nil, nil, nil, "the order class")
 	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{
 		k.attrOrderDate: a.orderDate,
 		k.attrTotal:     a.total,
@@ -1701,7 +1694,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 
 	// Product class: empty parent for state machine (has attribute only).
 	// Superclass in product_types generalization. Linked to actorSystem.
-	classProduct := model_class.NewClass(k.classProduct, "Product", "A product for sale.", &k.actorSystem, &k.classGen2, nil, "")
+	classProduct := model_class.NewClass(k.classProduct, "Product", "A product for sale.", "", &k.actorSystem, &k.classGen2, nil, "")
 	classProduct.SetInvariants(l.classInvariants2)
 	classProduct.SetAttributes(map[identity.Key]model_class.Attribute{
 		k.attrProductName: a.productName,
@@ -1709,44 +1702,44 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	c.all[k.classProduct] = classProduct
 
 	// Line item: association class AND subclass in product_types generalization.
-	classLineItem := model_class.NewClass(k.classLineItem, "Line Item", "A line item in an order.", nil, nil, &k.classGen2, "")
+	classLineItem := model_class.NewClass(k.classLineItem, "Line Item", "A line item in an order.", "", nil, nil, &k.classGen2, "")
 	c.all[k.classLineItem] = classLineItem
 
 	// Customer class: linked to actor.
-	classCustomer := model_class.NewClass(k.classCustomer, "Customer", "A customer in the system.", &k.actorPerson, nil, &k.classGen3, "")
+	classCustomer := model_class.NewClass(k.classCustomer, "Customer", "A customer in the system.", "", &k.actorPerson, nil, &k.classGen3, "")
 	c.all[k.classCustomer] = classCustomer
 
 	// Vehicle: superclass in vehicle_types generalization. Linked to actorVip.
-	classVehicle := model_class.NewClass(k.classVehicle, "Vehicle", "A vehicle.", &k.actorVip, &k.classGen1, nil, "")
+	classVehicle := model_class.NewClass(k.classVehicle, "Vehicle", "A vehicle.", "", &k.actorVip, &k.classGen1, nil, "")
 	c.all[k.classVehicle] = classVehicle
 
 	// Car: subclass in vehicle_types generalization. Superclass in order_types generalization.
-	classCar := model_class.NewClass(k.classCar, "Car", "A car is a type of vehicle.", nil, &k.classGen3, &k.classGen1, "")
+	classCar := model_class.NewClass(k.classCar, "Car", "A car is a type of vehicle.", "", nil, &k.classGen3, &k.classGen1, "")
 	c.all[k.classCar] = classCar
 
 	// Warehouse (subdomain B).
-	classWarehouse := model_class.NewClass(k.classWarehouse, "Warehouse", "A warehouse for storing products.", nil, nil, nil, "")
+	classWarehouse := model_class.NewClass(k.classWarehouse, "Warehouse", "A warehouse for storing products.", "", nil, nil, nil, "")
 	classWarehouse.SetInvariants(l.classInvariants3)
 	c.all[k.classWarehouse] = classWarehouse
 
 	// Shelf (subdomain B).
-	classShelf := model_class.NewClass(k.classShelf, "Shelf", "A shelf in a warehouse.", nil, nil, nil, "")
+	classShelf := model_class.NewClass(k.classShelf, "Shelf", "A shelf in a warehouse.", "", nil, nil, nil, "")
 	c.all[k.classShelf] = classShelf
 
 	// Aisle (subdomain B).
-	classAisle := model_class.NewClass(k.classAisle, "Aisle", "An aisle in a warehouse.", nil, nil, nil, "")
+	classAisle := model_class.NewClass(k.classAisle, "Aisle", "An aisle in a warehouse.", "", nil, nil, nil, "")
 	c.all[k.classAisle] = classAisle
 
 	// Supplier (subdomain C / domain B).
-	classSupplier := model_class.NewClass(k.classSupplier, "Supplier", "A supplier of products.", nil, nil, nil, "")
+	classSupplier := model_class.NewClass(k.classSupplier, "Supplier", "A supplier of products.", "", nil, nil, nil, "")
 	c.all[k.classSupplier] = classSupplier
 
 	// Shipment (subdomain C / domain B).
-	classShipment := model_class.NewClass(k.classShipment, "Shipment", "A shipment of goods.", nil, nil, nil, "")
+	classShipment := model_class.NewClass(k.classShipment, "Shipment", "A shipment of goods.", "", nil, nil, nil, "")
 	c.all[k.classShipment] = classShipment
 
 	// Route (subdomain C / domain B).
-	classRoute := model_class.NewClass(k.classRoute, "Route", "A delivery route.", nil, nil, nil, "")
+	classRoute := model_class.NewClass(k.classRoute, "Route", "A delivery route.", "", nil, nil, nil, "")
 	c.all[k.classRoute] = classRoute
 
 	return c
@@ -1765,15 +1758,15 @@ func buildClassGeneralizations(k testKeys) testGeneralizations {
 	g.all = make(map[identity.Key]model_class.Generalization)
 
 	// Pairwise: (T, F).
-	gen1 := model_class.NewGeneralization(k.classGen1, "Vehicle Types", "Specialization of vehicles.", true, false, "vehicle hierarchy")
+	gen1 := model_class.NewGeneralization(k.classGen1, "Vehicle Types", "Specialization of vehicles.", "", true, false, "vehicle hierarchy")
 	g.all[k.classGen1] = gen1
 
 	// Pairwise: (F, F).
-	gen2 := model_class.NewGeneralization(k.classGen2, "Product Types", "Specialization of products.", false, false, "")
+	gen2 := model_class.NewGeneralization(k.classGen2, "Product Types", "Specialization of products.", "", false, false, "")
 	g.all[k.classGen2] = gen2
 
 	// Pairwise: (F, T).
-	gen3 := model_class.NewGeneralization(k.classGen3, "Order Types", "Specialization of orders.", false, true, "")
+	gen3 := model_class.NewGeneralization(k.classGen3, "Order Types", "Specialization of orders.", "", false, true, "")
 	g.all[k.classGen3] = gen3
 
 	return g
@@ -2039,7 +2032,7 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	// Place Order: sea level, subclass, rich (3 actors, 3 scenarios).
 	ucPlaceOrder := model_use_case.NewUseCase(
 		k.ucPlaceOrder, "Place Order", "Customer places an order.",
-		"sea", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, "place order",
+		"", "sea", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, "place order",
 	)
 	ucPlaceOrder.SetActors(map[identity.Key]model_use_case.Actor{
 		k.classCustomer: ucActor1,
@@ -2051,32 +2044,32 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	// View Order: mud level, read-only, has 1 scenario.
 	ucViewOrder := model_use_case.NewUseCase(
 		k.ucViewOrder, "View Order", "View order details.",
-		"mud", true, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, "",
+		"", "mud", true, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, "",
 	)
 	ucViewOrder.SetScenarios(sc.viewOrderScenarios)
 
 	// Manage Order: sky level, superclass.
 	ucManageOrder := model_use_case.NewUseCase(
 		k.ucManageOrder, "Manage Order", "Manage orders.",
-		"sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, "",
+		"", "sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, "",
 	)
 
 	// Cancel Order: empty parent (0 actors, 0 scenarios).
 	ucCancelOrder := model_use_case.NewUseCase(
 		k.ucCancelOrder, "Cancel Order", "Customer cancels an order.",
-		"mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, "",
+		"", "mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, "",
 	)
 
 	// View Orders: sky level, superclass for ucGen2.
 	uc5 := model_use_case.NewUseCase(
 		k.uc5, "View Orders", "View multiple orders.",
-		"sky", true, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, "",
+		"", "sky", true, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, "",
 	)
 
 	// Cancel Orders: sky level, superclass for ucGen3.
 	uc6 := model_use_case.NewUseCase(
 		k.uc6, "Cancel Orders", "Cancel multiple orders.",
-		"sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, "",
+		"", "sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, "",
 	)
 
 	u.useCases = map[identity.Key]model_use_case.UseCase{
@@ -2089,9 +2082,9 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	}
 
 	// Use case generalizations (3).
-	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", false, true, "")
-	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", true, false, "")
-	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", true, true, "")
+	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", "", false, true, "")
+	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", "", true, false, "")
+	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", "", true, true, "")
 	u.useCaseGens = map[identity.Key]model_use_case.Generalization{
 		k.ucGen1: ucGen1,
 		k.ucGen2: ucGen2,
@@ -2122,12 +2115,12 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 
 func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.Key]model_actor.Generalization) {
 	// Actors (4).
-	actorPerson := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "person", &k.actorGen3, nil, "main actor")
+	actorPerson := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "", "person", &k.actorGen3, nil, "main actor")
 	// actorSystem: has BOTH SuperclassOfKey AND SubclassOfKey (different generalizations).
-	actorSystem := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "system", &k.actorGen2, &k.actorGen3, "")
-	actorVip := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "person", nil, &k.actorGen2, "")
-	actor4 := model_actor.NewActor(k.actor4, "Regular Customer", "A regular customer.", "person", &k.actorGen1, nil, "")
-	actor5 := model_actor.NewActor(k.actor5, "Another Customer", "Another customer.", "person", nil, &k.actorGen1, "")
+	actorSystem := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "", "system", &k.actorGen2, &k.actorGen3, "")
+	actorVip := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "", "person", nil, &k.actorGen2, "")
+	actor4 := model_actor.NewActor(k.actor4, "Regular Customer", "A regular customer.", "", "person", &k.actorGen1, nil, "")
+	actor5 := model_actor.NewActor(k.actor5, "Another Customer", "Another customer.", "", "person", nil, &k.actorGen1, "")
 
 	actors := map[identity.Key]model_actor.Actor{
 		k.actorPerson: actorPerson,
@@ -2138,9 +2131,9 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 	}
 
 	// Actor generalizations (3). Pairwise: (T,T), (F,F), (T,F).
-	actorGen1 := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", true, true, "customer hierarchy")
-	actorGen2 := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", false, false, "")
-	actorGen3 := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", true, false, "")
+	actorGen1 := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", "", true, true, "customer hierarchy")
+	actorGen2 := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", "", false, false, "")
+	actorGen3 := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", "", true, false, "")
 
 	actorGens := map[identity.Key]model_actor.Generalization{
 		k.actorGen1: actorGen1,
@@ -2179,7 +2172,7 @@ func buildSubdomains(
 	assocs testAssociations,
 ) map[identity.Key]model_domain.Subdomain {
 	// Subdomain A: rich (3+ classes, 3 generalizations, 4 use cases, 3 uc gens, 3 class assocs, 3 shares).
-	subdomainA := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", "order subdomain")
+	subdomainA := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", "", "order subdomain")
 	subdomainA.Classes = map[identity.Key]model_class.Class{
 		k.classOrder:    classes.all[k.classOrder],
 		k.classProduct:  classes.all[k.classProduct],
@@ -2195,7 +2188,7 @@ func buildSubdomains(
 	subdomainA.UseCaseShares = uc.useCaseShares
 
 	// Subdomain B: has 3 classes (for domain-level associations).
-	subdomainB := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", "")
+	subdomainB := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", "", "")
 	subdomainB.Classes = map[identity.Key]model_class.Class{
 		k.classWarehouse: classes.all[k.classWarehouse],
 		k.classShelf:     classes.all[k.classShelf],
@@ -2203,7 +2196,7 @@ func buildSubdomains(
 	}
 
 	// Subdomain C (domain B): has 3 classes (for model-level associations).
-	subdomainC := model_domain.NewSubdomain(k.subdomainC, "Default", "", "")
+	subdomainC := model_domain.NewSubdomain(k.subdomainC, "Default", "", "", "")
 	subdomainC.Classes = map[identity.Key]model_class.Class{
 		k.classSupplier: classes.all[k.classSupplier],
 		k.classShipment: classes.all[k.classShipment],
@@ -2211,7 +2204,7 @@ func buildSubdomains(
 	}
 
 	// Subdomain D: empty parent (0 classes, 0 everything).
-	subdomainD := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", "")
+	subdomainD := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", "", "")
 
 	return map[identity.Key]model_domain.Subdomain{
 		k.subdomainA: subdomainA,
@@ -2227,7 +2220,7 @@ func buildSubdomains(
 
 func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain) map[identity.Key]model_domain.Domain {
 	// Domain A: rich (3 subdomains: A, B, D).
-	domainA := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", false, "main domain")
+	domainA := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", "", false, "main domain")
 	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
 		k.subdomainA: subdomains[k.subdomainA],
 		k.subdomainB: subdomains[k.subdomainB],
@@ -2235,13 +2228,13 @@ func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain
 	}
 
 	// Domain B: single subdomain (special case).
-	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", true, "")
+	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", "", true, "")
 	domainB.Subdomains = map[identity.Key]model_domain.Subdomain{
 		k.subdomainC: subdomains[k.subdomainC],
 	}
 
 	// Domain C: empty parent (0 subdomains).
-	domainC := model_domain.NewDomain(k.domainC, "External", "External integrations.", false, "")
+	domainC := model_domain.NewDomain(k.domainC, "External", "External integrations.", "", false, "")
 
 	return map[identity.Key]model_domain.Domain{
 		k.domainA: domainA,

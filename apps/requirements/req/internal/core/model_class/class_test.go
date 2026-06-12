@@ -144,7 +144,7 @@ func (suite *ClassSuite) TestNew() {
 	subclassOfKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2"))
 
 	// Test parameters are mapped correctly.
-	class := NewClass(key, "Name", "Details", &actorKey, &superclassOfKey, &subclassOfKey, "UmlComment")
+	class := NewClass(key, "Name", "Details", "", &actorKey, &superclassOfKey, &subclassOfKey, "UmlComment")
 	suite.Equal(Class{
 		Key:             key,
 		Name:            "Name",

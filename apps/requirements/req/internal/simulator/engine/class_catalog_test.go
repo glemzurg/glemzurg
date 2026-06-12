@@ -56,7 +56,7 @@ func (s *ClassCatalogSuite) TestCatalogWithMultipleClasses() {
 func (s *ClassCatalogSuite) TestClassWithNoStatesExcluded() {
 	classKey := mustKey("domain/d/subdomain/s/class/simple")
 
-	simpleClass := model_class.NewClass(classKey, "Simple", "", nil, nil, nil, "")
+	simpleClass := model_class.NewClass(classKey, "Simple", "", "", nil, nil, nil, "")
 	simpleClass.SetAttributes(map[identity.Key]model_class.Attribute{})
 	simpleClass.SetStates(map[identity.Key]model_state.State{})
 	simpleClass.SetEvents(map[identity.Key]model_state.Event{})
@@ -135,7 +135,7 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Counter", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -286,7 +286,7 @@ func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
 
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Counter", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -331,7 +331,7 @@ func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
 
 	orderClass, orderKey := testOrderClass()
 
-	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Counter", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,

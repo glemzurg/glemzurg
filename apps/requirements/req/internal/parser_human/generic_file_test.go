@@ -38,7 +38,7 @@ func (suite *FileSuite) TestParseFiles() {
 		suite.Equal(expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
-		generated := generateFileContent(actual.Markdown, actual.UmlComment, actual.Data)
+		generated := generateFileContent(actual.Markdown, actual.UnfinishedNotes, actual.UmlComment, actual.Data)
 		suite.Equal(testData.Contents, generated, testName)
 	}
 }

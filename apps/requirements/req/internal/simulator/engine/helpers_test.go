@@ -46,7 +46,7 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 	transClose := model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
@@ -82,7 +82,7 @@ func testItemClass() (model_class.Class, identity.Key) {
 
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := model_class.NewClass(classKey, "Item", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Item", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -152,15 +152,15 @@ func testModel(classes ...struct {
 		classMap[c.key] = c.class
 	}
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = classMap
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

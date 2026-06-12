@@ -14,10 +14,11 @@ import (
 
 // Subdomain is a nested category of the model.
 type Subdomain struct {
-	Key        identity.Key
-	Name       string
-	Details    string // Markdown.
-	UmlComment string
+	Key             identity.Key
+	Name            string
+	Details         string // Markdown.
+	UnfinishedNotes string // Scratch notes not yet placed in final requirement locations.
+	UmlComment      string
 	// Children
 	Generalizations        map[identity.Key]model_class.Generalization                    // Generalizations for the classes in this subdomain.
 	UseCaseGeneralizations map[identity.Key]model_use_case.Generalization                 // Generalizations for the use cases in this subdomain.
@@ -27,12 +28,13 @@ type Subdomain struct {
 	UseCaseShares          map[identity.Key]map[identity.Key]model_use_case.UseCaseShared // Outer key is sea-level use case, inner key is mud-level use case.
 }
 
-func NewSubdomain(key identity.Key, name, details, umlComment string) Subdomain {
+func NewSubdomain(key identity.Key, name, details, unfinishedNotes, umlComment string) Subdomain {
 	return Subdomain{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		UmlComment: umlComment,
+		Key:             key,
+		Name:            name,
+		Details:         details,
+		UnfinishedNotes: unfinishedNotes,
+		UmlComment:      umlComment,
 	}
 }
 

@@ -14,6 +14,7 @@ type Class struct {
 	Key             identity.Key
 	Name            string
 	Details         string        // Markdown.
+	UnfinishedNotes string        // Scratch notes not yet placed in final requirement locations.
 	ActorKey        *identity.Key // If this class is an Actor this is the key of that actor.
 	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
@@ -29,11 +30,12 @@ type Class struct {
 	Transitions map[identity.Key]model_state.Transition
 }
 
-func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Class {
+func NewClass(key identity.Key, name, details, unfinishedNotes string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Class {
 	return Class{
 		Key:             key,
 		Name:            name,
 		Details:         details,
+		UnfinishedNotes: unfinishedNotes,
 		ActorKey:        actorKey,
 		SuperclassOfKey: superclassOfKey,
 		SubclassOfKey:   subclassOfKey,

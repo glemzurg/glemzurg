@@ -134,7 +134,7 @@ func createTestModel() *core.Model {
 	completeAction := model_state.NewAction(actionKey, "complete", "", requires, guarantees, nil, nil)
 
 	// Create the class
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		statusAttr.Key: statusAttr,
 		amountAttr.Key: amountAttr,
@@ -146,14 +146,14 @@ func createTestModel() *core.Model {
 
 	// Create the subdomain
 	subdomainKey := mustKey("domain/test_domain/subdomain/test_subdomain")
-	subdomain := model_domain.NewSubdomain(subdomainKey, "TestSubdomain", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "TestSubdomain", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		classKey: class,
 	}
 
 	// Create the domain
 	domainKey := mustKey("domain/test_domain")
-	domain := model_domain.NewDomain(domainKey, "TestDomain", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "TestDomain", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
@@ -162,7 +162,7 @@ func createTestModel() *core.Model {
 	invariants := []model_logic.Logic{
 		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil),
 	}
-	model := core.NewModel("test_model", "TestModel", "", invariants, nil, nil)
+	model := core.NewModel("test_model", "TestModel", "", "", invariants, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -178,20 +178,20 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 		model_class.AttributeAnnotations{}))
 	attr.DataType = nil // Not parsed!
 
-	class := model_class.NewClass(classKey, "BadClass", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "BadClass", "", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{
 		attr.Key: attr,
 	}
 
 	subdomainKey := mustKey("domain/d/subdomain/s")
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
 	domainKey := mustKey("domain/d")
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	checker, violations := NewDataTypeChecker(&model)
@@ -435,7 +435,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	invariants := []model_logic.Logic{
 		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always false.", "", parsedSpec("FALSE"), nil),
 	}
-	model := core.NewModel("test", "Test", "", invariants, nil, nil)
+	model := core.NewModel("test", "Test", "", "", invariants, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
 	checker, err := NewInvariantChecker(&model)
@@ -459,7 +459,7 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 	invariants := []model_logic.Logic{
 		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Invalid expression.", "", spec, nil),
 	}
-	model := core.NewModel("test", "Test", "", invariants, nil, nil)
+	model := core.NewModel("test", "Test", "", "", invariants, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
 	// The checker should handle nil Expression (skip unparsed invariants).
@@ -529,18 +529,18 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 		model_class.AttributeAnnotations{}))
 	attr.DataType = dataType
 
-	class := model_class.NewClass(classKey, "Test", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Test", "", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{attr.Key: attr}
 
 	subdomainKey := mustKey("domain/d/subdomain/s")
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
 	domainKey := mustKey("domain/d")
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	checker, violations := NewDataTypeChecker(&model)

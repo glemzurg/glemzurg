@@ -31,14 +31,7 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 		markdown += "\n\n" + parsedFile.UmlComment
 	}
 
-	model = core.NewModel(
-		strings.TrimSpace(strings.ToLower(key)),
-		parsedFile.Title,
-		markdown,
-		invariants,
-		globalFunctions,
-		namedSets,
-	)
+	model = core.NewModel(strings.TrimSpace(strings.ToLower(key)), parsedFile.Title, markdown, parsedFile.UnfinishedNotes, invariants, globalFunctions, namedSets)
 
 	return model, nil
 }
@@ -223,7 +216,7 @@ func generateModelContent(model core.Model) string {
 
 	dataStr, _ := builder.Build()
 
-	return generateFileContent(prependMarkdownTitle(model.Name, model.Details), "", dataStr)
+	return generateFileContent(prependMarkdownTitle(model.Name, model.Details), model.UnfinishedNotes, "", dataStr)
 }
 
 // generateGlobalFunctionsYaml generates the global_functions YAML section.

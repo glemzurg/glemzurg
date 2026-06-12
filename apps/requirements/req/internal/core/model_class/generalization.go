@@ -9,22 +9,24 @@ import (
 
 // Generalization is how two or more things in the system build on each other (like a super type and sub type).
 type Generalization struct {
-	Key        identity.Key
-	Name       string
-	Details    string // Markdown.
-	IsComplete bool   // Are the specializations complete, or can an instantiation of this generalization exist without a specialization.
-	IsStatic   bool   // Are the specializations static and unchanging or can they change during runtime.
-	UmlComment string
+	Key             identity.Key
+	Name            string
+	Details         string // Markdown.
+	UnfinishedNotes string // Scratch notes not yet placed in final requirement locations.
+	IsComplete      bool   // Are the specializations complete, or can an instantiation of this generalization exist without a specialization.
+	IsStatic        bool   // Are the specializations static and unchanging or can they change during runtime.
+	UmlComment      string
 }
 
-func NewGeneralization(key identity.Key, name, details string, isComplete, isStatic bool, umlComment string) Generalization {
+func NewGeneralization(key identity.Key, name, details, unfinishedNotes string, isComplete, isStatic bool, umlComment string) Generalization {
 	return Generalization{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		IsComplete: isComplete,
-		IsStatic:   isStatic,
-		UmlComment: umlComment,
+		Key:             key,
+		Name:            name,
+		Details:         details,
+		UnfinishedNotes: unfinishedNotes,
+		IsComplete:      isComplete,
+		IsStatic:        isStatic,
+		UmlComment:      umlComment,
 	}
 }
 

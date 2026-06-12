@@ -158,7 +158,7 @@ func (suite *ActorSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	actor := NewActor(key, "Name", "Details", _USER_TYPE_PERSON, &genKeyA, &genKeyB, "UmlComment")
+	actor := NewActor(key, "Name", "Details", "", _USER_TYPE_PERSON, &genKeyA, &genKeyB, "UmlComment")
 	suite.Equal(Actor{
 		Key:             key,
 		Name:            "Name",
@@ -171,7 +171,7 @@ func (suite *ActorSuite) TestNew() {
 
 	// Test with nil superclass/subclass.
 
-	actor = NewActor(key, "Name", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
+	actor = NewActor(key, "Name", "Details", "", _USER_TYPE_PERSON, nil, nil, "UmlComment")
 	suite.Equal(Actor{
 		Key:        key,
 		Name:       "Name",

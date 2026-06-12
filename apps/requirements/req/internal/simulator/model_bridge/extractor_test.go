@@ -32,7 +32,7 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 	invKey1 := helper.Must(identity.NewInvariantKey("1"))
 	inv1 := model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Order count limit.", "", parsedSpec("1 + 1 = 2"), nil)
 
-	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil, nil)
+	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{inv0, inv1}, nil, nil)
 
 	expressions := ExtractFromModel(&model)
 
@@ -52,7 +52,7 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 }
 
 func (s *ExtractorTestSuite) TestExtractModelInvariants_Empty() {
-	model := core.NewModel("test_model", "Test Model", "", []model_logic.Logic{}, nil, nil)
+	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{}, nil, nil)
 
 	expressions := ExtractFromModel(&model)
 
@@ -77,7 +77,7 @@ func (s *ExtractorTestSuite) TestExtractGlobalFunctions() {
 		gfuncStatusKey: gfuncStatus,
 	}
 
-	model := core.NewModel("test_model", "Test Model", "", nil, globalFunctions, nil)
+	model := core.NewModel("test_model", "Test Model", "", "", nil, globalFunctions, nil)
 
 	expressions := ExtractFromModel(&model)
 
@@ -131,16 +131,16 @@ func (s *ExtractorTestSuite) TestExtractActionExpressions() {
 
 	action := model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq0, actionReq1}, []model_logic.Logic{actionGuar0}, nil, nil)
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", nil, nil, nil)
+	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	expressions := ExtractFromModel(&model)
@@ -203,16 +203,16 @@ func (s *ExtractorTestSuite) TestExtractQueryExpressions() {
 
 	query := model_state.NewQuery(queryKey, "FindPending", "", []model_logic.Logic{queryReq0}, []model_logic.Logic{queryGuar0, queryGuar1}, nil)
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.Queries = map[identity.Key]model_state.Query{queryKey: query}
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", nil, nil, nil)
+	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	expressions := ExtractFromModel(&model)
@@ -265,16 +265,16 @@ func (s *ExtractorTestSuite) TestExtractGuardExpressions() {
 
 	guard := model_state.NewGuard(guardKey, "CanShip", guardLogic)
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.Guards = map[identity.Key]model_state.Guard{guardKey: guard}
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Management", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := model_domain.NewDomain(domainKey, "Orders", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", nil, nil, nil)
+	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	expressions := ExtractFromModel(&model)
@@ -337,21 +337,21 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 	guard := model_state.NewGuard(guardKey, "LowStock", guardLogic)
 
 	// Assemble class
-	class := model_class.NewClass(classKey, "Product", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Product", "", "", nil, nil, nil, "")
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
 	class.Queries = map[identity.Key]model_state.Query{queryKey: query}
 	class.Guards = map[identity.Key]model_state.Guard{guardKey: guard}
 
 	// Assemble subdomain
-	subdomain := model_domain.NewSubdomain(subdomainKey, "Inventory", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Inventory", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
 	// Assemble domain
-	domain := model_domain.NewDomain(domainKey, "Shop", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "Shop", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
 	// Assemble model
-	model := core.NewModel("shop_model", "Shop Model", "", []model_logic.Logic{inv0}, globalFunctions, nil)
+	model := core.NewModel("shop_model", "Shop Model", "", "", []model_logic.Logic{inv0}, globalFunctions, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	expressions := ExtractFromModel(&model)

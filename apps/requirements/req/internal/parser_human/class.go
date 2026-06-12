@@ -65,7 +65,7 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 		return model_class.Class{}, nil, errors.WithStack(err)
 	}
 
-	class = model_class.NewClass(classKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
+	class = model_class.NewClass(classKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), parsedFile.UnfinishedNotes, actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 
 	// Parse and set class components from YAML data.
 	associations, err = parseClassComponents(&class, subdomainKey, classKey, yamlData)
@@ -1127,7 +1127,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 	generateClassBehavioralYaml(builder, class)
 
 	yamlStr, _ := builder.Build()
-	return generateFileContent(prependMarkdownTitle(class.Name, class.Details), class.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownTitle(class.Name, class.Details), class.UnfinishedNotes, class.UmlComment, yamlStr)
 }
 
 // generateClassStructuralYaml generates structural sections: top-level fields, invariants, attributes, associations.

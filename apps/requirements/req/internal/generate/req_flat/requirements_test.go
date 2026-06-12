@@ -90,7 +90,7 @@ func buildTestModel() core.Model {
 	query := model_state.NewQuery(tQueryKey, "GetTotal", "", nil, []model_logic.Logic{queryGuarantee}, nil)
 
 	// Class.
-	class := model_class.NewClass(tClassKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(tClassKey, "Order", "", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{
 		tAttributeKey: helper.Must(model_class.NewAttribute(tAttributeKey, "amount", "", "", nil, false,
 			model_class.AttributeAnnotations{})),
@@ -126,7 +126,7 @@ func buildTestModel() core.Model {
 	class.SetInvariants([]model_logic.Logic{classInv1, classInv2})
 
 	// Second class (minimal).
-	class2 := model_class.NewClass(tClass2Key, "Item", "", nil, nil, nil, "")
+	class2 := model_class.NewClass(tClass2Key, "Item", "", "", nil, nil, nil, "")
 	class2.Attributes = map[identity.Key]model_class.Attribute{}
 	class2.States = map[identity.Key]model_state.State{}
 	class2.Events = map[identity.Key]model_state.Event{}
@@ -136,10 +136,10 @@ func buildTestModel() core.Model {
 	class2.Transitions = map[identity.Key]model_state.Transition{}
 
 	// Generalization.
-	gen := model_class.NewGeneralization(tGenKey, "Vehicle", "", false, false, "")
+	gen := model_class.NewGeneralization(tGenKey, "Vehicle", "", "", false, false, "")
 
 	// Use case.
-	useCase := model_use_case.NewUseCase(tUseCaseKey, "PlaceOrder", "", "sea", false, model_use_case.GeneralizationRefs{}, "")
+	useCase := model_use_case.NewUseCase(tUseCaseKey, "PlaceOrder", "", "", "sea", false, model_use_case.GeneralizationRefs{}, "")
 	scenario := model_scenario.NewScenario(tScenarioKey, "HappyPath", "")
 	obj := model_scenario.NewObject(tObjectKey, 1, "order1", "name", tClassKey, false, "")
 	scenario.Objects = map[identity.Key]model_scenario.Object{
@@ -151,10 +151,10 @@ func buildTestModel() core.Model {
 	useCase.Actors = map[identity.Key]model_use_case.Actor{}
 
 	// Use case generalization.
-	ucGen := model_use_case.NewGeneralization(tUseCaseGenKey, "OrderFlow", "", false, false, "")
+	ucGen := model_use_case.NewGeneralization(tUseCaseGenKey, "OrderFlow", "", "", false, false, "")
 
 	// Subdomain.
-	subdomain := model_domain.NewSubdomain(tSubdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(tSubdomainKey, "S", "", "", "")
 	subdomain.Generalizations = map[identity.Key]model_class.Generalization{
 		tGenKey: gen,
 	}
@@ -173,19 +173,19 @@ func buildTestModel() core.Model {
 	}
 
 	// Domain.
-	domain := model_domain.NewDomain(tDomainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(tDomainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		tSubdomainKey: subdomain,
 	}
 
 	// Actors.
-	actor := model_actor.NewActor(tActorKey, "User", "", "person", nil, nil, "")
+	actor := model_actor.NewActor(tActorKey, "User", "", "", "person", nil, nil, "")
 
 	// Actor generalization.
-	actorGen := model_actor.NewGeneralization(tActorGenKey, "UserType", "", false, false, "")
+	actorGen := model_actor.NewGeneralization(tActorGenKey, "UserType", "", "", false, false, "")
 
 	// Model.
-	model := core.NewModel("test", "Test", "", []model_logic.Logic{invariant}, map[identity.Key]model_logic.GlobalFunction{
+	model := core.NewModel("test", "Test", "", "", []model_logic.Logic{invariant}, map[identity.Key]model_logic.GlobalFunction{
 		tGlobalFuncKey: globalFunc,
 	}, nil)
 	model.Actors = map[identity.Key]model_actor.Actor{
@@ -194,7 +194,7 @@ func buildTestModel() core.Model {
 	model.ActorGeneralizations = map[identity.Key]model_actor.Generalization{
 		tActorGenKey: actorGen,
 	}
-	domain2 := model_domain.NewDomain(tDomain2Key, "D2", "", false, "")
+	domain2 := model_domain.NewDomain(tDomain2Key, "D2", "", "", false, "")
 	domain2.Subdomains = map[identity.Key]model_domain.Subdomain{}
 	model.Domains = map[identity.Key]model_domain.Domain{
 		tDomainKey:  domain,
@@ -623,7 +623,7 @@ func (s *RequirementsSuite) TestActorGeneralizationSuperclassLookup() {
 	model := buildTestModel()
 
 	genKey := tActorGenKey
-	superActor := model_actor.NewActor(tActorKey, "User", "", "person", &genKey, nil, "")
+	superActor := model_actor.NewActor(tActorKey, "User", "", "", "person", &genKey, nil, "")
 	model.Actors[tActorKey] = superActor
 
 	reqs := NewRequirements(model)
@@ -637,8 +637,8 @@ func (s *RequirementsSuite) TestActorGeneralizationSubclassesLookup() {
 	model := buildTestModel()
 
 	genKey := tActorGenKey
-	subActor1 := model_actor.NewActor(tActor2Key, "Admin", "", "person", nil, &genKey, "")
-	subActor2 := model_actor.NewActor(tActor3Key, "Guest", "", "person", nil, &genKey, "")
+	subActor1 := model_actor.NewActor(tActor2Key, "Admin", "", "", "person", nil, &genKey, "")
+	subActor2 := model_actor.NewActor(tActor3Key, "Guest", "", "", "person", nil, &genKey, "")
 	model.Actors[tActor2Key] = subActor1
 	model.Actors[tActor3Key] = subActor2
 
@@ -655,7 +655,7 @@ func (s *RequirementsSuite) TestUseCaseGeneralizationSuperclassLookup() {
 	model := buildTestModel()
 
 	genKey := tUseCaseGenKey
-	superUC := model_use_case.NewUseCase(tUseCaseKey, "PlaceOrder", "", "sea", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &genKey}, "")
+	superUC := model_use_case.NewUseCase(tUseCaseKey, "PlaceOrder", "", "", "sea", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &genKey}, "")
 	superUC.Actors = map[identity.Key]model_use_case.Actor{}
 	superUC.Scenarios = map[identity.Key]model_scenario.Scenario{
 		tScenarioKey: model_scenario.NewScenario(tScenarioKey, "HappyPath", ""),
@@ -677,10 +677,10 @@ func (s *RequirementsSuite) TestUseCaseGeneralizationSubclassesLookup() {
 	model := buildTestModel()
 
 	genKey := tUseCaseGenKey
-	subUC1 := model_use_case.NewUseCase(tUseCase2Key, "Login", "", "mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &genKey}, "")
+	subUC1 := model_use_case.NewUseCase(tUseCase2Key, "Login", "", "", "mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &genKey}, "")
 	subUC1.Actors = map[identity.Key]model_use_case.Actor{}
 	subUC1.Scenarios = map[identity.Key]model_scenario.Scenario{}
-	subUC2 := model_use_case.NewUseCase(tUseCase3Key, "Checkout", "", "mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &genKey}, "")
+	subUC2 := model_use_case.NewUseCase(tUseCase3Key, "Checkout", "", "", "mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &genKey}, "")
 	subUC2.Actors = map[identity.Key]model_use_case.Actor{}
 	subUC2.Scenarios = map[identity.Key]model_scenario.Scenario{}
 
@@ -715,7 +715,7 @@ func (s *RequirementsSuite) TestDomainHasMultipleSubdomains_SingleDefault() {
 
 	// Replace subdomain with one named "default".
 	defaultSubKey := helper.Must(identity.NewSubdomainKey(tDomainKey, "default"))
-	defaultSub := model_domain.NewSubdomain(defaultSubKey, "Default", "", "")
+	defaultSub := model_domain.NewSubdomain(defaultSubKey, "Default", "", "", "")
 	defaultSub.Generalizations = map[identity.Key]model_class.Generalization{}
 	defaultSub.UseCaseGeneralizations = map[identity.Key]model_use_case.Generalization{}
 	defaultSub.Classes = map[identity.Key]model_class.Class{}
@@ -743,7 +743,7 @@ func (s *RequirementsSuite) TestDomainHasMultipleSubdomains_UnknownDomain() {
 // ============================================================
 
 func (s *RequirementsSuite) TestFlattenModel_EmptyModel() {
-	model := core.NewModel("empty", "Empty", "", nil, nil, nil)
+	model := core.NewModel("empty", "Empty", "", "", nil, nil, nil)
 	reqs := NewRequirements(model)
 
 	s.Empty(reqs.Actors)

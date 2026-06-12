@@ -17,17 +17,19 @@ type Actor struct {
 	Key             identity.Key
 	Name            string
 	Details         string        // Markdown.
+	UnfinishedNotes string        // Scratch notes not yet placed in final requirement locations.
 	Type            string        // "person" or "system"
 	SuperclassOfKey *identity.Key // If this actor is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this actor is part of a generalization as a subclass.
 	UmlComment      string
 }
 
-func NewActor(key identity.Key, name, details, userType string, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Actor {
+func NewActor(key identity.Key, name, details, unfinishedNotes, userType string, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Actor {
 	return Actor{
 		Key:             key,
 		Name:            name,
 		Details:         details,
+		UnfinishedNotes: unfinishedNotes,
 		Type:            userType,
 		SuperclassOfKey: superclassOfKey,
 		SubclassOfKey:   subclassOfKey,

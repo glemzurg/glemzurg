@@ -86,7 +86,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 
 	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
 
-	class := model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Stuck", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -134,7 +134,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Counter", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,

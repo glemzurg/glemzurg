@@ -47,7 +47,7 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
-	useCase = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), level, readOnly, model_use_case.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, parsedFile.UmlComment)
+	useCase = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), parsedFile.UnfinishedNotes, level, readOnly, model_use_case.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, parsedFile.UmlComment)
 
 	// Parse actors.
 	if err := parseUseCaseActors(&useCase, subdomainKey, yamlData); err != nil {
@@ -297,11 +297,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	if yamlStr == "" {
 		yamlStr = "\n"
 	}
-	content := prependMarkdownTitle(useCase.Name, useCase.Details) + "\n\n◆\n\n" + useCase.UmlComment + "\n\n◇"
-	if yamlStr != "" {
-		content += "\n\n" + yamlStr
-	}
-	return strings.TrimSpace(content)
+	return generateFileContent(prependMarkdownTitle(useCase.Name, useCase.Details), useCase.UnfinishedNotes, useCase.UmlComment, yamlStr)
 }
 
 // generateUseCaseTopFields writes the top-level YAML fields (level, superclass_of_key, subclass_of_key).

@@ -152,7 +152,7 @@ func buildTestModel(
 
 	transition := model_state.NewTransition(transKey, nil, eventKey, nil, nil, &toStateKey, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
+	class := model_class.NewClass(classKey, "Order", "", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateKey: model_state.NewState(stateKey, "Open", "", ""),
@@ -167,17 +167,17 @@ func buildTestModel(
 		transKey: transition,
 	})
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		classKey: class,
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test Model", "", nil, nil, nil)
+	model := core.NewModel("test", "Test Model", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

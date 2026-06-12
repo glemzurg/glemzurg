@@ -17,10 +17,11 @@ import (
 
 // Model is the documentation summary of a set of requirements.
 type Model struct {
-	Key        string // Models do not have keys like other entitites. They just need to be unique to other models in the system.
-	Name       string
-	Details    string              // Markdown.
-	Invariants []model_logic.Logic // Invariants that must be true for this model.
+	Key             string // Models do not have keys like other entitites. They just need to be unique to other models in the system.
+	Name            string
+	Details         string              // Markdown.
+	UnfinishedNotes string              // Scratch notes not yet placed in final requirement locations.
+	Invariants      []model_logic.Logic // Invariants that must be true for this model.
 	// Global functions that can be referenced from other expressions.
 	GlobalFunctions map[identity.Key]model_logic.GlobalFunction
 	// Named sets that can be referenced from behavioral logic.
@@ -33,11 +34,12 @@ type Model struct {
 	ClassAssociations    map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_logic.NamedSet) Model {
+func NewModel(key, name, details, unfinishedNotes string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_logic.NamedSet) Model {
 	return Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
 		Name:            name,
 		Details:         details,
+		UnfinishedNotes: unfinishedNotes,
 		Invariants:      invariants,
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,

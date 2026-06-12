@@ -80,7 +80,7 @@ func (suite *GeneralizationSuite) TestNew() {
 	key := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
 
 	// Test parameters are mapped correctly.
-	gen := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
+	gen := NewGeneralization(key, "Name", "Details", "", true, false, "UmlComment")
 	suite.Equal(Generalization{
 		Key:        key,
 		Name:       "Name",

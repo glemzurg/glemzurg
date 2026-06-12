@@ -19,6 +19,7 @@ type UseCase struct {
 	Key             identity.Key
 	Name            string
 	Details         string        // Markdown.
+	UnfinishedNotes string        // Scratch notes not yet placed in final requirement locations.
 	Level           string        // How high cocept or tightly focused the user case is.
 	ReadOnly        bool          // This is a user story that does not change the state of the system.
 	SuperclassOfKey *identity.Key // If this use case is part of a generalization as the superclass.
@@ -35,11 +36,12 @@ type GeneralizationRefs struct {
 	SubclassOfKey   *identity.Key
 }
 
-func NewUseCase(key identity.Key, name, details, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) UseCase {
+func NewUseCase(key identity.Key, name, details, unfinishedNotes, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) UseCase {
 	return UseCase{
 		Key:             key,
 		Name:            name,
 		Details:         details,
+		UnfinishedNotes: unfinishedNotes,
 		Level:           level,
 		ReadOnly:        readOnly,
 		SuperclassOfKey: genRefs.SuperclassOfKey,
