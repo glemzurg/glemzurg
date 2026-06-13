@@ -1,6 +1,6 @@
 # Class Has No Attributes (E11022)
 
-Every class must have at least one attribute to describe its data properties.
+Every class must have at least one attribute to describe its data properties, except classes backed by an actor (`actor_key` set). Actor classes represent participants in use cases and may carry only lifecycle behavior via their state machine.
 
 ## What Went Wrong
 

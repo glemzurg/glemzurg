@@ -1,6 +1,7 @@
 package parser_ai
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -333,6 +334,84 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	suite.Equal("confirm", trans.EventKey)
 	suite.Equal("has_items", *trans.GuardKey)
 	suite.Equal("process", *trans.ActionKey)
+}
+
+// TestConvertFromModelDeterministicExport verifies repeated exports produce identical JSON.
+func (suite *ConvertSuite) TestConvertFromModelDeterministicExport() {
+	domainKey := helper.Must(identity.NewDomainKey("users"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "managed_user"))
+
+	activeKey := helper.Must(identity.NewStateKey(classKey, "active"))
+	unprovisionedKey := helper.Must(identity.NewStateKey(classKey, "unprovisioned"))
+	deactivatedKey := helper.Must(identity.NewStateKey(classKey, "deactivated"))
+
+	deactivateEventKey := helper.Must(identity.NewEventKey(classKey, "deactivate_user"))
+	createEventKey := helper.Must(identity.NewEventKey(classKey, "create_managed_user"))
+	selfElevationEventKey := helper.Must(identity.NewEventKey(classKey, "self_elevation_blocked"))
+
+	deactivateActionKey := helper.Must(identity.NewActionKey(classKey, "deactivate_user"))
+	createActionKey := helper.Must(identity.NewActionKey(classKey, "create_managed_user"))
+	selfElevationActionKey := helper.Must(identity.NewActionKey(classKey, "self_elevation_blocked"))
+
+	deactivateTransitionKey := helper.Must(identity.NewTransitionKey(classKey, "active", "deactivate_user", "", "deactivate_user", "deactivated"))
+	createTransitionKey := helper.Must(identity.NewTransitionKey(classKey, "unprovisioned", "create_managed_user", "", "create_managed_user", "active"))
+	selfElevationTransitionKey := helper.Must(identity.NewTransitionKey(classKey, "unprovisioned", "self_elevation_blocked", "", "self_elevation_blocked", "unprovisioned"))
+
+	userClass := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Managed User"})
+	userClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	userClass.SetStates(map[identity.Key]model_state.State{
+		activeKey:        model_state.NewState(activeKey, "Active", "", ""),
+		unprovisionedKey: model_state.NewState(unprovisionedKey, "Unprovisioned", "", ""),
+		deactivatedKey:   model_state.NewState(deactivatedKey, "Deactivated", "", ""),
+	})
+	userClass.SetEvents(map[identity.Key]model_state.Event{
+		deactivateEventKey:    model_state.NewEvent(deactivateEventKey, "deactivate_user", "", nil),
+		createEventKey:        model_state.NewEvent(createEventKey, "create_managed_user", "", nil),
+		selfElevationEventKey: model_state.NewEvent(selfElevationEventKey, "self_elevation_blocked", "", nil),
+	})
+	userClass.SetGuards(make(map[identity.Key]model_state.Guard))
+	userClass.SetActions(map[identity.Key]model_state.Action{
+		deactivateActionKey:    model_state.NewAction(deactivateActionKey, "deactivate_user", "", nil, nil, nil, nil),
+		createActionKey:        model_state.NewAction(createActionKey, "create_managed_user", "", nil, nil, nil, nil),
+		selfElevationActionKey: model_state.NewAction(selfElevationActionKey, "self_elevation_blocked", "", nil, nil, nil, nil),
+	})
+	userClass.SetTransitions(map[identity.Key]model_state.Transition{
+		deactivateTransitionKey:    model_state.NewTransition(deactivateTransitionKey, &activeKey, deactivateEventKey, nil, &deactivateActionKey, &deactivatedKey, ""),
+		createTransitionKey:        model_state.NewTransition(createTransitionKey, &unprovisionedKey, createEventKey, nil, &createActionKey, &activeKey, ""),
+		selfElevationTransitionKey: model_state.NewTransition(selfElevationTransitionKey, &unprovisionedKey, selfElevationEventKey, nil, &selfElevationActionKey, &unprovisionedKey, ""),
+	})
+
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: userClass}
+
+	domain := model_domain.NewDomain(domainKey, "Users", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	m := core.NewModel("testmodel", "Test Model", "", "", nil, nil, nil)
+	m.Actors = make(map[identity.Key]model_actor.Actor)
+	m.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+	model := &m
+
+	marshalStateMachine := func() []byte {
+		input, err := ConvertFromModel(model)
+		suite.Require().NoError(err)
+		sm := input.Domains["users"].Subdomains["default"].Classes["managed_user"].StateMachine
+		suite.Require().NotNil(sm)
+		data, err := json.Marshal(sm)
+		suite.Require().NoError(err)
+		return data
+	}
+
+	first := marshalStateMachine()
+	second := marshalStateMachine()
+	suite.Equal(first, second, "repeated ConvertFromModel must produce identical state machine JSON")
+
+	sm := helper.Must(ConvertFromModel(model)).Domains["users"].Subdomains["default"].Classes["managed_user"].StateMachine
+	suite.Require().Len(sm.Transitions, 3)
+	suite.Equal("deactivate_user", sm.Transitions[0].EventKey)
+	suite.Equal("create_managed_user", sm.Transitions[1].EventKey)
+	suite.Equal("self_elevation_blocked", sm.Transitions[2].EventKey)
 }
 
 // TestConvertToModelWithStateMachine tests converting a state machine.

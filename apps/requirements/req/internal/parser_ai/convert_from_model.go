@@ -3,6 +3,7 @@ package parser_ai
 import (
 	"fmt"
 	"maps"
+	"sort"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -135,6 +136,7 @@ func convertActorGeneralizationFromModel(gen *model_actor.Generalization, actors
 			result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
 		}
 	}
+	sort.Strings(result.SubclassKeys)
 
 	return result
 }
@@ -367,6 +369,7 @@ func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, u
 			result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
 		}
 	}
+	sort.Strings(result.SubclassKeys)
 
 	return result
 }
@@ -402,9 +405,10 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 			indexMap[indexNum] = append(indexMap[indexNum], key.SubKey)
 		}
 	}
-	// Convert map to slice
+	// Convert map to slice; sort attribute names within each index group for stable export.
 	for i := range uint(len(indexMap)) {
 		if attrs, ok := indexMap[i]; ok {
+			sort.Strings(attrs)
 			result.Indexes = append(result.Indexes, attrs)
 		}
 	}
@@ -479,8 +483,9 @@ func convertStateMachineFromModel(class *model_class.Class) *inputStateMachine {
 		sm.Guards[keyFromName(key.SubKey)] = converted
 	}
 
-	// Convert transitions
-	for _, transition := range class.Transitions {
+	// Convert transitions in stable key order; map iteration is nondeterministic in Go.
+	for _, key := range sortedIdentityKeys(class.Transitions) {
+		transition := class.Transitions[key]
 		converted := convertTransitionFromModel(&transition)
 		sm.Transitions = append(sm.Transitions, converted)
 	}
@@ -685,6 +690,7 @@ func convertClassGeneralizationFromModel(gen *model_class.Generalization, localC
 			}
 		}
 	}
+	sort.Strings(result.SubclassKeys)
 
 	return result
 }

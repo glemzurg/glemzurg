@@ -77,7 +77,8 @@ func writeModelActorsAndGeneralizations(model *inputModel, modelDir string) erro
 		if err := os.MkdirAll(actorsDir, 0755); err != nil {
 			return err
 		}
-		for key, actor := range model.Actors {
+		for _, key := range sortedKeys(model.Actors) {
+			actor := model.Actors[key]
 			if err := writeJSON(filepath.Join(actorsDir, key+".actor.json"), actor); err != nil {
 				return err
 			}
@@ -88,7 +89,8 @@ func writeModelActorsAndGeneralizations(model *inputModel, modelDir string) erro
 		if err := os.MkdirAll(agDir, 0755); err != nil {
 			return err
 		}
-		for key, gen := range model.ActorGeneralizations {
+		for _, key := range sortedKeys(model.ActorGeneralizations) {
+			gen := model.ActorGeneralizations[key]
 			if err := writeJSON(filepath.Join(agDir, key+".agen.json"), gen); err != nil {
 				return err
 			}
@@ -104,7 +106,8 @@ func writeModelCollections(model *inputModel, modelDir string) error {
 		if err := os.MkdirAll(gfDir, 0755); err != nil {
 			return err
 		}
-		for key, gf := range model.GlobalFunctions {
+		for _, key := range sortedKeys(model.GlobalFunctions) {
+			gf := model.GlobalFunctions[key]
 			if err := writeJSON(filepath.Join(gfDir, key+".json"), gf); err != nil {
 				return err
 			}
@@ -115,7 +118,8 @@ func writeModelCollections(model *inputModel, modelDir string) error {
 		if err := os.MkdirAll(nsDir, 0755); err != nil {
 			return err
 		}
-		for key, ns := range model.NamedSets {
+		for _, key := range sortedKeys(model.NamedSets) {
+			ns := model.NamedSets[key]
 			if err := writeJSON(filepath.Join(nsDir, key+".nset.json"), ns); err != nil {
 				return err
 			}
@@ -131,7 +135,8 @@ func writeModelAssociationsAndDomains(model *inputModel, modelDir string) error 
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for _, assoc := range model.ClassAssociations {
+		for _, key := range sortedKeys(model.ClassAssociations) {
+			assoc := model.ClassAssociations[key]
 			filename := classAssociationFilename(assoc)
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
@@ -143,7 +148,8 @@ func writeModelAssociationsAndDomains(model *inputModel, modelDir string) error 
 		if err := os.MkdirAll(daDir, 0755); err != nil {
 			return err
 		}
-		for key, da := range model.DomainAssociations {
+		for _, key := range sortedKeys(model.DomainAssociations) {
+			da := model.DomainAssociations[key]
 			if err := writeJSON(filepath.Join(daDir, key+".domain_assoc.json"), da); err != nil {
 				return err
 			}
@@ -154,7 +160,8 @@ func writeModelAssociationsAndDomains(model *inputModel, modelDir string) error 
 		if err := os.MkdirAll(domainsDir, 0755); err != nil {
 			return err
 		}
-		for domainKey, domain := range model.Domains {
+		for _, domainKey := range sortedKeys(model.Domains) {
+			domain := model.Domains[domainKey]
 			if err := writeDomainTree(domain, filepath.Join(domainsDir, domainKey)); err != nil {
 				return err
 			}
@@ -181,7 +188,8 @@ func writeDomainTree(domain *inputDomain, domainDir string) error {
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for _, assoc := range domain.ClassAssociations {
+		for _, key := range sortedKeys(domain.ClassAssociations) {
+			assoc := domain.ClassAssociations[key]
 			filename := classAssociationFilename(assoc)
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
@@ -195,7 +203,8 @@ func writeDomainTree(domain *inputDomain, domainDir string) error {
 		if err := os.MkdirAll(subdomainsDir, 0755); err != nil {
 			return err
 		}
-		for subdomainKey, subdomain := range domain.Subdomains {
+		for _, subdomainKey := range sortedKeys(domain.Subdomains) {
+			subdomain := domain.Subdomains[subdomainKey]
 			if err := writeSubdomainTree(subdomain, filepath.Join(subdomainsDir, subdomainKey)); err != nil {
 				return err
 			}
@@ -223,7 +232,8 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for _, assoc := range subdomain.ClassAssociations {
+		for _, key := range sortedKeys(subdomain.ClassAssociations) {
+			assoc := subdomain.ClassAssociations[key]
 			filename := classAssociationFilename(assoc)
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
@@ -237,7 +247,8 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 		if err := os.MkdirAll(genDir, 0755); err != nil {
 			return err
 		}
-		for key, gen := range subdomain.ClassGeneralizations {
+		for _, key := range sortedKeys(subdomain.ClassGeneralizations) {
+			gen := subdomain.ClassGeneralizations[key]
 			if err := writeJSON(filepath.Join(genDir, key+".cgen.json"), gen); err != nil {
 				return err
 			}
@@ -250,7 +261,8 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 		if err := os.MkdirAll(classesDir, 0755); err != nil {
 			return err
 		}
-		for classKey, class := range subdomain.Classes {
+		for _, classKey := range sortedKeys(subdomain.Classes) {
+			class := subdomain.Classes[classKey]
 			if err := writeClassTree(class, filepath.Join(classesDir, classKey)); err != nil {
 				return err
 			}
@@ -263,7 +275,8 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 		if err := os.MkdirAll(genDir, 0755); err != nil {
 			return err
 		}
-		for key, gen := range subdomain.UseCaseGeneralizations {
+		for _, key := range sortedKeys(subdomain.UseCaseGeneralizations) {
+			gen := subdomain.UseCaseGeneralizations[key]
 			if err := writeJSON(filepath.Join(genDir, key+".ucgen.json"), gen); err != nil {
 				return err
 			}
@@ -276,7 +289,8 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 		if err := os.MkdirAll(useCasesDir, 0755); err != nil {
 			return err
 		}
-		for useCaseKey, useCase := range subdomain.UseCases {
+		for _, useCaseKey := range sortedKeys(subdomain.UseCases) {
+			useCase := subdomain.UseCases[useCaseKey]
 			if err := writeUseCaseTree(useCase, filepath.Join(useCasesDir, useCaseKey)); err != nil {
 				return err
 			}
@@ -313,7 +327,8 @@ func writeClassTree(class *inputClass, classDir string) error {
 	}
 
 	// Write attribute invariants (per attribute subdirectory)
-	for attrKey, attr := range class.Attributes {
+	for _, attrKey := range sortedKeys(class.Attributes) {
+		attr := class.Attributes[attrKey]
 		if len(attr.Invariants) > 0 {
 			attrInvariantsDir := filepath.Join(classDir, "attributes", attrKey, "invariants")
 			if err := os.MkdirAll(attrInvariantsDir, 0755); err != nil {
@@ -341,7 +356,8 @@ func writeClassTree(class *inputClass, classDir string) error {
 		if err := os.MkdirAll(actionsDir, 0755); err != nil {
 			return err
 		}
-		for key, action := range class.Actions {
+		for _, key := range sortedKeys(class.Actions) {
+			action := class.Actions[key]
 			if err := writeJSON(filepath.Join(actionsDir, key+".json"), action); err != nil {
 				return err
 			}
@@ -354,7 +370,8 @@ func writeClassTree(class *inputClass, classDir string) error {
 		if err := os.MkdirAll(queriesDir, 0755); err != nil {
 			return err
 		}
-		for key, query := range class.Queries {
+		for _, key := range sortedKeys(class.Queries) {
+			query := class.Queries[key]
 			if err := writeJSON(filepath.Join(queriesDir, key+".json"), query); err != nil {
 				return err
 			}
@@ -382,7 +399,8 @@ func writeUseCaseTree(useCase *inputUseCase, useCaseDir string) error {
 		if err := os.MkdirAll(scenariosDir, 0755); err != nil {
 			return err
 		}
-		for key, scenario := range useCase.Scenarios {
+		for _, key := range sortedKeys(useCase.Scenarios) {
+			scenario := useCase.Scenarios[key]
 			if err := writeJSON(filepath.Join(scenariosDir, key+".scenario.json"), scenario); err != nil {
 				return err
 			}

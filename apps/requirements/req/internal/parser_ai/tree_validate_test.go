@@ -1038,6 +1038,20 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	suite.Contains(parseErr.Message, "class_associations/") // Check for guidance about file location
 }
 
+// TestCompletenessActorClassNoAttributes verifies actor-backed classes may have no attributes.
+func (suite *TreeValidateSuite) TestCompletenessActorClassNoAttributes() {
+	model := t_buildCompleteModelTree()
+	administrator := t_buildCompleteClass()
+	administrator.Name = "Administrator"
+	administrator.ActorKey = "customer"
+	administrator.Attributes = map[string]*inputAttribute{}
+	administrator.Indexes = nil
+	model.Domains["orders"].Subdomains["default"].Classes["administrator"] = administrator
+
+	err := validateModelCompleteness(model)
+	suite.NoError(err)
+}
+
 // TestCompletenessClassNoAttributes verifies error when class has no attributes.
 func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
 	model := t_buildCompleteModelTree()

@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // sortedKeys returns sorted keys from a map.
@@ -14,6 +16,18 @@ func sortedKeys[V any](m map[string]V) []string {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+	return keys
+}
+
+// sortedIdentityKeys returns identity keys sorted by Key.String() for deterministic map iteration.
+func sortedIdentityKeys[V any](m map[identity.Key]V) []identity.Key {
+	keys := make([]identity.Key, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].String() < keys[j].String()
+	})
 	return keys
 }
 
@@ -223,8 +237,8 @@ func validateSubdomainCompleteness(domainKey, subdomainKey string, subdomain *in
 func validateClassCompleteness(domainKey, subdomainKey, classKey string, class *inputClass) error {
 	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
 
-	// Check class has at least one attribute
-	if len(class.Attributes) == 0 {
+	// Actor-backed classes model participants, not persisted entity data, so they need no attributes.
+	if len(class.Attributes) == 0 && class.ActorKey == "" {
 		return NewParseError(
 			ErrTreeClassNoAttributes,
 			fmt.Sprintf("class '%s' must have at least one attribute defined - attributes describe the data properties of a class; add attributes to the 'attributes' map in the class.json file with name, data type rules, and details",
