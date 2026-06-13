@@ -118,7 +118,7 @@ The events for this class.
 {{ range .Class.Events -}}
 
 - **{{ .Name }}.** {{ .Details }}{{ if ne .Parameters nil }} Parameters:
-{{ range .Parameters }}   - *{{ .Name }}.* {{ data_type_rules .DataTypeRules .DataType }}
+{{ range .Parameters }}   - *{{ .Name }}.* {{ parameter_data_type_display . }}
 {{ end }}{{- end }}
 {{ end }}
 
@@ -156,7 +156,7 @@ The actions for this class.
 Parameters:
 
 {{ range $action.Parameters -}}
-- *{{ .Name }}.* {{ data_type_rules .DataTypeRules .DataType }}
+- *{{ .Name }}.* {{ parameter_data_type_display . }}
 {{ end }}
 {{ end -}}
 Requires:
@@ -181,8 +181,9 @@ Guarantees:
 {{ if ne $action.Guarantees nil -}}
 
 {{ range $action.Guarantees -}}
-{{- $mainBullet := main_bullet .Description }}
-{{- $subBullets := sub_bullets .Description }}
+{{- $displayDesc := action_guarantee_display_description $.Class . -}}
+{{- $mainBullet := main_bullet $displayDesc }}
+{{- $subBullets := sub_bullets $displayDesc }}
 - {{ $mainBullet }}
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
@@ -246,7 +247,7 @@ The queries for this class.
 Parameters:
 
 {{ range $query.Parameters -}}
-- *{{ .Name }}.* {{ data_type_rules .DataTypeRules .DataType }}
+- *{{ .Name }}.* {{ parameter_data_type_display . }}
 {{ end }}
 {{ end -}}
 Requires:

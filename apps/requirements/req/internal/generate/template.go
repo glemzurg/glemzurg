@@ -137,11 +137,13 @@ var _funcMap = template.FuncMap{
 	"filename": func(objType string, key identity.Key, suffix, ext string) (filename string) {
 		return convertKeyToFilename(objType, key.String(), suffix, ext)
 	},
-	"data_type_rules": func(rules string, dataType *model_data_type.DataType) (value string) {
-		if dataType == nil {
-			return `_(unparsed)_ ` + rules
+	"data_type_rules": formatDataTypeRules,
+	"parameter_data_type_display": func(param model_state.Parameter) string {
+		display := formatDataTypeRules(param.DataTypeRules, param.DataType)
+		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
+			display += " (" + param.DataType.TypeSpec.Specification + ")"
 		}
-		return "__" + dataType.String() + "__"
+		return display
 	},
 	"first_md_paragraph": firstMdParagraph,
 	"first_md_sentence": func(md string) (paragraph string) {
@@ -220,6 +222,15 @@ var _funcMap = template.FuncMap{
 	"sub_bullets": func(bulletText string) (subBullets []string) {
 		_, subBullets = splitBulletTextIntoMainAndSubBullets(bulletText)
 		return subBullets
+	},
+	"action_guarantee_display_description": func(class model_class.Class, guarantee model_logic.Logic) string {
+		if guarantee.Description != "" {
+			return guarantee.Description
+		}
+		if description, ok := model_class.ComputedSimpleActionGuaranteeDescription(guarantee, class.Attributes); ok {
+			return description
+		}
+		return ""
 	},
 
 	// Lookup methods for objects.
@@ -441,6 +452,13 @@ var _funcMap = template.FuncMap{
 		}
 		return indexes
 	},
+}
+
+func formatDataTypeRules(rules string, dataType *model_data_type.DataType) string {
+	if dataType == nil {
+		return `_(unparsed)_ ` + rules
+	}
+	return "__" + dataType.String() + "__"
 }
 
 // Split multi-line bullets into sub bullets.
