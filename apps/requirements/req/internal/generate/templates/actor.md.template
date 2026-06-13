@@ -16,14 +16,14 @@
 {{- $super := actor_generalization_superclass $reqs $gen.Key -}}
 {{- $subs := actor_generalization_subclasses $reqs $gen.Key -}}
 - **{{ $gen.Name }}{{ unfinished_notes_marker $gen.UnfinishedNotes }}.** {{ $gen.Details }}
-    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Actor.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Actor.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Actor.Key }}{{ $super.Name }}{{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Actor.Key }}{{ $sub.Name }}{{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ else }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ end }}{{ else }}???{{ end }}
 {{ end -}}
 {{ if ne .Actor.SubclassOfKey nil -}}
 {{- $gen := actor_generalization_lookup $reqs .Actor.SubclassOfKey -}}
 {{- $super := actor_generalization_superclass $reqs $gen.Key -}}
 {{- $subs := actor_generalization_subclasses $reqs $gen.Key -}}
 - **{{ $gen.Name }}{{ unfinished_notes_marker $gen.UnfinishedNotes }}.** {{ $gen.Details }}
-    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Actor.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Actor.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Actor.Key }}{{ $super.Name }}{{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Actor.Key }}{{ $sub.Name }}{{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ else }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ end }}{{ else }}???{{ end }}
 {{ end }}
 {{- end }}
 
@@ -37,7 +37,7 @@ The domain classes that define this actor.
 {{- $class := . }}
 {{- $domain := class_domain $reqs $class.Key }}
 
-### {{ $domain.Name }} : [{{ $class.Name }}]({{ filename "class" $class.Key "" ".md" }})
+### {{ $domain.Name }} : [{{ $class.Name }}]({{ filename "class" $class.Key "" ".md" }}){{ unfinished_notes_marker $class.UnfinishedNotes }}
 
 {{ first_md_paragraph $class.Details }}
 

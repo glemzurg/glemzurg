@@ -4,11 +4,13 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
@@ -723,6 +725,51 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 	}
 	// The association exists at subdomain level in the original model.
 	s.Equal(1, totalAssocs)
+}
+
+func (s *FilteredModelSuite) TestBuildFilteredModel_PreservesActorAndUseCaseGeneralizations() {
+	actorGenKey := helper.Must(identity.NewActorGeneralizationKey("customers"))
+	actorGen := model_actor.NewGeneralization(actorGenKey, "Customers", "", "actor gen notes", true, true, "")
+
+	ucGenKey := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "management"))
+	ucGen := model_use_case.NewGeneralization(ucGenKey, "Management", "", "uc gen notes", true, true, "")
+
+	model := buildSingleDomainModel()
+	model.ActorGeneralizations = map[identity.Key]model_actor.Generalization{
+		actorGenKey: actorGen,
+	}
+
+	domain := model.Domains[domainKey]
+	subdomain := domain.Subdomains[subdomainKey]
+	subdomain.UseCaseGeneralizations = map[identity.Key]model_use_case.Generalization{
+		ucGenKey: ucGen,
+	}
+	domain.Subdomains[subdomainKey] = subdomain
+	model.Domains[domainKey] = domain
+
+	resolved := &ResolvedSurface{
+		Classes: map[identity.Key]model_class.Class{
+			orderClassKey: makeOrderClass(),
+		},
+		Associations:    map[identity.Key]model_class.Association{},
+		ModelInvariants: []model_logic.Logic{},
+	}
+
+	filtered, err := BuildFilteredModel(model, resolved)
+	s.Require().NoError(err)
+	s.Require().Len(filtered.ActorGeneralizations, 1)
+	s.Equal("actor gen notes", filtered.ActorGeneralizations[actorGenKey].UnfinishedNotes)
+
+	foundUCGen := false
+	for _, dom := range filtered.Domains {
+		for _, sub := range dom.Subdomains {
+			if gen, ok := sub.UseCaseGeneralizations[ucGenKey]; ok {
+				s.Equal("uc gen notes", gen.UnfinishedNotes)
+				foundUCGen = true
+			}
+		}
+	}
+	s.True(foundUCGen, "filtered subdomain should retain use case generalizations")
 }
 
 func (s *FilteredModelSuite) TestBuildFilteredModel_PreservesModelMetadata() {

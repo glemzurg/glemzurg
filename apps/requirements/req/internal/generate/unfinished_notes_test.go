@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -55,4 +56,55 @@ func TestGenerateUnfinishedNotesInMarkdown(t *testing.T) {
 	require.NotEmpty(t, actor.UnfinishedNotes)
 	assert.Contains(t, productBody, unfinishedNotesMarker(actor.UnfinishedNotes),
 		"actor bullet should show marker when linked actor has unfinished notes")
+}
+
+func findSingleSubdomainDomain(model core.Model) (model_domain.Domain, model_domain.Subdomain, bool) {
+	for _, domain := range model.Domains {
+		if len(domain.Subdomains) != 1 {
+			continue
+		}
+		for _, subdomain := range domain.Subdomains {
+			return domain, subdomain, true
+		}
+	}
+	return model_domain.Domain{}, model_domain.Subdomain{}, false
+}
+
+func TestGenerateSingleSubdomainUnfinishedNotesOnDomainPage(t *testing.T) {
+	model := test_helper.GetTestModel()
+	writer := newCollectWriter()
+	require.NoError(t, GenerateMdToWriter(model, writer, nil))
+
+	domain, subdomain, ok := findSingleSubdomainDomain(model)
+	require.True(t, ok, "test model should include a single-subdomain domain")
+	require.NotEmpty(t, subdomain.UnfinishedNotes)
+
+	domainFile := convertKeyToFilename("domain", domain.Key.String(), "", ".md")
+	domainMD, ok := writer.md[domainFile]
+	require.True(t, ok, "expected domain page (%s)", domainFile)
+
+	body := string(domainMD)
+	assert.Contains(t, body, unfinishedNotesBlock(subdomain.UnfinishedNotes))
+	assert.Contains(t, body, subdomain.Name)
+}
+
+func TestGenerateActorGenParticipantUnfinishedNotesMarkers(t *testing.T) {
+	model := test_helper.GetTestModel()
+	require.NotEmpty(t, model.ActorGeneralizations)
+
+	var participantNotes string
+	for _, actor := range model.Actors {
+		if actor.Name == "Another Customer" {
+			require.NotEmpty(t, actor.UnfinishedNotes)
+			participantNotes = actor.UnfinishedNotes
+			break
+		}
+	}
+	require.NotEmpty(t, participantNotes)
+
+	writer := newCollectWriter()
+	require.NoError(t, GenerateMdToWriter(model, writer, nil))
+
+	body := string(writer.md["model.md"])
+	assert.Contains(t, body, unfinishedNotesMarker(participantNotes))
 }

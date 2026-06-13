@@ -20,7 +20,7 @@ The actor generalizations of this model.
 {{- $super := actor_generalization_superclass $reqs .Key -}}
 {{- $subs := actor_generalization_subclasses $reqs .Key -}}
 - **{{ .Name }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ .Details }}
-    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ else }}???{{ end }}
+    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }}
 {{ end }}
 {{- end }}
 

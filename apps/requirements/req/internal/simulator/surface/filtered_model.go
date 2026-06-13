@@ -13,6 +13,7 @@ import (
 func BuildFilteredModel(original *core.Model, resolved *ResolvedSurface) (*core.Model, error) {
 	filtered := core.NewModel(original.Key, original.Name, original.Details, original.UnfinishedNotes, resolved.ModelInvariants, original.GlobalFunctions, original.NamedSets)
 	filtered.Actors = original.Actors
+	filtered.ActorGeneralizations = original.ActorGeneralizations
 
 	// Rebuild domain/subdomain/class tree with only included classes.
 	filteredDomains := make(map[identity.Key]model_domain.Domain)
@@ -28,6 +29,7 @@ func BuildFilteredModel(original *core.Model, resolved *ResolvedSurface) (*core.
 			if len(filteredClasses) > 0 {
 				filteredSub := model_domain.NewSubdomain(subdomainKey, subdomain.Name, subdomain.Details, subdomain.UnfinishedNotes, subdomain.UmlComment)
 				filteredSub.Generalizations = subdomain.Generalizations
+				filteredSub.UseCaseGeneralizations = subdomain.UseCaseGeneralizations
 				filteredSub.Classes = filteredClasses
 				filteredSub.UseCases = subdomain.UseCases
 				filteredSub.ClassAssociations = filterAssociations(subdomain.ClassAssociations, resolved.Associations)
