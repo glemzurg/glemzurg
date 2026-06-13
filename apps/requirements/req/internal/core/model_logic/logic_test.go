@@ -145,14 +145,13 @@ func (s *LogicTestSuite) TestValidate() {
 			errstr: "Type",
 		},
 		{
-			testName: "error missing description",
+			testName: "valid without description",
 			logic: Logic{
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "",
 				Spec:        validSpec(),
 			},
-			errstr: "Description",
 		},
 		{
 			testName: "error missing notation in spec",
@@ -369,15 +368,15 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 	err := logic.ValidateWithParent(ctx, nil)
 	s.Require().NoError(err)
 
-	// Test that Validate is called.
+	// Test that Validate accepts an empty description.
 	logic = Logic{
 		Key:         validKey,
 		Type:        LogicTypeAssessment,
-		Description: "", // Invalid
+		Description: "",
 		Spec:        validSpec(),
 	}
 	err = logic.ValidateWithParent(ctx, nil)
-	s.Require().ErrorContains(err, "Description")
+	s.Require().NoError(err)
 
 	// Test that ValidateParent is called - invariant key should have nil parent.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))

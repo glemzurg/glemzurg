@@ -36,7 +36,7 @@ var validLogicTypes = map[string]bool{
 type Logic struct {
 	Key            identity.Key              // The key is unique in the whole model, and built on the key of the containing object.
 	Type           string                    // One of: assessment, state_change, query, safety_rule, value, let.
-	Description    string                    // Required human-readable description.
+	Description    string                    // Optional human-readable description.
 	Target         string                    // Identifier or attribute to set. Required for state_change and query types.
 	Spec           logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
 	TargetTypeSpec *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
@@ -67,10 +67,6 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 	// Type must be a valid value.
 	if !validLogicTypes[l.Type] {
 		return coreerr.NewWithValues(ctx, coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let")
-	}
-	// Description is required.
-	if l.Description == "" {
-		return coreerr.New(ctx, coreerr.LogicDescRequired, "Description is required", "Description")
 	}
 	// Target validation based on logic type.
 	switch l.Type {

@@ -95,7 +95,7 @@ func (suite *GuardSuite) TestValidate() {
 			errstr: "KeyType",
 		},
 		{
-			testName: "error invalid logic missing description",
+			testName: "valid logic without description",
 			guard: Guard{
 				Key:  validKey,
 				Name: "Name",
@@ -103,7 +103,6 @@ func (suite *GuardSuite) TestValidate() {
 					Key: validKey, Type: model_logic.LogicTypeAssessment, Description: "", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
 				},
 			},
-			errstr: "Description",
 		},
 		{
 			testName: "error logic wrong kind",
