@@ -406,7 +406,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 
 		annotations := attributeAnnotationsFromYamlData(attributeData)
 
-		typeSpec, err := attributeTypeSpecFromYamlData(attributeData)
+		typeSpec, err := typeSpecFromYamlData(attributeData)
 		if err != nil {
 			return model_class.Attribute{}, err
 		}
@@ -495,17 +495,35 @@ func attributeAnnotationsFromYamlData(attributeData map[string]any) model_class.
 	return model_class.AttributeAnnotations{UmlComment: umlComment, IndexNums: indexNums}
 }
 
-// attributeTypeSpecFromYamlData parses the optional type_spec field from attribute YAML data.
-func attributeTypeSpecFromYamlData(attributeData map[string]any) (*logic_spec.TypeSpec, error) {
-	tsStr, ok := attributeData["type_spec"].(string)
+// typeSpecFromYamlData parses the optional type_spec field from YAML attribute or parameter data.
+func typeSpecFromYamlData(data map[string]any) (*logic_spec.TypeSpec, error) {
+	tsStr, ok := data["type_spec"].(string)
 	if !ok || tsStr == "" {
 		return nil, nil //nolint:nilnil // nil pointer means no type spec present
 	}
 	ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "attribute type spec")
+		return nil, errors.Wrap(err, "type spec")
 	}
 	return &ts, nil
+}
+
+// parameterFromYamlMap constructs a parameter from a YAML mapping under an event, action, or query.
+func parameterFromYamlMap(parentKey identity.Key, paramMap map[string]any) (model_state.Parameter, error) {
+	paramName, _ := paramMap["name"].(string)
+	paramRules, _ := paramMap["rules"].(string)
+	param, err := model_state.NewParameter(parentKey, paramName, paramRules)
+	if err != nil {
+		return model_state.Parameter{}, err
+	}
+	typeSpec, err := typeSpecFromYamlData(paramMap)
+	if err != nil {
+		return model_state.Parameter{}, err
+	}
+	if typeSpec != nil && param.DataType != nil {
+		param.DataType.TypeSpec = typeSpec
+	}
+	return param, nil
 }
 
 // yamlString reads an optional string field from a YAML map. It returns a clear
@@ -773,10 +791,9 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 				if !ok {
 					return model_state.Event{}, errors.Errorf("event '%s': each parameter must be a mapping", name)
 				}
-				paramName, _ := paramMap["name"].(string)
-				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(eventKey, paramName, paramRules)
+				param, err := parameterFromYamlMap(eventKey, paramMap)
 				if err != nil {
+					paramName, _ := paramMap["name"].(string)
 					return model_state.Event{}, errors.Wrapf(err, "event '%s' parameter '%s'", name, paramName)
 				}
 				parameters = append(parameters, param)
@@ -864,10 +881,9 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 				if !ok {
 					return model_state.Action{}, errors.Errorf("action '%s': each parameter must be a mapping", name)
 				}
-				paramName, _ := paramMap["name"].(string)
-				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(actionKey, paramName, paramRules)
+				param, err := parameterFromYamlMap(actionKey, paramMap)
 				if err != nil {
+					paramName, _ := paramMap["name"].(string)
 					return model_state.Action{}, errors.Wrapf(err, "action '%s' parameter '%s'", name, paramName)
 				}
 				parameters = append(parameters, param)
@@ -936,10 +952,9 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 				if !ok {
 					return model_state.Query{}, errors.Errorf("query '%s': each parameter must be a mapping", name)
 				}
-				paramName, _ := paramMap["name"].(string)
-				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(queryKey, paramName, paramRules)
+				param, err := parameterFromYamlMap(queryKey, paramMap)
 				if err != nil {
+					paramName, _ := paramMap["name"].(string)
 					return model_state.Query{}, errors.Wrapf(err, "query '%s' parameter '%s'", name, paramName)
 				}
 				parameters = append(parameters, param)
@@ -1413,6 +1428,9 @@ func generateParameterSequence(builder *YamlBuilder, params []model_state.Parame
 		paramBuilder := NewYamlBuilder()
 		paramBuilder.AddField("name", param.Name)
 		paramBuilder.AddField("rules", param.DataTypeRules)
+		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
+			paramBuilder.AddField("type_spec", param.DataType.TypeSpec.Specification)
+		}
 		items = append(items, paramBuilder)
 	}
 	builder.AddSequenceOfMappings("parameters", items)

@@ -12,6 +12,7 @@ import (
 type inputParameter struct {
 	Name          string `json:"name"`
 	DataTypeRules string `json:"data_type_rules,omitempty"`
+	TypeSpec      string `json:"type_spec,omitempty"`
 }
 
 // parameterSchema is the compiled JSON schema for parameter objects.

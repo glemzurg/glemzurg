@@ -65,6 +65,7 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 					for i, expectedParam := range expectedEvent.Parameters {
 						suite.Equal(expectedParam.Name, actualEvent.Parameters[i].Name, testName+" event '"+key+"' param["+string(rune('0'+i))+"] name")
 						suite.Equal(expectedParam.DataTypeRules, actualEvent.Parameters[i].DataTypeRules, testName+" event '"+key+"' param["+string(rune('0'+i))+"] data_type_rules")
+						suite.Equal(expectedParam.TypeSpec, actualEvent.Parameters[i].TypeSpec, testName+" event '"+key+"' param["+string(rune('0'+i))+"] type_spec")
 					}
 				}
 			}

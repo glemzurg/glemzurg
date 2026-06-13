@@ -649,10 +649,14 @@ func convertParametersFromModel(params []model_state.Parameter) []inputParameter
 	}
 	result := make([]inputParameter, len(params))
 	for i, param := range params {
-		result[i] = inputParameter{
+		ip := inputParameter{
 			Name:          param.Name,
 			DataTypeRules: param.DataTypeRules,
 		}
+		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
+			ip.TypeSpec = param.DataType.TypeSpec.Specification
+		}
+		result[i] = ip
 	}
 	return result
 }

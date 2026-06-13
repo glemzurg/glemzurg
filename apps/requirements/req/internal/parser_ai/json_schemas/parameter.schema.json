@@ -13,6 +13,10 @@
     "data_type_rules": {
       "type": "string",
       "description": "Optional data type rules describing the expected value type and constraints for the parameter (e.g., 'positive integer', 'non-empty string', 'valid email address'). Helps implementers understand the expected input format."
+    },
+    "type_spec": {
+      "type": "string",
+      "description": "Optional type specification for the parameter's data type in TLA+ notation. Provides a precise formal type for the parameter (e.g., 'Nat', 'STRING', 'Int'). Only meaningful when data_type_rules can be parsed into a data type."
     }
   },
   "required": ["name"],

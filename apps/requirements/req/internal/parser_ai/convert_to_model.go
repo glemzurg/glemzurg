@@ -1052,12 +1052,23 @@ func convertAttributeDerivation(attr *inputAttribute, attrKey identity.Key, keyS
 // convertAttributeTypeSpec parses the optional type_spec for an attribute.
 // Returns a nil pointer with no error when there is no type spec.
 func convertAttributeTypeSpec(attr *inputAttribute, keyStr, classFile string) (*logic_spec.TypeSpec, error) { //nolint:nilnil // nil pointer means no type spec present
-	if attr.TypeSpec == "" {
+	return convertInputTypeSpec(attr.TypeSpec, "attribute", keyStr, classFile)
+}
+
+// convertParameterTypeSpec parses the optional type_spec for a parameter.
+// Returns a nil pointer with no error when there is no type spec.
+func convertParameterTypeSpec(param *inputParameter, keyStr, sourceFile string) (*logic_spec.TypeSpec, error) { //nolint:nilnil // nil pointer means no type spec present
+	return convertInputTypeSpec(param.TypeSpec, "parameter", keyStr, sourceFile)
+}
+
+// convertInputTypeSpec parses an optional TLA+ type_spec string from parser_ai input.
+func convertInputTypeSpec(typeSpec, kind, keyStr, sourceFile string) (*logic_spec.TypeSpec, error) { //nolint:nilnil // nil pointer means no type spec present
+	if typeSpec == "" {
 		return nil, nil //nolint:nilnil // nil pointer means no type spec present
 	}
-	ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, attr.TypeSpec, nil)
+	ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, typeSpec, nil)
 	if err != nil {
-		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create type spec for attribute '%s': %s", keyStr, err.Error()), classFile)
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create type spec for %s '%s': %s", kind, keyStr, err.Error()), sourceFile)
 	}
 	return &ts, nil
 }
@@ -1167,17 +1178,15 @@ func convertSMEventsToModel(sm *inputStateMachine, class *model_class.Class, cla
 			Parameters: []model_state.Parameter{},
 		}
 
-		for _, param := range event.Parameters {
-			builtParam, err := model_state.NewParameter(eventKey, param.Name, param.DataTypeRules)
-			if err != nil {
-				return convErr(
-					ErrConvModelValidation,
-					fmt.Sprintf("failed to construct event parameter '%s': %s", param.Name, err.Error()),
-					smFile,
-				).WithField(fmt.Sprintf("events.%s.parameters.%s", eventKeyStr, param.Name))
-			}
-			converted.Parameters = append(converted.Parameters, builtParam)
+		convertedParams, err := convertParametersToModel(event.Parameters, eventKey, smFile)
+		if err != nil {
+			return convErr(
+				ErrConvModelValidation,
+				fmt.Sprintf("failed to convert event '%s' parameters: %s", eventKeyStr, err.Error()),
+				smFile,
+			).WithField(fmt.Sprintf("events.%s.parameters", eventKeyStr))
 		}
+		converted.Parameters = convertedParams
 
 		class.Events[converted.Key] = converted
 	}
@@ -1339,7 +1348,7 @@ func convertActionToModel(keyStr string, action *inputAction, classKey identity.
 		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action safety rules: %s", err.Error()), actionFile)
 	}
 
-	parameters, err := convertParametersToModel(action.Parameters, actionKey)
+	parameters, err := convertParametersToModel(action.Parameters, actionKey, actionFile)
 	if err != nil {
 		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action parameters: %s", err.Error()), actionFile)
 	}
@@ -1377,7 +1386,7 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 		return model_state.Query{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert query guarantees: %s", err.Error()), queryFile)
 	}
 
-	parameters, err := convertParametersToModel(query.Parameters, queryKey)
+	parameters, err := convertParametersToModel(query.Parameters, queryKey, queryFile)
 	if err != nil {
 		return model_state.Query{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert query parameters: %s", err.Error()), queryFile)
 	}
@@ -1444,7 +1453,7 @@ func convertLogicsToModel(logics []inputLogic, logicType string, parentKey ident
 
 // convertParametersToModel converts a slice of inputParameter to a slice of model_state.Parameter,
 // parenting each parameter's identity.Key under the given owner key (action/query/event).
-func convertParametersToModel(params []inputParameter, parentKey identity.Key) ([]model_state.Parameter, error) {
+func convertParametersToModel(params []inputParameter, parentKey identity.Key, sourceFile string) ([]model_state.Parameter, error) {
 	if len(params) == 0 {
 		return nil, nil
 	}
@@ -1453,6 +1462,13 @@ func convertParametersToModel(params []inputParameter, parentKey identity.Key) (
 		built, err := model_state.NewParameter(parentKey, param.Name, param.DataTypeRules)
 		if err != nil {
 			return nil, fmt.Errorf("parameter %d (%s): %w", i, param.Name, err)
+		}
+		typeSpec, err := convertParameterTypeSpec(&param, param.Name, sourceFile)
+		if err != nil {
+			return nil, err
+		}
+		if typeSpec != nil && built.DataType != nil {
+			built.DataType.TypeSpec = typeSpec
 		}
 		result[i] = built
 	}

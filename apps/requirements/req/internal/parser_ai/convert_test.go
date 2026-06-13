@@ -1036,6 +1036,72 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 	suite.Equal("1..*", assoc.ToMultiplicity)
 }
 
+// TestConvertParameterTypeSpecRoundTrip verifies action parameter type_spec survives model conversion.
+func (suite *ConvertSuite) TestConvertParameterTypeSpecRoundTrip() {
+	original := &inputModel{
+		Name:              "Test Model",
+		Actors:            make(map[string]*inputActor),
+		ClassAssociations: make(map[string]*inputClassAssociation),
+		Domains: map[string]*inputDomain{
+			"test": {
+				Name: "Test",
+				Subdomains: map[string]*inputSubdomain{
+					"default": {
+						Name: "Default",
+						Classes: map[string]*inputClass{
+							"widget": {
+								Name:       "Widget",
+								Attributes: make(map[string]*inputAttribute),
+								Actions: map[string]*inputAction{
+									"adjust": {
+										Name: "Adjust",
+										Parameters: []inputParameter{
+											{
+												Name:          "amount",
+												DataTypeRules: "unconstrained",
+												TypeSpec:      "Nat",
+											},
+										},
+									},
+								},
+								Queries: make(map[string]*inputQuery),
+							},
+						},
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
+					},
+				},
+				ClassAssociations: make(map[string]*inputClassAssociation),
+			},
+		},
+	}
+
+	model, err := ConvertToModel(original, "testmodel")
+	suite.Require().NoError(err)
+
+	var action model_state.Action
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				for _, a := range class.Actions {
+					action = a
+				}
+			}
+		}
+	}
+	suite.Require().Len(action.Parameters, 1)
+	suite.Require().NotNil(action.Parameters[0].DataType)
+	suite.Require().NotNil(action.Parameters[0].DataType.TypeSpec)
+	suite.Equal("Nat", action.Parameters[0].DataType.TypeSpec.Specification)
+
+	result, err := ConvertFromModel(model)
+	suite.Require().NoError(err)
+
+	actionInput := result.Domains["test"].Subdomains["default"].Classes["widget"].Actions["adjust"]
+	suite.Require().Len(actionInput.Parameters, 1)
+	suite.Equal("Nat", actionInput.Parameters[0].TypeSpec)
+}
+
 // TestConvertFromModelValidationError tests that validation errors from source model are returned.
 func (suite *ConvertSuite) TestConvertFromModelValidationError() {
 	model := &core.Model{

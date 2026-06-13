@@ -29,6 +29,10 @@
           "data_type_rules": {
             "type": "string",
             "description": "Data type rules for the parameter value."
+          },
+          "type_spec": {
+            "type": "string",
+            "description": "Optional TLA+ type specification for the parameter (e.g., 'Nat', 'STRING')."
           }
         },
         "required": ["name"],
