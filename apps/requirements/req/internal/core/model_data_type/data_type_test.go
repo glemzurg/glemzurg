@@ -802,6 +802,41 @@ func TestNewUnparsable(t *testing.T) {
 	assert.Nil(t, result)
 }
 
+func TestIsAtomicUnconstrained(t *testing.T) {
+	tests := []struct {
+		name     string
+		dataType *DataType
+		want     bool
+	}{
+		{
+			name: "atomic unconstrained",
+			dataType: &DataType{
+				CollectionType: COLLECTION_TYPE_ATOMIC,
+				Atomic:         &Atomic{ConstraintType: CONSTRAINT_TYPE_UNCONSTRAINED},
+			},
+			want: true,
+		},
+		{
+			name: "atomic span",
+			dataType: &DataType{
+				CollectionType: COLLECTION_TYPE_ATOMIC,
+				Atomic:         &Atomic{ConstraintType: CONSTRAINT_TYPE_SPAN},
+			},
+			want: false,
+		},
+		{
+			name:     "nil",
+			dataType: nil,
+			want:     false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, IsAtomicUnconstrained(tc.dataType))
+		})
+	}
+}
+
 func TestNewInvalid(t *testing.T) {
 	// Key is required.
 	result, err := New(identity.Key{}, "", nil)

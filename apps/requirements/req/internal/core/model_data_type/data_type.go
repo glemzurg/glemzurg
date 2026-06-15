@@ -227,6 +227,14 @@ func (d DataType) validateCollectionFields(ctx *coreerr.ValidationContext) error
 	return nil
 }
 
+// IsAtomicUnconstrained reports whether dataType is a parsed atomic unconstrained rule.
+func IsAtomicUnconstrained(dataType *DataType) bool {
+	return dataType != nil &&
+		dataType.CollectionType == COLLECTION_TYPE_ATOMIC &&
+		dataType.Atomic != nil &&
+		dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_UNCONSTRAINED
+}
+
 // String returns a string representation of the DataType.
 func (d DataType) String() string {
 	switch d.CollectionType {

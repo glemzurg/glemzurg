@@ -45,7 +45,7 @@ This is an actor:
 | Name | Rules | Nullable | Type | Comment |
 | ---- | ----- | -------- | ---- | ------- |
 {{- range .Class.Attributes }}
-| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ .DerivationPolicy.Spec.Specification }}{{ end }}{{ end }} | {{ .Nullable }} | {{ if and (ne .DataType nil) (ne .DataType.TypeSpec nil) }}{{ .DataType.TypeSpec.Specification }}{{ end }} | {{ .Details }} |{{end}}
+| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ .DerivationPolicy.Spec.Specification }}{{ end }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ .Details }} |{{end}}
 
 {{- $indexes := class_indexes .Class.Attributes }}
 {{ if ne $indexes nil }}

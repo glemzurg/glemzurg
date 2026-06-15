@@ -137,15 +137,10 @@ var _funcMap = template.FuncMap{
 	"filename": func(objType string, key identity.Key, suffix, ext string) (filename string) {
 		return convertKeyToFilename(objType, key.String(), suffix, ext)
 	},
-	"data_type_rules": formatDataTypeRules,
-	"parameter_data_type_display": func(param model_state.Parameter) string {
-		display := formatDataTypeRules(param.DataTypeRules, param.DataType)
-		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
-			display += " (" + param.DataType.TypeSpec.Specification + ")"
-		}
-		return display
-	},
-	"first_md_paragraph": firstMdParagraph,
+	"data_type_rules":             formatDataTypeRules,
+	"data_type_spec_display":      dataTypeSpecDisplay,
+	"parameter_data_type_display": parameterDataTypeDisplay,
+	"first_md_paragraph":          firstMdParagraph,
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},
@@ -459,6 +454,27 @@ func formatDataTypeRules(rules string, dataType *model_data_type.DataType) strin
 		return `_(unparsed)_ ` + rules
 	}
 	return "__" + dataType.String() + "__"
+}
+
+func dataTypeSpecDisplay(dataType *model_data_type.DataType) string {
+	if model_data_type.IsAtomicUnconstrained(dataType) {
+		return "(unknown)"
+	}
+	if dataType != nil && dataType.TypeSpec != nil && dataType.TypeSpec.Specification != "" {
+		return dataType.TypeSpec.Specification
+	}
+	return ""
+}
+
+func parameterDataTypeDisplay(param model_state.Parameter) string {
+	display := formatDataTypeRules(param.DataTypeRules, param.DataType)
+	if model_data_type.IsAtomicUnconstrained(param.DataType) {
+		return display + " (unknown)"
+	}
+	if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
+		display += " (" + param.DataType.TypeSpec.Specification + ")"
+	}
+	return display
 }
 
 // Split multi-line bullets into sub bullets.
