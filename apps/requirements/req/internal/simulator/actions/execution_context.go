@@ -73,9 +73,12 @@ type ExecutionContext struct {
 	// These are applied at the end of the top-level action.
 	collectedPrimed map[state.InstanceID]map[string]object.Object
 
-	// mutatedInstances tracks which instances have had actions set primed
-	// values on them. These instances are "locked" for further action mutations.
+	// mutatedInstances tracks which instances have had primed values recorded.
 	mutatedInstances map[state.InstanceID]bool
+
+	// instanceActionOwner maps instance ID to the action key that first claimed
+	// mutation rights in this chain (blocks a different chained action).
+	instanceActionOwner map[state.InstanceID]identity.Key
 
 	// postConditions holds all post-conditions to check after primed
 	// values are applied.
@@ -91,18 +94,22 @@ type ExecutionContext struct {
 // NewExecutionContext creates a new top-level execution context.
 func NewExecutionContext() *ExecutionContext {
 	return &ExecutionContext{
-		collectedPrimed:  make(map[state.InstanceID]map[string]object.Object),
-		mutatedInstances: make(map[state.InstanceID]bool),
-		postConditions:   nil,
-		depth:            0,
+		collectedPrimed:     make(map[state.InstanceID]map[string]object.Object),
+		mutatedInstances:    make(map[state.InstanceID]bool),
+		instanceActionOwner: make(map[state.InstanceID]identity.Key),
+		postConditions:      nil,
+		depth:               0,
 	}
 }
 
-// CanMutate checks if an action is allowed to set primed values on this instance.
-// Returns false if the instance already has primed assignments from a different
-// action in the chain.
-func (ctx *ExecutionContext) CanMutate(instanceID state.InstanceID) bool {
-	return !ctx.mutatedInstances[instanceID]
+// ClaimInstanceForAction records that actionKey may mutate instanceID in this chain.
+// Returns false if another action already claimed the instance.
+func (ctx *ExecutionContext) ClaimInstanceForAction(instanceID state.InstanceID, actionKey identity.Key) bool {
+	if owner, ok := ctx.instanceActionOwner[instanceID]; ok && owner != actionKey {
+		return false
+	}
+	ctx.instanceActionOwner[instanceID] = actionKey
+	return true
 }
 
 // RecordPrimedAssignment stores a primed assignment for deferred application.

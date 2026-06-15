@@ -370,6 +370,11 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 		return &me.NamedSetRef{SetKey: key}, nil
 	}
 
+	// NULL is the model's absent-value sentinel; the simulator represents it as {}.
+	if name == "NULL" {
+		return &me.SetLiteral{Elements: []me.Expression{}}, nil
+	}
+
 	// Check well-known set constant names (Nat, Int, Real, BOOLEAN).
 	// The parser produces Identifier nodes for these since they are not
 	// reserved keywords in the PEG grammar.

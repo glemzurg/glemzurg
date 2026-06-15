@@ -178,17 +178,17 @@ func (s *ActionsSuite) TestExecutionContextRejectsStateField() {
 
 func (s *ActionsSuite) TestExecutionContextReentrancyGuard() {
 	ctx := NewExecutionContext()
+	actionA := mustKey("domain/d/subdomain/s/class/order/action/a")
+	actionB := mustKey("domain/d/subdomain/s/class/order/action/b")
 
-	// First mutation is fine
-	s.True(ctx.CanMutate(1))
+	s.True(ctx.ClaimInstanceForAction(1, actionA))
 	err := ctx.RecordPrimedAssignment(1, "count", object.NewInteger(1))
 	s.Require().NoError(err)
+	err = ctx.RecordPrimedAssignment(1, "status", object.NewString("open"))
+	s.Require().NoError(err)
 
-	// After mutation, instance 1 is locked
-	s.False(ctx.CanMutate(1))
-
-	// Instance 2 is still available
-	s.True(ctx.CanMutate(2))
+	s.False(ctx.ClaimInstanceForAction(1, actionB))
+	s.True(ctx.ClaimInstanceForAction(2, actionB))
 }
 
 func (s *ActionsSuite) TestExecutionContextDepthLimit() {

@@ -264,7 +264,7 @@ func (s *EngineSuite) TestNoSimulatableClassesReturnsError() {
 	config := SimulationConfig{MaxSteps: 10, RandomSeed: 42}
 	_, err := NewSimulationEngine(model, config)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "no simulatable classes")
+	s.Contains(err.Error(), "state machine")
 }
 
 func (s *EngineSuite) TestStepNumbersAreSequential() {

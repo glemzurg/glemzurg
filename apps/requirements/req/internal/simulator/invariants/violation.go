@@ -17,6 +17,9 @@ const (
 	// ViolationTypeModelInvariant indicates a TLA+ model invariant violation.
 	ViolationTypeModelInvariant ViolationType = iota
 
+	// ViolationTypeClassInvariant indicates a TLA+ class-level invariant violation.
+	ViolationTypeClassInvariant
+
 	// ViolationTypeActionGuarantee indicates an action's TLA+ guarantee (post-condition) violation.
 	ViolationTypeActionGuarantee
 
@@ -67,6 +70,8 @@ func (v ViolationType) String() string {
 	switch v {
 	case ViolationTypeModelInvariant:
 		return "model_invariant"
+	case ViolationTypeClassInvariant:
+		return "class_invariant"
 	case ViolationTypeActionGuarantee:
 		return "action_guarantee"
 	case ViolationTypeQueryGuarantee:
@@ -150,6 +155,24 @@ func NewModelInvariantViolation(index int, expression string, message string) *V
 	return &ViolationError{
 		Type:           ViolationTypeModelInvariant,
 		Message:        fmt.Sprintf("model invariant %d failed: %s - %s", index, expression, message),
+		Expression:     expression,
+		InvariantIndex: index,
+	}
+}
+
+// NewClassInvariantViolation creates a violation for a failed class-level invariant.
+func NewClassInvariantViolation(
+	classKey identity.Key,
+	instanceID state.InstanceID,
+	index int,
+	expression string,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:           ViolationTypeClassInvariant,
+		Message:        fmt.Sprintf("class %s invariant %d failed on instance %d: %s - %s", classKey.String(), index, instanceID, expression, message),
+		InstanceID:     instanceID,
+		ClassKey:       classKey,
 		Expression:     expression,
 		InvariantIndex: index,
 	}
@@ -402,7 +425,7 @@ func (v ViolationErrors) TLAViolations() ViolationErrors {
 	for _, violation := range v {
 		//nolint:exhaustive // Only TLA+ violation types are relevant here.
 		switch violation.Type {
-		case ViolationTypeModelInvariant, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee:
+		case ViolationTypeModelInvariant, ViolationTypeClassInvariant, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee:
 			result = append(result, violation)
 		default:
 			// Not a TLA+ violation; skip.

@@ -55,10 +55,9 @@ func TestParameterTypeSpecDisplayInMarkdown(t *testing.T) {
 	reqs := req_flat.NewRequirements(model)
 	contents, err := generateClassMdContents(reqs, class, "", "")
 	require.NoError(t, err)
-	require.Contains(t, contents, "- *Amount.* __unconstrained__ (unknown)")
-	require.NotContains(t, contents, "STRING")
-	require.NotContains(t, contents, "Int")
-	require.Contains(t, contents, "- *Label.* __unconstrained__ (unknown)")
+	require.Contains(t, contents, "- *Amount.* __unconstrained__ (STRING)")
+	require.Contains(t, contents, "- *Label.* __unconstrained__")
+	require.NotContains(t, contents, "- *Label.* __unconstrained__ (")
 }
 
 func TestUnconstrainedAttributeTypeSpecDisplayInMarkdown(t *testing.T) {
@@ -88,7 +87,5 @@ func TestUnconstrainedAttributeTypeSpecDisplayInMarkdown(t *testing.T) {
 	reqs := req_flat.NewRequirements(model)
 	contents, err := generateClassMdContents(reqs, class, "", "")
 	require.NoError(t, err)
-	require.Contains(t, contents, "| Note | __unconstrained__ | false | (unknown) | A note field. |")
-	require.NotContains(t, contents, "STRING")
-	require.NotContains(t, contents, "Int")
+	require.Contains(t, contents, "| Note | __unconstrained__ | false | STRING | A note field. |")
 }

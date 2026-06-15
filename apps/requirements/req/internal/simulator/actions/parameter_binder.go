@@ -3,9 +3,11 @@ package actions
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -53,6 +55,18 @@ func (b *ParameterBinder) GenerateRandomParameters(
 
 // generateRandomValue creates a random value based on data type constraints.
 func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	if dataType != nil && dataType.TypeSpec != nil {
+		switch strings.ToUpper(strings.TrimSpace(dataType.TypeSpec.Specification)) {
+		case "STRING":
+			return randomString(rng)
+		case "BOOLEAN":
+			if rng.Intn(2) == 0 {
+				return object.NewBoolean(false)
+			}
+			return object.NewBoolean(true)
+		}
+	}
+
 	if dataType == nil || dataType.Atomic == nil {
 		// No type info — generate a default integer in [0, 100).
 		return object.NewNatural(rng.Int63n(100))
@@ -72,11 +86,28 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 		return object.NewString(atomic.Enums[idx].Value)
 
 	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
-		return object.NewNatural(rng.Int63n(100))
+		return randomString(rng)
+
+	case model_data_type.CONSTRAINT_TYPE_REFERENCE, model_data_type.CONSTRAINT_TYPE_OBJECT:
+		return randomString(rng)
 
 	default:
 		return object.NewNatural(rng.Int63n(100))
 	}
+}
+
+func randomString(rng *rand.Rand) object.Object {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	length := 1 + rng.Intn(8)
+	var b strings.Builder
+	for range length {
+		b.WriteByte(letters[rng.Intn(len(letters))])
+	}
+	// Occasionally emit NULL (empty set) for nullable-friendly exploration.
+	if rng.Intn(10) == 0 {
+		return evaluator.EMPTY_SET
+	}
+	return object.NewString(b.String())
 }
 
 // randomNumberInSpan generates a random integer within a span's bounds.

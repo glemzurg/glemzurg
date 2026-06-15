@@ -73,6 +73,10 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
+	if err := validateSimulationModel(activeModel); err != nil {
+		return nil, err
+	}
+
 	simState, bindingsBuilder, err := setupState(activeModel)
 	if err != nil {
 		return nil, err
@@ -148,6 +152,10 @@ func setupState(model *core.Model) (*state.SimulationState, *state.BindingsBuild
 	}
 	if derivedEval.HasDerivedAttributes() {
 		bindingsBuilder.SetDerivedResolver(derivedEval)
+	}
+
+	if err := bindingsBuilder.RegisterNamedSets(model); err != nil {
+		return nil, nil, fmt.Errorf("named set setup: %w", err)
 	}
 
 	return simState, bindingsBuilder, nil
@@ -239,9 +247,11 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 			return nil, fmt.Errorf("step %d execution error: %w", step+1, err)
 		}
 
-		// Run model-level invariant check after each step.
+		// Run model- and class-level invariant checks after each step.
 		modelViolations := e.invariantChecker.CheckModelInvariants(e.simState, e.bindingsBuilder)
 		stepResult.Violations = append(stepResult.Violations, modelViolations...)
+		classViolations := e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)
+		stepResult.Violations = append(stepResult.Violations, classViolations...)
 
 		result.Steps = append(result.Steps, stepResult)
 		result.StepsTaken++

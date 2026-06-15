@@ -389,7 +389,7 @@ func (s *ResolverSuite) TestResolve_ExcludeClass() {
 	s.NotContains(resolved.Classes, itemClassKey)
 }
 
-func (s *ResolverSuite) TestResolve_FiltersStatelessClasses() {
+func (s *ResolverSuite) TestResolve_StatelessClass_Error() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
@@ -408,12 +408,9 @@ func (s *ResolverSuite) TestResolve_FiltersStatelessClasses() {
 		domainKey: domain,
 	}
 
-	resolved, err := Resolve(nil, &model)
-	s.Require().NoError(err)
-	// Stateless class should be filtered out.
-	s.Len(resolved.Classes, 1)
-	s.Contains(resolved.Classes, orderClassKey)
-	s.NotContains(resolved.Classes, statelessKey)
+	_, err := Resolve(nil, &model)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "without a state machine")
 }
 
 func (s *ResolverSuite) TestResolve_AssociationsBothEndpointsInScope() {
@@ -497,7 +494,7 @@ func (s *ResolverSuite) TestResolve_NoSimulatableClasses_Error() {
 
 	_, err := Resolve(nil, &model)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "no simulatable classes")
+	s.Contains(err.Error(), "without a state machine")
 }
 
 func (s *ResolverSuite) TestResolve_InvalidSpec_Error() {

@@ -141,7 +141,8 @@ func evalAttributeRef(n *me.AttributeRef, bindings *Bindings) *EvalResult {
 	attrName := n.AttributeKey.SubKey
 	value := self.Get(attrName)
 	if value == nil {
-		return NewEvalError("attribute not found: %s", attrName)
+		// Nullable or unset attributes behave as NULL (empty set) in TLA+ specs.
+		return NewEvalResult(EMPTY_SET)
 	}
 	return NewEvalResult(value)
 }
@@ -231,7 +232,7 @@ func resolveRootValue(current me.Expression, bindings *Bindings) (object.Object,
 		}
 		value := self.Get(attrName)
 		if value == nil {
-			return nil, NewEvalError("attribute not found: %s", attrName)
+			return EMPTY_SET, nil
 		}
 		return value, nil
 	case *me.SelfRef:

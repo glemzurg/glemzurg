@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -19,6 +20,7 @@ const _EXPRESSION_RETURNED_NIL = "expression returned nil"
 // InvariantChecker evaluates invariants against simulation state.
 // It checks:
 //   - Model-level invariants (Model.Invariants)
+//   - Class-level invariants (Class.Invariants, per instance)
 //   - Action post-condition guarantees
 //   - Query post-condition guarantees
 type InvariantChecker struct {
@@ -28,6 +30,9 @@ type InvariantChecker struct {
 	// parsedInvariantItems caches pre-lowered model invariant items (both let and assessment).
 	parsedInvariantItems []parsedInvariantItem
 
+	// parsedClassInvariants maps class key to pre-lowered class invariant items.
+	parsedClassInvariants map[identity.Key][]parsedClassInvariantItem
+
 	// actionPostConditions maps action key to post-condition expressions
 	actionPostConditions map[identity.Key][]parsedGuarantee
 
@@ -36,6 +41,15 @@ type InvariantChecker struct {
 
 	// classNameMap maps class keys to class names for bindings
 	classNameMap map[identity.Key]string
+}
+
+// parsedClassInvariantItem holds a pre-lowered class invariant with metadata.
+type parsedClassInvariantItem struct {
+	isLet         bool
+	target        string
+	expression    me.Expression
+	originalIndex int
+	spec          string
 }
 
 // parsedInvariantItem holds a pre-lowered invariant or let expression with metadata.
@@ -59,11 +73,12 @@ type parsedGuarantee struct {
 // (via parse functions passed to constructors).
 func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 	checker := &InvariantChecker{
-		model:                model,
-		parsedInvariantItems: make([]parsedInvariantItem, 0, len(model.Invariants)),
-		actionPostConditions: make(map[identity.Key][]parsedGuarantee),
-		queryPostConditions:  make(map[identity.Key][]parsedGuarantee),
-		classNameMap:         make(map[identity.Key]string),
+		model:                 model,
+		parsedInvariantItems:  make([]parsedInvariantItem, 0, len(model.Invariants)),
+		parsedClassInvariants: make(map[identity.Key][]parsedClassInvariantItem),
+		actionPostConditions:  make(map[identity.Key][]parsedGuarantee),
+		queryPostConditions:   make(map[identity.Key][]parsedGuarantee),
+		classNameMap:          make(map[identity.Key]string),
 	}
 
 	// Load model invariants from pre-parsed expressions.
@@ -87,16 +102,48 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 		})
 	}
 
-	// Iterate through all classes to collect class names
+	// Iterate through all classes to collect class names and class invariants.
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
 				checker.classNameMap[class.Key] = class.Name
+				if err := checker.loadClassInvariants(class); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
 
 	return checker, nil
+}
+
+func (c *InvariantChecker) loadClassInvariants(class model_class.Class) error {
+	if len(class.Invariants) == 0 {
+		return nil
+	}
+
+	items := make([]parsedClassInvariantItem, 0, len(class.Invariants))
+	for i, inv := range class.Invariants {
+		expr := inv.Spec.Expression
+		if expr == nil {
+			continue
+		}
+		isLet := inv.Type == model_logic.LogicTypeLet
+		if !isLet && model_bridge.ContainsAnyPrimedME(expr) {
+			return fmt.Errorf("class %s invariant %d must not contain primed variables: %s", class.Name, i, inv.Spec.Specification)
+		}
+		items = append(items, parsedClassInvariantItem{
+			isLet:         isLet,
+			target:        inv.Target,
+			expression:    expr,
+			originalIndex: i,
+			spec:          inv.Spec.Specification,
+		})
+	}
+	if len(items) > 0 {
+		c.parsedClassInvariants[class.Key] = items
+	}
+	return nil
 }
 
 // CheckModelInvariants evaluates all model-level invariants against the current state.
@@ -154,6 +201,75 @@ func (c *InvariantChecker) CheckModelInvariants(
 				item.originalIndex,
 				item.spec,
 				message,
+			))
+		}
+	}
+
+	return violations
+}
+
+// CheckClassInvariants evaluates class-level invariants for every instance in state.
+func (c *InvariantChecker) CheckClassInvariants(
+	simState *state.SimulationState,
+	bindingsBuilder *state.BindingsBuilder,
+) ViolationErrors {
+	var violations ViolationErrors
+
+	for _, instance := range simState.AllInstances() {
+		items, ok := c.parsedClassInvariants[instance.ClassKey]
+		if !ok {
+			continue
+		}
+		violations = append(violations, c.checkClassInvariantsForInstance(instance, items, bindingsBuilder)...)
+	}
+
+	return violations
+}
+
+func (c *InvariantChecker) checkClassInvariantsForInstance(
+	instance *state.ClassInstance,
+	items []parsedClassInvariantItem,
+	bindingsBuilder *state.BindingsBuilder,
+) ViolationErrors {
+	var violations ViolationErrors
+	bindings := bindingsBuilder.BuildForInstance(instance)
+
+	for _, item := range items {
+		if !item.isLet {
+			continue
+		}
+		result := evaluator.Eval(item.expression, bindings)
+		if result.IsError() {
+			violations = append(violations, NewClassInvariantViolation(
+				instance.ClassKey, instance.ID, item.originalIndex, item.spec,
+				fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
+			))
+			continue
+		}
+		bindings.Set(item.target, result.Value, evaluator.NamespaceLocal)
+	}
+
+	for _, item := range items {
+		if item.isLet {
+			continue
+		}
+		result := evaluator.Eval(item.expression, bindings)
+		if result.Error != nil {
+			violations = append(violations, NewClassInvariantViolation(
+				instance.ClassKey, instance.ID, item.originalIndex, item.spec,
+				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
+			))
+			continue
+		}
+		if !isTrueBoolean(result.Value) {
+			var message string
+			if result.Value == nil {
+				message = _EXPRESSION_RETURNED_NIL
+			} else {
+				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
+			}
+			violations = append(violations, NewClassInvariantViolation(
+				instance.ClassKey, instance.ID, item.originalIndex, item.spec, message,
 			))
 		}
 	}
@@ -301,6 +417,10 @@ func (c *InvariantChecker) CheckAllInvariants(
 	// Check model invariants
 	modelViolations := c.CheckModelInvariants(simState, bindingsBuilder)
 	violations = append(violations, modelViolations...)
+
+	// Check class invariants
+	classViolations := c.CheckClassInvariants(simState, bindingsBuilder)
+	violations = append(violations, classViolations...)
 
 	// Check data type constraints
 	if dataTypeChecker != nil {

@@ -3,6 +3,8 @@ package surface
 import (
 	"fmt"
 	"maps"
+	"sort"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -54,11 +56,19 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 		}
 	}
 
-	// 3. Filter to simulatable: remove classes with no states.
-	for classKey, class := range resolved.Classes {
+	// 3. Reject classes with no state machine — simulation cannot run them.
+	var stateless []string
+	for _, class := range resolved.Classes {
 		if len(class.States) == 0 {
-			delete(resolved.Classes, classKey)
+			stateless = append(stateless, class.Name)
 		}
+	}
+	if len(stateless) > 0 {
+		return nil, fmt.Errorf(
+			"surface includes %d class(es) without a state machine: %s",
+			len(stateless),
+			strings.Join(statelessNamesSorted(stateless), ", "),
+		)
 	}
 
 	// 4. Resolve associations.
@@ -171,4 +181,41 @@ func toKeySet(keys []identity.Key) map[identity.Key]bool {
 		set[k] = true
 	}
 	return set
+}
+
+func statelessNamesSorted(names []string) []string {
+	sorted := append([]string(nil), names...)
+	sort.Strings(sorted)
+	return sorted
+}
+
+// ResolveClassKeysByName finds class keys whose Name or key suffix matches any of the
+// given names (case-insensitive).
+func ResolveClassKeysByName(model *core.Model, names []string) ([]identity.Key, error) {
+	want := make(map[string]bool, len(names))
+	for _, name := range names {
+		want[strings.ToLower(strings.TrimSpace(name))] = true
+	}
+
+	var keys []identity.Key
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for classKey, class := range subdomain.Classes {
+				lowerName := strings.ToLower(class.Name)
+				if want[lowerName] {
+					keys = append(keys, classKey)
+					continue
+				}
+				if want[strings.ToLower(classKey.SubKey)] {
+					keys = append(keys, classKey)
+				}
+			}
+		}
+	}
+
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("no classes matched names: %s", strings.Join(names, ", "))
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+	return keys, nil
 }

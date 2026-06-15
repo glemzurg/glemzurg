@@ -571,6 +571,42 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	s.False(v3.HasViolations(), "Value 50 should pass")
 }
 
+func (s *InvariantsSuite) TestCheckClassInvariants() {
+	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
+	invKey := helper.Must(identity.NewClassInvariantKey(classKey, "0"))
+	classInv := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Name required.", "", orderSpec("self.name # \"\""), nil)
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	nameAttrKey := helper.Must(identity.NewAttributeKey(classKey, "name"))
+	nameAttr := helper.Must(model_class.NewAttribute(nameAttrKey, "name", "", "unconstrained", nil, false, model_class.AttributeAnnotations{}))
+	class.SetAttributes(map[identity.Key]model_class.Attribute{nameAttrKey: nameAttr})
+	class.SetInvariants([]model_logic.Logic{classInv})
+
+	subdomainKey := mustKey("domain/test_domain/subdomain/test_subdomain")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+	domainKey := mustKey("domain/test_domain")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+	s.Require().NoError(convert.LowerModel(&model))
+
+	checker, err := NewInvariantChecker(&model)
+	s.Require().NoError(err)
+
+	simState := state.NewSimulationState()
+	attrs := object.NewRecord()
+	attrs.Set("name", object.NewString(""))
+	simState.CreateInstance(classKey, attrs)
+	bindingsBuilder := state.NewBindingsBuilder(simState)
+
+	violations := checker.CheckClassInvariants(simState, bindingsBuilder)
+	s.True(violations.HasViolations())
+	s.Equal(ViolationTypeClassInvariant, violations[0].Type)
+}
+
 // Test: Primed variables in model-level invariants fail to parse without class context.
 func (s *InvariantsSuite) TestInvariantCheckerRejectsPrimedInvariants() {
 	// Primed unresolved identifier fails to parse (no class context).

@@ -1,6 +1,9 @@
 package state
 
 import (
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -24,6 +27,9 @@ type BindingsBuilder struct {
 
 	// derivedResolver computes derived attribute values on-demand (optional)
 	derivedResolver DerivedAttributeResolver
+
+	// namedSetValues holds pre-evaluated model named sets keyed by nset SubKey.
+	namedSetValues map[string]object.Object
 }
 
 // NewBindingsBuilder creates a new bindings builder for the given simulation state.
@@ -43,11 +49,39 @@ func NewBindingsBuilderWithRelations(state *SimulationState, relationCtx *evalua
 	}
 }
 
+// RegisterNamedSets evaluates and caches model-level named sets for expression lookup.
+func (b *BindingsBuilder) RegisterNamedSets(model *core.Model) error {
+	b.namedSetValues = make(map[string]object.Object)
+	if len(model.NamedSets) == 0 {
+		return nil
+	}
+
+	evalBindings := evaluator.NewBindings()
+	for _, ns := range model.NamedSets {
+		if ns.Spec.Expression == nil {
+			return fmt.Errorf("named set %q has no lowered expression", ns.Name)
+		}
+		result := evaluator.Eval(ns.Spec.Expression, evalBindings)
+		if result.IsError() {
+			return fmt.Errorf("named set %q: %s", ns.Name, result.Error.Inspect())
+		}
+		b.namedSetValues[ns.Key.SubKey] = result.Value
+	}
+	return nil
+}
+
+func (b *BindingsBuilder) applyNamedSets(bindings *evaluator.Bindings) {
+	for name, value := range b.namedSetValues {
+		bindings.Set(name, value, evaluator.NamespaceGlobal)
+	}
+}
+
 // BuildGlobal creates a root bindings context with global state variables.
 // This is suitable for evaluating model-level invariants.
 func (b *BindingsBuilder) BuildGlobal() *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
 	bindings.SetRelationContext(b.buildRelationContext())
+	b.applyNamedSets(bindings)
 	return bindings
 }
 
@@ -67,7 +101,9 @@ func (b *BindingsBuilder) BuildForInstance(instance *ClassInstance) *evaluator.B
 	attrs := b.resolveAttributes(instance)
 
 	// Create a child scope with self set
-	return bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+	child := bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+	b.applyNamedSets(child)
+	return child
 }
 
 // BuildForInstanceWithVariables creates bindings with "self" and additional variables.
@@ -84,6 +120,7 @@ func (b *BindingsBuilder) BuildForInstanceWithVariables(
 		bindings.Set(name, value, evaluator.NamespaceLocal)
 	}
 
+	b.applyNamedSets(bindings)
 	return bindings
 }
 
@@ -111,6 +148,7 @@ func (b *BindingsBuilder) BuildWithClassInstances(classNameMap map[identity.Key]
 		bindings.Set(className, classSet, evaluator.NamespaceGlobal)
 	}
 
+	b.applyNamedSets(bindings)
 	return bindings
 }
 

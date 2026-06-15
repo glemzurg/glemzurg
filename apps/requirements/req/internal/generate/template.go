@@ -457,9 +457,6 @@ func formatDataTypeRules(rules string, dataType *model_data_type.DataType) strin
 }
 
 func dataTypeSpecDisplay(dataType *model_data_type.DataType) string {
-	if model_data_type.IsAtomicUnconstrained(dataType) {
-		return "(unknown)"
-	}
 	if dataType != nil && dataType.TypeSpec != nil && dataType.TypeSpec.Specification != "" {
 		return dataType.TypeSpec.Specification
 	}
@@ -468,9 +465,6 @@ func dataTypeSpecDisplay(dataType *model_data_type.DataType) string {
 
 func parameterDataTypeDisplay(param model_state.Parameter) string {
 	display := formatDataTypeRules(param.DataTypeRules, param.DataType)
-	if model_data_type.IsAtomicUnconstrained(param.DataType) {
-		return display + " (unknown)"
-	}
 	if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
 		display += " (" + param.DataType.TypeSpec.Specification + ")"
 	}

@@ -274,6 +274,13 @@ func (e *ActionExecutor) executeActionInContext(
 	}
 	defer ctx.DecrementDepth()
 
+	if !ctx.ClaimInstanceForAction(instance.ID, action.Key) {
+		return fmt.Errorf(
+			"re-entrant mutation on instance %d in action %s: instance already mutated by another action in the chain",
+			instance.ID, action.Name,
+		)
+	}
+
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
 	if err := e.evaluateActionRequires(action, bindings); err != nil {
@@ -336,10 +343,6 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 	for i, guar := range action.Guarantees {
 		if guar.Type == model_logic.LogicTypeLet {
 			continue
-		}
-		// Check re-entrancy constraint.
-		if !ctx.CanMutate(instance.ID) {
-			return fmt.Errorf("re-entrant mutation on instance %d in action %s: instance already has primed values from another action", instance.ID, action.Name)
 		}
 
 		if guar.Target == "" {
