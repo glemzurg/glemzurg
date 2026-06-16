@@ -43,23 +43,14 @@
             "name": "Approve",
             "details": "Manager approves the order",
             "parameters": [
-                {
-                    "name": "approver_id",
-                    "data_type_rules": "User ID of the approving manager"
-                },
-                {
-                    "name": "notes",
-                    "data_type_rules": "Optional approval notes"
-                }
+                "approver_id",
+                "notes"
             ]
         },
         "reject": {
             "name": "Reject",
             "parameters": [
-                {
-                    "name": "reason",
-                    "data_type_rules": "Rejection reason text"
-                }
+                "reason"
             ]
         }
     },

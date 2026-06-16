@@ -21,7 +21,7 @@ func TestParameterTypeSpecDisplayInMarkdown(t *testing.T) {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "widget"))
 	actionKey := helper.Must(identity.NewActionKey(classKey, "adjust"))
 
-	amountParam, err := model_state.NewParameter(actionKey, "Amount", "unconstrained")
+	amountParam, err := model_state.NewParameter(actionKey, "Amount", "unconstrained", false)
 	require.NoError(t, err)
 	require.NotNil(t, amountParam.DataType)
 
@@ -29,7 +29,7 @@ func TestParameterTypeSpecDisplayInMarkdown(t *testing.T) {
 	require.NoError(t, err)
 	amountParam.DataType.TypeSpec = &typeSpec
 
-	labelParam, err := model_state.NewParameter(actionKey, "Label", "unconstrained")
+	labelParam, err := model_state.NewParameter(actionKey, "Label", "unconstrained", false)
 	require.NoError(t, err)
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Widget"})

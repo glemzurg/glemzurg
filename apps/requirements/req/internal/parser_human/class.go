@@ -508,11 +508,16 @@ func typeSpecFromYamlData(data map[string]any) (*logic_spec.TypeSpec, error) {
 	return &ts, nil
 }
 
-// parameterFromYamlMap constructs a parameter from a YAML mapping under an event, action, or query.
+// parameterFromYamlMap constructs a parameter from a YAML mapping under an action or query.
 func parameterFromYamlMap(parentKey identity.Key, paramMap map[string]any) (model_state.Parameter, error) {
 	paramName, _ := paramMap["name"].(string)
 	paramRules, _ := paramMap["rules"].(string)
-	param, err := model_state.NewParameter(parentKey, paramName, paramRules)
+	nullable := false
+	nullableAny, found := paramMap["nullable"]
+	if found {
+		nullable = nullableAny.(bool)
+	}
+	param, err := model_state.NewParameter(parentKey, paramName, paramRules, nullable)
 	if err != nil {
 		return model_state.Parameter{}, err
 	}
@@ -770,7 +775,7 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 	}
 
 	details := ""
-	var parameters []model_state.Parameter
+	var parameterNames []string
 
 	eventData, ok := eventAny.(map[string]any)
 	if ok {
@@ -779,24 +784,19 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 			details = detailsAny.(string)
 		}
 
-		// Parse event parameters.
+		// Parse event parameter names (ordered string list).
 		parametersAny, found := eventData["parameters"]
 		if found {
 			paramsList, ok := parametersAny.([]any)
 			if !ok {
 				return model_state.Event{}, errors.Errorf("event '%s': parameters must be a sequence", name)
 			}
-			for _, paramAny := range paramsList {
-				paramMap, ok := paramAny.(map[string]any)
+			for i, paramAny := range paramsList {
+				paramName, ok := paramAny.(string)
 				if !ok {
-					return model_state.Event{}, errors.Errorf("event '%s': each parameter must be a mapping", name)
+					return model_state.Event{}, errors.Errorf("event '%s': parameters[%d] must be a string name", name, i)
 				}
-				param, err := parameterFromYamlMap(eventKey, paramMap)
-				if err != nil {
-					paramName, _ := paramMap["name"].(string)
-					return model_state.Event{}, errors.Wrapf(err, "event '%s' parameter '%s'", name, paramName)
-				}
-				parameters = append(parameters, param)
+				parameterNames = append(parameterNames, paramName)
 			}
 		}
 	}
@@ -805,7 +805,7 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 		eventKey,
 		name,
 		details,
-		parameters)
+		parameterNames)
 
 	return event, nil
 }
@@ -1311,7 +1311,7 @@ func generateClassEventsYaml(builder *YamlBuilder, class model_class.Class) {
 		event := class.Events[key]
 		eventBuilder := NewYamlBuilder()
 		eventBuilder.AddField("details", event.Details)
-		generateParameterSequence(eventBuilder, event.Parameters)
+		generateEventParameterNames(eventBuilder, event.ParameterNames)
 		eventsBuilder.AddMappingFieldAlways(event.Name, eventBuilder)
 	}
 	builder.AddMappingField("events", eventsBuilder)
@@ -1428,12 +1428,23 @@ func generateParameterSequence(builder *YamlBuilder, params []model_state.Parame
 		paramBuilder := NewYamlBuilder()
 		paramBuilder.AddField("name", param.Name)
 		paramBuilder.AddField("rules", param.DataTypeRules)
+		if param.Nullable {
+			paramBuilder.AddBoolField("nullable", param.Nullable)
+		}
 		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
 			paramBuilder.AddField("type_spec", param.DataType.TypeSpec.Specification)
 		}
 		items = append(items, paramBuilder)
 	}
 	builder.AddSequenceOfMappings("parameters", items)
+}
+
+// generateEventParameterNames adds an ordered parameter name list for an event.
+func generateEventParameterNames(builder *YamlBuilder, names []string) {
+	if len(names) == 0 {
+		return
+	}
+	builder.AddSequenceField("parameters", names)
 }
 
 // generateLogicSequence adds a logic sequence of mappings to the builder.

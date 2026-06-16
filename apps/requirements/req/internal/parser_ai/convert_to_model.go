@@ -1171,22 +1171,7 @@ func convertSMEventsToModel(sm *inputStateMachine, class *model_class.Class, cla
 			).WithField(fmt.Sprintf("events.%s", eventKeyStr))
 		}
 
-		converted := model_state.Event{
-			Key:        eventKey,
-			Name:       event.Name,
-			Details:    event.Details,
-			Parameters: []model_state.Parameter{},
-		}
-
-		convertedParams, err := convertParametersToModel(event.Parameters, eventKey, smFile)
-		if err != nil {
-			return convErr(
-				ErrConvModelValidation,
-				fmt.Sprintf("failed to convert event '%s' parameters: %s", eventKeyStr, err.Error()),
-				smFile,
-			).WithField(fmt.Sprintf("events.%s.parameters", eventKeyStr))
-		}
-		converted.Parameters = convertedParams
+		converted := model_state.NewEvent(eventKey, event.Name, event.Details, event.Parameters)
 
 		class.Events[converted.Key] = converted
 	}
@@ -1459,7 +1444,7 @@ func convertParametersToModel(params []inputParameter, parentKey identity.Key, s
 	}
 	result := make([]model_state.Parameter, len(params))
 	for i, param := range params {
-		built, err := model_state.NewParameter(parentKey, param.Name, param.DataTypeRules)
+		built, err := model_state.NewParameter(parentKey, param.Name, param.DataTypeRules, param.Nullable)
 		if err != nil {
 			return nil, fmt.Errorf("parameter %d (%s): %w", i, param.Name, err)
 		}

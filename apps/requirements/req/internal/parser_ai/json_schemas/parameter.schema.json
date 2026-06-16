@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "parameter.schema.json",
   "title": "Parameter",
-  "description": "Schema for a parameter object. Parameters represent typed inputs to actions, queries, and events. A parameter must have a name and may optionally include data type rules describing the expected value type. If validation fails, verify 'name' is present and non-empty.",
+  "description": "Schema for a typed action or query parameter object. A parameter must have a name and may optionally include data type rules describing the expected value type. If validation fails, verify 'name' is present and non-empty.",
   "type": "object",
   "properties": {
     "name": {
@@ -17,6 +17,10 @@
     "type_spec": {
       "type": "string",
       "description": "Optional type specification for the parameter's data type in TLA+ notation. Provides a precise formal type for the parameter (e.g., 'Nat', 'STRING', 'Int'). Only meaningful when data_type_rules can be parsed into a data type."
+    },
+    "nullable": {
+      "type": "boolean",
+      "description": "Whether absent (NULL) is a valid value for this parameter. Defaults to false when omitted."
     }
   },
   "required": ["name"],

@@ -69,26 +69,11 @@
           },
           "parameters": {
             "type": "array",
-            "description": "Parameters passed with the event when it is raised. These provide data that guards and actions can use during transition processing.",
+            "description": "Ordered parameter names carried by the event payload. Names may be a superset of any action or query parameters bound on a transition.",
             "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "The name of the parameter (e.g., 'amount', 'reason', 'user_id'). This is used to reference the parameter in guards and actions. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
-                  "minLength": 1
-                },
-                "data_type_rules": {
-                  "type": "string",
-                  "description": "Data type rules for the parameter value."
-                },
-                "type_spec": {
-                  "type": "string",
-                  "description": "Optional TLA+ type specification for the parameter (e.g., 'Nat', 'STRING')."
-                }
-              },
-              "required": ["name"],
-              "additionalProperties": false
+              "type": "string",
+              "description": "A parameter name (e.g., 'amount', 'reason', 'user_id'). Must be non-empty.",
+              "minLength": 1
             }
           }
         },

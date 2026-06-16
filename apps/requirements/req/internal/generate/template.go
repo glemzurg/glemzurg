@@ -177,10 +177,7 @@ var _funcMap = template.FuncMap{
 		event := eventLookup[transition.EventKey.String()]
 
 		// Create a signature for the event.
-		var paramNames []string
-		for _, param := range event.Parameters {
-			paramNames = append(paramNames, param.Name)
-		}
+		paramNames := event.ParameterNames
 		signature := strings.Join(paramNames, ", ")
 
 		// The main call.

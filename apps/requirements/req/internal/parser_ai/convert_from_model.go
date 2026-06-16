@@ -519,16 +519,7 @@ func convertEventFromModel(event *model_state.Event) *inputEvent {
 	result := &inputEvent{
 		Name:       event.Name,
 		Details:    event.Details,
-		Parameters: []inputParameter{},
-	}
-
-	// Convert event parameters
-	for _, param := range event.Parameters {
-		converted := inputParameter{
-			Name:          param.Name,
-			DataTypeRules: param.DataTypeRules,
-		}
-		result.Parameters = append(result.Parameters, converted)
+		Parameters: event.ParameterNames,
 	}
 
 	return result
@@ -652,6 +643,7 @@ func convertParametersFromModel(params []model_state.Parameter) []inputParameter
 		ip := inputParameter{
 			Name:          param.Name,
 			DataTypeRules: param.DataTypeRules,
+			Nullable:      param.Nullable,
 		}
 		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
 			ip.TypeSpec = param.DataType.TypeSpec.Specification

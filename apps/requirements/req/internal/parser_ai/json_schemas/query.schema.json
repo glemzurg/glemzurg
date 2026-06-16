@@ -33,6 +33,10 @@
           "type_spec": {
             "type": "string",
             "description": "Optional TLA+ type specification for the parameter (e.g., 'Nat', 'STRING')."
+          },
+          "nullable": {
+            "type": "boolean",
+            "description": "Whether absent (NULL) is a valid value for this parameter. Defaults to false when omitted."
           }
         },
         "required": ["name"],

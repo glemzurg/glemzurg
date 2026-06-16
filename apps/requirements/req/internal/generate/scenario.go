@@ -209,13 +209,13 @@ func buildEventText(ctx stepContext, stmt model_scenario.Step) string {
 		event, found := ctx.eventLookup[stmt.EventKey.String()]
 		if found {
 			textBuilder.WriteString(event.Name)
-			if len(event.Parameters) > 0 {
+			if len(event.ParameterNames) > 0 {
 				textBuilder.WriteString("(")
-				for i, param := range event.Parameters {
+				for i, name := range event.ParameterNames {
 					if i > 0 {
 						textBuilder.WriteString(", ")
 					}
-					textBuilder.WriteString(param.Name)
+					textBuilder.WriteString(name)
 				}
 				textBuilder.WriteString(")")
 			}

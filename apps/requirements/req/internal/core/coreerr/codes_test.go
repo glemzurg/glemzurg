@@ -133,11 +133,11 @@ func allCodeConstants() map[string]Code {
 		"GuardLogicTypeInvalid": GuardLogicTypeInvalid,
 
 		// Event errors.
-		"EventKeyInvalid":       EventKeyInvalid,
-		"EventKeyTypeInvalid":   EventKeyTypeInvalid,
-		"EventNameRequired":     EventNameRequired,
+		"EventKeyInvalid":             EventKeyInvalid,
+		"EventKeyTypeInvalid":         EventKeyTypeInvalid,
+		"EventNameRequired":           EventNameRequired,
 		"EventNameInvalidChars":       EventNameInvalidChars,
-		"EventParameterNameRequired":    EventParameterNameRequired,
+		"EventParameterNameRequired":  EventParameterNameRequired,
 		"EventParameterNameDuplicate": EventParameterNameDuplicate,
 
 		// Query errors.

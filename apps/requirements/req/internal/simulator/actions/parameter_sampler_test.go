@@ -68,8 +68,8 @@ func (s *ParameterSamplerSuite) jurisdictionParams() []model_state.Parameter {
 	classKey := mustKey("domain/finance/wallet/class/jurisdiction")
 	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
 	return []model_state.Parameter{
-		helper.Must(model_state.NewParameter(actionKey, "CountryCode", "ref of ISO 3166-1 two-letter codes")),
-		helper.Must(model_state.NewParameter(actionKey, "StateCode", "ref of ISO 3166-2 subdivision codes")),
+		helper.Must(model_state.NewParameter(actionKey, "CountryCode", "ref of ISO 3166-1 two-letter codes", false)),
+		helper.Must(model_state.NewParameter(actionKey, "StateCode", "ref of ISO 3166-2 subdivision codes", false)),
 	}
 }
 
@@ -181,7 +181,7 @@ func (s *ParameterSamplerSuite) TestSampleEnumConstraint() {
 	)
 	action := model_state.NewAction(actionKey, "Add", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
 	params := []model_state.Parameter{
-		helper.Must(model_state.NewParameter(actionKey, "SocialOnly", "enum of TRUE, FALSE")),
+		helper.Must(model_state.NewParameter(actionKey, "SocialOnly", "enum of TRUE, FALSE", false)),
 	}
 
 	binder := NewParameterBinder()
@@ -199,7 +199,7 @@ func (s *ParameterSamplerSuite) TestSampleFallsBackWithoutRequires() {
 	classKey := mustKey("domain/finance/wallet/class/jurisdiction")
 	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
 	params := []model_state.Parameter{
-		helper.Must(model_state.NewParameter(actionKey, "Name", "unconstrained")),
+		helper.Must(model_state.NewParameter(actionKey, "Name", "unconstrained", false)),
 	}
 
 	binder := NewParameterBinder()
@@ -237,7 +237,7 @@ func (s *ParameterSamplerSuite) TestBareParameterReferenceRequireIsSupported() {
 		nil,
 		nil,
 		[]model_state.Parameter{
-			helper.Must(model_state.NewParameter(actionKey, "Name", "display name")),
+			helper.Must(model_state.NewParameter(actionKey, "Name", "display name", false)),
 		},
 	)
 
@@ -265,7 +265,7 @@ func (s *ParameterSamplerSuite) TestUnsupportedCompareRequireReturnsSpecificErro
 		nil,
 		nil,
 		[]model_state.Parameter{
-			helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount")),
+			helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
 		},
 	)
 
@@ -300,11 +300,11 @@ func (s *ParameterSamplerSuite) TestSampleFromRequiresReturnsUnsupportedError() 
 		nil,
 		nil,
 		[]model_state.Parameter{
-			helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount")),
+			helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
 		},
 	)
 	params := []model_state.Parameter{
-		helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount")),
+		helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
 	}
 
 	binder := NewParameterBinder()

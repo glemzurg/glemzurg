@@ -174,8 +174,9 @@ func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string
 	}
 
 	action, found := e.catalog.GetActionForEvent(pending.Class.ClassKey, pending.Event.Key, instanceState)
+	paramDefs := eventSamplingParameterDefs(action)
 	if found && action != nil && len(action.Requires) > 0 {
-		params, err := e.paramGen.Sampler.SampleFromRequires(pending.Event.Parameters, action, e.rng)
+		params, err := e.paramGen.Sampler.SampleFromRequires(paramDefs, action, e.rng)
 		if err != nil {
 			var unsupported *actions.UnsupportedRequiresSamplingError
 			if errors.As(err, &unsupported) {
@@ -185,7 +186,7 @@ func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string
 		}
 		return params, nil
 	}
-	return e.paramGen.Binder.GenerateRandomParameters(pending.Event.Parameters, e.rng), nil
+	return e.paramGen.Binder.GenerateRandomParameters(paramDefs, e.rng), nil
 }
 
 // executeExitActions runs exit state actions for a non-creation transition.

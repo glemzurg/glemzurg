@@ -8,11 +8,12 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
-// inputParameter represents a typed parameter in JSON.
+// inputParameter represents a typed action or query parameter in JSON.
 type inputParameter struct {
 	Name          string `json:"name"`
 	DataTypeRules string `json:"data_type_rules,omitempty"`
 	TypeSpec      string `json:"type_spec,omitempty"`
+	Nullable      bool   `json:"nullable,omitempty"`
 }
 
 // parameterSchema is the compiled JSON schema for parameter objects.

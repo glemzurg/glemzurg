@@ -20,7 +20,5 @@ events:
     Trigger:
         details: Appears in data dictionary.
         parameters:
-            - name: Thing
-              rules: string that is 3-28 chars long
-            - name: Another
-              rules: unconstrained
+            - Thing
+            - Another

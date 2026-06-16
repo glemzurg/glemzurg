@@ -117,8 +117,8 @@ The events for this class.
 
 {{ range .Class.Events -}}
 
-- **{{ .Name }}.** {{ .Details }}{{ if ne .Parameters nil }} Parameters:
-{{ range .Parameters }}   - *{{ .Name }}.* {{ parameter_data_type_display . }}
+- **{{ .Name }}.** {{ .Details }}{{ if ne .ParameterNames nil }} Parameters:
+{{ range .ParameterNames }}   - *{{ . }}.*
 {{ end }}{{- end }}
 {{ end }}
 

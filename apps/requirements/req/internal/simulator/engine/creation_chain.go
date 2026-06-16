@@ -83,7 +83,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 
 		// Create MinTo instances of the target class.
 		for range assocInfo.MinTo {
-			params := h.paramBinder.GenerateRandomParameters(creationEvent.Parameters, h.rng)
+			params := h.paramBinder.GenerateRandomParameters(nil, h.rng)
 
 			assocKey := assocInfo.Association.Key
 			result, err := h.actionExecutor.ExecuteTransition(
