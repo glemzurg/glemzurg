@@ -138,44 +138,47 @@
 <!-- public.class -->
 <g id="node4" class="node">
 <title>public.class</title>
-<polygon fill="#efefef" stroke="none" points="907.12,-335.8 907.12,-371.4 1130.09,-371.4 1130.09,-335.8 907.12,-335.8"/>
-<polygon fill="none" stroke="black" points="907.12,-335.8 907.12,-371.4 1130.09,-371.4 1130.09,-335.8 907.12,-335.8"/>
-<text text-anchor="start" x="914.12" y="-349.2" font-family="Arial Bold" font-size="18.00">public.class</text>
-<text text-anchor="start" x="998.6" y="-349.2" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="1029.72" y="-349.2" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="907.12,-305 907.12,-335.8 1130.09,-335.8 1130.09,-305 907.12,-305"/>
-<text text-anchor="start" x="914.12" y="-317.2" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="985.71" y="-317.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="907.12,-274.2 907.12,-305 1130.09,-305 1130.09,-274.2 907.12,-274.2"/>
-<text text-anchor="start" x="914.12" y="-286.4" font-family="Arial" font-size="14.00">class_key </text>
-<text text-anchor="start" x="979.48" y="-286.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="907.12,-243.4 907.12,-274.2 1130.09,-274.2 1130.09,-243.4 907.12,-243.4"/>
-<text text-anchor="start" x="914.12" y="-255.6" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="953.03" y="-255.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="907.12,-212.6 907.12,-243.4 1130.09,-243.4 1130.09,-212.6 907.12,-212.6"/>
-<text text-anchor="start" x="914.12" y="-224.8" font-family="Arial" font-size="14.00">subdomain_key </text>
-<text text-anchor="start" x="1016.07" y="-224.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="907.12,-181.8 907.12,-212.6 1130.09,-212.6 1130.09,-181.8 907.12,-181.8"/>
-<text text-anchor="start" x="914.12" y="-194" font-family="Arial" font-size="14.00">actor_key </text>
-<text text-anchor="start" x="978.7" y="-194" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="907.12,-151 907.12,-181.8 1130.09,-181.8 1130.09,-151 907.12,-151"/>
-<text text-anchor="start" x="914.12" y="-163.2" font-family="Arial" font-size="14.00">superclass_of_key </text>
-<text text-anchor="start" x="1033.96" y="-163.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="907.12,-120.2 907.12,-151 1130.09,-151 1130.09,-120.2 907.12,-120.2"/>
-<text text-anchor="start" x="914.12" y="-132.4" font-family="Arial" font-size="14.00">subclass_of_key </text>
-<text text-anchor="start" x="1021.51" y="-132.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="907.12,-89.4 907.12,-120.2 1130.09,-120.2 1130.09,-89.4 907.12,-89.4"/>
-<text text-anchor="start" x="914.12" y="-101.6" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="958.48" y="-101.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="907.12,-58.6 907.12,-89.4 1130.09,-89.4 1130.09,-58.6 907.12,-58.6"/>
-<text text-anchor="start" x="914.12" y="-70.8" font-family="Arial" font-size="14.00">uml_comment </text>
-<text text-anchor="start" x="1005.92" y="-70.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="907.12,-351.2 907.12,-386.8 1130.09,-386.8 1130.09,-351.2 907.12,-351.2"/>
+<polygon fill="none" stroke="black" points="907.12,-351.2 907.12,-386.8 1130.09,-386.8 1130.09,-351.2 907.12,-351.2"/>
+<text text-anchor="start" x="914.12" y="-364.6" font-family="Arial Bold" font-size="18.00">public.class</text>
+<text text-anchor="start" x="998.6" y="-364.6" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="1029.72" y="-364.6" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="907.12,-320.4 907.12,-351.2 1130.09,-351.2 1130.09,-320.4 907.12,-320.4"/>
+<text text-anchor="start" x="914.12" y="-332.6" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="985.71" y="-332.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-289.6 907.12,-320.4 1130.09,-320.4 1130.09,-289.6 907.12,-289.6"/>
+<text text-anchor="start" x="914.12" y="-301.8" font-family="Arial" font-size="14.00">class_key </text>
+<text text-anchor="start" x="979.48" y="-301.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-258.8 907.12,-289.6 1130.09,-289.6 1130.09,-258.8 907.12,-258.8"/>
+<text text-anchor="start" x="914.12" y="-271" font-family="Arial" font-size="14.00">name </text>
+<text text-anchor="start" x="953.03" y="-271" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-228 907.12,-258.8 1130.09,-258.8 1130.09,-228 907.12,-228"/>
+<text text-anchor="start" x="914.12" y="-240.2" font-family="Arial" font-size="14.00">subdomain_key </text>
+<text text-anchor="start" x="1016.07" y="-240.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-197.2 907.12,-228 1130.09,-228 1130.09,-197.2 907.12,-197.2"/>
+<text text-anchor="start" x="914.12" y="-209.4" font-family="Arial" font-size="14.00">actor_key </text>
+<text text-anchor="start" x="978.7" y="-209.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-166.4 907.12,-197.2 1130.09,-197.2 1130.09,-166.4 907.12,-166.4"/>
+<text text-anchor="start" x="914.12" y="-178.6" font-family="Arial" font-size="14.00">superclass_of_key </text>
+<text text-anchor="start" x="1033.96" y="-178.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-135.6 907.12,-166.4 1130.09,-166.4 1130.09,-135.6 907.12,-135.6"/>
+<text text-anchor="start" x="914.12" y="-147.8" font-family="Arial" font-size="14.00">subclass_of_key </text>
+<text text-anchor="start" x="1021.51" y="-147.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-104.8 907.12,-135.6 1130.09,-135.6 1130.09,-104.8 907.12,-104.8"/>
+<text text-anchor="start" x="914.12" y="-117" font-family="Arial" font-size="14.00">details </text>
+<text text-anchor="start" x="958.48" y="-117" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-74 907.12,-104.8 1130.09,-104.8 1130.09,-74 907.12,-74"/>
+<text text-anchor="start" x="914.12" y="-86.2" font-family="Arial" font-size="14.00">unfinished_notes </text>
+<text text-anchor="start" x="1023.87" y="-86.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="907.12,-43.2 907.12,-74 1130.09,-74 1130.09,-43.2 907.12,-43.2"/>
+<text text-anchor="start" x="914.12" y="-55.4" font-family="Arial" font-size="14.00">uml_comment </text>
+<text text-anchor="start" x="1005.92" y="-55.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.attribute&#45;&gt;public.class -->
 <g id="edge3" class="edge">
 <title>public.attribute:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M808.84,-803.23C901.59,-773.17 799.51,-320.4 906.12,-320.4"/>
-<polygon fill="black" stroke="black" points="808.8,-803.24 798.23,-800.3 803.52,-804.05 799.24,-804.7 799.24,-804.7 799.24,-804.7 803.52,-804.05 799.59,-809.2 808.8,-803.24"/>
+<path fill="none" stroke="black" d="M808.81,-803.19C898.49,-773.29 802.85,-335.8 906.12,-335.8"/>
+<polygon fill="black" stroke="black" points="808.79,-803.2 798.21,-800.3 803.52,-804.02 799.24,-804.7 799.24,-804.7 799.24,-804.7 803.52,-804.02 799.61,-809.19 808.79,-803.2"/>
 <text text-anchor="start" x="805.58" y="-788.8" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.class_index -->

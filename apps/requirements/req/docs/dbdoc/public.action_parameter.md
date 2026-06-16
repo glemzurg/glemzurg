@@ -15,6 +15,7 @@ A parameter of an action.
 | sort_order | integer |  | false |  |  | Parameters are an ordered list. |
 | data_type_rules | text |  | true |  |  | The rules for a well-formed value. |
 | data_type_key | text |  | true |  | [public.data_type](public.data_type.md) | If the rules are parsable, the data type they parse into. |
+| nullable | boolean | false | false |  |  | Whether absent (NULL) is a valid value for this parameter. |
 
 ## Constraints
 
@@ -23,6 +24,7 @@ A parameter of an action.
 | action_parameter_action_key_not_null | n | NOT NULL action_key |
 | action_parameter_model_key_not_null | n | NOT NULL model_key |
 | action_parameter_name_not_null | n | NOT NULL name |
+| action_parameter_nullable_not_null | n | NOT NULL nullable |
 | action_parameter_parameter_key_not_null | n | NOT NULL parameter_key |
 | action_parameter_sort_order_not_null | n | NOT NULL sort_order |
 | fk_action_parameter_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |

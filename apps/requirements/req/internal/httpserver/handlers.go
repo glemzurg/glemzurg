@@ -178,9 +178,6 @@ func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
 	buf.WriteString(`");evtSource.onmessage = () => location.reload();</script>`)
 	buf.WriteString(`<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>`)
 	buf.WriteString(`</head><body>`)
-	if idx, ok := s.store.GetParseIssues(model); ok {
-		buf.WriteString(idx.GlobalPageBanner())
-	}
 	buf.Write(mdHTML)
 	buf.WriteString(`<script>`)
 	buf.WriteString(`document.querySelectorAll('pre code.language-mermaid').forEach(function(el){`)

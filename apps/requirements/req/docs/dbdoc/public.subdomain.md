@@ -13,6 +13,7 @@ A bucket for parts of a model.
 | domain_key | text |  | false |  | [public.domain](public.domain.md) |  |
 | name | text |  | false |  |  | The unique name of the subdomain. |
 | details | text |  | true |  |  | A summary description. |
+| unfinished_notes | text |  | true |  |  | Scratch notes not yet placed in final requirement locations. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 
 ## Constraints

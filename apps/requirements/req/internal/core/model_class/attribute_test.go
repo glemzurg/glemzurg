@@ -256,6 +256,11 @@ func (suite *AttributeSuite) TestNew() {
 			},
 		},
 	}, attrParsed)
+
+	// Duplicate enum values in rules fail at construction, like other datatype validation errors.
+	dupKey := helper.Must(identity.NewAttributeKey(classKey, "attr_dup_enum"))
+	_, err = NewAttribute(dupKey, "Name", "Details", "enum of a, b, a", nil, false, AttributeAnnotations{})
+	suite.Require().ErrorContains(err, `duplicate enum value "a"`)
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

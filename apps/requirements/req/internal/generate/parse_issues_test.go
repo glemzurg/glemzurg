@@ -68,6 +68,9 @@ found:
 	if !strings.Contains(body, "parse-error-spec") {
 		t.Errorf("expected red styling on broken expression, got: %s", body)
 	}
+	if strings.Contains(body, "This Model Has Parse Errors") {
+		t.Errorf("class page should not show model.md hub banner, got: %s", body)
+	}
 
 	var subdomainFile string
 	for _, domain := range model.Domains {
@@ -90,10 +93,103 @@ found:
 	}
 
 	modelBody := string(writer.md["model.md"])
-	if !strings.Contains(modelBody, "Model Parse Errors") {
-		t.Errorf("expected model summary banner, got: %s", modelBody)
+	if !strings.Contains(modelBody, "This Model Has Parse Errors") {
+		t.Errorf("expected parse error hub on model.md, got: %s", modelBody)
+	}
+	if !strings.Contains(modelBody, "\n\n# ") {
+		t.Errorf("expected blank line between parse banner and model title heading, got: %s", modelBody[:min(200, len(modelBody))])
+	}
+	classHref := convertKeyToFilename("class", target.Key.String(), "", ".md")
+	if !strings.Contains(modelBody, `href="`+classHref+`"`) {
+		t.Errorf("expected model.md to link to class %s, got: %s", classHref, modelBody)
 	}
 	if !strings.Contains(modelBody, target.Name) {
-		t.Errorf("expected broken class named in model summary, got: %s", modelBody)
+		t.Errorf("expected model.md to name class %q, got: %s", target.Name, modelBody)
+	}
+	if strings.Contains(modelBody, "class invariant 0:") {
+		t.Errorf("model.md should link to classes, not duplicate class error details, got: %s", modelBody)
+	}
+}
+
+func TestModelSummaryBannerHub(t *testing.T) {
+	model := test_helper.GetTestModel()
+
+	var classKey identity.Key
+	var className string
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for ck, class := range subdomain.Classes {
+				classKey = ck
+				className = class.Name
+				goto found
+			}
+		}
+	}
+found:
+	if classKey.KeyType == "" {
+		t.Skip("test model has no classes")
+	}
+
+	invKey, err := identity.NewClassInvariantKey(classKey, "99")
+	if err != nil {
+		t.Fatalf("NewClassInvariantKey: %v", err)
+	}
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "(((", nil)
+	if err != nil {
+		t.Fatalf("NewExpressionSpec: %v", err)
+	}
+	for dKey, domain := range model.Domains {
+		for sKey, subdomain := range domain.Subdomains {
+			if class, ok := subdomain.Classes[classKey]; ok {
+				class.SetInvariants(append(class.Invariants, model_logic.NewLogic(
+					invKey,
+					model_logic.LogicTypeAssessment,
+					"broken invariant",
+					"",
+					spec,
+					nil,
+				)))
+				subdomain.Classes[classKey] = class
+				domain.Subdomains[sKey] = subdomain
+				model.Domains[dKey] = domain
+			}
+		}
+	}
+
+	classHref := convertKeyToFilename("class", classKey.String(), "", ".md")
+
+	tests := []struct {
+		name       string
+		fileErrors map[string]string
+	}{
+		{name: "class expression error only", fileErrors: nil},
+		{
+			name: "class file error only",
+			fileErrors: map[string]string{
+				classKey.String(): "yaml: line 1: syntax error",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			idx := BuildParseIssueIndex(&model, tc.fileErrors)
+			banner := idx.ModelSummaryBanner(&model)
+			if banner == "" {
+				t.Fatal("expected model.md hub banner")
+			}
+			if !strings.Contains(banner, "This Model Has Parse Errors") {
+				t.Errorf("expected hub heading, got: %s", banner)
+			}
+			if !strings.Contains(banner, `href="`+classHref+`"`) {
+				t.Errorf("expected link to %s, got: %s", classHref, banner)
+			}
+			if !strings.Contains(banner, className) {
+				t.Errorf("expected class name %q in hub, got: %s", className, banner)
+			}
+			if strings.Contains(banner, "yaml: line 1") || strings.Contains(banner, "class invariant 0:") {
+				t.Errorf("hub should not duplicate error details, got: %s", banner)
+			}
+		})
 	}
 }

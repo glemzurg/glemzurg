@@ -78,9 +78,9 @@ func TestUnfinishedNotesMarker(t *testing.T) {
 			want:  "",
 		},
 		{
-			name:  "red parenthesized asterism",
+			name:  "red warning glyph",
 			notes: "note",
-			want:  ` (<span class="unfinished-notes-glyph">` + _unfinishedNotesGlyph + `</span>)`,
+			want:  ` <span class="unfinished-notes-glyph">` + _unfinishedNotesGlyph + `</span>`,
 		},
 	}
 

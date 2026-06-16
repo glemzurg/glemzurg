@@ -92,6 +92,22 @@ func (a Atomic) validateEnums(ctx *coreerr.ValidationContext) error {
 				return err
 			}
 		}
+		seen := make(map[string]bool, len(a.Enums))
+		for i := range a.Enums {
+			value := a.Enums[i].Value
+			if seen[value] {
+				childCtx := ctx.Child("enum", fmt.Sprintf("%d", i))
+				return coreerr.NewWithValues(
+					childCtx,
+					coreerr.DtypeEnumValueDuplicate,
+					fmt.Sprintf("duplicate enum value %q", value),
+					"Enums",
+					value,
+					"",
+				)
+			}
+			seen[value] = true
+		}
 		if a.EnumOrdered == nil {
 			return coreerr.New(ctx, coreerr.DtypeAtomicEnumordRequired, "enumOrdered must not be nil for enumeration types", "EnumOrdered")
 		}

@@ -143,7 +143,8 @@ func generateModelFilesToWriter(reqs *req_flat.Requirements, writer ContentWrite
 	}
 	if activeParseIssues != nil {
 		if banner := activeParseIssues.ModelSummaryBanner(&model); banner != "" {
-			mdContents = banner + mdContents
+			// Blank line required so gomarkdown parses the template's leading # heading.
+			mdContents = banner + "\n\n" + mdContents
 		}
 	}
 	if err := writer.WriteMarkdown("model.md", []byte(mdContents)); err != nil {
@@ -378,7 +379,7 @@ func writeClassMarkdownPage(
 	}
 	if activeParseIssues != nil {
 		if banner := activeParseIssues.ClassExpressionBanner(class.Key); banner != "" {
-			classMdContents = banner + classMdContents
+			classMdContents = banner + "\n\n" + classMdContents
 		}
 	}
 	return writer.WriteMarkdown(classFilename, []byte(classMdContents))

@@ -12,6 +12,7 @@ A bucket for parts of a model.
 | model_key | text |  | false | [public.subdomain](public.subdomain.md) [public.domain_association](public.domain_association.md) | [public.model](public.model.md) | The model this domain is part of. |
 | name | text |  | false |  |  | The unique name of the domain. |
 | details | text |  | true |  |  | A summary description. |
+| unfinished_notes | text |  | true |  |  | Scratch notes not yet placed in final requirement locations. |
 | realized | boolean |  | false |  |  | A realized domain is one with no semantic model, which is preexisting, and just design and later artifacts. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 

@@ -1,10 +1,10 @@
 package generate
 
 import (
-	"fmt"
 	"html"
 	"maps"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -107,43 +107,14 @@ func (idx *ParseIssueIndex) ClassExpressionBanner(classKey identity.Key) string 
 	return parseIssuesBannerHTML("Expression Parse Errors", msgs)
 }
 
-// ModelSummaryBanner returns a model-page summary of every parse issue in scope.
+// ModelSummaryBanner returns an error hub for model.md: a summary message and links
+// to classes with parse issues. Full error details stay on each class page; model-level
+// expression errors are highlighted inline in the sections below.
 func (idx *ParseIssueIndex) ModelSummaryBanner(model *core.Model) string {
 	if idx == nil || !idx.HasIssues() {
 		return ""
 	}
-
-	var lines []string
-	lines = append(lines, idx.ModelErrors...)
-
-	type classLine struct {
-		name string
-		key  string
-	}
-	var classes []classLine
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for classKey, class := range subdomain.Classes {
-				if !idx.ClassHasIssues(classKey) {
-					continue
-				}
-				classes = append(classes, classLine{name: class.Name, key: classKey.String()})
-			}
-		}
-	}
-	sort.Slice(classes, func(i, j int) bool { return classes[i].name < classes[j].name })
-
-	for _, cl := range classes {
-		if msg, ok := idx.FileErrors[cl.key]; ok {
-			lines = append(lines, fmt.Sprintf("class %s: %s", cl.name, msg))
-			continue
-		}
-		for _, msg := range idx.ExprErrors[cl.key] {
-			lines = append(lines, fmt.Sprintf("class %s: %s", cl.name, msg))
-		}
-	}
-
-	return parseIssuesBannerHTML("Model Parse Errors", lines)
+	return modelParseErrorHubHTML(model, idx)
 }
 
 // IssueCount returns the total number of recorded parse and expression errors.
@@ -163,15 +134,67 @@ func (idx *ParseIssueIndex) IssueCount() int {
 	return n
 }
 
-// GlobalPageBanner summarizes issues for injection at the top of every rendered page.
-func (idx *ParseIssueIndex) GlobalPageBanner() string {
-	if idx == nil || !idx.HasIssues() {
-		return ""
+type classIssueLink struct {
+	name string
+	key  string
+}
+
+func classesWithIssues(model *core.Model, idx *ParseIssueIndex) []classIssueLink {
+	var classes []classIssueLink
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for classKey, class := range subdomain.Classes {
+				if !idx.ClassHasIssues(classKey) {
+					continue
+				}
+				classes = append(classes, classIssueLink{name: class.Name, key: classKey.String()})
+			}
+		}
 	}
-	return fmt.Sprintf(
-		`<div class="parse-error-banner"><p style="color:%s;font-weight:bold;">`+
-			`&#9888; This model has parse errors (%d). See <a href="model.md">model.md</a> for details.</p></div>`,
-		errorTextColor, idx.IssueCount())
+	sort.Slice(classes, func(i, j int) bool { return classes[i].name < classes[j].name })
+	return classes
+}
+
+func modelParseErrorHubHTML(model *core.Model, idx *ParseIssueIndex) string {
+	classes := classesWithIssues(model, idx)
+	hasModelLevel := len(idx.ModelErrors) > 0
+
+	var b strings.Builder
+	b.WriteString(`<div class="parse-error-banner"><h2 style="color:`)
+	b.WriteString(errorTextColor)
+	b.WriteString(`;">This Model Has Parse Errors</h2><p style="color:`)
+	b.WriteString(errorTextColor)
+	b.WriteString(`;font-weight:bold;">&#9888; `)
+	b.WriteString(strconv.Itoa(idx.IssueCount()))
+	b.WriteString(` issue`)
+	if idx.IssueCount() != 1 {
+		b.WriteString(`s`)
+	}
+	b.WriteString(` need attention.</p>`)
+
+	if len(classes) > 0 {
+		b.WriteString(`<p style="color:`)
+		b.WriteString(errorTextColor)
+		b.WriteString(`;">Classes with errors:</p><ul>`)
+		for _, cl := range classes {
+			href := convertKeyToFilename("class", cl.key, "", ".md")
+			b.WriteString(`<li><a href="`)
+			b.WriteString(html.EscapeString(href))
+			b.WriteString(`">`)
+			b.WriteString(html.EscapeString(cl.name))
+			b.WriteString(`</a></li>`)
+		}
+		b.WriteString(`</ul>`)
+	}
+
+	if hasModelLevel {
+		b.WriteString(`<p style="color:`)
+		b.WriteString(errorTextColor)
+		b.WriteString(`;">Model-level expression errors are highlighted in the Invariants, Global Functions, and Named Sets sections below.</p>`)
+	}
+
+	b.WriteString(`</div>`)
+	return b.String()
 }
 
 func parseIssuesBannerHTML(heading string, lines []string) string {

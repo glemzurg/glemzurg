@@ -522,7 +522,8 @@ const (
 	// ---------------------------------------------------------------
 	// AtomicEnum errors — atomic enum validation.
 
-	DtypeEnumValueRequired Code = "DTYPE_ENUM_VALUE_REQUIRED" // AtomicEnum Value is empty.
+	DtypeEnumValueRequired  Code = "DTYPE_ENUM_VALUE_REQUIRED"  // AtomicEnum Value is empty.
+	DtypeEnumValueDuplicate Code = "DTYPE_ENUM_VALUE_DUPLICATE" // AtomicEnum Value appears more than once in the same enumeration.
 
 	// ---------------------------------------------------------------
 	// Field errors — record field validation.

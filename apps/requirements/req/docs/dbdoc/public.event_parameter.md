@@ -2,19 +2,17 @@
 
 ## Description
 
-A parameter of an event.
+An ordered parameter name carried by an event payload.
 
 ## Columns
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.data_type](public.data_type.md) [public.event](public.event.md) | The model this event is part of. |
-| event_key | text |  | false |  | [public.event](public.event.md) | The event this parameter is part of. |
+| model_key | text |  | false |  | [public.event](public.event.md) | The model this event is part of. |
+| event_key | text |  | false |  | [public.event](public.event.md) | The event this parameter name is part of. |
 | parameter_key | text |  | false |  |  | The internal ID, the name but lower case. |
 | name | text |  | false |  |  | The unique name of the parameter within the event. |
-| sort_order | integer |  | false |  |  | Parameters are an ordered list. |
-| data_type_rules | text |  | true |  |  | The rules for a well-formed value. |
-| data_type_key | text |  | true |  | [public.data_type](public.data_type.md) | If the rules are parsable, the data type they parse into. |
+| sort_order | integer |  | false |  |  | Parameter names are an ordered list. |
 
 ## Constraints
 
@@ -25,7 +23,6 @@ A parameter of an event.
 | event_parameter_name_not_null | n | NOT NULL name |
 | event_parameter_parameter_key_not_null | n | NOT NULL parameter_key |
 | event_parameter_sort_order_not_null | n | NOT NULL sort_order |
-| fk_event_parameter_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | fk_event_parameter_event | FOREIGN KEY | FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE |
 | event_parameter_pkey | PRIMARY KEY | PRIMARY KEY (model_key, event_key, parameter_key) |
 

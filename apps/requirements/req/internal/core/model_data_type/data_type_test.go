@@ -844,6 +844,13 @@ func TestNewInvalid(t *testing.T) {
 	assert.Nil(t, result)
 }
 
+func TestNewDuplicateEnumValue(t *testing.T) {
+	key := t_dtKey("dup_enum")
+	result, err := New(key, "enum of free_play, purchased, bonus, purchased", nil)
+	require.ErrorContains(t, err, `duplicate enum value "purchased"`)
+	assert.Nil(t, result)
+}
+
 func TestDataTypeString(t *testing.T) {
 	trueValue := true
 	falseValue := false

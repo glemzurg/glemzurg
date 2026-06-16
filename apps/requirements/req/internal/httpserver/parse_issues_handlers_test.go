@@ -47,10 +47,11 @@ func addBrokenInvariantToFirstClass(model *core.Model) model_class.Class {
 	return target
 }
 
-func TestRenderMDShowsParseIssueBanner(t *testing.T) {
+func TestRenderMDShowsParseIssueHubOnModelPageOnly(t *testing.T) {
 	store := NewModelStore()
 	model := test_helper.GetTestModel()
-	if addBrokenInvariantToFirstClass(&model).Key.KeyType == "" {
+	target := addBrokenInvariantToFirstClass(&model)
+	if target.Key.KeyType == "" {
 		t.Skip("test model has no classes")
 	}
 
@@ -59,12 +60,25 @@ func TestRenderMDShowsParseIssueBanner(t *testing.T) {
 	}
 
 	server := NewServer(store)
-	code, body := requestMD(server, "/test_model/model.md")
+
+	code, modelBody := requestMD(server, "/test_model/model.md")
 	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
+		t.Fatalf("expected 200 for model.md, got %d", code)
 	}
-	if !strings.Contains(body, "This model has parse errors") {
-		t.Errorf("expected global parse banner, got: %s", body)
+	if !strings.Contains(modelBody, "This Model Has Parse Errors") {
+		t.Errorf("expected parse error hub on model.md, got: %s", modelBody)
+	}
+	if !strings.Contains(modelBody, "<h1>"+model.Name+"</h1>") {
+		t.Errorf("expected model name as h1 after parse banner, got: %s", modelBody)
+	}
+
+	classFile := "class-" + strings.ReplaceAll(target.Key.String(), "/", ".") + ".md"
+	code, classBody := requestMD(server, "/test_model/"+classFile)
+	if code != http.StatusOK {
+		t.Fatalf("expected 200 for class page, got %d", code)
+	}
+	if strings.Contains(classBody, "This Model Has Parse Errors") {
+		t.Errorf("class page should not show model.md hub banner, got: %s", classBody)
 	}
 }
 

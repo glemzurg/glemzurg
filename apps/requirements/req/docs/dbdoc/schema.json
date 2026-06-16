@@ -23,6 +23,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         }
       ],
       "indexes": [
@@ -642,6 +648,12 @@
           "comment": "A summary description."
         },
         {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
+        },
+        {
           "name": "realized",
           "type": "boolean",
           "nullable": false,
@@ -765,6 +777,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         },
         {
           "name": "uml_comment",
@@ -1039,6 +1057,12 @@
           "comment": "A summary description."
         },
         {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
+        },
+        {
           "name": "uml_comment",
           "type": "text",
           "nullable": true,
@@ -1141,6 +1165,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         },
         {
           "name": "actor_type",
@@ -1993,6 +2023,12 @@
           "comment": "A summary description."
         },
         {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
+        },
+        {
           "name": "uml_comment",
           "type": "text",
           "nullable": true,
@@ -2144,6 +2180,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         },
         {
           "name": "uml_comment",
@@ -3240,6 +3282,13 @@
           "type": "text",
           "nullable": true,
           "comment": "If the rules are parsable, the data type they parse into."
+        },
+        {
+          "name": "nullable",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether absent (NULL) is a valid value for this parameter."
         }
       ],
       "indexes": [
@@ -3273,6 +3322,16 @@
           "referenced_table": "",
           "columns": [
             "name"
+          ]
+        },
+        {
+          "name": "query_parameter_nullable_not_null",
+          "type": "n",
+          "def": "NOT NULL nullable",
+          "table": "public.query_parameter",
+          "referenced_table": "",
+          "columns": [
+            "nullable"
           ]
         },
         {
@@ -3812,7 +3871,7 @@
     {
       "name": "public.event_parameter",
       "type": "BASE TABLE",
-      "comment": "A parameter of an event.",
+      "comment": "An ordered parameter name carried by an event payload.",
       "columns": [
         {
           "name": "model_key",
@@ -3824,7 +3883,7 @@
           "name": "event_key",
           "type": "text",
           "nullable": false,
-          "comment": "The event this parameter is part of."
+          "comment": "The event this parameter name is part of."
         },
         {
           "name": "parameter_key",
@@ -3842,19 +3901,7 @@
           "name": "sort_order",
           "type": "integer",
           "nullable": false,
-          "comment": "Parameters are an ordered list."
-        },
-        {
-          "name": "data_type_rules",
-          "type": "text",
-          "nullable": true,
-          "comment": "The rules for a well-formed value."
-        },
-        {
-          "name": "data_type_key",
-          "type": "text",
-          "nullable": true,
-          "comment": "If the rules are parsable, the data type they parse into."
+          "comment": "Parameter names are an ordered list."
         }
       ],
       "indexes": [
@@ -3918,21 +3965,6 @@
           "referenced_table": "",
           "columns": [
             "sort_order"
-          ]
-        },
-        {
-          "name": "fk_event_parameter_data_type",
-          "type": "FOREIGN KEY",
-          "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
-          "table": "public.event_parameter",
-          "referenced_table": "data_type",
-          "columns": [
-            "model_key",
-            "data_type_key"
-          ],
-          "referenced_columns": [
-            "model_key",
-            "data_type_key"
           ]
         },
         {
@@ -4251,6 +4283,13 @@
           "type": "text",
           "nullable": true,
           "comment": "If the rules are parsable, the data type they parse into."
+        },
+        {
+          "name": "nullable",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether absent (NULL) is a valid value for this parameter."
         }
       ],
       "indexes": [
@@ -4294,6 +4333,16 @@
           "referenced_table": "",
           "columns": [
             "name"
+          ]
+        },
+        {
+          "name": "action_parameter_nullable_not_null",
+          "type": "n",
+          "def": "NOT NULL nullable",
+          "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "nullable"
           ]
         },
         {
@@ -5081,6 +5130,12 @@
           "comment": "A summary description."
         },
         {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
+        },
+        {
           "name": "uml_comment",
           "type": "text",
           "nullable": true,
@@ -5208,6 +5263,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         },
         {
           "name": "level",
@@ -6969,21 +7030,6 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
-    },
-    {
-      "table": "public.event_parameter",
-      "columns": [
-        "model_key",
-        "data_type_key"
-      ],
-      "cardinality": "zero_or_more",
-      "parent_table": "public.data_type",
-      "parent_columns": [
-        "model_key",
-        "data_type_key"
-      ],
-      "parent_cardinality": "exactly_one",
-      "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
     },
     {
       "table": "public.event_parameter",

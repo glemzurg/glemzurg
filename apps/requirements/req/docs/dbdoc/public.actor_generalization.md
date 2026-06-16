@@ -14,6 +14,7 @@ A relationship between actors indicating super classes and subclasses.
 | is_complete | boolean |  | true |  |  | Are the specializations complete, or can an instantiation of this generalization exist without a specialization. |
 | is_static | boolean |  | true |  |  | Are the specializations static and unchanging or can they change during runtime. |
 | details | text |  | true |  |  | A summary description. |
+| unfinished_notes | text |  | true |  |  | Scratch notes not yet placed in final requirement locations. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 
 ## Constraints

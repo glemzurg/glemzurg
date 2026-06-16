@@ -16,6 +16,7 @@ A set of objects that share the same semantics.
 | superclass_of_key | text |  | true |  | [public.class_generalization](public.class_generalization.md) | The generalization this class is a superclass of, if it is one. |
 | subclass_of_key | text |  | true |  | [public.class_generalization](public.class_generalization.md) | The generalization this class is a subclass of, if it is one. |
 | details | text |  | true |  |  | A summary description. |
+| unfinished_notes | text |  | true |  |  | Scratch notes not yet placed in final requirement locations. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 
 ## Constraints

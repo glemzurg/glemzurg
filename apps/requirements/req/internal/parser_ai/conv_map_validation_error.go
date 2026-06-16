@@ -488,6 +488,7 @@ var coreToParserCode = map[coreerr.Code]int{
 	coreerr.DtypeSpanPrecisionInvalid:         ErrConvLogicSpecInvalid,
 	coreerr.DtypeSpanPrecisionNotPow10:        ErrConvLogicSpecInvalid,
 	coreerr.DtypeEnumValueRequired:            ErrConvLogicSpecInvalid,
+	coreerr.DtypeEnumValueDuplicate:           ErrConvLogicSpecInvalid,
 	coreerr.DtypeFieldNameRequired:            ErrConvLogicSpecInvalid,
 	coreerr.DtypeFieldDatatypeRequired:        ErrConvLogicSpecInvalid,
 	coreerr.DtypeFieldNameInvalid:             ErrConvLogicSpecInvalid,
