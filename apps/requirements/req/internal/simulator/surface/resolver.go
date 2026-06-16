@@ -57,19 +57,13 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 		}
 	}
 
-	// 3. Reject classes with no state machine — simulation cannot run them.
-	var stateless []string
-	for _, class := range resolved.Classes {
+	// 3. Drop classes with no state machine — simulation cannot run them.
+	for classKey, class := range resolved.Classes {
 		if len(class.States) == 0 {
-			stateless = append(stateless, class.Name)
+			delete(resolved.Classes, classKey)
+			resolved.Warnings = append(resolved.Warnings,
+				fmt.Sprintf("class %s excluded: no state machine", class.Name))
 		}
-	}
-	if len(stateless) > 0 {
-		return nil, fmt.Errorf(
-			"surface includes %d class(es) without a state machine: %s",
-			len(stateless),
-			strings.Join(statelessNamesSorted(stateless), ", "),
-		)
 	}
 
 	// 4. Resolve associations.
@@ -184,17 +178,122 @@ func toKeySet(keys []identity.Key) map[identity.Key]bool {
 	return set
 }
 
-func statelessNamesSorted(names []string) []string {
-	sorted := append([]string(nil), names...)
-	sort.Strings(sorted)
-	return sorted
-}
-
 // classSpecifier scopes a class lookup. Unqualified specifiers match any subdomain.
 type classSpecifier struct {
 	domainSubKey    string
 	subdomainSubKey string
 	classToken      string
+}
+
+// subdomainPathSpecifier scopes a subdomain lookup by domain/subdomain subkeys.
+type subdomainPathSpecifier struct {
+	domainSubKey    string
+	subdomainSubKey string
+}
+
+// ResolveSubdomainKeysByPath resolves include-subdomain entries to subdomain keys.
+//
+// Each entry may be:
+//   - subdomain subkey (e.g. wallet), matching any domain;
+//   - domain/subdomain (e.g. finance/wallet).
+func ResolveSubdomainKeysByPath(model *core.Model, paths []string) ([]identity.Key, error) {
+	seen := make(map[string]bool)
+	var keys []identity.Key
+
+	for _, path := range paths {
+		spec, err := parseSubdomainPath(path)
+		if err != nil {
+			return nil, err
+		}
+
+		matched, err := resolveSubdomainPath(model, spec)
+		if err != nil {
+			return nil, err
+		}
+		for _, key := range matched {
+			keyStr := key.String()
+			if seen[keyStr] {
+				continue
+			}
+			seen[keyStr] = true
+			keys = append(keys, key)
+		}
+	}
+
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("no subdomains matched paths: %s", strings.Join(paths, ", "))
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+	return keys, nil
+}
+
+func parseSubdomainPath(raw string) (subdomainPathSpecifier, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return subdomainPathSpecifier{}, fmt.Errorf("subdomain path is empty")
+	}
+	if !strings.Contains(raw, "/") {
+		return subdomainPathSpecifier{subdomainSubKey: raw}, nil
+	}
+
+	parts := strings.Split(raw, "/")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+		if parts[i] == "" {
+			return subdomainPathSpecifier{}, fmt.Errorf("invalid subdomain path %q: path segments must be non-empty", raw)
+		}
+	}
+
+	switch len(parts) {
+	case 2:
+		return subdomainPathSpecifier{
+			domainSubKey:    parts[0],
+			subdomainSubKey: parts[1],
+		}, nil
+	default:
+		return subdomainPathSpecifier{}, fmt.Errorf(
+			"invalid subdomain path %q: use subdomain or domain/subdomain",
+			raw,
+		)
+	}
+}
+
+func resolveSubdomainPath(model *core.Model, spec subdomainPathSpecifier) ([]identity.Key, error) {
+	var hits []identity.Key
+	var domainSubKeys []string
+
+	for _, domain := range model.Domains {
+		if spec.domainSubKey != "" && !strings.EqualFold(domain.Key.SubKey, spec.domainSubKey) {
+			continue
+		}
+		for subdomainKey, subdomain := range domain.Subdomains {
+			if !strings.EqualFold(subdomain.Key.SubKey, spec.subdomainSubKey) {
+				continue
+			}
+			hits = append(hits, subdomainKey)
+			if spec.domainSubKey == "" {
+				domainSubKeys = append(domainSubKeys, domain.Key.SubKey)
+			}
+		}
+	}
+
+	if len(hits) == 0 {
+		if spec.domainSubKey != "" {
+			return nil, fmt.Errorf("no subdomain %q in domain %q", spec.subdomainSubKey, spec.domainSubKey)
+		}
+		return nil, fmt.Errorf("no subdomain %q", spec.subdomainSubKey)
+	}
+
+	if spec.domainSubKey == "" && len(hits) > 1 {
+		sort.Strings(domainSubKeys)
+		return nil, fmt.Errorf(
+			"subdomain %q is ambiguous across domains %s; use domain/subdomain",
+			spec.subdomainSubKey,
+			strings.Join(domainSubKeys, ", "),
+		)
+	}
+
+	return hits, nil
 }
 
 // ResolveClassKeysByName resolves include-class entries to class keys.

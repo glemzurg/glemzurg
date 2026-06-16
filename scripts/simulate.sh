@@ -2,23 +2,23 @@
 # Run the exercise simulator against a human-readable model.
 #
 # Example usage:
-#   Default root (data_sandbox/model), jurisdiction class, seed 42:
+#   Default root (data_sandbox/model), finance/wallet subdomain, seed 42:
 #     ./scripts/simulate.sh evenplay 42
 #
-#   Explicit class scope:
-#     ./scripts/simulate.sh evenplay 42 jurisdiction
+#   Explicit subdomain scope:
+#     ./scripts/simulate.sh evenplay 42 finance/wallet
 #
-#   Subdomain-qualified class (avoids matching same-named classes elsewhere):
-#     ./scripts/simulate.sh evenplay 42 wallet/partner
+#   Single class only (use - to skip subdomain filter, pass -include-class):
+#     ./scripts/simulate.sh evenplay 42 - --include-class wallet/partner
 #
 #   Full step trace:
-#     ./scripts/simulate.sh evenplay 42 jurisdiction --trace
+#     ./scripts/simulate.sh evenplay 42 finance/wallet --trace
 #
 #   Keep simulating after the first violation:
-#     ./scripts/simulate.sh evenplay 42 jurisdiction --continue-on-violation
+#     ./scripts/simulate.sh evenplay 42 finance/wallet --continue-on-violation
 #
 #   Custom model root:
-#     ./scripts/simulate.sh data_sandbox/model evenplay 42 jurisdiction
+#     ./scripts/simulate.sh data_sandbox/model evenplay 42 finance/wallet
 #
 #   Examples tree:
 #     ./scripts/simulate.sh /data/examples/requirements/req/models/ web_books 1
@@ -30,15 +30,16 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DEFAULT_ROOTSOURCE="$REPO_ROOT/data_sandbox/model"
 
 usage() {
-    echo "Usage: $0 MODEL SEED [INCLUDE_CLASS] [OPTIONS...]"
-    echo "       $0 ROOTSOURCE MODEL SEED [INCLUDE_CLASS] [OPTIONS...]"
+    echo "Usage: $0 MODEL SEED [INCLUDE_SUBDOMAIN] [OPTIONS...]"
+    echo "       $0 ROOTSOURCE MODEL SEED [INCLUDE_SUBDOMAIN] [OPTIONS...]"
     echo ""
-    echo "  MODEL          Model name under the root source (e.g. evenplay)"
-    echo "  SEED           Random seed for reproducible runs (e.g. 42)"
-    echo "  INCLUDE_CLASS  Comma-separated classes: name, subdomain/class, or domain/subdomain/class (default: jurisdiction)"
-    echo "  ROOTSOURCE     Human model root directory (default: data_sandbox/model)"
+    echo "  MODEL              Model name under the root source (e.g. evenplay)"
+    echo "  SEED               Random seed for reproducible runs (e.g. 42)"
+    echo "  INCLUDE_SUBDOMAIN  Subdomain or domain/subdomain path; use - for class-only scope (default: finance/wallet)"
+    echo "  ROOTSOURCE         Human model root directory (default: data_sandbox/model)"
     echo ""
     echo "Options (passed to simulate):"
+    echo "  --include-class PATH     Narrow scope to specific class(es): name, subdomain/class, or domain/subdomain/class"
     echo "  --trace                  Include full step trace in output"
     echo "  --continue-on-violation  Keep simulating after violations"
     echo "  --max-steps N            Maximum simulation steps (default: 100)"
@@ -82,9 +83,9 @@ if [ -z "$MODEL" ]; then
     exit 1
 fi
 
-INCLUDE_CLASS="jurisdiction"
+INCLUDE_SUBDOMAIN="finance/wallet"
 if [ -n "$1" ] && [[ "$1" != --* ]]; then
-    INCLUDE_CLASS="$1"
+    INCLUDE_SUBDOMAIN="$1"
     shift
 fi
 
@@ -112,9 +113,11 @@ CMD=(
     "$SIMULATE_BIN"
     -rootsource "$ROOTSOURCE"
     -model "$MODEL"
-    -include-class "$INCLUDE_CLASS"
     -seed "$SEED"
 )
+if [ "$INCLUDE_SUBDOMAIN" != "-" ]; then
+    CMD+=(-include-subdomain "$INCLUDE_SUBDOMAIN")
+fi
 if [ ${#EXTRA_FLAGS[@]} -gt 0 ]; then
     CMD+=("${EXTRA_FLAGS[@]}")
 fi

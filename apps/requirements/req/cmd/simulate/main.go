@@ -20,15 +20,16 @@ import (
 )
 
 type cliOptions struct {
-	maxSteps          int
-	seed              int64
-	stopOnViolation   bool
-	output            string
-	showTrace         bool
-	quiet             bool
-	rootSource        string
-	modelName         string
-	includeClassNames []string
+	maxSteps              int
+	seed                  int64
+	stopOnViolation       bool
+	output                string
+	showTrace             bool
+	quiet                 bool
+	rootSource            string
+	modelName             string
+	includeSubdomainPaths []string
+	includeClassNames     []string
 }
 
 func main() {
@@ -53,6 +54,7 @@ func parseCLIOptions() cliOptions {
 	quiet := flag.Bool("quiet", false, "Only output violations")
 	rootSource := flag.String("rootsource", "", "Human model root source directory (e.g. data_sandbox/model)")
 	modelName := flag.String("model", "", "Model name when using -rootsource (e.g. evenplay)")
+	includeSubdomains := flag.String("include-subdomain", "", "Comma-separated subdomains to simulate: subdomain or domain/subdomain")
 	includeClasses := flag.String("include-class", "", "Comma-separated classes to simulate: name, subdomain/class, or domain/subdomain/class")
 	flag.Parse()
 
@@ -62,20 +64,21 @@ func parseCLIOptions() cliOptions {
 	}
 
 	return cliOptions{
-		maxSteps:          *maxSteps,
-		seed:              *seed,
-		stopOnViolation:   stop,
-		output:            *output,
-		showTrace:         *showTrace,
-		quiet:             *quiet,
-		rootSource:        *rootSource,
-		modelName:         *modelName,
-		includeClassNames: parseIncludeClassNames(*includeClasses),
+		maxSteps:              *maxSteps,
+		seed:                  *seed,
+		stopOnViolation:       stop,
+		output:                *output,
+		showTrace:             *showTrace,
+		quiet:                 *quiet,
+		rootSource:            *rootSource,
+		modelName:             *modelName,
+		includeSubdomainPaths: parseCommaSeparatedFlag(*includeSubdomains),
+		includeClassNames:     parseCommaSeparatedFlag(*includeClasses),
 	}
 }
 
 func runSimulation(opts cliOptions) (hasViolations bool, err error) {
-	model, err := loadModel(opts.rootSource, opts.modelName, opts.includeClassNames)
+	model, err := loadModel(opts.rootSource, opts.modelName, opts.includeSubdomainPaths, opts.includeClassNames)
 	if err != nil {
 		return false, fmt.Errorf("loading model: %w", err)
 	}
@@ -85,7 +88,7 @@ func runSimulation(opts cliOptions) (hasViolations bool, err error) {
 		actualSeed = time.Now().UnixNano()
 	}
 
-	surfaceSpec, err := buildSurfaceSpec(model, opts.includeClassNames)
+	surfaceSpec, err := buildSurfaceSpec(model, opts.includeSubdomainPaths, opts.includeClassNames)
 	if err != nil {
 		return false, fmt.Errorf("building surface specification: %w", err)
 	}
@@ -118,7 +121,7 @@ func runSimulation(opts cliOptions) (hasViolations bool, err error) {
 	return violationReport.HasViolations(), nil
 }
 
-func loadModel(rootSource, modelName string, includeClassNames []string) (*core.Model, error) {
+func loadModel(rootSource, modelName string, includeSubdomainPaths, includeClassNames []string) (*core.Model, error) {
 	if rootSource == "" {
 		return nil, fmt.Errorf("-rootsource and -model are required")
 	}
@@ -136,8 +139,8 @@ func loadModel(rootSource, modelName string, includeClassNames []string) (*core.
 	}
 
 	active := &parsed
-	if len(includeClassNames) > 0 {
-		surfaceSpec, specErr := buildSurfaceSpec(active, includeClassNames)
+	if hasSurfaceScope(includeSubdomainPaths, includeClassNames) {
+		surfaceSpec, specErr := buildSurfaceSpec(active, includeSubdomainPaths, includeClassNames)
 		if specErr != nil {
 			return nil, specErr
 		}
@@ -160,30 +163,46 @@ func applySurfaceFilter(model *core.Model, surfaceSpec *surface.SurfaceSpecifica
 	return surface.BuildFilteredModel(model, resolved)
 }
 
-func parseIncludeClassNames(includeClassesFlag string) []string {
-	if strings.TrimSpace(includeClassesFlag) == "" {
+func parseCommaSeparatedFlag(flagValue string) []string {
+	if strings.TrimSpace(flagValue) == "" {
 		return nil
 	}
-	names := strings.Split(includeClassesFlag, ",")
+	values := strings.Split(flagValue, ",")
 	var trimmed []string
-	for _, name := range names {
-		name = strings.TrimSpace(name)
-		if name != "" {
-			trimmed = append(trimmed, name)
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value != "" {
+			trimmed = append(trimmed, value)
 		}
 	}
 	return trimmed
 }
 
-func buildSurfaceSpec(model *core.Model, includeClassNames []string) (*surface.SurfaceSpecification, error) {
-	if len(includeClassNames) == 0 {
+func hasSurfaceScope(includeSubdomainPaths, includeClassNames []string) bool {
+	return len(includeSubdomainPaths) > 0 || len(includeClassNames) > 0
+}
+
+func buildSurfaceSpec(model *core.Model, includeSubdomainPaths, includeClassNames []string) (*surface.SurfaceSpecification, error) {
+	if !hasSurfaceScope(includeSubdomainPaths, includeClassNames) {
 		return &surface.SurfaceSpecification{}, nil
 	}
-	keys, err := surface.ResolveClassKeysByName(model, includeClassNames)
-	if err != nil {
-		return nil, err
+
+	spec := &surface.SurfaceSpecification{}
+	if len(includeSubdomainPaths) > 0 {
+		keys, err := surface.ResolveSubdomainKeysByPath(model, includeSubdomainPaths)
+		if err != nil {
+			return nil, err
+		}
+		spec.IncludeSubdomains = keys
 	}
-	return &surface.SurfaceSpecification{IncludeClasses: keys}, nil
+	if len(includeClassNames) > 0 {
+		keys, err := surface.ResolveClassKeysByName(model, includeClassNames)
+		if err != nil {
+			return nil, err
+		}
+		spec.IncludeClasses = keys
+	}
+	return spec, nil
 }
 
 func outputText(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool, seed int64) {

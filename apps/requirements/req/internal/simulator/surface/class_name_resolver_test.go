@@ -56,6 +56,49 @@ func TestResolveClassKeysByName_AmbiguousSubdomain(t *testing.T) {
 	assert.Contains(t, err.Error(), "ambiguous across domains")
 }
 
+func TestResolveSubdomainKeysByPath_SubdomainSubkey(t *testing.T) {
+	model := buildTwoDomainModel()
+
+	keys, err := ResolveSubdomainKeysByPath(model, []string{"s"})
+	require.NoError(t, err)
+	require.Len(t, keys, 1)
+	assert.Equal(t, subdomainKey, keys[0])
+}
+
+func TestResolveSubdomainKeysByPath_DomainSubdomain(t *testing.T) {
+	model := buildTwoDomainModel()
+
+	keys, err := ResolveSubdomainKeysByPath(model, []string{"d2/s2"})
+	require.NoError(t, err)
+	require.Len(t, keys, 1)
+	assert.Equal(t, subdomain2Key, keys[0])
+}
+
+func TestResolveSubdomainKeysByPath_NotFound(t *testing.T) {
+	model := buildTwoDomainModel()
+
+	_, err := ResolveSubdomainKeysByPath(model, []string{"missing"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `no subdomain "missing"`)
+}
+
+func TestResolveSubdomainKeysByPath_AmbiguousSubdomain(t *testing.T) {
+	model := buildAmbiguousSubdomainModel()
+
+	_, err := ResolveSubdomainKeysByPath(model, []string{"shared"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "ambiguous across domains")
+}
+
+func TestResolveSubdomainKeysByPath_DomainDisambiguatesSubdomain(t *testing.T) {
+	model := buildAmbiguousSubdomainModel()
+
+	keys, err := ResolveSubdomainKeysByPath(model, []string{"d1/shared"})
+	require.NoError(t, err)
+	require.Len(t, keys, 1)
+	assert.Equal(t, ambiguousSubdomain1Key, keys[0])
+}
+
 func TestResolveClassKeysByName_DomainDisambiguatesSubdomain(t *testing.T) {
 	model := buildAmbiguousSubdomainModel()
 
