@@ -2,10 +2,7 @@ package actions
 
 import (
 	"math/rand"
-	"regexp"
-	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -42,7 +39,7 @@ func (s *ParameterSampler) SampleFromRequires(
 	return result
 }
 
-// parameterConstraints captures sampling hints extracted from require specifications.
+// parameterConstraints captures sampling hints extracted from require expression trees.
 type parameterConstraints struct {
 	nullableElseTuple *nullableElseTupleConstraint
 	tupleInSet        *tupleInSetConstraint
@@ -52,82 +49,13 @@ type parameterConstraints struct {
 type nullableElseTupleConstraint struct {
 	conditionParam string
 	thenParam      string
-	paramNames     [2]string
-	setName        string
+	paramNames     []string
+	setSubKey      string
 }
 
 type tupleInSetConstraint struct {
-	paramNames [2]string
-	setName    string
-}
-
-var (
-	// NULL may appear as NULL or {} in lowered specifications.
-	reIfNullThenNullElseTuple = regexp.MustCompile(
-		`(?i)IF\s+(\w+)\s*=\s*(?:NULL|\{\})\s+THEN\s+(\w+)\s*=\s*(?:NULL|\{\})\s+ELSE\s+(?:<<|⟨)\s*(\w+)\s*,\s*(\w+)\s*(?:>>|⟩)\s*(?:\\in|∈)\s+(_\w+)`,
-	)
-	reTupleInNamedSet = regexp.MustCompile(`(?:<<|⟨)\s*(\w+)\s*,\s*(\w+)\s*(?:>>|⟩)\s*(?:\\in|∈)\s+(_\w+)`)
-	reParamInEnum     = regexp.MustCompile(`(\w+)\s*\\in\s*\{([^}]+)\}`)
-)
-
-func extractParameterConstraints(requires []model_logic.Logic) parameterConstraints {
-	constraints := parameterConstraints{
-		enumValues: make(map[string][]string),
-	}
-
-	for _, req := range requires {
-		if req.Type != model_logic.LogicTypeAssessment {
-			continue
-		}
-		spec := strings.TrimSpace(req.Spec.Specification)
-		if spec == "" {
-			continue
-		}
-		applyConstraintPatterns(spec, &constraints)
-	}
-
-	return constraints
-}
-
-func applyConstraintPatterns(spec string, constraints *parameterConstraints) {
-	if constraints.nullableElseTuple == nil {
-		if m := reIfNullThenNullElseTuple.FindStringSubmatch(spec); len(m) == 6 {
-			constraints.nullableElseTuple = &nullableElseTupleConstraint{
-				conditionParam: m[1],
-				thenParam:      m[2],
-				paramNames:     [2]string{m[3], m[4]},
-				setName:        m[5],
-			}
-			return
-		}
-	}
-
-	if constraints.tupleInSet == nil {
-		if m := reTupleInNamedSet.FindStringSubmatch(spec); len(m) == 4 {
-			constraints.tupleInSet = &tupleInSetConstraint{
-				paramNames: [2]string{m[1], m[2]},
-				setName:    m[3],
-			}
-			return
-		}
-	}
-
-	if m := reParamInEnum.FindStringSubmatch(spec); len(m) == 3 {
-		constraints.enumValues[m[1]] = parseEnumLiterals(m[2])
-	}
-}
-
-func parseEnumLiterals(raw string) []string {
-	parts := strings.Split(raw, ",")
-	values := make([]string, 0, len(parts))
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		part = strings.Trim(part, `"`)
-		if part != "" {
-			values = append(values, part)
-		}
-	}
-	return values
+	paramNames []string
+	setSubKey  string
 }
 
 func applyParameterConstraints(
@@ -157,18 +85,18 @@ func applyNullableElseTuple(
 	namedSetValues map[string]object.Object,
 ) {
 	if rng.Intn(5) == 0 {
-		result[constraint.paramNames[0]] = evaluator.EMPTY_SET
-		result[constraint.paramNames[1]] = evaluator.EMPTY_SET
+		for _, paramName := range constraint.paramNames {
+			result[paramName] = evaluator.EMPTY_SET
+		}
 		return
 	}
 
-	tuple, ok := pickRandomTuple(constraint.setName, namedSetValues, rng)
+	tuple, ok := pickRandomTuple(constraint.setSubKey, namedSetValues, rng)
 	if !ok {
 		return
 	}
 
-	result[constraint.paramNames[0]] = normalizeTupleElement(tuple.At(1))
-	result[constraint.paramNames[1]] = normalizeTupleElement(tuple.At(2))
+	assignTupleParams(result, constraint.paramNames, tuple)
 }
 
 func applyTupleInSet(
@@ -177,13 +105,18 @@ func applyTupleInSet(
 	rng *rand.Rand,
 	namedSetValues map[string]object.Object,
 ) {
-	tuple, ok := pickRandomTuple(constraint.setName, namedSetValues, rng)
+	tuple, ok := pickRandomTuple(constraint.setSubKey, namedSetValues, rng)
 	if !ok {
 		return
 	}
 
-	result[constraint.paramNames[0]] = normalizeTupleElement(tuple.At(1))
-	result[constraint.paramNames[1]] = normalizeTupleElement(tuple.At(2))
+	assignTupleParams(result, constraint.paramNames, tuple)
+}
+
+func assignTupleParams(result map[string]object.Object, paramNames []string, tuple *object.Tuple) {
+	for i, paramName := range paramNames {
+		result[paramName] = normalizeTupleElement(tuple.At(i + 1))
+	}
 }
 
 func normalizeTupleElement(value object.Object) object.Object {
@@ -197,15 +130,11 @@ func normalizeTupleElement(value object.Object) object.Object {
 }
 
 func pickRandomTuple(
-	setName string,
+	setSubKey string,
 	namedSetValues map[string]object.Object,
 	rng *rand.Rand,
 ) (*object.Tuple, bool) {
-	setKey := strings.TrimPrefix(setName, "_")
-	setObj, ok := namedSetValues[setKey]
-	if !ok {
-		setObj, ok = namedSetValues[strings.ToLower(setKey)]
-	}
+	setObj, ok := namedSetValues[setSubKey]
 	if !ok {
 		return nil, false
 	}

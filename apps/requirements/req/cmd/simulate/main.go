@@ -14,7 +14,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/loader"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/report"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/trace"
@@ -29,7 +28,6 @@ type cliOptions struct {
 	quiet             bool
 	rootSource        string
 	modelName         string
-	jsonPath          string
 	includeClassNames []string
 }
 
@@ -72,13 +70,12 @@ func parseCLIOptions() cliOptions {
 		quiet:             *quiet,
 		rootSource:        *rootSource,
 		modelName:         *modelName,
-		jsonPath:          flag.Arg(0),
 		includeClassNames: parseIncludeClassNames(*includeClasses),
 	}
 }
 
 func runSimulation(opts cliOptions) (hasViolations bool, err error) {
-	model, err := loadModel(opts.rootSource, opts.modelName, opts.jsonPath, opts.includeClassNames)
+	model, err := loadModel(opts.rootSource, opts.modelName, opts.includeClassNames)
 	if err != nil {
 		return false, fmt.Errorf("loading model: %w", err)
 	}
@@ -121,51 +118,38 @@ func runSimulation(opts cliOptions) (hasViolations bool, err error) {
 	return violationReport.HasViolations(), nil
 }
 
-func loadModel(rootSource, modelName, jsonPath string, includeClassNames []string) (*core.Model, error) {
-	if rootSource != "" {
-		if modelName == "" {
-			return nil, fmt.Errorf("model name is required with -rootsource")
-		}
-		modelPath := filepath.Join(rootSource, modelName)
-		parsed, failures, err := parser_human.Parse(modelPath)
-		if err != nil {
-			return nil, err
-		}
-		if len(failures) > 0 {
-			return nil, fmt.Errorf("model has %d parse failure(s); fix before simulating", len(failures))
-		}
-		active := &parsed
-		if len(includeClassNames) > 0 {
-			surfaceSpec, specErr := buildSurfaceSpec(active, includeClassNames)
-			if specErr != nil {
-				return nil, specErr
-			}
-			active, err = applySurfaceFilter(active, surfaceSpec)
-			if err != nil {
-				return nil, err
-			}
-		}
-		if err := convert.LowerModel(active); err != nil {
-			return nil, err
-		}
-		return active, nil
+func loadModel(rootSource, modelName string, includeClassNames []string) (*core.Model, error) {
+	if rootSource == "" {
+		return nil, fmt.Errorf("-rootsource and -model are required")
+	}
+	if modelName == "" {
+		return nil, fmt.Errorf("model name is required with -rootsource")
 	}
 
-	if jsonPath == "" {
-		return nil, fmt.Errorf("provide <model-path> or -rootsource with -model")
-	}
-	model, err := loader.LoadModel(jsonPath)
+	modelPath := filepath.Join(rootSource, modelName)
+	parsed, failures, err := parser_human.Parse(modelPath)
 	if err != nil {
 		return nil, err
 	}
+	if len(failures) > 0 {
+		return nil, fmt.Errorf("model has %d parse failure(s); fix before simulating", len(failures))
+	}
+
+	active := &parsed
 	if len(includeClassNames) > 0 {
-		surfaceSpec, specErr := buildSurfaceSpec(model, includeClassNames)
+		surfaceSpec, specErr := buildSurfaceSpec(active, includeClassNames)
 		if specErr != nil {
 			return nil, specErr
 		}
-		return applySurfaceFilter(model, surfaceSpec)
+		active, err = applySurfaceFilter(active, surfaceSpec)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return model, nil
+	if err := convert.LowerModel(active); err != nil {
+		return nil, err
+	}
+	return active, nil
 }
 
 func applySurfaceFilter(model *core.Model, surfaceSpec *surface.SurfaceSpecification) (*core.Model, error) {
