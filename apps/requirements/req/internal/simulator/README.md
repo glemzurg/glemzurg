@@ -25,9 +25,10 @@ creation (mandatory associations) runs inside a creation step, not as a top-leve
 
 ## Liveness (coverage)
 
-After the run, liveness checks the **whole surface** — every simulatable class in
-scope, not only classes that happened to receive events. Violations are intentional
-development signals: they show where the subdomain still lacks exercised logic.
+After the run, liveness checks the **whole scoped subdomain** — every class and
+association in the surface, including stateless classes that cannot be simulated.
+Violations are intentional development signals: they show where the subdomain still
+lacks exercised logic. Only simulatable classes participate in the run itself.
 
 | Check | What it means |
 |-------|----------------|

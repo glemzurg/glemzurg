@@ -456,10 +456,7 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 	s.Contains(assocViolations[0].Message, "order_items")
 }
 
-func (s *LivenessCheckerSuite) TestNoSimulatableClasses_NoViolations() {
-	// Empty model with no simulatable classes — the catalog would be empty.
-	// But NewSimulationEngine would fail before reaching liveness.
-	// Test the checker directly with an empty catalog.
+func (s *LivenessCheckerSuite) TestStatelessClass_InstantiationViolation() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
 	statelessClass := model_class.NewClass(statelessKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stateless", Details: "", UnfinishedNotes: "", UmlComment: ""})
@@ -481,7 +478,9 @@ func (s *LivenessCheckerSuite) TestNoSimulatableClasses_NoViolations() {
 	}
 
 	violations := checker.Check(result)
-	s.Empty(violations)
+	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
+	s.Len(classViolations, 1)
+	s.Contains(classViolations[0].Message, "Stateless")
 }
 
 func (s *LivenessCheckerSuite) TestMultipleViolationsCombined() {

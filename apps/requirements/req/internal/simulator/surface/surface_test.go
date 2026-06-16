@@ -389,7 +389,7 @@ func (s *ResolverSuite) TestResolve_ExcludeClass() {
 	s.NotContains(resolved.Classes, itemClassKey)
 }
 
-func (s *ResolverSuite) TestResolve_StatelessClass_ExcludedWithWarning() {
+func (s *ResolverSuite) TestResolve_StatelessClass_IncludedWithWarning() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
@@ -411,10 +411,10 @@ func (s *ResolverSuite) TestResolve_StatelessClass_ExcludedWithWarning() {
 	resolved, err := Resolve(nil, &model)
 	s.Require().NoError(err)
 	s.Contains(resolved.Classes, orderClassKey)
-	s.NotContains(resolved.Classes, statelessKey)
+	s.Contains(resolved.Classes, statelessKey)
 	foundWarning := false
 	for _, w := range resolved.Warnings {
-		if contains(w, "Stateless") {
+		if contains(w, "no state machine") {
 			foundWarning = true
 			break
 		}

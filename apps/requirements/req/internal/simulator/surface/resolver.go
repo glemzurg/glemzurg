@@ -57,23 +57,22 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 		}
 	}
 
-	// 3. Drop classes with no state machine — simulation cannot run them.
-	for classKey, class := range resolved.Classes {
+	// 3. Warn about classes with no state machine; they stay in scope for liveness.
+	for _, class := range resolved.Classes {
 		if len(class.States) == 0 {
-			delete(resolved.Classes, classKey)
 			resolved.Warnings = append(resolved.Warnings,
-				fmt.Sprintf("class %s excluded: no state machine", class.Name))
+				fmt.Sprintf("class %s has no state machine (liveness only; not simulatable)", class.Name))
 		}
 	}
 
-	// 4. Resolve associations.
+	// 4. Resolve associations across the full surface class set.
 	resolveAssociations(model, resolved)
 
 	// 5. Scope invariants.
 	scopeModelInvariants(model, resolved)
 
 	// 6. Validate: at least one simulatable class must remain.
-	if len(resolved.Classes) == 0 {
+	if countSimulatableClasses(resolved.Classes) == 0 {
 		return nil, fmt.Errorf("no simulatable classes remain after surface area filtering")
 	}
 
@@ -176,6 +175,16 @@ func toKeySet(keys []identity.Key) map[identity.Key]bool {
 		set[k] = true
 	}
 	return set
+}
+
+func countSimulatableClasses(classes map[identity.Key]model_class.Class) int {
+	n := 0
+	for _, class := range classes {
+		if len(class.States) > 0 {
+			n++
+		}
+	}
+	return n
 }
 
 // classSpecifier scopes a class lookup. Unqualified specifiers match any subdomain.

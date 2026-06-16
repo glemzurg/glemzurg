@@ -53,7 +53,7 @@ func (s *ClassCatalogSuite) TestCatalogWithMultipleClasses() {
 	s.NotNil(catalog.GetClassInfo(itemKey))
 }
 
-func (s *ClassCatalogSuite) TestClassWithNoStatesExcluded() {
+func (s *ClassCatalogSuite) TestClassWithNoStatesScopedForLiveness() {
 	classKey := mustKey("domain/d/subdomain/s/class/simple")
 
 	simpleClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Simple", Details: "", UnfinishedNotes: "", UmlComment: ""})
@@ -69,7 +69,10 @@ func (s *ClassCatalogSuite) TestClassWithNoStatesExcluded() {
 
 	catalog := NewClassCatalog(model)
 
-	s.Nil(catalog.GetClassInfo(classKey))
+	info := catalog.GetClassInfo(classKey)
+	s.NotNil(info)
+	s.False(info.HasStates)
+	s.Len(catalog.AllScopedClasses(), 1)
 	s.Empty(catalog.AllSimulatableClasses())
 }
 

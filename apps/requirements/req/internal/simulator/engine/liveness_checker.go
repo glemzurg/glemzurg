@@ -35,14 +35,14 @@ func (lc *LivenessChecker) Check(result *SimulationResult) invariants.ViolationE
 	return violations
 }
 
-// checkClassInstantiation verifies every in-scope simulatable class had at least
-// one instance created during the simulation.
+// checkClassInstantiation verifies every in-scope class had at least one instance
+// created during the simulation.
 func (lc *LivenessChecker) checkClassInstantiation(result *SimulationResult) invariants.ViolationErrors {
 	instantiated := make(map[identity.Key]bool)
 	collectInstantiatedClasses(result.Steps, instantiated)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
 		if !instantiated[classInfo.ClassKey] {
 			violations = append(violations, invariants.NewLivenessClassNotInstantiatedViolation(
 				classInfo.ClassKey,
@@ -73,7 +73,7 @@ func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult)
 	collectWrittenAttributes(result.Steps, written)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
 		classWritten := written[classInfo.ClassKey]
 
 		type attrCoverage struct {
@@ -202,8 +202,11 @@ func (lc *LivenessChecker) checkEventCoverage(result *SimulationResult) invarian
 	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
 		events := sortedClassEvents(classInfo)
+		if len(events) == 0 {
+			continue
+		}
 		for _, event := range events {
 			if !coverage.events[event.Key] {
 				violations = append(violations, invariants.NewLivenessEventNotSentViolation(
@@ -226,8 +229,11 @@ func (lc *LivenessChecker) checkQueryCoverage(result *SimulationResult) invarian
 	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
 		queries := sortedClassQueries(classInfo)
+		if len(queries) == 0 {
+			continue
+		}
 		for _, query := range queries {
 			if !coverage.queries[query.Key] {
 				violations = append(violations, invariants.NewLivenessQueryNotRunViolation(
@@ -250,8 +256,11 @@ func (lc *LivenessChecker) checkActionCoverage(result *SimulationResult) invaria
 	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
 		actions := sortedClassActions(classInfo)
+		if len(actions) == 0 {
+			continue
+		}
 		for _, action := range actions {
 			if !coverage.actions[action.Key] {
 				violations = append(violations, invariants.NewLivenessActionNotExecutedViolation(

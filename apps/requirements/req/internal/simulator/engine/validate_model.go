@@ -12,10 +12,10 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 )
 
-// validateSimulationModel rejects models where any in-scope class lacks a state machine
-// or defines parsed action requires the parameter sampler cannot satisfy.
+// validateSimulationModel rejects models with no simulatable classes and checks
+// parsed action requires the parameter sampler cannot satisfy.
 func validateSimulationModel(model *core.Model) error {
-	if err := validateClassesHaveStates(model); err != nil {
+	if err := validateAtLeastOneSimulatableClass(model); err != nil {
 		return err
 	}
 	if err := validateEventActionParameters(model); err != nil {
@@ -24,25 +24,17 @@ func validateSimulationModel(model *core.Model) error {
 	return validateRequiresSamplingSupport(model)
 }
 
-func validateClassesHaveStates(model *core.Model) error {
-	var missing []string
+func validateAtLeastOneSimulatableClass(model *core.Model) error {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
-				if len(class.States) == 0 {
-					missing = append(missing, class.Name)
+				if len(class.States) > 0 {
+					return nil
 				}
 			}
 		}
 	}
-	if len(missing) == 0 {
-		return nil
-	}
-	sort.Strings(missing)
-	return fmt.Errorf(
-		"simulation requires every class to have a state machine; missing states: %s",
-		strings.Join(missing, ", "),
-	)
+	return fmt.Errorf("simulation requires at least one class with a state machine in scope")
 }
 
 type eventActionBindingKey struct {

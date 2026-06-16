@@ -61,14 +61,11 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 		queryCalledBy:  make(map[identity.Key][]identity.Key),
 	}
 
-	// Walk all classes in the model.
+	// Walk all in-scope classes; stateless classes are liveness-only metadata.
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
-				if len(class.States) == 0 {
-					continue // Skip classes without state machines.
-				}
-				catalog.classes[class.Key] = buildClassInfo(class)
+				catalog.classes[class.Key] = buildScopedClassInfo(class)
 			}
 		}
 	}
@@ -79,7 +76,22 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 	return catalog
 }
 
-// buildClassInfo creates pre-computed simulation metadata for a single class.
+// buildScopedClassInfo creates catalog metadata for any in-scope class.
+// Stateless classes stay in the catalog for liveness even though they cannot simulate.
+func buildScopedClassInfo(class model_class.Class) *ClassInfo {
+	if len(class.States) == 0 {
+		return &ClassInfo{
+			Class:       class,
+			ClassKey:    class.Key,
+			StateEvents: make(map[string][]EventInfo),
+			DoActions:   make(map[string][]model_state.Action),
+			HasEvents:   len(class.Events) > 0,
+		}
+	}
+	return buildClassInfo(class)
+}
+
+// buildClassInfo creates pre-computed simulation metadata for a simulatable class.
 func buildClassInfo(class model_class.Class) *ClassInfo {
 	info := &ClassInfo{
 		Class:       class,
@@ -191,6 +203,12 @@ func buildDoActions(class model_class.Class, s model_state.State) []model_state.
 func (c *ClassCatalog) buildAssociationInfo(model *core.Model) {
 	allAssocs := model.GetClassAssociations()
 	for _, assoc := range allAssocs {
+		if _, fromIn := c.classes[assoc.FromClassKey]; !fromIn {
+			continue
+		}
+		if _, toIn := c.classes[assoc.ToClassKey]; !toIn {
+			continue
+		}
 		ai := AssociationInfo{
 			Association:   assoc,
 			FromClassKey:  assoc.FromClassKey,
@@ -256,11 +274,25 @@ func (c *ClassCatalog) GetClassInfo(classKey identity.Key) *ClassInfo {
 	return c.classes[classKey]
 }
 
-// AllSimulatableClasses returns all classes with state machines, sorted by key.
-func (c *ClassCatalog) AllSimulatableClasses() []*ClassInfo {
+// AllScopedClasses returns every in-scope class (simulatable and stateless), sorted by key.
+func (c *ClassCatalog) AllScopedClasses() []*ClassInfo {
 	result := make([]*ClassInfo, 0, len(c.classes))
 	for _, info := range c.classes {
 		result = append(result, info)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].ClassKey.String() < result[j].ClassKey.String()
+	})
+	return result
+}
+
+// AllSimulatableClasses returns classes with state machines, sorted by key.
+func (c *ClassCatalog) AllSimulatableClasses() []*ClassInfo {
+	result := make([]*ClassInfo, 0, len(c.classes))
+	for _, info := range c.classes {
+		if info.HasStates {
+			result = append(result, info)
+		}
 	}
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].ClassKey.String() < result[j].ClassKey.String()
@@ -390,8 +422,8 @@ func (c *ClassCatalog) ExternalCreationEvents(classKey identity.Key) []model_sta
 }
 
 func (c *ClassCatalog) isMandatoryAssociationCreationTarget(classKey identity.Key) bool {
-	for otherKey := range c.classes {
-		if otherKey == classKey {
+	for otherKey, otherInfo := range c.classes {
+		if otherKey == classKey || !otherInfo.HasStates {
 			continue
 		}
 		for _, ai := range c.classAssocs[otherKey] {
@@ -467,7 +499,7 @@ func (c *ClassCatalog) isQueryExternal(query model_state.Query) bool {
 
 func (c *ClassCatalog) hasSimulatableSender(senders []identity.Key) bool {
 	for _, senderKey := range senders {
-		if _, simulatable := c.classes[senderKey]; simulatable {
+		if info, ok := c.classes[senderKey]; ok && info.HasStates {
 			return true
 		}
 	}
