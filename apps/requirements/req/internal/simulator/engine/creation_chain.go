@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
@@ -83,72 +84,91 @@ func (h *CreationChainHandler) HandleCreationChain(
 
 		// Create MinTo instances of the target class.
 		for range assocInfo.MinTo {
-			params := h.paramBinder.GenerateRandomParameters(nil, h.rng)
-
-			assocKey := assocInfo.Association.Key
-			result, err := h.actionExecutor.ExecuteTransition(
-				toClassInfo.Class,
-				*creationEvent,
-				nil, // nil instance = creation
-				params,
-				&assocKey,
-				&createdInstanceID,
-			)
-			if err != nil {
-				return cascadedSteps, allViolations, fmt.Errorf(
-					"creation chain: failed to create %s via %s: %w",
-					toClassInfo.Class.Name, assocInfo.Association.Name, err,
-				)
-			}
-
-			step := &SimulationStep{
-				Kind:             StepKindCreation,
-				ClassKey:         toClassInfo.ClassKey,
-				ClassName:        toClassInfo.Class.Name,
-				EventKey:         creationEvent.Key,
-				EventName:        creationEvent.Name,
-				InstanceID:       result.InstanceID,
-				ToState:          result.ToState,
-				Parameters:       params,
-				TransitionResult: result,
-				Violations:       result.Violations,
-			}
-
-			// Execute entry actions on the new instance.
-			if !result.WasDeletion && result.ToState != "" {
-				toStateKey := stateNameToKey(result.ToState, toClassInfo.Class)
-				if toStateKey != nil {
-					newInstance := simState.GetInstance(result.InstanceID)
-					if newInstance != nil {
-						entryViolations, err := h.stateActionExec.ExecuteEntryActions(
-							toClassInfo.Class, *toStateKey, newInstance,
-						)
-						if err != nil {
-							return cascadedSteps, allViolations, fmt.Errorf(
-								"creation chain entry actions error: %w", err,
-							)
-						}
-						step.Violations = append(step.Violations, entryViolations...)
-					}
-				}
-			}
-
-			// Recursively handle creation chain for the new instance.
-			childSteps, childViolations, err := h.HandleCreationChain(
-				result.InstanceID, simState, depth+1,
+			step, stepViolations, err := h.createMandatoryInstance(
+				toClassInfo, creationEvent, assocInfo, createdInstanceID, simState, depth,
 			)
 			if err != nil {
 				return cascadedSteps, allViolations, err
 			}
-			step.CascadedSteps = childSteps
-			step.Violations = append(step.Violations, childViolations...)
-
 			cascadedSteps = append(cascadedSteps, step)
-			allViolations = append(allViolations, step.Violations...)
+			allViolations = append(allViolations, stepViolations...)
 		}
 	}
 
 	return cascadedSteps, allViolations, nil
+}
+
+func (h *CreationChainHandler) createMandatoryInstance(
+	toClassInfo *ClassInfo,
+	creationEvent *model_state.Event,
+	assocInfo AssociationInfo,
+	createdInstanceID state.InstanceID,
+	simState *state.SimulationState,
+	depth int,
+) (*SimulationStep, invariants.ViolationErrors, error) {
+	params, err := actions.SampleEventPayload(*creationEvent, nil, h.paramBinder, nil, h.rng)
+	if err != nil {
+		return nil, nil, fmt.Errorf(
+			"creation chain: event %s parameter sampling: %w",
+			creationEvent.Name, err,
+		)
+	}
+
+	assocKey := assocInfo.Association.Key
+	result, err := h.actionExecutor.ExecuteTransition(
+		toClassInfo.Class,
+		*creationEvent,
+		nil, // nil instance = creation
+		params,
+		&assocKey,
+		&createdInstanceID,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf(
+			"creation chain: failed to create %s via %s: %w",
+			toClassInfo.Class.Name, assocInfo.Association.Name, err,
+		)
+	}
+
+	step := &SimulationStep{
+		Kind:             StepKindCreation,
+		ClassKey:         toClassInfo.ClassKey,
+		ClassName:        toClassInfo.Class.Name,
+		EventKey:         creationEvent.Key,
+		EventName:        creationEvent.Name,
+		InstanceID:       result.InstanceID,
+		ToState:          result.ToState,
+		Parameters:       params,
+		TransitionResult: result,
+		Violations:       result.Violations,
+	}
+
+	// Execute entry actions on the new instance.
+	if !result.WasDeletion && result.ToState != "" {
+		toStateKey := stateNameToKey(result.ToState, toClassInfo.Class)
+		if toStateKey != nil {
+			newInstance := simState.GetInstance(result.InstanceID)
+			if newInstance != nil {
+				entryViolations, err := h.stateActionExec.ExecuteEntryActions(
+					toClassInfo.Class, *toStateKey, newInstance,
+				)
+				if err != nil {
+					return nil, nil, fmt.Errorf("creation chain entry actions error: %w", err)
+				}
+				step.Violations = append(step.Violations, entryViolations...)
+			}
+		}
+	}
+
+	// Recursively handle creation chain for the new instance.
+	childSteps, childViolations, err := h.HandleCreationChain(result.InstanceID, simState, depth+1)
+	if err != nil {
+		return nil, nil, err
+	}
+	step.CascadedSteps = childSteps
+	step.Violations = append(step.Violations, childViolations...)
+
+	return step, step.Violations, nil
 }
 
 // stateNameToKey looks up a state name in the class and returns its key.

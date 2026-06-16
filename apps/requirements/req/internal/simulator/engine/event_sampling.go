@@ -1,14 +1,22 @@
 package engine
 
 import (
+	"math/rand"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
-// eventSamplingParameterDefs returns typed parameter defs used for event payload sampling.
-// Full event-name-to-action matching is deferred; bound transitions use action parameters.
-func eventSamplingParameterDefs(action *model_state.Action) []model_state.Parameter {
-	if action != nil && len(action.Parameters) > 0 {
-		return action.Parameters
+// sampleEventPayload generates parameter values for an event, including event-only names.
+func sampleEventPayload(
+	event *model_state.Event,
+	action *model_state.Action,
+	gen *StepParameterGenerator,
+	rng *rand.Rand,
+) (map[string]object.Object, error) {
+	if event == nil {
+		return map[string]object.Object{}, nil
 	}
-	return nil
+	return actions.SampleEventPayload(*event, action, gen.Binder, gen.Sampler, rng)
 }

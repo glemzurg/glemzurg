@@ -32,6 +32,9 @@ func TestParameterTypeSpecDisplayInMarkdown(t *testing.T) {
 	labelParam, err := model_state.NewParameter(actionKey, "Label", "unconstrained", false)
 	require.NoError(t, err)
 
+	optionalParam, err := model_state.NewParameter(actionKey, "Note", "unconstrained", true)
+	require.NoError(t, err)
+
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Widget"})
 	class.SetActions(map[identity.Key]model_state.Action{
 		actionKey: model_state.NewAction(
@@ -41,7 +44,7 @@ func TestParameterTypeSpecDisplayInMarkdown(t *testing.T) {
 			nil,
 			nil,
 			nil,
-			[]model_state.Parameter{amountParam, labelParam},
+			[]model_state.Parameter{amountParam, labelParam, optionalParam},
 		),
 	})
 
@@ -58,6 +61,45 @@ func TestParameterTypeSpecDisplayInMarkdown(t *testing.T) {
 	require.Contains(t, contents, "- *Amount.* __unconstrained__ (STRING)")
 	require.Contains(t, contents, "- *Label.* __unconstrained__")
 	require.NotContains(t, contents, "- *Label.* __unconstrained__ (")
+	require.Contains(t, contents, "- *Note.* __unconstrained__ (nullable)")
+}
+
+func TestNullableQueryParameterDisplayInMarkdown(t *testing.T) {
+	domainKey := helper.Must(identity.NewDomainKey("finance"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "wallet"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "widget"))
+	queryKey := helper.Must(identity.NewQueryKey(classKey, "lookup"))
+
+	requiredParam, err := model_state.NewParameter(queryKey, "Id", "Nat", false)
+	require.NoError(t, err)
+	optionalParam, err := model_state.NewParameter(queryKey, "Format", "unconstrained", true)
+	require.NoError(t, err)
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Widget"})
+	class.SetQueries(map[identity.Key]model_state.Query{
+		queryKey: model_state.NewQuery(
+			queryKey,
+			"Lookup",
+			"Look up a widget",
+			nil,
+			nil,
+			[]model_state.Parameter{requiredParam, optionalParam},
+		),
+	})
+
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	reqs := req_flat.NewRequirements(model)
+	contents, err := generateClassMdContents(reqs, class, "", "")
+	require.NoError(t, err)
+	require.Contains(t, contents, "- *Id.* _(unparsed)_ Nat")
+	require.NotContains(t, contents, "- *Id.* _(unparsed)_ Nat (nullable)")
+	require.Contains(t, contents, "- *Format.* __unconstrained__ (nullable)")
 }
 
 func TestUnconstrainedAttributeTypeSpecDisplayInMarkdown(t *testing.T) {

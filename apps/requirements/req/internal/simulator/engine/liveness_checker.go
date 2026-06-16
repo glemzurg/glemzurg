@@ -73,22 +73,27 @@ func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult)
 	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
 		classWritten := written[classInfo.ClassKey]
 
-		// Collect non-derived attribute names, sorted for deterministic output.
-		var attrNames []string
+		// Collect non-derived attributes, sorted by display name for deterministic output.
+		// Primed assignments record attribute subKeys; compare against Key.SubKey, not Name.
+		type attrCoverage struct {
+			subKey string
+			name   string
+		}
+		var attrs []attrCoverage
 		for _, attr := range classInfo.Class.Attributes {
 			if attr.DerivationPolicy != nil {
 				continue // Derived attributes are computed, not written.
 			}
-			attrNames = append(attrNames, attr.Name)
+			attrs = append(attrs, attrCoverage{subKey: attr.Key.SubKey, name: attr.Name})
 		}
-		sort.Strings(attrNames)
+		sort.Slice(attrs, func(i, j int) bool { return attrs[i].name < attrs[j].name })
 
-		for _, attrName := range attrNames {
-			if classWritten == nil || !classWritten[attrName] {
+		for _, attr := range attrs {
+			if classWritten == nil || !classWritten[attr.subKey] {
 				violations = append(violations, invariants.NewLivenessAttributeNotWrittenViolation(
 					classInfo.ClassKey,
 					classInfo.Class.Name,
-					attrName,
+					attr.name,
 				))
 			}
 		}
@@ -115,14 +120,14 @@ func collectWrittenAttributes(steps []*SimulationStep, out map[identity.Key]map[
 	}
 }
 
-// recordPrimedWrites records attribute names from primed assignments for a class.
+// recordPrimedWrites records attribute subKeys from primed assignments for a class.
 func recordPrimedWrites(classKey identity.Key, assignments map[state.InstanceID]map[string]object.Object, out map[identity.Key]map[string]bool) {
 	for _, fields := range assignments {
 		for fieldName := range fields {
 			if out[classKey] == nil {
 				out[classKey] = make(map[string]bool)
 			}
-			out[classKey][fieldName] = true
+			out[classKey][identity.NormalizeSubKey(fieldName)] = true
 		}
 	}
 }

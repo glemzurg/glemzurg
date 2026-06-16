@@ -206,6 +206,41 @@ func (s *LivenessCheckerSuite) TestCascadedCreationStepsCounted() {
 	s.Empty(classViolations)
 }
 
+// livenessJurisdictionClass creates a Jurisdiction-like class whose attribute
+// display names differ from the subKeys recorded in primed assignments.
+func livenessJurisdictionClass() (model_class.Class, identity.Key) {
+	classKey := mustKey("domain/d/subdomain/s/class/jurisdiction")
+	stateActiveKey := mustKey("domain/d/subdomain/s/class/jurisdiction/state/active")
+	eventCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")
+	transCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/transition/create")
+	attrCountryCodeKey := mustKey("domain/d/subdomain/s/class/jurisdiction/attribute/country_code")
+
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
+
+	attrCountryCode := helper.Must(model_class.NewAttribute(attrCountryCodeKey, "Country Code", "", "", nil, false,
+		model_class.AttributeAnnotations{}))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Jurisdiction", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(map[identity.Key]model_class.Attribute{
+		attrCountryCodeKey: attrCountryCode,
+	})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: stateActive,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
+		eventCreateKey: eventCreate,
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transCreateKey: transCreate,
+	})
+	return class, classKey
+}
+
 func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
 	orderClass, orderKey := livenessOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
@@ -215,6 +250,25 @@ func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
 	result := &SimulationResult{
 		Steps: []*SimulationStep{
 			makeStepWithWrite(orderKey, "Order", 1, "amount", object.NewInteger(100)),
+		},
+		FinalState: makeFinalState(),
+	}
+
+	violations := checker.Check(result)
+	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
+	s.Empty(attrViolations)
+}
+
+func (s *LivenessCheckerSuite) TestAttributeWrittenBySubKey_MatchesDisplayName() {
+	jurisdictionClass, jurisdictionKey := livenessJurisdictionClass()
+	model := testModel(classEntry(jurisdictionClass, jurisdictionKey))
+	catalog := NewClassCatalog(model)
+	checker := NewLivenessChecker(catalog)
+
+	// Primed assignments use the attribute subKey, not the display name.
+	result := &SimulationResult{
+		Steps: []*SimulationStep{
+			makeStepWithWrite(jurisdictionKey, "Jurisdiction", 1, "country_code", object.NewString("US")),
 		},
 		FinalState: makeFinalState(),
 	}

@@ -465,6 +465,9 @@ func parameterDataTypeDisplay(param model_state.Parameter) string {
 	if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
 		display += " (" + param.DataType.TypeSpec.Specification + ")"
 	}
+	if param.Nullable {
+		display += " (nullable)"
+	}
 	return display
 }
 

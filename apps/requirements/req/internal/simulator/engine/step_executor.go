@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
@@ -174,19 +175,20 @@ func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string
 	}
 
 	action, found := e.catalog.GetActionForEvent(pending.Class.ClassKey, pending.Event.Key, instanceState)
-	paramDefs := eventSamplingParameterDefs(action)
-	if found && action != nil && len(action.Requires) > 0 {
-		params, err := e.paramGen.Sampler.SampleFromRequires(paramDefs, action, e.rng)
-		if err != nil {
-			var unsupported *actions.UnsupportedRequiresSamplingError
-			if errors.As(err, &unsupported) {
-				unsupported.ClassName = pending.Class.Class.Name
-			}
-			return nil, err
-		}
-		return params, nil
+	var actionPtr *model_state.Action
+	if found && action != nil {
+		actionPtr = action
 	}
-	return e.paramGen.Binder.GenerateRandomParameters(paramDefs, e.rng), nil
+
+	params, err := sampleEventPayload(pending.Event, actionPtr, e.paramGen, e.rng)
+	if err != nil {
+		var unsupported *actions.UnsupportedRequiresSamplingError
+		if errors.As(err, &unsupported) {
+			unsupported.ClassName = pending.Class.Class.Name
+		}
+		return nil, err
+	}
+	return params, nil
 }
 
 // executeExitActions runs exit state actions for a non-creation transition.
