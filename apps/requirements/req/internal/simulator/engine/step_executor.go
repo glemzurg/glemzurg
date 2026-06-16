@@ -7,8 +7,20 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
+
+// StepParameterGenerator supplies surface and nested event parameter values.
+type StepParameterGenerator struct {
+	Binder  *actions.ParameterBinder
+	Sampler *actions.ParameterSampler
+}
+
+// NewStepParameterGenerator wires type-only and requires-aware parameter generation.
+func NewStepParameterGenerator(binder *actions.ParameterBinder, sampler *actions.ParameterSampler) *StepParameterGenerator {
+	return &StepParameterGenerator{Binder: binder, Sampler: sampler}
+}
 
 // StepExecutor executes a single simulation step end-to-end.
 type StepExecutor struct {
@@ -16,7 +28,7 @@ type StepExecutor struct {
 	stateActionExec *StateActionExecutor
 	chainHandler    *CreationChainHandler
 	multChecker     *MultiplicityChecker
-	paramBinder     *actions.ParameterBinder
+	paramGen        *StepParameterGenerator
 	catalog         *ClassCatalog
 	rng             *rand.Rand
 }
@@ -27,7 +39,7 @@ func NewStepExecutor(
 	stateActionExec *StateActionExecutor,
 	chainHandler *CreationChainHandler,
 	multChecker *MultiplicityChecker,
-	paramBinder *actions.ParameterBinder,
+	paramGen *StepParameterGenerator,
 	catalog *ClassCatalog,
 	rng *rand.Rand,
 ) *StepExecutor {
@@ -36,7 +48,7 @@ func NewStepExecutor(
 		stateActionExec: stateActionExec,
 		chainHandler:    chainHandler,
 		multChecker:     multChecker,
-		paramBinder:     paramBinder,
+		paramGen:        paramGen,
 		catalog:         catalog,
 		rng:             rng,
 	}
@@ -101,8 +113,8 @@ func (e *StepExecutor) executeTransition(
 		EventName:  pending.Event.Name,
 	}
 
-	// 1. Generate event parameters.
-	params := e.paramBinder.GenerateRandomParameters(pending.Event.Parameters, e.rng)
+	// 1. Generate event parameters (surface steps sample from transition action requires).
+	params := e.sampleEventParameters(pending)
 	step.Parameters = params
 
 	// 2. Execute exit StateActions (if not creation).
@@ -148,6 +160,20 @@ func (e *StepExecutor) executeTransition(
 	e.checkMultiplicityConstraints(result, simState, step)
 
 	return step, nil
+}
+
+// sampleEventParameters generates parameters for a top-level transition event.
+func (e *StepExecutor) sampleEventParameters(pending *PendingAction) map[string]object.Object {
+	instanceState := ""
+	if pending.Instance != nil {
+		instanceState = getInstanceStateName(pending.Instance)
+	}
+
+	action, found := e.catalog.GetActionForEvent(pending.Class.ClassKey, pending.Event.Key, instanceState)
+	if found && action != nil && len(action.Requires) > 0 {
+		return e.paramGen.Sampler.SampleFromRequires(pending.Event.Parameters, action, e.rng)
+	}
+	return e.paramGen.Binder.GenerateRandomParameters(pending.Event.Parameters, e.rng)
 }
 
 // executeExitActions runs exit state actions for a non-creation transition.

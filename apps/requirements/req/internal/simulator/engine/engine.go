@@ -88,7 +88,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	}
 
 	stepExecutor, selector, livenessChecker, err := setupExecutors(
-		activeModel, simState, bindingsBuilder, checkers, rng,
+		activeModel, bindingsBuilder, checkers, rng,
 	)
 	if err != nil {
 		return nil, err
@@ -190,7 +190,6 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 // setupExecutors creates step executor, action selector, and liveness checker.
 func setupExecutors(
 	model *core.Model,
-	_ *state.SimulationState,
 	bindingsBuilder *state.BindingsBuilder,
 	checkers *simulationCheckers,
 	rng *rand.Rand,
@@ -202,7 +201,7 @@ func setupExecutors(
 		return nil, nil, nil, fmt.Errorf("no simulatable classes found in model (classes must have states)")
 	}
 
-	stepExecutor, selector, livenessChecker := buildStepExecutor(actionExecutor, catalog, rng)
+	stepExecutor, selector, livenessChecker := buildStepExecutor(actionExecutor, bindingsBuilder, catalog, rng)
 	return stepExecutor, selector, livenessChecker, nil
 }
 
@@ -215,15 +214,26 @@ func buildActionExecutor(bindingsBuilder *state.BindingsBuilder, checkers *simul
 	)
 }
 
-// buildStepExecutor creates the step executor, action selector, and liveness checker.
-func buildStepExecutor(actionExecutor *actions.ActionExecutor, catalog *ClassCatalog, rng *rand.Rand) (*StepExecutor, *ActionSelector, *LivenessChecker) {
+// buildStepParameterGenerator creates surface and nested parameter generators from model named sets.
+func buildStepParameterGenerator(bindingsBuilder *state.BindingsBuilder) (*actions.ParameterBinder, *StepParameterGenerator) {
 	paramBinder := actions.NewParameterBinder()
+	paramSampler := actions.NewParameterSampler(paramBinder, bindingsBuilder.NamedSetValues())
+	return paramBinder, NewStepParameterGenerator(paramBinder, paramSampler)
+}
+
+// buildStepExecutor creates the step executor, action selector, and liveness checker.
+func buildStepExecutor(
+	actionExecutor *actions.ActionExecutor,
+	bindingsBuilder *state.BindingsBuilder,
+	catalog *ClassCatalog,
+	rng *rand.Rand,
+) (*StepExecutor, *ActionSelector, *LivenessChecker) {
+	paramBinder, paramGen := buildStepParameterGenerator(bindingsBuilder)
 	stateActionExec := NewStateActionExecutor(actionExecutor)
 	chainHandler := NewCreationChainHandler(catalog, actionExecutor, stateActionExec, paramBinder, rng)
 	multChecker := NewMultiplicityChecker(catalog)
-
 	stepExecutor := NewStepExecutor(
-		actionExecutor, stateActionExec, chainHandler, multChecker, paramBinder, catalog, rng,
+		actionExecutor, stateActionExec, chainHandler, multChecker, paramGen, catalog, rng,
 	)
 
 	return stepExecutor, NewActionSelector(catalog, rng), NewLivenessChecker(catalog)

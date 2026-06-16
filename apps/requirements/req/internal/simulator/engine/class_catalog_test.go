@@ -200,6 +200,23 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 	s.Len(ext, 1)
 }
 
+func (s *ClassCatalogSuite) TestGetActionForEvent() {
+	orderClass, orderKey := testOrderClass()
+	model := testModel(classEntry(orderClass, orderKey))
+	catalog := NewClassCatalog(model)
+
+	createEventKey := mustKey("domain/d/subdomain/s/class/order/event/create")
+	action, found := catalog.GetActionForEvent(orderKey, createEventKey, "")
+	s.True(found)
+	s.Nil(action)
+
+	closeEventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
+	closeAction, found := catalog.GetActionForEvent(orderKey, closeEventKey, "Open")
+	s.True(found)
+	s.Require().NotNil(closeAction)
+	s.Equal("DoClose", closeAction.Name)
+}
+
 func (s *ClassCatalogSuite) TestGetCreationEvent() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))

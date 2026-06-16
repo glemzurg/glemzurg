@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -47,6 +48,16 @@ func NewBindingsBuilderWithRelations(state *SimulationState, relationCtx *evalua
 		state:       state,
 		relationCtx: relationCtx,
 	}
+}
+
+// NamedSetValues returns pre-evaluated named set values keyed by set SubKey.
+func (b *BindingsBuilder) NamedSetValues() map[string]object.Object {
+	if len(b.namedSetValues) == 0 {
+		return nil
+	}
+	copyMap := make(map[string]object.Object, len(b.namedSetValues))
+	maps.Copy(copyMap, b.namedSetValues)
+	return copyMap
 }
 
 // RegisterNamedSets evaluates and caches model-level named sets for expression lookup.

@@ -307,9 +307,12 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 
 	exec := buildTestExecutor(simState)
 
-	_, err := exec.ExecuteAction(action, instance, nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "precondition failed")
+	result, err := exec.ExecuteAction(action, instance, nil)
+	s.Require().NoError(err)
+	s.False(result.Success)
+	s.Require().Len(result.Violations, 1)
+	s.Equal(invariants.ViolationTypeActionRequires, result.Violations[0].Type)
+	s.Contains(result.Violations[0].Message, "requires[0] failed")
 }
 
 func (s *ActionsSuite) TestExecuteActionWithParameters() {

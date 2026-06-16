@@ -6,6 +6,7 @@ import (
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -89,6 +90,9 @@ type ExecutionContext struct {
 
 	// depth tracks the current call chain depth (for debugging/limits).
 	depth int
+
+	// requiresViolations holds precondition failures that block guarantee application.
+	requiresViolations invariants.ViolationErrors
 }
 
 // NewExecutionContext creates a new top-level execution context.
@@ -184,4 +188,14 @@ func (ctx *ExecutionContext) IncrementDepth() error {
 // DecrementDepth decrements the call depth.
 func (ctx *ExecutionContext) DecrementDepth() {
 	ctx.depth--
+}
+
+// SetRequiresViolations records precondition failures for the current action chain.
+func (ctx *ExecutionContext) SetRequiresViolations(violations invariants.ViolationErrors) {
+	ctx.requiresViolations = violations
+}
+
+// RequiresViolations returns precondition failures recorded during execution.
+func (ctx *ExecutionContext) RequiresViolations() invariants.ViolationErrors {
+	return ctx.requiresViolations
 }

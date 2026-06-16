@@ -124,6 +124,14 @@ func (e *ActionExecutor) ExecuteAction(
 		return nil, err
 	}
 
+	if ctx.RequiresViolations().HasViolations() {
+		return &ActionResult{
+			InstanceID: instance.ID,
+			Violations: ctx.RequiresViolations(),
+			Success:    false,
+		}, nil
+	}
+
 	// Phase B: Apply ALL primed assignments from the entire chain
 	if err := e.applyPrimedAssignments(ctx); err != nil {
 		return nil, err
@@ -283,8 +291,13 @@ func (e *ActionExecutor) executeActionInContext(
 
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
-	if err := e.evaluateActionRequires(action, bindings); err != nil {
+	reqViolations, err := e.evaluateActionRequires(action, instance.ID, bindings)
+	if err != nil {
 		return err
+	}
+	if reqViolations.HasViolations() {
+		ctx.SetRequiresViolations(reqViolations)
+		return nil
 	}
 
 	if err := e.evaluateActionGuarantees(ctx, action, instance, bindings); err != nil {
@@ -297,35 +310,43 @@ func (e *ActionExecutor) executeActionInContext(
 // evaluateActionRequires evaluates the preconditions (Requires) for an action.
 func (e *ActionExecutor) evaluateActionRequires(
 	action model_state.Action,
+	instanceID state.InstanceID,
 	bindings *evaluator.Bindings,
-) error {
+) (invariants.ViolationErrors, error) {
 	// Pass 1: Evaluate all let bindings in requires (in order).
 	if err := evalLetBindings(action.Requires, bindings, "action", action.Name, "requires"); err != nil {
-		return err
+		return nil, err
 	}
 	// Pass 2: Evaluate non-let assessment items.
+	var violations invariants.ViolationErrors
 	for i, req := range action.Requires {
 		if req.Type == model_logic.LogicTypeLet {
 			continue
 		}
 		expr := req.Spec.Expression
 		if expr == nil {
-			return fmt.Errorf("action %s requires[%d]: expression not lowered", action.Name, i)
+			return nil, fmt.Errorf("action %s requires[%d]: expression not lowered", action.Name, i)
 		}
 
 		if model_bridge.ContainsAnyPrimedME(expr) {
-			return fmt.Errorf("action %s requires[%d]: Requires must not contain primed variables", action.Name, i)
+			return nil, fmt.Errorf("action %s requires[%d]: Requires must not contain primed variables", action.Name, i)
 		}
 
 		result := evaluator.Eval(expr, bindings)
 		if result.IsError() {
-			return fmt.Errorf("action %s requires[%d] evaluation error: %s", action.Name, i, result.Error.Inspect())
+			return nil, fmt.Errorf("action %s requires[%d] evaluation error: %s", action.Name, i, result.Error.Inspect())
 		}
 		if !isTrueBoolean(result.Value) {
-			return fmt.Errorf("action %s precondition failed: requires[%d] = %s", action.Name, i, req.Spec.Specification)
+			msg := _EXPRESSION_RETURNED_NIL
+			if result.Value != nil {
+				msg = fmt.Sprintf("expression returned %s", result.Value.Inspect())
+			}
+			violations = append(violations, invariants.NewActionRequiresViolation(
+				action.Key, action.Name, i, req.Spec.Specification, instanceID, msg,
+			))
 		}
 	}
-	return nil
+	return violations, nil
 }
 
 // evaluateActionGuarantees evaluates the guarantees for an action and records primed assignments.

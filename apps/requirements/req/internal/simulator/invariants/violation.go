@@ -20,6 +20,9 @@ const (
 	// ViolationTypeClassInvariant indicates a TLA+ class-level invariant violation.
 	ViolationTypeClassInvariant
 
+	// ViolationTypeActionRequires indicates an action's TLA+ requires (precondition) was not met.
+	ViolationTypeActionRequires
+
 	// ViolationTypeActionGuarantee indicates an action's TLA+ guarantee (post-condition) violation.
 	ViolationTypeActionGuarantee
 
@@ -72,6 +75,8 @@ func (v ViolationType) String() string {
 		return "model_invariant"
 	case ViolationTypeClassInvariant:
 		return "class_invariant"
+	case ViolationTypeActionRequires:
+		return "action_requires"
 	case ViolationTypeActionGuarantee:
 		return "action_guarantee"
 	case ViolationTypeQueryGuarantee:
@@ -175,6 +180,26 @@ func NewClassInvariantViolation(
 		ClassKey:       classKey,
 		Expression:     expression,
 		InvariantIndex: index,
+	}
+}
+
+// NewActionRequiresViolation creates a violation for a failed action requires precondition.
+func NewActionRequiresViolation(
+	actionKey identity.Key,
+	actionName string,
+	requireIndex int,
+	expression string,
+	instanceID state.InstanceID,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeActionRequires,
+		Message:           fmt.Sprintf("action %s requires[%d] failed: %s - %s", actionName, requireIndex, expression, message),
+		InstanceID:        instanceID,
+		ActionOrQueryKey:  actionKey,
+		ActionOrQueryName: actionName,
+		Expression:        expression,
+		GuaranteeIndex:    requireIndex,
 	}
 }
 
@@ -425,7 +450,7 @@ func (v ViolationErrors) TLAViolations() ViolationErrors {
 	for _, violation := range v {
 		//nolint:exhaustive // Only TLA+ violation types are relevant here.
 		switch violation.Type {
-		case ViolationTypeModelInvariant, ViolationTypeClassInvariant, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee:
+		case ViolationTypeModelInvariant, ViolationTypeClassInvariant, ViolationTypeActionRequires, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee:
 			result = append(result, violation)
 		default:
 			// Not a TLA+ violation; skip.

@@ -263,6 +263,60 @@ func (c *ClassCatalog) GetMandatoryOutboundAssociations(classKey identity.Key) [
 	return result
 }
 
+// GetActionForEvent resolves the action wired to a transition for the given event and instance state.
+// When multiple transitions share the event, the first matching transition with an action is returned.
+func (c *ClassCatalog) GetActionForEvent(
+	classKey identity.Key,
+	eventKey identity.Key,
+	instanceStateName string,
+) (*model_state.Action, bool) {
+	info := c.classes[classKey]
+	if info == nil {
+		return nil, false
+	}
+
+	class := info.Class
+	var fromStateKey *identity.Key
+	if instanceStateName != "" {
+		for _, s := range class.States {
+			if s.Name == instanceStateName {
+				key := s.Key
+				fromStateKey = &key
+				break
+			}
+		}
+	}
+
+	var matches []model_state.Transition
+	for _, t := range class.Transitions {
+		if t.EventKey != eventKey {
+			continue
+		}
+		if instanceStateName == "" {
+			if t.FromStateKey != nil {
+				continue
+			}
+		} else if t.FromStateKey == nil || fromStateKey == nil || *t.FromStateKey != *fromStateKey {
+			continue
+		}
+		matches = append(matches, t)
+	}
+
+	sort.Slice(matches, func(i, j int) bool {
+		return matches[i].Key.String() < matches[j].Key.String()
+	})
+
+	for _, t := range matches {
+		if t.ActionKey == nil {
+			return nil, true
+		}
+		if action, ok := class.Actions[*t.ActionKey]; ok {
+			return &action, true
+		}
+	}
+	return nil, false
+}
+
 // GetCreationEvent returns the first creation event for a class (if any).
 func (c *ClassCatalog) GetCreationEvent(classKey identity.Key) (*model_state.Event, bool) {
 	info := c.classes[classKey]
