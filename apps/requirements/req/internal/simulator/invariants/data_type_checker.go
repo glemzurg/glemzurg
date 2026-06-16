@@ -49,7 +49,7 @@ func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 
 				for _, attr := range class.Attributes {
 					attrCopy := attr // Make a copy to get a stable pointer
-					attrMap[attr.Name] = &attrCopy
+					attrMap[attr.Key.SubKey] = &attrCopy
 
 					// Check if DataType is parsed
 					if attr.DataType == nil {
@@ -79,15 +79,15 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 		return violations
 	}
 
-	for attrName, attrDef := range attrs {
-		value := instance.GetAttribute(attrName)
+	for fieldKey, attrDef := range attrs {
+		value := instance.GetAttribute(fieldKey)
 
 		// Check required (non-nullable) constraint
 		if !attrDef.Nullable && object.IsNull(value) {
 			violations = append(violations, NewRequiredAttributeViolation(
 				instance.ID,
 				instance.ClassKey,
-				attrName,
+				attrDef.Name,
 			))
 			continue // No point checking other constraints on nil value
 		}
@@ -102,7 +102,7 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 			typeViolations := c.checkDataTypeConstraints(
 				instance.ID,
 				instance.ClassKey,
-				attrName,
+				attrDef.Name,
 				value,
 				attrDef.DataType,
 			)
@@ -439,10 +439,10 @@ func (c *DataTypeChecker) CheckState(simState *state.SimulationState) ViolationE
 	return violations
 }
 
-// GetAttributeDefinition returns the attribute definition for a class attribute.
-func (c *DataTypeChecker) GetAttributeDefinition(classKey identity.Key, attrName string) *model_class.Attribute {
+// GetAttributeDefinition returns the attribute definition keyed by YAML field name (attribute SubKey).
+func (c *DataTypeChecker) GetAttributeDefinition(classKey identity.Key, fieldKey string) *model_class.Attribute {
 	if attrs, ok := c.classAttributes[classKey]; ok {
-		return attrs[attrName]
+		return attrs[fieldKey]
 	}
 	return nil
 }

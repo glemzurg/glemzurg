@@ -571,6 +571,43 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	s.False(v3.HasViolations(), "Value 50 should pass")
 }
 
+func (s *InvariantsSuite) TestDataTypeCheckerUsesAttributeFieldKey() {
+	classKey := mustKey("domain/finance/subdomain/wallet/class/jurisdiction")
+	nameAttrKey := helper.Must(identity.NewAttributeKey(classKey, "name"))
+	nameAttr := helper.Must(model_class.NewAttribute(nameAttrKey, "Display Name", "", "unconstrained", nil, false, model_class.AttributeAnnotations{}))
+	socialAttrKey := helper.Must(identity.NewAttributeKey(classKey, "social_only"))
+	socialAttr := helper.Must(model_class.NewAttribute(socialAttrKey, "Is Social Only", "", "enum of TRUE, FALSE", nil, false, model_class.AttributeAnnotations{}))
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
+	class.SetAttributes(map[identity.Key]model_class.Attribute{
+		nameAttrKey:   nameAttr,
+		socialAttrKey: socialAttr,
+	})
+
+	subdomainKey := mustKey("domain/finance/subdomain/wallet")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+	domainKey := mustKey("domain/finance")
+	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	checker, violations := NewDataTypeChecker(&model)
+	s.NotNil(checker)
+	s.False(violations.HasViolations())
+
+	simState := state.NewSimulationState()
+	attrs := object.NewRecord()
+	attrs.Set("name", object.NewString("UK"))
+	attrs.Set("social_only", object.NewBoolean(false))
+	instance := simState.CreateInstance(classKey, attrs)
+
+	instanceViolations := checker.CheckInstance(instance)
+	s.False(instanceViolations.HasViolations())
+}
+
 func (s *InvariantsSuite) TestDataTypeCheckerNormalizesEmptyStringToNull() {
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
 	nameAttrKey := helper.Must(identity.NewAttributeKey(classKey, "name"))
