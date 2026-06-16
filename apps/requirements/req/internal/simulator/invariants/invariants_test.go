@@ -571,16 +571,35 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	s.False(v3.HasViolations(), "Value 50 should pass")
 }
 
-func (s *InvariantsSuite) TestCheckClassInvariants() {
+func (s *InvariantsSuite) TestDataTypeCheckerNormalizesEmptyStringToNull() {
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
-	invKey := helper.Must(identity.NewClassInvariantKey(classKey, "0"))
-	classInv := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Name required.", "", orderSpec("self.name # \"\""), nil)
-
-	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	nameAttrKey := helper.Must(identity.NewAttributeKey(classKey, "name"))
 	nameAttr := helper.Must(model_class.NewAttribute(nameAttrKey, "name", "", "unconstrained", nil, false, model_class.AttributeAnnotations{}))
-	class.SetAttributes(map[identity.Key]model_class.Attribute{nameAttrKey: nameAttr})
-	class.SetInvariants([]model_logic.Logic{classInv})
+	nameAttr.DataType = &model_data_type.DataType{
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "unconstrained",
+		},
+	}
+	typeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil)
+	s.Require().NoError(err)
+	nameAttr.DataType.TypeSpec = &typeSpec
+
+	countryAttrKey := helper.Must(identity.NewAttributeKey(classKey, "country_code"))
+	countryAttr := helper.Must(model_class.NewAttribute(countryAttrKey, "country_code", "", "unconstrained", nil, true, model_class.AttributeAnnotations{}))
+	countryAttr.DataType = &model_data_type.DataType{
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "unconstrained",
+		},
+		TypeSpec: &typeSpec,
+	}
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(map[identity.Key]model_class.Attribute{
+		nameAttrKey:    nameAttr,
+		countryAttrKey: countryAttr,
+	})
 
 	subdomainKey := mustKey("domain/test_domain/subdomain/test_subdomain")
 	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
@@ -591,20 +610,35 @@ func (s *InvariantsSuite) TestCheckClassInvariants() {
 
 	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
-	s.Require().NoError(convert.LowerModel(&model))
 
-	checker, err := NewInvariantChecker(&model)
-	s.Require().NoError(err)
+	checker, violations := NewDataTypeChecker(&model)
+	s.NotNil(checker)
+	s.False(violations.HasViolations())
 
 	simState := state.NewSimulationState()
-	attrs := object.NewRecord()
-	attrs.Set("name", object.NewString(""))
-	simState.CreateInstance(classKey, attrs)
-	bindingsBuilder := state.NewBindingsBuilder(simState)
 
-	violations := checker.CheckClassInvariants(simState, bindingsBuilder)
-	s.True(violations.HasViolations())
-	s.Equal(ViolationTypeClassInvariant, violations[0].Type)
+	emptyNameAttrs := object.NewRecord()
+	emptyNameAttrs.Set("name", object.NewString(""))
+	instanceEmpty := simState.CreateInstance(classKey, emptyNameAttrs)
+	s.True(object.IsNull(instanceEmpty.GetAttribute("name")))
+	emptyNameViolations := checker.CheckInstance(instanceEmpty)
+	s.True(emptyNameViolations.HasViolations())
+	s.Equal(ViolationTypeRequiredAttribute, emptyNameViolations[0].Type)
+
+	nullCountryAttrs := object.NewRecord()
+	nullCountryAttrs.Set("name", object.NewString("valid"))
+	nullCountryAttrs.Set("country_code", object.NewSet())
+	instanceNull := simState.CreateInstance(classKey, nullCountryAttrs)
+	nullCountryViolations := checker.CheckInstance(instanceNull)
+	s.False(nullCountryViolations.HasViolations())
+
+	emptyCountryAttrs := object.NewRecord()
+	emptyCountryAttrs.Set("name", object.NewString("valid"))
+	emptyCountryAttrs.Set("country_code", object.NewString(""))
+	instanceEmptyCountry := simState.CreateInstance(classKey, emptyCountryAttrs)
+	s.True(object.IsNull(instanceEmptyCountry.GetAttribute("country_code")))
+	emptyCountryViolations := checker.CheckInstance(instanceEmptyCountry)
+	s.False(emptyCountryViolations.HasViolations())
 }
 
 // Test: Primed variables in model-level invariants fail to parse without class context.

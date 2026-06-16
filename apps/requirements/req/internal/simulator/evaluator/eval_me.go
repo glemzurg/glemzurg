@@ -26,7 +26,7 @@ func evalBoolLiteral(n *me.BoolLiteral) *EvalResult {
 }
 
 func evalMEStringLiteral(n *me.StringLiteral) *EvalResult {
-	return NewEvalResult(object.NewString(n.Value))
+	return NewEvalResult(object.NormalizeSimulatorValue(object.NewString(n.Value)))
 }
 
 func evalMETupleLiteral(n *me.TupleLiteral, bindings *Bindings) *EvalResult {
@@ -797,7 +797,7 @@ func evalMEStringConcat(n *me.StringConcat, bindings *Bindings) *EvalResult {
 		}
 		builder.WriteString(str.Value())
 	}
-	return NewEvalResult(object.NewString(builder.String()))
+	return NewEvalResult(object.NormalizeSimulatorValue(object.NewString(builder.String())))
 }
 
 func evalMETupleConcat(n *me.TupleConcat, bindings *Bindings) *EvalResult {

@@ -136,7 +136,7 @@ func (b *Bindings) GetValue(name string) (object.Object, bool) {
 // Set creates or updates a binding in the current scope.
 func (b *Bindings) Set(name string, value object.Object, ns Namespace) {
 	b.store[name] = &BindingEntry{
-		Value:     value.Clone(), // Always clone to ensure immutability
+		Value:     object.NormalizeSimulatorValue(value).Clone(), // Always clone to ensure immutability
 		Namespace: ns,
 		Primed:    false,
 	}
@@ -152,7 +152,7 @@ func (b *Bindings) SetPrimed(name string, value object.Object) {
 	// Look for existing entry
 	if entry, ok := b.store[name]; ok {
 		// Update existing entry with primed value
-		entry.PrimedValue = value.Clone()
+		entry.PrimedValue = object.NormalizeSimulatorValue(value).Clone()
 		entry.Primed = true
 		return
 	}
@@ -164,9 +164,10 @@ func (b *Bindings) SetPrimed(name string, value object.Object) {
 	}
 
 	// Create new entry - when priming without current value, both are set
+	normalized := object.NormalizeSimulatorValue(value).Clone()
 	b.store[name] = &BindingEntry{
-		Value:       value.Clone(), // Also set current value for new entries
-		PrimedValue: value.Clone(),
+		Value:       normalized, // Also set current value for new entries
+		PrimedValue: normalized.Clone(),
 		Namespace:   ns,
 		Primed:      true,
 	}

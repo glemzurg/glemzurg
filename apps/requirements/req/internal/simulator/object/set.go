@@ -70,7 +70,7 @@ func (s *Set) Size() int {
 
 // Add adds an element to the set.
 func (s *Set) Add(elem Object) {
-	s.elements[hashValue(elem)] = elem.Clone()
+	s.elements[hashValue(elem)] = NormalizeSimulatorValue(elem).Clone()
 }
 
 // Remove removes an element from the set.

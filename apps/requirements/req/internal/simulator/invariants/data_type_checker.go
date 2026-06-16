@@ -83,7 +83,7 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 		value := instance.GetAttribute(attrName)
 
 		// Check required (non-nullable) constraint
-		if !attrDef.Nullable && value == nil {
+		if !attrDef.Nullable && object.IsNull(value) {
 			violations = append(violations, NewRequiredAttributeViolation(
 				instance.ID,
 				instance.ClassKey,
@@ -92,8 +92,8 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 			continue // No point checking other constraints on nil value
 		}
 
-		// If value is nil and attribute is nullable, skip constraint checks
-		if value == nil {
+		// If value is NULL and attribute is nullable, skip constraint checks
+		if object.IsNull(value) {
 			continue
 		}
 

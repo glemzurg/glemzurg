@@ -80,7 +80,7 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 
 	case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
 		if len(atomic.Enums) == 0 {
-			return object.NewString("")
+			return evaluator.EMPTY_SET
 		}
 		idx := rng.Intn(len(atomic.Enums))
 		return object.NewString(atomic.Enums[idx].Value)
