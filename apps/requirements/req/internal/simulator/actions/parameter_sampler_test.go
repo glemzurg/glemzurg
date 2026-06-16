@@ -68,8 +68,8 @@ func (s *ParameterSamplerSuite) jurisdictionParams() []model_state.Parameter {
 	classKey := mustKey("domain/finance/wallet/class/jurisdiction")
 	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
 	return []model_state.Parameter{
-		helper.Must(model_state.NewParameter(actionKey, "CountryCode", "ref of ISO 3166-1 two-letter codes", false)),
-		helper.Must(model_state.NewParameter(actionKey, "StateCode", "ref of ISO 3166-2 subdivision codes", false)),
+		helper.Must(model_state.NewParameter(actionKey, "CountryCode", "ref of ISO 3166-1 two-letter codes", true)),
+		helper.Must(model_state.NewParameter(actionKey, "StateCode", "ref of ISO 3166-2 subdivision codes", true)),
 	}
 }
 
@@ -124,7 +124,10 @@ func (s *ParameterSamplerSuite) TestApplyNullableElseTupleSetsCoupledValues() {
 			"CountryCode": object.NewString("junk"),
 			"StateCode":   object.NewString("junk"),
 		}
-		applyNullableElseTuple(result, constraint, rand.New(rand.NewSource(int64(seed))), s.jurisdictionNamedSet()) //nolint:gosec // deterministic test seed
+		applyNullableElseTuple(result, constraint, rand.New(rand.NewSource(int64(seed))), s.jurisdictionNamedSet(), map[string]bool{ //nolint:gosec // deterministic test seed
+			"CountryCode": true,
+			"StateCode":   true,
+		})
 		s.assertJurisdictionPair(result["CountryCode"], result["StateCode"], int64(seed))
 	}
 }
@@ -277,6 +280,89 @@ func (s *ParameterSamplerSuite) TestUnsupportedCompareRequireReturnsSpecificErro
 	s.Equal("Order", unsupported.ClassName)
 	s.Equal("SetAmount", unsupported.ActionName)
 	s.Contains(unsupported.Error(), "cannot derive random parameter values")
+}
+
+func (s *ParameterSamplerSuite) jurisdictionUpdateAction() model_state.Action {
+	classKey := mustKey("domain/finance/wallet/class/jurisdiction")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "update"))
+	requireLogic := model_logic.NewLogic(
+		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+		model_logic.LogicTypeAssessment,
+		"Valid jurisdiction pair when country is provided.",
+		"",
+		jurisdictionRequireSpec(`IF CountryCode = NULL THEN StateCode = NULL ELSE <<CountryCode, StateCode>> \in _JurisdictionCodes`),
+		nil,
+	)
+	return model_state.NewAction(actionKey, "Update", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
+}
+
+func (s *ParameterSamplerSuite) jurisdictionUpdateParams() []model_state.Parameter {
+	classKey := mustKey("domain/finance/wallet/class/jurisdiction")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "update"))
+	return []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "Name", "unconstrained", false)),
+		helper.Must(model_state.NewParameter(actionKey, "SocialOnly", "enum of TRUE, FALSE", false)),
+		helper.Must(model_state.NewParameter(actionKey, "CountryCode", "ref of ISO 3166-1 two-letter codes", true)),
+		helper.Must(model_state.NewParameter(actionKey, "StateCode", "ref of ISO 3166-2 subdivision codes", true)),
+	}
+}
+
+func (s *ParameterSamplerSuite) TestNonNullableParameterNeverSampledAsNull() {
+	binder := NewParameterBinder()
+	sampler := NewParameterSampler(binder, s.jurisdictionNamedSet())
+	action := s.jurisdictionUpdateAction()
+	params := s.jurisdictionUpdateParams()
+
+	for seed := range 200 {
+		result, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		s.Require().NoError(err)
+		s.False(object.IsNull(result["Name"]), "seed %d", seed)
+		s.False(object.IsNull(result["SocialOnly"]), "seed %d", seed)
+	}
+}
+
+func (s *ParameterSamplerSuite) TestNullableParameterMayBeNull() {
+	binder := NewParameterBinder()
+	params := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(
+			helper.Must(identity.NewActionKey(mustKey("domain/finance/wallet/class/jurisdiction"), "add")),
+			"CountryCode",
+			"ref of ISO 3166-1 two-letter codes",
+			true,
+		)),
+	}
+
+	var sawNull bool
+	for seed := range 200 {
+		result := binder.GenerateRandomParameters(params, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		if object.IsNull(result["CountryCode"]) {
+			sawNull = true
+			break
+		}
+	}
+	s.True(sawNull)
+}
+
+func (s *ParameterSamplerSuite) TestNullableElseTupleSkipsNullBranchForNonNullableParam() {
+	constraint := &nullableElseTupleConstraint{
+		conditionParam: "CountryCode",
+		thenParam:      "StateCode",
+		paramNames:     []string{"CountryCode", "StateCode"},
+		setSubKey:      "jurisdictioncodes",
+	}
+	nullableByName := map[string]bool{
+		"CountryCode": false,
+		"StateCode":   true,
+	}
+
+	for seed := range 50 {
+		result := map[string]object.Object{
+			"CountryCode": object.NewString("junk"),
+			"StateCode":   object.NewString("junk"),
+		}
+		applyNullableElseTuple(result, constraint, rand.New(rand.NewSource(int64(seed))), s.jurisdictionNamedSet(), nullableByName) //nolint:gosec // deterministic test seed
+		s.False(object.IsNull(result["CountryCode"]), "seed %d", seed)
+	}
 }
 
 func (s *ParameterSamplerSuite) TestSampleFromRequiresReturnsUnsupportedError() {

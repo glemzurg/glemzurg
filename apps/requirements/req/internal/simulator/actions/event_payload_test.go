@@ -70,25 +70,15 @@ func (s *EventPayloadSuite) TestSampleEventPayloadEventOnlyNamesWithoutAction() 
 	s.True(isEventOnlyValue(result["extra_telemetry"]))
 }
 
-func (s *EventPayloadSuite) TestGenerateEventOnlyParameterValueAlternates() {
+func (s *EventPayloadSuite) TestGenerateEventOnlyParameterValueProducesStrings() {
 	binder := NewParameterBinder()
 	rng := rand.New(rand.NewSource(99)) //nolint:gosec // deterministic test seed
 
-	var sawString bool
-	var sawEmpty bool
 	for range 50 {
 		val := binder.GenerateEventOnlyParameterValue(rng)
-		switch val.(type) {
-		case *object.String:
-			sawString = true
-		default:
-			if val == evaluator.EMPTY_SET {
-				sawEmpty = true
-			}
-		}
+		_, ok := val.(*object.String)
+		s.True(ok)
 	}
-	s.True(sawString)
-	s.True(sawEmpty)
 }
 
 func isEventOnlyValue(val object.Object) bool {

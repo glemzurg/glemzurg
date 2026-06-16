@@ -45,7 +45,9 @@ func (s *ParameterSampler) SampleFromRequires(
 
 	constraints := extractParameterConstraints(action.Requires)
 	result := s.binder.GenerateRandomParameters(paramDefs, rng)
-	applyParameterConstraints(result, constraints, rng, s.namedSetValues)
+	nullableByName := parameterNullableByName(paramDefs)
+	applyParameterConstraints(result, constraints, rng, s.namedSetValues, nullableByName)
+	enforceParameterNullability(result, paramDefs, rng)
 	return result, nil
 }
 
@@ -68,14 +70,39 @@ type tupleInSetConstraint struct {
 	setSubKey  string
 }
 
+func parameterNullableByName(paramDefs []model_state.Parameter) map[string]bool {
+	nullable := make(map[string]bool, len(paramDefs))
+	for _, param := range paramDefs {
+		nullable[param.Name] = param.Nullable
+	}
+	return nullable
+}
+
+// enforceParameterNullability replaces NULL on non-nullable parameters after constraint application.
+func enforceParameterNullability(
+	result map[string]object.Object,
+	paramDefs []model_state.Parameter,
+	rng *rand.Rand,
+) {
+	for _, param := range paramDefs {
+		if param.Nullable {
+			continue
+		}
+		if object.IsNull(result[param.Name]) {
+			result[param.Name] = generateRandomValue(param.DataType, rng)
+		}
+	}
+}
+
 func applyParameterConstraints(
 	result map[string]object.Object,
 	constraints parameterConstraints,
 	rng *rand.Rand,
 	namedSetValues map[string]object.Object,
+	nullableByName map[string]bool,
 ) {
 	if constraints.nullableElseTuple != nil {
-		applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues)
+		applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues, nullableByName)
 	} else if constraints.tupleInSet != nil {
 		applyTupleInSet(result, constraints.tupleInSet, rng, namedSetValues)
 	}
@@ -93,8 +120,9 @@ func applyNullableElseTuple(
 	constraint *nullableElseTupleConstraint,
 	rng *rand.Rand,
 	namedSetValues map[string]object.Object,
+	nullableByName map[string]bool,
 ) {
-	if rng.Intn(5) == 0 {
+	if nullableElseTupleMayBeNull(constraint.paramNames, nullableByName) && rng.Intn(5) == 0 {
 		for _, paramName := range constraint.paramNames {
 			result[paramName] = evaluator.EMPTY_SET
 		}
@@ -107,6 +135,15 @@ func applyNullableElseTuple(
 	}
 
 	assignTupleParams(result, constraint.paramNames, tuple)
+}
+
+func nullableElseTupleMayBeNull(paramNames []string, nullableByName map[string]bool) bool {
+	for _, paramName := range paramNames {
+		if !nullableByName[paramName] {
+			return false
+		}
+	}
+	return true
 }
 
 func applyTupleInSet(

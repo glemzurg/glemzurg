@@ -11,6 +11,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
+// nullableNullSampleDenom is the denominator for sampling NULL on nullable parameters (1/denom chance).
+const nullableNullSampleDenom = 10
+
 // ParameterBinder validates and generates parameter values for actions and queries.
 type ParameterBinder struct{}
 
@@ -47,13 +50,22 @@ func (b *ParameterBinder) GenerateRandomParameters(
 	result := make(map[string]object.Object)
 
 	for _, paramDef := range paramDefs {
-		result[paramDef.Name] = generateRandomValue(paramDef.DataType, rng)
+		result[paramDef.Name] = sampleParameterValue(paramDef, rng)
 	}
 
 	return result
 }
 
-// generateRandomValue creates a random value based on data type constraints.
+// sampleParameterValue generates a random value for one action/query parameter.
+// Nullable parameters may be NULL; non-nullable parameters never are.
+func sampleParameterValue(param model_state.Parameter, rng *rand.Rand) object.Object {
+	if param.Nullable && rng.Intn(nullableNullSampleDenom) == 0 {
+		return evaluator.EMPTY_SET
+	}
+	return generateRandomValue(param.DataType, rng)
+}
+
+// generateRandomValue creates a random non-null value based on data type constraints.
 func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
 	if dataType != nil && dataType.TypeSpec != nil {
 		switch strings.ToUpper(strings.TrimSpace(dataType.TypeSpec.Specification)) {
@@ -102,10 +114,6 @@ func randomString(rng *rand.Rand) object.Object {
 	var b strings.Builder
 	for range length {
 		b.WriteByte(letters[rng.Intn(len(letters))])
-	}
-	// Occasionally emit NULL (empty set) for nullable-friendly exploration.
-	if rng.Intn(10) == 0 {
-		return evaluator.EMPTY_SET
 	}
 	return object.NewString(b.String())
 }
