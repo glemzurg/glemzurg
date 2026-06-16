@@ -96,6 +96,8 @@ func (e *StepExecutor) executeQuery(
 		return nil, fmt.Errorf("query %s error: %w", pending.Query.Name, err)
 	}
 
+	step.QueryKey = pending.Query.Key
+	step.QueryName = pending.Query.Name
 	step.QueryResult = result
 	step.Violations = append(step.Violations, result.Violations...)
 	return step, nil
@@ -123,6 +125,7 @@ func (e *StepExecutor) executeDo(
 		return nil, fmt.Errorf("do action %s error: %w", pending.DoAction.Name, err)
 	}
 
+	step.ExecutedActionKeys = append(step.ExecutedActionKeys, pending.DoAction.Key)
 	step.DoActionResult = result
 	step.Violations = append(step.Violations, result.Violations...)
 	return step, nil
@@ -231,12 +234,13 @@ func (e *StepExecutor) executeExitActions(pending *PendingAction, step *Simulati
 	if fromStateKey == nil {
 		return nil
 	}
-	exitViolations, err := e.stateActionExec.ExecuteExitActions(
+	exitKeys, exitViolations, err := e.stateActionExec.ExecuteExitActions(
 		pending.Class.Class, *fromStateKey, pending.Instance,
 	)
 	if err != nil {
 		return fmt.Errorf("exit actions error: %w", err)
 	}
+	step.ExecutedActionKeys = append(step.ExecutedActionKeys, exitKeys...)
 	step.Violations = append(step.Violations, exitViolations...)
 	return nil
 }
@@ -259,12 +263,13 @@ func (e *StepExecutor) executeEntryActions(
 	if entryInstance == nil {
 		return nil
 	}
-	entryViolations, err := e.stateActionExec.ExecuteEntryActions(
+	entryKeys, entryViolations, err := e.stateActionExec.ExecuteEntryActions(
 		pending.Class.Class, *toStateKey, entryInstance,
 	)
 	if err != nil {
 		return fmt.Errorf("entry actions error: %w", err)
 	}
+	step.ExecutedActionKeys = append(step.ExecutedActionKeys, entryKeys...)
 	step.Violations = append(step.Violations, entryViolations...)
 	return nil
 }

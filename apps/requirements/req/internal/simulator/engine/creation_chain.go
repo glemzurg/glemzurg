@@ -149,12 +149,13 @@ func (h *CreationChainHandler) createMandatoryInstance(
 		if toStateKey != nil {
 			newInstance := simState.GetInstance(result.InstanceID)
 			if newInstance != nil {
-				entryViolations, err := h.stateActionExec.ExecuteEntryActions(
+				entryKeys, entryViolations, err := h.stateActionExec.ExecuteEntryActions(
 					toClassInfo.Class, *toStateKey, newInstance,
 				)
 				if err != nil {
 					return nil, nil, fmt.Errorf("creation chain entry actions error: %w", err)
 				}
+				step.ExecutedActionKeys = append(step.ExecutedActionKeys, entryKeys...)
 				step.Violations = append(step.Violations, entryViolations...)
 			}
 		}

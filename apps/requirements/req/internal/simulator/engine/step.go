@@ -75,6 +75,15 @@ type SimulationStep struct {
 	// QueryResult is the result from a query execution (nil for non-query steps).
 	QueryResult *actions.QueryResult
 
+	// QueryKey is the query invoked (for query steps).
+	QueryKey identity.Key
+
+	// QueryName is the human-readable query name (for query steps).
+	QueryName string
+
+	// ExecutedActionKeys records actions run during this step (transition, do, entry, exit).
+	ExecutedActionKeys []identity.Key
+
 	// CascadedSteps holds child steps from creation chain cascading.
 	CascadedSteps []*SimulationStep
 

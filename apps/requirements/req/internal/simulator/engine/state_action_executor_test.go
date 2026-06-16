@@ -88,7 +88,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	ae := buildStateActionTestExecutor(simState)
 	sae := NewStateActionExecutor(ae)
 
-	violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
+	_, violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
 	s.Require().NoError(err)
 	s.Empty(violations)
 
@@ -135,7 +135,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	ae := buildStateActionTestExecutor(simState)
 	sae := NewStateActionExecutor(ae)
 
-	violations, err := sae.ExecuteEntryActions(class, stateOpenKey, instance)
+	_, violations, err := sae.ExecuteEntryActions(class, stateOpenKey, instance)
 	s.Require().NoError(err)
 	s.Empty(violations)
 
@@ -168,7 +168,7 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 	ae := buildStateActionTestExecutor(simState)
 	sae := NewStateActionExecutor(ae)
 
-	violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
+	_, violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
 	s.Require().NoError(err)
 	s.Empty(violations)
 }
@@ -193,7 +193,7 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	ae := buildStateActionTestExecutor(simState)
 	sae := NewStateActionExecutor(ae)
 
-	_, err := sae.ExecuteEntryActions(class, bogusStateKey, instance)
+	_, _, err := sae.ExecuteEntryActions(class, bogusStateKey, instance)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "not found")
 }

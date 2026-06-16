@@ -15,7 +15,7 @@ type PendingAction struct {
 	Class      *ClassInfo
 	Event      *model_state.Event   // Non-nil for event-triggered transitions.
 	Query      *model_state.Query   // Non-nil for query invocations.
-	DoAction   *model_state.Action  // Non-nil for "do" state actions (not top-level selected).
+	DoAction   *model_state.Action  // Non-nil for "do" state actions.
 	Instance   *state.ClassInstance // nil for creation.
 	IsCreation bool
 	IsQuery    bool
@@ -53,19 +53,19 @@ func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*Pending
 func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState) []PendingAction {
 	var eligible []PendingAction
 
-	for _, classInfo := range s.catalog.AllEventBearingClasses() {
-		// Initial transitions not sent by another simulatable in-scope class.
-		externalCreationEvents := s.catalog.ExternalCreationEvents(classInfo.ClassKey)
-		for i := range externalCreationEvents {
-			eligible = append(eligible, PendingAction{
-				Class:      classInfo,
-				Event:      &externalCreationEvents[i],
-				Instance:   nil,
-				IsCreation: true,
-			})
+	for _, classInfo := range s.catalog.AllSimulatableClasses() {
+		if classInfo.HasEvents {
+			externalCreationEvents := s.catalog.ExternalCreationEvents(classInfo.ClassKey)
+			for i := range externalCreationEvents {
+				eligible = append(eligible, PendingAction{
+					Class:      classInfo,
+					Event:      &externalCreationEvents[i],
+					Instance:   nil,
+					IsCreation: true,
+				})
+			}
 		}
 
-		// Events and queries on existing instances only.
 		instances := simState.InstancesByClass(classInfo.ClassKey)
 		sort.Slice(instances, func(i, j int) bool {
 			return instances[i].ID < instances[j].ID
@@ -76,22 +76,35 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 				continue
 			}
 
-			stateEvents := s.catalog.ExternalStateEvents(classInfo.ClassKey, currentState)
-			for i := range stateEvents {
-				eligible = append(eligible, PendingAction{
-					Class:    classInfo,
-					Event:    &stateEvents[i].Event,
-					Instance: instance,
-				})
+			if classInfo.HasEvents {
+				stateEvents := s.catalog.ExternalStateEvents(classInfo.ClassKey, currentState)
+				for i := range stateEvents {
+					eligible = append(eligible, PendingAction{
+						Class:    classInfo,
+						Event:    &stateEvents[i].Event,
+						Instance: instance,
+					})
+				}
+
+				externalQueries := s.catalog.ExternalQueries(classInfo.ClassKey)
+				for i := range externalQueries {
+					eligible = append(eligible, PendingAction{
+						Class:    classInfo,
+						Query:    &externalQueries[i],
+						Instance: instance,
+						IsQuery:  true,
+					})
+				}
 			}
 
-			externalQueries := s.catalog.ExternalQueries(classInfo.ClassKey)
-			for i := range externalQueries {
+			// Do-actions are always surface-level on existing instances.
+			doActions := s.catalog.SurfaceDoActions(classInfo.ClassKey, currentState)
+			for i := range doActions {
 				eligible = append(eligible, PendingAction{
 					Class:    classInfo,
-					Query:    &externalQueries[i],
+					DoAction: &doActions[i],
 					Instance: instance,
-					IsQuery:  true,
+					IsDo:     true,
 				})
 			}
 		}

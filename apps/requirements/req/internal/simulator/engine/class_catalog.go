@@ -446,25 +446,14 @@ func (c *ClassCatalog) ExternalQueries(classKey identity.Key) []model_state.Quer
 	return queries
 }
 
-// ExternalDoActions returns "do" actions eligible for top-level firing in a state.
-// A "do" action is "internal" if its CalledBy list contains an in-scope class.
-func (c *ClassCatalog) ExternalDoActions(classKey identity.Key, stateName string) []model_state.Action {
+// SurfaceDoActions returns all "do" state actions for top-level simulation.
+// Do-actions are surface-level by nature — they are not filtered by CalledBy.
+func (c *ClassCatalog) SurfaceDoActions(classKey identity.Key, stateName string) []model_state.Action {
 	info := c.classes[classKey]
 	if info == nil {
 		return nil
 	}
-	allDo := info.DoActions[stateName]
-	if len(allDo) == 0 {
-		return nil
-	}
-
-	var external []model_state.Action
-	for _, action := range allDo {
-		if c.isActionExternal(action) {
-			external = append(external, action)
-		}
-	}
-	return external
+	return info.DoActions[stateName]
 }
 
 // isEventExternal returns true when no simulatable in-scope class sends the event.
@@ -483,9 +472,4 @@ func (c *ClassCatalog) hasSimulatableSender(senders []identity.Key) bool {
 		}
 	}
 	return false
-}
-
-// isActionExternal returns true when no simulatable in-scope class calls the action.
-func (c *ClassCatalog) isActionExternal(action model_state.Action) bool {
-	return !c.hasSimulatableSender(c.actionCalledBy[action.Key])
 }

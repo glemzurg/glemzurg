@@ -281,8 +281,7 @@ func (s *ClassCatalogSuite) TestExternalStateEvents_SentByOutOfScope() {
 	s.Equal("close", ext[0].Event.Name)
 }
 
-func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
-	// With no CalledBy data, all do-actions are external.
+func (s *ClassCatalogSuite) TestSurfaceDoActions_ReturnsStateDoActions() {
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/counter/state/active")
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/counter/event/create")
@@ -319,13 +318,13 @@ func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
 
-	ext := catalog.ExternalDoActions(classKey, "Active")
+	ext := catalog.SurfaceDoActions(classKey, "Active")
 	s.Len(ext, 1)
 	s.Equal("DoCount", ext[0].Name)
 }
 
-func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
-	// Action with CalledBy pointing to an in-scope class → internal (filtered out).
+func (s *ClassCatalogSuite) TestSurfaceDoActions_UnaffectedByCalledBy() {
+	// Do-actions are surface-level even when CalledBy points to an in-scope class.
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/counter/state/active")
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/counter/event/create")
@@ -367,8 +366,9 @@ func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
 	// Mark the action as called by Order (in-scope).
 	catalog.SetActionCalledBy(actionDoKey, []identity.Key{orderKey})
 
-	ext := catalog.ExternalDoActions(classKey, "Active")
-	s.Empty(ext, "do action should be internal because caller Order is in scope")
+	ext := catalog.SurfaceDoActions(classKey, "Active")
+	s.Len(ext, 1)
+	s.Equal("DoCount", ext[0].Name)
 }
 
 func (s *ClassCatalogSuite) TestCallerDataExport() {

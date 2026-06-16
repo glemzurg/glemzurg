@@ -64,6 +64,15 @@ const (
 
 	// ViolationTypeLivenessAttributeNotRead indicates a class attribute was never read during simulation (reserved for future use).
 	ViolationTypeLivenessAttributeNotRead
+
+	// ViolationTypeLivenessEventNotSent indicates an event was never fired during simulation.
+	ViolationTypeLivenessEventNotSent
+
+	// ViolationTypeLivenessQueryNotRun indicates a query was never executed during simulation.
+	ViolationTypeLivenessQueryNotRun
+
+	// ViolationTypeLivenessActionNotExecuted indicates an action was never executed during simulation.
+	ViolationTypeLivenessActionNotExecuted
 )
 
 // String returns a human-readable name for the violation type.
@@ -105,6 +114,12 @@ func (v ViolationType) String() string {
 		return "liveness_association_not_linked"
 	case ViolationTypeLivenessAttributeNotRead:
 		return "liveness_attribute_not_read"
+	case ViolationTypeLivenessEventNotSent:
+		return "liveness_event_not_sent"
+	case ViolationTypeLivenessQueryNotRun:
+		return "liveness_query_not_run"
+	case ViolationTypeLivenessActionNotExecuted:
+		return "liveness_action_not_executed"
 	default:
 		return "unknown"
 	}
@@ -425,6 +440,35 @@ func NewLivenessAssociationNotLinkedViolation(_ identity.Key, associationName st
 	}
 }
 
+// NewLivenessEventNotSentViolation creates a violation for an event that was never fired.
+func NewLivenessEventNotSentViolation(classKey identity.Key, className, eventName string) *ViolationError {
+	return &ViolationError{
+		Type:     ViolationTypeLivenessEventNotSent,
+		Message:  fmt.Sprintf("liveness: event %s on class %s was never sent during simulation", eventName, className),
+		ClassKey: classKey,
+	}
+}
+
+// NewLivenessQueryNotRunViolation creates a violation for a query that was never executed.
+func NewLivenessQueryNotRunViolation(classKey identity.Key, className, queryName string) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeLivenessQueryNotRun,
+		Message:           fmt.Sprintf("liveness: query %s on class %s was never run during simulation", queryName, className),
+		ClassKey:          classKey,
+		ActionOrQueryName: queryName,
+	}
+}
+
+// NewLivenessActionNotExecutedViolation creates a violation for an action that was never executed.
+func NewLivenessActionNotExecutedViolation(classKey identity.Key, className, actionName string) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeLivenessActionNotExecuted,
+		Message:           fmt.Sprintf("liveness: action %s on class %s was never executed during simulation", actionName, className),
+		ClassKey:          classKey,
+		ActionOrQueryName: actionName,
+	}
+}
+
 // ViolationErrors is a collection of violations.
 type ViolationErrors []*ViolationError
 
@@ -483,7 +527,10 @@ func (v ViolationErrors) LivenessViolations() ViolationErrors {
 		case ViolationTypeLivenessClassNotInstantiated,
 			ViolationTypeLivenessAttributeNotWritten,
 			ViolationTypeLivenessAssociationNotLinked,
-			ViolationTypeLivenessAttributeNotRead:
+			ViolationTypeLivenessAttributeNotRead,
+			ViolationTypeLivenessEventNotSent,
+			ViolationTypeLivenessQueryNotRun,
+			ViolationTypeLivenessActionNotExecuted:
 			result = append(result, violation)
 		default:
 			// Not a liveness violation; skip.

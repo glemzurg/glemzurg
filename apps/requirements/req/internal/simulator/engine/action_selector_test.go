@@ -113,7 +113,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	s.Contains(err.Error(), "deadlock")
 }
 
-func (s *ActionSelectorSuite) TestDoActionsNotTopLevelSelected() {
+func (s *ActionSelectorSuite) TestDoActionsEligibleOnExistingInstances() {
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/counter/state/active")
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/counter/event/create")
@@ -162,10 +162,16 @@ func (s *ActionSelectorSuite) TestDoActionsNotTopLevelSelected() {
 	attrs.Set("count", object.NewInteger(0))
 	simState.CreateInstance(classKey, attrs)
 
-	// Do-actions are never top-level eligible; only events and queries are.
+	foundDo := false
 	for range 50 {
 		action, err := selector.SelectAction(simState)
 		s.Require().NoError(err)
-		s.False(action.IsDo, "do actions must not be top-level eligible")
+		if action.IsDo {
+			foundDo = true
+			s.Equal("DoCount", action.DoAction.Name)
+			s.NotNil(action.Instance)
+			break
+		}
 	}
+	s.True(foundDo, "do actions are surface-level on existing instances")
 }

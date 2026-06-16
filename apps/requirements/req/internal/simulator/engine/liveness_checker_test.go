@@ -498,16 +498,33 @@ func (s *LivenessCheckerSuite) TestMultipleViolationsCombined() {
 	}
 
 	violations := checker.Check(result)
-	// 2 classes not instantiated + 2 attributes not written (amount + name).
 	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
 	s.Len(classViolations, 2)
 
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
 	s.Len(attrViolations, 2)
 
-	// LivenessViolations filter should return all of them.
-	liveness := violations.LivenessViolations()
-	s.Len(liveness, 4)
+	eventViolations := violations.ByType(invariants.ViolationTypeLivenessEventNotSent)
+	s.NotEmpty(eventViolations)
+
+	s.NotEmpty(violations.LivenessViolations())
+}
+
+func (s *LivenessCheckerSuite) TestEventNotSent_Violation() {
+	orderClass, orderKey := livenessOrderClass()
+	model := testModel(classEntry(orderClass, orderKey))
+	catalog := NewClassCatalog(model)
+	checker := NewLivenessChecker(catalog)
+
+	result := &SimulationResult{
+		Steps:      []*SimulationStep{},
+		FinalState: makeFinalState(),
+	}
+
+	violations := checker.Check(result)
+	eventViolations := violations.ByType(invariants.ViolationTypeLivenessEventNotSent)
+	s.NotEmpty(eventViolations)
+	s.Contains(eventViolations[0].Message, "create")
 }
 
 func (s *LivenessCheckerSuite) TestNilFinalState_NoAssociationPanic() {

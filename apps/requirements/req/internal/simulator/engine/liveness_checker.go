@@ -3,6 +3,7 @@ package engine
 import (
 	"sort"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
@@ -10,10 +11,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
-// LivenessChecker performs post-simulation coverage analysis.
-// It verifies that every in-scope class was instantiated, every
-// non-derived attribute was written, and every in-scope association
-// had at least one link created.
+// LivenessChecker performs post-simulation coverage analysis across the whole
+// simulation surface. Violations highlight gaps in subdomain logic — classes,
+// associations, events, queries, and actions that the run never exercised.
 type LivenessChecker struct {
 	catalog *ClassCatalog
 }
@@ -29,17 +29,20 @@ func (lc *LivenessChecker) Check(result *SimulationResult) invariants.ViolationE
 	violations = append(violations, lc.checkClassInstantiation(result)...)
 	violations = append(violations, lc.checkAttributeWriteCoverage(result)...)
 	violations = append(violations, lc.checkAssociationCoverage(result)...)
+	violations = append(violations, lc.checkEventCoverage(result)...)
+	violations = append(violations, lc.checkQueryCoverage(result)...)
+	violations = append(violations, lc.checkActionCoverage(result)...)
 	return violations
 }
 
-// checkClassInstantiation verifies every simulatable class had at least
+// checkClassInstantiation verifies every in-scope simulatable class had at least
 // one instance created during the simulation.
 func (lc *LivenessChecker) checkClassInstantiation(result *SimulationResult) invariants.ViolationErrors {
 	instantiated := make(map[identity.Key]bool)
 	collectInstantiatedClasses(result.Steps, instantiated)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllEventBearingClasses() {
+	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
 		if !instantiated[classInfo.ClassKey] {
 			violations = append(violations, invariants.NewLivenessClassNotInstantiatedViolation(
 				classInfo.ClassKey,
@@ -70,11 +73,9 @@ func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult)
 	collectWrittenAttributes(result.Steps, written)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllEventBearingClasses() {
+	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
 		classWritten := written[classInfo.ClassKey]
 
-		// Collect non-derived attributes, sorted by display name for deterministic output.
-		// Primed assignments record attribute subKeys; compare against Key.SubKey, not Name.
 		type attrCoverage struct {
 			subKey string
 			name   string
@@ -82,7 +83,7 @@ func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult)
 		var attrs []attrCoverage
 		for _, attr := range classInfo.Class.Attributes {
 			if attr.DerivationPolicy != nil {
-				continue // Derived attributes are computed, not written.
+				continue
 			}
 			attrs = append(attrs, attrCoverage{subKey: attr.Key.SubKey, name: attr.Name})
 		}
@@ -105,15 +106,12 @@ func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult)
 // pairs that were written via primed assignments.
 func collectWrittenAttributes(steps []*SimulationStep, out map[identity.Key]map[string]bool) {
 	for _, step := range steps {
-		// Check transition result.
 		if step.TransitionResult != nil && step.TransitionResult.ActionResult != nil {
 			recordPrimedWrites(step.ClassKey, step.TransitionResult.ActionResult.PrimedAssignments, out)
 		}
-		// Check do action result.
 		if step.DoActionResult != nil {
 			recordPrimedWrites(step.ClassKey, step.DoActionResult.PrimedAssignments, out)
 		}
-		// Recurse into cascaded steps.
 		if len(step.CascadedSteps) > 0 {
 			collectWrittenAttributes(step.CascadedSteps, out)
 		}
@@ -132,21 +130,17 @@ func recordPrimedWrites(classKey identity.Key, assignments map[state.InstanceID]
 	}
 }
 
-// checkAssociationCoverage verifies every in-scope association had at
-// least one link created during the simulation.
+// checkAssociationCoverage verifies every in-scope association had at least
+// one link created during the simulation.
 func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) invariants.ViolationErrors {
 	if result.FinalState == nil {
 		return nil
 	}
 
-	// Get all association keys that have at least one link in the final state.
 	linkedAssocs := result.FinalState.Links().AllAssociationKeys()
 
 	var violations invariants.ViolationErrors
 	for _, assocInfo := range lc.catalog.AllAssociations() {
-		if !lc.associationEndpointsAreEventBearing(assocInfo) {
-			continue
-		}
 		assocKeyStr := evaluator.AssociationKey(assocInfo.Association.Key.String())
 		if !linkedAssocs[assocKeyStr] {
 			violations = append(violations, invariants.NewLivenessAssociationNotLinkedViolation(
@@ -160,8 +154,140 @@ func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) in
 	return violations
 }
 
-func (lc *LivenessChecker) associationEndpointsAreEventBearing(assocInfo AssociationInfo) bool {
-	fromInfo := lc.catalog.GetClassInfo(assocInfo.FromClassKey)
-	toInfo := lc.catalog.GetClassInfo(assocInfo.ToClassKey)
-	return fromInfo != nil && fromInfo.HasEvents && toInfo != nil && toInfo.HasEvents
+type simulationCoverage struct {
+	events  map[identity.Key]bool
+	queries map[identity.Key]bool
+	actions map[identity.Key]bool
+}
+
+func collectSimulationCoverage(steps []*SimulationStep, catalog *ClassCatalog, out *simulationCoverage) {
+	for _, step := range steps {
+		if step.EventName != "" {
+			out.events[step.EventKey] = true
+		}
+		if step.QueryName != "" {
+			out.queries[step.QueryKey] = true
+		}
+		for _, actionKey := range step.ExecutedActionKeys {
+			out.actions[actionKey] = true
+		}
+		recordTransitionActionCoverage(step, catalog, out)
+		if len(step.CascadedSteps) > 0 {
+			collectSimulationCoverage(step.CascadedSteps, catalog, out)
+		}
+	}
+}
+
+func recordTransitionActionCoverage(step *SimulationStep, catalog *ClassCatalog, out *simulationCoverage) {
+	if step.TransitionResult == nil || step.TransitionResult.ActionResult == nil {
+		return
+	}
+	classInfo := catalog.GetClassInfo(step.ClassKey)
+	if classInfo == nil {
+		return
+	}
+	transition, ok := classInfo.Class.Transitions[step.TransitionResult.TransitionKey]
+	if !ok || transition.ActionKey == nil {
+		return
+	}
+	out.actions[*transition.ActionKey] = true
+}
+
+func (lc *LivenessChecker) checkEventCoverage(result *SimulationResult) invariants.ViolationErrors {
+	coverage := &simulationCoverage{
+		events:  make(map[identity.Key]bool),
+		queries: make(map[identity.Key]bool),
+		actions: make(map[identity.Key]bool),
+	}
+	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
+
+	var violations invariants.ViolationErrors
+	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+		events := sortedClassEvents(classInfo)
+		for _, event := range events {
+			if !coverage.events[event.Key] {
+				violations = append(violations, invariants.NewLivenessEventNotSentViolation(
+					classInfo.ClassKey,
+					classInfo.Class.Name,
+					event.Name,
+				))
+			}
+		}
+	}
+	return violations
+}
+
+func (lc *LivenessChecker) checkQueryCoverage(result *SimulationResult) invariants.ViolationErrors {
+	coverage := &simulationCoverage{
+		events:  make(map[identity.Key]bool),
+		queries: make(map[identity.Key]bool),
+		actions: make(map[identity.Key]bool),
+	}
+	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
+
+	var violations invariants.ViolationErrors
+	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+		queries := sortedClassQueries(classInfo)
+		for _, query := range queries {
+			if !coverage.queries[query.Key] {
+				violations = append(violations, invariants.NewLivenessQueryNotRunViolation(
+					classInfo.ClassKey,
+					classInfo.Class.Name,
+					query.Name,
+				))
+			}
+		}
+	}
+	return violations
+}
+
+func (lc *LivenessChecker) checkActionCoverage(result *SimulationResult) invariants.ViolationErrors {
+	coverage := &simulationCoverage{
+		events:  make(map[identity.Key]bool),
+		queries: make(map[identity.Key]bool),
+		actions: make(map[identity.Key]bool),
+	}
+	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
+
+	var violations invariants.ViolationErrors
+	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+		actions := sortedClassActions(classInfo)
+		for _, action := range actions {
+			if !coverage.actions[action.Key] {
+				violations = append(violations, invariants.NewLivenessActionNotExecutedViolation(
+					classInfo.ClassKey,
+					classInfo.Class.Name,
+					action.Name,
+				))
+			}
+		}
+	}
+	return violations
+}
+
+func sortedClassEvents(classInfo *ClassInfo) []model_state.Event {
+	events := make([]model_state.Event, 0, len(classInfo.Class.Events))
+	for _, event := range classInfo.Class.Events {
+		events = append(events, event)
+	}
+	sort.Slice(events, func(i, j int) bool { return events[i].Name < events[j].Name })
+	return events
+}
+
+func sortedClassQueries(classInfo *ClassInfo) []model_state.Query {
+	queries := make([]model_state.Query, 0, len(classInfo.Class.Queries))
+	for _, query := range classInfo.Class.Queries {
+		queries = append(queries, query)
+	}
+	sort.Slice(queries, func(i, j int) bool { return queries[i].Name < queries[j].Name })
+	return queries
+}
+
+func sortedClassActions(classInfo *ClassInfo) []model_state.Action {
+	actions := make([]model_state.Action, 0, len(classInfo.Class.Actions))
+	for _, action := range classInfo.Class.Actions {
+		actions = append(actions, action)
+	}
+	sort.Slice(actions, func(i, j int) bool { return actions[i].Name < actions[j].Name })
+	return actions
 }
