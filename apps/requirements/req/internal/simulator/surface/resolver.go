@@ -8,6 +8,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
@@ -189,27 +190,40 @@ func statelessNamesSorted(names []string) []string {
 	return sorted
 }
 
-// ResolveClassKeysByName finds class keys whose Name or key suffix matches any of the
-// given names (case-insensitive).
-func ResolveClassKeysByName(model *core.Model, names []string) ([]identity.Key, error) {
-	want := make(map[string]bool, len(names))
-	for _, name := range names {
-		want[strings.ToLower(strings.TrimSpace(name))] = true
-	}
+// classSpecifier scopes a class lookup. Unqualified specifiers match any subdomain.
+type classSpecifier struct {
+	domainSubKey    string
+	subdomainSubKey string
+	classToken      string
+}
 
+// ResolveClassKeysByName resolves include-class entries to class keys.
+//
+// Each entry may be:
+//   - class name or class subkey (case-insensitive), matching any subdomain;
+//   - subdomain/class (e.g. wallet/partner);
+//   - domain/subdomain/class (e.g. finance/wallet/partner).
+func ResolveClassKeysByName(model *core.Model, names []string) ([]identity.Key, error) {
+	seen := make(map[string]bool)
 	var keys []identity.Key
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for classKey, class := range subdomain.Classes {
-				lowerName := strings.ToLower(class.Name)
-				if want[lowerName] {
-					keys = append(keys, classKey)
-					continue
-				}
-				if want[strings.ToLower(classKey.SubKey)] {
-					keys = append(keys, classKey)
-				}
+
+	for _, name := range names {
+		spec, err := parseClassSpecifier(name)
+		if err != nil {
+			return nil, err
+		}
+
+		matched, err := resolveClassSpecifier(model, spec)
+		if err != nil {
+			return nil, err
+		}
+		for _, key := range matched {
+			keyStr := key.String()
+			if seen[keyStr] {
+				continue
 			}
+			seen[keyStr] = true
+			keys = append(keys, key)
 		}
 	}
 
@@ -218,4 +232,126 @@ func ResolveClassKeysByName(model *core.Model, names []string) ([]identity.Key, 
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
 	return keys, nil
+}
+
+func parseClassSpecifier(raw string) (classSpecifier, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return classSpecifier{}, fmt.Errorf("class specifier is empty")
+	}
+	if !strings.Contains(raw, "/") {
+		return classSpecifier{classToken: raw}, nil
+	}
+
+	parts := strings.Split(raw, "/")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+		if parts[i] == "" {
+			return classSpecifier{}, fmt.Errorf("invalid class specifier %q: path segments must be non-empty", raw)
+		}
+	}
+
+	switch len(parts) {
+	case 2:
+		return classSpecifier{
+			subdomainSubKey: parts[0],
+			classToken:      parts[1],
+		}, nil
+	case 3:
+		return classSpecifier{
+			domainSubKey:    parts[0],
+			subdomainSubKey: parts[1],
+			classToken:      parts[2],
+		}, nil
+	default:
+		return classSpecifier{}, fmt.Errorf(
+			"invalid class specifier %q: use class, subdomain/class, or domain/subdomain/class",
+			raw,
+		)
+	}
+}
+
+func resolveClassSpecifier(model *core.Model, spec classSpecifier) ([]identity.Key, error) {
+	if spec.subdomainSubKey == "" {
+		return resolveUnqualifiedClassToken(model, spec.classToken)
+	}
+
+	var subdomainHits []struct {
+		domainSubKey string
+		subdomain    model_domain.Subdomain
+	}
+
+	for _, domain := range model.Domains {
+		if spec.domainSubKey != "" && !strings.EqualFold(domain.Key.SubKey, spec.domainSubKey) {
+			continue
+		}
+		for _, subdomain := range domain.Subdomains {
+			if !strings.EqualFold(subdomain.Key.SubKey, spec.subdomainSubKey) {
+				continue
+			}
+			subdomainHits = append(subdomainHits, struct {
+				domainSubKey string
+				subdomain    model_domain.Subdomain
+			}{domainSubKey: domain.Key.SubKey, subdomain: subdomain})
+		}
+	}
+
+	if len(subdomainHits) == 0 {
+		if spec.domainSubKey != "" {
+			return nil, fmt.Errorf(
+				"no subdomain %q in domain %q for class %q",
+				spec.subdomainSubKey, spec.domainSubKey, spec.classToken,
+			)
+		}
+		return nil, fmt.Errorf("no subdomain %q for class %q", spec.subdomainSubKey, spec.classToken)
+	}
+
+	if spec.domainSubKey == "" && len(subdomainHits) > 1 {
+		domains := make([]string, len(subdomainHits))
+		for i, hit := range subdomainHits {
+			domains[i] = hit.domainSubKey
+		}
+		sort.Strings(domains)
+		return nil, fmt.Errorf(
+			"subdomain %q is ambiguous across domains %s; use domain/subdomain/class",
+			spec.subdomainSubKey,
+			strings.Join(domains, ", "),
+		)
+	}
+
+	var keys []identity.Key
+	for _, hit := range subdomainHits {
+		classKey, found := matchClassToken(hit.subdomain, spec.classToken)
+		if !found {
+			return nil, fmt.Errorf(
+				"no class %q in subdomain %s/%s",
+				spec.classToken, hit.domainSubKey, spec.subdomainSubKey,
+			)
+		}
+		keys = append(keys, classKey)
+	}
+	return keys, nil
+}
+
+func resolveUnqualifiedClassToken(model *core.Model, classToken string) ([]identity.Key, error) {
+	var keys []identity.Key
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			classKey, found := matchClassToken(subdomain, classToken)
+			if found {
+				keys = append(keys, classKey)
+			}
+		}
+	}
+	return keys, nil
+}
+
+func matchClassToken(subdomain model_domain.Subdomain, classToken string) (identity.Key, bool) {
+	want := strings.ToLower(strings.TrimSpace(classToken))
+	for classKey, class := range subdomain.Classes {
+		if strings.EqualFold(classKey.SubKey, want) || strings.EqualFold(class.Name, want) {
+			return classKey, true
+		}
+	}
+	return identity.Key{}, false
 }

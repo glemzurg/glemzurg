@@ -53,7 +53,7 @@ func parseCLIOptions() cliOptions {
 	quiet := flag.Bool("quiet", false, "Only output violations")
 	rootSource := flag.String("rootsource", "", "Human model root source directory (e.g. data_sandbox/model)")
 	modelName := flag.String("model", "", "Model name when using -rootsource (e.g. evenplay)")
-	includeClasses := flag.String("include-class", "", "Comma-separated class names to simulate (surface filter)")
+	includeClasses := flag.String("include-class", "", "Comma-separated classes to simulate: name, subdomain/class, or domain/subdomain/class")
 	flag.Parse()
 
 	stop := *stopOnViolation

@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
@@ -27,9 +28,11 @@ func TestGenerateScenarioMermaidContents_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, contents, `participant `)
-	assert.Contains(t, contents, ` as Alice<br/>Customer`)
-	assert.Contains(t, contents, ` as Order 42`)
-	assert.Contains(t, contents, ` as *<br/>Product`)
+	aliceIdx := strings.Index(contents, ` as Alice<br/>Customer`)
+	orderIdx := strings.Index(contents, ` as Order 42`)
+	productIdx := strings.Index(contents, ` as *<br/>Product`)
+	assert.Greater(t, orderIdx, aliceIdx, "objects should follow YAML order: customer before order")
+	assert.Greater(t, productIdx, orderIdx, "objects should follow YAML order: order before product")
 	assert.Contains(t, contents, `Customer submits orderSubmit(`)
 	assert.Contains(t, contents, "loop while items remain")
 	assert.Contains(t, contents, "alt order is valid")

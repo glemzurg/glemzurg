@@ -8,6 +8,9 @@
 #   Explicit class scope:
 #     ./scripts/simulate.sh evenplay 42 jurisdiction
 #
+#   Subdomain-qualified class (avoids matching same-named classes elsewhere):
+#     ./scripts/simulate.sh evenplay 42 wallet/partner
+#
 #   Full step trace:
 #     ./scripts/simulate.sh evenplay 42 jurisdiction --trace
 #
@@ -32,7 +35,7 @@ usage() {
     echo ""
     echo "  MODEL          Model name under the root source (e.g. evenplay)"
     echo "  SEED           Random seed for reproducible runs (e.g. 42)"
-    echo "  INCLUDE_CLASS  Comma-separated class names to simulate (default: jurisdiction)"
+    echo "  INCLUDE_CLASS  Comma-separated classes: name, subdomain/class, or domain/subdomain/class (default: jurisdiction)"
     echo "  ROOTSOURCE     Human model root directory (default: data_sandbox/model)"
     echo ""
     echo "Options (passed to simulate):"

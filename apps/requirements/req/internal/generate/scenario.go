@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -72,7 +73,7 @@ func writeParticipants(ctx stepContext, builder *mermaidSequence, scenario model
 	}
 
 	var participantIDs []string
-	for _, obj := range scenario.Objects {
+	for _, obj := range scenarioObjectsInOrder(scenario) {
 		object, found := ctx.objectLookup[obj.Key.String()]
 		if !found {
 			return nil, errors.Errorf("unknown object key: '%s'", obj.Key.String())
@@ -91,6 +92,18 @@ func writeParticipants(ctx stepContext, builder *mermaidSequence, scenario model
 
 func scenarioObjectParticipantID(objectKey identity.Key) string {
 	return mermaidNodeID("sobject", objectKey)
+}
+
+// scenarioObjectsInOrder returns scenario objects sorted by ObjectNumber (YAML objects array order).
+func scenarioObjectsInOrder(scenario model_scenario.Scenario) []model_scenario.Object {
+	objects := make([]model_scenario.Object, 0, len(scenario.Objects))
+	for _, obj := range scenario.Objects {
+		objects = append(objects, obj)
+	}
+	sort.Slice(objects, func(i, j int) bool {
+		return objects[i].ObjectNumber < objects[j].ObjectNumber
+	})
+	return objects
 }
 
 func mermaidNodeID(prefix string, key identity.Key) string {
