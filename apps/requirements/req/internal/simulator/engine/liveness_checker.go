@@ -39,7 +39,7 @@ func (lc *LivenessChecker) checkClassInstantiation(result *SimulationResult) inv
 	collectInstantiatedClasses(result.Steps, instantiated)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+	for _, classInfo := range lc.catalog.AllEventBearingClasses() {
 		if !instantiated[classInfo.ClassKey] {
 			violations = append(violations, invariants.NewLivenessClassNotInstantiatedViolation(
 				classInfo.ClassKey,
@@ -70,7 +70,7 @@ func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult)
 	collectWrittenAttributes(result.Steps, written)
 
 	var violations invariants.ViolationErrors
-	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
+	for _, classInfo := range lc.catalog.AllEventBearingClasses() {
 		classWritten := written[classInfo.ClassKey]
 
 		// Collect non-derived attributes, sorted by display name for deterministic output.
@@ -144,6 +144,9 @@ func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) in
 
 	var violations invariants.ViolationErrors
 	for _, assocInfo := range lc.catalog.AllAssociations() {
+		if !lc.associationEndpointsAreEventBearing(assocInfo) {
+			continue
+		}
 		assocKeyStr := evaluator.AssociationKey(assocInfo.Association.Key.String())
 		if !linkedAssocs[assocKeyStr] {
 			violations = append(violations, invariants.NewLivenessAssociationNotLinkedViolation(
@@ -155,4 +158,10 @@ func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) in
 		}
 	}
 	return violations
+}
+
+func (lc *LivenessChecker) associationEndpointsAreEventBearing(assocInfo AssociationInfo) bool {
+	fromInfo := lc.catalog.GetClassInfo(assocInfo.FromClassKey)
+	toInfo := lc.catalog.GetClassInfo(assocInfo.ToClassKey)
+	return fromInfo != nil && fromInfo.HasEvents && toInfo != nil && toInfo.HasEvents
 }

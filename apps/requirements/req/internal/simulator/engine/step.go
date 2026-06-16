@@ -72,6 +72,9 @@ type SimulationStep struct {
 	// DoActionResult is the result from a "do" action execution (nil for transition steps).
 	DoActionResult *actions.ActionResult
 
+	// QueryResult is the result from a query execution (nil for non-query steps).
+	QueryResult *actions.QueryResult
+
 	// CascadedSteps holds child steps from creation chain cascading.
 	CascadedSteps []*SimulationStep
 

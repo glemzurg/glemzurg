@@ -197,8 +197,9 @@ func setupExecutors(
 	actionExecutor := buildActionExecutor(bindingsBuilder, checkers, rng)
 
 	catalog := NewClassCatalog(model)
-	if len(catalog.AllSimulatableClasses()) == 0 {
-		return nil, nil, nil, fmt.Errorf("no simulatable classes found in model (classes must have states)")
+	PopulateCallerDataFromModel(model, catalog)
+	if len(catalog.AllEventBearingClasses()) == 0 {
+		return nil, nil, nil, fmt.Errorf("no event-bearing simulatable classes found in model")
 	}
 
 	stepExecutor, selector, livenessChecker := buildStepExecutor(actionExecutor, bindingsBuilder, catalog, rng)

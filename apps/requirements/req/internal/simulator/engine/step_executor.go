@@ -62,12 +62,43 @@ func (e *StepExecutor) Execute(
 	simState *state.SimulationState,
 	stepNumber int,
 ) (*SimulationStep, error) {
+	if pending.IsQuery {
+		return e.executeQuery(pending, stepNumber)
+	}
+
 	// Handle "do" actions separately — they don't involve state transitions.
 	if pending.IsDo {
 		return e.executeDo(pending, stepNumber)
 	}
 
 	return e.executeTransition(pending, simState, stepNumber)
+}
+
+// executeQuery runs a read-only query on an existing instance.
+func (e *StepExecutor) executeQuery(
+	pending *PendingAction,
+	stepNumber int,
+) (*SimulationStep, error) {
+	step := &SimulationStep{
+		StepNumber: stepNumber,
+		Kind:       StepKindNormal,
+		ClassKey:   pending.Class.ClassKey,
+		ClassName:  pending.Class.Class.Name,
+		InstanceID: pending.Instance.ID,
+	}
+
+	if pending.Query == nil {
+		return nil, fmt.Errorf("query is nil")
+	}
+
+	result, err := e.actionExecutor.ExecuteQuery(*pending.Query, pending.Instance, nil)
+	if err != nil {
+		return nil, fmt.Errorf("query %s error: %w", pending.Query.Name, err)
+	}
+
+	step.QueryResult = result
+	step.Violations = append(step.Violations, result.Violations...)
+	return step, nil
 }
 
 // executeDo handles a "do" state action — runs the action on the instance.

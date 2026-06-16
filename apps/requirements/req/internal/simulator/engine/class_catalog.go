@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -18,6 +19,7 @@ type ClassInfo struct {
 	StateEvents    map[string][]EventInfo          // stateName → eligible events from that state.
 	DoActions      map[string][]model_state.Action // stateName → "do" actions available while in state.
 	HasStates      bool
+	HasEvents      bool
 }
 
 // EventInfo pairs an event with the transitions it can trigger from a specific state.
@@ -94,6 +96,7 @@ func buildClassInfo(class model_class.Class) *ClassInfo {
 	}
 
 	info.CreationEvents = findCreationEvents(class, eventByKey)
+	info.HasEvents = len(class.Events) > 0
 	buildPerStateInfo(info, class, eventByKey)
 
 	return info
@@ -214,6 +217,13 @@ func (c *ClassCatalog) SetEventSentBy(eventKey identity.Key, senderClassKeys []i
 	c.eventSentBy[eventKey] = senderClassKeys
 }
 
+func (c *ClassCatalog) addEventSender(eventKey, senderClassKey identity.Key) {
+	if slices.Contains(c.eventSentBy[eventKey], senderClassKey) {
+		return
+	}
+	c.eventSentBy[eventKey] = append(c.eventSentBy[eventKey], senderClassKey)
+}
+
 // SetActionCalledBy records which classes call a given action.
 func (c *ClassCatalog) SetActionCalledBy(actionKey identity.Key, callerClassKeys []identity.Key) {
 	c.actionCalledBy[actionKey] = callerClassKeys
@@ -222,6 +232,13 @@ func (c *ClassCatalog) SetActionCalledBy(actionKey identity.Key, callerClassKeys
 // SetQueryCalledBy records which classes call a given query.
 func (c *ClassCatalog) SetQueryCalledBy(queryKey identity.Key, callerClassKeys []identity.Key) {
 	c.queryCalledBy[queryKey] = callerClassKeys
+}
+
+func (c *ClassCatalog) addQueryCaller(queryKey, callerClassKey identity.Key) {
+	if slices.Contains(c.queryCalledBy[queryKey], callerClassKey) {
+		return
+	}
+	c.queryCalledBy[queryKey] = append(c.queryCalledBy[queryKey], callerClassKey)
 }
 
 // CallerData exports the SentBy/CalledBy metadata as a surface.CallerData
@@ -244,6 +261,20 @@ func (c *ClassCatalog) AllSimulatableClasses() []*ClassInfo {
 	result := make([]*ClassInfo, 0, len(c.classes))
 	for _, info := range c.classes {
 		result = append(result, info)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].ClassKey.String() < result[j].ClassKey.String()
+	})
+	return result
+}
+
+// AllEventBearingClasses returns simulatable classes that declare at least one event.
+func (c *ClassCatalog) AllEventBearingClasses() []*ClassInfo {
+	result := make([]*ClassInfo, 0, len(c.classes))
+	for _, info := range c.classes {
+		if info.HasEvents {
+			result = append(result, info)
+		}
 	}
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].ClassKey.String() < result[j].ClassKey.String()
@@ -336,32 +367,40 @@ func (c *ClassCatalog) GetAssociationsForClass(classKey identity.Key) []Associat
 	return c.classAssocs[classKey]
 }
 
-// ExternalCreationEvents returns creation events that are NOT triggered by
-// another in-scope class through an association. A creation event is "internal"
-// if another class in the catalog has a mandatory outbound association that
-// targets this class — meaning the other class creates this one as part of
-// its own creation chain.
+// ExternalCreationEvents returns creation events eligible for top-level firing.
+// An event is excluded when a simulatable in-scope class sends it (SentBy) or
+// when another class's mandatory outbound association targets this class.
 func (c *ClassCatalog) ExternalCreationEvents(classKey identity.Key) []model_state.Event {
 	info := c.classes[classKey]
-	if info == nil {
+	if info == nil || len(info.CreationEvents) == 0 {
 		return nil
 	}
 
-	// Check if any other class in scope has a mandatory association pointing to this class.
-	for otherKey, otherInfo := range c.classes {
+	if c.isMandatoryAssociationCreationTarget(classKey) {
+		return nil
+	}
+
+	var external []model_state.Event
+	for _, ev := range info.CreationEvents {
+		if c.isEventExternal(ev) {
+			external = append(external, ev)
+		}
+	}
+	return external
+}
+
+func (c *ClassCatalog) isMandatoryAssociationCreationTarget(classKey identity.Key) bool {
+	for otherKey := range c.classes {
 		if otherKey == classKey {
 			continue
 		}
-		_ = otherInfo
 		for _, ai := range c.classAssocs[otherKey] {
 			if ai.FromClassKey == otherKey && ai.ToClassKey == classKey && ai.MandatoryTo {
-				// This class's creation is driven by another class — not external.
-				return nil
+				return true
 			}
 		}
 	}
-
-	return info.CreationEvents
+	return false
 }
 
 // ExternalStateEvents returns events eligible for external (top-level) firing
@@ -387,6 +426,26 @@ func (c *ClassCatalog) ExternalStateEvents(classKey identity.Key, stateName stri
 	return external
 }
 
+// ExternalQueries returns queries eligible for top-level firing on existing instances.
+// A query is "internal" if its CalledBy list contains a simulatable in-scope class.
+func (c *ClassCatalog) ExternalQueries(classKey identity.Key) []model_state.Query {
+	info := c.classes[classKey]
+	if info == nil || len(info.Class.Queries) == 0 {
+		return nil
+	}
+
+	queries := make([]model_state.Query, 0, len(info.Class.Queries))
+	for _, query := range info.Class.Queries {
+		if c.isQueryExternal(query) {
+			queries = append(queries, query)
+		}
+	}
+	sort.Slice(queries, func(i, j int) bool {
+		return queries[i].Key.String() < queries[j].Key.String()
+	})
+	return queries
+}
+
 // ExternalDoActions returns "do" actions eligible for top-level firing in a state.
 // A "do" action is "internal" if its CalledBy list contains an in-scope class.
 func (c *ClassCatalog) ExternalDoActions(classKey identity.Key, stateName string) []model_state.Action {
@@ -408,30 +467,25 @@ func (c *ClassCatalog) ExternalDoActions(classKey identity.Key, stateName string
 	return external
 }
 
-// isEventExternal returns true if the event has no SentBy classes in scope.
+// isEventExternal returns true when no simulatable in-scope class sends the event.
 func (c *ClassCatalog) isEventExternal(event model_state.Event) bool {
-	senders := c.eventSentBy[event.Key]
-	if len(senders) == 0 {
-		return true // No senders declared — always external.
-	}
-	for _, senderKey := range senders {
-		if _, inScope := c.classes[senderKey]; inScope {
-			return false // A sender is in scope — this event is internal.
-		}
-	}
-	return true // No senders are in scope — external.
+	return !c.hasSimulatableSender(c.eventSentBy[event.Key])
 }
 
-// isActionExternal returns true if the action has no CalledBy classes in scope.
-func (c *ClassCatalog) isActionExternal(action model_state.Action) bool {
-	callers := c.actionCalledBy[action.Key]
-	if len(callers) == 0 {
-		return true // No callers declared — always external.
-	}
-	for _, callerKey := range callers {
-		if _, inScope := c.classes[callerKey]; inScope {
-			return false // A caller is in scope — this action is internal.
+func (c *ClassCatalog) isQueryExternal(query model_state.Query) bool {
+	return !c.hasSimulatableSender(c.queryCalledBy[query.Key])
+}
+
+func (c *ClassCatalog) hasSimulatableSender(senders []identity.Key) bool {
+	for _, senderKey := range senders {
+		if _, simulatable := c.classes[senderKey]; simulatable {
+			return true
 		}
 	}
-	return true // No callers are in scope — external.
+	return false
+}
+
+// isActionExternal returns true when no simulatable in-scope class calls the action.
+func (c *ClassCatalog) isActionExternal(action model_state.Action) bool {
+	return !c.hasSimulatableSender(c.actionCalledBy[action.Key])
 }
