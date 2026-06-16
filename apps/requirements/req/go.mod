@@ -3,7 +3,6 @@ module github.com/glemzurg/glemzurg/apps/requirements/req
 go 1.25.3
 
 require (
-	github.com/aorith/svg-sequence v0.0.15
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-playground/validator/v10 v10.30.1

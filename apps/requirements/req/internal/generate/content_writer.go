@@ -77,11 +77,6 @@ func generateFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter, cl
 		return err
 	}
 
-	// Generate scenario files
-	if err := generateScenarioFilesToWriter(reqs, writer); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -385,24 +380,6 @@ func generateUseCaseFilesToWriter(reqs *req_flat.Requirements, writer ContentWri
 			return err
 		}
 		if err := writer.WriteMarkdown(modelFilename, []byte(mdContents)); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// generateScenarioFilesToWriter generates scenario files to a ContentWriter.
-func generateScenarioFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
-	scenarioLookup := reqs.ScenarioLookup()
-
-	for _, scenario := range scenarioLookup {
-		svgFilename := convertKeyToFilename("scenario", scenario.Key.String(), "", ".svg")
-		svgContents, err := generateScenarioSvgContents(reqs, scenario)
-		if err != nil {
-			return err
-		}
-		if err := writer.WriteSVG(svgFilename, []byte(svgContents)); err != nil {
 			return err
 		}
 	}

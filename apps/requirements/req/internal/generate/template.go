@@ -261,6 +261,15 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.ScenarioLookup()
 		return lookup[key.String()]
 	},
+	"scenario_mermaid": func(reqs *req_flat.Requirements, key identity.Key) (value string) {
+		lookup := reqs.ScenarioLookup()
+		scenario := lookup[key.String()]
+		contents, err := generateScenarioMermaidContents(reqs, scenario)
+		if err != nil {
+			panic(errors.WithStack(err))
+		}
+		return contents
+	},
 	"actor_lookup": func(reqs *req_flat.Requirements, key identity.Key) (actor model_actor.Actor) {
 		lookup := reqs.ActorLookup()
 		return lookup[key.String()]

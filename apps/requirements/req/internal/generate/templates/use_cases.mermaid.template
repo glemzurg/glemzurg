@@ -3,12 +3,12 @@ flowchart LR
     subgraph {{ nodeid "domain" .Domain.Key }}["{{ .Domain.Name }}"]
 {{ range .UseCases -}}
 {{ $useCaseNode := nodeid "use_case" .Key -}}
-        {{ $useCaseNode }}(["{{ if ne .Level "sea" }}<<{{ .Level }}>> {{ end }}{{ .Name }}"])
+        {{ $useCaseNode }}(["{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ .Name }}"])
 {{ end -}}
     end
 {{ range .Actors -}}
 {{ $actorKey := nodeid "actor" .Key -}}
-    {{ $actorKey }}["<<{{ .Type }}>><br/>{{ .Name }}"]
+    {{ $actorKey }}["«{{ .Type }}»<br/>{{ .Name }}"]
 {{ end -}}
 {{ range .UseCases -}}
 {{ $useCaseNode := nodeid "use_case" .Key -}}

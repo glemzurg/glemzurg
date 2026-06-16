@@ -65,7 +65,10 @@ Flows of interest.
 
 {{ $scenario.Details }}
 
-![er]({{ filename "scenario" $scenario.Key "" ".svg" }})
+```mermaid
+sequenceDiagram
+{{ scenario_mermaid $reqs $scenario.Key }}
+```
 
 {{ end -}}
 {{- else -}}
