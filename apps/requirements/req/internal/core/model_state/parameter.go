@@ -9,20 +9,21 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// Parameter is a typed parameter for actions, queries, and events.
+// Parameter is a typed parameter for actions and queries.
 type Parameter struct {
 	Key           identity.Key
 	Name          string
 	DataTypeRules string                    // What are the bounds of this data type.
+	Nullable      bool                      // Whether absent (NULL) is a valid value.
 	DataType      *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
 // NewParameter constructs a Parameter whose identity.Key is parented by the owning
-// action, query, or event. The data type rules are parsed into a DataType if they
+// action or query. The data type rules are parsed into a DataType if they
 // can be parsed; parse failures are tolerated (DataType stays nil) but other errors
 // are propagated. Name is preserved verbatim; the key's subKey uses the normalized
-// form so it satisfies the identifier pattern (same convention as Event / Attribute).
-func NewParameter(parentKey identity.Key, name, dataTypeRules string) (param Parameter, err error) {
+// form so it satisfies the identifier pattern (same convention as Attribute).
+func NewParameter(parentKey identity.Key, name, dataTypeRules string, nullable bool) (param Parameter, err error) {
 	paramKey, err := identity.NewParameterKey(parentKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return Parameter{}, err
@@ -32,6 +33,7 @@ func NewParameter(parentKey identity.Key, name, dataTypeRules string) (param Par
 		Key:           paramKey,
 		Name:          name,
 		DataTypeRules: dataTypeRules,
+		Nullable:      nullable,
 	}
 
 	if param.DataTypeRules != "" {
@@ -96,7 +98,7 @@ func (p *Parameter) Validate(ctx *coreerr.ValidationContext) error {
 }
 
 // ValidateWithParent validates the Parameter and verifies its key is parented by
-// the given action, query, or event key.
+// the given action or query key.
 func (p *Parameter) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
 	if err := p.Validate(ctx); err != nil {
 		return err

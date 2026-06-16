@@ -2115,10 +2115,10 @@ func (suite *KeyTypeSuite) TestNewParameterKey() {
 			expected:  helper.Must(newKey(queryKey.String(), KEY_TYPE_PARAMETER, "filter")),
 		},
 		{
-			testName:  "ok event parent",
+			testName:  "error event parent",
 			parentKey: eventKey,
 			subKey:    "payload",
-			expected:  helper.Must(newKey(eventKey.String(), KEY_TYPE_PARAMETER, "payload")),
+			errstr:    "parent key cannot be of type 'event' for 'parameter' key",
 		},
 		{
 			testName:  "error wrong parent type (class)",

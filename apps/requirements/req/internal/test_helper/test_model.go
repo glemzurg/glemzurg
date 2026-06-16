@@ -358,31 +358,6 @@ func GetStrictTestModel() core.Model {
 				}
 			}
 
-			// Ensure all event parameter DataTypeRules are parseable.
-			// The AI parser validates data_type_rules; the base model may
-			// contain intentionally unparseable values that are valid for the
-			// human parser but not the AI path.
-			for classKey, class := range subdomain.Classes {
-				changed := false
-				for eventKey, event := range class.Events {
-					for i := range event.Parameters {
-						if event.Parameters[i].DataTypeRules != "" && event.Parameters[i].DataType == nil {
-							// Unparseable — replace with unconstrained.
-							p, err := model_state.NewParameter(event.Key, event.Parameters[i].Name, "unconstrained")
-							if err != nil {
-								panic(fmt.Sprintf("failed to create replacement parameter: %v", err))
-							}
-							event.Parameters[i] = p
-							changed = true
-						}
-					}
-					class.Events[eventKey] = event
-				}
-				if changed {
-					subdomain.Classes[classKey] = class
-				}
-			}
-
 			// Update subdomain in domain.
 			domain.Subdomains[subdomainKey] = subdomain
 		}
@@ -1406,8 +1381,8 @@ func buildNamedSets(k testKeys) (map[identity.Key]model_logic.NamedSet, error) {
 // shared parameter values (e.g., "quantity" reused across an event and an action)
 // are constructed once per owner.
 type testParams struct {
-	eventSubmit   []model_state.Parameter
-	eventFulfill  []model_state.Parameter
+	eventSubmit   []string
+	eventFulfill  []string
 	actionProcess []model_state.Parameter
 	actionNotify  []model_state.Parameter
 	queryStatus   []model_state.Parameter
@@ -1417,75 +1392,55 @@ type testParams struct {
 func buildParameters(k testKeys) (testParams, error) {
 	var p testParams
 
-	// eventSubmit: quantity, productID, reason.
-	quantitySubmit, err := model_state.NewParameter(k.eventSubmit, "quantity", "[1 .. 10000] at 1 unit")
-	if err != nil {
-		return p, err
-	}
-	productIDSubmit, err := model_state.NewParameter(k.eventSubmit, "product_id", "ref from domain_a>subdomain_a>product")
-	if err != nil {
-		return p, err
-	}
-	reasonSubmit, err := model_state.NewParameter(k.eventSubmit, "reason", "enum of out_of_stock, changed_mind, defective")
-	if err != nil {
-		return p, err
-	}
-	p.eventSubmit = []model_state.Parameter{quantitySubmit, productIDSubmit, reasonSubmit}
+	// eventSubmit: action/query param names plus an extra event-only name.
+	p.eventSubmit = []string{"quantity", "product_id", "reason", "extra_telemetry"}
 
-	// eventFulfill: reason, unparseable (Int → unparseable).
-	reasonFulfill, err := model_state.NewParameter(k.eventFulfill, "reason", "enum of out_of_stock, changed_mind, defective")
-	if err != nil {
-		return p, err
-	}
-	unparseableFulfill, err := model_state.NewParameter(k.eventFulfill, "unparseable_field", "Int")
-	if err != nil {
-		return p, err
-	}
-	p.eventFulfill = []model_state.Parameter{reasonFulfill, unparseableFulfill}
+	// eventFulfill: includes a name not declared on any action/query parameter.
+	p.eventFulfill = []string{"reason", "unparseable_field"}
 
 	// actionProcess: quantity, priority, tags.
-	quantityProcess, err := model_state.NewParameter(k.actionProcess, "quantity", "[1 .. 10000] at 1 unit")
+	quantityProcess, err := model_state.NewParameter(k.actionProcess, "quantity", "[1 .. 10000] at 1 unit", false)
 	if err != nil {
 		return p, err
 	}
-	priorityProcess, err := model_state.NewParameter(k.actionProcess, "priority", "ordered enum of low, medium, high, critical")
+	priorityProcess, err := model_state.NewParameter(k.actionProcess, "priority", "ordered enum of low, medium, high, critical", false)
 	if err != nil {
 		return p, err
 	}
-	tagsProcess, err := model_state.NewParameter(k.actionProcess, "tags", "unique unordered of unconstrained")
+	tagsProcess, err := model_state.NewParameter(k.actionProcess, "tags", "unique unordered of unconstrained", false)
 	if err != nil {
 		return p, err
 	}
 	p.actionProcess = []model_state.Parameter{quantityProcess, priorityProcess, tagsProcess}
 
 	// actionNotify: format, unconstrained_bound (span with unconstrained lower bound).
-	formatNotify, err := model_state.NewParameter(k.actionNotify, "format", "unconstrained")
+	formatNotify, err := model_state.NewParameter(k.actionNotify, "format", "unconstrained", false)
 	if err != nil {
 		return p, err
 	}
-	unconstrainedBoundNotify, err := model_state.NewParameter(k.actionNotify, "unconstrained_bound", "(unconstrained .. 100] at 1 unit")
+	unconstrainedBoundNotify, err := model_state.NewParameter(k.actionNotify, "unconstrained_bound", "(unconstrained .. 100] at 1 unit", true)
 	if err != nil {
 		return p, err
 	}
 	p.actionNotify = []model_state.Parameter{formatNotify, unconstrainedBoundNotify}
 
 	// queryStatus: productID, items, format.
-	productIDStatus, err := model_state.NewParameter(k.queryStatus, "product_id", "ref from domain_a>subdomain_a>product")
+	productIDStatus, err := model_state.NewParameter(k.queryStatus, "product_id", "ref from domain_a>subdomain_a>product", true)
 	if err != nil {
 		return p, err
 	}
-	itemsStatus, err := model_state.NewParameter(k.queryStatus, "items", "1-100 ordered of obj of some_class")
+	itemsStatus, err := model_state.NewParameter(k.queryStatus, "items", "1-100 ordered of obj of some_class", false)
 	if err != nil {
 		return p, err
 	}
-	formatStatus, err := model_state.NewParameter(k.queryStatus, "format", "unconstrained")
+	formatStatus, err := model_state.NewParameter(k.queryStatus, "format", "unconstrained", false)
 	if err != nil {
 		return p, err
 	}
 	p.queryStatus = []model_state.Parameter{productIDStatus, itemsStatus, formatStatus}
 
 	// queryHistory: format.
-	formatHistory, err := model_state.NewParameter(k.queryHistory, "format", "unconstrained")
+	formatHistory, err := model_state.NewParameter(k.queryHistory, "format", "unconstrained", false)
 	if err != nil {
 		return p, err
 	}
@@ -1533,14 +1488,14 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// --- Events ---
 
-	// eventSubmit: rich (3 parameters).
+	// eventSubmit: name list is a superset of actionProcess parameters.
 	eventSubmit := model_state.NewEvent(k.eventSubmit, "Submit", "Customer submits the order.",
 		p.eventSubmit)
 
 	eventFulfill := model_state.NewEvent(k.eventFulfill, "Fulfill", "Order is fulfilled.",
 		p.eventFulfill)
 
-	// eventCancel: empty parent (nil parameters).
+	// eventCancel: no parameter names.
 	eventCancel := model_state.NewEvent(k.eventCancel, "Cancel", "Order is cancelled.", nil)
 
 	sm.events = map[identity.Key]model_state.Event{

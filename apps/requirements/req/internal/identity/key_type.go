@@ -480,11 +480,10 @@ func NewQueryGuaranteeKey(queryKey Key, subKey string) (key Key, err error) {
 	return newKey(queryKey.String(), KEY_TYPE_QUERY_GUARANTEE, subKey)
 }
 
-// NewParameterKey creates a parameter key. The parent must be an action, query, or event —
-// the three owner types of Parameter today (see model_state/{action,query,event}.go).
+// NewParameterKey creates a parameter key. The parent must be an action or query.
 func NewParameterKey(parentKey Key, subKey string) (key Key, err error) {
 	switch parentKey.GetKeyType() {
-	case KEY_TYPE_ACTION, KEY_TYPE_QUERY, KEY_TYPE_EVENT:
+	case KEY_TYPE_ACTION, KEY_TYPE_QUERY:
 		// OK.
 	default:
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'parameter' key", parentKey.GetKeyType())

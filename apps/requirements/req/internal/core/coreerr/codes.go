@@ -122,8 +122,10 @@ const (
 
 	EventKeyInvalid       Code = "EVENT_KEY_INVALID"        // Event key failed validation.
 	EventKeyTypeInvalid   Code = "EVENT_KEY_TYPE_INVALID"   // Key is not KEY_TYPE_EVENT.
-	EventNameRequired     Code = "EVENT_NAME_REQUIRED"      // Event Name is empty.
-	EventNameInvalidChars Code = "EVENT_NAME_INVALID_CHARS" // Event Name contains characters outside A-Za-z0-9 space hyphen underscore.
+	EventNameRequired              Code = "EVENT_NAME_REQUIRED"               // Event Name is empty.
+	EventNameInvalidChars          Code = "EVENT_NAME_INVALID_CHARS"          // Event Name contains characters outside A-Za-z0-9 space hyphen underscore.
+	EventParameterNameRequired     Code = "EVENT_PARAMETER_NAME_REQUIRED"     // An entry in ParameterNames is empty.
+	EventParameterNameDuplicate    Code = "EVENT_PARAMETER_NAME_DUPLICATE"    // ParameterNames contains duplicate names (after normalization).
 
 	// ---------------------------------------------------------------
 	// Query errors.

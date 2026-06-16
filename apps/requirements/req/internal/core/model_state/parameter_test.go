@@ -148,22 +148,30 @@ func (suite *ParameterSuite) TestValidate() {
 // TestNew tests that NewParameter maps parameters correctly and sets the identity.Key.
 func (suite *ParameterSuite) TestNew() {
 	actionKey := testActionKey()
-	param, err := NewParameter(actionKey, "amount", "unconstrained")
+	param, err := NewParameter(actionKey, "amount", "unconstrained", false)
 	suite.Require().NoError(err)
 	suite.Equal("amount", param.Name)
 	suite.Equal("unconstrained", param.DataTypeRules)
+	suite.False(param.Nullable)
 	suite.Equal(identity.KEY_TYPE_PARAMETER, param.Key.KeyType)
 	suite.Equal("amount", param.Key.SubKey)
 	suite.Equal(actionKey.String(), param.Key.ParentKey)
 }
 
-// TestNewRejectsBadParent: NewParameter requires its parent to be action/query/event.
+func (suite *ParameterSuite) TestNewStoresNullable() {
+	actionKey := testActionKey()
+	param, err := NewParameter(actionKey, "country_code", "unconstrained", true)
+	suite.Require().NoError(err)
+	suite.True(param.Nullable)
+}
+
+// TestNewRejectsBadParent: NewParameter requires its parent to be action or query.
 func (suite *ParameterSuite) TestNewRejectsBadParent() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 
-	_, err := NewParameter(classKey, "amount", "unconstrained")
+	_, err := NewParameter(classKey, "amount", "unconstrained", false)
 	suite.Require().Error(err)
 	suite.ErrorContains(err, "parent key cannot be of type 'class' for 'parameter' key")
 }
@@ -172,7 +180,7 @@ func (suite *ParameterSuite) TestNewRejectsBadParent() {
 // the canonical identity.Key string parented by the Parameter's own identity.Key.
 func (suite *ParameterSuite) TestNewSetsDataTypeKey() {
 	actionKey := testActionKey()
-	param, err := NewParameter(actionKey, "amount", "unconstrained")
+	param, err := NewParameter(actionKey, "amount", "unconstrained", false)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(param.DataType, "NewParameter should parse DataTypeRules into a DataType")
 
@@ -188,7 +196,7 @@ func (suite *ParameterSuite) TestNewSetsDataTypeKey() {
 func (suite *ParameterSuite) TestValidateWithParent() {
 	ctx := coreerr.NewContext("test", "")
 	actionKey := testActionKey()
-	param, err := NewParameter(actionKey, "amount", "unconstrained")
+	param, err := NewParameter(actionKey, "amount", "unconstrained", false)
 	suite.Require().NoError(err)
 
 	// Correct parent.

@@ -136,7 +136,9 @@ func allCodeConstants() map[string]Code {
 		"EventKeyInvalid":       EventKeyInvalid,
 		"EventKeyTypeInvalid":   EventKeyTypeInvalid,
 		"EventNameRequired":     EventNameRequired,
-		"EventNameInvalidChars": EventNameInvalidChars,
+		"EventNameInvalidChars":       EventNameInvalidChars,
+		"EventParameterNameRequired":    EventParameterNameRequired,
+		"EventParameterNameDuplicate": EventParameterNameDuplicate,
 
 		// Query errors.
 		"QueryKeyInvalid":               QueryKeyInvalid,
