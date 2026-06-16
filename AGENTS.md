@@ -74,7 +74,7 @@ Example. Instead of "we removed `PRM_NO_KYC` because Topgolf doesn't use it", wr
 
 Bad (how): `// Split on each marker, then trim whitespace from each section.`
 
-Good (why): `// ⁂ must be parsed before ◆ so unfinished notes stay out of UML and YAML sections.`
+Good (why): `// ⚠ must be parsed before ◆ so unfinished notes stay out of UML and YAML sections.`
 
 ## Model-agnostic Go
 

@@ -19,7 +19,7 @@ var _genericFileTitleRegexp *regexp.Regexp
 
 // Separators in the files.
 const (
-	_NOTES_MARKER = "⁂" // U+2042 ASTERISM
+	_NOTES_MARKER = "⚠" // U+26A0 WARNING SIGN
 	_UML_MARKER   = "◆" // U+25C6
 	_DATA_MARKER  = "◇" // U+25C7
 )
@@ -36,7 +36,7 @@ const (
 type File struct {
 	Title           string // Extracted from the first non-whitespace line if it has the pattern of: "# title"
 	Markdown        string // The beginning of the document.
-	UnfinishedNotes string // Overflow from details; scratch text started by U+2042 (⁂).
+	UnfinishedNotes string // Overflow from details; scratch text started by U+26A0 (⚠).
 	UmlComment      string // Comment for uml display is started by U+25C6 (◆).
 	Data            string // Parseable data is started by U+25C7 (◇).
 }
@@ -176,7 +176,7 @@ func generateFileContent(markdown, unfinishedNotes, umlComment, data string) str
 	// Title already in the markdown.
 	content := markdown
 	if unfinishedNotes != "" {
-		content += "\n\n⁂\n\n" + unfinishedNotes
+		content += "\n\n" + _NOTES_MARKER + "\n\n" + unfinishedNotes
 	}
 	if umlComment != "" {
 		content += "\n\n◆\n\n" + umlComment

@@ -6,9 +6,9 @@ import (
 	"unicode"
 )
 
-const _unfinishedNotesGlyph = "\u2042" // ⁂ ASTERISM — block leader and list-item marker
+const _unfinishedNotesGlyph = "\u26a0" // ⚠ WARNING SIGN — block leader and list-item marker
 
-// unfinishedNotesBlock renders scratch notes as a preformatted block: a red ⁂,
+// unfinishedNotesBlock renders scratch notes as a preformatted block: a red ⚠,
 // then the note text on the next line via <br />. HTML carries the leader color
 // because fenced code blocks cannot style inline glyphs. Empty or whitespace-only
 // notes produce no output.
@@ -21,12 +21,12 @@ func unfinishedNotesBlock(notes string) string {
 		_unfinishedNotesGlyph + "</span><br />\n" + html.EscapeString(trimmed) + "\n</pre>\n"
 }
 
-// unfinishedNotesMarker returns a red parenthesized ⁂ when notes are present.
+// unfinishedNotesMarker returns a red ⚠ when notes are present.
 func unfinishedNotesMarker(notes string) string {
 	if strings.TrimSpace(notes) == "" {
 		return ""
 	}
-	return ` (<span class="unfinished-notes-glyph">` + _unfinishedNotesGlyph + `</span>)`
+	return ` <span class="unfinished-notes-glyph">` + _unfinishedNotesGlyph + `</span>`
 }
 
 // Skip the header and grab the first markdown paragraph as a summary for showing in table of contents pages.
