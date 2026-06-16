@@ -584,6 +584,7 @@ CREATE TABLE query_parameter (
   sort_order int NOT NULL,
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
+  nullable boolean NOT NULL DEFAULT false,
   PRIMARY KEY (model_key, query_key, parameter_key),
   CONSTRAINT fk_query_parameter_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
   CONSTRAINT fk_query_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
@@ -597,6 +598,7 @@ COMMENT ON COLUMN query_parameter.name IS 'The unique name of the parameter with
 COMMENT ON COLUMN query_parameter.sort_order IS 'Parameters are an ordered list.';
 COMMENT ON COLUMN query_parameter.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN query_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
+COMMENT ON COLUMN query_parameter.nullable IS 'Whether absent (NULL) is a valid value for this parameter.';
 
 --------------------------------------------------------------
 
@@ -682,21 +684,16 @@ CREATE TABLE event_parameter (
   parameter_key text NOT NULL,
   name text NOT NULL,
   sort_order int NOT NULL,
-  data_type_rules text DEFAULT NULL,
-  data_type_key text DEFAULT NULL,
   PRIMARY KEY (model_key, event_key, parameter_key),
-  CONSTRAINT fk_event_parameter_event FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE,
-  CONSTRAINT fk_event_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
+  CONSTRAINT fk_event_parameter_event FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE event_parameter IS 'A parameter of an event.';
+COMMENT ON TABLE event_parameter IS 'An ordered parameter name carried by an event payload.';
 COMMENT ON COLUMN event_parameter.model_key IS 'The model this event is part of.';
-COMMENT ON COLUMN event_parameter.event_key IS 'The event this parameter is part of.';
+COMMENT ON COLUMN event_parameter.event_key IS 'The event this parameter name is part of.';
 COMMENT ON COLUMN event_parameter.parameter_key IS 'The internal ID, the name but lower case.';
 COMMENT ON COLUMN event_parameter.name IS 'The unique name of the parameter within the event.';
-COMMENT ON COLUMN event_parameter.sort_order IS 'Parameters are an ordered list.';
-COMMENT ON COLUMN event_parameter.data_type_rules IS 'The rules for a well-formed value.';
-COMMENT ON COLUMN event_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
+COMMENT ON COLUMN event_parameter.sort_order IS 'Parameter names are an ordered list.';
 
 --------------------------------------------------------------
 
@@ -745,6 +742,7 @@ CREATE TABLE action_parameter (
   sort_order int NOT NULL,
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
+  nullable boolean NOT NULL DEFAULT false,
   PRIMARY KEY (model_key, action_key, parameter_key),
   CONSTRAINT fk_action_parameter_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
   CONSTRAINT fk_action_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
@@ -758,6 +756,7 @@ COMMENT ON COLUMN action_parameter.name IS 'The unique name of the parameter wit
 COMMENT ON COLUMN action_parameter.sort_order IS 'Parameters are an ordered list.';
 COMMENT ON COLUMN action_parameter.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN action_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
+COMMENT ON COLUMN action_parameter.nullable IS 'Whether absent (NULL) is a valid value for this parameter.';
 
 --------------------------------------------------------------
 

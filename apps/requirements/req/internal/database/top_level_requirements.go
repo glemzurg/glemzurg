@@ -410,17 +410,10 @@ func collectDataTypes(model core.Model, attributesMap map[identity.Key][]model_c
 	return dataTypes
 }
 
-// collectParameterDataTypes collects data types from query, event, and action parameters.
+// collectParameterDataTypes collects data types from query and action parameters.
 func collectParameterDataTypes(class model_class.Class, dataTypes map[string]model_data_type.DataType) {
 	for _, query := range class.Queries {
 		for _, param := range query.Parameters {
-			if param.DataType != nil {
-				dataTypes[param.DataType.Key.String()] = *param.DataType
-			}
-		}
-	}
-	for _, event := range class.Events {
-		for _, param := range event.Parameters {
 			if param.DataType != nil {
 				dataTypes[param.DataType.Key.String()] = *param.DataType
 			}
@@ -621,15 +614,17 @@ func writeQuerySubItems(tx *sql.Tx, modelKey string, queriesMap map[identity.Key
 	return AddQueryGuarantees(tx, modelKey, queryGuaranteesMap)
 }
 
-// writeEventParameters writes event parameter rows.
+// writeEventParameters writes event parameter name rows.
 func writeEventParameters(tx *sql.Tx, modelKey string, eventsMap map[identity.Key][]model_state.Event) error {
-	eventParamsMap := make(map[identity.Key][]model_state.Parameter)
+	eventNamesMap := make(map[identity.Key][]string)
 	for _, eventList := range eventsMap {
 		for _, event := range eventList {
-			eventParamsMap[event.Key] = append(eventParamsMap[event.Key], event.Parameters...)
+			if len(event.ParameterNames) > 0 {
+				eventNamesMap[event.Key] = event.ParameterNames
+			}
 		}
 	}
-	return AddEventParameters(tx, modelKey, eventParamsMap)
+	return AddEventParameters(tx, modelKey, eventNamesMap)
 }
 
 // writeStateActions collects and inserts state action rows.
@@ -1192,15 +1187,15 @@ func queryEventData(tx *sql.Tx, modelKey string, ds *readDomainStructure) error 
 		return err
 	}
 
-	eventParamsMap, err := QueryEventParameters(tx, modelKey)
+	eventNamesMap, err := QueryEventParameters(tx, modelKey)
 	if err != nil {
 		return err
 	}
 
 	for classKey, events := range ds.eventsMap {
 		for i, event := range events {
-			if params, ok := eventParamsMap[event.Key]; ok {
-				events[i].Parameters = params
+			if names, ok := eventNamesMap[event.Key]; ok {
+				events[i].ParameterNames = names
 			}
 		}
 		ds.eventsMap[classKey] = events
@@ -1331,7 +1326,7 @@ func stitchAttributeData(ds *readDomainStructure, logicsByKey map[identity.Key]m
 	return nil
 }
 
-// stitchParamDataTypes stitches data types onto query, event, and action parameters.
+// stitchParamDataTypes stitches data types onto query and action parameters.
 func stitchParamDataTypes(ds *readDomainStructure) {
 	// Stitch data types onto query parameters.
 	for classKey, queries := range ds.queriesMap {
@@ -1339,14 +1334,6 @@ func stitchParamDataTypes(ds *readDomainStructure) {
 			stitchParameterDataTypes(queries[i].Parameters, ds.dataTypes)
 		}
 		ds.queriesMap[classKey] = queries
-	}
-
-	// Stitch data types onto event parameters.
-	for classKey, events := range ds.eventsMap {
-		for i := range events {
-			stitchParameterDataTypes(events[i].Parameters, ds.dataTypes)
-		}
-		ds.eventsMap[classKey] = events
 	}
 
 	// Stitch data types onto action parameters.

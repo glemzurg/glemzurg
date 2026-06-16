@@ -85,7 +85,7 @@ func (suite *ActionParameterSuite) TestLoad() {
 }
 
 func (suite *ActionParameterSuite) TestAdd() {
-	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, helper.Must(model_state.NewParameter(suite.actionKey, "Amount", "Nat")))
+	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, helper.Must(model_state.NewParameter(suite.actionKey, "Amount", "Nat", false)))
 	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
@@ -97,10 +97,10 @@ func (suite *ActionParameterSuite) TestAdd() {
 }
 
 func (suite *ActionParameterSuite) TestUpdate() {
-	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, helper.Must(model_state.NewParameter(suite.actionKey, "Amount", "Nat")))
+	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, helper.Must(model_state.NewParameter(suite.actionKey, "Amount", "Nat", false)))
 	suite.Require().NoError(err)
 
-	err = UpdateActionParameter(suite.db, suite.model.Key, suite.actionKey, 2, helper.Must(model_state.NewParameter(suite.actionKey, "Amount", "Int")))
+	err = UpdateActionParameter(suite.db, suite.model.Key, suite.actionKey, 2, helper.Must(model_state.NewParameter(suite.actionKey, "Amount", "Int", false)))
 	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
@@ -112,7 +112,7 @@ func (suite *ActionParameterSuite) TestUpdate() {
 }
 
 func (suite *ActionParameterSuite) TestRemove() {
-	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, helper.Must(model_state.NewParameter(suite.actionKey, "Amount", "Nat")))
+	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, helper.Must(model_state.NewParameter(suite.actionKey, "Amount", "Nat", false)))
 	suite.Require().NoError(err)
 
 	err = RemoveActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
@@ -126,8 +126,8 @@ func (suite *ActionParameterSuite) TestRemove() {
 func (suite *ActionParameterSuite) TestQuery() {
 	err := AddActionParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.actionKey: {
-			helper.Must(model_state.NewParameter(suite.actionKey, "Alpha", "Nat")),
-			helper.Must(model_state.NewParameter(suite.actionKey, "Bravo", "Int")),
+			helper.Must(model_state.NewParameter(suite.actionKey, "Alpha", "Nat", false)),
+			helper.Must(model_state.NewParameter(suite.actionKey, "Bravo", "Int", true)),
 		},
 	})
 	suite.Require().NoError(err)
@@ -143,6 +143,7 @@ func (suite *ActionParameterSuite) TestQuery() {
 			{
 				Name:          "Bravo",
 				DataTypeRules: "Int",
+				Nullable:      true,
 			},
 		},
 	}, params)
@@ -153,7 +154,7 @@ func (suite *ActionParameterSuite) TestQuery() {
 //==================================================
 
 func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, name string) (param model_state.Parameter) {
-	built, err := model_state.NewParameter(actionKey, name, "Nat")
+	built, err := model_state.NewParameter(actionKey, name, "Nat", false)
 	require.NoError(t, err)
 
 	err = AddActionParameter(dbOrTx, modelKey, actionKey, built)

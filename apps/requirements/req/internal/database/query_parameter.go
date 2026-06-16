@@ -36,6 +36,7 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 		sortOrder,
 		&dataTypeRules,
 		&dataTypeKey,
+		&param.Nullable,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -87,7 +88,8 @@ func LoadQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, p
 			name            ,
 			sort_order      ,
 			data_type_rules ,
-			data_type_key
+			data_type_key   ,
+			nullable
 		FROM
 			query_parameter
 		WHERE
@@ -125,7 +127,8 @@ func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 			name            = $4 ,
 			sort_order      = $5 ,
 			data_type_rules = $6 ,
-			data_type_key   = $7
+			data_type_key   = $7 ,
+			nullable        = $8
 		WHERE
 			model_key     = $1
 		AND
@@ -138,7 +141,8 @@ func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 		param.Name,
 		sortOrder,
 		param.DataTypeRules,
-		parameterDataTypeKey(param))
+		parameterDataTypeKey(param),
+		param.Nullable)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -194,7 +198,8 @@ func QueryQueryParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.K
 			name            ,
 			sort_order      ,
 			data_type_rules ,
-			data_type_key
+			data_type_key   ,
+			nullable
 		FROM
 			query_parameter
 		WHERE
@@ -221,8 +226,8 @@ func AddQueryParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 
 	// Build the bulk insert query.
 	var qb strings.Builder
-	qb.WriteString(`INSERT INTO query_parameter (model_key, query_key, parameter_key, name, sort_order, data_type_rules, data_type_key) VALUES `)
-	args := make([]any, 0, count*7)
+	qb.WriteString(`INSERT INTO query_parameter (model_key, query_key, parameter_key, name, sort_order, data_type_rules, data_type_key, nullable) VALUES `)
+	args := make([]any, 0, count*8)
 	i := 0
 	for queryKey, paramList := range params {
 		for paramIdx, param := range paramList {
@@ -232,9 +237,9 @@ func AddQueryParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 
 			paramKey := param.Key.SubKey
 
-			base := i * 7
-			fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
-			args = append(args, modelKey, queryKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
+			base := i * 8
+			fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+			args = append(args, modelKey, queryKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param), param.Nullable)
 			i++
 		}
 	}
