@@ -6,6 +6,9 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 )
 
@@ -13,6 +16,9 @@ import (
 // or defines parsed action requires the parameter sampler cannot satisfy.
 func validateSimulationModel(model *core.Model) error {
 	if err := validateClassesHaveStates(model); err != nil {
+		return err
+	}
+	if err := validateEventActionParameters(model); err != nil {
 		return err
 	}
 	return validateRequiresSamplingSupport(model)
@@ -37,6 +43,104 @@ func validateClassesHaveStates(model *core.Model) error {
 		"simulation requires every class to have a state machine; missing states: %s",
 		strings.Join(missing, ", "),
 	)
+}
+
+type eventActionBindingKey struct {
+	classKey  string
+	eventKey  string
+	actionKey string
+}
+
+func validateEventActionParameters(model *core.Model) error {
+	seen := make(map[eventActionBindingKey]bool)
+	var messages []string
+
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				if len(class.States) == 0 {
+					continue
+				}
+				messages = append(messages, collectEventActionParameterMismatches(class, seen)...)
+			}
+		}
+	}
+
+	if len(messages) == 0 {
+		return nil
+	}
+	sort.Strings(messages)
+	return fmt.Errorf("%s", strings.Join(messages, "; "))
+}
+
+func collectEventActionParameterMismatches(class model_class.Class, seen map[eventActionBindingKey]bool) []string {
+	var messages []string
+
+	for _, transition := range class.Transitions {
+		if transition.ActionKey == nil {
+			continue
+		}
+
+		key := eventActionBindingKey{
+			classKey:  class.Key.String(),
+			eventKey:  transition.EventKey.String(),
+			actionKey: transition.ActionKey.String(),
+		}
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+
+		event, eventOK := class.Events[transition.EventKey]
+		if !eventOK {
+			continue
+		}
+		action, actionOK := class.Actions[*transition.ActionKey]
+		if !actionOK {
+			continue
+		}
+
+		missing := actionParametersMissingFromEvent(event, action)
+		if len(missing) == 0 {
+			continue
+		}
+
+		messages = append(messages, formatActionParametersMissingFromEvent(class.Name, event.Name, action.Name, missing))
+	}
+
+	return messages
+}
+
+func actionParametersMissingFromEvent(event model_state.Event, action model_state.Action) []string {
+	onEvent := make(map[string]bool, len(event.ParameterNames))
+	for _, name := range event.ParameterNames {
+		onEvent[identity.NormalizeSubKey(name)] = true
+	}
+
+	var missing []string
+	for _, param := range action.Parameters {
+		if onEvent[identity.NormalizeSubKey(param.Name)] {
+			continue
+		}
+		missing = append(missing, param.Name)
+	}
+	sort.Strings(missing)
+	return missing
+}
+
+func formatActionParametersMissingFromEvent(className, eventName, actionName string, missing []string) string {
+	switch len(missing) {
+	case 1:
+		return fmt.Sprintf(
+			`class %q event %q action %q: action parameter %q is not declared on the event`,
+			className, eventName, actionName, missing[0],
+		)
+	default:
+		return fmt.Sprintf(
+			`class %q event %q action %q: action parameters %s are not declared on the event`,
+			className, eventName, actionName, strings.Join(missing, ", "),
+		)
+	}
 }
 
 func validateRequiresSamplingSupport(model *core.Model) error {
