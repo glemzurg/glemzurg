@@ -25,6 +25,9 @@ type ContentWriter interface {
 // there has its own page replaced with a red-bold error block; every other page
 // renders normally. Pass nil when there are no parse failures.
 func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter, classErrors map[string]string) error { //nolint:revive // public API name
+	activeParseIssues = BuildParseIssueIndex(&parsedModel, classErrors)
+	defer func() { activeParseIssues = nil }()
+
 	// Create the flattened requirements from the model.
 	reqs := req_flat.NewRequirements(parsedModel)
 
@@ -137,6 +140,11 @@ func generateModelFilesToWriter(reqs *req_flat.Requirements, writer ContentWrite
 	mdContents, err := generateModelMdContents(reqs, model, actors, domains, domainsDiagram)
 	if err != nil {
 		return err
+	}
+	if activeParseIssues != nil {
+		if banner := activeParseIssues.ModelSummaryBanner(&model); banner != "" {
+			mdContents = banner + mdContents
+		}
 	}
 	if err := writer.WriteMarkdown("model.md", []byte(mdContents)); err != nil {
 		return err
@@ -331,42 +339,49 @@ func generateClassFilesToWriter(reqs *req_flat.Requirements, writer ContentWrite
 
 	for _, class := range classLookup {
 		classFilename := convertKeyToFilename("class", class.Key.String(), "", ".md")
-
-		// If this class's source file failed to parse, its page is the error.
-		if msg, failed := classErrors[class.Key.String()]; failed {
-			if err := writer.WriteMarkdown(classFilename, ClassErrorMarkdown(class.Name, msg)); err != nil {
-				return err
-			}
-			continue
-		}
-
-		// Generate classes Mermaid diagram.
-		generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
-		classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations)
-		if err != nil {
-			return err
-		}
-
-		// Generate state machine Mermaid diagram if applicable.
-		stateDiagram := ""
-		if len(class.States) > 0 {
-			stateDiagram, err = generateClassStateMermaidContents(reqs, class)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Generate class summary markdown with embedded diagrams.
-		classMdContents, err := generateClassMdContents(reqs, class, classesDiagram, stateDiagram)
-		if err != nil {
-			return err
-		}
-		if err := writer.WriteMarkdown(classFilename, []byte(classMdContents)); err != nil {
+		if err := writeClassMarkdownPage(reqs, writer, class, classFilename, classErrors); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func writeClassMarkdownPage(
+	reqs *req_flat.Requirements,
+	writer ContentWriter,
+	class model_class.Class,
+	classFilename string,
+	classErrors map[string]string,
+) error {
+	if msg, failed := classErrors[class.Key.String()]; failed {
+		return writer.WriteMarkdown(classFilename, ClassErrorMarkdown(class.Name, msg))
+	}
+
+	generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
+	classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations)
+	if err != nil {
+		return err
+	}
+
+	stateDiagram := ""
+	if len(class.States) > 0 {
+		stateDiagram, err = generateClassStateMermaidContents(reqs, class)
+		if err != nil {
+			return err
+		}
+	}
+
+	classMdContents, err := generateClassMdContents(reqs, class, classesDiagram, stateDiagram)
+	if err != nil {
+		return err
+	}
+	if activeParseIssues != nil {
+		if banner := activeParseIssues.ClassExpressionBanner(class.Key); banner != "" {
+			classMdContents = banner + classMdContents
+		}
+	}
+	return writer.WriteMarkdown(classFilename, []byte(classMdContents))
 }
 
 // generateUseCaseFilesToWriter generates use case files to a ContentWriter.

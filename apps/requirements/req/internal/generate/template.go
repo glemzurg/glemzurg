@@ -146,6 +146,13 @@ var _funcMap = template.FuncMap{
 	},
 	"unfinished_notes_block":  unfinishedNotesBlock,
 	"unfinished_notes_marker": unfinishedNotesMarker,
+	"parse_error_marker": func(classKey identity.Key) string {
+		if activeParseIssues == nil {
+			return ""
+		}
+		return activeParseIssues.ClassMarker(classKey)
+	},
+	"expression_spec_display": expressionSpecDisplay,
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},

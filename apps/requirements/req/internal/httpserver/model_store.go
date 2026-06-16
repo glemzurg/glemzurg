@@ -16,6 +16,7 @@ type ModelStore struct {
 	css         map[string][]byte            // model -> CSS content
 	svg         map[string]map[string][]byte // model -> file -> SVG content
 	modelErrors map[string]string            // model -> last generation error message
+	parseIssues map[string]*generate.ParseIssueIndex
 }
 
 // NewModelStore creates a new model store.
@@ -26,6 +27,7 @@ func NewModelStore() *ModelStore {
 		css:         make(map[string][]byte),
 		svg:         make(map[string]map[string][]byte),
 		modelErrors: make(map[string]string),
+		parseIssues: make(map[string]*generate.ParseIssueIndex),
 	}
 }
 
@@ -39,7 +41,7 @@ func (s *ModelStore) SetModel(name string, model *core.Model, classErrors map[st
 	defer s.mu.Unlock()
 
 	// Generate markdown content in memory
-	mdContent, svgContent, cssContent, err := s.generateContent(model, classErrors)
+	mdContent, svgContent, cssContent, parseIssues, err := s.generateContent(model, classErrors)
 	if err != nil {
 		return err
 	}
@@ -48,6 +50,7 @@ func (s *ModelStore) SetModel(name string, model *core.Model, classErrors map[st
 	s.markdown[name] = mdContent
 	s.svg[name] = svgContent
 	s.css[name] = cssContent
+	s.parseIssues[name] = parseIssues
 	delete(s.modelErrors, name) // Recovery: a successful generation clears the error.
 
 	return nil
@@ -71,6 +74,14 @@ func (s *ModelStore) GetModelError(name string) (string, bool) {
 	defer s.mu.RUnlock()
 	msg, ok := s.modelErrors[name]
 	return msg, ok
+}
+
+// GetParseIssues returns the last recorded parse-issue index for a model, if any.
+func (s *ModelStore) GetParseIssues(name string) (*generate.ParseIssueIndex, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	idx, ok := s.parseIssues[name]
+	return idx, ok
 }
 
 // GetModel returns a model by name.
@@ -125,7 +136,9 @@ func (s *ModelStore) ListModels() []string {
 }
 
 // generateContent generates markdown, SVG, and CSS content for a model.
-func (s *ModelStore) generateContent(model *core.Model, classErrors map[string]string) (map[string][]byte, map[string][]byte, []byte, error) {
+func (s *ModelStore) generateContent(model *core.Model, classErrors map[string]string) (map[string][]byte, map[string][]byte, []byte, *generate.ParseIssueIndex, error) {
+	parseIssues := generate.BuildParseIssueIndex(model, classErrors)
+
 	// Use the generate package to create content in memory
 	collector := &ContentCollector{
 		Markdown: make(map[string][]byte),
@@ -134,7 +147,7 @@ func (s *ModelStore) generateContent(model *core.Model, classErrors map[string]s
 
 	err := generate.GenerateMdToWriter(*model, collector, classErrors)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	mdContent := collector.Markdown
@@ -145,7 +158,7 @@ func (s *ModelStore) generateContent(model *core.Model, classErrors map[string]s
 	generate.WriteCSS(&cssBuffer)
 	cssContent := cssBuffer.Bytes()
 
-	return mdContent, svgContent, cssContent, nil
+	return mdContent, svgContent, cssContent, parseIssues, nil
 }
 
 // ContentCollector implements generate.ContentWriter to collect content in memory.

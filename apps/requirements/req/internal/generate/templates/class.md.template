@@ -45,7 +45,7 @@ This is an actor:
 | Name | Rules | Nullable | Type | Comment |
 | ---- | ----- | -------- | ---- | ------- |
 {{- range .Class.Attributes }}
-| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ .DerivationPolicy.Spec.Specification }}{{ end }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ .Details }} |{{end}}
+| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ expression_spec_display .DerivationPolicy.Spec }}{{ end }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ .Details }} |{{end}}
 
 {{- $indexes := class_indexes .Class.Attributes }}
 {{ if ne $indexes nil }}
@@ -63,10 +63,10 @@ This is an actor:
 
 {{ range .Invariants -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
 {{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
 {{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
 {{ end -}}
 {{ end }}
 {{ end -}}
@@ -77,10 +77,10 @@ This is an actor:
 
 {{ range .Class.Invariants -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
 {{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
 {{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
 {{ end -}}
 {{ end }}
 {{- end }}
@@ -131,7 +131,7 @@ The guards for this class.
 
 {{ range .Class.Guards -}}
 - **[{{ .Logic.Description }}]**
-{{ if ne .Logic.Spec.Specification "" }}    - {{ .Logic.Spec.Specification }}
+{{ if ne .Logic.Spec.Specification "" }}    - {{ expression_spec_display .Logic.Spec }}
 {{ end -}}
 {{ end }}
 {{- end }}
@@ -165,10 +165,10 @@ Requires:
 
 {{ range $action.Requires -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
 {{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
 {{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
 {{ end -}}
 {{ end }}
 
@@ -188,12 +188,12 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ if ne .Target "" }}{{ if eq .Type "let" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ else }}    - {{ .Target }}' = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .Target "" }}{{ if eq .Type "let" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
+{{ else }}    - {{ .Target }}' = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
 {{ end -}}
 {{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
 {{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
 {{ end -}}
 {{ end }}
 
@@ -206,10 +206,10 @@ Safety Rules:
 
 {{ range $action.SafetyRules -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
 {{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
 {{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
 {{ end -}}
 {{ end }}
 {{ end -}}
@@ -256,10 +256,10 @@ Requires:
 
 {{ range $query.Requires -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
 {{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
 {{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
 {{ end -}}
 {{ end }}
 
@@ -278,12 +278,12 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ if ne .Target "" }}{{ if eq .Type "let" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ else }}    - {{ .Target }}' = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .Target "" }}{{ if eq .Type "let" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
+{{ else }}    - {{ .Target }}' = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
 {{ end -}}
 {{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
 {{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
 {{ end -}}
 {{ end }}
 

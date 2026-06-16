@@ -37,7 +37,7 @@ The domain classes that define this actor.
 {{- $class := . }}
 {{- $domain := class_domain $reqs $class.Key }}
 
-### {{ $domain.Name }} : [{{ $class.Name }}]({{ filename "class" $class.Key "" ".md" }}){{ unfinished_notes_marker $class.UnfinishedNotes }}
+### {{ $domain.Name }} : [{{ $class.Name }}]({{ filename "class" $class.Key "" ".md" }}){{ parse_error_marker $class.Key }}{{ unfinished_notes_marker $class.UnfinishedNotes }}
 
 {{ first_md_paragraph $class.Details }}
 

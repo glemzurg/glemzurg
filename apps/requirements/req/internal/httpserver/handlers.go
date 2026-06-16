@@ -131,11 +131,17 @@ func (s *Server) homeHandler(w http.ResponseWriter, _ *http.Request) {
 	list.WriteString("<ul>")
 	for _, model := range models {
 		escaped := html.EscapeString(model)
-		fmt.Fprintf(&list, "<li><a href=\"/%s/model.md\">%s</a></li>", escaped, escaped)
+		marker := ""
+		if idx, ok := s.store.GetParseIssues(model); ok && idx.HasIssues() {
+			marker = ` <span class="parse-error-marker" title="Parse errors">&#9888;</span>`
+		} else if _, ok := s.store.GetModelError(model); ok {
+			marker = ` <span class="parse-error-marker" title="Generation failed">&#9888;</span>`
+		}
+		fmt.Fprintf(&list, "<li><a href=\"/%s/model.md\">%s</a>%s</li>", escaped, escaped, marker)
 	}
 	list.WriteString("</ul>")
 
-	page := "<html><body><h1>Models</h1>" + list.String() + "</body></html>"
+	page := "<html><head><style>.parse-error-marker{color:#cc0000;font-weight:bold;}</style></head><body><h1>Models</h1>" + list.String() + "</body></html>"
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(page))
 }
@@ -172,6 +178,9 @@ func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
 	buf.WriteString(`");evtSource.onmessage = () => location.reload();</script>`)
 	buf.WriteString(`<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>`)
 	buf.WriteString(`</head><body>`)
+	if idx, ok := s.store.GetParseIssues(model); ok {
+		buf.WriteString(idx.GlobalPageBanner())
+	}
 	buf.Write(mdHTML)
 	buf.WriteString(`<script>`)
 	buf.WriteString(`document.querySelectorAll('pre code.language-mermaid').forEach(function(el){`)
