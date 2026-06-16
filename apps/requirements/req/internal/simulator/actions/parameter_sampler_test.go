@@ -155,7 +155,8 @@ func (s *ParameterSamplerSuite) TestSampleNullableElseTupleFromNamedSet() {
 	params := s.jurisdictionParams()
 
 	for seed := range 30 {
-		result := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		result, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		s.Require().NoError(err)
 		s.assertJurisdictionPair(result["CountryCode"], result["StateCode"], int64(seed))
 	}
 }
@@ -187,7 +188,8 @@ func (s *ParameterSamplerSuite) TestSampleEnumConstraint() {
 	sampler := NewParameterSampler(binder, nil)
 	rng := rand.New(rand.NewSource(7)) //nolint:gosec // deterministic test seed
 
-	result := sampler.SampleFromRequires(params, &action, rng)
+	result, err := sampler.SampleFromRequires(params, &action, rng)
+	s.Require().NoError(err)
 	value, ok := result["SocialOnly"].(*object.String)
 	s.Require().True(ok)
 	s.Contains([]string{"TRUE", "FALSE"}, value.Value())
@@ -204,6 +206,110 @@ func (s *ParameterSamplerSuite) TestSampleFallsBackWithoutRequires() {
 	sampler := NewParameterSampler(binder, nil)
 	rng := rand.New(rand.NewSource(1)) //nolint:gosec // deterministic test seed
 
-	result := sampler.SampleFromRequires(params, nil, rng)
+	result, err := sampler.SampleFromRequires(params, nil, rng)
+	s.Require().NoError(err)
 	s.NotNil(result["Name"])
+}
+
+func (s *ParameterSamplerSuite) TestBareParameterReferenceRequireIsSupported() {
+	classKey := mustKey("domain/finance/wallet/class/jurisdiction")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
+	ctx := &convert.LowerContext{
+		ClassKey: classKey,
+		Parameters: map[string]bool{
+			"Name": true,
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	requireLogic := model_logic.NewLogic(
+		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+		model_logic.LogicTypeAssessment,
+		"Name is provided.",
+		"",
+		helper.Must(logic_spec.NewExpressionSpec("tla_plus", "Name", pf)),
+		nil,
+	)
+	action := model_state.NewAction(
+		actionKey,
+		"Add",
+		"",
+		[]model_logic.Logic{requireLogic},
+		nil,
+		nil,
+		[]model_state.Parameter{
+			helper.Must(model_state.NewParameter(actionKey, "Name", "display name")),
+		},
+	)
+
+	err := ValidateActionRequiresSamplingSupport("Jurisdiction", action)
+	s.NoError(err)
+}
+
+func (s *ParameterSamplerSuite) TestUnsupportedCompareRequireReturnsSpecificError() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "set_amount"))
+	spec := orderSpecWithParams("Amount > 0", []string{"Amount"})
+	requireLogic := model_logic.NewLogic(
+		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+		model_logic.LogicTypeAssessment,
+		"Amount must be positive.",
+		"",
+		spec,
+		nil,
+	)
+	action := model_state.NewAction(
+		actionKey,
+		"SetAmount",
+		"",
+		[]model_logic.Logic{requireLogic},
+		nil,
+		nil,
+		[]model_state.Parameter{
+			helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount")),
+		},
+	)
+
+	err := ValidateActionRequiresSamplingSupport("Order", action)
+	s.Require().Error(err)
+
+	var unsupported *UnsupportedRequiresSamplingError
+	s.Require().ErrorAs(err, &unsupported)
+	s.Equal("Order", unsupported.ClassName)
+	s.Equal("SetAmount", unsupported.ActionName)
+	s.Contains(unsupported.Error(), "cannot derive random parameter values")
+}
+
+func (s *ParameterSamplerSuite) TestSampleFromRequiresReturnsUnsupportedError() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "set_amount"))
+	spec := orderSpecWithParams("Amount > 0", []string{"Amount"})
+	action := model_state.NewAction(
+		actionKey,
+		"SetAmount",
+		"",
+		[]model_logic.Logic{
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+				model_logic.LogicTypeAssessment,
+				"Amount must be positive.",
+				"",
+				spec,
+				nil,
+			),
+		},
+		nil,
+		nil,
+		[]model_state.Parameter{
+			helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount")),
+		},
+	)
+	params := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount")),
+	}
+
+	binder := NewParameterBinder()
+	sampler := NewParameterSampler(binder, nil)
+	_, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(1))) //nolint:gosec // deterministic test seed
+	s.Require().Error(err)
+	s.ErrorAs(err, new(*UnsupportedRequiresSamplingError))
 }

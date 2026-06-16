@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 
@@ -114,7 +115,10 @@ func (e *StepExecutor) executeTransition(
 	}
 
 	// 1. Generate event parameters (surface steps sample from transition action requires).
-	params := e.sampleEventParameters(pending)
+	params, err := e.sampleEventParameters(pending)
+	if err != nil {
+		return nil, fmt.Errorf("event %s parameter sampling: %w", pending.Event.Name, err)
+	}
 	step.Parameters = params
 
 	// 2. Execute exit StateActions (if not creation).
@@ -163,7 +167,7 @@ func (e *StepExecutor) executeTransition(
 }
 
 // sampleEventParameters generates parameters for a top-level transition event.
-func (e *StepExecutor) sampleEventParameters(pending *PendingAction) map[string]object.Object {
+func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string]object.Object, error) {
 	instanceState := ""
 	if pending.Instance != nil {
 		instanceState = getInstanceStateName(pending.Instance)
@@ -171,9 +175,17 @@ func (e *StepExecutor) sampleEventParameters(pending *PendingAction) map[string]
 
 	action, found := e.catalog.GetActionForEvent(pending.Class.ClassKey, pending.Event.Key, instanceState)
 	if found && action != nil && len(action.Requires) > 0 {
-		return e.paramGen.Sampler.SampleFromRequires(pending.Event.Parameters, action, e.rng)
+		params, err := e.paramGen.Sampler.SampleFromRequires(pending.Event.Parameters, action, e.rng)
+		if err != nil {
+			var unsupported *actions.UnsupportedRequiresSamplingError
+			if errors.As(err, &unsupported) {
+				unsupported.ClassName = pending.Class.Class.Name
+			}
+			return nil, err
+		}
+		return params, nil
 	}
-	return e.paramGen.Binder.GenerateRandomParameters(pending.Event.Parameters, e.rng)
+	return e.paramGen.Binder.GenerateRandomParameters(pending.Event.Parameters, e.rng), nil
 }
 
 // executeExitActions runs exit state actions for a non-creation transition.

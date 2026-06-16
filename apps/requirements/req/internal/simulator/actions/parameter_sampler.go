@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
@@ -28,15 +29,24 @@ func (s *ParameterSampler) SampleFromRequires(
 	paramDefs []model_state.Parameter,
 	action *model_state.Action,
 	rng *rand.Rand,
-) map[string]object.Object {
+) (map[string]object.Object, error) {
 	if action == nil || len(action.Requires) == 0 {
-		return s.binder.GenerateRandomParameters(paramDefs, rng)
+		return s.binder.GenerateRandomParameters(paramDefs, rng), nil
+	}
+
+	paramNames := parameterNames(paramDefs)
+	if err := ValidateRequiresSamplingSupport(action.Requires, paramNames); err != nil {
+		var unsupported *UnsupportedRequiresSamplingError
+		if errors.As(err, &unsupported) && action != nil {
+			unsupported.ActionName = action.Name
+		}
+		return nil, err
 	}
 
 	constraints := extractParameterConstraints(action.Requires)
 	result := s.binder.GenerateRandomParameters(paramDefs, rng)
 	applyParameterConstraints(result, constraints, rng, s.namedSetValues)
-	return result
+	return result, nil
 }
 
 // parameterConstraints captures sampling hints extracted from require expression trees.
