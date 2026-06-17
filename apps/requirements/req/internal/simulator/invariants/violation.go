@@ -44,6 +44,9 @@ const (
 	// ViolationTypeUnparsedDataType indicates an attribute has no parsed DataType.
 	ViolationTypeUnparsedDataType
 
+	// ViolationTypeMissingAttributeTypeSpec indicates a written attribute has no TLA+ type_spec.
+	ViolationTypeMissingAttributeTypeSpec
+
 	// ViolationTypeIndexUniqueness indicates two instances share the same index tuple.
 	ViolationTypeIndexUniqueness
 
@@ -100,6 +103,8 @@ func (v ViolationType) String() string {
 		return "collection_size"
 	case ViolationTypeUnparsedDataType:
 		return "unparsed_data_type"
+	case ViolationTypeMissingAttributeTypeSpec:
+		return "missing_attribute_type_spec"
 	case ViolationTypeIndexUniqueness:
 		return "index_uniqueness"
 	case ViolationTypeMultiplicity:
@@ -354,6 +359,22 @@ func NewUnparsedDataTypeViolation(classKey identity.Key, attributeName string, d
 	}
 }
 
+// NewMissingAttributeTypeSpecViolation creates a violation when an instance holds a value
+// for an attribute that declares no TLA+ type_spec.
+func NewMissingAttributeTypeSpecViolation(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attributeName string,
+) *ViolationError {
+	return &ViolationError{
+		Type:          ViolationTypeMissingAttributeTypeSpec,
+		Message:       fmt.Sprintf("attribute %s on instance %d of class %s has no TLA+ type_spec but holds a value", attributeName, instanceID, classKey.String()),
+		InstanceID:    instanceID,
+		ClassKey:      classKey,
+		AttributeName: attributeName,
+	}
+}
+
 // NewIndexUniquenessViolation creates a violation for duplicate index tuples.
 func NewIndexUniquenessViolation(
 	instanceID state.InstanceID,
@@ -509,7 +530,7 @@ func (v ViolationErrors) DataTypeViolations() ViolationErrors {
 	for _, violation := range v {
 		//nolint:exhaustive // Only data type violation types are relevant here.
 		switch violation.Type {
-		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness:
+		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness, ViolationTypeMissingAttributeTypeSpec:
 			result = append(result, violation)
 		default:
 			// Not a data type violation; skip.

@@ -3,6 +3,7 @@ package invariants
 import (
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -94,6 +95,15 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 
 		// If value is NULL and attribute is nullable, skip constraint checks
 		if object.IsNull(value) {
+			continue
+		}
+
+		if !attributeHasTypeSpec(attrDef) {
+			violations = append(violations, NewMissingAttributeTypeSpecViolation(
+				instance.ID,
+				instance.ClassKey,
+				attrDef.Name,
+			))
 			continue
 		}
 
@@ -448,6 +458,13 @@ func (c *DataTypeChecker) GetAttributeDefinition(classKey identity.Key, fieldKey
 }
 
 // HasClass returns true if the checker has attribute definitions for the class.
+func attributeHasTypeSpec(attr *model_class.Attribute) bool {
+	if attr == nil || attr.DataType == nil || attr.DataType.TypeSpec == nil {
+		return false
+	}
+	return strings.TrimSpace(attr.DataType.TypeSpec.Specification) != ""
+}
+
 func (c *DataTypeChecker) HasClass(classKey identity.Key) bool {
 	_, ok := c.classAttributes[classKey]
 	return ok

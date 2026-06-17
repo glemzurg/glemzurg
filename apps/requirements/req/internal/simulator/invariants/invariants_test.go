@@ -109,18 +109,24 @@ func createTestModel() *core.Model {
 		},
 	}
 
+	stringTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil))
+	natTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil))
+
 	// Create attributes
 	statusAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/status"), "status", "", "{pending, active, completed}", nil, false,
 		model_class.AttributeAnnotations{}))
 	statusAttr.DataType = statusDataType
+	statusAttr.DataType.TypeSpec = &stringTypeSpec
 
 	amountAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/amount"), "amount", "", "[0, 1000000] cents", nil, false,
 		model_class.AttributeAnnotations{}))
 	amountAttr.DataType = amountDataType
+	amountAttr.DataType.TypeSpec = &natTypeSpec
 
 	nameAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/name"), "name", "", "string", nil, true,
 		model_class.AttributeAnnotations{}))
 	nameAttr.DataType = nameDataType
+	nameAttr.DataType.TypeSpec = &stringTypeSpec
 
 	// Create an action with a post-condition guarantee
 	actionKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order/action/complete")
@@ -314,6 +320,48 @@ func (s *InvariantsSuite) TestDataTypeCheckerValidInstance() {
 	// Check should pass
 	instanceViolations := checker.CheckInstance(instance)
 	s.False(instanceViolations.HasViolations())
+}
+
+// Test: DataTypeChecker flags values on attributes that declare no TLA+ type_spec.
+func (s *InvariantsSuite) TestDataTypeCheckerMissingAttributeTypeSpec() {
+	classKey := mustKey("domain/d/subdomain/s/class/currency")
+
+	abbrAttr := helper.Must(model_class.NewAttribute(
+		mustKey("domain/d/subdomain/s/class/currency/attribute/abbr"),
+		"Abbr", "", "unconstrained", nil, false, model_class.AttributeAnnotations{},
+	))
+	abbrAttr.DataType = &model_data_type.DataType{
+		CollectionType: "atomic",
+		Atomic:         &model_data_type.Atomic{ConstraintType: "unconstrained"},
+	}
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Currency"})
+	class.Attributes = map[identity.Key]model_class.Attribute{abbrAttr.Key: abbrAttr}
+
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+
+	domainKey := mustKey("domain/d")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	checker, violations := NewDataTypeChecker(&model)
+	s.NotNil(checker)
+	s.False(violations.HasViolations())
+
+	simState := state.NewSimulationState()
+	attrs := object.NewRecord()
+	attrs.Set("abbr", object.NewString("USD"))
+	instance := simState.CreateInstance(classKey, attrs)
+
+	instanceViolations := checker.CheckInstance(instance)
+	s.Require().Len(instanceViolations, 1)
+	s.Equal(ViolationTypeMissingAttributeTypeSpec, instanceViolations[0].Type)
+	s.Equal("Abbr", instanceViolations[0].AttributeName)
 }
 
 // Test: DataTypeChecker handles nullable attributes correctly.
@@ -528,6 +576,8 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/value"), "value", "", "(0, 100) items", nil, false,
 		model_class.AttributeAnnotations{}))
 	attr.DataType = dataType
+	natTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil))
+	attr.DataType.TypeSpec = &natTypeSpec
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Test", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Attributes = map[identity.Key]model_class.Attribute{attr.Key: attr}
@@ -573,10 +623,30 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 
 func (s *InvariantsSuite) TestDataTypeCheckerUsesAttributeFieldKey() {
 	classKey := mustKey("domain/finance/subdomain/wallet/class/jurisdiction")
+	stringTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil))
+	boolTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "BOOLEAN", nil))
+
 	nameAttrKey := helper.Must(identity.NewAttributeKey(classKey, "name"))
 	nameAttr := helper.Must(model_class.NewAttribute(nameAttrKey, "Display Name", "", "unconstrained", nil, false, model_class.AttributeAnnotations{}))
+	nameAttr.DataType = &model_data_type.DataType{
+		CollectionType: "atomic",
+		Atomic:         &model_data_type.Atomic{ConstraintType: "unconstrained"},
+	}
+	nameAttr.DataType.TypeSpec = &stringTypeSpec
+
 	socialAttrKey := helper.Must(identity.NewAttributeKey(classKey, "social_only"))
 	socialAttr := helper.Must(model_class.NewAttribute(socialAttrKey, "Is Social Only", "", "enum of TRUE, FALSE", nil, false, model_class.AttributeAnnotations{}))
+	socialAttr.DataType = &model_data_type.DataType{
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "enumeration",
+			Enums: []model_data_type.AtomicEnum{
+				{Value: "TRUE", SortOrder: 0},
+				{Value: "FALSE", SortOrder: 1},
+			},
+		},
+	}
+	socialAttr.DataType.TypeSpec = &boolTypeSpec
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
