@@ -59,6 +59,7 @@ type SimulationEngine struct {
 	stepExecutor     *StepExecutor
 	selector         *ActionSelector
 	invariantChecker *invariants.InvariantChecker
+	dataTypeChecker  *invariants.DataTypeChecker
 	livenessChecker  *LivenessChecker
 }
 
@@ -104,6 +105,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		stepExecutor:     stepExecutor,
 		selector:         selector,
 		invariantChecker: checkers.invariantChecker,
+		dataTypeChecker:  checkers.dataTypeChecker,
 		livenessChecker:  livenessChecker,
 	}, nil
 }
@@ -162,8 +164,7 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 		return nil, fmt.Errorf("invariant checker setup: %w", err)
 	}
 
-	dataTypeChecker, dtWarnings := invariants.NewDataTypeChecker(model)
-	_ = dtWarnings // Warnings about unparsed data types are informational.
+	dataTypeChecker, _ := invariants.NewDataTypeChecker(model)
 
 	indexChecker := invariants.NewIndexUniquenessChecker(model)
 
@@ -304,6 +305,10 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	}
 
 	result.FinalState = e.simState
+
+	if e.dataTypeChecker != nil {
+		result.Violations = append(result.Violations, e.dataTypeChecker.UnparsedAttributeDefinitionViolations()...)
+	}
 
 	// Run liveness checks after simulation completes.
 	livenessViolations := e.livenessChecker.Check(result)

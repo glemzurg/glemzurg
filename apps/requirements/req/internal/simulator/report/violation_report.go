@@ -45,7 +45,7 @@ func FromViolations(violations invariants.ViolationErrors) *ViolationReport {
 	dataType := violations.DataTypeViolations()
 	liveness := violations.LivenessViolations()
 
-	// Collect remaining violations (multiplicity, safety rules, unparsed data type).
+	// Collect remaining violations (multiplicity, safety rules).
 	categorized := make(map[*invariants.ViolationError]bool)
 	for _, v := range tla {
 		categorized[v] = true

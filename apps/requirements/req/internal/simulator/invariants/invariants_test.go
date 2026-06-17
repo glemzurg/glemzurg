@@ -364,6 +364,75 @@ func (s *InvariantsSuite) TestDataTypeCheckerMissingAttributeTypeSpec() {
 	s.Equal("Abbr", instanceViolations[0].AttributeName)
 }
 
+func (s *InvariantsSuite) TestDataTypeCheckerUnparsedAttributeOnInstance() {
+	classKey := mustKey("domain/d/subdomain/s/class/currency")
+	badAttr := helper.Must(model_class.NewAttribute(
+		mustKey("domain/d/subdomain/s/class/currency/attribute/bad"),
+		"Bad", "", "not a valid data type rule", nil, false, model_class.AttributeAnnotations{},
+	))
+	badAttr.DataType = nil
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Currency"})
+	class.Attributes = map[identity.Key]model_class.Attribute{badAttr.Key: badAttr}
+
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+	domainKey := mustKey("domain/d")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	checker, setupViolations := NewDataTypeChecker(&model)
+	s.Require().Len(setupViolations, 1)
+
+	simState := state.NewSimulationState()
+	attrs := object.NewRecord()
+	attrs.Set("bad", object.NewString("value"))
+	instance := simState.CreateInstance(classKey, attrs)
+
+	instanceViolations := checker.CheckInstance(instance)
+	s.Require().Len(instanceViolations, 1)
+	s.Equal(ViolationTypeUnparsedDataType, instanceViolations[0].Type)
+	s.Equal(instance.ID, instanceViolations[0].InstanceID)
+}
+
+func (s *InvariantsSuite) TestCheckParameterTypeSpecsUnparsedRules() {
+	actionKey := mustKey("domain/d/subdomain/s/class/currency/action/add")
+	classKey := mustKey("domain/d/subdomain/s/class/currency")
+	param := helper.Must(model_state.NewParameter(actionKey, "Name", "not a valid rule", false))
+	param.DataType = nil
+
+	violations := CheckParameterTypeSpecs(
+		[]model_state.Parameter{param}, actionKey, "Add", "action", 1, classKey,
+	)
+	s.Require().Len(violations, 1)
+	s.Equal(ViolationTypeUnparsedDataType, violations[0].Type)
+	s.Equal("Name", violations[0].AttributeName)
+}
+
+func (s *InvariantsSuite) TestCheckParameterTypeSpecs() {
+	actionKey := mustKey("domain/d/subdomain/s/class/currency/action/add")
+	classKey := mustKey("domain/d/subdomain/s/class/currency")
+	params := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "Name", "unconstrained", false)),
+	}
+	stringTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil))
+	typed := helper.Must(model_state.NewParameter(actionKey, "Type", "enum of SOCIAL, REAL", false))
+	typed.DataType.TypeSpec = &stringTypeSpec
+
+	violations := CheckParameterTypeSpecs(params, actionKey, "Add", "action", 1, classKey)
+	s.Require().Len(violations, 1)
+	s.Equal(ViolationTypeMissingParameterTypeSpec, violations[0].Type)
+	s.Equal("Name", violations[0].AttributeName)
+
+	violations = CheckParameterTypeSpecs(
+		[]model_state.Parameter{typed}, actionKey, "Add", "action", 1, classKey,
+	)
+	s.Empty(violations)
+}
+
 // Test: DataTypeChecker handles nullable attributes correctly.
 func (s *InvariantsSuite) TestDataTypeCheckerNullableAttribute() {
 	model := createTestModel()

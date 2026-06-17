@@ -47,6 +47,9 @@ const (
 	// ViolationTypeMissingAttributeTypeSpec indicates a written attribute has no TLA+ type_spec.
 	ViolationTypeMissingAttributeTypeSpec
 
+	// ViolationTypeMissingParameterTypeSpec indicates a simulated parameter has no TLA+ type_spec.
+	ViolationTypeMissingParameterTypeSpec
+
 	// ViolationTypeIndexUniqueness indicates two instances share the same index tuple.
 	ViolationTypeIndexUniqueness
 
@@ -105,6 +108,8 @@ func (v ViolationType) String() string {
 		return "unparsed_data_type"
 	case ViolationTypeMissingAttributeTypeSpec:
 		return "missing_attribute_type_spec"
+	case ViolationTypeMissingParameterTypeSpec:
+		return "missing_parameter_type_spec"
 	case ViolationTypeIndexUniqueness:
 		return "index_uniqueness"
 	case ViolationTypeMultiplicity:
@@ -348,14 +353,76 @@ func NewCollectionSizeViolation(
 	}
 }
 
-// NewUnparsedDataTypeViolation creates a violation for an attribute without a parsed DataType.
+// NewUnparsedDataTypeViolation creates a class-level violation for an attribute without a parsed DataType.
 func NewUnparsedDataTypeViolation(classKey identity.Key, attributeName string, dataTypeRules string) *ViolationError {
 	return &ViolationError{
 		Type:          ViolationTypeUnparsedDataType,
-		Message:       fmt.Sprintf("attribute %s on class %s has unparsed data type: %s", attributeName, classKey.String(), dataTypeRules),
+		Message:       fmt.Sprintf("attribute %s on class %s has unparsed data type rules: %s", attributeName, classKey.String(), dataTypeRules),
 		ClassKey:      classKey,
 		AttributeName: attributeName,
 		ExpectedValue: dataTypeRules,
+	}
+}
+
+// NewUnparsedAttributeDataTypeViolation creates an instance-level violation for an attribute
+// value whose data type rules did not parse.
+func NewUnparsedAttributeDataTypeViolation(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attributeName string,
+	dataTypeRules string,
+) *ViolationError {
+	return &ViolationError{
+		Type:          ViolationTypeUnparsedDataType,
+		Message:       fmt.Sprintf("attribute %s on instance %d of class %s has unparsed data type rules: %s", attributeName, instanceID, classKey.String(), dataTypeRules),
+		InstanceID:    instanceID,
+		ClassKey:      classKey,
+		AttributeName: attributeName,
+		ExpectedValue: dataTypeRules,
+	}
+}
+
+// NewUnparsedParameterDataTypeViolation creates a violation when a simulated parameter's
+// data type rules did not parse.
+func NewUnparsedParameterDataTypeViolation(
+	sourceKey identity.Key,
+	sourceName string,
+	sourceKind string,
+	parameterName string,
+	dataTypeRules string,
+	instanceID state.InstanceID,
+	classKey identity.Key,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeUnparsedDataType,
+		Message:           fmt.Sprintf("parameter %s on %s %s has unparsed data type rules: %s", parameterName, sourceKind, sourceName, dataTypeRules),
+		InstanceID:        instanceID,
+		ClassKey:          classKey,
+		AttributeName:     parameterName,
+		ActionOrQueryKey:  sourceKey,
+		ActionOrQueryName: sourceName,
+		ExpectedValue:     dataTypeRules,
+	}
+}
+
+// NewMissingParameterTypeSpecViolation creates a violation when a simulated action or query
+// parameter declares no TLA+ type_spec.
+func NewMissingParameterTypeSpecViolation(
+	sourceKey identity.Key,
+	sourceName string,
+	sourceKind string,
+	parameterName string,
+	instanceID state.InstanceID,
+	classKey identity.Key,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeMissingParameterTypeSpec,
+		Message:           fmt.Sprintf("parameter %s on %s %s has no TLA+ type_spec", parameterName, sourceKind, sourceName),
+		InstanceID:        instanceID,
+		ClassKey:          classKey,
+		AttributeName:     parameterName,
+		ActionOrQueryKey:  sourceKey,
+		ActionOrQueryName: sourceName,
 	}
 }
 
@@ -530,7 +597,7 @@ func (v ViolationErrors) DataTypeViolations() ViolationErrors {
 	for _, violation := range v {
 		//nolint:exhaustive // Only data type violation types are relevant here.
 		switch violation.Type {
-		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness, ViolationTypeMissingAttributeTypeSpec:
+		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness, ViolationTypeUnparsedDataType, ViolationTypeMissingAttributeTypeSpec, ViolationTypeMissingParameterTypeSpec:
 			result = append(result, violation)
 		default:
 			// Not a data type violation; skip.

@@ -133,6 +133,9 @@ func (e *ActionExecutor) ExecuteAction(
 	parameters map[string]object.Object,
 ) (*ActionResult, error) {
 	ctx := NewExecutionContext()
+	paramViolations := invariants.CheckParameterTypeSpecs(
+		action.Parameters, action.Key, action.Name, "action", instance.ID, instance.ClassKey,
+	)
 
 	// Phase A: Execute the action chain (collecting primed values and post-conditions)
 	if err := e.executeActionInContext(ctx, action, instance, parameters); err != nil {
@@ -142,7 +145,7 @@ func (e *ActionExecutor) ExecuteAction(
 	if ctx.RequiresViolations().HasViolations() {
 		return &ActionResult{
 			InstanceID: instance.ID,
-			Violations: ctx.RequiresViolations(),
+			Violations: append(ctx.RequiresViolations(), paramViolations...),
 			Success:    false,
 		}, nil
 	}
@@ -154,6 +157,7 @@ func (e *ActionExecutor) ExecuteAction(
 
 	// Phases C-F: Check all post-conditions and invariants
 	allViolations := e.checkAllInvariants(ctx)
+	allViolations = append(allViolations, paramViolations...)
 
 	return &ActionResult{
 		InstanceID:        instance.ID,
@@ -486,6 +490,9 @@ func (e *ActionExecutor) ExecuteQuery(
 	parameters map[string]object.Object,
 ) (*QueryResult, error) {
 	ctx := NewExecutionContext()
+	paramViolations := invariants.CheckParameterTypeSpecs(
+		query.Parameters, query.Key, query.Name, "query", instance.ID, instance.ClassKey,
+	)
 
 	outputs, err := e.executeQueryInContext(ctx, query, instance, parameters)
 	if err != nil {
@@ -494,6 +501,7 @@ func (e *ActionExecutor) ExecuteQuery(
 
 	// Check post-conditions (reuse shared helper).
 	allViolations := e.checkPostConditions(ctx)
+	allViolations = append(allViolations, paramViolations...)
 
 	return &QueryResult{
 		InstanceID: instance.ID,

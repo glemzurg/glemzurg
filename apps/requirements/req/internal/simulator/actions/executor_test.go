@@ -109,6 +109,19 @@ func lowerClass(class model_class.Class, _ identity.Key) model_class.Class {
 	return class
 }
 
+func paramWithNatTypeSpec(parentKey identity.Key, name, rules string) model_state.Parameter {
+	param := helper.Must(model_state.NewParameter(parentKey, name, rules, false))
+	natTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil))
+	if param.DataType == nil {
+		param.DataType = &model_data_type.DataType{
+			CollectionType: "atomic",
+			Atomic:         &model_data_type.Atomic{ConstraintType: model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED},
+		}
+	}
+	param.DataType.TypeSpec = &natTypeSpec
+	return param
+}
+
 // --- Helper: create a simple class with states, actions, and transitions ---
 
 // testOrderClass creates an Order class with states (Open, Closed), events (close),
@@ -325,7 +338,7 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 		nil,
 	)
 
-	actionParams := []model_state.Parameter{helper.Must(model_state.NewParameter(actionKey, "amount", "[0,1000]", false))}
+	actionParams := []model_state.Parameter{paramWithNatTypeSpec(actionKey, "amount", "[0,1000]")}
 	action := model_state.NewAction(actionKey, "set_amount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, actionParams)
 	action = lowerAction(action, classKey)
 
@@ -346,6 +359,48 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 
 	updated := simState.GetInstance(instance.ID)
 	s.Equal("500", updated.GetAttribute("amount").Inspect())
+}
+
+func (s *ActionsSuite) TestExecuteActionReportsUnparsedParameterDataType() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	actionKey := mustKey("domain/d/subdomain/s/class/order/action/set_amount")
+	param := helper.Must(model_state.NewParameter(actionKey, "amount", "not a valid rule", false))
+	param.DataType = nil
+	action := model_state.NewAction(actionKey, "set_amount", "", nil, nil, nil, []model_state.Parameter{param})
+
+	simState := state.NewSimulationState()
+	instance := simState.CreateInstance(classKey, object.NewRecord())
+	exec := buildTestExecutor(simState)
+
+	result, err := exec.ExecuteAction(action, instance, map[string]object.Object{
+		"amount": object.NewInteger(1),
+	})
+	s.Require().NoError(err)
+	s.False(result.Success)
+	s.Require().Len(result.Violations, 1)
+	s.Equal(invariants.ViolationTypeUnparsedDataType, result.Violations[0].Type)
+}
+
+func (s *ActionsSuite) TestExecuteActionReportsMissingParameterTypeSpec() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	actionKey := mustKey("domain/d/subdomain/s/class/order/action/set_amount")
+	actionParams := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "amount", "unconstrained", false)),
+	}
+	action := model_state.NewAction(actionKey, "set_amount", "", nil, nil, nil, actionParams)
+
+	simState := state.NewSimulationState()
+	instance := simState.CreateInstance(classKey, object.NewRecord())
+	exec := buildTestExecutor(simState)
+
+	result, err := exec.ExecuteAction(action, instance, map[string]object.Object{
+		"amount": object.NewInteger(1),
+	})
+	s.Require().NoError(err)
+	s.False(result.Success)
+	s.Require().Len(result.Violations, 1)
+	s.Equal(invariants.ViolationTypeMissingParameterTypeSpec, result.Violations[0].Type)
+	s.Equal("amount", result.Violations[0].AttributeName)
 }
 
 // ========================================================================
@@ -377,6 +432,28 @@ func (s *ActionsSuite) TestExecuteQueryReturnsOutput() {
 	s.True(result.Success)
 	s.NotNil(result.Outputs["result"])
 	s.Equal("100", result.Outputs["result"].Inspect())
+}
+
+func (s *ActionsSuite) TestExecuteQueryReportsMissingParameterTypeSpec() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	queryKey := mustKey("domain/d/subdomain/s/class/order/query/filter")
+	queryParams := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(queryKey, "limit", "unconstrained", false)),
+	}
+	query := model_state.NewQuery(queryKey, "filter", "", nil, nil, queryParams)
+
+	simState := state.NewSimulationState()
+	instance := simState.CreateInstance(classKey, object.NewRecord())
+	exec := buildTestExecutor(simState)
+
+	result, err := exec.ExecuteQuery(query, instance, map[string]object.Object{
+		"limit": object.NewInteger(5),
+	})
+	s.Require().NoError(err)
+	s.False(result.Success)
+	s.Require().Len(result.Violations, 1)
+	s.Equal(invariants.ViolationTypeMissingParameterTypeSpec, result.Violations[0].Type)
+	s.Equal("limit", result.Violations[0].AttributeName)
 }
 
 func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {

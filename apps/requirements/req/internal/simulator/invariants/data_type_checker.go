@@ -3,7 +3,6 @@ package invariants
 import (
 	"fmt"
 	"math/big"
-	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -31,16 +30,16 @@ const _BOUND_TYPE_OPEN = "open"
 type DataTypeChecker struct {
 	// classAttributes maps class key to its attribute definitions
 	classAttributes map[identity.Key]map[string]*model_class.Attribute
+
+	// unparsedAttributeDefs holds class-level violations for attributes whose rules did not parse.
+	unparsedAttributeDefs ViolationErrors
 }
 
 // NewDataTypeChecker creates a new data type checker from a model.
-// Returns an error if any class attribute has an unparsed DataType.
 func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 	checker := &DataTypeChecker{
 		classAttributes: make(map[identity.Key]map[string]*model_class.Attribute),
 	}
-
-	var violations ViolationErrors
 
 	// Iterate through all domains, subdomains, and classes to collect attributes
 	for _, domain := range model.Domains {
@@ -52,13 +51,10 @@ func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 					attrCopy := attr // Make a copy to get a stable pointer
 					attrMap[attr.Key.SubKey] = &attrCopy
 
-					// Check if DataType is parsed
 					if attr.DataType == nil {
-						violations = append(violations, NewUnparsedDataTypeViolation(
-							class.Key,
-							attr.Name,
-							attr.DataTypeRules,
-						))
+						checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
+							NewUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
+						)
 					}
 				}
 
@@ -67,7 +63,13 @@ func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 		}
 	}
 
-	return checker, violations
+	return checker, checker.unparsedAttributeDefs
+}
+
+// UnparsedAttributeDefinitionViolations returns class-level violations for attributes
+// whose data type rules did not parse in the simulated model.
+func (c *DataTypeChecker) UnparsedAttributeDefinitionViolations() ViolationErrors {
+	return c.unparsedAttributeDefs
 }
 
 // CheckInstance validates all attribute values on an instance against their data type constraints.
@@ -95,6 +97,16 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 
 		// If value is NULL and attribute is nullable, skip constraint checks
 		if object.IsNull(value) {
+			continue
+		}
+
+		if attrDef.DataType == nil {
+			violations = append(violations, NewUnparsedAttributeDataTypeViolation(
+				instance.ID,
+				instance.ClassKey,
+				attrDef.Name,
+				attrDef.DataTypeRules,
+			))
 			continue
 		}
 
@@ -455,14 +467,6 @@ func (c *DataTypeChecker) GetAttributeDefinition(classKey identity.Key, fieldKey
 		return attrs[fieldKey]
 	}
 	return nil
-}
-
-// HasClass returns true if the checker has attribute definitions for the class.
-func attributeHasTypeSpec(attr *model_class.Attribute) bool {
-	if attr == nil || attr.DataType == nil || attr.DataType.TypeSpec == nil {
-		return false
-	}
-	return strings.TrimSpace(attr.DataType.TypeSpec.Specification) != ""
 }
 
 func (c *DataTypeChecker) HasClass(classKey identity.Key) bool {
