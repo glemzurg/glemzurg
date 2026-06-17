@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
+	"github.com/gomarkdown/markdown"
 )
 
 func TestGenerateShowsExpressionParseErrors(t *testing.T) {
@@ -191,5 +192,26 @@ found:
 				t.Errorf("hub should not duplicate error details, got: %s", banner)
 			}
 		})
+	}
+}
+
+func TestExpressionSpecDisplayDoesNotPreEscapeComparisons(t *testing.T) {
+	spec := logic_spec.ExpressionSpec{
+		Notation:      model_logic.NotationTLAPlus,
+		Specification: `\E c \in self.Adjusts : c.amount > 0 /\ \E c \in self.Adjusts : c.amount < 0`,
+	}
+
+	got := expressionSpecDisplay(spec)
+	if strings.Contains(got, "&gt;") || strings.Contains(got, "&lt;") {
+		t.Fatalf("expected raw comparison operators, got %q", got)
+	}
+
+	md := "- " + got
+	htmlOut := string(markdown.ToHTML([]byte(md), nil, nil))
+	if strings.Contains(htmlOut, "&amp;gt;") || strings.Contains(htmlOut, "&amp;lt;") {
+		t.Fatalf("gomarkdown double-encoded comparisons: %s", htmlOut)
+	}
+	if !strings.Contains(htmlOut, "&gt;") || !strings.Contains(htmlOut, "&lt;") {
+		t.Fatalf("expected single-encoded comparisons in HTML, got %s", htmlOut)
 	}
 }

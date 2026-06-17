@@ -222,11 +222,12 @@ func expressionSpecDisplay(spec logic_spec.ExpressionSpec) string {
 	if spec.Specification == "" {
 		return ""
 	}
-	escaped := html.EscapeString(spec.Specification)
+	// Leave > and < unescaped: gomarkdown escapes them once when rendering markdown to HTML.
+	// Pre-escaping here produces &amp;gt; / &amp;lt;, which browsers show as literal entity text.
 	if activeParseIssues == nil || !activeParseIssues.failedSpecs[spec.Specification] {
-		return escaped
+		return spec.Specification
 	}
-	return `<span class="parse-error-spec">` + escaped + `</span>`
+	return `<span class="parse-error-spec">` + spec.Specification + `</span>`
 }
 
 func copyStringMap(in map[string]string) map[string]string {
