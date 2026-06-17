@@ -77,7 +77,10 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
-	simState, bindingsBuilder, err := setupState(activeModel)
+	catalog := NewClassCatalog(activeModel)
+	PopulateCallerDataFromModel(activeModel, catalog)
+
+	simState, bindingsBuilder, err := setupState(activeModel, catalog)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +91,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	}
 
 	stepExecutor, selector, livenessChecker, err := setupExecutors(
-		activeModel, bindingsBuilder, checkers, rng,
+		activeModel, bindingsBuilder, checkers, catalog, rng,
 	)
 	if err != nil {
 		return nil, err
@@ -123,27 +126,11 @@ func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model
 
 // setupState creates simulation state and bindings builder, registers associations,
 // and sets up derived attribute evaluation.
-func setupState(model *core.Model) (*state.SimulationState, *state.BindingsBuilder, error) {
+func setupState(model *core.Model, catalog *ClassCatalog) (*state.SimulationState, *state.BindingsBuilder, error) {
 	simState := state.NewSimulationState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
-	// Register all associations with bindings builder so the evaluator can traverse them.
-	for _, assoc := range model.GetClassAssociations() {
-		bindingsBuilder.AddAssociation(
-			assoc.Key,
-			assoc.Name,
-			assoc.FromClassKey,
-			assoc.ToClassKey,
-			evaluator.Multiplicity{
-				LowerBound:  assoc.FromMultiplicity.LowerBound,
-				HigherBound: assoc.FromMultiplicity.HigherBound,
-			},
-			evaluator.Multiplicity{
-				LowerBound:  assoc.ToMultiplicity.LowerBound,
-				HigherBound: assoc.ToMultiplicity.HigherBound,
-			},
-		)
-	}
+	registerCatalogAssociations(catalog, bindingsBuilder)
 
 	// Set up derived attribute evaluation (on-demand computation).
 	derivedEval, err := NewDerivedAttributeEvaluator(model, simState, bindingsBuilder.RelationContext())
@@ -187,17 +174,36 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 	}, nil
 }
 
+func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.BindingsBuilder) {
+	for _, ai := range catalog.AllAssociations() {
+		assoc := ai.Association
+		bindingsBuilder.AddAssociation(
+			assoc.Key,
+			assoc.Name,
+			assoc.FromClassKey,
+			assoc.ToClassKey,
+			evaluator.Multiplicity{
+				LowerBound:  assoc.FromMultiplicity.LowerBound,
+				HigherBound: assoc.FromMultiplicity.HigherBound,
+			},
+			evaluator.Multiplicity{
+				LowerBound:  assoc.ToMultiplicity.LowerBound,
+				HigherBound: assoc.ToMultiplicity.HigherBound,
+			},
+		)
+	}
+}
+
 // setupExecutors creates step executor, action selector, and liveness checker.
 func setupExecutors(
-	model *core.Model,
+	_ *core.Model,
 	bindingsBuilder *state.BindingsBuilder,
 	checkers *simulationCheckers,
+	catalog *ClassCatalog,
 	rng *rand.Rand,
 ) (*StepExecutor, *ActionSelector, *LivenessChecker, error) {
-	actionExecutor := buildActionExecutor(bindingsBuilder, checkers, rng)
+	actionExecutor := buildActionExecutor(bindingsBuilder, checkers, catalog, rng)
 
-	catalog := NewClassCatalog(model)
-	PopulateCallerDataFromModel(model, catalog)
 	if len(catalog.AllEventBearingClasses()) == 0 {
 		return nil, nil, nil, fmt.Errorf("no event-bearing simulatable classes found in model")
 	}
@@ -207,11 +213,16 @@ func setupExecutors(
 }
 
 // buildActionExecutor creates the action executor with its dependencies.
-func buildActionExecutor(bindingsBuilder *state.BindingsBuilder, checkers *simulationCheckers, rng *rand.Rand) *actions.ActionExecutor {
+func buildActionExecutor(
+	bindingsBuilder *state.BindingsBuilder,
+	checkers *simulationCheckers,
+	catalog *ClassCatalog,
+	rng *rand.Rand,
+) *actions.ActionExecutor {
 	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
 	return actions.NewActionExecutor(
 		bindingsBuilder, checkers.invariantChecker, checkers.dataTypeChecker,
-		checkers.indexChecker, guardEvaluator, rng,
+		checkers.indexChecker, guardEvaluator, catalog, rng,
 	)
 }
 

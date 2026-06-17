@@ -80,6 +80,19 @@ type TransitionResult struct {
 	Violations invariants.ViolationErrors
 }
 
+// AssociationClassIndex resolves association-class metadata for creation linking.
+type AssociationClassIndex interface {
+	GetAssociationClassInfo(classKey identity.Key) AssociationClassLinkInfo
+	IsAssociationClass(classKey identity.Key) bool
+}
+
+// AssociationClassLinkInfo holds the keys needed to wire decomposed AC legs on Add.
+type AssociationClassLinkInfo struct {
+	Found           bool
+	FromLegAssocKey identity.Key
+	ToLegAssocKey   identity.Key
+}
+
 // ActionExecutor executes actions, queries, and transitions against simulation state.
 type ActionExecutor struct {
 	bindingsBuilder  *state.BindingsBuilder
@@ -87,6 +100,7 @@ type ActionExecutor struct {
 	dataTypeChecker  *invariants.DataTypeChecker
 	indexChecker     *invariants.IndexUniquenessChecker
 	guardEvaluator   *GuardEvaluator
+	acIndex          AssociationClassIndex
 	rng              *rand.Rand
 }
 
@@ -97,6 +111,7 @@ func NewActionExecutor(
 	dataTypeChecker *invariants.DataTypeChecker,
 	indexChecker *invariants.IndexUniquenessChecker,
 	guardEvaluator *GuardEvaluator,
+	acIndex AssociationClassIndex,
 	rng *rand.Rand,
 ) *ActionExecutor {
 	return &ActionExecutor{
@@ -105,6 +120,7 @@ func NewActionExecutor(
 		dataTypeChecker:  dataTypeChecker,
 		indexChecker:     indexChecker,
 		guardEvaluator:   guardEvaluator,
+		acIndex:          acIndex,
 		rng:              rng,
 	}
 }
@@ -569,6 +585,7 @@ func (e *ActionExecutor) ExecuteTransition(
 	eventParams map[string]object.Object,
 	sourceAssocKey *identity.Key, // association for creation linking
 	sourceID *state.InstanceID, // parent instance for creation linking
+	targetID *state.InstanceID, // to-endpoint for association-class creation
 ) (*TransitionResult, error) {
 	currentStateName := getInstanceCurrentState(instance)
 
@@ -586,7 +603,7 @@ func (e *ActionExecutor) ExecuteTransition(
 
 	// Step 3: Handle creation (FromStateKey == nil)
 	if chosen.FromStateKey == nil {
-		instance, err = e.handleCreation(class, instance, sourceAssocKey, sourceID)
+		instance, err = e.handleCreation(class, instance, sourceAssocKey, sourceID, targetID)
 		if err != nil {
 			return nil, err
 		}
@@ -713,7 +730,12 @@ func (e *ActionExecutor) handleCreation(
 	_ *state.ClassInstance,
 	sourceAssocKey *identity.Key,
 	sourceID *state.InstanceID,
+	targetID *state.InstanceID,
 ) (*state.ClassInstance, error) {
+	if e.acIndex != nil && e.acIndex.IsAssociationClass(class.Key) {
+		return e.handleAssociationClassCreation(class, sourceID, targetID)
+	}
+
 	simState := e.bindingsBuilder.State()
 	newAttrs := object.NewRecord()
 
@@ -733,6 +755,50 @@ func (e *ActionExecutor) handleCreation(
 	if sourceAssocKey != nil && sourceID != nil {
 		simState.AddLink(*sourceAssocKey, *sourceID, instance.ID)
 	}
+
+	return instance, nil
+}
+
+func (e *ActionExecutor) handleAssociationClassCreation(
+	class model_class.Class,
+	sourceID *state.InstanceID,
+	targetID *state.InstanceID,
+) (*state.ClassInstance, error) {
+	if sourceID == nil || targetID == nil {
+		return nil, fmt.Errorf(
+			"association class %s Add requires both endpoint instances",
+			class.Name,
+		)
+	}
+	if e.acIndex == nil {
+		return nil, fmt.Errorf("association class %s: no association-class index configured", class.Name)
+	}
+
+	linkInfo := e.acIndex.GetAssociationClassInfo(class.Key)
+	if !linkInfo.Found {
+		return nil, fmt.Errorf("association class %s: no host association metadata", class.Name)
+	}
+
+	simState := e.bindingsBuilder.State()
+	fromInstance := simState.GetInstance(*sourceID)
+	toInstance := simState.GetInstance(*targetID)
+	if fromInstance == nil || toInstance == nil {
+		return nil, fmt.Errorf("association class %s Add: endpoint instance not found", class.Name)
+	}
+
+	newAttrs := object.NewRecord()
+	if e.indexChecker != nil && e.rng != nil {
+		if indexInfo := e.indexChecker.GetClassIndexInfo(class.Key); indexInfo != nil {
+			existingInstances := simState.InstancesByClass(class.Key)
+			if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, e.rng); err != nil {
+				return nil, fmt.Errorf("failed to generate index-safe values for class %s: %w", class.Name, err)
+			}
+		}
+	}
+
+	instance := simState.CreateInstance(class.Key, newAttrs)
+	simState.AddLink(linkInfo.FromLegAssocKey, *sourceID, instance.ID)
+	simState.AddLink(linkInfo.ToLegAssocKey, instance.ID, *targetID)
 
 	return instance, nil
 }

@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -20,6 +21,11 @@ type PendingAction struct {
 	IsCreation bool
 	IsQuery    bool
 	IsDo       bool // True when this is a "do" state action.
+
+	// Association-class Add binds both decomposed endpoints.
+	SourceAssocKey   *identity.Key
+	SourceInstanceID *state.InstanceID
+	TargetInstanceID *state.InstanceID
 }
 
 // ActionSelector randomly selects the next simulation action.
@@ -64,6 +70,8 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 					IsCreation: true,
 				})
 			}
+
+			eligible = append(eligible, s.collectAssociationClassCreations(classInfo, simState)...)
 		}
 
 		instances := simState.InstancesByClass(classInfo.ClassKey)
@@ -111,6 +119,56 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 	}
 
 	return eligible
+}
+
+func (s *ActionSelector) collectAssociationClassCreations(
+	classInfo *ClassInfo,
+	simState *state.SimulationState,
+) []PendingAction {
+	acInfo := s.catalog.LookupAssociationClass(classInfo.ClassKey)
+	if acInfo == nil || len(classInfo.CreationEvents) == 0 {
+		return nil
+	}
+
+	fromInstances := s.activeInstancesByClass(simState, acInfo.FromClassKey)
+	toInstances := s.activeInstancesByClass(simState, acInfo.ToClassKey)
+	if len(fromInstances) == 0 || len(toInstances) == 0 {
+		return nil
+	}
+
+	creationEvent := classInfo.CreationEvents[0]
+	var eligible []PendingAction
+	fromLegKey := acInfo.FromLegAssocKey
+
+	for _, fromInst := range fromInstances {
+		for _, toInst := range toInstances {
+			fromID := fromInst.ID
+			toID := toInst.ID
+			eligible = append(eligible, PendingAction{
+				Class:            classInfo,
+				Event:            &creationEvent,
+				Instance:         nil,
+				IsCreation:       true,
+				SourceAssocKey:   &fromLegKey,
+				SourceInstanceID: &fromID,
+				TargetInstanceID: &toID,
+			})
+		}
+	}
+	return eligible
+}
+
+func (s *ActionSelector) activeInstancesByClass(simState *state.SimulationState, classKey identity.Key) []*state.ClassInstance {
+	instances := simState.InstancesByClass(classKey)
+	var active []*state.ClassInstance
+	for _, inst := range instances {
+		if !IsActiveAssociationClassInstance(s.catalog, inst.ClassKey, getInstanceStateName(inst)) {
+			continue
+		}
+		active = append(active, inst)
+	}
+	sort.Slice(active, func(i, j int) bool { return active[i].ID < active[j].ID })
+	return active
 }
 
 // getInstanceStateName extracts the current state name from an instance's _state attribute.

@@ -37,7 +37,7 @@ func buildChainTestComponents(
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, rng)
+	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, nil, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
 
@@ -87,7 +87,7 @@ func (s *CreationChainSuite) TestNoMandatoryAssociationsReturnsEmpty() {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
 
-	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil)
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil, nil)
 	s.Require().NoError(err)
 
 	// Handle creation chain — nothing should cascade.
@@ -106,7 +106,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
 
-	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil)
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil, nil)
 	s.Require().NoError(err)
 	s.True(result.WasCreation)
 
@@ -134,7 +134,7 @@ func (s *CreationChainSuite) TestCascadeDepthLimitReturnsError() {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
 
-	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil)
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil, nil)
 	s.Require().NoError(err)
 
 	// Simulate exceeding depth limit.
@@ -186,7 +186,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, rng)
+	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, nil, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
 	catalog := NewClassCatalog(model)
@@ -195,7 +195,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	// Create an Order.
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
-	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil)
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil, nil)
 	s.Require().NoError(err)
 
 	// Handle chain — should fail because Item has no creation transition.

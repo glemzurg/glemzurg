@@ -164,7 +164,7 @@ func (e *StepExecutor) executeTransition(
 	// 3. Execute the transition.
 	result, err := e.actionExecutor.ExecuteTransition(
 		pending.Class.Class, *pending.Event, pending.Instance,
-		params, nil, nil, // No source association for top-level steps.
+		params, pending.SourceAssocKey, pending.SourceInstanceID, pending.TargetInstanceID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("transition error: %w", err)

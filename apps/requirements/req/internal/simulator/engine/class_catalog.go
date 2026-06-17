@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
@@ -45,6 +46,9 @@ type ClassCatalog struct {
 	associations []AssociationInfo
 	classAssocs  map[identity.Key][]AssociationInfo // classKey → associations involving it
 
+	associationClasses map[identity.Key]*AssociationClassInfo
+	hostAssocKeys      map[identity.Key]bool
+
 	// Simulator-local SentBy/CalledBy data.
 	eventSentBy    map[identity.Key][]identity.Key // event key → sender class keys
 	actionCalledBy map[identity.Key][]identity.Key // action key → caller class keys
@@ -70,7 +74,13 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 		}
 	}
 
-	// Build association info.
+	// Build association-class index before association info so host assocs decompose into legs.
+	var err error
+	catalog.associationClasses, catalog.hostAssocKeys, err = buildAssociationClassIndex(model, catalog.classes)
+	if err != nil {
+		panic(err)
+	}
+
 	catalog.buildAssociationInfo(model)
 
 	return catalog
@@ -203,6 +213,9 @@ func buildDoActions(class model_class.Class, s model_state.State) []model_state.
 func (c *ClassCatalog) buildAssociationInfo(model *core.Model) {
 	allAssocs := model.GetClassAssociations()
 	for _, assoc := range allAssocs {
+		if c.hostAssocKeys[assoc.Key] {
+			continue
+		}
 		if _, fromIn := c.classes[assoc.FromClassKey]; !fromIn {
 			continue
 		}
@@ -218,16 +231,54 @@ func (c *ClassCatalog) buildAssociationInfo(model *core.Model) {
 			MinTo:         assoc.ToMultiplicity.LowerBound,
 			MinFrom:       assoc.FromMultiplicity.LowerBound,
 		}
-		c.associations = append(c.associations, ai)
-		c.classAssocs[assoc.FromClassKey] = append(c.classAssocs[assoc.FromClassKey], ai)
-		if assoc.FromClassKey != assoc.ToClassKey {
-			c.classAssocs[assoc.ToClassKey] = append(c.classAssocs[assoc.ToClassKey], ai)
-		}
+		c.addAssociationInfo(ai)
 	}
+
+	for _, ai := range decomposedAssociationInfos(c.associationClasses) {
+		c.addAssociationInfo(ai)
+	}
+
 	// Sort associations for determinism.
 	sort.Slice(c.associations, func(i, j int) bool {
 		return c.associations[i].Association.Key.String() < c.associations[j].Association.Key.String()
 	})
+}
+
+func (c *ClassCatalog) addAssociationInfo(ai AssociationInfo) {
+	c.associations = append(c.associations, ai)
+	c.classAssocs[ai.FromClassKey] = append(c.classAssocs[ai.FromClassKey], ai)
+	if ai.FromClassKey != ai.ToClassKey {
+		c.classAssocs[ai.ToClassKey] = append(c.classAssocs[ai.ToClassKey], ai)
+	}
+}
+
+// LookupAssociationClass returns decomposed leg metadata for an association-class key.
+func (c *ClassCatalog) LookupAssociationClass(classKey identity.Key) *AssociationClassInfo {
+	return c.associationClasses[classKey]
+}
+
+// IsAssociationClass reports whether the class serves as an association class in the model.
+func (c *ClassCatalog) IsAssociationClass(classKey identity.Key) bool {
+	_, ok := c.associationClasses[classKey]
+	return ok
+}
+
+// IsHostAssociation reports whether the association is materialized via decomposed AC legs.
+func (c *ClassCatalog) IsHostAssociation(assocKey identity.Key) bool {
+	return c.hostAssocKeys[assocKey]
+}
+
+// GetAssociationClassInfo implements actions.AssociationClassIndex.
+func (c *ClassCatalog) GetAssociationClassInfo(classKey identity.Key) actions.AssociationClassLinkInfo {
+	info := c.associationClasses[classKey]
+	if info == nil {
+		return actions.AssociationClassLinkInfo{}
+	}
+	return actions.AssociationClassLinkInfo{
+		Found:           true,
+		FromLegAssocKey: info.FromLegAssocKey,
+		ToLegAssocKey:   info.ToLegAssocKey,
+	}
 }
 
 // SetEventSentBy records which classes send a given event.
@@ -405,6 +456,11 @@ func (c *ClassCatalog) GetAssociationsForClass(classKey identity.Key) []Associat
 func (c *ClassCatalog) ExternalCreationEvents(classKey identity.Key) []model_state.Event {
 	info := c.classes[classKey]
 	if info == nil || len(info.CreationEvents) == 0 {
+		return nil
+	}
+
+	// Association-class Add must bind both endpoints; bare external creation would orphan rows.
+	if c.IsAssociationClass(classKey) {
 		return nil
 	}
 

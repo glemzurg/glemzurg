@@ -41,7 +41,7 @@ func buildTestExecutor(simState *state.SimulationState) *ActionExecutor {
 	bb := state.NewBindingsBuilder(simState)
 	ge := NewGuardEvaluator(bb)
 
-	return NewActionExecutor(bb, nil, nil, nil, ge, nil)
+	return NewActionExecutor(bb, nil, nil, nil, ge, nil, nil)
 }
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
@@ -518,7 +518,7 @@ func (s *ActionsSuite) TestExecuteTransitionNormal() {
 	eventCloseKey := mustKey("domain/d/subdomain/s/class/order/event/close")
 	event := class.Events[eventCloseKey]
 
-	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil, nil)
 	s.Require().NoError(err)
 	s.NotNil(result)
 
@@ -567,7 +567,7 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 
 	eventObj := class.Events[eventCreateKey]
 
-	result, err := exec.ExecuteTransition(class, eventObj, nil, nil, nil, nil)
+	result, err := exec.ExecuteTransition(class, eventObj, nil, nil, nil, nil, nil)
 	s.Require().NoError(err)
 	s.True(result.WasCreation)
 	s.Equal("Open", result.ToState)
@@ -614,7 +614,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 
 	eventObj := class.Events[eventDeleteKey]
 
-	result, err := exec.ExecuteTransition(class, eventObj, instance, nil, nil, nil)
+	result, err := exec.ExecuteTransition(class, eventObj, instance, nil, nil, nil, nil)
 	s.Require().NoError(err)
 	s.True(result.WasDeletion)
 
@@ -639,7 +639,7 @@ func (s *ActionsSuite) TestExecuteTransitionNoMatchingTransition() {
 	eventCloseKey := mustKey("domain/d/subdomain/s/class/order/event/close")
 	event := class.Events[eventCloseKey]
 
-	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "no transitions")
 }
@@ -711,7 +711,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventReviewKey]
-	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil, nil)
 	s.Require().NoError(err)
 	s.Equal("Approved", result.ToState)
 
@@ -722,7 +722,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	instance2 := simState.CreateInstance(classKey, attrs2)
 	_ = simState.SetStateMachineState(instance2.ID, stateOpenKey)
 
-	result2, err := exec.ExecuteTransition(class, event, instance2, nil, nil, nil)
+	result2, err := exec.ExecuteTransition(class, event, instance2, nil, nil, nil, nil)
 	s.Require().NoError(err)
 	s.Equal("Rejected", result2.ToState)
 }
@@ -779,7 +779,7 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventKey]
-	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "non-determinism")
 }
@@ -826,7 +826,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventKey]
-	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "deadlock")
 }

@@ -44,7 +44,7 @@ func TestStateActionExecutorSuite(t *testing.T) {
 func buildStateActionTestExecutor(simState *state.SimulationState) *actions.ActionExecutor {
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
-	return actions.NewActionExecutor(bb, nil, nil, nil, ge, nil)
+	return actions.NewActionExecutor(bb, nil, nil, nil, ge, nil, nil)
 }
 
 func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
