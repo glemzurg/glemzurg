@@ -1,15 +1,15 @@
 #!/bin/bash
-# Print human-readable class association facts for one model subdomain.
+# Print human-readable model facts (associations and indexes) for one model subdomain.
 #
 # Example usage:
 #   Default (data_sandbox evenplay finance/wallet):
-#     ./scripts/associationfacts.sh data_sandbox/model evenplay finance/wallet
+#     ./scripts/modelfacts.sh data_sandbox/model evenplay finance/wallet
 #
 #   With debug:
-#     ./scripts/associationfacts.sh data_sandbox/model evenplay finance/wallet -debug
+#     ./scripts/modelfacts.sh data_sandbox/model evenplay finance/wallet -debug
 #
 #   Examples tree:
-#     ./scripts/associationfacts.sh /data/examples/requirements/req/models/ web_books finance/wallet
+#     ./scripts/modelfacts.sh /data/examples/requirements/req/models/ web_books finance/wallet
 
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -63,9 +63,9 @@ echo -e "\nUPDATE INSTALL\n"
 
 # ================================================
 
-# Run the command to print association facts for the subdomain.
-echo -e "\n/go/bin/req -associationfacts -rootsource $INPUT_PATH -model $MODEL -subdomain $SUBDOMAIN$OPTIONAL_FLAGS\n"
-/go/bin/req -associationfacts -rootsource $INPUT_PATH -model $MODEL -subdomain $SUBDOMAIN $OPTIONAL_FLAGS
+# Run the command to print model facts for the subdomain.
+echo -e "\n/go/bin/req -modelfacts -rootsource $INPUT_PATH -model $MODEL -subdomain $SUBDOMAIN$OPTIONAL_FLAGS\n"
+/go/bin/req -modelfacts -rootsource $INPUT_PATH -model $MODEL -subdomain $SUBDOMAIN $OPTIONAL_FLAGS
 
 [ $? -ne 0 ] && exit 1
 

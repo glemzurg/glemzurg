@@ -1,7 +1,8 @@
-package associationfacts
+package modelfacts
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -43,9 +44,23 @@ func FindSubdomain(model core.Model, path SubdomainPath) (model_domain.Subdomain
 	return model_domain.Subdomain{}, fmt.Errorf("domain %q not found in model %q", path.DomainSubKey, model.Key)
 }
 
-// FactsForSubdomain returns human-readable association facts for associations whose
+// SubdomainFacts groups readable model facts for one subdomain.
+type SubdomainFacts struct {
+	Associations []string
+	Indexes      []string
+}
+
+// FactsForSubdomain returns association and index uniqueness facts for one subdomain.
+func FactsForSubdomain(subdomain model_domain.Subdomain) SubdomainFacts {
+	return SubdomainFacts{
+		Associations: AssociationFactsForSubdomain(subdomain),
+		Indexes:      IndexFactsForSubdomain(subdomain),
+	}
+}
+
+// AssociationFactsForSubdomain returns human-readable association facts for associations whose
 // from- and to-classes both belong to the subdomain.
-func FactsForSubdomain(subdomain model_domain.Subdomain) []string {
+func AssociationFactsForSubdomain(subdomain model_domain.Subdomain) []string {
 	classByKey := make(map[string]model_class.Class, len(subdomain.Classes))
 	for key, class := range subdomain.Classes {
 		classByKey[key.String()] = class
@@ -68,6 +83,45 @@ func FactsForSubdomain(subdomain model_domain.Subdomain) []string {
 			}
 		}
 		facts = append(facts, FormatAssociationFact(assoc, fromClass, toClass, assocClass))
+	}
+
+	sort.Strings(facts)
+	return facts
+}
+
+// IndexFactsForSubdomain returns human-readable uniqueness facts for class attribute indexes.
+func IndexFactsForSubdomain(subdomain model_domain.Subdomain) []string {
+	classes := make([]model_class.Class, 0, len(subdomain.Classes))
+	for _, class := range subdomain.Classes {
+		classes = append(classes, class)
+	}
+	sort.Slice(classes, func(i, j int) bool {
+		return classes[i].Name < classes[j].Name
+	})
+
+	var facts []string
+	for _, class := range classes {
+		indexMap := map[uint][]string{}
+		for _, attr := range class.Attributes {
+			for _, indexNum := range attr.IndexNums {
+				indexMap[indexNum] = append(indexMap[indexNum], attr.Name)
+			}
+		}
+		if len(indexMap) == 0 {
+			continue
+		}
+
+		indexNums := make([]uint, 0, len(indexMap))
+		for indexNum := range indexMap {
+			indexNums = append(indexNums, indexNum)
+		}
+		slices.Sort(indexNums)
+
+		for _, indexNum := range indexNums {
+			names := indexMap[indexNum]
+			sort.Strings(names)
+			facts = append(facts, FormatIndexFact(class.Name, names))
+		}
 	}
 
 	sort.Strings(facts)
@@ -116,6 +170,30 @@ func FormatAssociationFact(assoc model_class.Association, fromClass, toClass mod
 	}
 	b.WriteString(".")
 	return b.String()
+}
+
+// FormatIndexFact renders one class index as a review-friendly uniqueness sentence.
+func FormatIndexFact(className string, attrNames []string) string {
+	classPlural := classPhrase(className).plural()
+	attrs := attributeListPhrase(attrNames)
+
+	if len(attrNames) == 1 {
+		return fmt.Sprintf("No %s can share the same %s.", classPlural, attrs)
+	}
+	return fmt.Sprintf("No %s can share the same %s combination.", classPlural, attrs)
+}
+
+func attributeListPhrase(names []string) string {
+	switch len(names) {
+	case 0:
+		return ""
+	case 1:
+		return names[0]
+	case 2:
+		return names[0] + " and " + names[1]
+	default:
+		return strings.Join(names[:len(names)-1], ", ") + ", and " + names[len(names)-1]
+	}
 }
 
 func endConstraint(m model_class.Multiplicity, subject, object classPhrase, assocName string) string {

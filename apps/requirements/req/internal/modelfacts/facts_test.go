@@ -1,4 +1,4 @@
-package associationfacts
+package modelfacts
 
 import (
 	"strings"
@@ -132,7 +132,43 @@ func TestFormatAssociationFact(t *testing.T) {
 	}
 }
 
-func TestFactsForSubdomain_testModel(t *testing.T) {
+func TestFormatIndexFact(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name      string
+		className string
+		attrNames []string
+		want      string
+	}{
+		{
+			name:      "key index single attribute",
+			className: "Currency",
+			attrNames: []string{"Abbr"},
+			want:      "No currencies can share the same Abbr.",
+		},
+		{
+			name:      "secondary index composite",
+			className: "Widget",
+			attrNames: []string{"Email", "Tenant"},
+			want:      "No widgets can share the same Email and Tenant combination.",
+		},
+		{
+			name:      "secondary index three attributes",
+			className: "Order",
+			attrNames: []string{"Alpha", "Beta", "Gamma"},
+			want:      "No orders can share the same Alpha, Beta, and Gamma combination.",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, FormatIndexFact(tc.className, tc.attrNames))
+		})
+	}
+}
+
+func TestAssociationFactsForSubdomain_testModel(t *testing.T) {
 	t.Parallel()
 
 	model := test_helper.GetTestModel()
@@ -142,7 +178,7 @@ func TestFactsForSubdomain_testModel(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	facts := FactsForSubdomain(subdomain)
+	facts := AssociationFactsForSubdomain(subdomain)
 	require.Len(t, facts, 3)
 
 	joined := strings.Join(facts, "\n")
@@ -153,4 +189,21 @@ func TestFactsForSubdomain_testModel(t *testing.T) {
 	assert.Contains(t, joined, "each customer links to one or more orders")
 	assert.Contains(t, joined, "each product (product has line items) links to one or more line items")
 	assert.Contains(t, joined, "each line item links to exactly one product")
+}
+
+func TestIndexFactsForSubdomain_testModel(t *testing.T) {
+	t.Parallel()
+
+	model := test_helper.GetTestModel()
+	subdomain, err := FindSubdomain(model, SubdomainPath{
+		DomainSubKey:    "domain_a",
+		SubdomainSubKey: "subdomain_a",
+	})
+	require.NoError(t, err)
+
+	facts := IndexFactsForSubdomain(subdomain)
+	require.Len(t, facts, 2)
+
+	joined := strings.Join(facts, "\n")
+	assert.Contains(t, joined, "No orders can share the same Total.")
 }

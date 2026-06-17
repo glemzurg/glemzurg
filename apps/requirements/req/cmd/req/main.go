@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/associationfacts"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/httpserver"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/modelfacts"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 )
@@ -51,13 +51,13 @@ func main() {
 	// HTTP server mode (serves in-memory generated content for a single model):
 	//   $GOBIN/req -http -port 8080 -rootsource example/models -model model_a
 	//
-	// Association facts for human review of one subdomain:
-	//   $GOBIN/req -associationfacts -rootsource example/models -model model_a -subdomain domain/subdomain
+	// Model facts for human review of one subdomain:
+	//   $GOBIN/req -modelfacts -rootsource example/models -model model_a -subdomain domain/subdomain
 
 	var rootSourcePath, rootOutputPath, model string
 	var inputFormat, outputFormat string
 	var debug, skipDB bool
-	var httpMode, associationFactsMode bool
+	var httpMode, modelFactsMode bool
 	var subdomainPath string
 	var port string
 	flag.StringVar(&rootSourcePath, "rootsource", "", "the path to the source models")
@@ -68,8 +68,8 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "enable the debug level of logging")
 	flag.BoolVar(&skipDB, "skipdb", false, "skip database validation step")
 	flag.BoolVar(&httpMode, "http", false, "start HTTP server mode")
-	flag.BoolVar(&associationFactsMode, "associationfacts", false, "print human-readable class association facts for one subdomain")
-	flag.StringVar(&subdomainPath, "subdomain", "", "domain/subdomain path for -associationfacts (e.g. billing/ledger)")
+	flag.BoolVar(&modelFactsMode, "modelfacts", false, "print human-readable model facts (associations and indexes) for one subdomain")
+	flag.StringVar(&subdomainPath, "subdomain", "", "domain/subdomain path for -modelfacts (e.g. billing/ledger)")
 	flag.StringVar(&port, "port", "8080", "port for HTTP server (only used with -http)")
 	flag.Parse()
 
@@ -93,19 +93,19 @@ func main() {
 		_ = slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	// Association facts mode
-	if associationFactsMode {
+	// Model facts mode
+	if modelFactsMode {
 		if rootSourcePath == "" || model == "" || subdomainPath == "" {
-			associationFactsError("rootsource, model, and subdomain are required for -associationfacts")
+			modelFactsError("rootsource, model, and subdomain are required for -modelfacts")
 			flag.Usage()
 			os.Exit(1)
 		}
 		if inputFormat != InputFormatDataYAML {
-			associationFactsError("-associationfacts only supports input format data/yaml")
+			modelFactsError("-modelfacts only supports input format data/yaml")
 			os.Exit(1)
 		}
-		if err := runAssociationFacts(rootSourcePath, model, subdomainPath); err != nil {
-			associationFactsError("%+v", err)
+		if err := runModelFacts(rootSourcePath, model, subdomainPath); err != nil {
+			modelFactsError("%+v", err)
 			os.Exit(1)
 		}
 		os.Exit(0)
@@ -292,9 +292,9 @@ func classErrorMap(failures []parser_human.ParseFailure) map[string]string {
 	return m
 }
 
-// associationFactsError writes a message to stderr so failures remain visible even when
+// modelFactsError writes a message to stderr so failures remain visible even when
 // parse logging is suppressed.
-func associationFactsError(format string, args ...any) {
+func modelFactsError(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
 }
 
@@ -305,8 +305,8 @@ func withDiscardedLog(fn func()) {
 	log.SetOutput(os.Stderr)
 }
 
-// runAssociationFacts parses a model and prints association fact strings for one subdomain.
-func runAssociationFacts(rootSourcePath, model, subdomainPath string) error {
+// runModelFacts parses a model and prints model fact strings for one subdomain.
+func runModelFacts(rootSourcePath, model, subdomainPath string) error {
 	sourcePath := filepath.Join(rootSourcePath, model)
 
 	var parsed core.Model
@@ -322,20 +322,28 @@ func runAssociationFacts(rootSourcePath, model, subdomainPath string) error {
 		return fmt.Errorf("%d class file(s) failed to parse", len(failures))
 	}
 
-	path, err := associationfacts.ParseSubdomainPath(subdomainPath)
+	path, err := modelfacts.ParseSubdomainPath(subdomainPath)
 	if err != nil {
 		return err
 	}
-	subdomain, err := associationfacts.FindSubdomain(parsed, path)
+	subdomain, err := modelfacts.FindSubdomain(parsed, path)
 	if err != nil {
 		return err
 	}
 
-	facts := associationfacts.FactsForSubdomain(subdomain)
-	for _, fact := range facts {
-		_, _ = fmt.Fprintln(os.Stdout, fact)
+	facts := modelfacts.FactsForSubdomain(subdomain)
+	printModelFactLines(facts.Associations)
+	if len(facts.Associations) > 0 && len(facts.Indexes) > 0 {
+		_, _ = fmt.Fprintln(os.Stdout)
 	}
+	printModelFactLines(facts.Indexes)
 	return nil
+}
+
+func printModelFactLines(lines []string) {
+	for _, line := range lines {
+		_, _ = fmt.Fprintln(os.Stdout, line)
+	}
 }
 
 // runHTTPServer starts the HTTP server in watch mode, serving in-memory generated content for a single model.
