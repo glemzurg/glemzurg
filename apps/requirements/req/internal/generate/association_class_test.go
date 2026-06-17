@@ -96,10 +96,11 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	wantFrom := aNode + ` "1" -- ` + linkNode
 	wantTo := linkNode + ` --> "1" ` + bNode
 	wantACLink := cNode + ` .. ` + linkNode
-	wantLinkNode := `class ` + linkNode + `["links"]`
+	wantLinkNode := `class ` + linkNode + `["«association»<br/>links"]`
 	wantClassMemberBlock := `class ` + aNode + `["A"] {`
-	if strings.Contains(got, "hideEmptyMembersBox") {
-		t.Errorf("hideEmptyMembersBox hides member boxes on regular classes; diagram should omit it:\n%s", got)
+	wantHideEmptyMembersBox := "hideEmptyMembersBox: true"
+	if !strings.Contains(got, wantHideEmptyMembersBox) {
+		t.Errorf("class diagrams should enable hideEmptyMembersBox, want %q in:\n%s", wantHideEmptyMembersBox, got)
 	}
 	if !strings.Contains(got, wantClassMemberBlock) {
 		t.Errorf("regular classes should declare an empty member block, want %q in:\n%s", wantClassMemberBlock, got)
@@ -134,9 +135,18 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 		}
 	}
 
-	wantLabel := `«association class» C`
-	if !strings.Contains(got, wantLabel) {
-		t.Errorf("expected %q on the association class node, got:\n%s", wantLabel, got)
+	wantACNode := `class ` + cNode + `["C"]`
+	if !strings.Contains(got, wantACNode) {
+		t.Errorf("association class node should show only its name, want %q in:\n%s", wantACNode, got)
+	}
+	if strings.Contains(got, `«association class»`) {
+		t.Errorf("association class nodes should not carry the «association class» stereotype:\n%s", got)
+	}
+	if strings.Contains(got, `«association» links`) {
+		t.Errorf("association link stereotype should sit above the name, not inline:\n%s", got)
+	}
+	if strings.Contains(got, `<<association>>`) {
+		t.Errorf("association stereotypes should use guillemets, not ASCII angle brackets:\n%s", got)
 	}
 
 	wantLinkStyle := "style " + linkNode + " stroke:#333,stroke-dasharray:5 5"
@@ -151,9 +161,9 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 		t.Errorf("should use style directive, not classDef/::: shorthand:\n%s", got)
 	}
 
-	for _, name := range []string{`"«association class» A"`, `"«association class» B"`} {
+	for _, name := range []string{`"«association class» A"`, `"«association class» B"`, `"«association class»<br/>C"`} {
 		if strings.Contains(got, name) {
-			t.Errorf("endpoint class should not be tagged as association class: %s", name)
+			t.Errorf("class should not be tagged with «association class»: %s", name)
 		}
 	}
 }

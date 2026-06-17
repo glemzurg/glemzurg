@@ -76,6 +76,10 @@ Bad (how): `// Split on each marker, then trim whitespace from each section.`
 
 Good (why): `// ⚠ must be parsed before ◆ so unfinished notes stay out of UML and YAML sections.`
 
+## UML stereotypes
+
+UML stereotypes in this repo use **guillemets** (`«»`), not ASCII angle brackets. When the user writes a stereotype as `<>`, `<<`, `<<>>`, or similar bracket shorthand, they mean the guillemet form — e.g. `<<association>>` → `«association»`, `<<actor>>` → `«actor»`. Generated Mermaid and markdown must render stereotypes with `«»`.
+
 ## Model-agnostic Go
 
 Requirements tooling (`apps/requirements/req` and related packages) must not embed names, association labels, domain vocabulary, or other content from a specific model in production Go code.

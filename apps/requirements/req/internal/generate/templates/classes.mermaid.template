@@ -1,4 +1,9 @@
 {{- $reqs := .Reqs -}}
+---
+config:
+  class:
+    hideEmptyMembersBox: true
+---
 classDiagram
 {{ range .Generalizations -}}
 {{- $superclass := generalization_superclass $reqs .Key -}}
@@ -9,7 +14,7 @@ classDiagram
 {{ end -}}
 {{ range .Classes -}}
 {{- $class := class_lookup $reqs .Key -}}
-    class {{ nodeid "class" .Key }}["{{ if ne .ActorKey nil }}«actor» {{ end }}{{ if is_association_class $reqs .Key }}«association class» {{ end }}{{ .Name }}"] {
+    class {{ nodeid "class" .Key }}["{{ classes_mermaid_class_label . }}"] {
 {{- range .Attributes }}
         {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }}
 {{- end }}
@@ -20,7 +25,7 @@ style {{ nodeid "class" (mermaid_focal_class_key .FocalClassKey) }} {{ classes_m
 {{ end -}}
 {{ range .Associations -}}
 {{ if render_association_class_mermaid . -}}
-    class {{ nodeid "assoc" .Key }}["{{ .Name }}"]
+    class {{ nodeid "assoc" .Key }}["{{ classes_mermaid_association_link_label .Name }}"]
 {{ end -}}
 {{ end -}}
 {{ range .Associations -}}
