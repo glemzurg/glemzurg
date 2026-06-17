@@ -60,8 +60,8 @@ func TestGenerateClassBoxesForGeneralizationParticipants(t *testing.T) {
 	}
 	got := string(body)
 
-	parentNode := nodeIDFor(parentKey)
-	childNode := nodeIDFor(childKey)
+	parentNode := nodeIDFor("class", parentKey)
+	childNode := nodeIDFor("class", childKey)
 
 	// Both classes get their own labelled boxes.
 	if !strings.Contains(got, `class `+parentNode+`["Shape"]`) {

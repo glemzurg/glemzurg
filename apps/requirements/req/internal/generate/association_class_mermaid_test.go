@@ -61,16 +61,24 @@ func TestGenerateAssociationClassMermaidEndpointMultiplicities(t *testing.T) {
 	fromFile := convertKeyToFilename("class", fromKey.String(), "", ".md")
 	got := string(writer.md[fromFile])
 
-	fromNode := nodeIDFor(fromKey)
-	acNode := nodeIDFor(acKey)
-	toNode := nodeIDFor(toKey)
+	fromNode := nodeIDFor("class", fromKey)
+	acNode := nodeIDFor("class", acKey)
+	toNode := nodeIDFor("class", toKey)
+	linkNode := nodeIDFor("assoc", assocKey)
 
-	wantFrom := fromNode + ` "3" -- ` + acNode
-	wantTo := acNode + ` --> "*" ` + toNode + ` : relates`
+	wantFrom := fromNode + ` "3" -- ` + linkNode
+	wantTo := linkNode + ` --> "*" ` + toNode
+	wantACLink := acNode + ` .. ` + linkNode
 	if !strings.Contains(got, wantFrom) {
 		t.Errorf("missing from leg with endpoint multiplicity: want %q in:\n%s", wantFrom, got)
 	}
 	if !strings.Contains(got, wantTo) {
 		t.Errorf("missing directed to leg with endpoint multiplicity: want %q in:\n%s", wantTo, got)
+	}
+	if strings.Contains(got, wantTo+` : relates`) {
+		t.Errorf("association name should not label endpoint legs:\n%s", got)
+	}
+	if !strings.Contains(got, wantACLink) {
+		t.Errorf("missing dotted association-class link: want %q in:\n%s", wantACLink, got)
 	}
 }

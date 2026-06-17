@@ -1,5 +1,7 @@
 
 
+improved rendering of association classes
+
 index display in uml class graphs
 invariants over associations
 invariants reverse over associations

@@ -15,9 +15,14 @@ classDiagram
 {{- end }}
     }
 {{ end -}}
-{{ range .Classes -}}
-{{ if is_association_class $reqs .Key -}}
-style {{ nodeid "class" .Key }} stroke:#333,stroke-dasharray:5 5
+{{ range .Associations -}}
+{{ if render_association_class_mermaid . -}}
+    class {{ nodeid "assoc" .Key }}["{{ .Name }}"]
+{{ end -}}
+{{ end -}}
+{{ range .Associations -}}
+{{ if render_association_class_mermaid . -}}
+style {{ nodeid "assoc" .Key }} stroke:#333,stroke-dasharray:5 5
 {{ end -}}
 {{ end -}}
 {{ range .Associations -}}
@@ -25,8 +30,10 @@ style {{ nodeid "class" .Key }} stroke:#333,stroke-dasharray:5 5
 {{ $fromClassKey := nodeid "class" .FromClassKey -}}
 {{ $toClassKey := nodeid "class" .ToClassKey -}}
 {{ $associationClassKey := nodeid "class" (association_class_key .) -}}
-    {{ $fromClassKey }} "{{ multiplicity .FromMultiplicity }}" -- {{ $associationClassKey }}
-    {{ $associationClassKey }} --> "{{ multiplicity .ToMultiplicity }}" {{ $toClassKey }} : {{ .Name }}
+{{ $associationLinkKey := nodeid "assoc" .Key -}}
+    {{ $fromClassKey }} "{{ multiplicity .FromMultiplicity }}" -- {{ $associationLinkKey }}
+    {{ $associationLinkKey }} --> "{{ multiplicity .ToMultiplicity }}" {{ $toClassKey }}
+    {{ $associationClassKey }} .. {{ $associationLinkKey }}
 {{ else -}}
 {{ $fromClassKey := nodeid "class" .FromClassKey -}}
 {{ $fromMultiplicity := multiplicity .FromMultiplicity -}}

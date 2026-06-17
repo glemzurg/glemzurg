@@ -12,12 +12,12 @@ import (
 )
 
 // nodeIDFor mirrors the template "nodeid" func: sanitize key string for mermaid.
-func nodeIDFor(key identity.Key) string {
+func nodeIDFor(idType string, key identity.Key) string {
 	keyStr := key.String()
 	keyStr = strings.ReplaceAll(keyStr, "/", "_")
 	keyStr = strings.ReplaceAll(keyStr, "-", "_")
 	keyStr = strings.ReplaceAll(keyStr, ".", "_")
-	return "class_" + keyStr
+	return idType + "_" + keyStr
 }
 
 // buildAssocClassTestModel returns a minimal model with three classes (A, B, C)
@@ -67,10 +67,14 @@ func buildAssocClassTestModel(t *testing.T) (model core.Model, aKey, bKey, cKey 
 	return model, aKey, bKey, cKey
 }
 
-// Association classes render as a path through the association-class node: endpoint
-// multiplicities sit on FROM and TO, with an undirected FROM--AC leg and a directed AC-->TO leg.
+// Association classes render beside a dashed title-only link node; endpoints connect
+// through that node and the association class links to it with a dotted line.
 func TestGenerateAssociationClassMermaid(t *testing.T) {
 	model, aKey, bKey, cKey := buildAssocClassTestModel(t)
+	assocKey := helper.Must(identity.NewClassAssociationKey(
+		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("dx")), "sx")),
+		aKey, bKey, "links",
+	))
 
 	writer := newCollectWriter()
 	if err := GenerateMdToWriter(model, writer, nil); err != nil {
@@ -84,20 +88,29 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	}
 	got := string(body)
 
-	aNode := nodeIDFor(aKey)
-	bNode := nodeIDFor(bKey)
-	cNode := nodeIDFor(cKey)
+	aNode := nodeIDFor("class", aKey)
+	bNode := nodeIDFor("class", bKey)
+	cNode := nodeIDFor("class", cKey)
+	linkNode := nodeIDFor("assoc", assocKey)
 
-	wantFrom := aNode + ` "1" -- ` + cNode
-	wantTo := cNode + ` --> "1" ` + bNode + ` : links`
+	wantFrom := aNode + ` "1" -- ` + linkNode
+	wantTo := linkNode + ` --> "1" ` + bNode
+	wantACLink := cNode + ` .. ` + linkNode
+	wantLinkNode := `class ` + linkNode + `["links"]`
 	if !strings.Contains(got, wantFrom) {
-		t.Errorf("missing from→association-class leg: want %q in:\n%s", wantFrom, got)
+		t.Errorf("missing from→association link leg: want %q in:\n%s", wantFrom, got)
 	}
 	if !strings.Contains(got, wantTo) {
-		t.Errorf("missing association-class→to leg: want %q in:\n%s", wantTo, got)
+		t.Errorf("missing association link→to leg: want %q in:\n%s", wantTo, got)
 	}
-	if strings.Contains(got, wantFrom+` :`) {
-		t.Errorf("from→association-class leg should be unlabeled, got label after:\n%s", wantFrom)
+	if strings.Contains(got, wantTo+` :`) {
+		t.Errorf("association link legs should be unlabeled, got label after:\n%s", wantTo)
+	}
+	if !strings.Contains(got, wantACLink) {
+		t.Errorf("missing dotted association-class link: want %q in:\n%s", wantACLink, got)
+	}
+	if !strings.Contains(got, wantLinkNode) {
+		t.Errorf("missing title-only association link node: want %q in:\n%s", wantLinkNode, got)
 	}
 
 	direct := aNode + ` "1" --> "1" ` + bNode
@@ -105,9 +118,9 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 		t.Errorf("should not render direct endpoint association %q when association class is set:\n%s", direct, got)
 	}
 
-	for _, dashed := range []string{cNode + " ..> " + aNode, cNode + " ..> " + bNode} {
-		if strings.Contains(got, dashed) {
-			t.Errorf("should not use dashed association-class links %q:\n%s", dashed, got)
+	for _, oldPath := range []string{aNode + ` "1" -- ` + cNode, cNode + ` --> "1" ` + bNode} {
+		if strings.Contains(got, oldPath) {
+			t.Errorf("endpoints should not connect through association class node %q:\n%s", oldPath, got)
 		}
 	}
 
@@ -116,9 +129,13 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 		t.Errorf("expected %q on the association class node, got:\n%s", wantLabel, got)
 	}
 
-	wantStyle := "style " + cNode + " stroke:#333,stroke-dasharray:5 5"
-	if !strings.Contains(got, wantStyle) {
-		t.Errorf("expected dashed-box style on association class node, want %q in:\n%s", wantStyle, got)
+	wantLinkStyle := "style " + linkNode + " stroke:#333,stroke-dasharray:5 5"
+	if !strings.Contains(got, wantLinkStyle) {
+		t.Errorf("expected dashed-box style on association link node, want %q in:\n%s", wantLinkStyle, got)
+	}
+	acStyle := "style " + cNode + " stroke:#333,stroke-dasharray:5 5"
+	if strings.Contains(got, acStyle) {
+		t.Errorf("association class node should use normal box style, not %q:\n%s", acStyle, got)
 	}
 	if strings.Contains(got, ":::associationClass") || strings.Contains(got, "classDef associationClass") {
 		t.Errorf("should use style directive, not classDef/::: shorthand:\n%s", got)
