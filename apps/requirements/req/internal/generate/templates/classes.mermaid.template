@@ -25,8 +25,8 @@ style {{ nodeid "class" .Key }} stroke:#333,stroke-dasharray:5 5
 {{ $fromClassKey := nodeid "class" .FromClassKey -}}
 {{ $toClassKey := nodeid "class" .ToClassKey -}}
 {{ $associationClassKey := nodeid "class" (association_class_key .) -}}
-    {{ $fromClassKey }} "{{ association_class_from_leg_from_multiplicity . }}" --> "{{ association_class_from_leg_to_multiplicity . }}" {{ $associationClassKey }} : {{ .Name }}
-{{ $associationClassKey }} "{{ association_class_to_leg_from_multiplicity . }}" --> "{{ association_class_to_leg_to_multiplicity . }}" {{ $toClassKey }}
+    {{ $fromClassKey }} "{{ multiplicity .FromMultiplicity }}" -- {{ $associationClassKey }}
+    {{ $associationClassKey }} --> "{{ multiplicity .ToMultiplicity }}" {{ $toClassKey }} : {{ .Name }}
 {{ else -}}
 {{ $fromClassKey := nodeid "class" .FromClassKey -}}
 {{ $fromMultiplicity := multiplicity .FromMultiplicity -}}

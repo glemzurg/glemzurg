@@ -67,8 +67,8 @@ func buildAssocClassTestModel(t *testing.T) (model core.Model, aKey, bKey, cKey 
 	return model, aKey, bKey, cKey
 }
 
-// Association classes render as solid decomposed legs through the association class,
-// with the «association class» stereotype on the class node.
+// Association classes render as a path through the association-class node: endpoint
+// multiplicities sit on FROM and TO, with an undirected FROM--AC leg and a directed AC-->TO leg.
 func TestGenerateAssociationClassMermaid(t *testing.T) {
 	model, aKey, bKey, cKey := buildAssocClassTestModel(t)
 
@@ -88,16 +88,16 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	bNode := nodeIDFor(bKey)
 	cNode := nodeIDFor(cKey)
 
-	wantFrom := aNode + ` "1" --> "1" ` + cNode + ` : links`
-	wantTo := cNode + ` "1" --> "1" ` + bNode
+	wantFrom := aNode + ` "1" -- ` + cNode
+	wantTo := cNode + ` --> "1" ` + bNode + ` : links`
 	if !strings.Contains(got, wantFrom) {
-		t.Errorf("missing decomposed from→association-class leg: want %q in:\n%s", wantFrom, got)
+		t.Errorf("missing from→association-class leg: want %q in:\n%s", wantFrom, got)
 	}
 	if !strings.Contains(got, wantTo) {
-		t.Errorf("missing decomposed association-class→to leg: want %q in:\n%s", wantTo, got)
+		t.Errorf("missing association-class→to leg: want %q in:\n%s", wantTo, got)
 	}
-	if strings.Contains(got, wantTo+` :`) {
-		t.Errorf("association-class→to leg should be unlabeled, got label after:\n%s", wantTo)
+	if strings.Contains(got, wantFrom+` :`) {
+		t.Errorf("from→association-class leg should be unlabeled, got label after:\n%s", wantFrom)
 	}
 
 	direct := aNode + ` "1" --> "1" ` + bNode
