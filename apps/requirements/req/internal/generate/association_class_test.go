@@ -97,9 +97,15 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	wantTo := linkNode + ` --> "1" ` + bNode
 	wantACLink := cNode + ` .. ` + linkNode
 	wantLinkNode := `class ` + linkNode + `["links"]`
-	wantHideMembers := "hideEmptyMembersBox: true"
-	if !strings.Contains(got, wantHideMembers) {
-		t.Errorf("expected hideEmptyMembersBox config when association link nodes render, want %q in:\n%s", wantHideMembers, got)
+	wantClassMemberBlock := `class ` + aNode + `["A"] {`
+	if strings.Contains(got, "hideEmptyMembersBox") {
+		t.Errorf("hideEmptyMembersBox hides member boxes on regular classes; diagram should omit it:\n%s", got)
+	}
+	if !strings.Contains(got, wantClassMemberBlock) {
+		t.Errorf("regular classes should declare an empty member block, want %q in:\n%s", wantClassMemberBlock, got)
+	}
+	if strings.Contains(got, wantLinkNode+` {`) {
+		t.Errorf("association link node should be title-only without a member block:\n%s", got)
 	}
 	if !strings.Contains(got, wantFrom) {
 		t.Errorf("missing from→association link leg: want %q in:\n%s", wantFrom, got)

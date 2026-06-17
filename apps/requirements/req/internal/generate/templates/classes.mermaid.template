@@ -1,11 +1,4 @@
 {{- $reqs := .Reqs -}}
-{{ if classes_mermaid_hide_empty_members_box .Associations -}}
----
-config:
-  class:
-    hideEmptyMembersBox: true
----
-{{ end -}}
 classDiagram
 {{ range .Generalizations -}}
 {{- $superclass := generalization_superclass $reqs .Key -}}
@@ -21,6 +14,9 @@ classDiagram
         {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }}
 {{- end }}
     }
+{{ end -}}
+{{ if has_mermaid_focal_class .FocalClassKey -}}
+style {{ nodeid "class" (mermaid_focal_class_key .FocalClassKey) }} {{ classes_mermaid_focal_class_style }}
 {{ end -}}
 {{ range .Associations -}}
 {{ if render_association_class_mermaid . -}}

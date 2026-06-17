@@ -242,7 +242,7 @@ func buildClassesDiagram(reqs *req_flat.Requirements, classes []model_class.Clas
 	if len(generalizations) == 0 && len(allClasses) == 0 && len(associations) == 0 {
 		return "", nil
 	}
-	return generateClassesMermaidContents(reqs, generalizations, allClasses, associations)
+	return generateClassesMermaidContents(reqs, generalizations, allClasses, associations, nil)
 }
 
 // buildUseCasesDiagram generates a Mermaid use case diagram for a domain.
@@ -360,7 +360,7 @@ func writeClassMarkdownPage(
 	}
 
 	generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
-	classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations)
+	classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations, &class.Key)
 	if err != nil {
 		return err
 	}

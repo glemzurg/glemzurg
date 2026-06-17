@@ -3,6 +3,7 @@ package generate
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -61,17 +62,26 @@ func generateClassStateMermaidContents(reqs *req_flat.Requirements, class model_
 }
 
 // generateClassesMermaidContents generates Mermaid class diagram markup.
-func generateClassesMermaidContents(reqs *req_flat.Requirements, generalizations []model_class.Generalization, classes []model_class.Class, associations []model_class.Association) (contents string, err error) {
+// focalClassKey, when set, applies a stronger border to that class (class pages only).
+func generateClassesMermaidContents(
+	reqs *req_flat.Requirements,
+	generalizations []model_class.Generalization,
+	classes []model_class.Class,
+	associations []model_class.Association,
+	focalClassKey *identity.Key,
+) (contents string, err error) {
 	contents, err = generateFromTemplate(_classesMermaidTemplate, struct {
 		Reqs            *req_flat.Requirements
 		Generalizations []model_class.Generalization
 		Classes         []model_class.Class
 		Associations    []model_class.Association
+		FocalClassKey   *identity.Key
 	}{
 		Reqs:            reqs,
 		Generalizations: generalizations,
 		Classes:         classes,
 		Associations:    associations,
+		FocalClassKey:   focalClassKey,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)
