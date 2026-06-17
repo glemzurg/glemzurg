@@ -97,6 +97,10 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	wantTo := linkNode + ` --> "1" ` + bNode
 	wantACLink := cNode + ` .. ` + linkNode
 	wantLinkNode := `class ` + linkNode + `["links"]`
+	wantHideMembers := "hideEmptyMembersBox: true"
+	if !strings.Contains(got, wantHideMembers) {
+		t.Errorf("expected hideEmptyMembersBox config when association link nodes render, want %q in:\n%s", wantHideMembers, got)
+	}
 	if !strings.Contains(got, wantFrom) {
 		t.Errorf("missing from→association link leg: want %q in:\n%s", wantFrom, got)
 	}

@@ -1,4 +1,11 @@
 {{- $reqs := .Reqs -}}
+{{ if classes_mermaid_hide_empty_members_box .Associations -}}
+---
+config:
+  class:
+    hideEmptyMembersBox: true
+---
+{{ end -}}
 classDiagram
 {{ range .Generalizations -}}
 {{- $superclass := generalization_superclass $reqs .Key -}}

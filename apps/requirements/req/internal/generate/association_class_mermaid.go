@@ -1,9 +1,17 @@
 package generate
 
 import (
+	"slices"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
+
+// classesMermaidHideEmptyMembersBox enables Mermaid's hideEmptyMembersBox config when
+// association link nodes (title-only, no members) appear in the diagram.
+func classesMermaidHideEmptyMembersBox(associations []model_class.Association) bool {
+	return slices.ContainsFunc(associations, renderAssociationClassMermaid)
+}
 
 // renderAssociationClassMermaid reports whether the association should be decomposed into
 // a dashed title-only link node between endpoints, with the association class linked

@@ -156,8 +156,9 @@ var _funcMap = template.FuncMap{
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
-	"render_association_class_mermaid": renderAssociationClassMermaid,
-	"association_class_key":            associationClassKeyNode,
+	"render_association_class_mermaid":       renderAssociationClassMermaid,
+	"association_class_key":                  associationClassKeyNode,
+	"classes_mermaid_hide_empty_members_box": classesMermaidHideEmptyMembersBox,
 	"generalization_label": func(reqs *req_flat.Requirements, generalizationKey identity.Key) (value string) {
 		generalizationLookup := reqs.GeneralizationLookup()
 		generalization := generalizationLookup[generalizationKey.String()]
