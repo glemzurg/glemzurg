@@ -49,7 +49,17 @@ A set literal of string values:
 
 ### Collections
 
-Module-qualified TLA+ constructors:
+Module-qualified TLA+ constructors and operators use the `_Module!Name` form in specifications (for example `_Seq!Len(seq)`). The leading underscore marks a standard-library module call, distinct from class-scoped actions.
+
+**Stdlib module discipline.** Each `_Module` prefix names a real TLA+ standard module. Only operators that exist in that module's official definition may appear under that prefix. `_Seq`, `_Bags`, and similar names are not general-purpose namespaces for convenience helpers; they exist so specifications remain portable TLA+ that would mean the same thing in TLC or another conforming tool.
+
+| Module prefix | Real TLA+ module | Allowed today (simulator) |
+| --- | --- | --- |
+| `_Seq!` | Sequences | `Head`, `Tail`, `Append`, `Len` |
+| `_Bags!` | Bags | `SetToBag`, `BagToSet`, `CopiesIn`, `BagIn` |
+| `_Stack!`, `_Queue!` | (req data-type helpers) | Stack/queue ops on tuples — not TLA+ standard modules; used only for data-type sampling |
+
+Do not add invented operators under `_Seq!` or `_Bags!` (for example a hypothetical `_FiniteSets!Sum`). When the standard libraries lack an operator you need, express the computation in plain TLA+ (conditionals, `LET`, `CHOOSE`, quantifiers, recursion) or as a model global function whose body is valid TLA+.
 
 | Form | Meaning |
 | --- | --- |

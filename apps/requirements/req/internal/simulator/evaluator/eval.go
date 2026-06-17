@@ -154,6 +154,10 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 	// === Control flow ===
 	case *me.IfThenElse:
 		return evalMEIfThenElse(n, bindings)
+	case *me.LetExpr:
+		return evalMELetExpr(n, bindings)
+	case *me.Choose:
+		return evalMEChoose(n, bindings)
 	case *me.Case:
 		return evalMECase(n, bindings)
 

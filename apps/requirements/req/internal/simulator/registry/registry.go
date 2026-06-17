@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
@@ -245,13 +246,23 @@ func (r *Registry) Get(key DefinitionKey) (*Definition, bool) {
 	return def, ok
 }
 
-// GetGlobal retrieves a global function by its local name (without underscore prefix).
+// GetGlobal retrieves a global function by registry local name or identity SubKey.
 func (r *Registry) GetGlobal(localName string) (*Definition, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	def, ok := r.globals[localName]
-	return def, ok
+	if def, ok := r.globals[localName]; ok {
+		return def, true
+	}
+	// GlobalCall.FunctionKey.SubKey is normalized lowercase without a leading underscore.
+	normalized := strings.ToLower(strings.TrimSpace(localName))
+	for name, def := range r.globals {
+		subKey := strings.TrimPrefix(identity.NormalizeSubKey(name), "_")
+		if subKey == normalized {
+			return def, true
+		}
+	}
+	return nil, false
 }
 
 // Update updates an existing definition's body and parameters.

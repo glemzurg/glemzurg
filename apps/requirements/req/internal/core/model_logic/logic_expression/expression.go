@@ -56,6 +56,8 @@ const (
 	// Control flow.
 	NodeIfThenElse = "if_then_else"
 	NodeCase       = "case"
+	NodeLetExpr    = "let_expr"
+	NodeChoose     = "choose"
 
 	// Quantifiers.
 	NodeQuantifier = "quantifier"

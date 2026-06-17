@@ -8,6 +8,8 @@ type BuiltinFn func(args []object.Object) *EvalResult
 
 // builtins maps function names to their implementations.
 // Names follow _Module!Function syntax to avoid collision with user-defined names.
+// Each _Module prefix must match a real TLA+ standard module; only operators from
+// that module's official definition belong here — not arbitrary convenience helpers.
 var builtins = map[string]BuiltinFn{
 	// Sequences (_Seq module)
 	"_Seq!Head":   builtinSeqHead,

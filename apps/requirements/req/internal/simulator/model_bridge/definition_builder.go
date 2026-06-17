@@ -373,6 +373,10 @@ func ContainsAnyPrimedME(expr me.Expression) bool {
 	// Conditionals.
 	case *me.IfThenElse:
 		return ContainsAnyPrimedME(e.Condition) || ContainsAnyPrimedME(e.Then) || ContainsAnyPrimedME(e.Else)
+	case *me.LetExpr:
+		return ContainsAnyPrimedME(e.Value) || ContainsAnyPrimedME(e.Body)
+	case *me.Choose:
+		return ContainsAnyPrimedME(e.Set) || ContainsAnyPrimedME(e.Predicate)
 	case *me.Case:
 		for _, branch := range e.Branches {
 			if ContainsAnyPrimedME(branch.Condition) || ContainsAnyPrimedME(branch.Result) {

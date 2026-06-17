@@ -227,6 +227,12 @@ func (p *printer) print(expr Expression) string {
 			" THEN " + p.print(e.Then) +
 			" ELSE " + p.print(e.Else)
 
+	// --- LET / CHOOSE ---
+	case *LetExpr:
+		return "LET " + e.Variable + " == " + p.print(e.Value) + " IN " + p.print(e.Body)
+	case *ChooseExpr:
+		return "CHOOSE " + p.print(e.Membership) + " : " + p.print(e.Predicate)
+
 	// --- CASE ---
 	case *CaseExpr:
 		return p.printCase(e)

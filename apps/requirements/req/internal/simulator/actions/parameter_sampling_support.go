@@ -200,6 +200,10 @@ func controlFlowExpressionChildren(expr me.Expression) []me.Expression {
 	switch node := expr.(type) {
 	case *me.IfThenElse:
 		return []me.Expression{node.Condition, node.Then, node.Else}
+	case *me.LetExpr:
+		return []me.Expression{node.Value, node.Body}
+	case *me.Choose:
+		return []me.Expression{node.Set, node.Predicate}
 	case *me.Quantifier:
 		return []me.Expression{node.Predicate}
 	case *me.SetFilter:

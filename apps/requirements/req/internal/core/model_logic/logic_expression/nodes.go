@@ -307,6 +307,26 @@ type Case struct {
 func (n *Case) expressionNode()  {}
 func (n *Case) NodeType() string { return NodeCase }
 
+// LetExpr is a local binding: LET name == value IN body.
+type LetExpr struct {
+	Variable string
+	Value    Expression
+	Body     Expression
+}
+
+func (n *LetExpr) expressionNode()  {}
+func (n *LetExpr) NodeType() string { return NodeLetExpr }
+
+// Choose picks one element from a finite set satisfying a predicate.
+type Choose struct {
+	Variable  string
+	Set       Expression
+	Predicate Expression
+}
+
+func (n *Choose) expressionNode()  {}
+func (n *Choose) NodeType() string { return NodeChoose }
+
 // --- Quantifiers ---
 
 // Quantifier represents universal (∀) or existential (∃) quantification.

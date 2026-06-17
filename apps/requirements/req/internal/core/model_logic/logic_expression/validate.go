@@ -495,6 +495,44 @@ func (n *Case) Validate(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
+func (n *LetExpr) Validate(ctx *coreerr.ValidationContext) error {
+	if n.Variable == "" {
+		return coreerr.New(ctx, coreerr.ExprVariableRequired, "LetExpr.Variable: is required", "Variable")
+	}
+	if n.Value == nil {
+		return coreerr.New(ctx, coreerr.ExprExprRequired, "LetExpr.Value: is required", "Value")
+	}
+	if err := n.Value.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprOperandInvalid, fmt.Sprintf("LetExpr.Value: %s", err.Error()), "Value")
+	}
+	if n.Body == nil {
+		return coreerr.New(ctx, coreerr.ExprExprRequired, "LetExpr.Body: is required", "Body")
+	}
+	if err := n.Body.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprOperandInvalid, fmt.Sprintf("LetExpr.Body: %s", err.Error()), "Body")
+	}
+	return nil
+}
+
+func (n *Choose) Validate(ctx *coreerr.ValidationContext) error {
+	if n.Set == nil {
+		return coreerr.New(ctx, coreerr.ExprSetRequired, "Choose.Set: is required", "Set")
+	}
+	if n.Predicate == nil {
+		return coreerr.New(ctx, coreerr.ExprPredicateRequired, "Choose.Predicate: is required", "Predicate")
+	}
+	if n.Variable == "" {
+		return coreerr.New(ctx, coreerr.ExprVariableRequired, "Choose.Variable: is required", "Variable")
+	}
+	if err := n.Set.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprSetInvalid, fmt.Sprintf("Choose.Set: %s", err.Error()), "Set")
+	}
+	if err := n.Predicate.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprPredicateInvalid, fmt.Sprintf("Choose.Predicate: %s", err.Error()), "Predicate")
+	}
+	return nil
+}
+
 // --- Quantifier validation ---
 
 func (n *Quantifier) Validate(ctx *coreerr.ValidationContext) error {

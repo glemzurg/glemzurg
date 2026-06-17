@@ -149,6 +149,12 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 	case *me.IfThenElse:
 		return raiseIfThenElse(e, ctx)
 
+	case *me.LetExpr:
+		return raiseLetExpr(e, ctx)
+
+	case *me.Choose:
+		return raiseChoose(e, ctx)
+
 	case *me.Case:
 		return raiseCase(e, ctx)
 
@@ -628,6 +634,35 @@ func raiseIfThenElse(e *me.IfThenElse, ctx *RaiseContext) (ast.Expression, error
 		return nil, fmt.Errorf("IfThenElse.Else: %w", err)
 	}
 	return &ast.IfThenElse{Condition: cond, Then: then, Else: elseExpr}, nil
+}
+
+func raiseLetExpr(e *me.LetExpr, ctx *RaiseContext) (ast.Expression, error) {
+	value, err := Raise(e.Value, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("LetExpr.Value: %w", err)
+	}
+	body, err := Raise(e.Body, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("LetExpr.Body: %w", err)
+	}
+	return &ast.LetExpr{Variable: e.Variable, Value: value, Body: body}, nil
+}
+
+func raiseChoose(e *me.Choose, ctx *RaiseContext) (ast.Expression, error) {
+	set, err := Raise(e.Set, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Choose.Set: %w", err)
+	}
+	predicate, err := Raise(e.Predicate, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Choose.Predicate: %w", err)
+	}
+	membership := &ast.Membership{
+		Operator: "∈",
+		Left:     &ast.Identifier{Value: e.Variable},
+		Right:    set,
+	}
+	return &ast.ChooseExpr{Membership: membership, Predicate: predicate}, nil
 }
 
 func raiseCase(e *me.Case, ctx *RaiseContext) (ast.Expression, error) {

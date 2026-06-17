@@ -718,12 +718,14 @@ TupleIndexSuffix <- "[" ws? index:Expression ws? "]" {
 // - RecordExpr before SetLiteral (both start with '[' but records have |-> or EXCEPT)
 // - SetLiteral before Identifier (starts with '{')
 // - IfThenElse before Identifier (starts with IF keyword)
+// - LetExpr before Identifier (starts with LET keyword)
+// - ChooseExpr before Identifier (starts with CHOOSE keyword)
 // - CaseExpr before Identifier (starts with CASE keyword)
 // - FunctionCall before Identifier (identifier followed by '(')
 // - ExistingValue before Identifier (@ is a special symbol)
 // - Literal before Identifier (TRUE/FALSE are keywords, not identifiers)
 // - Identifier last (catch-all for names)
-AtomicExpr <- ParenExpr / TupleLiteral / RecordExpr / SetFilter / SetLiteral / IfThenElse / CaseExpr / FunctionCall / ExistingValue / Literal / Identifier
+AtomicExpr <- ParenExpr / TupleLiteral / RecordExpr / SetFilter / SetLiteral / IfThenElse / LetExpr / ChooseExpr / CaseExpr / FunctionCall / ExistingValue / Literal / Identifier
 
 // Parenthesized expression - creates ParenExpr node to preserve parentheses
 ParenExpr <- "(" ws? expr:Expression ws? ")" {
@@ -913,6 +915,23 @@ IfThenElse <- "IF" ws+ cond:Expression ws+ "THEN" ws+ then:Expression ws+ "ELSE"
 	}, nil
 }
 
+// LetExpr: LET name == value IN body
+LetExpr <- "LET" ws+ name:IdentifierName ws? "==" ws? value:Expression ws+ "IN" ws+ body:Expression {
+	return &ast.LetExpr{
+		Variable: name.(string),
+		Value:    value.(ast.Expression),
+		Body:     body.(ast.Expression),
+	}, nil
+}
+
+// ChooseExpr: CHOOSE var ∈ set : predicate
+ChooseExpr <- "CHOOSE" ws+ membership:SetMembershipExpr ws? ":" ws? predicate:Expression {
+	return &ast.ChooseExpr{
+		Membership: membership.(ast.Expression),
+		Predicate:  predicate.(ast.Expression),
+	}, nil
+}
+
 // CaseExpr: CASE cond -> result [] cond -> result [] OTHER -> result
 // Uses [] as branch separator and -> for condition to result mapping
 CaseExpr <- "CASE" ws+ branches:CaseBranches other:CaseOther? {
@@ -1046,7 +1065,7 @@ IdentifierName <- [a-zA-Z_][a-zA-Z0-9_]* {
 
 // ReservedKeyword: words that cannot be used as identifiers
 // Note: \A and \E are NOT in this list since they start with backslash
-ReservedKeyword <- ( "TRUE" / "FALSE" / "IF" / "THEN" / "ELSE" / "CASE" / "OTHER" / "EXCEPT" ) ![a-zA-Z0-9_]
+ReservedKeyword <- ( "TRUE" / "FALSE" / "IF" / "THEN" / "ELSE" / "LET" / "IN" / "CHOOSE" / "CASE" / "OTHER" / "EXCEPT" ) ![a-zA-Z0-9_]
 
 // =============================================================================
 // Literals

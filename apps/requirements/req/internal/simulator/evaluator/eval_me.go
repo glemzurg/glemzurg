@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"sort"
 	"strings"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -841,6 +842,59 @@ func evalMEIfThenElse(n *me.IfThenElse, bindings *Bindings) *EvalResult {
 		return Eval(n.Then, bindings)
 	}
 	return Eval(n.Else, bindings)
+}
+
+func evalMELetExpr(n *me.LetExpr, bindings *Bindings) *EvalResult {
+	valueResult := Eval(n.Value, bindings)
+	if valueResult.IsError() {
+		return valueResult
+	}
+	childBindings := NewEnclosedBindings(bindings)
+	childBindings.Set(n.Variable, valueResult.Value, NamespaceLocal)
+	return Eval(n.Body, childBindings)
+}
+
+func evalMEChoose(n *me.Choose, bindings *Bindings) *EvalResult {
+	setResult := Eval(n.Set, bindings)
+	if setResult.IsError() {
+		return setResult
+	}
+	sourceSet, ok := setResult.Value.(*object.Set)
+	if !ok {
+		return NewEvalError("CHOOSE domain must be Set, got %s", setResult.Value.Type())
+	}
+
+	candidates, errResult := filterSetElements(sourceSet, n.Variable, n.Predicate, bindings)
+	if errResult != nil {
+		return errResult
+	}
+	if len(candidates) == 0 {
+		return NewEvalError("CHOOSE: no element of set satisfied predicate")
+	}
+
+	sort.Slice(candidates, func(i, j int) bool {
+		return compareObjectsForChoose(candidates[i], candidates[j]) < 0
+	})
+	return NewEvalResult(candidates[0])
+}
+
+// compareObjectsForChoose orders candidates the way TLC does for CHOOSE with a
+// tautological predicate: numerics by value, everything else by Inspect text.
+func compareObjectsForChoose(left, right object.Object) int {
+	leftNum, leftIsNum := left.(*object.Number)
+	rightNum, rightIsNum := right.(*object.Number)
+	if leftIsNum && rightIsNum {
+		return leftNum.Cmp(rightNum)
+	}
+	leftText := left.Inspect()
+	rightText := right.Inspect()
+	if leftText < rightText {
+		return -1
+	}
+	if leftText > rightText {
+		return 1
+	}
+	return 0
 }
 
 func evalMECase(n *me.Case, bindings *Bindings) *EvalResult {

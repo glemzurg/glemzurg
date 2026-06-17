@@ -170,6 +170,10 @@ func Lower(expr ast.Expression, ctx *LowerContext) (me.Expression, error) {
 	// --- Control flow ---
 	case *ast.IfThenElse:
 		return lowerIfThenElse(e, ctx)
+	case *ast.LetExpr:
+		return lowerLetExpr(e, ctx)
+	case *ast.ChooseExpr:
+		return lowerChooseExpr(e, ctx)
 	case *ast.CaseExpr:
 		return lowerCaseExpr(e, ctx)
 
@@ -780,6 +784,32 @@ func lowerIfThenElse(e *ast.IfThenElse, ctx *LowerContext) (*me.IfThenElse, erro
 		return nil, fmt.Errorf("IfThenElse.Else: %w", err)
 	}
 	return &me.IfThenElse{Condition: cond, Then: then, Else: elseExpr}, nil
+}
+
+func lowerLetExpr(e *ast.LetExpr, ctx *LowerContext) (*me.LetExpr, error) {
+	value, err := Lower(e.Value, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("LetExpr.Value: %w", err)
+	}
+	childCtx := withLocalVar(ctx, e.Variable)
+	body, err := Lower(e.Body, childCtx)
+	if err != nil {
+		return nil, fmt.Errorf("LetExpr.Body: %w", err)
+	}
+	return &me.LetExpr{Variable: e.Variable, Value: value, Body: body}, nil
+}
+
+func lowerChooseExpr(e *ast.ChooseExpr, ctx *LowerContext) (*me.Choose, error) {
+	varName, set, err := extractMembershipBinding(e.Membership, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("ChooseExpr: %w", err)
+	}
+	childCtx := withLocalVar(ctx, varName)
+	predicate, err := Lower(e.Predicate, childCtx)
+	if err != nil {
+		return nil, fmt.Errorf("ChooseExpr.Predicate: %w", err)
+	}
+	return &me.Choose{Variable: varName, Set: set, Predicate: predicate}, nil
 }
 
 func lowerCaseExpr(e *ast.CaseExpr, ctx *LowerContext) (*me.Case, error) {

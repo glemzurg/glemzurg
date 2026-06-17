@@ -179,6 +179,12 @@ func walkIdentifiersControlFlow(expr me.Expression, result map[string]bool) {
 		walkIdentifiersIR(e.Condition, result)
 		walkIdentifiersIR(e.Then, result)
 		walkIdentifiersIR(e.Else, result)
+	case *me.LetExpr:
+		walkIdentifiersIR(e.Value, result)
+		walkIdentifiersIR(e.Body, result)
+	case *me.Choose:
+		walkIdentifiersIR(e.Set, result)
+		walkIdentifiersIR(e.Predicate, result)
 	case *me.Case:
 		for _, branch := range e.Branches {
 			walkBinaryIR(branch.Condition, branch.Result, result)
