@@ -138,6 +138,9 @@ func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) in
 	}
 
 	linkedAssocs := result.FinalState.Links().AllAssociationKeys()
+	for hostKey := range result.FinalState.AssociationLinks().AllHostAssociationKeys() {
+		linkedAssocs[hostKey] = true
+	}
 
 	var violations invariants.ViolationErrors
 	for _, assocInfo := range lc.catalog.AllAssociations() {

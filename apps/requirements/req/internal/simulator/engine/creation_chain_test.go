@@ -143,6 +143,43 @@ func (s *CreationChainSuite) TestCascadeDepthLimitReturnsError() {
 	s.Contains(err.Error(), "max depth")
 }
 
+func (s *CreationChainSuite) TestMandatoryAssociationClassCreatesEndpointAndLink() {
+	tcm := buildAssociationClassTestModel()
+	handler, simState, ae := buildAssociationClassChainComponents(tcm)
+
+	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
+	partnerEvent := partnerClass.Events[mustKey("domain/d/subdomain/s/class/partner/event/create")]
+
+	result, err := ae.ExecuteTransition(partnerClass, partnerEvent, nil, nil, nil, nil, nil)
+	s.Require().NoError(err)
+
+	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
+	s.Require().NoError(err)
+	s.Require().Len(steps, 2)
+	s.Equal("Jurisdiction", steps[0].ClassName)
+	s.Equal("LinkDef", steps[1].ClassName)
+	s.Equal("Add", steps[1].EventName)
+
+	acInfo := NewClassCatalog(tcm.model).LookupAssociationClass(tcm.linkDefKey)
+	s.Require().NotNil(acInfo)
+	links := simState.AssociationLinksFromEndpoint(acInfo.HostAssociation.Key, result.InstanceID)
+	s.Len(links, 1)
+}
+
+func buildAssociationClassChainComponents(tcm *acTestModel) (*CreationChainHandler, *state.SimulationState, *actions.ActionExecutor) {
+	simState := state.NewSimulationState()
+	bb := state.NewBindingsBuilder(simState)
+	registerCatalogAssociations(NewClassCatalog(tcm.model), bb)
+	ge := actions.NewGuardEvaluator(bb)
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
+	catalog := NewClassCatalog(tcm.model)
+	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, catalog, rng)
+	pb := actions.NewParameterBinder()
+	sae := NewStateActionExecutor(ae)
+	handler := NewCreationChainHandler(catalog, ae, sae, pb, rng)
+	return handler, simState, ae
+}
+
 func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	// Build a model where Item has no creation transition.
 	orderClass, orderKey := testOrderClass()

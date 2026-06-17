@@ -1,42 +1,22 @@
 package engine
 
 import (
-	"fmt"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 )
 
-// acToLegNameSuffix tags simulator-local AC→endpoint leg keys without embedding domain vocabulary.
-const acToLegNameSuffix = "__ac_to_leg"
-
-// AssociationClassInfo holds decomposed link metadata for one association-class role.
+// AssociationClassInfo holds native host-association metadata for one association-class role.
 type AssociationClassInfo struct {
 	AssociationClassKey identity.Key
 	HostAssociation     model_class.Association
 	FromClassKey        identity.Key
 	ToClassKey          identity.Key
-	FromLegAssocKey     identity.Key
-	ToLegAssocKey       identity.Key
-	FromLegName         string
-	ToLegName           string
-	FromLegFromMult     evaluator.Multiplicity
-	FromLegToMult       evaluator.Multiplicity
-	ToLegFromMult       evaluator.Multiplicity
-	ToLegToMult         evaluator.Multiplicity
 	InactiveStates      map[string]bool
 }
 
-func buildAssociationClassIndex(model *core.Model, scopedClasses map[identity.Key]*ClassInfo) (
-	map[identity.Key]*AssociationClassInfo,
-	map[identity.Key]bool,
-	error,
-) {
+func buildAssociationClassIndex(model *core.Model, scopedClasses map[identity.Key]*ClassInfo) map[identity.Key]*AssociationClassInfo {
 	index := make(map[identity.Key]*AssociationClassInfo)
-	hostAssocKeys := make(map[identity.Key]bool)
 
 	for _, assoc := range model.GetClassAssociations() {
 		if assoc.AssociationClassKey == nil {
@@ -53,110 +33,25 @@ func buildAssociationClassIndex(model *core.Model, scopedClasses map[identity.Ke
 			continue
 		}
 
-		parentKey, err := associationParentKey(assoc.Key)
-		if err != nil {
-			return nil, nil, err
-		}
-		toLegKey, err := identity.NewClassAssociationKey(
-			parentKey,
-			acKey,
-			assoc.ToClassKey,
-			assoc.Name+acToLegNameSuffix,
-		)
-		if err != nil {
-			return nil, nil, fmt.Errorf("association class %s to-leg key: %w", acKey.String(), err)
-		}
-
 		acClass := scopedClasses[acKey].Class
-		info := &AssociationClassInfo{
+		index[acKey] = &AssociationClassInfo{
 			AssociationClassKey: acKey,
 			HostAssociation:     assoc,
 			FromClassKey:        assoc.FromClassKey,
 			ToClassKey:          assoc.ToClassKey,
-			FromLegAssocKey:     assoc.Key,
-			ToLegAssocKey:       toLegKey,
-			FromLegName:         assoc.Name,
-			ToLegName:           assoc.Name + acToLegNameSuffix,
-			FromLegFromMult:     oneMultiplicity(),
-			FromLegToMult:       multiplicityFromModel(assoc.ToMultiplicity),
-			ToLegFromMult:       multiplicityFromModel(assoc.FromMultiplicity),
-			ToLegToMult:         oneMultiplicity(),
 			InactiveStates:      inactiveAssociationClassStates(acClass),
 		}
-		index[acKey] = info
-		hostAssocKeys[assoc.Key] = true
 	}
 
-	return index, hostAssocKeys, nil
+	return index
 }
 
-func associationParentKey(assocKey identity.Key) (identity.Key, error) {
-	if assocKey.ParentKey != "" {
-		return identity.ParseKey(assocKey.ParentKey)
+// CreationCascadeClassKey returns the class whose creation event satisfies a mandatory host association.
+func CreationCascadeClassKey(ai AssociationInfo) identity.Key {
+	if ai.Association.AssociationClassKey != nil {
+		return *ai.Association.AssociationClassKey
 	}
-	return identity.Key{}, nil
-}
-
-func oneMultiplicity() evaluator.Multiplicity {
-	return evaluator.Multiplicity{LowerBound: 1, HigherBound: 1}
-}
-
-func multiplicityFromModel(m model_class.Multiplicity) evaluator.Multiplicity {
-	return evaluator.Multiplicity{
-		LowerBound:  m.LowerBound,
-		HigherBound: m.HigherBound,
-	}
-}
-
-func decomposedAssociationInfos(
-	index map[identity.Key]*AssociationClassInfo,
-) []AssociationInfo {
-	var result []AssociationInfo
-	for _, acInfo := range index {
-		result = append(result, fromLegAssociationInfo(acInfo), toLegAssociationInfo(acInfo))
-	}
-	return result
-}
-
-func fromLegAssociationInfo(acInfo *AssociationClassInfo) AssociationInfo {
-	host := acInfo.HostAssociation
-	return AssociationInfo{
-		Association: model_class.Association{
-			Key:                 acInfo.FromLegAssocKey,
-			Name:                acInfo.FromLegName,
-			FromClassKey:        acInfo.FromClassKey,
-			ToClassKey:          acInfo.AssociationClassKey,
-			FromMultiplicity:    model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-			ToMultiplicity:      host.ToMultiplicity,
-			AssociationClassKey: nil,
-		},
-		FromClassKey:  acInfo.FromClassKey,
-		ToClassKey:    acInfo.AssociationClassKey,
-		MandatoryTo:   host.ToMultiplicity.LowerBound >= 1,
-		MandatoryFrom: false,
-		MinTo:         host.ToMultiplicity.LowerBound,
-		MinFrom:       0,
-	}
-}
-
-func toLegAssociationInfo(acInfo *AssociationClassInfo) AssociationInfo {
-	host := acInfo.HostAssociation
-	return AssociationInfo{
-		Association: model_class.Association{
-			Key:              acInfo.ToLegAssocKey,
-			Name:             acInfo.ToLegName,
-			FromClassKey:     acInfo.AssociationClassKey,
-			ToClassKey:       acInfo.ToClassKey,
-			FromMultiplicity: host.FromMultiplicity,
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-		},
-		FromClassKey:  acInfo.AssociationClassKey,
-		ToClassKey:    acInfo.ToClassKey,
-		MandatoryTo:   false,
-		MandatoryFrom: host.FromMultiplicity.LowerBound >= 1,
-		MinTo:         0,
-		MinFrom:       host.FromMultiplicity.LowerBound,
-	}
+	return ai.ToClassKey
 }
 
 // inactiveAssociationClassStates marks AC states that cannot reach any creation target state.

@@ -51,7 +51,6 @@ func (c *MultiplicityChecker) CheckInstance(
 
 	for _, ai := range assocs {
 		if ai.FromClassKey == instance.ClassKey {
-			// This instance is the "from" side — check ToMultiplicity.
 			count := c.countActiveForwardLinks(instance.ID, ai, simState)
 
 			v := checkBounds(count, ai.Association.ToMultiplicity.LowerBound, ai.Association.ToMultiplicity.HigherBound)
@@ -71,7 +70,6 @@ func (c *MultiplicityChecker) CheckInstance(
 		}
 
 		if ai.ToClassKey == instance.ClassKey {
-			// This instance is the "to" side — check FromMultiplicity.
 			count := c.countActiveReverseLinks(instance.ID, ai, simState)
 
 			v := checkBounds(count, ai.Association.FromMultiplicity.LowerBound, ai.Association.FromMultiplicity.HigherBound)
@@ -99,8 +97,11 @@ func (c *MultiplicityChecker) countActiveForwardLinks(
 	ai AssociationInfo,
 	simState *state.SimulationState,
 ) int {
+	if ai.Association.AssociationClassKey != nil {
+		return c.countActiveAssociationLinksFrom(fromID, ai.Association.Key, simState)
+	}
 	linked := simState.GetLinkedForward(fromID, ai.Association.Key)
-	return c.countActiveLinkedInstances(linked, ai.ToClassKey, simState)
+	return c.countActiveLinkedInstances(linked, simState)
 }
 
 func (c *MultiplicityChecker) countActiveReverseLinks(
@@ -108,13 +109,53 @@ func (c *MultiplicityChecker) countActiveReverseLinks(
 	ai AssociationInfo,
 	simState *state.SimulationState,
 ) int {
+	if ai.Association.AssociationClassKey != nil {
+		return c.countActiveAssociationLinksTo(toID, ai.Association.Key, simState)
+	}
 	linked := simState.GetLinkedReverse(toID, ai.Association.Key)
-	return c.countActiveLinkedInstances(linked, ai.FromClassKey, simState)
+	return c.countActiveLinkedInstances(linked, simState)
+}
+
+func (c *MultiplicityChecker) countActiveAssociationLinksFrom(
+	fromID state.InstanceID,
+	hostAssocKey identity.Key,
+	simState *state.SimulationState,
+) int {
+	links := simState.AssociationLinksFromEndpoint(hostAssocKey, fromID)
+	count := 0
+	for _, link := range links {
+		linkInst := simState.GetInstance(link.LinkInstanceID)
+		if linkInst == nil {
+			continue
+		}
+		if IsActiveAssociationClassInstance(c.catalog, linkInst.ClassKey, getInstanceStateName(linkInst)) {
+			count++
+		}
+	}
+	return count
+}
+
+func (c *MultiplicityChecker) countActiveAssociationLinksTo(
+	toID state.InstanceID,
+	hostAssocKey identity.Key,
+	simState *state.SimulationState,
+) int {
+	links := simState.AssociationLinksToEndpoint(hostAssocKey, toID)
+	count := 0
+	for _, link := range links {
+		linkInst := simState.GetInstance(link.LinkInstanceID)
+		if linkInst == nil {
+			continue
+		}
+		if IsActiveAssociationClassInstance(c.catalog, linkInst.ClassKey, getInstanceStateName(linkInst)) {
+			count++
+		}
+	}
+	return count
 }
 
 func (c *MultiplicityChecker) countActiveLinkedInstances(
 	linked []state.InstanceID,
-	_ identity.Key,
 	simState *state.SimulationState,
 ) int {
 	count := 0

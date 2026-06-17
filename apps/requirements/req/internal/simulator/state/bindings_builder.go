@@ -203,9 +203,8 @@ func (b *BindingsBuilder) buildRelationContext() *evaluator.RelationContext {
 		b.relationCtx = evaluator.NewRelationContext()
 	}
 
-	// Sync the link table from simulation state
-	// The relation context's link table is separate - we need to sync it
 	b.syncLinks()
+	b.syncAssociationLinks()
 
 	return b.relationCtx
 }
@@ -232,6 +231,42 @@ func (b *BindingsBuilder) syncLinks() {
 			}
 		}
 	}
+}
+
+func (b *BindingsBuilder) syncAssociationLinks() {
+	for _, link := range b.state.AssociationLinks().AllLinks() {
+		fromInstance := b.state.GetInstance(link.FromEndpointID)
+		linkInstance := b.state.GetInstance(link.LinkInstanceID)
+		toInstance := b.state.GetInstance(link.ToEndpointID)
+		if fromInstance == nil || linkInstance == nil || toInstance == nil {
+			continue
+		}
+
+		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
+		b.relationCtx.CreateLink(hostKey, fromInstance.Attributes, linkInstance.Attributes)
+		b.relationCtx.CreateLink(hostKey, linkInstance.Attributes, toInstance.Attributes)
+	}
+}
+
+// AddAssociationClassHost registers a host association materialized by association-class instances.
+func (b *BindingsBuilder) AddAssociationClassHost(
+	assocKey identity.Key,
+	name string,
+	fromClassKey identity.Key,
+	toClassKey identity.Key,
+	linkClassKey identity.Key,
+	fromMultiplicity evaluator.Multiplicity,
+	toMultiplicity evaluator.Multiplicity,
+) {
+	b.relationCtx.AddAssociationClassHost(
+		evaluator.AssociationKey(assocKey.String()),
+		name,
+		fromClassKey.String(),
+		toClassKey.String(),
+		linkClassKey.String(),
+		fromMultiplicity,
+		toMultiplicity,
+	)
 }
 
 // State returns the underlying simulation state.

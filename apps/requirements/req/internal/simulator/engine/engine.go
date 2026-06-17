@@ -177,19 +177,33 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.BindingsBuilder) {
 	for _, ai := range catalog.AllAssociations() {
 		assoc := ai.Association
+		fromMult := evaluator.Multiplicity{
+			LowerBound:  assoc.FromMultiplicity.LowerBound,
+			HigherBound: assoc.FromMultiplicity.HigherBound,
+		}
+		toMult := evaluator.Multiplicity{
+			LowerBound:  assoc.ToMultiplicity.LowerBound,
+			HigherBound: assoc.ToMultiplicity.HigherBound,
+		}
+		if assoc.AssociationClassKey != nil {
+			bindingsBuilder.AddAssociationClassHost(
+				assoc.Key,
+				assoc.Name,
+				assoc.FromClassKey,
+				assoc.ToClassKey,
+				*assoc.AssociationClassKey,
+				fromMult,
+				toMult,
+			)
+			continue
+		}
 		bindingsBuilder.AddAssociation(
 			assoc.Key,
 			assoc.Name,
 			assoc.FromClassKey,
 			assoc.ToClassKey,
-			evaluator.Multiplicity{
-				LowerBound:  assoc.FromMultiplicity.LowerBound,
-				HigherBound: assoc.FromMultiplicity.HigherBound,
-			},
-			evaluator.Multiplicity{
-				LowerBound:  assoc.ToMultiplicity.LowerBound,
-				HigherBound: assoc.ToMultiplicity.HigherBound,
-			},
+			fromMult,
+			toMult,
 		)
 	}
 }

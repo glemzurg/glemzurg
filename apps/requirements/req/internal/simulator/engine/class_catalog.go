@@ -47,7 +47,6 @@ type ClassCatalog struct {
 	classAssocs  map[identity.Key][]AssociationInfo // classKey → associations involving it
 
 	associationClasses map[identity.Key]*AssociationClassInfo
-	hostAssocKeys      map[identity.Key]bool
 
 	// Simulator-local SentBy/CalledBy data.
 	eventSentBy    map[identity.Key][]identity.Key // event key → sender class keys
@@ -74,13 +73,7 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 		}
 	}
 
-	// Build association-class index before association info so host assocs decompose into legs.
-	var err error
-	catalog.associationClasses, catalog.hostAssocKeys, err = buildAssociationClassIndex(model, catalog.classes)
-	if err != nil {
-		panic(err)
-	}
-
+	catalog.associationClasses = buildAssociationClassIndex(model, catalog.classes)
 	catalog.buildAssociationInfo(model)
 
 	return catalog
@@ -213,9 +206,6 @@ func buildDoActions(class model_class.Class, s model_state.State) []model_state.
 func (c *ClassCatalog) buildAssociationInfo(model *core.Model) {
 	allAssocs := model.GetClassAssociations()
 	for _, assoc := range allAssocs {
-		if c.hostAssocKeys[assoc.Key] {
-			continue
-		}
 		if _, fromIn := c.classes[assoc.FromClassKey]; !fromIn {
 			continue
 		}
@@ -234,10 +224,6 @@ func (c *ClassCatalog) buildAssociationInfo(model *core.Model) {
 		c.addAssociationInfo(ai)
 	}
 
-	for _, ai := range decomposedAssociationInfos(c.associationClasses) {
-		c.addAssociationInfo(ai)
-	}
-
 	// Sort associations for determinism.
 	sort.Slice(c.associations, func(i, j int) bool {
 		return c.associations[i].Association.Key.String() < c.associations[j].Association.Key.String()
@@ -252,7 +238,7 @@ func (c *ClassCatalog) addAssociationInfo(ai AssociationInfo) {
 	}
 }
 
-// LookupAssociationClass returns decomposed leg metadata for an association-class key.
+// LookupAssociationClass returns host-association metadata for an association-class key.
 func (c *ClassCatalog) LookupAssociationClass(classKey identity.Key) *AssociationClassInfo {
 	return c.associationClasses[classKey]
 }
@@ -263,9 +249,14 @@ func (c *ClassCatalog) IsAssociationClass(classKey identity.Key) bool {
 	return ok
 }
 
-// IsHostAssociation reports whether the association is materialized via decomposed AC legs.
-func (c *ClassCatalog) IsHostAssociation(assocKey identity.Key) bool {
-	return c.hostAssocKeys[assocKey]
+// IsAssociationClassHost reports whether the association is materialized via association-class rows.
+func (c *ClassCatalog) IsAssociationClassHost(assocKey identity.Key) bool {
+	for _, info := range c.associationClasses {
+		if info.HostAssociation.Key == assocKey {
+			return true
+		}
+	}
+	return false
 }
 
 // GetAssociationClassInfo implements actions.AssociationClassIndex.
@@ -275,9 +266,8 @@ func (c *ClassCatalog) GetAssociationClassInfo(classKey identity.Key) actions.As
 		return actions.AssociationClassLinkInfo{}
 	}
 	return actions.AssociationClassLinkInfo{
-		Found:           true,
-		FromLegAssocKey: info.FromLegAssocKey,
-		ToLegAssocKey:   info.ToLegAssocKey,
+		Found:        true,
+		HostAssocKey: info.HostAssociation.Key,
 	}
 }
 

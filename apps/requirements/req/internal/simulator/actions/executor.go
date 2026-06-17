@@ -86,11 +86,10 @@ type AssociationClassIndex interface {
 	IsAssociationClass(classKey identity.Key) bool
 }
 
-// AssociationClassLinkInfo holds the keys needed to wire decomposed AC legs on Add.
+// AssociationClassLinkInfo holds the host association key for materializing one AC row.
 type AssociationClassLinkInfo struct {
-	Found           bool
-	FromLegAssocKey identity.Key
-	ToLegAssocKey   identity.Key
+	Found        bool
+	HostAssocKey identity.Key
 }
 
 // ActionExecutor executes actions, queries, and transitions against simulation state.
@@ -797,8 +796,7 @@ func (e *ActionExecutor) handleAssociationClassCreation(
 	}
 
 	instance := simState.CreateInstance(class.Key, newAttrs)
-	simState.AddLink(linkInfo.FromLegAssocKey, *sourceID, instance.ID)
-	simState.AddLink(linkInfo.ToLegAssocKey, instance.ID, *targetID)
+	simState.AddAssociationLink(linkInfo.HostAssocKey, *sourceID, *targetID, instance.ID)
 
 	return instance, nil
 }

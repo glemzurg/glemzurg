@@ -22,7 +22,7 @@ type PendingAction struct {
 	IsQuery    bool
 	IsDo       bool // True when this is a "do" state action.
 
-	// Association-class Add binds both decomposed endpoints.
+	// Association-class Add binds both host-association endpoints.
 	SourceAssocKey   *identity.Key
 	SourceInstanceID *state.InstanceID
 	TargetInstanceID *state.InstanceID
@@ -138,7 +138,7 @@ func (s *ActionSelector) collectAssociationClassCreations(
 
 	creationEvent := classInfo.CreationEvents[0]
 	var eligible []PendingAction
-	fromLegKey := acInfo.FromLegAssocKey
+	hostAssocKey := acInfo.HostAssociation.Key
 
 	for _, fromInst := range fromInstances {
 		for _, toInst := range toInstances {
@@ -149,7 +149,7 @@ func (s *ActionSelector) collectAssociationClassCreations(
 				Event:            &creationEvent,
 				Instance:         nil,
 				IsCreation:       true,
-				SourceAssocKey:   &fromLegKey,
+				SourceAssocKey:   &hostAssocKey,
 				SourceInstanceID: &fromID,
 				TargetInstanceID: &toID,
 			})

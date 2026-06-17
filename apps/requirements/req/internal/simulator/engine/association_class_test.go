@@ -147,22 +147,24 @@ func (s *AssociationClassSuite) TestCatalogIndexesAssociationClass() {
 	catalog := NewClassCatalog(tcm.model)
 
 	s.True(catalog.IsAssociationClass(tcm.linkDefKey))
-	s.True(catalog.IsHostAssociation(tcm.hostAssocKey))
+	s.True(catalog.IsAssociationClassHost(tcm.hostAssocKey))
 
 	acInfo := catalog.LookupAssociationClass(tcm.linkDefKey)
 	s.Require().NotNil(acInfo)
 	s.Equal(tcm.partnerKey, acInfo.FromClassKey)
 	s.Equal(tcm.jurisdictionKey, acInfo.ToClassKey)
-	s.Equal(tcm.hostAssocKey, acInfo.FromLegAssocKey)
+	s.Equal(tcm.hostAssocKey, acInfo.HostAssociation.Key)
 	s.True(acInfo.InactiveStates["Deleted"])
 
 	assocs := catalog.AllAssociations()
-	s.Len(assocs, 2)
+	s.Len(assocs, 1)
+	s.Equal(tcm.hostAssocKey, assocs[0].Association.Key)
+	s.Require().NotNil(assocs[0].Association.AssociationClassKey)
 
 	s.Empty(catalog.ExternalCreationEvents(tcm.linkDefKey))
 }
 
-func (s *AssociationClassSuite) TestAssociationClassAddCreatesDecomposedLinks() {
+func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	tcm := buildAssociationClassTestModel()
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
@@ -187,26 +189,27 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesDecomposedLinks() 
 	s.Require().NoError(err)
 
 	acInfo := catalog.LookupAssociationClass(tcm.linkDefKey)
-	fromLegKey := acInfo.FromLegAssocKey
+	hostAssocKey := acInfo.HostAssociation.Key
 	result, err := ae.ExecuteTransition(
 		linkDefClass,
 		addEvent,
 		nil,
 		nil,
-		&fromLegKey,
+		&hostAssocKey,
 		&partnerResult.InstanceID,
 		&jurisdictionResult.InstanceID,
 	)
 	s.Require().NoError(err)
 	s.True(result.WasCreation)
 
-	fromLinks := simState.GetLinkedForward(partnerResult.InstanceID, acInfo.FromLegAssocKey)
-	s.Len(fromLinks, 1)
-	s.Equal(result.InstanceID, fromLinks[0])
+	links := simState.AssociationLinksFromEndpoint(hostAssocKey, partnerResult.InstanceID)
+	s.Len(links, 1)
+	s.Equal(result.InstanceID, links[0].LinkInstanceID)
+	s.Equal(partnerResult.InstanceID, links[0].FromEndpointID)
+	s.Equal(jurisdictionResult.InstanceID, links[0].ToEndpointID)
+	s.Equal(hostAssocKey, links[0].HostAssocKey)
 
-	toLinks := simState.GetLinkedForward(result.InstanceID, acInfo.ToLegAssocKey)
-	s.Len(toLinks, 1)
-	s.Equal(jurisdictionResult.InstanceID, toLinks[0])
+	s.Empty(simState.GetLinkedForward(partnerResult.InstanceID, hostAssocKey))
 }
 
 func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
@@ -256,11 +259,11 @@ func (s *AssociationClassSuite) TestDeleteSoftDeleteExcludesFromActiveCount() {
 	s.Require().NoError(err)
 
 	acInfo := catalog.LookupAssociationClass(tcm.linkDefKey)
-	fromLegKey := acInfo.FromLegAssocKey
+	hostAssocKey := acInfo.HostAssociation.Key
 	addResult, err := ae.ExecuteTransition(
 		linkDefClass,
 		linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")],
-		nil, nil, &fromLegKey, &partnerResult.InstanceID, &jurisdictionResult.InstanceID,
+		nil, nil, &hostAssocKey, &partnerResult.InstanceID, &jurisdictionResult.InstanceID,
 	)
 	s.Require().NoError(err)
 
@@ -295,21 +298,27 @@ func (s *AssociationClassSuite) TestSimulationRunsAssociationClassScenario() {
 
 	foundAdd := false
 	foundDelete := false
-	for _, step := range result.Steps {
-		if step.ClassKey == tcm.linkDefKey && step.EventName == "Add" {
-			foundAdd = true
-		}
-		if step.ClassKey == tcm.linkDefKey && step.EventName == "Delete" {
-			foundDelete = true
+	var walkSteps func(steps []*SimulationStep)
+	walkSteps = func(steps []*SimulationStep) {
+		for _, step := range steps {
+			if step.ClassKey == tcm.linkDefKey && step.EventName == "Add" {
+				foundAdd = true
+			}
+			if step.ClassKey == tcm.linkDefKey && step.EventName == "Delete" {
+				foundDelete = true
+			}
+			if len(step.CascadedSteps) > 0 {
+				walkSteps(step.CascadedSteps)
+			}
 		}
 	}
+	walkSteps(result.Steps)
 	s.True(foundAdd, "simulation should exercise AC Add with bound endpoints")
 
 	acInfo := NewClassCatalog(tcm.model).LookupAssociationClass(tcm.linkDefKey)
 	s.Require().NotNil(acInfo)
-	linkedFrom := result.FinalState.Links().AllAssociationKeys()
-	s.True(linkedFrom[evaluator.AssociationKey(acInfo.FromLegAssocKey.String())])
-	s.True(linkedFrom[evaluator.AssociationKey(acInfo.ToLegAssocKey.String())])
+	linkedHosts := result.FinalState.AssociationLinks().AllHostAssociationKeys()
+	s.True(linkedHosts[evaluator.AssociationKey(acInfo.HostAssociation.Key.String())])
 
 	_ = foundDelete
 }

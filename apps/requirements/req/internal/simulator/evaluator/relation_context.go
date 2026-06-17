@@ -91,6 +91,42 @@ func (c *RelationContext) AddAssociation(
 	c.ReverseRelations[toClassKey][name] = reverseInfo
 }
 
+// AddAssociationClassHost registers a host association materialized by association-class instances.
+// Both endpoints navigate to link-class instances via the host association name.
+func (c *RelationContext) AddAssociationClassHost(
+	assocKey AssociationKey,
+	name string,
+	fromClassKey string,
+	toClassKey string,
+	linkClassKey string,
+	fromMultiplicity Multiplicity,
+	toMultiplicity Multiplicity,
+) {
+	forwardInfo := &RelationInfo{
+		AssociationKey: assocKey,
+		Name:           name,
+		TargetClassKey: linkClassKey,
+		Multiplicity:   toMultiplicity,
+		Reverse:        false,
+	}
+	if c.ForwardRelations[fromClassKey] == nil {
+		c.ForwardRelations[fromClassKey] = make(map[string]*RelationInfo)
+	}
+	c.ForwardRelations[fromClassKey][name] = forwardInfo
+
+	reverseInfo := &RelationInfo{
+		AssociationKey: assocKey,
+		Name:           name,
+		TargetClassKey: linkClassKey,
+		Multiplicity:   fromMultiplicity,
+		Reverse:        true,
+	}
+	if c.ReverseRelations[toClassKey] == nil {
+		c.ReverseRelations[toClassKey] = make(map[string]*RelationInfo)
+	}
+	c.ReverseRelations[toClassKey][name] = reverseInfo
+}
+
 // GetForwardRelation returns relation info for a forward traversal (.Name).
 // Returns nil if no such relation exists.
 func (c *RelationContext) GetForwardRelation(classKey, fieldName string) *RelationInfo {
