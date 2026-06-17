@@ -108,11 +108,10 @@ func lowerClass(
 	}
 
 	// Attributes: derivation policy and invariants.
-	for aKey, attr := range class.Attributes {
-		if err := lowerAttribute(&attr, classCtx); err != nil {
-			return fmt.Errorf("attribute %q: %w", aKey.String(), err)
+	for i := range class.Attributes {
+		if err := lowerAttribute(&class.Attributes[i], classCtx); err != nil {
+			return fmt.Errorf("attribute %q: %w", class.Attributes[i].Key.String(), err)
 		}
-		class.Attributes[aKey] = attr
 	}
 
 	// Guards.

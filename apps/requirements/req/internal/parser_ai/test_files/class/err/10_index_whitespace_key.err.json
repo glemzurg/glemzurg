@@ -1,11 +1,14 @@
 {
     "name": "Order",
-    "attributes": {
-        "order_date": {
-            "name": "Order Date"
+    "attributes": [
+        {
+            "name": "Order Date",
+            "key": "order_date"
         }
-    },
+    ],
     "indexes": [
-        ["   "]
+        [
+            "   "
+        ]
     ]
 }

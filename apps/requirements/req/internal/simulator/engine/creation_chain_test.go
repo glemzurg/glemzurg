@@ -195,7 +195,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
 
 	itemClass := model_class.NewClass(itemKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	itemClass.SetAttributes(map[identity.Key]model_class.Attribute{})
+	itemClass.SetAttributes(nil)
 	itemClass.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})

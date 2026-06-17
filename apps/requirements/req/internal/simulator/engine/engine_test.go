@@ -40,7 +40,7 @@ func simpleOrderClass() (model_class.Class, identity.Key) {
 	transClose := model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, nil, &stateClosedKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
 		stateClosedKey: stateClosed,
@@ -159,7 +159,7 @@ func (s *EngineSuite) TestDeadlockDetection() {
 	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stuck", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -251,7 +251,7 @@ func (s *EngineSuite) TestNoSimulatableClassesReturnsError() {
 	classKey := mustKey("domain/d/subdomain/s/class/empty")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Empty", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})

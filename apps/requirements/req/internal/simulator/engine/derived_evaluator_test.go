@@ -61,10 +61,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 		model_class.AttributeAnnotations{}))
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrPriceKey:       attrPrice,
-		attrDoublePriceKey: attrDoublePrice,
-	})
+	class.SetAttributes([]model_class.Attribute{attrPrice, attrDoublePrice})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -107,9 +104,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 		model_class.AttributeAnnotations{}))
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrKey: attrDerived,
-	})
+	class.SetAttributes([]model_class.Attribute{attrDerived})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -143,10 +138,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 		model_class.AttributeAnnotations{}))
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrPriceKey:   attrPrice,
-		attrDerivedKey: attrDerived,
-	})
+	class.SetAttributes([]model_class.Attribute{attrPrice, attrDerived})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -180,10 +172,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 		model_class.AttributeAnnotations{}))
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrPriceKey:       attrPrice,
-		attrDoublePriceKey: attrDoublePrice,
-	})
+	class.SetAttributes([]model_class.Attribute{attrPrice, attrDoublePrice})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})

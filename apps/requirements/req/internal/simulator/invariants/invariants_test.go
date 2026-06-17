@@ -141,11 +141,7 @@ func createTestModel() *core.Model {
 
 	// Create the class
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		statusAttr.Key: statusAttr,
-		amountAttr.Key: amountAttr,
-		nameAttr.Key:   nameAttr,
-	})
+	class.SetAttributes([]model_class.Attribute{statusAttr, amountAttr, nameAttr})
 	class.SetActions(map[identity.Key]model_state.Action{
 		actionKey: completeAction,
 	})
@@ -185,9 +181,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	attr.DataType = nil // Not parsed!
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "BadClass", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.Attributes = map[identity.Key]model_class.Attribute{
-		attr.Key: attr,
-	}
+	class.Attributes = []model_class.Attribute{attr}
 
 	subdomainKey := mustKey("domain/d/subdomain/s")
 	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
@@ -336,7 +330,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerMissingAttributeTypeSpec() {
 	}
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Currency"})
-	class.Attributes = map[identity.Key]model_class.Attribute{abbrAttr.Key: abbrAttr}
+	class.Attributes = []model_class.Attribute{abbrAttr}
 
 	subdomainKey := mustKey("domain/d/subdomain/s")
 	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
@@ -373,7 +367,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerUnparsedAttributeOnInstance() {
 	badAttr.DataType = nil
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Currency"})
-	class.Attributes = map[identity.Key]model_class.Attribute{badAttr.Key: badAttr}
+	class.Attributes = []model_class.Attribute{badAttr}
 
 	subdomainKey := mustKey("domain/d/subdomain/s")
 	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
@@ -649,7 +643,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	attr.DataType.TypeSpec = &natTypeSpec
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Test", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.Attributes = map[identity.Key]model_class.Attribute{attr.Key: attr}
+	class.Attributes = []model_class.Attribute{attr}
 
 	subdomainKey := mustKey("domain/d/subdomain/s")
 	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
@@ -718,10 +712,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerUsesAttributeFieldKey() {
 	socialAttr.DataType.TypeSpec = &boolTypeSpec
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		nameAttrKey:   nameAttr,
-		socialAttrKey: socialAttr,
-	})
+	class.SetAttributes([]model_class.Attribute{nameAttr, socialAttr})
 
 	subdomainKey := mustKey("domain/finance/subdomain/wallet")
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
@@ -772,10 +763,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerNormalizesEmptyStringToNull() {
 	}
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		nameAttrKey:    nameAttr,
-		countryAttrKey: countryAttr,
-	})
+	class.SetAttributes([]model_class.Attribute{nameAttr, countryAttr})
 
 	subdomainKey := mustKey("domain/test_domain/subdomain/test_subdomain")
 	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")

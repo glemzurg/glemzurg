@@ -102,18 +102,18 @@ func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSe
 	}
 
 	// Attributes: derivation policy and invariants.
-	for aKey, attr := range class.Attributes {
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
 		if attr.DerivationPolicy != nil {
 			if err := relowerSpec(&attr.DerivationPolicy.Spec, classPF); err != nil {
-				return fmt.Errorf("attribute %q derivation: %w", aKey.String(), err)
+				return fmt.Errorf("attribute %q derivation: %w", attr.Key.String(), err)
 			}
 		}
-		for i := range attr.Invariants {
-			if err := relowerSpec(&attr.Invariants[i].Spec, classPF); err != nil {
-				return fmt.Errorf("attribute %q invariant %d: %w", aKey.String(), i, err)
+		for j := range attr.Invariants {
+			if err := relowerSpec(&attr.Invariants[j].Spec, classPF); err != nil {
+				return fmt.Errorf("attribute %q invariant %d: %w", attr.Key.String(), j, err)
 			}
 		}
-		class.Attributes[aKey] = attr
 	}
 
 	// Guards.
@@ -278,18 +278,18 @@ func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, n
 	}
 
 	// Attributes: derivation policy and invariants.
-	for aKey, attr := range class.Attributes {
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
 		if attr.DerivationPolicy != nil {
 			if err := relowerSpecStrict(&attr.DerivationPolicy.Spec, classPF); err != nil {
-				errs = append(errs, fmt.Errorf("attribute %q derivation: %w", aKey.String(), err))
+				errs = append(errs, fmt.Errorf("attribute %q derivation: %w", attr.Key.String(), err))
 			}
 		}
-		for i := range attr.Invariants {
-			if err := relowerSpecStrict(&attr.Invariants[i].Spec, classPF); err != nil {
-				errs = append(errs, fmt.Errorf("attribute %q invariant %d: %w", aKey.String(), i, err))
+		for j := range attr.Invariants {
+			if err := relowerSpecStrict(&attr.Invariants[j].Spec, classPF); err != nil {
+				errs = append(errs, fmt.Errorf("attribute %q invariant %d: %w", attr.Key.String(), j, err))
 			}
 		}
-		class.Attributes[aKey] = attr
 	}
 
 	// Guards.

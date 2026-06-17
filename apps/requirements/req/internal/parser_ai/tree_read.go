@@ -787,6 +787,18 @@ func readClassInvariants(classDir string, class *inputClass) error {
 	return readInvariantsDir(filepath.Join(classDir, "invariants"), &class.Invariants)
 }
 
+func readFileInDir(dir, name string) ([]byte, string, error) {
+	cleanDir := filepath.Clean(dir)
+	cleanName := filepath.Base(name)
+	filePath := filepath.Join(cleanDir, cleanName)
+	rel, err := filepath.Rel(cleanDir, filePath)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return nil, "", fmt.Errorf("path %q escapes directory %q", filePath, cleanDir)
+	}
+	content, err := os.ReadFile(filePath)
+	return content, filePath, err
+}
+
 // readInvariantsDir reads invariant JSON files from a directory into the target slice.
 func readInvariantsDir(dir string, target *[]inputLogic) error {
 	entries, err := os.ReadDir(dir)
@@ -805,8 +817,7 @@ func readInvariantsDir(dir string, target *[]inputLogic) error {
 	sort.Strings(names)
 	var errs []error
 	for _, name := range names {
-		filePath := filepath.Join(dir, name)
-		content, err := os.ReadFile(filePath)
+		content, filePath, err := readFileInDir(dir, name)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -823,12 +834,15 @@ func readInvariantsDir(dir string, target *[]inputLogic) error {
 
 // readClassAttributeInvariants reads per-attribute invariant files.
 func readClassAttributeInvariants(classDir string, class *inputClass) error {
-	for attrKey, attr := range class.Attributes {
-		attrInvariantsDir := filepath.Join(classDir, "attributes", attrKey, "invariants")
-		if err := readInvariantsDir(attrInvariantsDir, &attr.Invariants); err != nil {
+	for i := range class.Attributes {
+		attrKey, err := safeAttributeDirKey(class.Attributes[i].Key)
+		if err != nil {
 			return err
 		}
-		class.Attributes[attrKey] = attr
+		attrInvariantsDir := filepath.Join(classDir, "attributes", attrKey, "invariants")
+		if err := readInvariantsDir(attrInvariantsDir, &class.Attributes[i].Invariants); err != nil {
+			return err
+		}
 	}
 	return nil
 }

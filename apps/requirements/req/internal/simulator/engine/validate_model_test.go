@@ -48,7 +48,7 @@ func (s *ValidateModelSuite) jurisdictionClassMissingEventParam() (model_class.C
 	transAdd := model_state.NewTransition(transAddKey, nil, eventAddKey, nil, &actionAddKey, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Jurisdiction", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})

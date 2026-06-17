@@ -87,7 +87,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stuck", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -135,7 +135,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleOnExistingInstances() {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Counter", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})

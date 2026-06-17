@@ -14,19 +14,19 @@ And even more.
 
 actor_key: actor_key
 attributes:
-    power:
-        name: Power
-        details: Appears in data dictionary.
-        rules: string that is 3-28 chars long
-        nullable: true
-        derivation:
-            description: Human readable derivation rules.
-            specification: "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
-        uml_comment: very import to users
-        index_nums: [1, 2]
-    speed:
-        name: Speed
-        rules: unconstrained
-        type_spec: Nat
-        derivation:
-            description: No specification yet.
+    - key: power
+      name: Power
+      details: Appears in data dictionary.
+      rules: string that is 3-28 chars long
+      nullable: true
+      derivation:
+        description: Human readable derivation rules.
+        specification: "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
+      uml_comment: very import to users
+      index_nums: [1, 2]
+    - key: speed
+      name: Speed
+      rules: unconstrained
+      type_spec: Nat
+      derivation:
+        description: No specification yet.

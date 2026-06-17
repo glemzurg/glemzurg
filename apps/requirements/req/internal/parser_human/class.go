@@ -10,8 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
-
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
@@ -192,19 +190,20 @@ func parseClassStateMachine(class *model_class.Class, classKey identity.Key, yam
 
 // parseClassAttributes parses the attributes section from YAML data and sets them on the class.
 func parseClassAttributes(class *model_class.Class, classKey identity.Key, yamlData map[string]any) error {
-	var attributesData map[string]any
 	attributesAny, found := yamlData["attributes"]
-	if found {
-		attributesData = attributesAny.(map[string]any)
+	if !found {
+		class.SetAttributes([]model_class.Attribute{})
+		return nil
 	}
+	attributesData := attributesAny.([]any)
 
-	attributes := make(map[identity.Key]model_class.Attribute)
-	for attrSubKey, attributeAny := range attributesData {
-		attribute, err := attributeFromYamlData(classKey, identity.NormalizeSubKey(attrSubKey), attributeAny)
+	attributes := make([]model_class.Attribute, 0, len(attributesData))
+	for _, attributeAny := range attributesData {
+		attribute, err := attributeFromYamlData(classKey, attributeAny)
 		if err != nil {
 			return err
 		}
-		attributes[attribute.Key] = attribute
+		attributes = append(attributes, attribute)
 	}
 	class.SetAttributes(attributes)
 	return nil
@@ -369,70 +368,89 @@ func parseClassTransitions(class *model_class.Class, lookups parseKeyLookups, cl
 	return nil
 }
 
-func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAny any) (attribute model_class.Attribute, err error) {
+type attributeYamlScalars struct {
+	attrSubKey    string
+	name          string
+	details       string
+	dataTypeRules string
+	nullable      bool
+}
+
+func attributeScalarsFromYamlData(attributeData map[string]any) attributeYamlScalars {
+	scalars := attributeYamlScalars{}
+	if keyAny, found := attributeData["key"]; found {
+		scalars.attrSubKey = identity.NormalizeSubKey(keyAny.(string))
+	}
+	if nameAny, found := attributeData["name"]; found {
+		scalars.name = nameAny.(string)
+	}
+	if detailsAny, found := attributeData["details"]; found {
+		scalars.details = detailsAny.(string)
+	}
+	if dataTypeRulesAny, found := attributeData["rules"]; found {
+		scalars.dataTypeRules = dataTypeRulesAny.(string)
+	}
+	if nullableAny, found := attributeData["nullable"]; found {
+		scalars.nullable = nullableAny.(bool)
+	}
+	return scalars
+}
+
+type attributeYamlExtras struct {
+	attrKey          identity.Key
+	derivationPolicy *model_logic.Logic
+	annotations      model_class.AttributeAnnotations
+	typeSpec         *logic_spec.TypeSpec
+	invariants       []model_logic.Logic
+}
+
+func attributeExtrasFromYamlData(classKey identity.Key, attrSubKey string, attributeData map[string]any) (attributeYamlExtras, error) {
+	attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
+	if err != nil {
+		return attributeYamlExtras{}, errors.WithStack(err)
+	}
+	extras := attributeYamlExtras{attrKey: attrKey}
+
+	derivationPolicy, err := attributeDerivationFromYamlData(classKey, attrSubKey, attributeData)
+	if err != nil {
+		return attributeYamlExtras{}, err
+	}
+	extras.derivationPolicy = derivationPolicy
+	extras.annotations = attributeAnnotationsFromYamlData(attributeData)
+
+	typeSpec, err := typeSpecFromYamlData(attributeData)
+	if err != nil {
+		return attributeYamlExtras{}, err
+	}
+	extras.typeSpec = typeSpec
+
+	attrInvariants, err := logicListFromYamlData(attributeData, "invariants",
+		model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
+	if err != nil {
+		return attributeYamlExtras{}, errors.Wrap(err, "attribute invariants")
+	}
+	extras.invariants = attrInvariants
+	return extras, nil
+}
+
+func attributeFromYamlData(classKey identity.Key, attributeAny any) (attribute model_class.Attribute, err error) {
 	attributeData, ok := attributeAny.(map[string]any)
 	if ok {
-		// Data is in the right structure.
-		// Get each of the values.
-
-		name := ""
-		nameAny, found := attributeData["name"]
-		if found {
-			name = nameAny.(string)
-		}
-
-		details := ""
-		detailsAny, found := attributeData["details"]
-		if found {
-			details = detailsAny.(string)
-		}
-
-		dataTypeRules := ""
-		dataTypeRulesAny, found := attributeData["rules"]
-		if found {
-			dataTypeRules = dataTypeRulesAny.(string)
-		}
-
-		derivationPolicy, err := attributeDerivationFromYamlData(classKey, attrSubKey, attributeData)
+		scalars := attributeScalarsFromYamlData(attributeData)
+		extras, err := attributeExtrasFromYamlData(classKey, scalars.attrSubKey, attributeData)
 		if err != nil {
 			return model_class.Attribute{}, err
 		}
 
-		nullable := false
-		nullableAny, found := attributeData["nullable"]
-		if found {
-			nullable = nullableAny.(bool)
-		}
-
-		annotations := attributeAnnotationsFromYamlData(attributeData)
-
-		typeSpec, err := typeSpecFromYamlData(attributeData)
+		attribute, err = model_class.NewAttribute(extras.attrKey, scalars.name, scalars.details, scalars.dataTypeRules, extras.derivationPolicy, scalars.nullable, extras.annotations)
 		if err != nil {
 			return model_class.Attribute{}, err
 		}
-
-		// Construct the identity key for this attribute.
-		attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
-		if err != nil {
-			return model_class.Attribute{}, errors.WithStack(err)
+		if extras.typeSpec != nil && attribute.DataType != nil {
+			attribute.DataType.TypeSpec = extras.typeSpec
 		}
-
-		attribute, err = model_class.NewAttribute(attrKey, name, details, dataTypeRules, derivationPolicy, nullable, annotations)
-		if err != nil {
-			return model_class.Attribute{}, err
-		}
-		if typeSpec != nil && attribute.DataType != nil {
-			attribute.DataType.TypeSpec = typeSpec
-		}
-
-		// Parse attribute invariants.
-		attrInvariants, err := logicListFromYamlData(attributeData, "invariants",
-			model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
-		if err != nil {
-			return model_class.Attribute{}, errors.Wrap(err, "attribute invariants")
-		}
-		if len(attrInvariants) > 0 {
-			attribute.SetInvariants(attrInvariants)
+		if len(extras.invariants) > 0 {
+			attribute.SetInvariants(extras.invariants)
 		}
 	}
 
@@ -1220,10 +1238,10 @@ func generateClassAttributesYaml(builder *YamlBuilder, class model_class.Class) 
 	if len(class.Attributes) == 0 {
 		return
 	}
-	attrsBuilder := NewYamlBuilder()
-	sortedAttrs := view_helper.GetAttributesSorted(class.Attributes)
-	for _, attr := range sortedAttrs {
+	var attrBuilders []*YamlBuilder
+	for _, attr := range class.Attributes {
 		attrBuilder := NewYamlBuilder()
+		attrBuilder.AddField("key", attr.Key.SubKey)
 		attrBuilder.AddField("name", attr.Name)
 		attrBuilder.AddField("details", attr.Details)
 		attrBuilder.AddField("rules", attr.DataTypeRules)
@@ -1246,9 +1264,9 @@ func generateClassAttributesYaml(builder *YamlBuilder, class model_class.Class) 
 			attrBuilder.AddIntSliceField("index_nums", intNums)
 		}
 		generateLogicSequence(attrBuilder, "invariants", attr.Invariants)
-		attrsBuilder.AddMappingField(attr.Key.SubKey, attrBuilder)
+		attrBuilders = append(attrBuilders, attrBuilder)
 	}
-	builder.AddMappingField("attributes", attrsBuilder)
+	builder.AddSequenceOfMappings("attributes", attrBuilders)
 }
 
 // generateClassAssociationsYaml generates the associations YAML section.

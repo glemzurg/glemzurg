@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 const attributeIndexKeyLabel = "key"
@@ -59,7 +58,7 @@ func classAttributeTableName(attr model_class.Attribute) string {
 	return name.String()
 }
 
-func classIndexListings(attributes map[identity.Key]model_class.Attribute) []ClassIndexListing {
+func classIndexListings(attributes []model_class.Attribute) []ClassIndexListing {
 	indexMap := map[uint][]string{}
 	for _, attr := range attributes {
 		for _, indexNum := range attr.IndexNums {

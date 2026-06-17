@@ -239,8 +239,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
-		Attributes: map[identity.Key]Attribute{
-			attrKey: {Key: attrKey, Name: ""}, // Invalid: blank name
+		Attributes: []Attribute{
+			{Key: attrKey, Name: ""}, // Invalid: blank name
 		},
 	}
 	err = class.ValidateWithParent(ctx, &subdomainKey)
@@ -333,7 +333,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:         validKey,
 		Name:        "Name",
 		Invariants:  []model_logic.Logic{validInvariant},
-		Attributes:  map[identity.Key]Attribute{attrKey: validAttr},
+		Attributes:  []Attribute{validAttr},
 		States:      map[identity.Key]model_state.State{stateKey: validState},
 		Events:      map[identity.Key]model_state.Event{eventKey: validEvent},
 		Guards:      map[identity.Key]model_state.Guard{guardKey: validGuard},
@@ -392,8 +392,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
-		Attributes: map[identity.Key]Attribute{
-			attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &wrongDerivLogic},
+		Attributes: []Attribute{
+			{Key: attrKey, Name: "Attr", DerivationPolicy: &wrongDerivLogic},
 		},
 	}
 	err = class.ValidateWithParent(ctx, &subdomainKey)
@@ -420,7 +420,7 @@ func (suite *ClassSuite) TestSetters() {
 	class.SetInvariants(invariants)
 	suite.Equal(invariants, class.Invariants)
 
-	attrs := map[identity.Key]Attribute{attrKey: {Key: attrKey, Name: "Attr"}}
+	attrs := []Attribute{{Key: attrKey, Name: "Attr"}}
 	class.SetAttributes(attrs)
 	suite.Equal(attrs, class.Attributes)
 

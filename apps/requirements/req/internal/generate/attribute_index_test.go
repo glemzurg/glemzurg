@@ -102,12 +102,12 @@ func TestClassIndexListings(t *testing.T) {
 	abbrKey := helper.Must(identity.NewAttributeKey(classKey, "abbr"))
 	emailKey := helper.Must(identity.NewAttributeKey(classKey, "email"))
 
-	listings := classIndexListings(map[identity.Key]model_class.Attribute{
-		abbrKey: helper.Must(model_class.NewAttribute(
+	listings := classIndexListings([]model_class.Attribute{
+		helper.Must(model_class.NewAttribute(
 			abbrKey, "Abbr", "", "", nil, false,
 			model_class.AttributeAnnotations{IndexNums: []uint{0}},
 		)),
-		emailKey: helper.Must(model_class.NewAttribute(
+		helper.Must(model_class.NewAttribute(
 			emailKey, "Email", "", "", nil, false,
 			model_class.AttributeAnnotations{IndexNums: []uint{1, 3}},
 		)),
@@ -129,12 +129,12 @@ func TestGenerateClassMarkdownListsNamedIndexes(t *testing.T) {
 	emailKey := helper.Must(identity.NewAttributeKey(classKey, "email"))
 
 	widget := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Widget"})
-	widget.SetAttributes(map[identity.Key]model_class.Attribute{
-		abbrKey: helper.Must(model_class.NewAttribute(
+	widget.SetAttributes([]model_class.Attribute{
+		helper.Must(model_class.NewAttribute(
 			abbrKey, "Abbr", "", "", nil, false,
 			model_class.AttributeAnnotations{IndexNums: []uint{0}},
 		)),
-		emailKey: helper.Must(model_class.NewAttribute(
+		helper.Must(model_class.NewAttribute(
 			emailKey, "Email", "", "", nil, false,
 			model_class.AttributeAnnotations{IndexNums: []uint{1, 3}},
 		)),

@@ -10,7 +10,7 @@ import (
 
 // ComputedSimpleActionGuaranteeDescription derives "Set <attribute name>" for a
 // state_change guarantee that assigns a single-word expression to a class attribute.
-func ComputedSimpleActionGuaranteeDescription(guarantee model_logic.Logic, attributes map[identity.Key]Attribute) (string, bool) {
+func ComputedSimpleActionGuaranteeDescription(guarantee model_logic.Logic, attributes []Attribute) (string, bool) {
 	if guarantee.Type != model_logic.LogicTypeStateChange {
 		return "", false
 	}
@@ -24,7 +24,7 @@ func ComputedSimpleActionGuaranteeDescription(guarantee model_logic.Logic, attri
 	return "Set " + attrName, true
 }
 
-func attributeDisplayNameForTarget(attributes map[identity.Key]Attribute, target string) string {
+func attributeDisplayNameForTarget(attributes []Attribute, target string) string {
 	normalizedTarget := identity.NormalizeSubKey(target)
 	for _, attr := range attributes {
 		if attr.Key.SubKey == normalizedTarget && attr.Name != "" {

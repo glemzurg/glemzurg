@@ -25,6 +25,16 @@ func TestConvertSuite(t *testing.T) {
 	suite.Run(t, new(ConvertSuite))
 }
 
+// inputAttributesFrom builds an attribute slice from a key-to-attribute map for tests.
+func inputAttributesFrom(entries map[string]inputAttribute) []inputAttribute {
+	attrs := make([]inputAttribute, 0, len(entries))
+	for key, attr := range entries {
+		attr.Key = key
+		attrs = append(attrs, attr)
+	}
+	return attrs
+}
+
 // TestConvertFromModelMinimal tests converting a minimal valid core.Model to inputModel.
 func (suite *ConvertSuite) TestConvertFromModelMinimal() {
 	m := core.NewModel("testmodel", "Test Model", "Model details", "", nil, nil, nil)
@@ -130,10 +140,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 
 	// Build class
 	orderClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: &actorKey, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "Order details", UnfinishedNotes: "", UmlComment: ""})
-	orderClass.SetAttributes(map[identity.Key]model_class.Attribute{
-		idAttrKey:     idAttr,
-		statusAttrKey: statusAttr,
-	})
+	orderClass.SetAttributes([]model_class.Attribute{idAttr, statusAttr})
 
 	// Build subdomain
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "", "")
@@ -171,9 +178,11 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 	suite.Equal("Order", class.Name)
 	suite.Equal("Order details", class.Details)
 	suite.Equal("customer", class.ActorKey)
-	suite.Require().Contains(class.Attributes, "id")
-	suite.Equal("ID", class.Attributes["id"].Name)
-	suite.Equal("int", class.Attributes["id"].DataTypeRules)
+	suite.True(class.hasAttributeKey("id"))
+	inputIDAttr, ok := class.attributeByKey("id")
+	suite.Require().True(ok)
+	suite.Equal("ID", inputIDAttr.Name)
+	suite.Equal("int", inputIDAttr.DataTypeRules)
 }
 
 // TestConvertToModelWithClass tests converting a class with attributes.
@@ -194,10 +203,10 @@ func (suite *ConvertSuite) TestConvertToModelWithClass() {
 								Name:     "Order",
 								Details:  "Order details",
 								ActorKey: "customer",
-								Attributes: map[string]*inputAttribute{
+								Attributes: inputAttributesFrom(map[string]inputAttribute{
 									"id":     {Name: "ID", DataTypeRules: "int"},
 									"status": {Name: "Status", DataTypeRules: "string"},
-								},
+								}),
 								Indexes: [][]string{{"id"}},
 							},
 						},
@@ -277,7 +286,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 
 	// Build class
 	orderClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	orderClass.SetAttributes(nil)
 	orderClass.SetStates(map[identity.Key]model_state.State{
 		stateKey1: state1,
 		stateKey2: state2,
@@ -359,7 +368,7 @@ func (suite *ConvertSuite) TestConvertFromModelDeterministicExport() {
 	selfElevationTransitionKey := helper.Must(identity.NewTransitionKey(classKey, "unprovisioned", "self_elevation_blocked", "", "self_elevation_blocked", "unprovisioned"))
 
 	userClass := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Managed User"})
-	userClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	userClass.SetAttributes(nil)
 	userClass.SetStates(map[identity.Key]model_state.State{
 		activeKey:        model_state.NewState(activeKey, "Active", "", ""),
 		unprovisionedKey: model_state.NewState(unprovisionedKey, "Unprovisioned", "", ""),
@@ -433,7 +442,7 @@ func (suite *ConvertSuite) TestConvertToModelWithStateMachine() {
 						Classes: map[string]*inputClass{
 							"order": {
 								Name:       "Order",
-								Attributes: make(map[string]*inputAttribute),
+								Attributes: nil,
 								StateMachine: &inputStateMachine{
 									States: map[string]*inputState{
 										"pending":   {Name: "Pending"},
@@ -513,7 +522,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 
 	// Build class
 	orderClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	orderClass.SetAttributes(nil)
 	orderClass.SetQueries(map[identity.Key]model_state.Query{
 		queryKey: query,
 	})
@@ -567,7 +576,7 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 						Classes: map[string]*inputClass{
 							"order": {
 								Name:       "Order",
-								Attributes: make(map[string]*inputAttribute),
+								Attributes: nil,
 								Queries: map[string]*inputQuery{
 									"get_total": {
 										Name:    "Get Total",
@@ -632,10 +641,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 
 	// Build classes
 	productClass := model_class.NewClass(productKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &genKey, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	productClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	productClass.SetAttributes(nil)
 
 	bookClass := model_class.NewClass(bookKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &genKey}, model_class.ClassDetails{Name: "Book", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	bookClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	bookClass.SetAttributes(nil)
 
 	// Build generalization
 	gen := model_class.NewGeneralization(genKey, "Product Types", "Types of products", "", false, false, "")
@@ -688,8 +697,8 @@ func (suite *ConvertSuite) TestConvertToModelWithGeneralization() {
 					"default": {
 						Name: "Default",
 						Classes: map[string]*inputClass{
-							"product": {Name: "Product", Attributes: make(map[string]*inputAttribute)},
-							"book":    {Name: "Book", Attributes: make(map[string]*inputAttribute)},
+							"product": {Name: "Product", Attributes: nil},
+							"book":    {Name: "Book", Attributes: nil},
 						},
 						ClassGeneralizations: map[string]*inputClassGeneralization{
 							"product_types": {
@@ -757,10 +766,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 
 	// Build classes
 	orderClass := model_class.NewClass(orderKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	orderClass.SetAttributes(nil)
 
 	lineItemClass := model_class.NewClass(lineItemKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Line Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	lineItemClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	lineItemClass.SetAttributes(nil)
 
 	// Build association
 	assoc := model_class.NewAssociation(
@@ -820,8 +829,8 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 					"default": {
 						Name: "Default",
 						Classes: map[string]*inputClass{
-							"order":     {Name: "Order", Attributes: make(map[string]*inputAttribute)},
-							"line_item": {Name: "Line Item", Attributes: make(map[string]*inputAttribute)},
+							"order":     {Name: "Order", Attributes: nil},
+							"line_item": {Name: "Line Item", Attributes: nil},
 						},
 						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations: map[string]*inputClassAssociation{
@@ -914,10 +923,10 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 								Name:     "Order",
 								Details:  "An order class",
 								ActorKey: "customer",
-								Attributes: map[string]*inputAttribute{
+								Attributes: inputAttributesFrom(map[string]inputAttribute{
 									"id":     {Name: "ID", Details: "Order ID", DataTypeRules: "int"},
 									"status": {Name: "Status", DataTypeRules: "string"},
-								},
+								}),
 								Indexes: [][]string{{"id"}},
 								StateMachine: &inputStateMachine{
 									States: map[string]*inputState{
@@ -947,15 +956,15 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 							},
 							"line_item": {
 								Name:       "Line Item",
-								Attributes: make(map[string]*inputAttribute),
+								Attributes: nil,
 							},
 							"product": {
 								Name:       "Product",
-								Attributes: make(map[string]*inputAttribute),
+								Attributes: nil,
 							},
 							"book": {
 								Name:       "Book",
-								Attributes: make(map[string]*inputAttribute),
+								Attributes: nil,
 							},
 						},
 						ClassGeneralizations: map[string]*inputClassGeneralization{
@@ -1015,9 +1024,11 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 	suite.Equal("customer", class.ActorKey)
 
 	// Verify attributes
-	suite.Require().Contains(class.Attributes, "id")
-	suite.Equal("ID", class.Attributes["id"].Name)
-	suite.Equal("int", class.Attributes["id"].DataTypeRules)
+	suite.True(class.hasAttributeKey("id"))
+	inputIDAttr, ok := class.attributeByKey("id")
+	suite.Require().True(ok)
+	suite.Equal("ID", inputIDAttr.Name)
+	suite.Equal("int", inputIDAttr.DataTypeRules)
 
 	// Verify state machine
 	suite.Require().NotNil(class.StateMachine)
@@ -1051,7 +1062,7 @@ func (suite *ConvertSuite) TestConvertParameterTypeSpecRoundTrip() {
 						Classes: map[string]*inputClass{
 							"widget": {
 								Name:       "Widget",
-								Attributes: make(map[string]*inputAttribute),
+								Attributes: nil,
 								Actions: map[string]*inputAction{
 									"adjust": {
 										Name: "Adjust",
@@ -1134,7 +1145,7 @@ func (suite *ConvertSuite) TestConvertToModelValidationError() {
 							"order": {
 								Name:       "Order",
 								ActorKey:   "nonexistent_actor", // Invalid - references missing actor
-								Attributes: make(map[string]*inputAttribute),
+								Attributes: nil,
 							},
 						},
 						ClassGeneralizations: make(map[string]*inputClassGeneralization),
@@ -1166,10 +1177,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 
 	// Build classes
 	orderClass := model_class.NewClass(orderKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	orderClass.SetAttributes(nil)
 
 	shipmentClass := model_class.NewClass(shipmentKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shipment", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	shipmentClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	shipmentClass.SetAttributes(nil)
 
 	// Build subdomains
 	subdomain1 := model_domain.NewSubdomain(subdomain1Key, "Core", "", "", "")
@@ -1228,7 +1239,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 					"core": {
 						Name: "Core",
 						Classes: map[string]*inputClass{
-							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
+							"order": {Name: "Order", Attributes: nil},
 						},
 						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
@@ -1236,7 +1247,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 					"shipping": {
 						Name: "Shipping",
 						Classes: map[string]*inputClass{
-							"shipment": {Name: "Shipment", Attributes: make(map[string]*inputAttribute)},
+							"shipment": {Name: "Shipment", Attributes: nil},
 						},
 						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
@@ -1289,10 +1300,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 
 	// Build classes
 	orderClass := model_class.NewClass(orderKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	orderClass.SetAttributes(nil)
 
 	productClass := model_class.NewClass(productKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	productClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	productClass.SetAttributes(nil)
 
 	// Build subdomains
 	subdomain1 := model_domain.NewSubdomain(subdomain1Key, "Core", "", "", "")
@@ -1355,7 +1366,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 					"default": {
 						Name: "Core",
 						Classes: map[string]*inputClass{
-							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
+							"order": {Name: "Order", Attributes: nil},
 						},
 						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
@@ -1369,7 +1380,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 					"default": {
 						Name: "Products",
 						Classes: map[string]*inputClass{
-							"product": {Name: "Product", Attributes: make(map[string]*inputAttribute)},
+							"product": {Name: "Product", Attributes: nil},
 						},
 						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),

@@ -4,7 +4,7 @@
     "Details": "Here we have markdown details.\n\nAnd even more.",
     "ActorKey": "actor/actor_key",
     "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
-    "Attributes": {},
+    "Attributes": [],
     "States": {},
     "Events": {},
     "Guards": {

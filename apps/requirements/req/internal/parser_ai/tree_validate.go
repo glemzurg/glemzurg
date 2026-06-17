@@ -241,10 +241,10 @@ func validateClassCompleteness(domainKey, subdomainKey, classKey string, class *
 	if len(class.Attributes) == 0 && class.ActorKey == "" {
 		return NewParseError(
 			ErrTreeClassNoAttributes,
-			fmt.Sprintf("class '%s' must have at least one attribute defined - attributes describe the data properties of a class; add attributes to the 'attributes' map in the class.json file with name, data type rules, and details",
+			fmt.Sprintf("class '%s' must have at least one attribute defined - attributes describe the data properties of a class; add attributes to the 'attributes' array in class.json with key, name, and data type rules",
 				classKey),
 			classPath,
-		).WithField("attributes").WithHint("add attributes map to class.json: {\"attributes\": {\"attr_key\": {\"name\": ...}}}")
+		).WithField("attributes").WithHint("add attributes array to class.json: {\"attributes\": [{\"key\": \"attr_key\", \"name\": \"...\"}]}")
 	}
 
 	// Check class has a state machine
@@ -330,6 +330,31 @@ func validateSubdomainTree(model *inputModel, domainKey, subdomainKey string, su
 	return nil
 }
 
+func validateClassIndexReferences(class *inputClass, classKey, classPath string) error {
+	for i, index := range class.Indexes {
+		seen := make(map[string]bool)
+		for j, attrKey := range index {
+			if seen[attrKey] {
+				return NewParseError(
+					ErrTreeClassIndexAttrNotFound,
+					fmt.Sprintf("class '%s' index[%d] contains duplicate attribute key '%s'", classKey, i, attrKey),
+					classPath,
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(class.attributeKeysInOrder(), ", ")))
+			}
+			seen[attrKey] = true
+
+			if !class.hasAttributeKey(attrKey) {
+				return NewParseError(
+					ErrTreeClassIndexAttrNotFound,
+					fmt.Sprintf("class '%s' index[%d] references attribute '%s' which does not exist", classKey, i, attrKey),
+					classPath,
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(class.attributeKeysInOrder(), ", ")))
+			}
+		}
+	}
+	return nil
+}
+
 // validateClassTree validates a class and its children.
 func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey string, class *inputClass) error {
 	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
@@ -345,29 +370,8 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		}
 	}
 
-	// Validate indexes reference valid attributes
-	for i, index := range class.Indexes {
-		seen := make(map[string]bool)
-		for j, attrKey := range index {
-			// Check for duplicates within this index
-			if seen[attrKey] {
-				return NewParseError(
-					ErrTreeClassIndexAttrNotFound,
-					fmt.Sprintf("class '%s' index[%d] contains duplicate attribute key '%s'", classKey, i, attrKey),
-					classPath,
-				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(sortedKeys(class.Attributes), ", ")))
-			}
-			seen[attrKey] = true
-
-			// Check that the attribute exists
-			if _, ok := class.Attributes[attrKey]; !ok {
-				return NewParseError(
-					ErrTreeClassIndexAttrNotFound,
-					fmt.Sprintf("class '%s' index[%d] references attribute '%s' which does not exist", classKey, i, attrKey),
-					classPath,
-				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(sortedKeys(class.Attributes), ", ")))
-			}
-		}
+	if err := validateClassIndexReferences(class, classKey, classPath); err != nil {
+		return err
 	}
 
 	// Validate attribute key-name consistency
@@ -1436,12 +1440,11 @@ func validateClassNameUniqueness(class *inputClass, domainKey, subdomainKey, cla
 	return nil
 }
 
-// validateAttributeKeyNameConsistency checks that each attribute map key
-// matches keyFromName(name).
+// validateAttributeKeyNameConsistency checks that each attribute key matches keyFromName(name).
 func validateAttributeKeyNameConsistency(class *inputClass, domainKey, subdomainKey, classKey string) error {
 	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
-	for key, attr := range class.Attributes {
-		if err := validateMapKeyMatchesName(key, attr.Name, "attribute", ErrClassAttrKeyNameMismatch, classPath); err != nil {
+	for _, attr := range class.Attributes {
+		if err := validateMapKeyMatchesName(attr.Key, attr.Name, "attribute", ErrClassAttrKeyNameMismatch, classPath); err != nil {
 			return err
 		}
 	}

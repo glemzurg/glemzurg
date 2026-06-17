@@ -1,19 +1,22 @@
 {
     "name": "Order",
-    "attributes": {
-        "order_date": {
+    "attributes": [
+        {
             "name": "Order Date",
             "data_type_rules": "ISO 8601 date string",
-            "details": "The date when the order was placed"
+            "details": "The date when the order was placed",
+            "key": "order_date"
         },
-        "total_amount": {
+        {
             "name": "Total Amount",
             "data_type_rules": "Positive decimal with 2 decimal places",
-            "nullable": false
+            "nullable": false,
+            "key": "total_amount"
         },
-        "notes": {
+        {
             "name": "Notes",
-            "nullable": true
+            "nullable": true,
+            "key": "notes"
         }
-    }
+    ]
 }

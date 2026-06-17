@@ -27,7 +27,7 @@ func TestActionGuaranteeDisplayDescriptionInMarkdown(t *testing.T) {
 	require.NoError(t, err)
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{nameAttrKey: nameAttr})
+	class.SetAttributes([]model_class.Attribute{nameAttr})
 	class.SetActions(map[identity.Key]model_state.Action{
 		actionKey: model_state.NewAction(
 			actionKey,

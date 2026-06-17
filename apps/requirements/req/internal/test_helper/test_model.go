@@ -277,10 +277,7 @@ func GetStrictTestModel() core.Model {
 					}
 
 					// Add to class attributes.
-					if class.Attributes == nil {
-						class.Attributes = make(map[identity.Key]model_class.Attribute)
-					}
-					class.Attributes[dummyAttrKey] = dummyAttr
+					class.Attributes = append(class.Attributes, dummyAttr)
 
 					// Update the class in the subdomain.
 					subdomain.Classes[classKey] = class
@@ -399,11 +396,11 @@ func fixStrictModelNames(model *core.Model) {
 				}
 
 				// Fix attribute names.
-				for attrKey, attr := range class.Attributes {
-					expectedName := nameFromKey(attrKey.SubKey)
+				for i, attr := range class.Attributes {
+					expectedName := nameFromKey(attr.Key.SubKey)
 					if attr.Name != expectedName {
 						attr.Name = expectedName
-						class.Attributes[attrKey] = attr
+						class.Attributes[i] = attr
 					}
 				}
 
@@ -1674,11 +1671,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 
 	// Order class: rich, full state machine, 3 attributes.
 	classOrder := model_class.NewClass(k.classOrder, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "An order placed by a customer.", UnfinishedNotes: notesClassOrder, UmlComment: "the order class"})
-	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{
-		k.attrOrderDate: a.orderDate,
-		k.attrTotal:     a.total,
-		k.attrStatus:    a.status,
-	})
+	classOrder.SetAttributes([]model_class.Attribute{a.orderDate, a.total, a.status})
 	classOrder.SetInvariants(l.classInvariants1)
 	classOrder.SetStates(sm.states)
 	classOrder.SetEvents(sm.events)
@@ -1692,9 +1685,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	// Superclass in product_types generalization. Linked to actorSystem.
 	classProduct := model_class.NewClass(k.classProduct, model_class.ClassLinks{ActorKey: &k.actorSystem, SuperclassOfKey: &k.classGen2, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "A product for sale.", UnfinishedNotes: notesClassProduct, UmlComment: ""})
 	classProduct.SetInvariants(l.classInvariants2)
-	classProduct.SetAttributes(map[identity.Key]model_class.Attribute{
-		k.attrProductName: a.productName,
-	})
+	classProduct.SetAttributes([]model_class.Attribute{a.productName})
 	c.all[k.classProduct] = classProduct
 
 	// Line item: association class AND subclass in product_types generalization.

@@ -57,16 +57,16 @@ func TestGenerateClassesMermaidShowsAttributeIndexes(t *testing.T) {
 	nameAttrKey := helper.Must(identity.NewAttributeKey(classKey, "name"))
 
 	widget := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Widget"})
-	widget.SetAttributes(map[identity.Key]model_class.Attribute{
-		keyAttrKey: helper.Must(model_class.NewAttribute(
+	widget.SetAttributes([]model_class.Attribute{
+		helper.Must(model_class.NewAttribute(
 			keyAttrKey, "Id", "", "", nil, false,
 			model_class.AttributeAnnotations{IndexNums: []uint{0}},
 		)),
-		emailAttrKey: helper.Must(model_class.NewAttribute(
+		helper.Must(model_class.NewAttribute(
 			emailAttrKey, "Email", "", "", nil, false,
 			model_class.AttributeAnnotations{IndexNums: []uint{1, 3}},
 		)),
-		nameAttrKey: helper.Must(model_class.NewAttribute(
+		helper.Must(model_class.NewAttribute(
 			nameAttrKey, "Name", "", "", nil, false,
 			model_class.AttributeAnnotations{},
 		)),

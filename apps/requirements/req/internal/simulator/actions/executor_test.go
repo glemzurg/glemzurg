@@ -146,7 +146,7 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transition := model_state.NewTransition(transKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateClosedKey: model_state.NewState(stateClosedKey, "Closed", "", ""),
@@ -625,7 +625,7 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 	transition := model_state.NewTransition(transKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 	})
@@ -667,7 +667,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 	transition := model_state.NewTransition(transKey, &stateOpenKey, eventDeleteKey, nil, nil, nil, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 	})
@@ -755,7 +755,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	transReject := model_state.NewTransition(transRejectKey, &stateOpenKey, eventReviewKey, &guardLowKey, nil, &stateRejectedKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:     model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateApprovedKey: model_state.NewState(stateApprovedKey, "Approved", "", ""),
@@ -826,7 +826,7 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	trans2 := model_state.NewTransition(trans2Key, &stateOpenKey, eventKey, &guardAlwaysKey2, nil, &stateBKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateAKey:    model_state.NewState(stateAKey, "A", "", ""),
@@ -876,7 +876,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	trans := model_state.NewTransition(transKey, &stateOpenKey, eventKey, &guardNeverKey, nil, &stateAKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateAKey:    model_state.NewState(stateAKey, "A", "", ""),

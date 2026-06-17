@@ -137,7 +137,9 @@ func (r *Requirements) flattenModel() {
 				r.Classes[classKey] = class
 
 				// Attributes.
-				maps.Copy(r.Attributes, class.Attributes)
+				for _, attr := range class.Attributes {
+					r.Attributes[attr.Key] = attr
+				}
 
 				// Class invariants (slice, not map).
 				for _, inv := range class.Invariants {

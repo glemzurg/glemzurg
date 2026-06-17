@@ -74,6 +74,7 @@ func (suite *AttributeSuite) TestLoad() {
 				model_key,
 				class_key,
 				attribute_key,
+				sort_order,
 				name,
 				details,
 				data_type_rules,
@@ -86,6 +87,7 @@ func (suite *AttributeSuite) TestLoad() {
 				'model_key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/key',
+				0,
 				'Name',
 				'Details',
 				'DataTypeRules',
@@ -268,16 +270,6 @@ func (suite *AttributeSuite) TestQuery() {
 	err := AddAttributes(suite.db, suite.model.Key, map[identity.Key][]model_class.Attribute{
 		suite.class.Key: {
 			{
-				Key:              suite.attributeKeyB,
-				Name:             "NameX",
-				Details:          "DetailsX",
-				DataTypeRules:    "DataTypeRulesX",
-				DerivationPolicy: &model_logic.Logic{Key: suite.logicB.Key},
-				Nullable:         true,
-				UmlComment:       "UmlCommentX",
-				DataType:         &suite.dataTypeB,
-			},
-			{
 				Key:              suite.attributeKey,
 				Name:             "Name",
 				Details:          "Details",
@@ -286,6 +278,16 @@ func (suite *AttributeSuite) TestQuery() {
 				Nullable:         true,
 				UmlComment:       "UmlComment",
 				DataType:         &suite.dataType,
+			},
+			{
+				Key:              suite.attributeKeyB,
+				Name:             "NameX",
+				Details:          "DetailsX",
+				DataTypeRules:    "DataTypeRulesX",
+				DerivationPolicy: &model_logic.Logic{Key: suite.logicB.Key},
+				Nullable:         true,
+				UmlComment:       "UmlCommentX",
+				DataType:         &suite.dataTypeB,
 			},
 		},
 	})

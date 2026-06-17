@@ -105,15 +105,15 @@ func collectClassExpressionIssues(
 		}
 	}
 
-	for aKey, attr := range class.Attributes {
+	for _, attr := range class.Attributes {
 		if attr.DerivationPolicy != nil {
-			loc := fmt.Sprintf("attribute %q derivation", aKey.String())
+			loc := fmt.Sprintf("attribute %q derivation", attr.Key.String())
 			if issue := diagnoseUnparsedSpec(&attr.DerivationPolicy.Spec, classPF, class.Key, loc); issue != nil {
 				issues = append(issues, *issue)
 			}
 		}
 		for i := range attr.Invariants {
-			loc := fmt.Sprintf("attribute %q invariant %d", aKey.String(), i)
+			loc := fmt.Sprintf("attribute %q invariant %d", attr.Key.String(), i)
 			if issue := diagnoseUnparsedSpec(&attr.Invariants[i].Spec, classPF, class.Key, loc); issue != nil {
 				issues = append(issues, *issue)
 			}

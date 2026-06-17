@@ -875,7 +875,7 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		Details:         class.Details,
 		UnfinishedNotes: class.UnfinishedNotes,
 		UmlComment:      class.UMLComment,
-		Attributes:      make(map[identity.Key]model_class.Attribute),
+		Attributes:      nil,
 		States:          make(map[identity.Key]model_state.State),
 		Events:          make(map[identity.Key]model_state.Event),
 		Guards:          make(map[identity.Key]model_state.Guard),
@@ -932,12 +932,13 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 
 // convertClassAttributesAndInvariants converts attributes and class-level invariants into the result class.
 func convertClassAttributesAndInvariants(class *inputClass, result *model_class.Class, classKey identity.Key, classFile string) error {
-	for attrKeyStr, attr := range class.Attributes {
-		converted, err := convertAttributeToModel(attrKeyStr, attr, classKey, class.Indexes, classFile)
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
+		converted, err := convertAttributeToModel(attr, classKey, class.Indexes, classFile)
 		if err != nil {
 			return err
 		}
-		result.Attributes[converted.Key] = converted
+		result.Attributes = append(result.Attributes, converted)
 	}
 
 	classInvariants, err := convertLogicsToModel(class.Invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
@@ -968,20 +969,20 @@ func convertClassActionsAndQueries(class *inputClass, result *model_class.Class,
 }
 
 // convertAttributeToModel converts an inputAttribute to a model_class.Attribute.
-func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey identity.Key, indexes [][]string, classFile string) (model_class.Attribute, error) {
-	attrKey, err := identity.NewAttributeKey(classKey, keyStr)
+func convertAttributeToModel(attr *inputAttribute, classKey identity.Key, indexes [][]string, classFile string) (model_class.Attribute, error) {
+	attrKey, err := identity.NewAttributeKey(classKey, attr.Key)
 	if err != nil {
 		return model_class.Attribute{}, convErr(
 			ErrConvKeyConstruction,
-			fmt.Sprintf("failed to create attribute key '%s': %s", keyStr, err.Error()),
+			fmt.Sprintf("failed to create attribute key '%s': %s", attr.Key, err.Error()),
 			classFile,
-		).WithField(fmt.Sprintf("attributes.%s", keyStr))
+		).WithField(fmt.Sprintf("attributes.%s.key", attr.Key))
 	}
 
 	// Find which indexes this attribute is part of
 	var indexNums []uint
 	for i, index := range indexes {
-		if slices.Contains(index, keyStr) {
+		if slices.Contains(index, attr.Key) {
 			indexNums = append(indexNums, uint(i)) //nolint:gosec // index i is bounded by slice length, no overflow possible
 		}
 	}
@@ -997,14 +998,14 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 	}
 
 	// Parse the data type rules.
-	parsedDataType, err := convertAttributeDataType(attrKey, attr, keyStr, classFile)
+	parsedDataType, err := convertAttributeDataType(attrKey, attr, attr.Key, classFile)
 	if err != nil {
 		return model_class.Attribute{}, err
 	}
 	result.DataType = parsedDataType
 
 	// Parse optional type_spec and attach to the DataType.
-	typeSpec, err := convertAttributeTypeSpec(attr, keyStr, classFile)
+	typeSpec, err := convertAttributeTypeSpec(attr, attr.Key, classFile)
 	if err != nil {
 		return model_class.Attribute{}, err
 	}
@@ -1012,7 +1013,7 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 		result.DataType.TypeSpec = typeSpec
 	}
 
-	derivationPolicy, err := convertAttributeDerivation(attr, attrKey, keyStr, classFile)
+	derivationPolicy, err := convertAttributeDerivation(attr, attrKey, attr.Key, classFile)
 	if err != nil {
 		return model_class.Attribute{}, err
 	}
@@ -1021,7 +1022,7 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 	// Convert attribute invariants
 	attrInvariants, err := convertLogicsToModel(attr.Invariants, model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
 	if err != nil {
-		return model_class.Attribute{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert attribute '%s' invariants: %s", keyStr, err.Error()), classFile)
+		return model_class.Attribute{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert attribute '%s' invariants: %s", attr.Key, err.Error()), classFile)
 	}
 	result.SetInvariants(attrInvariants)
 

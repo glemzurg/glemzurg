@@ -18,15 +18,9 @@ func TestComputedSimpleActionGuaranteeDescription(t *testing.T) {
 	nameKey := helper.Must(identity.NewAttributeKey(classKey, "name"))
 	socialKey := helper.Must(identity.NewAttributeKey(classKey, "social_only"))
 
-	attributes := map[identity.Key]Attribute{
-		nameKey: {
-			Key:  nameKey,
-			Name: "Display Name",
-		},
-		socialKey: {
-			Key:  socialKey,
-			Name: "Is Social Only",
-		},
+	attributes := []Attribute{
+		{Key: nameKey, Name: "Display Name"},
+		{Key: socialKey, Name: "Is Social Only"},
 	}
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(

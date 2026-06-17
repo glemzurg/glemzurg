@@ -209,6 +209,7 @@ func allCodeConstants() map[string]Code {
 		// Attribute errors.
 		"AttrKeyInvalid":            AttrKeyInvalid,
 		"AttrKeyTypeInvalid":        AttrKeyTypeInvalid,
+		"AttrDuplicateKey":          AttrDuplicateKey,
 		"AttrNameRequired":          AttrNameRequired,
 		"AttrDerivationTypeInvalid": AttrDerivationTypeInvalid,
 		"AttrInvariantTypeInvalid":  AttrInvariantTypeInvalid,

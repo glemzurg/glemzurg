@@ -1476,10 +1476,7 @@ func assembleClassInvariants(class *model_class.Class, invKeys []identity.Key, l
 // assembleClassStructure attaches attributes to a class.
 func assembleClassStructure(class *model_class.Class, classKey identity.Key, ds *readDomainStructure) {
 	if attributes, ok := ds.attributesMap[classKey]; ok {
-		class.Attributes = make(map[identity.Key]model_class.Attribute)
-		for _, attr := range attributes {
-			class.Attributes[attr.Key] = attr
-		}
+		class.Attributes = append([]model_class.Attribute(nil), attributes...)
 	}
 }
 

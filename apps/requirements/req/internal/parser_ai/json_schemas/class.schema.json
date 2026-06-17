@@ -23,14 +23,16 @@
       "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the class in generated UML diagrams. Use for diagram-specific clarifications that don't belong in the main description."
     },
     "attributes": {
-      "type": "object",
-      "description": "Map of attribute keys to attribute definitions. Each key in this object becomes the attribute's identifier and must be unique within the class. These keys are referenced by indexes and other parts of the model. If validation fails: check that each attribute has a valid 'name' field.",
-      "propertyNames": {
-        "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
-      },
-      "additionalProperties": {
+      "type": "array",
+      "description": "Ordered list of class attributes; array order is declaration order and matches the core model. Each attribute key must be unique within the class and is referenced by indexes and other parts of the model. If validation fails: check that each attribute has valid 'key' and 'name' fields.",
+      "items": {
         "type": "object",
         "properties": {
+          "key": {
+            "type": "string",
+            "description": "Unique attribute identifier within the class (e.g., 'order_date', 'total_amount'). Referenced by indexes. Must match pattern for valid identifiers.",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+          },
           "name": {
             "type": "string",
             "description": "The display name of the attribute (e.g., 'Order Date', 'Total Amount'). This is the human-readable name shown in diagrams and documentation. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
@@ -94,6 +96,7 @@
           }
         },
         "required": [
+          "key",
           "name"
         ],
         "additionalProperties": false
@@ -101,12 +104,12 @@
     },
     "indexes": {
       "type": "array",
-      "description": "List of indexes for the class. Each index is an array of attribute keys that together form a unique or lookup index. The attribute keys must match keys defined in the 'attributes' object above. For example, if you have attributes 'customer_id' and 'order_date', an index could be ['customer_id', 'order_date']. If validation fails: verify each string in the index arrays matches an attribute key defined in this class's 'attributes' object.",
+      "description": "List of indexes for the class. Each index is an array of attribute keys that together form a unique or lookup index. The attribute keys must match 'key' values defined in the 'attributes' array above. For example, if you have attributes with keys 'customer_id' and 'order_date', an index could be ['customer_id', 'order_date']. If validation fails: verify each string in the index arrays matches an attribute key defined in this class's 'attributes' array.",
       "items": {
         "type": "array",
         "items": {
           "type": "string",
-          "description": "An attribute key that must exist in this class's 'attributes' object. If validation fails: check spelling and ensure the attribute is defined above."
+          "description": "An attribute key that must exist in this class's 'attributes' array. If validation fails: check spelling and ensure the attribute is defined above."
         },
         "minItems": 1
       }

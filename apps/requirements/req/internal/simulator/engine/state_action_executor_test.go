@@ -65,7 +65,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	stateClosed := model_state.NewState(stateClosedKey, "Closed", "", "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
 		stateClosedKey: stateClosed,
@@ -113,7 +113,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	stateOpen.SetActions([]model_state.StateAction{stateActionEntry})
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
 	})
@@ -150,7 +150,7 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
 	})
@@ -178,7 +178,7 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	bogusStateKey := mustKey("domain/d/subdomain/s/class/order/state/bogus")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})

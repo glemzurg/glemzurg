@@ -98,7 +98,7 @@ func testLinkDefClass() (model_class.Class, identity.Key) {
 	transDelete := model_state.NewTransition(transDeleteKey, &stateActiveKey, eventDeleteKey, nil, nil, &stateDeletedKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "LinkDef", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey:  stateActive,
 		stateDeletedKey: stateDeleted,
@@ -131,7 +131,7 @@ func simpleCreateClass(subKey, name string) (model_class.Class, identity.Key) {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: name, Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{stateActiveKey: stateActive})
 	class.SetEvents(map[identity.Key]model_state.Event{eventCreateKey: eventCreate})
 	class.SetGuards(map[identity.Key]model_state.Guard{})

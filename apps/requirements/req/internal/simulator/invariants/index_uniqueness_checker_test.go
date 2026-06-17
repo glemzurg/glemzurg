@@ -14,7 +14,7 @@ import (
 
 // --- Helpers for building test models with indexes ---
 
-func indexTestModel(attrs map[identity.Key]model_class.Attribute) (*core.Model, identity.Key) {
+func indexTestModel(attrs []model_class.Attribute) (*core.Model, identity.Key) {
 	classKey := mustKey("domain/d/subdomain/s/class/plane")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Plane", Details: "", UnfinishedNotes: "", UmlComment: ""})
@@ -55,9 +55,7 @@ func enumAttr(name string, values []string, indexNums []uint) model_class.Attrib
 func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
 	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/name"), "name", "", "string", nil, false,
 		model_class.AttributeAnnotations{}))
-	model, _ := indexTestModel(map[identity.Key]model_class.Attribute{
-		attr.Key: attr,
-	})
+	model, _ := indexTestModel([]model_class.Attribute{attr})
 
 	checker := NewIndexUniquenessChecker(model)
 	s.False(checker.HasIndexes())
@@ -69,9 +67,7 @@ func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
 
 func (s *InvariantsSuite) TestIndexCheckerSingleAttrNoConflict() {
 	attr := spanAttr("tail_number", []uint{1})
-	model, classKey := indexTestModel(map[identity.Key]model_class.Attribute{
-		attr.Key: attr,
-	})
+	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
 	checker := NewIndexUniquenessChecker(model)
 	s.True(checker.HasIndexes())
@@ -92,9 +88,7 @@ func (s *InvariantsSuite) TestIndexCheckerSingleAttrNoConflict() {
 
 func (s *InvariantsSuite) TestIndexCheckerSingleAttrConflict() {
 	attr := spanAttr("tail_number", []uint{1})
-	model, classKey := indexTestModel(map[identity.Key]model_class.Attribute{
-		attr.Key: attr,
-	})
+	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
 	checker := NewIndexUniquenessChecker(model)
 
@@ -120,10 +114,7 @@ func (s *InvariantsSuite) TestIndexCheckerCompositeNoConflict() {
 	emailAttr := enumAttr("email", []string{"a@b.com", "c@d.com"}, []uint{1})
 	tenantAttr := enumAttr("tenant", []string{"acme", "globex"}, []uint{1})
 
-	model, classKey := indexTestModel(map[identity.Key]model_class.Attribute{
-		emailAttr.Key:  emailAttr,
-		tenantAttr.Key: tenantAttr,
-	})
+	model, classKey := indexTestModel([]model_class.Attribute{emailAttr, tenantAttr})
 
 	checker := NewIndexUniquenessChecker(model)
 
@@ -148,10 +139,7 @@ func (s *InvariantsSuite) TestIndexCheckerCompositeConflict() {
 	emailAttr := enumAttr("email", []string{"a@b.com", "c@d.com"}, []uint{1})
 	tenantAttr := enumAttr("tenant", []string{"acme", "globex"}, []uint{1})
 
-	model, classKey := indexTestModel(map[identity.Key]model_class.Attribute{
-		emailAttr.Key:  emailAttr,
-		tenantAttr.Key: tenantAttr,
-	})
+	model, classKey := indexTestModel([]model_class.Attribute{emailAttr, tenantAttr})
 
 	checker := NewIndexUniquenessChecker(model)
 
@@ -179,10 +167,7 @@ func (s *InvariantsSuite) TestIndexCheckerMultipleIndexes() {
 	tailAttr := spanAttr("tail_number", []uint{1})
 	callAttr := enumAttr("callsign", []string{"AA1", "AA2", "BB1"}, []uint{2})
 
-	model, classKey := indexTestModel(map[identity.Key]model_class.Attribute{
-		tailAttr.Key: tailAttr,
-		callAttr.Key: callAttr,
-	})
+	model, classKey := indexTestModel([]model_class.Attribute{tailAttr, callAttr})
 
 	checker := NewIndexUniquenessChecker(model)
 
@@ -208,9 +193,7 @@ func (s *InvariantsSuite) TestIndexCheckerMultipleIndexes() {
 
 func (s *InvariantsSuite) TestIndexCheckerNilValuesDuplicate() {
 	attr := spanAttr("tail_number", []uint{1})
-	model, classKey := indexTestModel(map[identity.Key]model_class.Attribute{
-		attr.Key: attr,
-	})
+	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
 	checker := NewIndexUniquenessChecker(model)
 
@@ -231,9 +214,7 @@ func (s *InvariantsSuite) TestIndexCheckerNilValuesDuplicate() {
 func (s *InvariantsSuite) TestIndexCheckerMixedTypesNotEqual() {
 	// Number 42 should not equal String "42"
 	attr := spanAttr("id", []uint{1})
-	model, classKey := indexTestModel(map[identity.Key]model_class.Attribute{
-		attr.Key: attr,
-	})
+	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
 	checker := NewIndexUniquenessChecker(model)
 

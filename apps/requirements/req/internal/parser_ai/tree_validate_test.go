@@ -69,9 +69,9 @@ func (suite *TreeValidateSuite) TestClassIndexAttrNotFound() {
 func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
 	model := t_buildMinimalModelTree()
 	// Add attribute and index with duplicate
-	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Attributes = map[string]*inputAttribute{
+	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Attributes = inputAttributesFrom(map[string]inputAttribute{
 		"id": {Name: "ID", DataTypeRules: "unconstrained"},
-	}
+	})
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Indexes = [][]string{{"id", "id"}}
 
 	err := validateModelTree(model)
@@ -1044,7 +1044,7 @@ func (suite *TreeValidateSuite) TestCompletenessActorClassNoAttributes() {
 	administrator := t_buildCompleteClass()
 	administrator.Name = "Administrator"
 	administrator.ActorKey = "customer"
-	administrator.Attributes = map[string]*inputAttribute{}
+	administrator.Attributes = nil
 	administrator.Indexes = nil
 	model.Domains["orders"].Subdomains["default"].Classes["administrator"] = administrator
 
@@ -1055,7 +1055,7 @@ func (suite *TreeValidateSuite) TestCompletenessActorClassNoAttributes() {
 // TestCompletenessClassNoAttributes verifies error when class has no attributes.
 func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
 	model := t_buildCompleteModelTree()
-	model.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = map[string]*inputAttribute{} // Remove all attributes
+	model.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = nil // Remove all attributes
 
 	err := validateModelCompleteness(model)
 	suite.Require().Error(err)
@@ -1195,7 +1195,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			name: "no_attributes",
 			buildModel: func() *inputModel {
 				m := t_buildCompleteModelTree()
-				m.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = map[string]*inputAttribute{}
+				m.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = nil
 				return m
 			},
 			expectedCode: ErrTreeClassNoAttributes,
@@ -1384,7 +1384,7 @@ func t_buildMinimalModelTree() *inputModel {
 						Classes: map[string]*inputClass{
 							"class1": {
 								Name:       "Class 1",
-								Attributes: map[string]*inputAttribute{},
+								Attributes: nil,
 							},
 						},
 						ClassGeneralizations: map[string]*inputClassGeneralization{},
@@ -1420,10 +1420,10 @@ func t_buildValidModelTree() *inputModel {
 							"order": {
 								Name:     "Order",
 								ActorKey: "customer",
-								Attributes: map[string]*inputAttribute{
+								Attributes: inputAttributesFrom(map[string]inputAttribute{
 									"id":     {Name: "ID", DataTypeRules: "unconstrained"},
 									"status": {Name: "Status", DataTypeRules: "enum of active, pending, completed"},
-								},
+								}),
 								Indexes: [][]string{{"id"}, {"status"}},
 								StateMachine: &inputStateMachine{
 									States: map[string]*inputState{
@@ -1453,15 +1453,15 @@ func t_buildValidModelTree() *inputModel {
 							},
 							"line_item": {
 								Name:       "Line Item",
-								Attributes: map[string]*inputAttribute{},
+								Attributes: nil,
 							},
 							"product": {
 								Name:       "Product",
-								Attributes: map[string]*inputAttribute{},
+								Attributes: nil,
 							},
 							"book": {
 								Name:       "Book",
-								Attributes: map[string]*inputAttribute{},
+								Attributes: nil,
 							},
 						},
 						ClassGeneralizations: map[string]*inputClassGeneralization{
@@ -1531,9 +1531,9 @@ func t_buildCompleteClass() *inputClass {
 	toState := "active"
 	return &inputClass{
 		Name: "Complete Class",
-		Attributes: map[string]*inputAttribute{
+		Attributes: inputAttributesFrom(map[string]inputAttribute{
 			"id": {Name: "ID", DataTypeRules: "unconstrained"},
-		},
+		}),
 		StateMachine: &inputStateMachine{
 			States: map[string]*inputState{
 				"active": {Name: "Active"},
@@ -1769,9 +1769,9 @@ func (suite *TreeValidateSuite) TestStateKeyNameMatch() {
 func (suite *TreeValidateSuite) TestAttributeKeyNameMismatch() {
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
-	class.Attributes = map[string]*inputAttribute{
+	class.Attributes = inputAttributesFrom(map[string]inputAttribute{
 		"wrong_key": {Name: "Order Total"},
-	}
+	})
 
 	err := validateModelTree(model)
 	suite.Require().Error(err)
@@ -1788,9 +1788,9 @@ func (suite *TreeValidateSuite) TestAttributeKeyNameMismatch() {
 func (suite *TreeValidateSuite) TestAttributeKeyNameMatch() {
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
-	class.Attributes = map[string]*inputAttribute{
+	class.Attributes = inputAttributesFrom(map[string]inputAttribute{
 		"order_total": {Name: "Order Total"},
-	}
+	})
 
 	err := validateModelTree(model)
 	suite.Require().NoError(err)

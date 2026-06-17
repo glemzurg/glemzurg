@@ -444,6 +444,7 @@ CREATE TABLE attribute (
   model_key text NOT NULL,
   attribute_key text NOT NULL,
   class_key text NOT NULL,
+  sort_order int NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
   data_type_rules text DEFAULT NULL,
@@ -460,6 +461,7 @@ CREATE TABLE attribute (
 COMMENT ON TABLE attribute IS 'An attribute of a class.';
 COMMENT ON COLUMN attribute.attribute_key IS 'The internal ID.';
 COMMENT ON COLUMN attribute.class_key IS 'The class this attribute is part of.';
+COMMENT ON COLUMN attribute.sort_order IS 'Zero-based position of this attribute within its class; preserves source declaration order.';
 COMMENT ON COLUMN attribute.model_key IS 'The model this class attribute is part of.';
 COMMENT ON COLUMN attribute.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN attribute.data_type_key IS 'If the rules are parsable, the data type they parse into.';

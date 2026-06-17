@@ -91,10 +91,10 @@ func buildTestModel() core.Model {
 
 	// Class.
 	class := model_class.NewClass(tClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.Attributes = map[identity.Key]model_class.Attribute{
-		tAttributeKey: helper.Must(model_class.NewAttribute(tAttributeKey, "amount", "", "", nil, false,
+	class.SetAttributes([]model_class.Attribute{
+		helper.Must(model_class.NewAttribute(tAttributeKey, "amount", "", "", nil, false,
 			model_class.AttributeAnnotations{})),
-	}
+	})
 	stateOpen := model_state.NewState(tStateOpenKey, "Open", "", "")
 	stateOpen.SetActions([]model_state.StateAction{
 		model_state.NewStateAction(tSActionKey, tActionKey, "do"),
@@ -127,7 +127,7 @@ func buildTestModel() core.Model {
 
 	// Second class (minimal).
 	class2 := model_class.NewClass(tClass2Key, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class2.Attributes = map[identity.Key]model_class.Attribute{}
+	class2.SetAttributes(nil)
 	class2.States = map[identity.Key]model_state.State{}
 	class2.Events = map[identity.Key]model_state.Event{}
 	class2.Guards = map[identity.Key]model_state.Guard{}

@@ -117,7 +117,7 @@ func TestUnconstrainedAttributeTypeSpecDisplayInMarkdown(t *testing.T) {
 	attr.DataType.TypeSpec = &typeSpec
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Widget"})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{attrKey: attr})
+	class.SetAttributes([]model_class.Attribute{attr})
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}

@@ -57,7 +57,7 @@ func (s *ClassCatalogSuite) TestClassWithNoStatesScopedForLiveness() {
 	classKey := mustKey("domain/d/subdomain/s/class/simple")
 
 	simpleClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Simple", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	simpleClass.SetAttributes(map[identity.Key]model_class.Attribute{})
+	simpleClass.SetAttributes(nil)
 	simpleClass.SetStates(map[identity.Key]model_state.State{})
 	simpleClass.SetEvents(map[identity.Key]model_state.Event{})
 	simpleClass.SetGuards(map[identity.Key]model_state.Guard{})
@@ -139,7 +139,7 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Counter", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -306,7 +306,7 @@ func (s *ClassCatalogSuite) TestSurfaceDoActions_ReturnsStateDoActions() {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Counter", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -351,7 +351,7 @@ func (s *ClassCatalogSuite) TestSurfaceDoActions_UnaffectedByCalledBy() {
 	orderClass, orderKey := testOrderClass()
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Counter", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})

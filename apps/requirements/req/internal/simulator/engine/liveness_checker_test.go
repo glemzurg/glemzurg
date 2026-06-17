@@ -42,9 +42,7 @@ func livenessOrderClass() (model_class.Class, identity.Key) {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrAmountKey: attrAmount,
-	})
+	class.SetAttributes([]model_class.Attribute{attrAmount})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
 	})
@@ -76,9 +74,7 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrNameKey: attrName,
-	})
+	class.SetAttributes([]model_class.Attribute{attrName})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -223,9 +219,7 @@ func livenessJurisdictionClass() (model_class.Class, identity.Key) {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Jurisdiction", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrCountryCodeKey: attrCountryCode,
-	})
+	class.SetAttributes([]model_class.Attribute{attrCountryCode})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -313,9 +307,7 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrDerivedKey: attrDerived,
-	})
+	class.SetAttributes([]model_class.Attribute{attrDerived})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
 	})
@@ -460,7 +452,7 @@ func (s *LivenessCheckerSuite) TestStatelessClass_InstantiationViolation() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
 	statelessClass := model_class.NewClass(statelessKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stateless", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	statelessClass.SetAttributes(map[identity.Key]model_class.Attribute{})
+	statelessClass.SetAttributes(nil)
 	statelessClass.SetStates(map[identity.Key]model_state.State{})
 	statelessClass.SetEvents(map[identity.Key]model_state.Event{})
 	statelessClass.SetGuards(map[identity.Key]model_state.Guard{})

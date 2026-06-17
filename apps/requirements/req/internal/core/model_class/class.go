@@ -20,8 +20,8 @@ type Class struct {
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
 	// Children
-	Invariants  []model_logic.Logic        // Invariants that must be true for all objects of this class.
-	Attributes  map[identity.Key]Attribute // The attributes of a class.
+	Invariants  []model_logic.Logic // Invariants that must be true for all objects of this class.
+	Attributes  []Attribute         // Class attributes in source order; keys are unique within the class.
 	States      map[identity.Key]model_state.State
 	Events      map[identity.Key]model_state.Event
 	Guards      map[identity.Key]model_state.Guard
@@ -148,7 +148,7 @@ func (c *Class) SetInvariants(invariants []model_logic.Logic) {
 	c.Invariants = invariants
 }
 
-func (c *Class) SetAttributes(attributes map[identity.Key]Attribute) {
+func (c *Class) SetAttributes(attributes []Attribute) {
 	c.Attributes = attributes
 }
 
@@ -224,6 +224,9 @@ func (c *Class) validateClassChildren(ctx *coreerr.ValidationContext) error {
 	actionKeys := make(map[identity.Key]bool)
 	for actionKey := range c.Actions {
 		actionKeys[actionKey] = true
+	}
+	if err := validateUniqueAttributeKeys(ctx, c.Attributes); err != nil {
+		return err
 	}
 	for _, attr := range c.Attributes {
 		attrCtx := ctx.Child("attribute", attr.Key.String())

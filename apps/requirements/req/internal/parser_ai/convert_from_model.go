@@ -381,7 +381,7 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 		Details:         class.Details,
 		UnfinishedNotes: class.UnfinishedNotes,
 		UMLComment:      class.UmlComment,
-		Attributes:      make(map[string]*inputAttribute),
+		Attributes:      nil,
 		Indexes:         [][]string{},
 		Actions:         make(map[string]*inputAction),
 		Queries:         make(map[string]*inputQuery),
@@ -392,23 +392,23 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 		result.ActorKey = class.ActorKey.SubKey
 	}
 
-	// Convert attributes
-	for key, attr := range class.Attributes {
-		converted := convertAttributeFromModel(&attr)
-		result.Attributes[key.SubKey] = converted
+	// Convert attributes in core slice order.
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
+		result.Attributes = append(result.Attributes, *convertAttributeFromModel(attr))
 	}
 
 	// Build indexes from attribute IndexNums
 	indexMap := make(map[uint][]string)
-	for key, attr := range class.Attributes {
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
 		for _, indexNum := range attr.IndexNums {
-			indexMap[indexNum] = append(indexMap[indexNum], key.SubKey)
+			indexMap[indexNum] = append(indexMap[indexNum], attr.Key.SubKey)
 		}
 	}
-	// Convert map to slice; sort attribute names within each index group for stable export.
+	// Convert map to slice; preserve attribute order within each index from core slice walk.
 	for i := range uint(len(indexMap)) {
 		if attrs, ok := indexMap[i]; ok {
-			sort.Strings(attrs)
 			result.Indexes = append(result.Indexes, attrs)
 		}
 	}
@@ -439,6 +439,7 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 // convertAttributeFromModel converts a model_class.Attribute to an inputAttribute.
 func convertAttributeFromModel(attr *model_class.Attribute) *inputAttribute {
 	result := &inputAttribute{
+		Key:           attr.Key.SubKey,
 		Name:          attr.Name,
 		DataTypeRules: attr.DataTypeRules,
 		Details:       attr.Details,

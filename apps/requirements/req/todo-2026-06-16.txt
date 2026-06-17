@@ -1,7 +1,6 @@
 
 
 
-attributes ordered
 invariants over associations
 invariants reverse over associations
 named sets in invariant

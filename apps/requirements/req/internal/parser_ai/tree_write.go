@@ -327,8 +327,8 @@ func writeClassTree(class *inputClass, classDir string) error {
 	}
 
 	// Write attribute invariants (per attribute subdirectory)
-	for _, attrKey := range sortedKeys(class.Attributes) {
-		attr := class.Attributes[attrKey]
+	for _, attr := range class.Attributes {
+		attrKey := attr.Key
 		if len(attr.Invariants) > 0 {
 			attrInvariantsDir := filepath.Join(classDir, "attributes", attrKey, "invariants")
 			if err := os.MkdirAll(attrInvariantsDir, 0755); err != nil {

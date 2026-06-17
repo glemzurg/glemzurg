@@ -208,6 +208,7 @@ const (
 
 	AttrKeyInvalid            Code = "ATTR_KEY_INVALID"             // Attribute key failed validation.
 	AttrKeyTypeInvalid        Code = "ATTR_KEY_TYPE_INVALID"        // Key is not KEY_TYPE_ATTRIBUTE.
+	AttrDuplicateKey          Code = "ATTR_DUPLICATE_KEY"           // Class lists the same attribute key more than once.
 	AttrNameRequired          Code = "ATTR_NAME_REQUIRED"           // Attribute Name is empty.
 	AttrDerivationTypeInvalid Code = "ATTR_DERIVATION_TYPE_INVALID" // DerivationPolicy logic type is invalid.
 	AttrInvariantTypeInvalid  Code = "ATTR_INVARIANT_TYPE_INVALID"  // Attribute invariant has wrong logic type.

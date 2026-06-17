@@ -1,9 +1,10 @@
 {
     "name": "Order",
-    "attributes": {
-        "order_date": {
+    "attributes": [
+        {
             "name": "Order Date",
-            "unknown_field": "not allowed"
+            "unknown_field": "not allowed",
+            "key": "order_date"
         }
-    }
+    ]
 }

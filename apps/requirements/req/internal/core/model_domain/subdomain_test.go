@@ -362,7 +362,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	validClass.Guards = map[identity.Key]model_state.Guard{guardKey: validGuard}
 	validClass.Actions = map[identity.Key]model_state.Action{actionKey: validAction}
 	validClass.Queries = map[identity.Key]model_state.Query{queryKey: validQuery}
-	validClass.Attributes = map[identity.Key]model_class.Attribute{attrKey: validAttr}
+	validClass.Attributes = []model_class.Attribute{validAttr}
 
 	subdomain := Subdomain{
 		Key:  subdomainKey,
@@ -419,7 +419,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 		model_class.AttributeAnnotations{}))
 
 	wrongDerivClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	wrongDerivClass.Attributes = map[identity.Key]model_class.Attribute{attrKey: wrongDerivAttr}
+	wrongDerivClass.Attributes = []model_class.Attribute{wrongDerivAttr}
 
 	subdomain = Subdomain{
 		Key:  subdomainKey,
