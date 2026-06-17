@@ -14,7 +14,10 @@ classDiagram
 {{ end -}}
 {{ range .Classes -}}
 {{- $class := class_lookup $reqs .Key -}}
-    class {{ nodeid "class" .Key }}["{{ classes_mermaid_class_label . }}"] {
+    class {{ nodeid "class" .Key }}["{{ .Name }}"] {
+{{ if ne .ActorKey nil }}
+        {{ classes_mermaid_stereotype_annotation "actor" }}
+{{ end -}}
 {{- range .Attributes }}
         {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }}
 {{- end }}
@@ -25,7 +28,9 @@ style {{ nodeid "class" (mermaid_focal_class_key .FocalClassKey) }} {{ classes_m
 {{ end -}}
 {{ range .Associations -}}
 {{ if render_association_class_mermaid . -}}
-    class {{ nodeid "assoc" .Key }}["{{ classes_mermaid_association_link_label .Name }}"]
+    class {{ nodeid "assoc" .Key }}["{{ .Name }}"] {
+        {{ classes_mermaid_stereotype_annotation "association" }}
+    }
 {{ end -}}
 {{ end -}}
 {{ range .Associations -}}

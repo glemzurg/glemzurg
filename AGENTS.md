@@ -78,7 +78,7 @@ Good (why): `// ⚠ must be parsed before ◆ so unfinished notes stay out of UM
 
 ## UML stereotypes
 
-UML stereotypes in this repo use **guillemets** (`«»`), not ASCII angle brackets. When the user writes a stereotype as `<>`, `<<`, `<<>>`, or similar bracket shorthand, they mean the guillemet form — e.g. `<<association>>` → `«association»`, `<<actor>>` → `«actor»`. Generated Mermaid and markdown must render stereotypes with `«»`.
+UML stereotypes in this repo use **guillemets** (`«»`), not ASCII angle brackets. When the user writes a stereotype as `<>`, `<<`, `<<>>`, or similar bracket shorthand, they mean the guillemet form — e.g. `<<association>>` → `«association»`, `<<actor>>` → `«actor»`. Rendered diagrams must show `«»`. Mermaid class diagrams encode stereotypes in source as `<<name>>` inside the class body; Mermaid draws them as `«name»` above the class title.
 
 ## Model-agnostic Go
 
