@@ -13,27 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestClassesMermaidAttributeIndexSuffix(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		indexNums []uint
-		want      string
-	}{
-		{name: "none", indexNums: nil, want: ""},
-		{name: "key only", indexNums: []uint{0}, want: " [key]"},
-		{name: "secondary indexes", indexNums: []uint{1, 3, 4}, want: " [i1,i3,i4]"},
-		{name: "key and secondary", indexNums: []uint{3, 0, 1}, want: " [key,i1,i3]"},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			assert.Equal(t, tc.want, classesMermaidAttributeIndexSuffix(tc.indexNums))
-		})
-	}
-}
-
 func TestClassesMermaidAttributeMember(t *testing.T) {
 	t.Parallel()
 

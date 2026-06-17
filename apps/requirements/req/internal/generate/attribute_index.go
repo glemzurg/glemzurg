@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -13,17 +14,49 @@ const attributeIndexKeyLabel = "key"
 
 // ClassIndexListing groups attribute names that share one index number.
 type ClassIndexListing struct {
-	Name       string
+	Heading    string
 	Attributes []string
 }
 
-// attributeIndexLabel names an index for markdown and Mermaid display.
-// Index 0 is "key"; index N for N >= 1 is "iN".
-func attributeIndexLabel(indexNum uint) string {
+// attributeIndexBracketLabel names an index inside attribute bracket suffixes like [key,i3].
+func attributeIndexBracketLabel(indexNum uint) string {
 	if indexNum == 0 {
 		return attributeIndexKeyLabel
 	}
 	return fmt.Sprintf("i%d", indexNum)
+}
+
+func classIndexListingHeading(indexNum uint) string {
+	if indexNum == 0 {
+		return attributeIndexKeyLabel
+	}
+	return fmt.Sprintf("index %d", indexNum)
+}
+
+func attributeIndexBracketSuffix(indexNums []uint) string {
+	if len(indexNums) == 0 {
+		return ""
+	}
+	sorted := slices.Clone(indexNums)
+	slices.Sort(sorted)
+
+	labels := make([]string, 0, len(sorted))
+	for _, indexNum := range sorted {
+		labels = append(labels, attributeIndexBracketLabel(indexNum))
+	}
+	return " [" + strings.Join(labels, ",") + "]"
+}
+
+// classAttributeTableName renders the attribute name column, including derivation prefix
+// and index membership suffix matching the class UML diagram.
+func classAttributeTableName(attr model_class.Attribute) string {
+	var name strings.Builder
+	if attr.DerivationPolicy != nil {
+		name.WriteString("/")
+	}
+	name.WriteString(attr.Name)
+	name.WriteString(attributeIndexBracketSuffix(attr.IndexNums))
+	return name.String()
 }
 
 func classIndexListings(attributes map[identity.Key]model_class.Attribute) []ClassIndexListing {
@@ -48,7 +81,7 @@ func classIndexListings(attributes map[identity.Key]model_class.Attribute) []Cla
 		names := indexMap[indexNum]
 		sort.Strings(names)
 		listings = append(listings, ClassIndexListing{
-			Name:       attributeIndexLabel(indexNum),
+			Heading:    classIndexListingHeading(indexNum),
 			Attributes: names,
 		})
 	}

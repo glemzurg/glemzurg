@@ -45,7 +45,7 @@ This is an actor:
 | Name | Rules | Nullable | TLA+ | Comment |
 | ---- | ----- | -------- | ---- | ------- |
 {{- range .Class.Attributes }}
-| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ expression_spec_display .DerivationPolicy.Spec }}{{ end }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ .Details }} |{{end}}
+| {{ class_attribute_table_name . }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ expression_spec_display .DerivationPolicy.Spec }}{{ end }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ .Details }} |{{end}}
 
 {{- $indexes := class_indexes .Class.Attributes }}
 {{ if ne $indexes nil }}
@@ -53,7 +53,7 @@ This is an actor:
 ### Indexes
 
 {{ range $indexes -}}
-- {{ .Name }} [{{ range $i, $name := .Attributes }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
+- {{ .Heading }} [{{ range $i, $name := .Attributes }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
 {{ end }}
 {{ end }}
 
