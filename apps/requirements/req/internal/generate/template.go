@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"log"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -159,6 +158,7 @@ var _funcMap = template.FuncMap{
 	"render_association_class_mermaid":      renderAssociationClassMermaid,
 	"association_class_key":                 associationClassKeyNode,
 	"classes_mermaid_stereotype_annotation": classesMermaidStereotypeAnnotation,
+	"classes_mermaid_attribute_member":      classesMermaidAttributeMember,
 	"classes_mermaid_focal_class_style":     func() string { return classesMermaidFocalClassStyle },
 	"has_mermaid_focal_class":               hasMermaidFocalClass,
 	"mermaid_focal_class_key":               mermaidFocalClassKey,
@@ -435,31 +435,7 @@ var _funcMap = template.FuncMap{
 		})
 		return results
 	},
-	"class_indexes": func(attributes map[identity.Key]model_class.Attribute) (indexes [][]string) {
-		// Group attribute names by index number.
-		indexMap := map[uint][]string{}
-		for _, attr := range attributes {
-			for _, idx := range attr.IndexNums {
-				indexMap[idx] = append(indexMap[idx], attr.Name)
-			}
-		}
-		if len(indexMap) == 0 {
-			return nil
-		}
-		// Collect and sort index numbers.
-		var nums []uint
-		for num := range indexMap {
-			nums = append(nums, num)
-		}
-		slices.Sort(nums)
-		// Build sorted result.
-		for _, num := range nums {
-			names := indexMap[num]
-			sort.Strings(names)
-			indexes = append(indexes, names)
-		}
-		return indexes
-	},
+	"class_indexes": classIndexListings,
 }
 
 func formatDataTypeRules(rules string, dataType *model_data_type.DataType) string {

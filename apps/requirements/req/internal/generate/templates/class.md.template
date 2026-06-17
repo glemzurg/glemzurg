@@ -53,7 +53,7 @@ This is an actor:
 ### Indexes
 
 {{ range $indexes -}}
-- [{{ range $i, $name := . }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
+- {{ .Name }} [{{ range $i, $name := .Attributes }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
 {{ end }}
 {{ end }}
 

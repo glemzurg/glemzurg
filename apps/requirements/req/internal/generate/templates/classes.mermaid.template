@@ -19,7 +19,7 @@ classDiagram
         {{ classes_mermaid_stereotype_annotation "actor" }}
 {{ end -}}
 {{- range .Attributes }}
-        {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }}
+        {{ classes_mermaid_attribute_member . }}
 {{- end }}
     }
 {{ end -}}

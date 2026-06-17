@@ -1,11 +1,9 @@
 
 
-improved rendering of association classes
 
-index display in uml class graphs
+attributes ordered
 invariants over associations
 invariants reverse over associations
-attributes ordered
 named sets in invariant
 multiplicity enforced in invariants
 span forced in invariant
