@@ -28,11 +28,38 @@ func mergeConstraintsFromExpr(expr me.Expression, constraints *parameterConstrai
 	switch node := expr.(type) {
 	case *me.IfThenElse:
 		tryExtractNullableElseTuple(node, constraints)
+		tryExtractNullableElseMembership(node, constraints)
 	case *me.Membership:
 		tryExtractMembershipConstraint(node, constraints)
 	case *me.BinaryLogic:
 		mergeConstraintsFromExpr(node.Left, constraints)
 		mergeConstraintsFromExpr(node.Right, constraints)
+	}
+}
+
+func tryExtractNullableElseMembership(node *me.IfThenElse, constraints *parameterConstraints) {
+	if constraints.nullableElseMembership != nil {
+		return
+	}
+
+	paramName, condOk := nullCompareParam(node.Condition)
+	if !condOk || !isTrueLiteral(node.Then) {
+		return
+	}
+
+	membership, ok := node.Else.(*me.Membership)
+	if !ok || membership.Negated {
+		return
+	}
+
+	memberParam, setSubKey, ok := paramMembershipInNamedSet(membership)
+	if !ok || memberParam != paramName {
+		return
+	}
+
+	constraints.nullableElseMembership = &nullableElseMembershipConstraint{
+		paramName: paramName,
+		setSubKey: setSubKey,
 	}
 }
 
@@ -102,6 +129,25 @@ func nullCompareParam(expr me.Expression) (string, bool) {
 func isEmptySetLiteral(expr me.Expression) bool {
 	literal, ok := expr.(*me.SetLiteral)
 	return ok && len(literal.Elements) == 0
+}
+
+func isTrueLiteral(expr me.Expression) bool {
+	literal, ok := expr.(*me.BoolLiteral)
+	return ok && literal.Value
+}
+
+func paramMembershipInNamedSet(node *me.Membership) (string, string, bool) {
+	localVar, ok := node.Element.(*me.LocalVar)
+	if !ok {
+		return "", "", false
+	}
+
+	ref, ok := node.Set.(*me.NamedSetRef)
+	if !ok {
+		return "", "", false
+	}
+
+	return localVar.Name, ref.SetKey.SubKey, true
 }
 
 func tupleMembershipInNamedSet(node *me.Membership) ([]string, string, bool) {

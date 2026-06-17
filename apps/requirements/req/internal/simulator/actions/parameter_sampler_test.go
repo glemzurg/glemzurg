@@ -399,3 +399,103 @@ func (s *ParameterSamplerSuite) TestSampleFromRequiresReturnsUnsupportedError() 
 	s.Require().Error(err)
 	s.ErrorAs(err, new(*UnsupportedRequiresSamplingError))
 }
+
+func currencyRequireSpec(tla string) logic_spec.ExpressionSpec {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	iso4217CodesKey := helper.Must(identity.NewNamedSetKey("iso4217codes"))
+	ctx := &convert.LowerContext{
+		ClassKey: classKey,
+		Parameters: map[string]bool{
+			"ISO": true,
+		},
+		NamedSets: map[string]identity.Key{
+			"_Iso4217Codes": iso4217CodesKey,
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
+}
+
+func (s *ParameterSamplerSuite) iso4217NamedSet() map[string]object.Object {
+	isoCodes := object.NewSetFromElements([]object.Object{
+		object.NewString("USD"),
+		object.NewString("GBP"),
+		object.NewString("CAD"),
+		object.NewString("EUR"),
+	})
+	return map[string]object.Object{
+		"iso4217codes": isoCodes,
+	}
+}
+
+func (s *ParameterSamplerSuite) TestExtractNullableElseMembershipConstraint() {
+	constraints := extractParameterConstraints([]model_logic.Logic{
+		model_logic.NewLogic(
+			helper.Must(identity.NewActionRequireKey(helper.Must(identity.NewActionKey(mustKey("domain/finance/wallet/class/currency"), "add")), "0")),
+			model_logic.LogicTypeAssessment,
+			"Valid ISO 4217 code when ISO is provided.",
+			"",
+			currencyRequireSpec(`IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`),
+			nil,
+		),
+	})
+	s.Require().NotNil(constraints.nullableElseMembership)
+	s.Equal("ISO", constraints.nullableElseMembership.paramName)
+	s.Equal("iso4217codes", constraints.nullableElseMembership.setSubKey)
+}
+
+func (s *ParameterSamplerSuite) TestCurrencyRequiresSamplingSupport() {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
+	requireLogic := model_logic.NewLogic(
+		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+		model_logic.LogicTypeAssessment,
+		"Valid ISO 4217 code when ISO is provided.",
+		"",
+		currencyRequireSpec(`IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`),
+		nil,
+	)
+	action := model_state.NewAction(
+		actionKey,
+		"Add",
+		"",
+		[]model_logic.Logic{requireLogic},
+		nil,
+		nil,
+		[]model_state.Parameter{
+			helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true)),
+		},
+	)
+
+	err := ValidateActionRequiresSamplingSupport("Currency", action)
+	s.NoError(err)
+}
+
+func (s *ParameterSamplerSuite) TestSampleNullableElseMembershipFromNamedSet() {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
+	requireLogic := model_logic.NewLogic(
+		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+		model_logic.LogicTypeAssessment,
+		"Valid ISO 4217 code when ISO is provided.",
+		"",
+		currencyRequireSpec(`IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`),
+		nil,
+	)
+	action := model_state.NewAction(actionKey, "Add", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
+	params := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true)),
+	}
+
+	binder := NewParameterBinder()
+	sampler := NewParameterSampler(binder, s.iso4217NamedSet())
+
+	for seed := range 200 {
+		result, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		s.Require().NoError(err)
+		if object.IsNull(result["ISO"]) {
+			continue
+		}
+		s.Contains([]string{"USD", "GBP", "CAD", "EUR"}, result["ISO"].(*object.String).Value())
+	}
+}

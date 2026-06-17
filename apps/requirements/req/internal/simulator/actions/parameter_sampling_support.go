@@ -235,14 +235,15 @@ func expressionSupportsParamSampling(expr me.Expression) bool {
 
 	switch node := expr.(type) {
 	case *me.IfThenElse:
-		return isNullableElseTuplePattern(node)
+		return isNullableElseTuplePattern(node) || isNullableElseMembershipPattern(node)
 	case *me.Membership:
 		if node.Negated {
 			return false
 		}
 		_, _, tupleOK := tupleMembershipInNamedSet(node)
+		_, _, memberOK := paramMembershipInNamedSet(node)
 		_, _, enumOK := paramInStringEnum(node)
-		return tupleOK || enumOK
+		return tupleOK || memberOK || enumOK
 	case *me.BinaryLogic:
 		return expressionSupportsParamSampling(node.Left) &&
 			expressionSupportsParamSampling(node.Right)
@@ -253,6 +254,19 @@ func expressionSupportsParamSampling(expr me.Expression) bool {
 	default:
 		return false
 	}
+}
+
+func isNullableElseMembershipPattern(node *me.IfThenElse) bool {
+	paramName, ok := nullCompareParam(node.Condition)
+	if !ok || !isTrueLiteral(node.Then) {
+		return false
+	}
+	membership, ok := node.Else.(*me.Membership)
+	if !ok || membership.Negated {
+		return false
+	}
+	memberParam, _, ok := paramMembershipInNamedSet(membership)
+	return ok && memberParam == paramName
 }
 
 func isNullableElseTuplePattern(node *me.IfThenElse) bool {

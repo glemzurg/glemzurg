@@ -53,9 +53,15 @@ func (s *ParameterSampler) SampleFromRequires(
 
 // parameterConstraints captures sampling hints extracted from require expression trees.
 type parameterConstraints struct {
-	nullableElseTuple *nullableElseTupleConstraint
-	tupleInSet        *tupleInSetConstraint
-	enumValues        map[string][]string
+	nullableElseTuple      *nullableElseTupleConstraint
+	nullableElseMembership *nullableElseMembershipConstraint
+	tupleInSet             *tupleInSetConstraint
+	enumValues             map[string][]string
+}
+
+type nullableElseMembershipConstraint struct {
+	paramName string
+	setSubKey string
 }
 
 type nullableElseTupleConstraint struct {
@@ -101,9 +107,12 @@ func applyParameterConstraints(
 	namedSetValues map[string]object.Object,
 	nullableByName map[string]bool,
 ) {
-	if constraints.nullableElseTuple != nil {
+	switch {
+	case constraints.nullableElseTuple != nil:
 		applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues, nullableByName)
-	} else if constraints.tupleInSet != nil {
+	case constraints.nullableElseMembership != nil:
+		applyNullableElseMembership(result, constraints.nullableElseMembership, rng, namedSetValues, nullableByName)
+	case constraints.tupleInSet != nil:
 		applyTupleInSet(result, constraints.tupleInSet, rng, namedSetValues)
 	}
 
@@ -113,6 +122,26 @@ func applyParameterConstraints(
 		}
 		result[paramName] = object.NewString(values[rng.Intn(len(values))])
 	}
+}
+
+func applyNullableElseMembership(
+	result map[string]object.Object,
+	constraint *nullableElseMembershipConstraint,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+	nullableByName map[string]bool,
+) {
+	if nullableByName[constraint.paramName] && rng.Intn(5) == 0 {
+		result[constraint.paramName] = evaluator.EMPTY_SET
+		return
+	}
+
+	value, ok := pickRandomStringFromNamedSet(constraint.setSubKey, namedSetValues, rng)
+	if !ok {
+		return
+	}
+
+	result[constraint.paramName] = value
 }
 
 func applyNullableElseTuple(
@@ -174,6 +203,26 @@ func normalizeTupleElement(value object.Object) object.Object {
 		return evaluator.EMPTY_SET
 	}
 	return value.Clone()
+}
+
+func pickRandomStringFromNamedSet(
+	setSubKey string,
+	namedSetValues map[string]object.Object,
+	rng *rand.Rand,
+) (object.Object, bool) {
+	setObj, ok := namedSetValues[setSubKey]
+	if !ok {
+		return nil, false
+	}
+
+	set, ok := setObj.(*object.Set)
+	if !ok || set.Size() == 0 {
+		return nil, false
+	}
+
+	elements := set.Elements()
+	chosen := elements[rng.Intn(len(elements))]
+	return chosen.Clone(), true
 }
 
 func pickRandomTuple(
