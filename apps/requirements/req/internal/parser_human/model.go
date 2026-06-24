@@ -31,7 +31,9 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 		markdown += "\n\n" + parsedFile.UmlComment
 	}
 
-	model = core.NewModel(strings.TrimSpace(strings.ToLower(key)), parsedFile.Title, markdown, parsedFile.UnfinishedNotes, invariants, globalFunctions, namedSets)
+	model = core.NewModel(strings.TrimSpace(strings.ToLower(key)), core.ModelDetails{
+		Name: parsedFile.Title, Details: markdown,
+	}, parsedFile.UnfinishedNotes, invariants, globalFunctions, namedSets)
 
 	return model, nil
 }

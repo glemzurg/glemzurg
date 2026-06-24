@@ -18,14 +18,26 @@ type Transition struct {
 	UmlComment   string
 }
 
-func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identity.Key, guardKey, actionKey, toStateKey *identity.Key, umlComment string) Transition {
+// TransitionStateKeys holds optional from and to state references for a transition.
+type TransitionStateKeys struct {
+	FromStateKey *identity.Key
+	ToStateKey   *identity.Key
+}
+
+// TransitionLogicKeys holds optional guard and action references for a transition.
+type TransitionLogicKeys struct {
+	GuardKey  *identity.Key
+	ActionKey *identity.Key
+}
+
+func NewTransition(key identity.Key, eventKey identity.Key, states TransitionStateKeys, logic TransitionLogicKeys, umlComment string) Transition {
 	return Transition{
 		Key:          key,
-		FromStateKey: fromStateKey,
+		FromStateKey: states.FromStateKey,
 		EventKey:     eventKey,
-		GuardKey:     guardKey,
-		ActionKey:    actionKey,
-		ToStateKey:   toStateKey,
+		GuardKey:     logic.GuardKey,
+		ActionKey:    logic.ActionKey,
+		ToStateKey:   states.ToStateKey,
 		UmlComment:   umlComment,
 	}
 }

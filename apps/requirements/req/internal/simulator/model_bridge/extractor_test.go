@@ -32,7 +32,7 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 	invKey1 := helper.Must(identity.NewInvariantKey("1"))
 	inv1 := model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Order count limit.", "", parsedSpec("1 + 1 = 2"), nil)
 
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{inv0, inv1}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0, inv1}, nil, nil)
 
 	expressions := ExtractFromModel(&model)
 
@@ -52,7 +52,7 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 }
 
 func (s *ExtractorTestSuite) TestExtractModelInvariants_Empty() {
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{}, nil, nil)
 
 	expressions := ExtractFromModel(&model)
 
@@ -77,7 +77,7 @@ func (s *ExtractorTestSuite) TestExtractGlobalFunctions() {
 		gfuncStatusKey: gfuncStatus,
 	}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, globalFunctions, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, globalFunctions, nil)
 
 	expressions := ExtractFromModel(&model)
 
@@ -129,7 +129,7 @@ func (s *ExtractorTestSuite) TestExtractActionExpressions() {
 	actionGuarKey0 := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
 	actionGuar0 := model_logic.NewLogic(actionGuarKey0, model_logic.LogicTypeStateChange, "Postcondition.", "status", parsedSpec("TRUE"), nil)
 
-	action := model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq0, actionReq1}, []model_logic.Logic{actionGuar0}, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "PlaceOrder", Details: ""}, []model_logic.Logic{actionReq0, actionReq1}, []model_logic.Logic{actionGuar0}, nil, nil)
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
@@ -140,7 +140,7 @@ func (s *ExtractorTestSuite) TestExtractActionExpressions() {
 	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	expressions := ExtractFromModel(&model)
@@ -212,7 +212,7 @@ func (s *ExtractorTestSuite) TestExtractQueryExpressions() {
 	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	expressions := ExtractFromModel(&model)
@@ -274,7 +274,7 @@ func (s *ExtractorTestSuite) TestExtractGuardExpressions() {
 	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	expressions := ExtractFromModel(&model)
@@ -321,7 +321,7 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 	actionGuarKey0 := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
 	actionGuar0 := model_logic.NewLogic(actionGuarKey0, model_logic.LogicTypeStateChange, "Postcondition.", "stock", parsedSpec("TRUE"), nil)
 
-	action := model_state.NewAction(actionKey, "Restock", "", []model_logic.Logic{actionReq0}, []model_logic.Logic{actionGuar0}, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Restock", Details: ""}, []model_logic.Logic{actionReq0}, []model_logic.Logic{actionGuar0}, nil, nil)
 
 	// Query
 	queryReqKey0 := helper.Must(identity.NewQueryRequireKey(queryKey, "0"))
@@ -351,7 +351,7 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
 	// Assemble model
-	model := core.NewModel("shop_model", "Shop Model", "", "", []model_logic.Logic{inv0}, globalFunctions, nil)
+	model := core.NewModel("shop_model", core.ModelDetails{Name: "Shop Model", Details: ""}, "", []model_logic.Logic{inv0}, globalFunctions, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	expressions := ExtractFromModel(&model)

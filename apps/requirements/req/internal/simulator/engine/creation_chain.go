@@ -133,9 +133,7 @@ func (h *CreationChainHandler) createMandatoryInstance(
 		*creationEvent,
 		nil, // nil instance = creation
 		params,
-		&assocKey,
-		&createdInstanceID,
-		nil,
+		actions.CreationLinkSource{SourceAssocKey: &assocKey, SourceID: &createdInstanceID}, nil,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf(
@@ -233,7 +231,9 @@ func (h *CreationChainHandler) createMandatoryAssociationClassInstances(
 	for range assocInfo.MinTo {
 		toID := toInstances[0].ID
 		step, stepViolations, err := h.createAssociationClassInstance(
-			acClassInfo, creationEvent, hostAssocKey, fromInstanceID, toID, simState, depth,
+			acClassInfo, creationEvent, hostAssocKey,
+			instanceEndpointIDs{FromInstanceID: fromInstanceID, ToInstanceID: toID},
+			simState, depth,
 		)
 		if err != nil {
 			return cascadedSteps, allViolations, err
@@ -290,9 +290,7 @@ func (h *CreationChainHandler) createPlainEndpointInstance(
 		*creationEvent,
 		nil,
 		params,
-		nil,
-		nil,
-		nil,
+		actions.CreationLinkSource{}, nil,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf(
@@ -341,12 +339,17 @@ func (h *CreationChainHandler) createPlainEndpointInstance(
 	return step, step.Violations, nil
 }
 
+// instanceEndpointIDs holds the from and to endpoint instances for association-class materialization.
+type instanceEndpointIDs struct {
+	FromInstanceID state.InstanceID
+	ToInstanceID   state.InstanceID
+}
+
 func (h *CreationChainHandler) createAssociationClassInstance(
 	acClassInfo *ClassInfo,
 	creationEvent *model_state.Event,
 	hostAssocKey identity.Key,
-	fromInstanceID state.InstanceID,
-	toInstanceID state.InstanceID,
+	endpoints instanceEndpointIDs,
 	simState *state.SimulationState,
 	depth int,
 ) (*SimulationStep, invariants.ViolationErrors, error) {
@@ -363,9 +366,8 @@ func (h *CreationChainHandler) createAssociationClassInstance(
 		*creationEvent,
 		nil,
 		params,
-		&hostAssocKey,
-		&fromInstanceID,
-		&toInstanceID,
+		actions.CreationLinkSource{SourceAssocKey: &hostAssocKey, SourceID: &endpoints.FromInstanceID},
+		&endpoints.ToInstanceID,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf(

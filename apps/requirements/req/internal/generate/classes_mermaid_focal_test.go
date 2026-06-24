@@ -21,13 +21,7 @@ func TestGenerateClassesMermaidHighlightsFocalClassOnClassPage(t *testing.T) {
 
 	one := helper.Must(model_class.NewMultiplicity("1"))
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, "relates"))
-	assoc := model_class.NewAssociation(
-		assocKey, "relates", "",
-		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: one},
-		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: one},
-		nil,
-		"",
-	)
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "relates", Details: ""}, model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: one}, model_class.AssociationEnd{ClassKey: toKey, Multiplicity: one}, nil, "")
 
 	subdomain := model_domain.Subdomain{
 		Key:  subdomainKey,

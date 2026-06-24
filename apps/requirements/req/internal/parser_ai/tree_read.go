@@ -247,7 +247,7 @@ func readModelGlobalFunctions(modelDir string, model *inputModel) error {
 			errs = append(errs, err)
 			continue
 		}
-		if err := validatePrefixedFilenameMatchesName(key, gf.Name, "_", "global function", ".json", ErrGlobalFuncKeyNameMismatch, filePath); err != nil {
+		if err := validatePrefixedFilenameMatchesName(prefixedFilenameKeyName{Key: key, Name: gf.Name}, "_", "global function", ".json", ErrGlobalFuncKeyNameMismatch, filePath); err != nil {
 			errs = append(errs, err)
 			continue
 		}

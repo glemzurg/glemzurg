@@ -35,7 +35,7 @@ func (s *LoaderTestSuite) TestLoadModelInvariants() {
 	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)
 	inv1 := model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Basic arithmetic.", "", parsedSpec("1 + 1 = 2"), nil)
 
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{inv0, inv1}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0, inv1}, nil, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -56,7 +56,7 @@ func (s *LoaderTestSuite) TestLoadModelInvariants() {
 }
 
 func (s *LoaderTestSuite) TestLoadModelInvariants_Empty() {
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{}, nil, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -76,7 +76,7 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_NilExpression() {
 	// Create a logic with no specification (will have nil Expression).
 	inv1 := model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil)
 
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{inv0, inv1}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0, inv1}, nil, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -101,7 +101,7 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions() {
 		gfuncKey: gfunc,
 	}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, globalFunctions, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, globalFunctions, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -130,7 +130,7 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions_NoParams() {
 		gfuncKey: gfunc,
 	}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, globalFunctions, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, globalFunctions, nil)
 
 	loader := NewLoader()
 	result := loader.LoadFromModel(&model)
@@ -168,7 +168,7 @@ func (s *LoaderTestSuite) TestLoadActionExpressions() {
 	actionGuar := model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", parsedSpec("TRUE"), nil)
 
 	// Build the action
-	action := model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "PlaceOrder", Details: ""}, []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil)
 
 	// Build class, subdomain, domain using constructors then set children
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
@@ -180,7 +180,7 @@ func (s *LoaderTestSuite) TestLoadActionExpressions() {
 	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	loader := NewLoader()
@@ -245,7 +245,7 @@ func (s *LoaderTestSuite) TestLoadQueryExpressions() {
 	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	loader := NewLoader()
@@ -301,7 +301,7 @@ func (s *LoaderTestSuite) TestLoadGuardExpressions() {
 	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("test_model", "Test Model", "", "", nil, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	loader := NewLoader()
@@ -358,7 +358,7 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	actionGuar := model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", "stock", parsedSpec("TRUE"), nil)
 
 	// Build the action
-	action := model_state.NewAction(actionKey, "Restock", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Restock", Details: ""}, []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil)
 
 	// Build class, subdomain, domain using constructors then set children
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
@@ -370,7 +370,7 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	domain := model_domain.NewDomain(domainKey, "Shop", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("shop_model", "Shop Model", "", "", []model_logic.Logic{inv0}, globalFunctions, nil)
+	model := core.NewModel("shop_model", core.ModelDetails{Name: "Shop Model", Details: ""}, "", []model_logic.Logic{inv0}, globalFunctions, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	loader := NewLoader()
@@ -459,7 +459,7 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 	s.Require().NoError(err)
 	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)
 
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{inv0}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
 	result, err := loader.LoadFromModelStrict(&model)
@@ -474,7 +474,7 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_NilExpression() {
 	s.Require().NoError(err)
 	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil)
 
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{inv0}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
 	result, err := loader.LoadFromModelStrict(&model)
@@ -492,7 +492,7 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
 	s.Require().NoError(err)
 	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)
 
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{inv0}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
 
@@ -507,7 +507,7 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Panics() {
 	s.Require().NoError(err)
 	inv0 := model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil)
 
-	model := core.NewModel("test_model", "Test Model", "", "", []model_logic.Logic{inv0}, nil, nil)
+	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
 

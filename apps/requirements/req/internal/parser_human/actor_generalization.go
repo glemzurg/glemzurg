@@ -40,7 +40,12 @@ func parseActorGeneralization(generalizationSubKey, filename, contents string) (
 		return model_actor.Generalization{}, errors.WithStack(err)
 	}
 
-	generalization = model_actor.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), parsedFile.UnfinishedNotes, isComplete, isStatic, parsedFile.UmlComment)
+	generalization = model_actor.NewGeneralization(generalizationKey,
+		model_actor.GeneralizationDetails{Name: parsedFile.Title, Details: stripMarkdownTitle(parsedFile.Markdown)},
+		parsedFile.UnfinishedNotes,
+		model_actor.GeneralizationTraits{IsComplete: isComplete, IsStatic: isStatic},
+		parsedFile.UmlComment,
+	)
 	return generalization, nil
 }
 

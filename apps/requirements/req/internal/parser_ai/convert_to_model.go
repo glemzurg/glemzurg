@@ -445,7 +445,7 @@ func convertSubdomainClassesAndGeneralizations(ctx subdomainConvContext, subdoma
 	}
 
 	for key, class := range subdomain.Classes {
-		converted, err := convertClassToModel(key, class, ctx.subdomainKey, subdomain.ClassGeneralizations, genKeyMap, ctx.domainKeyStr, ctx.subdomainKeyStr)
+		converted, err := convertClassToModel(key, class, ctx, subdomain.ClassGeneralizations, genKeyMap)
 		if err != nil {
 			return err
 		}
@@ -589,7 +589,10 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, ctx useCaseConvConte
 
 	// Convert scenarios
 	for scenKeyStr, scenario := range uc.Scenarios {
-		converted, err := convertScenarioToModel(scenKeyStr, scenario, useCaseKey, ctx.subdomainKey, ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr)
+		converted, err := convertScenarioToModel(scenKeyStr, scenario,
+			useCaseScope{Key: useCaseKey, KeyStr: keyStr}, ctx.subdomainKey,
+			subdomainPath{DomainKeyStr: ctx.domainKeyStr, SubdomainKeyStr: ctx.subdomainKeyStr},
+		)
 		if err != nil {
 			return model_use_case.UseCase{}, err
 		}
@@ -599,11 +602,21 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, ctx useCaseConvConte
 	return result, nil
 }
 
-// convertScenarioToModel converts an inputScenario to a model_scenario.Scenario.
-func convertScenarioToModel(keyStr string, scenario *inputScenario, useCaseKey, subdomainKey identity.Key, domainKeyStr, subdomainKeyStr, useCaseKeyStr string) (model_scenario.Scenario, error) {
-	scenarioFile := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/scenarios/%s.scenario.json", domainKeyStr, subdomainKeyStr, useCaseKeyStr, keyStr)
+type useCaseScope struct {
+	Key    identity.Key
+	KeyStr string
+}
 
-	scenarioKey, err := identity.NewScenarioKey(useCaseKey, keyStr)
+type subdomainPath struct {
+	DomainKeyStr    string
+	SubdomainKeyStr string
+}
+
+// convertScenarioToModel converts an inputScenario to a model_scenario.Scenario.
+func convertScenarioToModel(keyStr string, scenario *inputScenario, useCase useCaseScope, subdomainKey identity.Key, path subdomainPath) (model_scenario.Scenario, error) {
+	scenarioFile := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/scenarios/%s.scenario.json", path.DomainKeyStr, path.SubdomainKeyStr, useCase.KeyStr, keyStr)
+
+	scenarioKey, err := identity.NewScenarioKey(useCase.Key, keyStr)
 	if err != nil {
 		return model_scenario.Scenario{}, convErr(
 			ErrConvKeyConstruction,
@@ -632,7 +645,7 @@ func convertScenarioToModel(keyStr string, scenario *inputScenario, useCaseKey, 
 	if scenario.Steps != nil {
 		stepCtx := stepConvContext{
 			scenarioKey:  scenarioKey,
-			useCaseKey:   useCaseKey,
+			useCaseKey:   useCase.Key,
 			subdomainKey: subdomainKey,
 			objects:      scenario.Objects,
 			scenarioFile: scenarioFile,
@@ -857,10 +870,10 @@ func convertUseCaseGeneralizationToModel(keyStr string, gen *inputUseCaseGeneral
 }
 
 // convertClassToModel converts an inputClass to a model_class.Class.
-func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity.Key, generalizations map[string]*inputClassGeneralization, genKeyMap map[string]identity.Key, domainKeyStr, subdomainKeyStr string) (model_class.Class, error) {
-	classFile := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKeyStr, subdomainKeyStr, keyStr)
+func convertClassToModel(keyStr string, class *inputClass, ctx subdomainConvContext, generalizations map[string]*inputClassGeneralization, genKeyMap map[string]identity.Key) (model_class.Class, error) {
+	classFile := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr)
 
-	classKey, err := identity.NewClassKey(subdomainKey, keyStr)
+	classKey, err := identity.NewClassKey(ctx.subdomainKey, keyStr)
 	if err != nil {
 		return model_class.Class{}, convErr(
 			ErrConvKeyConstruction,
@@ -917,13 +930,13 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 
 	// Convert state machine if present
 	if class.StateMachine != nil {
-		if err := convertStateMachineToModel(class.StateMachine, &result, classKey, domainKeyStr, subdomainKeyStr, keyStr); err != nil {
+		if err := convertStateMachineToModel(class.StateMachine, &result, classKey, ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr); err != nil {
 			return model_class.Class{}, err
 		}
 	}
 
 	// Convert actions and queries
-	if err := convertClassActionsAndQueries(class, &result, classKey, domainKeyStr, subdomainKeyStr, keyStr); err != nil {
+	if err := convertClassActionsAndQueries(class, &result, classKey, ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr); err != nil {
 		return model_class.Class{}, err
 	}
 

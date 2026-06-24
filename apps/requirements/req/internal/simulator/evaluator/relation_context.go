@@ -91,17 +91,31 @@ func (c *RelationContext) AddAssociation(
 	c.ReverseRelations[toClassKey][name] = reverseInfo
 }
 
+// AssociationHostEndpoints holds the from and to class keys for an association-class host.
+type AssociationHostEndpoints struct {
+	FromClassKey string
+	ToClassKey   string
+}
+
+// AssociationHostMultiplicities holds endpoint multiplicities for an association-class host.
+type AssociationHostMultiplicities struct {
+	From Multiplicity
+	To   Multiplicity
+}
+
 // AddAssociationClassHost registers a host association materialized by association-class instances.
 // Both endpoints navigate to link-class instances via the host association name.
 func (c *RelationContext) AddAssociationClassHost(
 	assocKey AssociationKey,
 	name string,
-	fromClassKey string,
-	toClassKey string,
+	endpoints AssociationHostEndpoints,
 	linkClassKey string,
-	fromMultiplicity Multiplicity,
-	toMultiplicity Multiplicity,
+	mults AssociationHostMultiplicities,
 ) {
+	fromClassKey := endpoints.FromClassKey
+	toClassKey := endpoints.ToClassKey
+	fromMultiplicity := mults.From
+	toMultiplicity := mults.To
 	forwardInfo := &RelationInfo{
 		AssociationKey: assocKey,
 		Name:           name,

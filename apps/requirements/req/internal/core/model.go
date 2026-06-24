@@ -34,11 +34,17 @@ type Model struct {
 	ClassAssociations    map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details, unfinishedNotes string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_logic.NamedSet) Model {
+// ModelDetails holds the human-authored name and description from a model file.
+type ModelDetails struct {
+	Name    string
+	Details string
+}
+
+func NewModel(key string, details ModelDetails, unfinishedNotes string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_logic.NamedSet) Model {
 	return Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
-		Name:            name,
-		Details:         details,
+		Name:            details.Name,
+		Details:         details.Details,
 		UnfinishedNotes: unfinishedNotes,
 		Invariants:      invariants,
 		GlobalFunctions: globalFunctions,

@@ -461,7 +461,11 @@ func writeStateItems(tx *sql.Tx, modelKey string, model core.Model) error {
 	statesMap, guardsMap, actionsMap, eventsMap, queriesMap := collectStateItemMaps(model)
 
 	// Write core state item rows.
-	if err := writeStateItemCoreRows(tx, modelKey, statesMap, guardsMap, actionsMap, eventsMap, queriesMap); err != nil {
+	if err := writeStateItemCoreRows(tx, modelKey,
+		stateGuardMaps{States: statesMap, Guards: guardsMap},
+		actionEventMaps{Actions: actionsMap, Events: eventsMap},
+		queriesMap,
+	); err != nil {
 		return err
 	}
 
@@ -477,24 +481,28 @@ func writeStateItems(tx *sql.Tx, modelKey string, model core.Model) error {
 	return writeTransitions(tx, modelKey, model)
 }
 
+type stateGuardMaps struct {
+	States map[identity.Key][]model_state.State
+	Guards map[identity.Key][]model_state.Guard
+}
+
+type actionEventMaps struct {
+	Actions map[identity.Key][]model_state.Action
+	Events  map[identity.Key][]model_state.Event
+}
+
 // writeStateItemCoreRows writes the primary rows for states, guards, actions, events, and queries.
-func writeStateItemCoreRows(tx *sql.Tx, modelKey string,
-	statesMap map[identity.Key][]model_state.State,
-	guardsMap map[identity.Key][]model_state.Guard,
-	actionsMap map[identity.Key][]model_state.Action,
-	eventsMap map[identity.Key][]model_state.Event,
-	queriesMap map[identity.Key][]model_state.Query,
-) error {
-	if err := AddStates(tx, modelKey, statesMap); err != nil {
+func writeStateItemCoreRows(tx *sql.Tx, modelKey string, stateGuards stateGuardMaps, actionEvents actionEventMaps, queriesMap map[identity.Key][]model_state.Query) error {
+	if err := AddStates(tx, modelKey, stateGuards.States); err != nil {
 		return err
 	}
-	if err := AddGuards(tx, modelKey, guardsMap); err != nil {
+	if err := AddGuards(tx, modelKey, stateGuards.Guards); err != nil {
 		return err
 	}
-	if err := AddActions(tx, modelKey, actionsMap); err != nil {
+	if err := AddActions(tx, modelKey, actionEvents.Actions); err != nil {
 		return err
 	}
-	if err := AddEvents(tx, modelKey, eventsMap); err != nil {
+	if err := AddEvents(tx, modelKey, actionEvents.Events); err != nil {
 		return err
 	}
 	return AddQueries(tx, modelKey, queriesMap)

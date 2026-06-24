@@ -36,10 +36,9 @@ func livenessOrderClass() (model_class.Class, identity.Key) {
 
 	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
-	attrAmount := helper.Must(model_class.NewAttribute(attrAmountKey, "amount", "", "", nil, false,
-		model_class.AttributeAnnotations{}))
+	attrAmount := helper.Must(model_class.NewAttribute(attrAmountKey, model_class.AttributeDetails{Name: "amount", Details: ""}, "", nil, false, model_class.AttributeAnnotations{}))
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateOpenKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes([]model_class.Attribute{attrAmount})
@@ -68,10 +67,9 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 
 	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
-	attrName := helper.Must(model_class.NewAttribute(attrNameKey, "name", "", "", nil, false,
-		model_class.AttributeAnnotations{}))
+	attrName := helper.Must(model_class.NewAttribute(attrNameKey, model_class.AttributeDetails{Name: "name", Details: ""}, "", nil, false, model_class.AttributeAnnotations{}))
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes([]model_class.Attribute{attrName})
@@ -213,10 +211,9 @@ func livenessJurisdictionClass() (model_class.Class, identity.Key) {
 
 	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
-	attrCountryCode := helper.Must(model_class.NewAttribute(attrCountryCodeKey, "Country Code", "", "", nil, false,
-		model_class.AttributeAnnotations{}))
+	attrCountryCode := helper.Must(model_class.NewAttribute(attrCountryCodeKey, model_class.AttributeDetails{Name: "Country Code", Details: ""}, "", nil, false, model_class.AttributeAnnotations{}))
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Jurisdiction", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes([]model_class.Attribute{attrCountryCode})
@@ -301,10 +298,9 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 	derivationLogic := model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", orderSpec("self.amount * 2"), nil)
 
-	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "total", "", "", &derivationLogic, false,
-		model_class.AttributeAnnotations{}))
+	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, model_class.AttributeDetails{Name: "total", Details: ""}, "", &derivationLogic, false, model_class.AttributeAnnotations{}))
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateOpenKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes([]model_class.Attribute{attrDerived})
@@ -387,10 +383,7 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := model_class.NewAssociation(assocKey, "order_items", "",
-		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
-		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
-		nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -424,10 +417,7 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := model_class.NewAssociation(assocKey, "order_items", "",
-		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
-		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
-		nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{

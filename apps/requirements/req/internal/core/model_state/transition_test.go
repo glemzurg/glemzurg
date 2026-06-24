@@ -182,7 +182,7 @@ func (suite *TransitionSuite) TestNew() {
 	key := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "guard1", "action1", "state2"))
 
 	// Test parameters are mapped correctly.
-	transition := NewTransition(key, &fromStateKey, eventKey, &guardKey, &actionKey, &toStateKey, "UmlComment")
+	transition := NewTransition(key, eventKey, TransitionStateKeys{FromStateKey: &fromStateKey, ToStateKey: &toStateKey}, TransitionLogicKeys{GuardKey: &guardKey, ActionKey: &actionKey}, "UmlComment")
 	suite.Equal(Transition{
 		Key:          key,
 		FromStateKey: &fromStateKey,

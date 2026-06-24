@@ -11,7 +11,9 @@ import (
 // associations, and invariants from the resolved surface. The original
 // model is not modified.
 func BuildFilteredModel(original *core.Model, resolved *ResolvedSurface) (*core.Model, error) {
-	filtered := core.NewModel(original.Key, original.Name, original.Details, original.UnfinishedNotes, resolved.ModelInvariants, original.GlobalFunctions, original.NamedSets)
+	filtered := core.NewModel(original.Key, core.ModelDetails{
+		Name: original.Name, Details: original.Details,
+	}, original.UnfinishedNotes, resolved.ModelInvariants, original.GlobalFunctions, original.NamedSets)
 	filtered.Actors = original.Actors
 	filtered.ActorGeneralizations = original.ActorGeneralizations
 

@@ -148,7 +148,12 @@ func main() {
 	log.Println()
 
 	// Process the conversion
-	err := processConversion(debug, skipDB, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat)
+	err := processConversion(
+		conversionFlags{debug: debug, skipDB: skipDB},
+		conversionPaths{rootSourcePath: rootSourcePath, rootOutputPath: rootOutputPath},
+		model,
+		conversionFormats{inputFormat: inputFormat, outputFormat: outputFormat},
+	)
 	if err != nil {
 		log.Printf("Error: %+v", err)
 		os.Exit(1)
@@ -165,11 +170,26 @@ func main() {
 // failures are NOT catastrophic: the full output is generated with red-bold
 // error blocks on the affected class pages, and processConversion returns a
 // non-nil error only so the caller logs it and exits non-zero.
-func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) error {
-	failures, err := runConversion(debug, skipDB, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat)
+type conversionFlags struct {
+	debug  bool
+	skipDB bool
+}
+
+type conversionPaths struct {
+	rootSourcePath string
+	rootOutputPath string
+}
+
+type conversionFormats struct {
+	inputFormat  string
+	outputFormat string
+}
+
+func processConversion(flags conversionFlags, paths conversionPaths, model string, formats conversionFormats) error {
+	failures, err := runConversion(flags, paths, model, formats)
 	if err != nil {
-		if outputFormat == OutputFormatMD {
-			outputPath := filepath.Join(rootOutputPath, model)
+		if formats.outputFormat == OutputFormatMD {
+			outputPath := filepath.Join(paths.rootOutputPath, model)
 			if writeErr := writeErrorMarkdown(outputPath, err); writeErr != nil {
 				log.Printf("Error: also failed to write error markdown: %v", writeErr)
 			}
@@ -198,15 +218,15 @@ func writeErrorMarkdown(outputPath string, genErr error) error {
 // It returns the per-class parse failures (if any) separately from err. A
 // non-nil err is a catastrophic failure; a non-empty failures slice with a nil
 // err means the output was generated with per-class error blocks.
-func runConversion(_, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) ([]parser_human.ParseFailure, error) {
-	sourcePath := filepath.Join(rootSourcePath, model)
-	outputPath := filepath.Join(rootOutputPath, model)
+func runConversion(flags conversionFlags, paths conversionPaths, model string, formats conversionFormats) ([]parser_human.ParseFailure, error) {
+	sourcePath := filepath.Join(paths.rootSourcePath, model)
+	outputPath := filepath.Join(paths.rootOutputPath, model)
 
 	// Step 1: Read the input model into core.Model
 	var parsedModel *core.Model
 	var failures []parser_human.ParseFailure
 
-	switch inputFormat {
+	switch formats.inputFormat {
 	case InputFormatDataYAML:
 		log.Println("Reading model from data/yaml format...")
 		m, parseFailures, err := parser_human.Parse(sourcePath)
@@ -228,7 +248,7 @@ func runConversion(_, skipDB bool, rootSourcePath, rootOutputPath, model, inputF
 	// Step 2: Optionally validate through database. Skipped when there are
 	// parse failures — the model is known-partial (placeholder classes), so the
 	// database round-trip would reject it.
-	if !skipDB && outputFormat == OutputFormatMD && len(failures) == 0 {
+	if !flags.skipDB && formats.outputFormat == OutputFormatMD && len(failures) == 0 {
 		db, err := database.NewDb()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create database: %w", err)
@@ -248,7 +268,7 @@ func runConversion(_, skipDB bool, rootSourcePath, rootOutputPath, model, inputF
 	}
 
 	// Step 3: Write the output in the desired format
-	switch outputFormat {
+	switch formats.outputFormat {
 	case OutputFormatMD:
 		log.Println("Generating markdown output...")
 		// Use the already-parsed model to generate markdown

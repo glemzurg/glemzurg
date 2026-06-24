@@ -270,8 +270,9 @@ func GetStrictTestModel() core.Model {
 					}
 
 					// Create dummy attribute.
-					dummyAttr, err := model_class.NewAttribute(dummyAttrKey, "Dummy ID", "Dummy attribute to satisfy strict requirements.", "unconstrained", nil, false,
-						model_class.AttributeAnnotations{})
+					dummyAttr, err := model_class.NewAttribute(dummyAttrKey, model_class.AttributeDetails{
+						Name: "Dummy ID", Details: "Dummy attribute to satisfy strict requirements.",
+					}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy attribute: %v", err))
 					}
@@ -304,7 +305,11 @@ func GetStrictTestModel() core.Model {
 					// Create objects.
 					state := model_state.NewState(stateKey, "Existing", "The entity exists in the system.", "")
 					event := model_state.NewEvent(eventKey, "Create", "Creates the entity.", nil)
-					transition := model_state.NewTransition(transitionKey, nil, eventKey, nil, nil, &stateKey, "")
+					transition := model_state.NewTransition(transitionKey, eventKey,
+						model_state.TransitionStateKeys{ToStateKey: &stateKey},
+						model_state.TransitionLogicKeys{},
+						"",
+					)
 
 					// Set on class.
 					class.SetStates(map[identity.Key]model_state.State{stateKey: state})
@@ -343,8 +348,9 @@ func GetStrictTestModel() core.Model {
 
 				dummyAssoc := model_class.NewAssociation(
 					dummyAssocKey,
-					"Dummy Association",
-					"Dummy association to satisfy strict requirements.",
+					model_class.AssociationDetails{
+						Name: "Dummy Association", Details: "Dummy association to satisfy strict requirements.",
+					},
 					model_class.AssociationEnd{ClassKey: classKeys[0], Multiplicity: mult1},
 					model_class.AssociationEnd{ClassKey: classKeys[1], Multiplicity: multMany},
 					nil,
@@ -532,7 +538,9 @@ func buildTestModel() (core.Model, error) {
 	domains := buildDomains(k, subdomains)
 
 	// Assemble the model.
-	model := core.NewModel("test_model", "Test Model", "A comprehensive test model with every type represented.", notesModel, logic.invariants, globalFuncs, namedSets)
+	model := core.NewModel("test_model", core.ModelDetails{
+		Name: "Test Model", Details: "A comprehensive test model with every type represented.",
+	}, notesModel, logic.invariants, globalFuncs, namedSets)
 
 	model.Actors = actors
 	model.ActorGeneralizations = actorGens
@@ -1517,7 +1525,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// actionProcess: rich (1 let + 3 requires, 1 let + 3 guarantees, 1 let + 3 safety, 3 params).
 	actionProcess := model_state.NewAction(
-		k.actionProcess, "Process Order", "Processes the order for fulfillment.",
+		k.actionProcess, model_state.ActionDetails{Name: "Process Order", Details: "Processes the order for fulfillment."},
 		[]model_logic.Logic{l.actionRequireLet, l.actionRequire1, l.actionRequire2, l.actionRequire3},
 		[]model_logic.Logic{l.actionGuarLet, l.actionGuarantee1, l.actionGuarantee2, l.actionGuarantee3},
 		[]model_logic.Logic{l.actionSafetyLet, l.actionSafety1, l.actionSafety2, l.actionSafety3},
@@ -1526,12 +1534,12 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// actionShip: empty parent (nil for all slices).
 	actionShip := model_state.NewAction(
-		k.actionShip, "Ship Order", "Ships the order to the customer.",
+		k.actionShip, model_state.ActionDetails{Name: "Ship Order", Details: "Ships the order to the customer."},
 		nil, nil, nil, nil,
 	)
 
 	actionNotify := model_state.NewAction(
-		k.actionNotify, "Notify Customer", "Sends notification to customer.",
+		k.actionNotify, model_state.ActionDetails{Name: "Notify Customer", Details: "Sends notification to customer."},
 		nil, nil, nil, p.actionNotify,
 	)
 
@@ -1571,28 +1579,32 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 	// --- Transitions ---
 
 	transitionSubmit := model_state.NewTransition(
-		k.transitionSubmit,
-		&k.stateNew, k.eventSubmit, &k.guardHasItems, &k.actionProcess, &k.stateProcessing,
+		k.transitionSubmit, k.eventSubmit,
+		model_state.TransitionStateKeys{FromStateKey: &k.stateNew, ToStateKey: &k.stateProcessing},
+		model_state.TransitionLogicKeys{GuardKey: &k.guardHasItems, ActionKey: &k.actionProcess},
 		"submit order transition",
 	)
 
 	transitionFulfill := model_state.NewTransition(
-		k.transitionFulfill,
-		&k.stateProcessing, k.eventFulfill, nil, &k.actionShip, &k.stateComplete,
+		k.transitionFulfill, k.eventFulfill,
+		model_state.TransitionStateKeys{FromStateKey: &k.stateProcessing, ToStateKey: &k.stateComplete},
+		model_state.TransitionLogicKeys{ActionKey: &k.actionShip},
 		"",
 	)
 
 	// Initial transition: nil FromStateKey.
 	transitionInitial := model_state.NewTransition(
-		k.transitionInitial,
-		nil, k.eventCancel, nil, nil, &k.stateNew,
+		k.transitionInitial, k.eventCancel,
+		model_state.TransitionStateKeys{ToStateKey: &k.stateNew},
+		model_state.TransitionLogicKeys{},
 		"initial transition",
 	)
 
 	// Final transition: nil ToStateKey.
 	transitionFinal := model_state.NewTransition(
-		k.transitionFinal,
-		&k.stateComplete, k.eventCancel, nil, nil, nil,
+		k.transitionFinal, k.eventCancel,
+		model_state.TransitionStateKeys{FromStateKey: &k.stateComplete},
+		model_state.TransitionLogicKeys{},
 		"",
 	)
 
@@ -1619,21 +1631,24 @@ func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 	var a testAttrs
 	var err error
 
-	a.orderDate, err = model_class.NewAttribute(k.attrOrderDate, "Order Date", "When the order was placed.", "3+ ordered of unconstrained", nil, false,
-		model_class.AttributeAnnotations{UmlComment: "the date"})
+	a.orderDate, err = model_class.NewAttribute(k.attrOrderDate, model_class.AttributeDetails{
+		Name: "Order Date", Details: "When the order was placed.",
+	}, "3+ ordered of unconstrained", nil, false, model_class.AttributeAnnotations{UmlComment: "the date"})
 	if err != nil {
 		return a, err
 	}
 
 	// Derived attribute with derivation policy.
-	a.total, err = model_class.NewAttribute(k.attrTotal, "Total", "Total amount for the order.", "(0 .. 1000000] at 0.01 dollar", &l.derivation, true,
-		model_class.AttributeAnnotations{IndexNums: []uint{1, 2}})
+	a.total, err = model_class.NewAttribute(k.attrTotal, model_class.AttributeDetails{
+		Name: "Total", Details: "Total amount for the order.",
+	}, "(0 .. 1000000] at 0.01 dollar", &l.derivation, true, model_class.AttributeAnnotations{IndexNums: []uint{1, 2}})
 	if err != nil {
 		return a, err
 	}
 
-	a.status, err = model_class.NewAttribute(k.attrStatus, "Status", "Current order status.", "enum of new, processing, complete", nil, false,
-		model_class.AttributeAnnotations{})
+	a.status, err = model_class.NewAttribute(k.attrStatus, model_class.AttributeDetails{
+		Name: "Status", Details: "Current order status.",
+	}, "enum of new, processing, complete", nil, false, model_class.AttributeAnnotations{})
 	if err != nil {
 		return a, err
 	}
@@ -1643,8 +1658,9 @@ func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 	}
 	a.status.DataType.TypeSpec = &statusTypeSpec
 
-	a.productName, err = model_class.NewAttribute(k.attrProductName, "Product Name", "Name of the product.", "unconstrained", nil, false,
-		model_class.AttributeAnnotations{})
+	a.productName, err = model_class.NewAttribute(k.attrProductName, model_class.AttributeDetails{
+		Name: "Product Name", Details: "Name of the product.",
+	}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
 	if err != nil {
 		return a, err
 	}
@@ -1745,15 +1761,15 @@ func buildClassGeneralizations(k testKeys) testGeneralizations {
 	g.all = make(map[identity.Key]model_class.Generalization)
 
 	// Pairwise: (T, F).
-	gen1 := model_class.NewGeneralization(k.classGen1, "Vehicle Types", "Specialization of vehicles.", notesClassGenVehicles, true, false, "vehicle hierarchy")
+	gen1 := model_class.NewGeneralization(k.classGen1, model_class.GeneralizationDetails{Name: "Vehicle Types", Details: "Specialization of vehicles."}, notesClassGenVehicles, model_class.GeneralizationTraits{IsComplete: true, IsStatic: false}, "vehicle hierarchy")
 	g.all[k.classGen1] = gen1
 
 	// Pairwise: (F, F).
-	gen2 := model_class.NewGeneralization(k.classGen2, "Product Types", "Specialization of products.", notesClassGenProducts, false, false, "")
+	gen2 := model_class.NewGeneralization(k.classGen2, model_class.GeneralizationDetails{Name: "Product Types", Details: "Specialization of products."}, notesClassGenProducts, model_class.GeneralizationTraits{IsComplete: false, IsStatic: false}, "")
 	g.all[k.classGen2] = gen2
 
 	// Pairwise: (F, T).
-	gen3 := model_class.NewGeneralization(k.classGen3, "Order Types", "Specialization of orders.", notesClassGenOrders, false, true, "")
+	gen3 := model_class.NewGeneralization(k.classGen3, model_class.GeneralizationDetails{Name: "Order Types", Details: "Specialization of orders."}, notesClassGenOrders, model_class.GeneralizationTraits{IsComplete: false, IsStatic: true}, "")
 	g.all[k.classGen3] = gen3
 
 	return g
@@ -1799,21 +1815,21 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	// Subdomain-level (3).
 	a1 := model_class.NewAssociation(
-		k.subdomainAssoc1, "order contains products", "Order-Product association.",
+		k.subdomainAssoc1, model_class.AssociationDetails{Name: "order contains products", Details: "Order-Product association."},
 		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, &k.classLineItem, "with line item",
 	)
 	ta.subdomain[k.subdomainAssoc1] = a1
 	ta.all[k.subdomainAssoc1] = a1
 
 	a2 := model_class.NewAssociation(
-		k.subdomainAssoc2, "order belongs to customer", "Order-Customer association.",
+		k.subdomainAssoc2, model_class.AssociationDetails{Name: "order belongs to customer", Details: "Order-Customer association."},
 		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: mult1}, nil, "",
 	)
 	ta.subdomain[k.subdomainAssoc2] = a2
 	ta.all[k.subdomainAssoc2] = a2
 
 	a3 := model_class.NewAssociation(
-		k.subdomainAssoc3, "product has line items", "Product-LineItem association.",
+		k.subdomainAssoc3, model_class.AssociationDetails{Name: "product has line items", Details: "Product-LineItem association."},
 		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classLineItem, Multiplicity: multMany}, nil, "",
 	)
 	ta.subdomain[k.subdomainAssoc3] = a3
@@ -1821,21 +1837,21 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	// Domain-level (3).
 	d1 := model_class.NewAssociation(
-		k.domainClassAssoc1, "order ships from warehouse", "Order-Warehouse relationship.",
+		k.domainClassAssoc1, model_class.AssociationDetails{Name: "order ships from warehouse", Details: "Order-Warehouse relationship."},
 		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multOpt}, nil, "",
 	)
 	ta.domain[k.domainClassAssoc1] = d1
 	ta.all[k.domainClassAssoc1] = d1
 
 	d2 := model_class.NewAssociation(
-		k.domainClassAssoc2, "product stored on shelf", "Product-Shelf relationship.",
+		k.domainClassAssoc2, model_class.AssociationDetails{Name: "product stored on shelf", Details: "Product-Shelf relationship."},
 		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classShelf, Multiplicity: mult1}, nil, "",
 	)
 	ta.domain[k.domainClassAssoc2] = d2
 	ta.all[k.domainClassAssoc2] = d2
 
 	d3 := model_class.NewAssociation(
-		k.domainClassAssoc3, "customer visits aisle", "Customer-Aisle relationship.",
+		k.domainClassAssoc3, model_class.AssociationDetails{Name: "customer visits aisle", Details: "Customer-Aisle relationship."},
 		model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classAisle, Multiplicity: multAny}, nil, "",
 	)
 	ta.domain[k.domainClassAssoc3] = d3
@@ -1843,21 +1859,21 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	// Model-level (3).
 	m1 := model_class.NewAssociation(
-		k.modelClassAssoc1, "product from supplier", "Product-Supplier relationship.",
+		k.modelClassAssoc1, model_class.AssociationDetails{Name: "product from supplier", Details: "Product-Supplier relationship."},
 		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classSupplier, Multiplicity: mult1}, nil, "cross-domain",
 	)
 	ta.model[k.modelClassAssoc1] = m1
 	ta.all[k.modelClassAssoc1] = m1
 
 	m2 := model_class.NewAssociation(
-		k.modelClassAssoc2, "order has shipment", "Order-Shipment relationship.",
+		k.modelClassAssoc2, model_class.AssociationDetails{Name: "order has shipment", Details: "Order-Shipment relationship."},
 		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classShipment, Multiplicity: multOpt}, nil, "",
 	)
 	ta.model[k.modelClassAssoc2] = m2
 	ta.all[k.modelClassAssoc2] = m2
 
 	m3 := model_class.NewAssociation(
-		k.modelClassAssoc3, "warehouse on route", "Warehouse-Route relationship.",
+		k.modelClassAssoc3, model_class.AssociationDetails{Name: "warehouse on route", Details: "Warehouse-Route relationship."},
 		model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classRoute, Multiplicity: multMany}, nil, "",
 	)
 	ta.model[k.modelClassAssoc3] = m3
@@ -1879,9 +1895,9 @@ func buildScenarios(k testKeys) testScenarios {
 	var s testScenarios
 
 	// Scenario objects (3).
-	objCustomer := model_scenario.NewObject(k.objCustomer, 1, "Alice", "name", k.classCustomer, false, "the customer")
-	objOrder := model_scenario.NewObject(k.objOrder, 2, "42", "id", k.classOrder, false, "")
-	objProduct := model_scenario.NewObject(k.objProduct, 3, "", "unnamed", k.classProduct, true, "")
+	objCustomer := model_scenario.NewObject(k.objCustomer, 1, model_scenario.ObjectDiagramName{Name: "Alice", NameStyle: "name"}, k.classCustomer, false, "the customer")
+	objOrder := model_scenario.NewObject(k.objOrder, 2, model_scenario.ObjectDiagramName{Name: "42", NameStyle: "id"}, k.classOrder, false, "")
+	objProduct := model_scenario.NewObject(k.objProduct, 3, model_scenario.ObjectDiagramName{NameStyle: "unnamed"}, k.classProduct, true, "")
 
 	// Step tree.
 	leafEvent := "event"
@@ -2051,9 +2067,9 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	}
 
 	// Use case generalizations (3).
-	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", notesUCGenManagement, false, true, "")
-	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", notesUCGenView, true, false, "")
-	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", notesUCGenCancel, true, true, "")
+	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, model_use_case.GeneralizationDetails{Name: "Order Management Types", Details: "Types of order management."}, notesUCGenManagement, model_use_case.GeneralizationTraits{IsComplete: false, IsStatic: true}, "")
+	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, model_use_case.GeneralizationDetails{Name: "Order View Types", Details: "Types of order viewing."}, notesUCGenView, model_use_case.GeneralizationTraits{IsComplete: true, IsStatic: false}, "")
+	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, model_use_case.GeneralizationDetails{Name: "Order Cancel Types", Details: "Types of order cancellation."}, notesUCGenCancel, model_use_case.GeneralizationTraits{IsComplete: true, IsStatic: true}, "")
 	u.useCaseGens = map[identity.Key]model_use_case.Generalization{
 		k.ucGen1: ucGen1,
 		k.ucGen2: ucGen2,
@@ -2100,9 +2116,9 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 	}
 
 	// Actor generalizations (3). Pairwise: (T,T), (F,F), (T,F).
-	actorGen1 := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", notesActorGenCustomers, true, true, "customer hierarchy")
-	actorGen2 := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", notesActorGenUsers, false, false, "")
-	actorGen3 := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", notesActorGenSystems, true, false, "")
+	actorGen1 := model_actor.NewGeneralization(k.actorGen1, model_actor.GeneralizationDetails{Name: "Customer Types", Details: "Types of customers."}, notesActorGenCustomers, model_actor.GeneralizationTraits{IsComplete: true, IsStatic: true}, "customer hierarchy")
+	actorGen2 := model_actor.NewGeneralization(k.actorGen2, model_actor.GeneralizationDetails{Name: "User Types", Details: "Types of users."}, notesActorGenUsers, model_actor.GeneralizationTraits{IsComplete: false, IsStatic: false}, "")
+	actorGen3 := model_actor.NewGeneralization(k.actorGen3, model_actor.GeneralizationDetails{Name: "System Types", Details: "Types of systems."}, notesActorGenSystems, model_actor.GeneralizationTraits{IsComplete: true, IsStatic: false}, "")
 
 	actorGens := map[identity.Key]model_actor.Generalization{
 		k.actorGen1: actorGen1,

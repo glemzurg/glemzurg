@@ -333,8 +333,7 @@ func (suite *ActionSuite) TestNew() {
 		helper.Must(NewParameter(key, "ParamB", "Int", false)),
 	}
 
-	action := NewAction(key, "Name", "Details",
-		requires, guarantees, safetyRules, params)
+	action := NewAction(key, ActionDetails{Name: "Name", Details: "Details"}, requires, guarantees, safetyRules, params)
 	suite.Equal(Action{
 		Key:         key,
 		Name:        "Name",
@@ -350,8 +349,7 @@ func (suite *ActionSuite) TestNew() {
 
 	// Test with nil optional fields (all Logic slice fields are optional).
 
-	action = NewAction(key, "Name", "Details",
-		nil, nil, nil, nil)
+	action = NewAction(key, ActionDetails{Name: "Name", Details: "Details"}, nil, nil, nil, nil)
 	suite.Equal(Action{
 		Key:     key,
 		Name:    "Name",

@@ -18,14 +18,26 @@ type Generalization struct {
 	UmlComment      string
 }
 
-func NewGeneralization(key identity.Key, name, details, unfinishedNotes string, isComplete, isStatic bool, umlComment string) Generalization {
+// GeneralizationDetails holds the human-authored name and description from a generalization file.
+type GeneralizationDetails struct {
+	Name    string
+	Details string
+}
+
+// GeneralizationTraits holds completeness and staticity flags for a generalization.
+type GeneralizationTraits struct {
+	IsComplete bool
+	IsStatic   bool
+}
+
+func NewGeneralization(key identity.Key, details GeneralizationDetails, unfinishedNotes string, traits GeneralizationTraits, umlComment string) Generalization {
 	return Generalization{
 		Key:             key,
-		Name:            name,
-		Details:         details,
+		Name:            details.Name,
+		Details:         details.Details,
 		UnfinishedNotes: unfinishedNotes,
-		IsComplete:      isComplete,
-		IsStatic:        isStatic,
+		IsComplete:      traits.IsComplete,
+		IsStatic:        traits.IsStatic,
 		UmlComment:      umlComment,
 	}
 }

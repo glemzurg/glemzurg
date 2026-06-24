@@ -38,8 +38,8 @@ func TestPopulateCallerDataFromModel_UseCaseEventSender(t *testing.T) {
 
 	scenario := model_scenario.NewScenario(scenarioKey, "Main", "")
 	scenario.SetObjects(map[identity.Key]model_scenario.Object{
-		fromObjectKey: model_scenario.NewObject(fromObjectKey, 1, "Admin", "name", adminClassKey, false, ""),
-		toObjectKey:   model_scenario.NewObject(toObjectKey, 2, "Acme", "name", partnerClassKey, false, ""),
+		fromObjectKey: model_scenario.NewObject(fromObjectKey, 1, model_scenario.ObjectDiagramName{Name: "Admin", NameStyle: "name"}, adminClassKey, false, ""),
+		toObjectKey:   model_scenario.NewObject(toObjectKey, 2, model_scenario.ObjectDiagramName{Name: "Acme", NameStyle: "name"}, partnerClassKey, false, ""),
 	})
 	scenario.Steps = &step
 
@@ -62,7 +62,7 @@ func TestPopulateCallerDataFromModel_UseCaseEventSender(t *testing.T) {
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("evenplay", "Evenplay", "", "", nil, nil, nil)
+	model := core.NewModel("evenplay", core.ModelDetails{Name: "Evenplay", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -104,7 +104,7 @@ func buildPartnerClassForCallerTest(classKey, eventKey identity.Key) model_class
 		eventKey: model_state.NewEvent(eventKey, "Add", "", nil),
 	}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		transKey: model_state.NewTransition(transKey, nil, eventKey, nil, nil, &stateKey, ""),
+		transKey: model_state.NewTransition(transKey, eventKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
 	}
 	return class
 }

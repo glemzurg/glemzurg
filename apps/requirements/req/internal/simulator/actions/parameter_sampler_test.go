@@ -61,7 +61,7 @@ func (s *ParameterSamplerSuite) jurisdictionAction() model_state.Action {
 		jurisdictionRequireSpec(`IF CountryCode = NULL THEN StateCode = NULL ELSE <<CountryCode, StateCode>> \in _JurisdictionCodes`),
 		nil,
 	)
-	return model_state.NewAction(actionKey, "Add", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
+	return model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
 }
 
 func (s *ParameterSamplerSuite) jurisdictionParams() []model_state.Parameter {
@@ -182,7 +182,7 @@ func (s *ParameterSamplerSuite) TestSampleEnumConstraint() {
 		helper.Must(logic_spec.NewExpressionSpec("tla_plus", `SocialOnly \in {"TRUE", "FALSE"}`, pf)),
 		nil,
 	)
-	action := model_state.NewAction(actionKey, "Add", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
 	params := []model_state.Parameter{
 		helper.Must(model_state.NewParameter(actionKey, "SocialOnly", "enum of TRUE, FALSE", false)),
 	}
@@ -232,17 +232,9 @@ func (s *ParameterSamplerSuite) TestBareParameterReferenceRequireIsSupported() {
 		helper.Must(logic_spec.NewExpressionSpec("tla_plus", "Name", pf)),
 		nil,
 	)
-	action := model_state.NewAction(
-		actionKey,
-		"Add",
-		"",
-		[]model_logic.Logic{requireLogic},
-		nil,
-		nil,
-		[]model_state.Parameter{
-			helper.Must(model_state.NewParameter(actionKey, "Name", "display name", false)),
-		},
-	)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "Name", "display name", false)),
+	})
 
 	err := ValidateActionRequiresSamplingSupport("Jurisdiction", action)
 	s.NoError(err)
@@ -260,17 +252,9 @@ func (s *ParameterSamplerSuite) TestUnsupportedCompareRequireReturnsSpecificErro
 		spec,
 		nil,
 	)
-	action := model_state.NewAction(
-		actionKey,
-		"SetAmount",
-		"",
-		[]model_logic.Logic{requireLogic},
-		nil,
-		nil,
-		[]model_state.Parameter{
-			helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
-		},
-	)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "SetAmount", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
+	})
 
 	err := ValidateActionRequiresSamplingSupport("Order", action)
 	s.Require().Error(err)
@@ -293,7 +277,7 @@ func (s *ParameterSamplerSuite) jurisdictionUpdateAction() model_state.Action {
 		jurisdictionRequireSpec(`IF CountryCode = NULL THEN StateCode = NULL ELSE <<CountryCode, StateCode>> \in _JurisdictionCodes`),
 		nil,
 	)
-	return model_state.NewAction(actionKey, "Update", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
+	return model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Update", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
 }
 
 func (s *ParameterSamplerSuite) jurisdictionUpdateParams() []model_state.Parameter {
@@ -369,26 +353,18 @@ func (s *ParameterSamplerSuite) TestSampleFromRequiresReturnsUnsupportedError() 
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	actionKey := helper.Must(identity.NewActionKey(classKey, "set_amount"))
 	spec := orderSpecWithParams("Amount > 0", []string{"Amount"})
-	action := model_state.NewAction(
-		actionKey,
-		"SetAmount",
-		"",
-		[]model_logic.Logic{
-			model_logic.NewLogic(
-				helper.Must(identity.NewActionRequireKey(actionKey, "0")),
-				model_logic.LogicTypeAssessment,
-				"Amount must be positive.",
-				"",
-				spec,
-				nil,
-			),
-		},
-		nil,
-		nil,
-		[]model_state.Parameter{
-			helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
-		},
-	)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "SetAmount", Details: ""}, []model_logic.Logic{
+		model_logic.NewLogic(
+			helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+			model_logic.LogicTypeAssessment,
+			"Amount must be positive.",
+			"",
+			spec,
+			nil,
+		),
+	}, nil, nil, []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
+	})
 	params := []model_state.Parameter{
 		helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
 	}
@@ -455,17 +431,9 @@ func (s *ParameterSamplerSuite) TestCurrencyRequiresSamplingSupport() {
 		currencyRequireSpec(`IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`),
 		nil,
 	)
-	action := model_state.NewAction(
-		actionKey,
-		"Add",
-		"",
-		[]model_logic.Logic{requireLogic},
-		nil,
-		nil,
-		[]model_state.Parameter{
-			helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true)),
-		},
-	)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true)),
+	})
 
 	err := ValidateActionRequiresSamplingSupport("Currency", action)
 	s.NoError(err)
@@ -482,7 +450,7 @@ func (s *ParameterSamplerSuite) TestSampleNullableElseMembershipFromNamedSet() {
 		currencyRequireSpec(`IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`),
 		nil,
 	)
-	action := model_state.NewAction(actionKey, "Add", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
 	params := []model_state.Parameter{
 		helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true)),
 	}

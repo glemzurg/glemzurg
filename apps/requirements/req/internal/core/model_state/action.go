@@ -20,11 +20,17 @@ type Action struct {
 	SafetyRules []model_logic.Logic // Boolean assertions that must reference primed variables.
 }
 
-func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) Action {
+// ActionDetails holds human-authored name and description for an action.
+type ActionDetails struct {
+	Name    string
+	Details string
+}
+
+func NewAction(key identity.Key, details ActionDetails, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) Action {
 	return Action{
 		Key:         key,
-		Name:        name,
-		Details:     details,
+		Name:        details.Name,
+		Details:     details.Details,
 		Requires:    requires,
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,

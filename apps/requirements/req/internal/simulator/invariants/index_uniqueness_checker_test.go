@@ -32,7 +32,7 @@ func indexTestModel(attrs []model_class.Attribute) (*core.Model, identity.Key) {
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -40,21 +40,18 @@ func indexTestModel(attrs []model_class.Attribute) (*core.Model, identity.Key) {
 }
 
 func spanAttr(name string, indexNums []uint) model_class.Attribute {
-	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), name, "", "[0, 10000]", nil, false,
-		model_class.AttributeAnnotations{IndexNums: indexNums}))
+	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), model_class.AttributeDetails{Name: name, Details: ""}, "[0, 10000]", nil, false, model_class.AttributeAnnotations{IndexNums: indexNums}))
 }
 
 func enumAttr(name string, values []string, indexNums []uint) model_class.Attribute {
 	dataTypeRules := "{" + strings.Join(values, ", ") + "}"
-	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), name, "", dataTypeRules, nil, false,
-		model_class.AttributeAnnotations{IndexNums: indexNums}))
+	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), model_class.AttributeDetails{Name: name, Details: ""}, dataTypeRules, nil, false, model_class.AttributeAnnotations{IndexNums: indexNums}))
 }
 
 // --- Tests ---
 
 func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/name"), "name", "", "string", nil, false,
-		model_class.AttributeAnnotations{}))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/name"), model_class.AttributeDetails{Name: "name", Details: ""}, "string", nil, false, model_class.AttributeAnnotations{}))
 	model, _ := indexTestModel([]model_class.Attribute{attr})
 
 	checker := NewIndexUniquenessChecker(model)

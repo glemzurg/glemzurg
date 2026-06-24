@@ -35,8 +35,7 @@ func TestProcessConversionFailureWritesErrorMarkdown(t *testing.T) {
 	rootOutput := t.TempDir()
 
 	// Point at a source root that has no such model: parsing fails.
-	err := processConversion(false, true, t.TempDir(), rootOutput, "evenplay",
-		InputFormatDataYAML, OutputFormatMD)
+	err := processConversion(conversionFlags{debug: false, skipDB: true}, conversionPaths{rootSourcePath: t.TempDir(), rootOutputPath: rootOutput}, "evenplay", conversionFormats{inputFormat: InputFormatDataYAML, outputFormat: OutputFormatMD})
 	if err == nil {
 		t.Fatal("expected processConversion to fail for a missing model")
 	}
@@ -54,8 +53,7 @@ func TestProcessConversionFailureWritesErrorMarkdown(t *testing.T) {
 func TestProcessConversionFailureNonMarkdownNoErrorFile(t *testing.T) {
 	rootOutput := t.TempDir()
 
-	err := processConversion(false, true, t.TempDir(), rootOutput, "evenplay",
-		InputFormatDataYAML, OutputFormatAIJSON)
+	err := processConversion(conversionFlags{debug: false, skipDB: true}, conversionPaths{rootSourcePath: t.TempDir(), rootOutputPath: rootOutput}, "evenplay", conversionFormats{inputFormat: InputFormatDataYAML, outputFormat: OutputFormatAIJSON})
 	if err == nil {
 		t.Fatal("expected processConversion to fail for a missing model")
 	}

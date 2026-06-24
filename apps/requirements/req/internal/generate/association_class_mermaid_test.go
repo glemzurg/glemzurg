@@ -23,13 +23,7 @@ func TestGenerateAssociationClassMermaidEndpointMultiplicities(t *testing.T) {
 	fromMult := helper.Must(model_class.NewMultiplicity("3"))
 	toMult := helper.Must(model_class.NewMultiplicity("many..many"))
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, "relates"))
-	assoc := model_class.NewAssociation(
-		assocKey, "relates", "",
-		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: fromMult},
-		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult},
-		&acKey,
-		"",
-	)
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "relates", Details: ""}, model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult}, &acKey, "")
 
 	subdomain := model_domain.Subdomain{
 		Key:  subdomainKey,

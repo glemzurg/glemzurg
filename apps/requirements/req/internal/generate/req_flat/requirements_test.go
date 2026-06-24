@@ -86,14 +86,13 @@ func buildTestModel() core.Model {
 	eventCreate := model_state.NewEvent(tEventCreateKey, "create", "", nil)
 	eventClose := model_state.NewEvent(tEventCloseKey, "close", "", nil)
 	guard := model_state.NewGuard(tGuardKey, "is_valid", guardLogic)
-	action := model_state.NewAction(tActionKey, "DoClose", "", nil, []model_logic.Logic{actionGuarantee}, nil, nil)
+	action := model_state.NewAction(tActionKey, model_state.ActionDetails{Name: "DoClose", Details: ""}, nil, []model_logic.Logic{actionGuarantee}, nil, nil)
 	query := model_state.NewQuery(tQueryKey, "GetTotal", "", nil, []model_logic.Logic{queryGuarantee}, nil)
 
 	// Class.
 	class := model_class.NewClass(tClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes([]model_class.Attribute{
-		helper.Must(model_class.NewAttribute(tAttributeKey, "amount", "", "", nil, false,
-			model_class.AttributeAnnotations{})),
+		helper.Must(model_class.NewAttribute(tAttributeKey, model_class.AttributeDetails{Name: "amount", Details: ""}, "", nil, false, model_class.AttributeAnnotations{})),
 	})
 	stateOpen := model_state.NewState(tStateOpenKey, "Open", "", "")
 	stateOpen.SetActions([]model_state.StateAction{
@@ -118,8 +117,8 @@ func buildTestModel() core.Model {
 		tQueryKey: query,
 	}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		tTransCreateKey: model_state.NewTransition(tTransCreateKey, nil, tEventCreateKey, nil, nil, &tStateOpenKey, ""),
-		tTransCloseKey:  model_state.NewTransition(tTransCloseKey, &tStateOpenKey, tEventCloseKey, &tGuardKey, &tActionKey, &tStateClosedKey, ""),
+		tTransCreateKey: model_state.NewTransition(tTransCreateKey, tEventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &tStateOpenKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
+		tTransCloseKey:  model_state.NewTransition(tTransCloseKey, tEventCloseKey, model_state.TransitionStateKeys{FromStateKey: &tStateOpenKey, ToStateKey: &tStateClosedKey}, model_state.TransitionLogicKeys{GuardKey: &tGuardKey, ActionKey: &tActionKey}, ""),
 	}
 	classInv1 := model_logic.NewLogic(tClassInvariantKey, model_logic.LogicTypeAssessment, "Order total matches.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.total > 0"}, nil)
 	classInv2 := model_logic.NewLogic(tClassInvariant2Key, model_logic.LogicTypeAssessment, "Order has items.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Len(self.items) > 0"}, nil)
@@ -136,12 +135,12 @@ func buildTestModel() core.Model {
 	class2.Transitions = map[identity.Key]model_state.Transition{}
 
 	// Generalization.
-	gen := model_class.NewGeneralization(tGenKey, "Vehicle", "", "", false, false, "")
+	gen := model_class.NewGeneralization(tGenKey, model_class.GeneralizationDetails{Name: "Vehicle", Details: ""}, "", model_class.GeneralizationTraits{IsComplete: false, IsStatic: false}, "")
 
 	// Use case.
 	useCase := model_use_case.NewUseCase(tUseCaseKey, model_use_case.UseCaseTraits{Level: "sea", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "PlaceOrder", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	scenario := model_scenario.NewScenario(tScenarioKey, "HappyPath", "")
-	obj := model_scenario.NewObject(tObjectKey, 1, "order1", "name", tClassKey, false, "")
+	obj := model_scenario.NewObject(tObjectKey, 1, model_scenario.ObjectDiagramName{Name: "order1", NameStyle: "name"}, tClassKey, false, "")
 	scenario.Objects = map[identity.Key]model_scenario.Object{
 		tObjectKey: obj,
 	}
@@ -151,7 +150,7 @@ func buildTestModel() core.Model {
 	useCase.Actors = map[identity.Key]model_use_case.Actor{}
 
 	// Use case generalization.
-	ucGen := model_use_case.NewGeneralization(tUseCaseGenKey, "OrderFlow", "", "", false, false, "")
+	ucGen := model_use_case.NewGeneralization(tUseCaseGenKey, model_use_case.GeneralizationDetails{Name: "OrderFlow", Details: ""}, "", model_use_case.GeneralizationTraits{IsComplete: false, IsStatic: false}, "")
 
 	// Subdomain.
 	subdomain := model_domain.NewSubdomain(tSubdomainKey, "S", "", "", "")
@@ -169,7 +168,7 @@ func buildTestModel() core.Model {
 		tUseCaseKey: useCase,
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		tAssocKey: model_class.NewAssociation(tAssocKey, "order_items", "", model_class.AssociationEnd{ClassKey: tClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: tClass2Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""),
+		tAssocKey: model_class.NewAssociation(tAssocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: tClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: tClass2Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""),
 	}
 
 	// Domain.
@@ -182,10 +181,10 @@ func buildTestModel() core.Model {
 	actor := model_actor.NewActor(tActorKey, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "User", Details: "", UnfinishedNotes: "", UmlComment: ""})
 
 	// Actor generalization.
-	actorGen := model_actor.NewGeneralization(tActorGenKey, "UserType", "", "", false, false, "")
+	actorGen := model_actor.NewGeneralization(tActorGenKey, model_actor.GeneralizationDetails{Name: "UserType", Details: ""}, "", model_actor.GeneralizationTraits{IsComplete: false, IsStatic: false}, "")
 
 	// Model.
-	model := core.NewModel("test", "Test", "", "", []model_logic.Logic{invariant}, map[identity.Key]model_logic.GlobalFunction{
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", []model_logic.Logic{invariant}, map[identity.Key]model_logic.GlobalFunction{
 		tGlobalFuncKey: globalFunc,
 	}, nil)
 	model.Actors = map[identity.Key]model_actor.Actor{
@@ -743,7 +742,7 @@ func (s *RequirementsSuite) TestDomainHasMultipleSubdomains_UnknownDomain() {
 // ============================================================
 
 func (s *RequirementsSuite) TestFlattenModel_EmptyModel() {
-	model := core.NewModel("empty", "Empty", "", "", nil, nil, nil)
+	model := core.NewModel("empty", core.ModelDetails{Name: "Empty", Details: ""}, "", nil, nil, nil)
 	reqs := NewRequirements(model)
 
 	s.Empty(reqs.Actors)

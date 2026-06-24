@@ -23,33 +23,25 @@ func TestActionGuaranteeDisplayDescriptionInMarkdown(t *testing.T) {
 	nameAttrKey := helper.Must(identity.NewAttributeKey(classKey, "name"))
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
 
-	nameAttr, err := model_class.NewAttribute(nameAttrKey, "Display Name", "", "unconstrained", nil, false, model_class.AttributeAnnotations{})
+	nameAttr, err := model_class.NewAttribute(nameAttrKey, model_class.AttributeDetails{Name: "Display Name", Details: ""}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
 	require.NoError(t, err)
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
 	class.SetAttributes([]model_class.Attribute{nameAttr})
 	class.SetActions(map[identity.Key]model_state.Action{
-		actionKey: model_state.NewAction(
-			actionKey,
-			"Add",
-			"Add a jurisdiction",
-			nil,
-			[]model_logic.Logic{{
-				Key:    guaranteeKey,
-				Type:   model_logic.LogicTypeStateChange,
-				Target: "name",
-				Spec:   logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Name"},
-			}},
-			nil,
-			nil,
-		),
+		actionKey: model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: "Add a jurisdiction"}, nil, []model_logic.Logic{{
+			Key:    guaranteeKey,
+			Type:   model_logic.LogicTypeStateChange,
+			Target: "name",
+			Spec:   logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Name"},
+		}}, nil, nil),
 	})
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)

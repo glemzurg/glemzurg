@@ -139,7 +139,7 @@ func buildAmbiguousSubdomainModel() *core.Model {
 		ambiguousSubdomain2Key: subdomain2,
 	}
 
-	model := core.NewModel("ambiguous", "Ambiguous", "", "", nil, nil, nil)
+	model := core.NewModel("ambiguous", core.ModelDetails{Name: "Ambiguous", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		ambiguousDomain1Key: domain1,
 		ambiguousDomain2Key: domain2,
@@ -164,7 +164,7 @@ func makePartnerClass(classKey identity.Key) model_class.Class {
 		eventKey: model_state.NewEvent(eventKey, "Add", "", nil),
 	}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		transKey: model_state.NewTransition(transKey, nil, eventKey, nil, nil, &stateKey, ""),
+		transKey: model_state.NewTransition(transKey, eventKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
 	}
 	return class
 }

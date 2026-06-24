@@ -154,7 +154,7 @@ func (suite *ObjectSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	obj := NewObject(key, 1, "Name", _NAME_STYLE_NAME, classKey, true, "UmlComment")
+	obj := NewObject(key, 1, ObjectDiagramName{Name: "Name", NameStyle: _NAME_STYLE_NAME}, classKey, true, "UmlComment")
 	suite.Equal(Object{
 		Key:          key,
 		ObjectNumber: 1,

@@ -108,15 +108,7 @@ func TestFormatAssociationFact(t *testing.T) {
 			fromMult := helper.Must(model_class.NewMultiplicity(tc.fromMult))
 			toMult := helper.Must(model_class.NewMultiplicity(tc.toMult))
 
-			assoc := model_class.NewAssociation(
-				helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, tc.assocName)),
-				tc.assocName,
-				tc.details,
-				model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: fromMult},
-				model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult},
-				nil,
-				"",
-			)
+			assoc := model_class.NewAssociation(helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, tc.assocName)), model_class.AssociationDetails{Name: tc.assocName, Details: tc.details}, model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult}, nil, "")
 
 			got := FormatAssociationFact(
 				assoc,

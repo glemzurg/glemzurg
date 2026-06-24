@@ -28,11 +28,17 @@ type AssociationEnd struct {
 	Multiplicity Multiplicity
 }
 
-func NewAssociation(key identity.Key, name, details string, from, to AssociationEnd, associationClassKey *identity.Key, umlComment string) Association {
+// AssociationDetails holds the human-authored name and description from an association file.
+type AssociationDetails struct {
+	Name    string
+	Details string
+}
+
+func NewAssociation(key identity.Key, details AssociationDetails, from, to AssociationEnd, associationClassKey *identity.Key, umlComment string) Association {
 	return Association{
 		Key:                 key,
-		Name:                name,
-		Details:             details,
+		Name:                details.Name,
+		Details:             details.Details,
 		FromClassKey:        from.ClassKey,
 		FromMultiplicity:    from.Multiplicity,
 		ToClassKey:          to.ClassKey,

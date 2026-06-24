@@ -108,11 +108,16 @@ type ActionExecutor struct {
 	deferMultiplicityInActionCheck bool
 }
 
+// InvariantRuntimeCheckers pairs the primary invariant and data-type checkers used during action execution.
+type InvariantRuntimeCheckers struct {
+	Checker  *invariants.InvariantChecker
+	DataType *invariants.DataTypeChecker
+}
+
 // NewActionExecutor creates a new action executor.
 func NewActionExecutor(
 	bindingsBuilder *state.BindingsBuilder,
-	invariantChecker *invariants.InvariantChecker,
-	dataTypeChecker *invariants.DataTypeChecker,
+	runtime InvariantRuntimeCheckers,
 	structuralCheckers *invariants.StructuralInvariantCheckers,
 	guardEvaluator *GuardEvaluator,
 	acIndex AssociationClassIndex,
@@ -120,8 +125,8 @@ func NewActionExecutor(
 ) *ActionExecutor {
 	return &ActionExecutor{
 		bindingsBuilder:    bindingsBuilder,
-		invariantChecker:   invariantChecker,
-		dataTypeChecker:    dataTypeChecker,
+		invariantChecker:   runtime.Checker,
+		dataTypeChecker:    runtime.DataType,
 		structuralCheckers: structuralCheckers,
 		guardEvaluator:     guardEvaluator,
 		acIndex:            acIndex,
@@ -598,6 +603,12 @@ func (e *ActionExecutor) executeQueryInContext(
 	return outputs, nil
 }
 
+// CreationLinkSource holds the association and parent instance for object creation linking.
+type CreationLinkSource struct {
+	SourceAssocKey *identity.Key
+	SourceID       *state.InstanceID
+}
+
 // ExecuteTransition handles an event arriving at an instance.
 // It finds matching transitions, evaluates guards, runs the action (if any),
 // and sets the _state attribute. Handles creation and deletion.
@@ -606,9 +617,8 @@ func (e *ActionExecutor) ExecuteTransition(
 	event model_state.Event,
 	instance *state.ClassInstance, // nil for creation (from initial state)
 	eventParams map[string]object.Object,
-	sourceAssocKey *identity.Key, // association for creation linking
-	sourceID *state.InstanceID, // parent instance for creation linking
-	targetID *state.InstanceID, // to-endpoint for association-class creation
+	source CreationLinkSource,
+	targetID *state.InstanceID,
 ) (*TransitionResult, error) {
 	currentStateName := getInstanceCurrentState(instance)
 
@@ -626,7 +636,7 @@ func (e *ActionExecutor) ExecuteTransition(
 
 	// Step 3: Handle creation (FromStateKey == nil)
 	if chosen.FromStateKey == nil {
-		instance, err = e.handleCreation(class, instance, sourceAssocKey, sourceID, targetID)
+		instance, err = e.handleCreation(class, instance, source.SourceAssocKey, source.SourceID, targetID)
 		if err != nil {
 			return nil, err
 		}

@@ -74,13 +74,12 @@ func TestClassAttributeTableName(t *testing.T) {
 	}{
 		{
 			name: "plain attribute",
-			attr: helper.Must(model_class.NewAttribute(attrKey, "Name", "", "", nil, false, model_class.AttributeAnnotations{})),
+			attr: helper.Must(model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "Name", Details: ""}, "", nil, false, model_class.AttributeAnnotations{})),
 			want: "Name",
 		},
 		{
 			name: "derived attribute with indexes",
-			attr: helper.Must(model_class.NewAttribute(attrKey, "Total", "", "", &model_logic.Logic{}, false,
-				model_class.AttributeAnnotations{IndexNums: []uint{0, 2}})),
+			attr: helper.Must(model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "Total", Details: ""}, "", &model_logic.Logic{}, false, model_class.AttributeAnnotations{IndexNums: []uint{0, 2}})),
 			want: "/Total [key,i2]",
 		},
 	}
@@ -103,14 +102,8 @@ func TestClassIndexListings(t *testing.T) {
 	emailKey := helper.Must(identity.NewAttributeKey(classKey, "email"))
 
 	listings := classIndexListings([]model_class.Attribute{
-		helper.Must(model_class.NewAttribute(
-			abbrKey, "Abbr", "", "", nil, false,
-			model_class.AttributeAnnotations{IndexNums: []uint{0}},
-		)),
-		helper.Must(model_class.NewAttribute(
-			emailKey, "Email", "", "", nil, false,
-			model_class.AttributeAnnotations{IndexNums: []uint{1, 3}},
-		)),
+		helper.Must(model_class.NewAttribute(abbrKey, model_class.AttributeDetails{Name: "Abbr", Details: ""}, "", nil, false, model_class.AttributeAnnotations{IndexNums: []uint{0}})),
+		helper.Must(model_class.NewAttribute(emailKey, model_class.AttributeDetails{Name: "Email", Details: ""}, "", nil, false, model_class.AttributeAnnotations{IndexNums: []uint{1, 3}})),
 	})
 
 	require.Len(t, listings, 3)
@@ -130,14 +123,8 @@ func TestGenerateClassMarkdownListsNamedIndexes(t *testing.T) {
 
 	widget := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Widget"})
 	widget.SetAttributes([]model_class.Attribute{
-		helper.Must(model_class.NewAttribute(
-			abbrKey, "Abbr", "", "", nil, false,
-			model_class.AttributeAnnotations{IndexNums: []uint{0}},
-		)),
-		helper.Must(model_class.NewAttribute(
-			emailKey, "Email", "", "", nil, false,
-			model_class.AttributeAnnotations{IndexNums: []uint{1, 3}},
-		)),
+		helper.Must(model_class.NewAttribute(abbrKey, model_class.AttributeDetails{Name: "Abbr", Details: ""}, "", nil, false, model_class.AttributeAnnotations{IndexNums: []uint{0}})),
+		helper.Must(model_class.NewAttribute(emailKey, model_class.AttributeDetails{Name: "Email", Details: ""}, "", nil, false, model_class.AttributeAnnotations{IndexNums: []uint{1, 3}})),
 	})
 
 	model := core.Model{

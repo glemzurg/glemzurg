@@ -277,8 +277,7 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 	object = model_scenario.NewObject(
 		objectKey,
 		objectNum,
-		name,
-		nameStyle,
+		model_scenario.ObjectDiagramName{Name: name, NameStyle: nameStyle},
 		classKey,
 		multi,
 		umlComment)

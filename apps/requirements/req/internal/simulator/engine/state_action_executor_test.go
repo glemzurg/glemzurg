@@ -44,7 +44,7 @@ func TestStateActionExecutorSuite(t *testing.T) {
 func buildStateActionTestExecutor(simState *state.SimulationState) *actions.ActionExecutor {
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
-	return actions.NewActionExecutor(bb, nil, nil, nil, ge, nil, nil)
+	return actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, nil, nil)
 }
 
 func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
@@ -56,7 +56,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionExitKey, "0"))
 	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", stateActionOrderSpec("self.exit_count + 1"), nil)
-	actionExit := model_state.NewAction(actionExitKey, "OnExit", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionExit := model_state.NewAction(actionExitKey, model_state.ActionDetails{Name: "OnExit", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateActionExit := model_state.NewStateAction(stateActionKey, actionExitKey, "exit")
 
@@ -105,7 +105,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionEntryKey, "0"))
 	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", stateActionOrderSpec("self.entry_count + 1"), nil)
-	actionEntry := model_state.NewAction(actionEntryKey, "OnEntry", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionEntry := model_state.NewAction(actionEntryKey, model_state.ActionDetails{Name: "OnEntry", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateActionEntry := model_state.NewStateAction(stateActionKey, actionEntryKey, "entry")
 

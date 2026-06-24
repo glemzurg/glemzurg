@@ -38,13 +38,13 @@ func testOrderClass() (model_class.Class, identity.Key) {
 
 	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 	eventClose := model_state.NewEvent(eventCloseKey, "close", "", nil)
-	actionClose := model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionClose := model_state.NewAction(actionCloseKey, model_state.ActionDetails{Name: "DoClose", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 	stateClosed := model_state.NewState(stateClosedKey, "Closed", "", "")
 
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
-	transClose := model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateOpenKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
+	transClose := model_state.NewTransition(transCloseKey, eventCloseKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: &stateClosedKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: &actionCloseKey}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(nil)
@@ -80,7 +80,7 @@ func testItemClass() (model_class.Class, identity.Key) {
 
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(nil)
@@ -160,7 +160,7 @@ func testModel(classes ...struct {
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

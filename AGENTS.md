@@ -120,7 +120,7 @@ These rules apply **only** to [go-complexity-lint](https://github.com/glemzurg/g
 When `go-complexity-lint` reports a finding:
 
 1. Run the gate and surface the warning with the affected function and the lint's suggested counts.
-2. Fix the code — refactor, split logic, or group related parameters into a coherent struct when appropriate.
+2. Fix the code by following the linter's remediation hint for that metric and avoid any anti-pattern described — do not invent a different strategy.
 3. If a scoped override or project-wide threshold change is the right outcome, describe the trade-off and leave the decision to the human.
 
 Existing `//complexity:...` comments in the codebase are human-approved; do not extend that pattern or copy it into new code.

@@ -252,20 +252,16 @@ func (b *BindingsBuilder) syncAssociationLinks() {
 func (b *BindingsBuilder) AddAssociationClassHost(
 	assocKey identity.Key,
 	name string,
-	fromClassKey identity.Key,
-	toClassKey identity.Key,
+	endpoints evaluator.AssociationHostEndpoints,
 	linkClassKey identity.Key,
-	fromMultiplicity evaluator.Multiplicity,
-	toMultiplicity evaluator.Multiplicity,
+	mults evaluator.AssociationHostMultiplicities,
 ) {
 	b.relationCtx.AddAssociationClassHost(
 		evaluator.AssociationKey(assocKey.String()),
 		name,
-		fromClassKey.String(),
-		toClassKey.String(),
+		endpoints,
 		linkClassKey.String(),
-		fromMultiplicity,
-		toMultiplicity,
+		mults,
 	)
 }
 

@@ -172,10 +172,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	assoc := NewAssociation(key, "Name", "Details",
-		AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity},
-		AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity},
-		&assocClassKey, "UmlComment")
+	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, &assocClassKey, "UmlComment")
 	suite.Equal(Association{
 		Key:                 key,
 		Name:                "Name",

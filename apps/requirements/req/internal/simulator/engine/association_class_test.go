@@ -40,15 +40,7 @@ func buildAssociationClassTestModel() *acTestModel {
 	hostAssocKey := testAssocKey(partnerKey, jurisdictionKey, "Configures")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	hostAssoc := model_class.NewAssociation(
-		hostAssocKey,
-		"Configures",
-		"",
-		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: fromMult},
-		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: toMult},
-		&linkDefKey,
-		"",
-	)
+	hostAssoc := model_class.NewAssociation(hostAssocKey, model_class.AssociationDetails{Name: "Configures", Details: ""}, model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: toMult}, &linkDefKey, "")
 
 	m := testModel(
 		classEntry(partnerClass, partnerKey),
@@ -94,9 +86,9 @@ func testLinkDefClass() (model_class.Class, identity.Key) {
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateDeleted := model_state.NewState(stateDeletedKey, "Deleted", "", "")
 
-	transAdd := model_state.NewTransition(transAddKey, nil, eventAddKey, nil, nil, &stateActiveKey, "")
-	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
-	transDelete := model_state.NewTransition(transDeleteKey, &stateActiveKey, eventDeleteKey, nil, nil, &stateDeletedKey, "")
+	transAdd := model_state.NewTransition(transAddKey, eventAddKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
+	transUpdate := model_state.NewTransition(transUpdateKey, eventUpdateKey, model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
+	transDelete := model_state.NewTransition(transDeleteKey, eventDeleteKey, model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateDeletedKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "LinkDef", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(nil)
@@ -129,7 +121,7 @@ func simpleCreateClass(subKey, name string) (model_class.Class, identity.Key) {
 
 	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: name, Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(nil)
@@ -174,7 +166,7 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, nil, nil, &invariants.StructuralInvariantCheckers{
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
 		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
 	}, ge, catalog, rng)
 
@@ -186,22 +178,14 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	jurisdictionEvent := jurisdictionClass.Events[mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")]
 	addEvent := linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")]
 
-	partnerResult, err := ae.ExecuteTransition(partnerClass, partnerEvent, nil, nil, nil, nil, nil)
+	partnerResult, err := ae.ExecuteTransition(partnerClass, partnerEvent, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
-	jurisdictionResult, err := ae.ExecuteTransition(jurisdictionClass, jurisdictionEvent, nil, nil, nil, nil, nil)
+	jurisdictionResult, err := ae.ExecuteTransition(jurisdictionClass, jurisdictionEvent, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
 	acInfo := catalog.LookupAssociationClass(tcm.linkDefKey)
 	hostAssocKey := acInfo.HostAssociation.Key
-	result, err := ae.ExecuteTransition(
-		linkDefClass,
-		addEvent,
-		nil,
-		nil,
-		&hostAssocKey,
-		&partnerResult.InstanceID,
-		&jurisdictionResult.InstanceID,
-	)
+	result, err := ae.ExecuteTransition(linkDefClass, addEvent, nil, nil, actions.CreationLinkSource{SourceAssocKey: &hostAssocKey, SourceID: &partnerResult.InstanceID}, &jurisdictionResult.InstanceID)
 	s.Require().NoError(err)
 	s.True(result.WasCreation)
 
@@ -222,14 +206,14 @@ func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 	catalog := NewClassCatalog(tcm.model)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, nil, nil, &invariants.StructuralInvariantCheckers{
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
 		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
 	}, ge, catalog, rng)
 
 	linkDefClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.linkDefKey]
 	addEvent := linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")]
 
-	_, err := ae.ExecuteTransition(linkDefClass, addEvent, nil, nil, nil, nil, nil)
+	_, err := ae.ExecuteTransition(linkDefClass, addEvent, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "requires both endpoint instances")
 }
@@ -243,7 +227,7 @@ func (s *AssociationClassSuite) TestDeleteSoftDeleteExcludesFromActiveCount() {
 
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, nil, nil, &invariants.StructuralInvariantCheckers{
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
 		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
 	}, ge, catalog, rng)
 
@@ -251,33 +235,21 @@ func (s *AssociationClassSuite) TestDeleteSoftDeleteExcludesFromActiveCount() {
 	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
 	jurisdictionClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.jurisdictionKey]
 
-	partnerResult, err := ae.ExecuteTransition(
-		partnerClass,
-		partnerClass.Events[mustKey("domain/d/subdomain/s/class/partner/event/create")],
-		nil, nil, nil, nil, nil,
-	)
+	partnerResult, err := ae.ExecuteTransition(partnerClass, partnerClass.Events[mustKey("domain/d/subdomain/s/class/partner/event/create")], nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
-	jurisdictionResult, err := ae.ExecuteTransition(
-		jurisdictionClass,
-		jurisdictionClass.Events[mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")],
-		nil, nil, nil, nil, nil,
-	)
+	jurisdictionResult, err := ae.ExecuteTransition(jurisdictionClass, jurisdictionClass.Events[mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")], nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
 	acInfo := catalog.LookupAssociationClass(tcm.linkDefKey)
 	hostAssocKey := acInfo.HostAssociation.Key
-	addResult, err := ae.ExecuteTransition(
-		linkDefClass,
-		linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")],
-		nil, nil, &hostAssocKey, &partnerResult.InstanceID, &jurisdictionResult.InstanceID,
-	)
+	addResult, err := ae.ExecuteTransition(linkDefClass, linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")], nil, nil, actions.CreationLinkSource{SourceAssocKey: &hostAssocKey, SourceID: &partnerResult.InstanceID}, &jurisdictionResult.InstanceID)
 	s.Require().NoError(err)
 
 	s.Empty(addResult.Violations.ByType(invariants.ViolationTypeMultiplicity))
 
 	acInstance := simState.GetInstance(addResult.InstanceID)
 	deleteEvent := linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/delete")]
-	deleteResult, err := ae.ExecuteTransition(linkDefClass, deleteEvent, acInstance, nil, nil, nil, nil)
+	deleteResult, err := ae.ExecuteTransition(linkDefClass, deleteEvent, acInstance, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
 	multViolations := deleteResult.Violations.ByType(invariants.ViolationTypeMultiplicity)

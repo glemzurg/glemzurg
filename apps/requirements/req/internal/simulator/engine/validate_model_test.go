@@ -30,22 +30,14 @@ func (s *ValidateModelSuite) jurisdictionClassMissingEventParam() (model_class.C
 		"CountryCode",
 		"StateCode",
 	})
-	actionAdd := model_state.NewAction(
-		actionAddKey,
-		"Add",
-		"",
-		nil,
-		nil,
-		nil,
-		[]model_state.Parameter{
-			helper.Must(model_state.NewParameter(actionAddKey, "Name", "unconstrained", false)),
-			helper.Must(model_state.NewParameter(actionAddKey, "SocialOnly", "enum of TRUE, FALSE", false)),
-			helper.Must(model_state.NewParameter(actionAddKey, "CountryCode", "ref", true)),
-			helper.Must(model_state.NewParameter(actionAddKey, "StateCode", "ref", true)),
-		},
-	)
+	actionAdd := model_state.NewAction(actionAddKey, model_state.ActionDetails{Name: "Add", Details: ""}, nil, nil, nil, []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionAddKey, "Name", "unconstrained", false)),
+		helper.Must(model_state.NewParameter(actionAddKey, "SocialOnly", "enum of TRUE, FALSE", false)),
+		helper.Must(model_state.NewParameter(actionAddKey, "CountryCode", "ref", true)),
+		helper.Must(model_state.NewParameter(actionAddKey, "StateCode", "ref", true)),
+	})
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
-	transAdd := model_state.NewTransition(transAddKey, nil, eventAddKey, nil, &actionAddKey, &stateActiveKey, "")
+	transAdd := model_state.NewTransition(transAddKey, eventAddKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: &actionAddKey}, "")
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Jurisdiction", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetAttributes(nil)

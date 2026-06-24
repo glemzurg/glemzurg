@@ -442,7 +442,9 @@ func attributeFromYamlData(classKey identity.Key, attributeAny any) (attribute m
 			return model_class.Attribute{}, err
 		}
 
-		attribute, err = model_class.NewAttribute(extras.attrKey, scalars.name, scalars.details, scalars.dataTypeRules, extras.derivationPolicy, scalars.nullable, extras.annotations)
+		attribute, err = model_class.NewAttribute(extras.attrKey, model_class.AttributeDetails{
+			Name: scalars.name, Details: scalars.details,
+		}, scalars.dataTypeRules, extras.derivationPolicy, scalars.nullable, extras.annotations)
 		if err != nil {
 			return model_class.Attribute{}, err
 		}
@@ -646,8 +648,7 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 
 		association = model_class.NewAssociation(
 			assocKey,
-			name,
-			details,
+			model_class.AssociationDetails{Name: name, Details: details},
 			model_class.AssociationEnd{ClassKey: fromClassKey, Multiplicity: fromMultiplicity},
 			model_class.AssociationEnd{ClassKey: toClassKey, Multiplicity: toMultiplicity},
 			associationClassKey,
@@ -929,8 +930,7 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 
 	action = model_state.NewAction(
 		actionKey,
-		name,
-		details,
+		model_state.ActionDetails{Name: name, Details: details},
 		requires,
 		guarantees,
 		safetyRules,
@@ -1107,11 +1107,9 @@ func transitionFromYamlData(lookups parseKeyLookups, classKey identity.Key, tran
 
 	transition = model_state.NewTransition(
 		transitionKey,
-		fromStateKey,
 		eventKey,
-		guardKey,
-		actionKey,
-		toStateKey,
+		model_state.TransitionStateKeys{FromStateKey: fromStateKey, ToStateKey: toStateKey},
+		model_state.TransitionLogicKeys{GuardKey: guardKey, ActionKey: actionKey},
 		umlComment)
 
 	return transition, nil

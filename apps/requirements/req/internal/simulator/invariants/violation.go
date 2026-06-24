@@ -382,11 +382,16 @@ func NewUnparsedAttributeDataTypeViolation(
 	}
 }
 
+// ViolationSourceIdentity holds the key and name of the action or query that owns a parameter violation.
+type ViolationSourceIdentity struct {
+	Key  identity.Key
+	Name string
+}
+
 // NewUnparsedParameterDataTypeViolation creates a violation when a simulated parameter's
 // data type rules did not parse.
 func NewUnparsedParameterDataTypeViolation(
-	sourceKey identity.Key,
-	sourceName string,
+	source ViolationSourceIdentity,
 	sourceKind string,
 	parameterName string,
 	dataTypeRules string,
@@ -395,12 +400,12 @@ func NewUnparsedParameterDataTypeViolation(
 ) *ViolationError {
 	return &ViolationError{
 		Type:              ViolationTypeUnparsedDataType,
-		Message:           fmt.Sprintf("parameter %s on %s %s has unparsed data type rules: %s", parameterName, sourceKind, sourceName, dataTypeRules),
+		Message:           fmt.Sprintf("parameter %s on %s %s has unparsed data type rules: %s", parameterName, sourceKind, source.Name, dataTypeRules),
 		InstanceID:        instanceID,
 		ClassKey:          classKey,
 		AttributeName:     parameterName,
-		ActionOrQueryKey:  sourceKey,
-		ActionOrQueryName: sourceName,
+		ActionOrQueryKey:  source.Key,
+		ActionOrQueryName: source.Name,
 		ExpectedValue:     dataTypeRules,
 	}
 }

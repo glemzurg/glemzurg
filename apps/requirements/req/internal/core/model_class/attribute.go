@@ -32,11 +32,17 @@ type AttributeAnnotations struct {
 	IndexNums  []uint
 }
 
-func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, annotations AttributeAnnotations) (attribute Attribute, err error) {
+// AttributeDetails holds the human-authored name and description for an attribute.
+type AttributeDetails struct {
+	Name    string
+	Details string
+}
+
+func NewAttribute(key identity.Key, details AttributeDetails, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, annotations AttributeAnnotations) (attribute Attribute, err error) {
 	attribute = Attribute{
 		Key:              key,
-		Name:             name,
-		Details:          details,
+		Name:             details.Name,
+		Details:          details.Details,
 		DataTypeRules:    dataTypeRules,
 		DerivationPolicy: derivationPolicy,
 		Nullable:         nullable,

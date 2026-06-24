@@ -20,7 +20,8 @@ func CheckParameterTypeSpecs(
 	for _, param := range params {
 		if param.DataType == nil {
 			violations = append(violations, NewUnparsedParameterDataTypeViolation(
-				sourceKey, sourceName, sourceKind, param.Name, param.DataTypeRules, instanceID, classKey,
+				ViolationSourceIdentity{Key: sourceKey, Name: sourceName},
+				sourceKind, param.Name, param.DataTypeRules, instanceID, classKey,
 			))
 			continue
 		}

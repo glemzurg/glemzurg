@@ -97,8 +97,8 @@ func makeOrderClass() model_class.Class {
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		orderTransCreateKey: model_state.NewTransition(orderTransCreateKey, nil, orderEventCreateKey, nil, nil, &orderStateOpenKey, ""),
-		orderTransCloseKey:  model_state.NewTransition(orderTransCloseKey, &orderStateOpenKey, orderEventCloseKey, nil, nil, &orderStateClosedKey, ""),
+		orderTransCreateKey: model_state.NewTransition(orderTransCreateKey, orderEventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &orderStateOpenKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
+		orderTransCloseKey:  model_state.NewTransition(orderTransCloseKey, orderEventCloseKey, model_state.TransitionStateKeys{FromStateKey: &orderStateOpenKey, ToStateKey: &orderStateClosedKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
 	}
 	return class
 }
@@ -117,7 +117,7 @@ func makeItemClass() model_class.Class {
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		itemTransCreateKey: model_state.NewTransition(itemTransCreateKey, nil, itemEventCreateKey, nil, nil, &itemStateActiveKey, ""),
+		itemTransCreateKey: model_state.NewTransition(itemTransCreateKey, itemEventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &itemStateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
 	}
 	return class
 }
@@ -136,7 +136,7 @@ func makePaymentClass() model_class.Class {
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		paymentTransCreateKey: model_state.NewTransition(paymentTransCreateKey, nil, paymentEventCreateKey, nil, nil, &paymentStatePendingKey, ""),
+		paymentTransCreateKey: model_state.NewTransition(paymentTransCreateKey, paymentEventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &paymentStatePendingKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
 	}
 	return class
 }
@@ -165,7 +165,7 @@ func buildTwoDomainModel() *core.Model {
 		itemClassKey:  makeItemClass(),
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, ""),
+		assocKey: model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, ""),
 	}
 
 	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
@@ -183,7 +183,7 @@ func buildTwoDomainModel() *core.Model {
 		subdomain2Key: subdomain2,
 	}
 
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey:  domain,
 		domain2Key: domain2,
@@ -204,7 +204,7 @@ func buildSingleDomainModel() *core.Model {
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -403,7 +403,7 @@ func (s *ResolverSuite) TestResolve_StatelessClass_IncludedWithWarning() {
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -496,7 +496,7 @@ func (s *ResolverSuite) TestResolve_NoSimulatableClasses_Error() {
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -713,7 +713,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations: map[identity.Key]model_class.Association{
-			assocKey: model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""),
+			assocKey: model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""),
 		},
 		ModelInvariants: []model_logic.Logic{},
 	}
@@ -735,10 +735,10 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 
 func (s *FilteredModelSuite) TestBuildFilteredModel_PreservesActorAndUseCaseGeneralizations() {
 	actorGenKey := helper.Must(identity.NewActorGeneralizationKey("customers"))
-	actorGen := model_actor.NewGeneralization(actorGenKey, "Customers", "", "actor gen notes", true, true, "")
+	actorGen := model_actor.NewGeneralization(actorGenKey, model_actor.GeneralizationDetails{Name: "Customers", Details: ""}, "actor gen notes", model_actor.GeneralizationTraits{IsComplete: true, IsStatic: true}, "")
 
 	ucGenKey := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "management"))
-	ucGen := model_use_case.NewGeneralization(ucGenKey, "Management", "", "uc gen notes", true, true, "")
+	ucGen := model_use_case.NewGeneralization(ucGenKey, model_use_case.GeneralizationDetails{Name: "Management", Details: ""}, "uc gen notes", model_use_case.GeneralizationTraits{IsComplete: true, IsStatic: true}, "")
 
 	model := buildSingleDomainModel()
 	model.ActorGeneralizations = map[identity.Key]model_actor.Generalization{

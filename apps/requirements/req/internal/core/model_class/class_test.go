@@ -322,13 +322,13 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	invKey := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
 	validInvariant := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	validLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	validAction := model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil)
+	validAction := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Action", Details: ""}, nil, nil, nil, nil)
 	validEvent := model_state.NewEvent(eventKey, "Event", "", nil)
 	validState := model_state.NewState(stateKey, "State", "", "")
 	validGuard := model_state.NewGuard(guardKey, "Guard", validLogic)
 	validQuery := model_state.NewQuery(queryKey, "Query", "", nil, nil, nil)
 	validAttr := Attribute{Key: attrKey, Name: "Attr"}
-	validTransition := model_state.NewTransition(transitionKey, &stateKey, eventKey, nil, nil, &stateKey, "")
+	validTransition := model_state.NewTransition(transitionKey, eventKey, model_state.TransitionStateKeys{FromStateKey: &stateKey, ToStateKey: &stateKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 	class = Class{
 		Key:         validKey,
 		Name:        "Name",
@@ -365,7 +365,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Actions: map[identity.Key]model_state.Action{
-			actionKey: model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil),
+			actionKey: model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Action", Details: ""}, []model_logic.Logic{wrongReqLogic}, nil, nil, nil),
 		},
 	}
 	err = class.ValidateWithParent(ctx, &subdomainKey)
@@ -436,7 +436,7 @@ func (suite *ClassSuite) TestSetters() {
 	class.SetGuards(guards)
 	suite.Equal(guards, class.Guards)
 
-	actions := map[identity.Key]model_state.Action{actionKey: model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil)}
+	actions := map[identity.Key]model_state.Action{actionKey: model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Action", Details: ""}, nil, nil, nil, nil)}
 	class.SetActions(actions)
 	suite.Equal(actions, class.Actions)
 

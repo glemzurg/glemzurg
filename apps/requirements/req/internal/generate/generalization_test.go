@@ -24,7 +24,7 @@ func TestGenerateClassBoxesForGeneralizationParticipants(t *testing.T) {
 
 	parent := model_class.NewClass(parentKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &genKey, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shape", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	child := model_class.NewClass(childKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &genKey}, model_class.ClassDetails{Name: "Circle", Details: "", UnfinishedNotes: "", UmlComment: ""})
-	gen := model_class.NewGeneralization(genKey, "Shape Types", "", "", true, true, "")
+	gen := model_class.NewGeneralization(genKey, model_class.GeneralizationDetails{Name: "Shape Types", Details: ""}, "", model_class.GeneralizationTraits{IsComplete: true, IsStatic: true}, "")
 
 	subdomain := model_domain.Subdomain{
 		Key:  subdomainKey,

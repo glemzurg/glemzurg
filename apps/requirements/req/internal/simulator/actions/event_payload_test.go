@@ -40,7 +40,7 @@ func (s *EventPayloadSuite) TestSampleEventPayloadIncludesEventOnlyNames() {
 	})
 
 	quantity := helper.Must(model_state.NewParameter(s.actionKey, "quantity", "[1 .. 10] at 1 unit", false))
-	action := model_state.NewAction(s.actionKey, "Process", "", nil, nil, nil, []model_state.Parameter{quantity})
+	action := model_state.NewAction(s.actionKey, model_state.ActionDetails{Name: "Process", Details: ""}, nil, nil, nil, []model_state.Parameter{quantity})
 
 	binder := NewParameterBinder()
 	sampler := NewParameterSampler(binder, nil)
@@ -100,7 +100,7 @@ func TestMatchActionParametersByEventNames(t *testing.T) {
 
 	quantity := helper.Must(model_state.NewParameter(actionKey, "quantity", "Nat", false))
 	priority := helper.Must(model_state.NewParameter(actionKey, "priority", "Nat", false))
-	action := model_state.NewAction(actionKey, "Process", "", nil, nil, nil, []model_state.Parameter{quantity, priority})
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Process", Details: ""}, nil, nil, nil, []model_state.Parameter{quantity, priority})
 
 	matched := matchActionParametersByEventNames([]string{"quantity", "extra_telemetry"}, &action)
 	require.Len(t, matched, 1)

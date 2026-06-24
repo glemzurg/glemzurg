@@ -373,17 +373,23 @@ func validateMapKeyMatchesName(key, name, entityType string, errCode int, filePa
 	return nil
 }
 
+// prefixedFilenameKeyName holds the filename key and entity name compared during validation.
+type prefixedFilenameKeyName struct {
+	Key  string
+	Name string
+}
+
 // validatePrefixedFilenameMatchesName checks that a prefixed filename key matches the expected key.
 // Used for entities like global functions where the key has a prefix (e.g., "_") that the name also has.
 // The prefix is stripped from both key and name before comparison.
-func validatePrefixedFilenameMatchesName(key, name, prefix, entityType, extension string, errCode int, filePath string) error {
-	nameWithoutPrefix := strings.TrimPrefix(name, prefix)
+func validatePrefixedFilenameMatchesName(keyName prefixedFilenameKeyName, prefix, entityType, extension string, errCode int, filePath string) error {
+	nameWithoutPrefix := strings.TrimPrefix(keyName.Name, prefix)
 	expectedKey := prefix + keyFromName(nameWithoutPrefix)
-	if key != expectedKey {
+	if keyName.Key != expectedKey {
 		return NewParseError(
 			errCode,
 			fmt.Sprintf("%s filename '%s%s' does not match name '%s' - expected filename '%s%s'",
-				entityType, key, extension, name, expectedKey, extension),
+				entityType, keyName.Key, extension, keyName.Name, expectedKey, extension),
 			filePath,
 		).WithField("name").WithHint(fmt.Sprintf("rename the file to '%s%s' or change the name field to match the current filename", expectedKey, extension))
 	}

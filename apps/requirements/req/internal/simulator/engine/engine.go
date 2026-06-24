@@ -193,11 +193,12 @@ func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.B
 			bindingsBuilder.AddAssociationClassHost(
 				assoc.Key,
 				assoc.Name,
-				assoc.FromClassKey,
-				assoc.ToClassKey,
+				evaluator.AssociationHostEndpoints{
+					FromClassKey: assoc.FromClassKey.String(),
+					ToClassKey:   assoc.ToClassKey.String(),
+				},
 				*assoc.AssociationClassKey,
-				fromMult,
-				toMult,
+				evaluator.AssociationHostMultiplicities{From: fromMult, To: toMult},
 			)
 			continue
 		}
@@ -243,8 +244,10 @@ func buildActionExecutor(
 		Multiplicity: checkers.multChecker,
 	}
 	return actions.NewActionExecutor(
-		bindingsBuilder, checkers.invariantChecker, checkers.dataTypeChecker,
-		structuralCheckers, guardEvaluator, catalog, rng,
+		bindingsBuilder,
+		actions.InvariantRuntimeCheckers{Checker: checkers.invariantChecker, DataType: checkers.dataTypeChecker},
+		structuralCheckers,
+		guardEvaluator, catalog, rng,
 	)
 }
 

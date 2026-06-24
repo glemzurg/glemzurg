@@ -501,7 +501,7 @@ func (suite *KeyValidateSuite) TestValidatePrefixedFilenameMatchesName() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			err := validatePrefixedFilenameMatchesName(tc.key, tc.nameVal, "_", "global function", ".json", ErrGlobalFuncKeyNameMismatch, "test.json")
+			err := validatePrefixedFilenameMatchesName(prefixedFilenameKeyName{Key: tc.key, Name: tc.nameVal}, "_", "global function", ".json", ErrGlobalFuncKeyNameMismatch, "test.json")
 			if tc.wantErr {
 				suite.Require().Error(err)
 				var parseErr *ParseError

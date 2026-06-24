@@ -37,22 +37,14 @@ func TestParameterTypeSpecDisplayInMarkdown(t *testing.T) {
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Widget"})
 	class.SetActions(map[identity.Key]model_state.Action{
-		actionKey: model_state.NewAction(
-			actionKey,
-			"Adjust",
-			"Adjust the widget",
-			nil,
-			nil,
-			nil,
-			[]model_state.Parameter{amountParam, labelParam, optionalParam},
-		),
+		actionKey: model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Adjust", Details: "Adjust the widget"}, nil, nil, nil, []model_state.Parameter{amountParam, labelParam, optionalParam}),
 	})
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
@@ -91,7 +83,7 @@ func TestNullableQueryParameterDisplayInMarkdown(t *testing.T) {
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
@@ -108,7 +100,7 @@ func TestUnconstrainedAttributeTypeSpecDisplayInMarkdown(t *testing.T) {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "widget"))
 	attrKey := helper.Must(identity.NewAttributeKey(classKey, "note"))
 
-	attr, err := model_class.NewAttribute(attrKey, "Note", "A note field.", "unconstrained", nil, false, model_class.AttributeAnnotations{})
+	attr, err := model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "Note", Details: "A note field."}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
 	require.NoError(t, err)
 	require.NotNil(t, attr.DataType)
 
@@ -123,7 +115,7 @@ func TestUnconstrainedAttributeTypeSpecDisplayInMarkdown(t *testing.T) {
 	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
-	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
