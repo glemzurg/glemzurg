@@ -22,7 +22,8 @@ When the user changes code the assistant wrote earlier, treat the user's version
 2. **Before writing code** — create or claim a bead (`bd create` or `bd update <id> --claim`). If the user's request maps to existing open work, claim that issue instead of starting untracked.
 3. **While working** — the active bead is the source of truth for what you are doing. Multi-step work gets an epic + child beads (see `.claude/skills/bead-epic/SKILL.md`).
 4. **When done** — close the bead (`bd close <id>`). File new beads for anything left unfinished.
-5. **Never substitute** — do not use TodoWrite, TaskCreate, markdown TODO lists, or informal mental tracking. Beads only.
+5. **After `req/` changes** — when any bead (task, bugfix, or epic child) changes code in or below `apps/requirements/req/`, add a **build-gate closing bead** that runs last (see [Quality gate](#quality-gate-appsrequirementsreqbuildsh)). Implementation beads close on their feature; the closing bead owns `build.sh` and any complexity fixes.
+6. **Never substitute** — do not use TodoWrite, TaskCreate, markdown TODO lists, or informal mental tracking. Beads only.
 
 Skipping beads is a workflow failure, not a time-saver.
 
@@ -47,7 +48,7 @@ Do not switch git branches, git add, git commit, git push, git pull.
 5. **`internal/parser_human`** — YAML read/write and conversion to/from core.
 6. **Everything else** — generate, simulator, notation, cmd, and any other packages that consume the model; add or extend tests for behavior touched in each package.
 
-Each stage gets thorough tests for the changes made in that stage. An epic that touches `internal/core` ends with the closing bead that runs `apps/requirements/req/build.sh` (see [Quality gate](#quality-gate-appsrequirementsreqbuildsh)).
+Each stage gets thorough tests for the changes made in that stage. Staged refactors still end with the build-gate closing bead that runs `apps/requirements/req/build.sh` (see [Quality gate](#quality-gate-appsrequirementsreqbuildsh)).
 
 ## Go member mutation
 
@@ -111,7 +112,9 @@ Requirements tooling (`apps/requirements/req` and related packages) must not emb
 
 ## Complexity linter (`go-complexity-lint`)
 
-These rules apply **only** to [go-complexity-lint](https://github.com/glemzurg/go-complexity-lint). Do not use `//complexity:...` comments to silence **golangci-lint** or any other linter — for those, surface the warning and let the human decide (including `//nolint:...`).
+These rules apply on the **build-gate closing bead** (see [Quality gate](#quality-gate-appsrequirementsreqbuildsh)) when `./apps/requirements/req/build.sh` reports `go-complexity-lint` findings. They govern how that bead fixes parameter-count and other complexity metrics — not how feature or staging beads shape code before the gate runs.
+
+They apply **only** to [go-complexity-lint](https://github.com/glemzurg/go-complexity-lint). Do not use `//complexity:...` comments to silence **golangci-lint** or any other linter — for those, surface the warning and let the human decide (including `//nolint:...`).
 
 ### Never add complexity exceptions
 
@@ -129,19 +132,21 @@ Existing `//complexity:...` comments in the codebase are human-approved; do not 
 
 This script is the single source of truth for "is the requirements tooling in shippable shape?". It runs `go fmt`, `golangci-lint`, `go-complexity-lint`, the full `go test ./...` suite (including database tests), and `go install`, exiting 0 only when every stage is clean.
 
-**Run it only when this session changed code in or below `apps/requirements/req/`.** Doc-only edits, changes elsewhere in the monorepo, or read-only investigation do not require the gate. When `apps/requirements/req/` did change, run `apps/requirements/req/build.sh` and fix any problems it reports before moving on. Do not defer fixes to session or epic close.
+**Create a build-gate closing bead whenever this session changed code in or below `apps/requirements/req/`.** Doc-only edits, changes elsewhere in the monorepo, or read-only investigation do not require one. The closing bead runs **last** — after every implementation, staging, or doc bead for that work — and is the only bead that runs `./apps/requirements/req/build.sh` and fixes what it reports (including complexity findings per [Complexity linter](#complexity-linter-go-complexity-lint)).
 
-**A block of work — a session close OR an epic close — is not done until the script exits 0** (when `apps/requirements/req/` code changed). "Almost passing" doesn't count. If the script is red, the work is not finished.
+**A block of work is not done until the closing bead closes with the script exiting 0** (when `apps/requirements/req/` code changed). "Almost passing" doesn't count. If the script is red, the work is not finished.
 
-### Closing-bead pattern for epics
+### Build-gate closing bead
 
-Every epic that touched `apps/requirements/req/` ends with a **closing bead** whose sole job is to run `apps/requirements/req/build.sh` and verify a clean exit.
+Every bead, epic, or session that touched `apps/requirements/req/` ends with a **build-gate closing bead** whose job is to run `./apps/requirements/req/build.sh`, fix every problem it reports, and verify a clean exit. Work of any size gets this bead — not only epics.
 
-- If the script exits 0, close the bead and the epic.
-- If the script surfaces problems, create new child beads under the epic for each problem class and address them. **Do not close the closing bead until the script is clean.** Keeping it open is the visible signal that the epic is not yet shippable.
-- The same closing bead is re-used across iterations — don't open a fresh "verify again" bead each round. The current open bead IS the verification gate.
+- Create the closing bead when you know `req/` will change; claim it only after preceding beads are closed so it truly runs last.
+- If the script exits 0, close the closing bead (and the parent epic, if any).
+- If the script surfaces problems, create child beads under the closing bead (or parent epic) for each problem class and address them. **Do not close the closing bead until the script is clean.** Keeping it open is the visible signal that the work is not yet shippable.
+- Re-use the same closing bead across fix iterations — don't open a fresh "verify again" bead each round. The current open closing bead IS the verification gate.
+- Complexity refactors belong on this bead: follow the [Complexity linter](#complexity-linter-go-complexity-lint) rules there, not on feature beads that precede it.
 
-This skill — running the gate at epic close, creating new beads if it fails, keeping the closing bead open until clean — is itself documented in `.claude/skills/bead-epic/SKILL.md`.
+Epic layout and dependency wiring for multi-step work are documented in `.claude/skills/bead-epic/SKILL.md`.
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:7510c1e2 -->
 ## Beads Issue Tracker
@@ -173,7 +178,7 @@ bd close <id>         # Complete work
 **MANDATORY WORKFLOW:**
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run and pass all quality gates** (if code changed under `apps/requirements/req/`) — `apps/requirements/req/build.sh`; fix every issue it reports
+2. **Close the build-gate bead** (if code changed under `apps/requirements/req/`) — its `./apps/requirements/req/build.sh` run must exit 0; fix every issue it reports before closing that bead
 3. **Update issue status** - Close finished work, update in-progress items
 5. **Clean up** - Clear stashes
 7. **Hand off** - Provide context for next session
