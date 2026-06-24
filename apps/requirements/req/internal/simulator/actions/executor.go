@@ -94,13 +94,18 @@ type AssociationClassLinkInfo struct {
 
 // ActionExecutor executes actions, queries, and transitions against simulation state.
 type ActionExecutor struct {
-	bindingsBuilder  *state.BindingsBuilder
-	invariantChecker *invariants.InvariantChecker
-	dataTypeChecker  *invariants.DataTypeChecker
-	indexChecker     *invariants.IndexUniquenessChecker
-	guardEvaluator   *GuardEvaluator
-	acIndex          AssociationClassIndex
-	rng              *rand.Rand
+	bindingsBuilder    *state.BindingsBuilder
+	invariantChecker   *invariants.InvariantChecker
+	dataTypeChecker    *invariants.DataTypeChecker
+	structuralCheckers *invariants.StructuralInvariantCheckers
+	guardEvaluator     *GuardEvaluator
+	acIndex            AssociationClassIndex
+	rng                *rand.Rand
+
+	// deferMultiplicityInActionCheck skips implicit multiplicity checks inside
+	// checkAllInvariants while a transition is mid-flight; ExecuteTransition
+	// runs them after links and _state are fully applied.
+	deferMultiplicityInActionCheck bool
 }
 
 // NewActionExecutor creates a new action executor.
@@ -108,19 +113,19 @@ func NewActionExecutor(
 	bindingsBuilder *state.BindingsBuilder,
 	invariantChecker *invariants.InvariantChecker,
 	dataTypeChecker *invariants.DataTypeChecker,
-	indexChecker *invariants.IndexUniquenessChecker,
+	structuralCheckers *invariants.StructuralInvariantCheckers,
 	guardEvaluator *GuardEvaluator,
 	acIndex AssociationClassIndex,
 	rng *rand.Rand,
 ) *ActionExecutor {
 	return &ActionExecutor{
-		bindingsBuilder:  bindingsBuilder,
-		invariantChecker: invariantChecker,
-		dataTypeChecker:  dataTypeChecker,
-		indexChecker:     indexChecker,
-		guardEvaluator:   guardEvaluator,
-		acIndex:          acIndex,
-		rng:              rng,
+		bindingsBuilder:    bindingsBuilder,
+		invariantChecker:   invariantChecker,
+		dataTypeChecker:    dataTypeChecker,
+		structuralCheckers: structuralCheckers,
+		guardEvaluator:     guardEvaluator,
+		acIndex:            acIndex,
+		rng:                rng,
 	}
 }
 
@@ -189,6 +194,9 @@ func (e *ActionExecutor) checkAllInvariants(ctx *ExecutionContext) invariants.Vi
 	allViolations = append(allViolations, e.checkDataTypeConstraints(ctx)...)
 	allViolations = append(allViolations, e.checkModelInvariants()...)
 	allViolations = append(allViolations, e.checkIndexUniqueness()...)
+	if !e.deferMultiplicityInActionCheck {
+		allViolations = append(allViolations, e.checkMultiplicityInvariants()...)
+	}
 
 	return allViolations
 }
@@ -282,10 +290,18 @@ func (e *ActionExecutor) checkModelInvariants() invariants.ViolationErrors {
 
 // checkIndexUniqueness checks index uniqueness constraints.
 func (e *ActionExecutor) checkIndexUniqueness() invariants.ViolationErrors {
-	if e.indexChecker == nil {
+	if e.structuralCheckers == nil || e.structuralCheckers.Index == nil {
 		return nil
 	}
-	return e.indexChecker.CheckState(e.bindingsBuilder.State())
+	return e.structuralCheckers.Index.CheckState(e.bindingsBuilder.State())
+}
+
+// checkMultiplicityInvariants checks association multiplicities as implicit invariants.
+func (e *ActionExecutor) checkMultiplicityInvariants() invariants.ViolationErrors {
+	if e.structuralCheckers == nil || e.structuralCheckers.Multiplicity == nil {
+		return nil
+	}
+	return e.structuralCheckers.Multiplicity.CheckState(e.bindingsBuilder.State())
 }
 
 // executeActionInContext runs a single action within an existing context.
@@ -616,8 +632,10 @@ func (e *ActionExecutor) ExecuteTransition(
 		}
 	}
 
-	// Step 4: Execute the action (if any)
+	// Step 4: Execute the action (if any). Multiplicity is deferred until after _state applies.
+	e.deferMultiplicityInActionCheck = true
 	actionResult, err := e.executeTransitionAction(chosen, class, instance, eventParams)
+	e.deferMultiplicityInActionCheck = false
 	if err != nil {
 		return nil, err
 	}
@@ -632,6 +650,7 @@ func (e *ActionExecutor) ExecuteTransition(
 	if actionResult != nil {
 		violations = actionResult.Violations
 	}
+	violations = append(violations, e.checkMultiplicityInvariants()...)
 
 	return &TransitionResult{
 		InstanceID:    instance.ID,
@@ -747,8 +766,8 @@ func (e *ActionExecutor) handleCreation(
 	newAttrs := object.NewRecord()
 
 	// Generate index-safe values if the class has indexes
-	if e.indexChecker != nil && e.rng != nil {
-		if indexInfo := e.indexChecker.GetClassIndexInfo(class.Key); indexInfo != nil {
+	if e.structuralCheckers != nil && e.structuralCheckers.Index != nil && e.rng != nil {
+		if indexInfo := e.structuralCheckers.Index.GetClassIndexInfo(class.Key); indexInfo != nil {
 			existingInstances := simState.InstancesByClass(class.Key)
 			if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, e.rng); err != nil {
 				return nil, fmt.Errorf("failed to generate index-safe values for class %s: %w", class.Name, err)
@@ -794,8 +813,8 @@ func (e *ActionExecutor) handleAssociationClassCreation(
 	}
 
 	newAttrs := object.NewRecord()
-	if e.indexChecker != nil && e.rng != nil {
-		if indexInfo := e.indexChecker.GetClassIndexInfo(class.Key); indexInfo != nil {
+	if e.structuralCheckers != nil && e.structuralCheckers.Index != nil && e.rng != nil {
+		if indexInfo := e.structuralCheckers.Index.GetClassIndexInfo(class.Key); indexInfo != nil {
 			existingInstances := simState.InstancesByClass(class.Key)
 			if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, e.rng); err != nil {
 				return nil, fmt.Errorf("failed to generate index-safe values for class %s: %w", class.Name, err)

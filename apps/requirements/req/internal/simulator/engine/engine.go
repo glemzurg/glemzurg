@@ -155,6 +155,7 @@ type simulationCheckers struct {
 	invariantChecker *invariants.InvariantChecker
 	dataTypeChecker  *invariants.DataTypeChecker
 	indexChecker     *invariants.IndexUniquenessChecker
+	multChecker      *invariants.MultiplicityChecker
 }
 
 // setupCheckers creates all invariant and constraint checkers.
@@ -167,11 +168,13 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 	dataTypeChecker, _ := invariants.NewDataTypeChecker(model)
 
 	indexChecker := invariants.NewIndexUniquenessChecker(model)
+	multChecker := invariants.NewMultiplicityChecker(model)
 
 	return &simulationCheckers{
 		invariantChecker: invariantChecker,
 		dataTypeChecker:  dataTypeChecker,
 		indexChecker:     indexChecker,
+		multChecker:      multChecker,
 	}, nil
 }
 
@@ -235,9 +238,13 @@ func buildActionExecutor(
 	rng *rand.Rand,
 ) *actions.ActionExecutor {
 	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
+	structuralCheckers := &invariants.StructuralInvariantCheckers{
+		Index:        checkers.indexChecker,
+		Multiplicity: checkers.multChecker,
+	}
 	return actions.NewActionExecutor(
 		bindingsBuilder, checkers.invariantChecker, checkers.dataTypeChecker,
-		checkers.indexChecker, guardEvaluator, catalog, rng,
+		structuralCheckers, guardEvaluator, catalog, rng,
 	)
 }
 
@@ -258,9 +265,8 @@ func buildStepExecutor(
 	paramBinder, paramGen := buildStepParameterGenerator(bindingsBuilder)
 	stateActionExec := NewStateActionExecutor(actionExecutor)
 	chainHandler := NewCreationChainHandler(catalog, actionExecutor, stateActionExec, paramBinder, rng)
-	multChecker := NewMultiplicityChecker(catalog)
 	stepExecutor := NewStepExecutor(
-		actionExecutor, stateActionExec, chainHandler, multChecker, paramGen, catalog, rng,
+		actionExecutor, stateActionExec, chainHandler, paramGen, catalog, rng,
 	)
 
 	return stepExecutor, NewActionSelector(catalog, rng), NewLivenessChecker(catalog)

@@ -4,8 +4,10 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
@@ -1275,4 +1277,80 @@ func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 	_, err := executor.ExecuteQuery(query, instance, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "Requires must not contain primed variables")
+}
+
+func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
+	orderClass, orderKey := testOrderClass()
+	itemClass, itemKey := multiplicityItemClass()
+
+	assocKey := multiplicityAssocKey(orderKey, itemKey, "OrderItem")
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity("2..many"))
+	assoc := model_class.NewAssociation(
+		assocKey, "OrderItem", "",
+		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
+		nil, "",
+	)
+
+	model := multiplicityTestModel(orderClass, orderKey, itemClass, itemKey)
+	model.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
+
+	simState := state.NewSimulationState()
+	bb := state.NewBindingsBuilder(simState)
+	multChecker := invariants.NewMultiplicityChecker(model)
+	ge := NewGuardEvaluator(bb)
+	exec := NewActionExecutor(bb, nil, nil, &invariants.StructuralInvariantCheckers{
+		Multiplicity: multChecker,
+	}, ge, nil, nil)
+
+	orderAttrs := object.NewRecord()
+	orderAttrs.Set("_state", object.NewString("Open"))
+	orderAttrs.Set("amount", object.NewInteger(0))
+	order := simState.CreateInstance(orderKey, orderAttrs)
+	item := simState.CreateInstance(itemKey, object.NewRecord())
+	simState.AddLink(assocKey, order.ID, item.ID)
+
+	event := orderClass.Events[mustKey("domain/d/subdomain/s/class/order/event/close")]
+	instance := simState.GetInstance(order.ID)
+	result, err := exec.ExecuteTransition(orderClass, event, instance, nil, nil, nil, nil)
+	s.Require().NoError(err)
+
+	multViolations := result.Violations.ByType(invariants.ViolationTypeMultiplicity)
+	s.Require().Len(multViolations, 1)
+	s.Contains(multViolations[0].Message, "at least 2")
+}
+
+func multiplicityItemClass() (model_class.Class, identity.Key) {
+	classKey := mustKey("domain/d/subdomain/s/class/item")
+	stateActiveKey := mustKey("domain/d/subdomain/s/class/item/state/active")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Item"})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: model_state.NewState(stateActiveKey, "Active", "", ""),
+	})
+	return class, classKey
+}
+
+func multiplicityTestModel(orderClass model_class.Class, orderKey identity.Key, itemClass model_class.Class, itemKey identity.Key) *core.Model {
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	domainKey := mustKey("domain/d")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		orderKey: orderClass,
+		itemKey:  itemClass,
+	}
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("test", "Test", "", "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+	return &model
+}
+
+func multiplicityAssocKey(fromClassKey, toClassKey identity.Key, name string) identity.Key {
+	parentKey := mustKey("domain/d/subdomain/s")
+	k, err := identity.NewClassAssociationKey(parentKey, fromClassKey, toClassKey, name)
+	if err != nil {
+		panic(err)
+	}
+	return k
 }

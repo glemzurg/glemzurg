@@ -8,7 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -29,7 +28,6 @@ type StepExecutor struct {
 	actionExecutor  *actions.ActionExecutor
 	stateActionExec *StateActionExecutor
 	chainHandler    *CreationChainHandler
-	multChecker     *MultiplicityChecker
 	paramGen        *StepParameterGenerator
 	catalog         *ClassCatalog
 	rng             *rand.Rand
@@ -40,7 +38,6 @@ func NewStepExecutor(
 	actionExecutor *actions.ActionExecutor,
 	stateActionExec *StateActionExecutor,
 	chainHandler *CreationChainHandler,
-	multChecker *MultiplicityChecker,
 	paramGen *StepParameterGenerator,
 	catalog *ClassCatalog,
 	rng *rand.Rand,
@@ -49,7 +46,6 @@ func NewStepExecutor(
 		actionExecutor:  actionExecutor,
 		stateActionExec: stateActionExec,
 		chainHandler:    chainHandler,
-		multChecker:     multChecker,
 		paramGen:        paramGen,
 		catalog:         catalog,
 		rng:             rng,
@@ -195,9 +191,6 @@ func (e *StepExecutor) executeTransition(
 		return nil, err
 	}
 
-	// 6. Check multiplicity constraints.
-	e.checkMultiplicityConstraints(result, simState, step)
-
 	return step, nil
 }
 
@@ -292,33 +285,6 @@ func (e *StepExecutor) handleCreationChain(
 	step.CascadedSteps = cascadedSteps
 	step.Violations = append(step.Violations, cascadeViolations...)
 	return nil
-}
-
-// checkMultiplicityConstraints checks multiplicity constraints on the result instance.
-func (e *StepExecutor) checkMultiplicityConstraints(
-	result *actions.TransitionResult,
-	simState *state.SimulationState,
-	step *SimulationStep,
-) {
-	instance := simState.GetInstance(result.InstanceID)
-	if instance == nil {
-		return
-	}
-	multViolations := e.multChecker.CheckInstance(instance, simState)
-	for _, mv := range multViolations {
-		step.Violations = append(step.Violations, invariants.NewMultiplicityViolation(
-			invariants.MultiplicityViolationParams{
-				InstanceID:      mv.InstanceID,
-				ClassKey:        mv.ClassKey,
-				AssociationName: mv.AssociationName,
-				Direction:       mv.Direction,
-				ActualCount:     mv.ActualCount,
-				RequiredMin:     mv.RequiredMin,
-				RequiredMax:     mv.RequiredMax,
-				Message:         mv.Message,
-			},
-		))
-	}
 }
 
 // getCurrentStateKey looks up the instance's current state key from its _state attribute.

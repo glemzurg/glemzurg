@@ -11,6 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
@@ -173,7 +174,9 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, catalog, rng)
+	ae := actions.NewActionExecutor(bb, nil, nil, &invariants.StructuralInvariantCheckers{
+		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
+	}, ge, catalog, rng)
 
 	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
 	jurisdictionClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.jurisdictionKey]
@@ -219,7 +222,9 @@ func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 	catalog := NewClassCatalog(tcm.model)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, catalog, rng)
+	ae := actions.NewActionExecutor(bb, nil, nil, &invariants.StructuralInvariantCheckers{
+		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
+	}, ge, catalog, rng)
 
 	linkDefClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.linkDefKey]
 	addEvent := linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")]
@@ -238,8 +243,9 @@ func (s *AssociationClassSuite) TestDeleteSoftDeleteExcludesFromActiveCount() {
 
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, catalog, rng)
-	multChecker := NewMultiplicityChecker(catalog)
+	ae := actions.NewActionExecutor(bb, nil, nil, &invariants.StructuralInvariantCheckers{
+		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
+	}, ge, catalog, rng)
 
 	linkDefClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.linkDefKey]
 	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
@@ -267,18 +273,18 @@ func (s *AssociationClassSuite) TestDeleteSoftDeleteExcludesFromActiveCount() {
 	)
 	s.Require().NoError(err)
 
-	partnerInst := simState.GetInstance(partnerResult.InstanceID)
-	violations := multChecker.CheckInstance(partnerInst, simState)
-	s.Empty(violations)
+	s.Empty(addResult.Violations.ByType(invariants.ViolationTypeMultiplicity))
 
 	acInstance := simState.GetInstance(addResult.InstanceID)
 	deleteEvent := linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/delete")]
-	_, err = ae.ExecuteTransition(linkDefClass, deleteEvent, acInstance, nil, nil, nil, nil)
+	deleteResult, err := ae.ExecuteTransition(linkDefClass, deleteEvent, acInstance, nil, nil, nil, nil)
 	s.Require().NoError(err)
 
-	violations = multChecker.CheckInstance(partnerInst, simState)
-	s.Require().Len(violations, 1)
-	s.Contains(violations[0].Message, "expected at least 1 links, got 0")
+	multViolations := deleteResult.Violations.ByType(invariants.ViolationTypeMultiplicity)
+	s.Require().Len(multViolations, 2)
+	for _, v := range multViolations {
+		s.Contains(v.Message, "expected at least 1 links, got 0")
+	}
 }
 
 func (s *AssociationClassSuite) TestSimulationRunsAssociationClassScenario() {
