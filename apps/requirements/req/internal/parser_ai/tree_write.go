@@ -52,6 +52,23 @@ func writeModelTree(model *inputModel, modelDir string) error {
 	return nil
 }
 
+func writeAssociationInvariants(assocDir, key string, assoc *inputClassAssociation) error {
+	if len(assoc.Invariants) == 0 {
+		return nil
+	}
+	invariantsDir := filepath.Join(assocDir, key, "invariants")
+	if err := os.MkdirAll(invariantsDir, 0755); err != nil {
+		return err
+	}
+	for i, inv := range assoc.Invariants {
+		filename := fmt.Sprintf("%03d.invariant.json", i+1)
+		if err := writeJSON(filepath.Join(invariantsDir, filename), inv); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // writeModelInvariants writes model-level invariants to the filesystem.
 func writeModelInvariants(model *inputModel, modelDir string) error {
 	if len(model.Invariants) == 0 {
@@ -141,6 +158,9 @@ func writeModelAssociationsAndDomains(model *inputModel, modelDir string) error 
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
 			}
+			if err := writeAssociationInvariants(assocDir, key, assoc); err != nil {
+				return err
+			}
 		}
 	}
 	if len(model.DomainAssociations) > 0 {
@@ -194,6 +214,9 @@ func writeDomainTree(domain *inputDomain, domainDir string) error {
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
 			}
+			if err := writeAssociationInvariants(assocDir, key, assoc); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -236,6 +259,9 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 			assoc := subdomain.ClassAssociations[key]
 			filename := classAssociationFilename(assoc)
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
+				return err
+			}
+			if err := writeAssociationInvariants(assocDir, key, assoc); err != nil {
 				return err
 			}
 		}

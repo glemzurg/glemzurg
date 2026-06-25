@@ -33,6 +33,9 @@ const (
 	// Keys with model, domain, subdomain parents.
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
 
+	// Keys with class association parents.
+	KEY_TYPE_CLASS_ASSOCIATION_INVARIANT = "cassocinvariant"
+
 	// Keys with class parents.
 	KEY_TYPE_ATTRIBUTE       = "attribute"
 	KEY_TYPE_STATE           = "state"
@@ -268,6 +271,18 @@ func NewClassInvariantKey(classKey Key, subKey string) (key Key, err error) {
 		}
 	}
 	return newKey(classKey.String(), KEY_TYPE_CLASS_INVARIANT, subKey)
+}
+
+func NewClassAssociationInvariantKey(associationKey Key, subKey string) (key Key, err error) {
+	if associationKey.GetKeyType() != KEY_TYPE_CLASS_ASSOCIATION {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'cassocinvariant' key", associationKey.GetKeyType())
+	}
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("class association invariant key must be a valid integer")
+		}
+	}
+	return newKey(associationKey.String(), KEY_TYPE_CLASS_ASSOCIATION_INVARIANT, subKey)
 }
 
 func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string) (key Key, err error) {

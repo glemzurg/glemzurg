@@ -59,6 +59,9 @@ const (
 	// ViolationTypeIndexUniqueness indicates two instances share the same index tuple.
 	ViolationTypeIndexUniqueness
 
+	// ViolationTypeAssociationInvariant indicates a failed association-level invariant assessment.
+	ViolationTypeAssociationInvariant
+
 	// ViolationTypeMultiplicity indicates an association multiplicity constraint is not met.
 	ViolationTypeMultiplicity
 
@@ -122,6 +125,8 @@ func (v ViolationType) String() string {
 		return "missing_parameter_type_spec"
 	case ViolationTypeIndexUniqueness:
 		return "index_uniqueness"
+	case ViolationTypeAssociationInvariant:
+		return "association_invariant"
 	case ViolationTypeMultiplicity:
 		return "multiplicity"
 	case ViolationTypeSafetyRule:
@@ -235,6 +240,26 @@ func NewAttributeInvariantViolation(
 		AttributeName:  attributeName,
 		Expression:     expression,
 		InvariantIndex: invariantIndex,
+	}
+}
+
+// NewAssociationInvariantViolation creates a violation for a failed association invariant.
+func NewAssociationInvariantViolation(
+	associationKey identity.Key,
+	associationName string,
+	instanceID state.InstanceID,
+	invariantIndex int,
+	expression string,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeAssociationInvariant,
+		Message:           fmt.Sprintf("association %q invariant %d failed on instance %d: %s - %s", associationName, invariantIndex, instanceID, expression, message),
+		InstanceID:        instanceID,
+		Expression:        expression,
+		InvariantIndex:    invariantIndex,
+		ActionOrQueryKey:  associationKey,
+		ActionOrQueryName: associationName,
 	}
 }
 

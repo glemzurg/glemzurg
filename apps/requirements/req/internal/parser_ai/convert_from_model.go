@@ -702,6 +702,7 @@ func convertAssociationFromModel(assoc *model_class.Association, parentType stri
 		FromMultiplicity: assoc.FromMultiplicity.String(),
 		ToMultiplicity:   assoc.ToMultiplicity.String(),
 		UmlComment:       assoc.UmlComment,
+		Invariants:       convertLogicsFromModel(assoc.Invariants),
 	}
 
 	// Format class keys based on scope

@@ -18,6 +18,9 @@ type inputClassAssociation struct {
 	ToMultiplicity      string  `json:"to_multiplicity"`
 	AssociationClassKey *string `json:"association_class_key,omitempty"`
 	UmlComment          string  `json:"uml_comment,omitempty"`
+
+	// Children (not from JSON, populated during directory traversal)
+	Invariants []inputLogic `json:"-"`
 }
 
 var classAssociationSchema *jsonschema.Schema

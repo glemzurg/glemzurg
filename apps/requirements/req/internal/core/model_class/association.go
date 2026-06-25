@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -20,6 +21,7 @@ type Association struct {
 	ToMultiplicity      Multiplicity  // The multiplicity on the other end of the association.
 	AssociationClassKey *identity.Key // Any class that points to this association.
 	UmlComment          string
+	Invariants          []model_logic.Logic // Constraints on link sets from the from-class anchor.
 }
 
 // AssociationEnd describes one end of an association: which class and its multiplicity.
@@ -32,6 +34,10 @@ type AssociationEnd struct {
 type AssociationDetails struct {
 	Name    string
 	Details string
+}
+
+func (a *Association) SetInvariants(invariants []model_logic.Logic) {
+	a.Invariants = invariants
 }
 
 func NewAssociation(key identity.Key, details AssociationDetails, from, to AssociationEnd, associationClassKey *identity.Key, umlComment string) Association {
@@ -143,7 +149,26 @@ func (a *Association) ValidateWithParent(ctx *coreerr.ValidationContext, parent 
 	if err := a.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
-	// Association has no children with keys that need validation.
+	return a.validateAssociationInvariants(ctx)
+}
+
+func (a *Association) validateAssociationInvariants(ctx *coreerr.ValidationContext) error {
+	letTargets := make(map[string]bool)
+	for i, inv := range a.Invariants {
+		invCtx := ctx.Child("invariant", fmt.Sprintf("%d", i))
+		if err := inv.ValidateWithParent(invCtx, &a.Key); err != nil {
+			return coreerr.New(invCtx, coreerr.AssocInvariantTypeInvalid, fmt.Sprintf("invariant %d: %s", i, err.Error()), "Invariants")
+		}
+		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
+			return coreerr.NewWithValues(invCtx, coreerr.AssocInvariantTypeInvalid, fmt.Sprintf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type), "Invariants", inv.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
+		}
+		if inv.Type == model_logic.LogicTypeLet {
+			if letTargets[inv.Target] {
+				return coreerr.NewWithValues(invCtx, coreerr.AssocInvariantDuplicateLet, fmt.Sprintf("invariant %d: duplicate let target %q", i, inv.Target), "Invariants", inv.Target, "")
+			}
+			letTargets[inv.Target] = true
+		}
+	}
 	return nil
 }
 

@@ -559,6 +559,22 @@ COMMENT ON COLUMN association.uml_comment IS 'A comment that appears in the diag
 
 --------------------------------------------------------------
 
+CREATE TABLE association_invariant (
+  model_key text NOT NULL,
+  association_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, association_key, logic_key),
+  CONSTRAINT fk_assoc_invariant_association FOREIGN KEY (model_key, association_key) REFERENCES association (model_key, association_key) ON DELETE CASCADE,
+  CONSTRAINT fk_assoc_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE association_invariant IS 'Join table linking class associations to their invariant logic predicates.';
+COMMENT ON COLUMN association_invariant.model_key IS 'The model this association invariant belongs to.';
+COMMENT ON COLUMN association_invariant.association_key IS 'The association this invariant constrains.';
+COMMENT ON COLUMN association_invariant.logic_key IS 'The logic predicate that must hold for the association link set.';
+
+--------------------------------------------------------------
+
 CREATE TABLE query (
   model_key text NOT NULL,
   class_key text NOT NULL,

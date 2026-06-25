@@ -125,8 +125,18 @@ func writeLogics(tx *sql.Tx, modelKey string, model core.Model) error {
 
 	// Collect logics from domain hierarchy.
 	collectDomainLogics(model, &allLogics, sortOrders)
+	collectAssociationLogics(model, &allLogics, sortOrders)
 
 	return AddLogics(tx, modelKey, allLogics, sortOrders)
+}
+
+func collectAssociationLogics(model core.Model, allLogics *[]model_logic.Logic, sortOrders map[string]int) {
+	for _, assoc := range model.GetClassAssociations() {
+		for i, inv := range assoc.Invariants {
+			sortOrders[inv.Key.String()] = i
+		}
+		*allLogics = append(*allLogics, assoc.Invariants...)
+	}
 }
 
 // collectDomainLogics collects derivation policy, guard, action, query, class invariant, and attribute invariant logics.
@@ -467,14 +477,21 @@ func writeClassIndexes(tx *sql.Tx, modelKey string, model core.Model) error {
 	return nil
 }
 
-// writeClassAssociations inserts class associations.
+// writeClassAssociations inserts class associations and association invariant join rows.
 func writeClassAssociations(tx *sql.Tx, modelKey string, model core.Model) error {
 	allClassAssociations := model.GetClassAssociations()
 	var classAssociationsList []model_class.Association
+	associationInvariantsMap := make(map[identity.Key][]identity.Key)
 	for _, assoc := range allClassAssociations {
 		classAssociationsList = append(classAssociationsList, assoc)
+		for _, inv := range assoc.Invariants {
+			associationInvariantsMap[assoc.Key] = append(associationInvariantsMap[assoc.Key], inv.Key)
+		}
 	}
-	return AddAssociations(tx, modelKey, classAssociationsList)
+	if err := AddAssociations(tx, modelKey, classAssociationsList); err != nil {
+		return err
+	}
+	return AddAssociationInvariants(tx, modelKey, associationInvariantsMap)
 }
 
 // writeStateItems inserts states, guards, actions, events, queries and their related sub-items.
@@ -968,22 +985,34 @@ func readAndAssembleDomains(tx *sql.Tx, modelKey string, model *core.Model, logi
 		}
 	}
 
-	// Class associations.
+	return attachClassAssociations(tx, modelKey, model, logicsByKey)
+}
+
+func attachClassAssociations(
+	tx *sql.Tx,
+	modelKey string,
+	model *core.Model,
+	logicsByKey map[identity.Key]model_logic.Logic,
+) error {
 	classAssociationsSlice, err := QueryAssociations(tx, modelKey)
 	if err != nil {
 		return err
 	}
-	if len(classAssociationsSlice) > 0 {
-		allClassAssocs := make(map[identity.Key]model_class.Association)
-		for _, assoc := range classAssociationsSlice {
-			allClassAssocs[assoc.Key] = assoc
-		}
-		if err = model.SetClassAssociations(allClassAssocs); err != nil {
-			return err
-		}
+	if len(classAssociationsSlice) == 0 {
+		return nil
 	}
 
-	return nil
+	assocInvariantsMap, err := QueryAssociationInvariants(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	allClassAssocs := make(map[identity.Key]model_class.Association)
+	for i := range classAssociationsSlice {
+		assembleAssociationInvariants(&classAssociationsSlice[i], assocInvariantsMap[classAssociationsSlice[i].Key], logicsByKey)
+		allClassAssocs[classAssociationsSlice[i].Key] = classAssociationsSlice[i]
+	}
+	return model.SetClassAssociations(allClassAssocs)
 }
 
 // queryAllDomainData runs all the domain-level queries and returns the results.
@@ -1559,6 +1588,17 @@ func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKe
 	assembleClassInvariants(class, ds.classInvariantsMap[classKey], logicsByKey)
 	assembleClassStructure(class, classKey, ds)
 	assembleClassBehavior(class, classKey, ds)
+}
+
+// assembleAssociationInvariants attaches invariants to an association by resolving logic keys.
+func assembleAssociationInvariants(assoc *model_class.Association, invKeys []identity.Key, logicsByKey map[identity.Key]model_logic.Logic) {
+	if len(invKeys) == 0 {
+		return
+	}
+	assoc.Invariants = make([]model_logic.Logic, len(invKeys))
+	for j, key := range invKeys {
+		assoc.Invariants[j] = logicsByKey[key]
+	}
 }
 
 // assembleClassInvariants attaches invariants to a class by resolving logic keys.

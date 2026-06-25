@@ -1581,7 +1581,25 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 		}
 	}
 
+	if err := attachAssociationInvariants(&result, assoc); err != nil {
+		return model_class.Association{}, err
+	}
+
 	return result, nil
+}
+
+func attachAssociationInvariants(result *model_class.Association, assoc *inputClassAssociation) error {
+	invariants, err := convertLogicsToModel(
+		assoc.Invariants,
+		model_logic.LogicTypeAssessment,
+		result.Key,
+		identity.NewClassAssociationInvariantKey,
+	)
+	if err != nil {
+		return err
+	}
+	result.SetInvariants(invariants)
+	return nil
 }
 
 // convertDomainClassAssociationToModel converts an inputClassAssociation at domain level to a model_class.Association.
@@ -1678,6 +1696,10 @@ func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssoci
 		ToClassKey:       toClassKey,
 		ToMultiplicity:   toMult,
 		UmlComment:       assoc.UmlComment,
+	}
+
+	if err := attachAssociationInvariants(&result, assoc); err != nil {
+		return model_class.Association{}, err
 	}
 
 	return result, nil
@@ -1787,6 +1809,10 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 		ToClassKey:       toClassKey,
 		ToMultiplicity:   toMult,
 		UmlComment:       assoc.UmlComment,
+	}
+
+	if err := attachAssociationInvariants(&result, assoc); err != nil {
+		return model_class.Association{}, err
 	}
 
 	return result, nil

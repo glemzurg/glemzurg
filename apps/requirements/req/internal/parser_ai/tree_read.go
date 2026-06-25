@@ -333,9 +333,17 @@ func readModelClassAssociations(modelDir string, model *inputModel) error {
 			errs = append(errs, err)
 			continue
 		}
+		if err := readAssociationInvariants(filepath.Join(assocDir, key), assoc); err != nil {
+			errs = append(errs, err)
+			continue
+		}
 		model.ClassAssociations[key] = assoc
 	}
 	return errors.Join(errs...)
+}
+
+func readAssociationInvariants(assocDir string, assoc *inputClassAssociation) error {
+	return readInvariantsDir(filepath.Join(assocDir, "invariants"), &assoc.Invariants)
 }
 
 // readModelDomainAssociations reads domain association files from the filesystem.
@@ -499,6 +507,10 @@ func readDomainAssociations(domainDir string, domain *inputDomain) error {
 			errs = append(errs, err)
 			continue
 		}
+		if err := readAssociationInvariants(filepath.Join(assocDir, key), assoc); err != nil {
+			errs = append(errs, err)
+			continue
+		}
 		domain.ClassAssociations[key] = assoc
 	}
 	return errors.Join(errs...)
@@ -580,6 +592,10 @@ func readSubdomainAssociations(subdomainDir string, subdomain *inputSubdomain) e
 			continue
 		}
 		if err := validateAssocFilenameMatchesName(key, assoc.Name, filePath); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if err := readAssociationInvariants(filepath.Join(assocDir, key), assoc); err != nil {
 			errs = append(errs, err)
 			continue
 		}

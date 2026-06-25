@@ -235,7 +235,7 @@ func (e *ActionExecutor) checkAllInvariants(ctx *ExecutionContext) invariants.Vi
 	allViolations = append(allViolations, e.checkModelInvariants()...)
 	allViolations = append(allViolations, e.checkIndexUniqueness()...)
 	if !e.deferMultiplicityInActionCheck {
-		allViolations = append(allViolations, e.checkMultiplicityInvariants()...)
+		allViolations = append(allViolations, e.checkAssociationStructuralInvariants()...)
 	}
 
 	return allViolations
@@ -336,12 +336,22 @@ func (e *ActionExecutor) checkIndexUniqueness() invariants.ViolationErrors {
 	return e.structuralCheckers.Index.CheckState(e.bindingsBuilder.State())
 }
 
-// checkMultiplicityInvariants checks association multiplicities as implicit invariants.
-func (e *ActionExecutor) checkMultiplicityInvariants() invariants.ViolationErrors {
-	if e.structuralCheckers == nil || e.structuralCheckers.Multiplicity == nil {
+// checkAssociationStructuralInvariants checks association multiplicities and association invariants.
+func (e *ActionExecutor) checkAssociationStructuralInvariants() invariants.ViolationErrors {
+	if e.structuralCheckers == nil {
 		return nil
 	}
-	return e.structuralCheckers.Multiplicity.CheckState(e.bindingsBuilder.State())
+	var violations invariants.ViolationErrors
+	if e.structuralCheckers.Multiplicity != nil {
+		violations = append(violations, e.structuralCheckers.Multiplicity.CheckState(e.bindingsBuilder.State())...)
+	}
+	if e.structuralCheckers.AssociationInvariants != nil {
+		violations = append(violations, e.structuralCheckers.AssociationInvariants.CheckState(
+			e.bindingsBuilder.State(),
+			e.bindingsBuilder,
+		)...)
+	}
+	return violations
 }
 
 func (e *ActionExecutor) buildRequiresBindings(
@@ -679,7 +689,7 @@ func (e *ActionExecutor) ExecuteTransition(
 	if actionResult != nil {
 		violations = actionResult.Violations
 	}
-	violations = append(violations, e.checkMultiplicityInvariants()...)
+	violations = append(violations, e.checkAssociationStructuralInvariants()...)
 
 	return &TransitionResult{
 		InstanceID:                 instance.ID,

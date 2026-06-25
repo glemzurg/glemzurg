@@ -661,6 +661,12 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			model_class.AssociationEnd{ClassKey: toClassKey, Multiplicity: toMultiplicity},
 			associationClassKey,
 			umlComment)
+
+		invariants, err := logicListFromYamlData(associationData, "invariants", model_logic.LogicTypeAssessment, assocKey, identity.NewClassAssociationInvariantKey)
+		if err != nil {
+			return model_class.Association{}, err
+		}
+		association.SetInvariants(invariants)
 	}
 
 	return association, nil
@@ -1292,6 +1298,7 @@ func generateClassAssociationsYaml(builder *YamlBuilder, class model_class.Class
 			assocBuilder.AddField("association_class_key", classAssociationRelativeKey(class, *assoc.AssociationClassKey))
 		}
 		assocBuilder.AddField("uml_comment", assoc.UmlComment)
+		generateLogicSequence(assocBuilder, "invariants", assoc.Invariants)
 		assocBuilders = append(assocBuilders, assocBuilder)
 	}
 	builder.AddSequenceOfMappings("associations", assocBuilders)
