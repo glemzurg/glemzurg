@@ -92,6 +92,10 @@ func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 		s.homeHandler(w, r)
 		return
 	}
+	if path == strings.TrimPrefix(mermaidJSPath, "/") {
+		s.serveMermaidJS(w, r)
+		return
+	}
 
 	parts := strings.Split(path, "/")
 	if len(parts) == 0 {
@@ -176,15 +180,22 @@ func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
 	buf.WriteString(`/`)
 	buf.WriteString(escapedFile)
 	buf.WriteString(`");evtSource.onmessage = () => location.reload();</script>`)
-	buf.WriteString(`<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>`)
+	if markdownHasMermaid(data) {
+		buf.WriteString(`<script src="`)
+		buf.WriteString(mermaidJSPath)
+		buf.WriteString(`"></script>`)
+	}
 	buf.WriteString(`</head><body>`)
 	buf.Write(mdHTML)
-	buf.WriteString(`<script>`)
-	buf.WriteString(`document.querySelectorAll('pre code.language-mermaid').forEach(function(el){`)
-	buf.WriteString(`var d=document.createElement('div');d.className='mermaid';`)
-	buf.WriteString(`d.textContent=el.textContent;el.parentElement.replaceWith(d);});`)
-	buf.WriteString(`mermaid.initialize({startOnLoad:false,securityLevel:'loose'});mermaid.run();`)
-	buf.WriteString(`</script></body></html>`)
+	if markdownHasMermaid(data) {
+		buf.WriteString(`<script>`)
+		buf.WriteString(`document.querySelectorAll('pre code.language-mermaid').forEach(function(el){`)
+		buf.WriteString(`var d=document.createElement('div');d.className='mermaid';`)
+		buf.WriteString(`d.textContent=el.textContent;el.parentElement.replaceWith(d);});`)
+		buf.WriteString(`mermaid.initialize({startOnLoad:false,securityLevel:'loose'});mermaid.run();`)
+		buf.WriteString(`</script>`)
+	}
+	buf.WriteString(`</body></html>`)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(buf.String()))
