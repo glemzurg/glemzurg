@@ -3,8 +3,6 @@ package httpserver
 import (
 	"bytes"
 	"context"
-	"sync"
-	"time"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
@@ -13,25 +11,12 @@ import (
 
 // ModelStore manages in-memory models and their generated markdown content.
 type ModelStore struct {
-	mu          sync.RWMutex
-	models      map[string]*core.Model       // Keyed by model name
-	markdown    map[string]map[string][]byte // model -> file -> content
-	css         map[string][]byte            // model -> CSS content
-	svg         map[string]map[string][]byte // model -> file -> SVG content
-	modelErrors map[string]string            // model -> last generation error message
-	parseIssues map[string]*generate.ParseIssueIndex
+	state storeState
 }
 
 // NewModelStore creates a new model store.
 func NewModelStore() *ModelStore {
-	return &ModelStore{
-		models:      make(map[string]*core.Model),
-		markdown:    make(map[string]map[string][]byte),
-		css:         make(map[string][]byte),
-		svg:         make(map[string]map[string][]byte),
-		modelErrors: make(map[string]string),
-		parseIssues: make(map[string]*generate.ParseIssueIndex),
-	}
+	return &ModelStore{state: newStoreState()}
 }
 
 // SetModel stores a model and regenerates its content. On success it clears any
@@ -45,8 +30,56 @@ func (s *ModelStore) SetModel(name string, model *core.Model, classErrors map[st
 
 // SetModelTracked is SetModel with optional phase timings recorded on tracker.
 func (s *ModelStore) SetModelTracked(name string, model *core.Model, classErrors map[string]string, tracker *perftrack.Tracker) error {
-	// Generate without holding the store lock so HTTP readers can keep serving the
-	// previous snapshot while a reload runs.
+	snapshot, err := s.generateSnapshot(model, classErrors, tracker)
+	if err != nil {
+		return err
+	}
+	s.state.publish(name, snapshot, tracker)
+	return nil
+}
+
+// SetModelError records a generation failure for a model. The model's previously
+// generated content (if any) is left in place; renderMD shows the error instead.
+func (s *ModelStore) SetModelError(name string, err error) {
+	s.state.setModelError(name, err)
+}
+
+// GetModelError returns the recorded generation error for a model, if any.
+func (s *ModelStore) GetModelError(name string) (string, bool) {
+	return s.state.modelError(name)
+}
+
+// GetParseIssues returns the last recorded parse-issue index for a model, if any.
+func (s *ModelStore) GetParseIssues(name string) (*generate.ParseIssueIndex, bool) {
+	return s.state.parseIssuesFor(name)
+}
+
+// GetModel returns a model by name.
+func (s *ModelStore) GetModel(name string) (*core.Model, bool) {
+	return s.state.model(name)
+}
+
+// GetMarkdown returns markdown content for a specific model and file.
+func (s *ModelStore) GetMarkdown(ctx context.Context, model, file string) ([]byte, bool) {
+	return s.state.markdownFile(ctx, model, file)
+}
+
+// GetCSS returns CSS content for a model.
+func (s *ModelStore) GetCSS(ctx context.Context, model string) ([]byte, bool) {
+	return s.state.cssFor(ctx, model)
+}
+
+// GetSVG returns SVG content for a specific model and file.
+func (s *ModelStore) GetSVG(ctx context.Context, model, file string) ([]byte, bool) {
+	return s.state.svgFile(ctx, model, file)
+}
+
+// ListModels returns a list of all model names.
+func (s *ModelStore) ListModels(ctx context.Context) []string {
+	return s.state.modelNames(ctx)
+}
+
+func (s *ModelStore) generateSnapshot(model *core.Model, classErrors map[string]string, tracker *perftrack.Tracker) (publishedSnapshot, error) {
 	var (
 		mdContent   map[string][]byte
 		svgContent  map[string][]byte
@@ -55,130 +88,21 @@ func (s *ModelStore) SetModelTracked(name string, model *core.Model, classErrors
 		err         error
 	)
 	perftrack.RunOn(tracker, "store.generate", func() {
-		mdContent, svgContent, cssContent, parseIssues, err = s.generateContentTracked(model, classErrors, tracker)
+		mdContent, svgContent, cssContent, parseIssues, err = generateModelContent(model, classErrors, tracker)
 	})
 	if err != nil {
-		return err
+		return publishedSnapshot{}, err
 	}
-
-	lockStart := time.Now()
-	s.mu.Lock()
-	if tracker != nil {
-		tracker.Add("store.lock_wait", time.Since(lockStart))
-	}
-	s.models[name] = model
-	s.markdown[name] = mdContent
-	s.svg[name] = svgContent
-	s.css[name] = cssContent
-	s.parseIssues[name] = parseIssues
-	delete(s.modelErrors, name) // Recovery: a successful generation clears the error.
-	s.mu.Unlock()
-
-	return nil
+	return publishedSnapshot{
+		model:       model,
+		markdown:    mdContent,
+		svg:         svgContent,
+		css:         cssContent,
+		parseIssues: parseIssues,
+	}, nil
 }
 
-// SetModelError records a generation failure for a model. The model's previously
-// generated content (if any) is left in place; renderMD shows the error instead.
-func (s *ModelStore) SetModelError(name string, err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	msg := "unknown error"
-	if err != nil {
-		msg = err.Error()
-	}
-	s.modelErrors[name] = msg
-}
-
-// GetModelError returns the recorded generation error for a model, if any.
-func (s *ModelStore) GetModelError(name string) (string, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	msg, ok := s.modelErrors[name]
-	return msg, ok
-}
-
-// GetParseIssues returns the last recorded parse-issue index for a model, if any.
-func (s *ModelStore) GetParseIssues(name string) (*generate.ParseIssueIndex, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	idx, ok := s.parseIssues[name]
-	return idx, ok
-}
-
-// GetModel returns a model by name.
-func (s *ModelStore) GetModel(name string) (*core.Model, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	model, ok := s.models[name]
-	return model, ok
-}
-
-// GetMarkdown returns markdown content for a specific model and file.
-func (s *ModelStore) GetMarkdown(ctx context.Context, model, file string) ([]byte, bool) {
-	lockStart := time.Now()
-	s.mu.RLock()
-	if tracker := perftrack.FromContext(ctx); tracker != nil {
-		tracker.Add("store.lock_wait", time.Since(lockStart))
-	}
-	defer s.mu.RUnlock()
-
-	var content []byte
-	var ok bool
-	perftrack.Run(ctx, "store.lookup", func() {
-		if files, found := s.markdown[model]; found {
-			content, ok = files[file]
-		}
-	})
-	return content, ok
-}
-
-// GetCSS returns CSS content for a model.
-func (s *ModelStore) GetCSS(ctx context.Context, model string) ([]byte, bool) {
-	lockStart := time.Now()
-	s.mu.RLock()
-	if tracker := perftrack.FromContext(ctx); tracker != nil {
-		tracker.Add("store.lock_wait", time.Since(lockStart))
-	}
-	defer s.mu.RUnlock()
-
-	content, ok := s.css[model]
-	return content, ok
-}
-
-// GetSVG returns SVG content for a specific model and file.
-func (s *ModelStore) GetSVG(ctx context.Context, model, file string) ([]byte, bool) {
-	lockStart := time.Now()
-	s.mu.RLock()
-	if tracker := perftrack.FromContext(ctx); tracker != nil {
-		tracker.Add("store.lock_wait", time.Since(lockStart))
-	}
-	defer s.mu.RUnlock()
-
-	if files, found := s.svg[model]; found {
-		if content, ok := files[file]; ok {
-			return content, true
-		}
-	}
-	return nil, false
-}
-
-// ListModels returns a list of all model names.
-func (s *ModelStore) ListModels(ctx context.Context) []string {
-	lockStart := time.Now()
-	s.mu.RLock()
-	if tracker := perftrack.FromContext(ctx); tracker != nil {
-		tracker.Add("store.lock_wait", time.Since(lockStart))
-	}
-	defer s.mu.RUnlock()
-
-	names := make([]string, 0, len(s.models))
-	for name := range s.models {
-		names = append(names, name)
-	}
-	return names
-}
-
-func (s *ModelStore) generateContentTracked(model *core.Model, classErrors map[string]string, tracker *perftrack.Tracker) (map[string][]byte, map[string][]byte, []byte, *generate.ParseIssueIndex, error) {
+func generateModelContent(model *core.Model, classErrors map[string]string, tracker *perftrack.Tracker) (map[string][]byte, map[string][]byte, []byte, *generate.ParseIssueIndex, error) {
 	var parseIssues *generate.ParseIssueIndex
 	perftrack.RunOn(tracker, "generate.parseIssues", func() {
 		parseIssues = generate.BuildParseIssueIndex(model, classErrors)
