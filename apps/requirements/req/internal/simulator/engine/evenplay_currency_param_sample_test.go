@@ -26,7 +26,7 @@ func TestEvenplayCurrencyAddSamplesISOFromNamedSet(t *testing.T) {
 	require.NoError(t, err)
 	constraints := actions.ExtractSamplingConstraintsForTest(logics)
 	require.NotNil(t, constraints.NullableElseMembership)
-	require.NotNil(t, constraints.NullableElseEquality)
+	require.NotNil(t, constraints.NullableElseExclusionEquality)
 
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
@@ -35,15 +35,20 @@ func TestEvenplayCurrencyAddSamplesISOFromNamedSet(t *testing.T) {
 	binder := actions.NewParameterBinder()
 	sampler := actions.NewParameterSampler(binder, bb.NamedSetValues())
 
+	isoSet, ok := bb.NamedSetValues()["iso4217codes"].(*object.Set)
+	require.True(t, ok)
+
 	for seed := range 50 {
 		result, err := sampler.SampleParameters(owner, action.Parameters, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
 		require.NoError(t, err)
 		if object.IsNull(result["ISO"]) {
+			require.False(t, isoSet.Contains(result["Abbr"]))
 			continue
 		}
 		iso := result["ISO"].(*object.String).Value()
 		require.Len(t, iso, 3)
 		require.Equal(t, iso, result["Abbr"].(*object.String).Value())
+		require.True(t, isoSet.Contains(result["ISO"]))
 	}
 }
 

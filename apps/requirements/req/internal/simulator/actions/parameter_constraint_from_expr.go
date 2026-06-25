@@ -7,18 +7,20 @@ import (
 
 // SamplingConstraintsForTest exposes constraint extraction for integration tests.
 type SamplingConstraintsForTest struct {
-	NullableElseMembership *nullableElseMembershipConstraint
-	NullableElseEquality   *nullableElseEqualityConstraint
-	NullableElseMirror     *nullableElseMirrorConstraint
+	NullableElseMembership        *nullableElseMembershipConstraint
+	NullableElseEquality          *nullableElseEqualityConstraint
+	NullableElseExclusionEquality *nullableElseExclusionEqualityConstraint
+	NullableElseMirror            *nullableElseMirrorConstraint
 }
 
 // ExtractSamplingConstraintsForTest returns constraints extracted from sampling logics.
 func ExtractSamplingConstraintsForTest(logics []model_logic.Logic) SamplingConstraintsForTest {
 	c := extractParameterConstraints(logics)
 	return SamplingConstraintsForTest{
-		NullableElseMembership: c.nullableElseMembership,
-		NullableElseEquality:   c.nullableElseEquality,
-		NullableElseMirror:     c.nullableElseMirror,
+		NullableElseMembership:        c.nullableElseMembership,
+		NullableElseEquality:          c.nullableElseEquality,
+		NullableElseExclusionEquality: c.nullableElseExclusionEquality,
+		NullableElseMirror:            c.nullableElseMirror,
 	}
 }
 
@@ -45,6 +47,7 @@ func mergeConstraintsFromExpr(expr me.Expression, constraints *parameterConstrai
 	switch node := expr.(type) {
 	case *me.IfThenElse:
 		tryExtractNullableElseTuple(node, constraints)
+		tryExtractNullableElseExclusionEquality(node, constraints)
 		tryExtractNullableElseMirror(node, constraints)
 		tryExtractNullableElseMembership(node, constraints)
 		tryExtractNullableElseEquality(node, constraints)
@@ -81,6 +84,33 @@ func tryExtractNullableElseMirror(node *me.IfThenElse, constraints *parameterCon
 	}
 
 	constraints.nullableElseMirror = &nullableElseMirrorConstraint{
+		driverParam:   driver,
+		followerParam: follower,
+		setSubKey:     setSubKey,
+	}
+}
+
+func tryExtractNullableElseExclusionEquality(node *me.IfThenElse, constraints *parameterConstraints) {
+	if constraints.nullableElseExclusionEquality != nil {
+		return
+	}
+
+	driver, condOk := nullCompareParam(node.Condition)
+	if !condOk {
+		return
+	}
+
+	follower, setSubKey, thenOk := paramNotMembershipInNamedSet(node.Then)
+	if !thenOk {
+		return
+	}
+
+	eqDriver, eqFollower, elseOk := paramEquality(node.Else)
+	if !elseOk || eqDriver != driver || eqFollower != follower {
+		return
+	}
+
+	constraints.nullableElseExclusionEquality = &nullableElseExclusionEqualityConstraint{
 		driverParam:   driver,
 		followerParam: follower,
 		setSubKey:     setSubKey,
@@ -205,6 +235,14 @@ func isEmptySetLiteral(expr me.Expression) bool {
 func isTrueLiteral(expr me.Expression) bool {
 	literal, ok := expr.(*me.BoolLiteral)
 	return ok && literal.Value
+}
+
+func paramNotMembershipInNamedSet(expr me.Expression) (string, string, bool) {
+	membership, ok := expr.(*me.Membership)
+	if !ok || !membership.Negated {
+		return "", "", false
+	}
+	return paramMembershipInNamedSet(membership)
 }
 
 func paramMembershipInNamedSet(node *me.Membership) (string, string, bool) {

@@ -233,6 +233,7 @@ func expressionSupportsParamSampling(expr me.Expression) bool {
 	case *me.IfThenElse:
 		return isNullableElseTuplePattern(node) ||
 			isNullableElseMirrorPattern(node) ||
+			isNullableElseExclusionEqualityPattern(node) ||
 			isNullableElseMembershipPattern(node) ||
 			isNullableElseEqualityPattern(node)
 	case *me.Membership:
@@ -266,6 +267,19 @@ func isNullableElseMembershipPattern(node *me.IfThenElse) bool {
 	}
 	memberParam, _, ok := paramMembershipInNamedSet(membership)
 	return ok && memberParam == paramName
+}
+
+func isNullableElseExclusionEqualityPattern(node *me.IfThenElse) bool {
+	driver, ok := nullCompareParam(node.Condition)
+	if !ok {
+		return false
+	}
+	follower, _, thenOk := paramNotMembershipInNamedSet(node.Then)
+	if !thenOk {
+		return false
+	}
+	eqDriver, eqFollower, elseOk := paramEquality(node.Else)
+	return elseOk && eqDriver == driver && eqFollower == follower
 }
 
 func isNullableElseEqualityPattern(node *me.IfThenElse) bool {

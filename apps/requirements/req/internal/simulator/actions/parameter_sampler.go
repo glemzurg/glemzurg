@@ -8,11 +8,15 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
+const maxNotInNamedSetAttempts = 10
+
 // ParameterSampler generates event parameters that satisfy action requires when possible.
 // Unmentioned parameters fall back to type-only random generation via ParameterBinder.
 type ParameterSampler struct {
 	binder         *ParameterBinder
 	namedSetValues map[string]object.Object
+	// generateOverride is set only by tests to force deterministic parameter draws.
+	generateOverride func(paramDefs []model_state.Parameter, rng *rand.Rand) map[string]object.Object
 }
 
 // NewParameterSampler creates a sampler backed by the given binder and model named sets.
@@ -45,12 +49,13 @@ func (s *ParameterSampler) SampleQueryFromRequires(
 
 // parameterConstraints captures sampling hints extracted from require expression trees.
 type parameterConstraints struct {
-	nullableElseTuple      *nullableElseTupleConstraint
-	nullableElseMirror     *nullableElseMirrorConstraint
-	nullableElseMembership *nullableElseMembershipConstraint
-	nullableElseEquality   *nullableElseEqualityConstraint
-	tupleInSet             *tupleInSetConstraint
-	enumValues             map[string][]string
+	nullableElseTuple             *nullableElseTupleConstraint
+	nullableElseMirror            *nullableElseMirrorConstraint
+	nullableElseExclusionEquality *nullableElseExclusionEqualityConstraint
+	nullableElseMembership        *nullableElseMembershipConstraint
+	nullableElseEquality          *nullableElseEqualityConstraint
+	tupleInSet                    *tupleInSetConstraint
+	enumValues                    map[string][]string
 }
 
 type nullableElseMembershipConstraint struct {
@@ -85,6 +90,14 @@ type nullableElseEqualityConstraint struct {
 	followerParam string
 }
 
+// nullableElseExclusionEqualityConstraint couples a nullable driver to a follower across branches:
+// IF driver = NULL THEN follower ∉ namedSet ELSE driver = follower (driver sampled from namedSet).
+type nullableElseExclusionEqualityConstraint struct {
+	driverParam   string
+	followerParam string
+	setSubKey     string
+}
+
 func parameterNullableByName(paramDefs []model_state.Parameter) map[string]bool {
 	nullable := make(map[string]bool, len(paramDefs))
 	for _, param := range paramDefs {
@@ -117,6 +130,8 @@ func applyParameterConstraints(
 	nullableByName map[string]bool,
 ) {
 	switch {
+	case constraints.nullableElseExclusionEquality != nil:
+		applyNullableElseExclusionEquality(result, constraints.nullableElseExclusionEquality, rng, namedSetValues, nullableByName)
 	case constraints.nullableElseTuple != nil:
 		applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues, nullableByName)
 	case constraints.nullableElseMirror != nil:
@@ -125,7 +140,9 @@ func applyParameterConstraints(
 		applyNullableElseMembership(result, constraints.nullableElseMembership, rng, namedSetValues, nullableByName)
 	}
 
-	if constraints.nullableElseEquality != nil && constraints.nullableElseMirror == nil {
+	if constraints.nullableElseEquality != nil &&
+		constraints.nullableElseMirror == nil &&
+		constraints.nullableElseExclusionEquality == nil {
 		applyNullableElseEquality(result, constraints.nullableElseEquality, nullableByName)
 	}
 
@@ -139,6 +156,31 @@ func applyParameterConstraints(
 		}
 		result[paramName] = object.NewString(values[rng.Intn(len(values))])
 	}
+}
+
+func applyNullableElseExclusionEquality(
+	result map[string]object.Object,
+	constraint *nullableElseExclusionEqualityConstraint,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+	nullableByName map[string]bool,
+) {
+	if nullableByName[constraint.driverParam] && rng.Intn(5) == 0 {
+		result[constraint.driverParam] = evaluator.EMPTY_SET
+		value, ok := pickRandomStringNotInNamedSet(constraint.setSubKey, namedSetValues, rng)
+		if ok {
+			result[constraint.followerParam] = value
+		}
+		return
+	}
+
+	value, ok := pickRandomStringFromNamedSet(constraint.setSubKey, namedSetValues, rng)
+	if !ok {
+		return
+	}
+
+	result[constraint.driverParam] = value
+	result[constraint.followerParam] = value.Clone()
 }
 
 func applyNullableElseMirror(
@@ -254,6 +296,30 @@ func normalizeTupleElement(value object.Object) object.Object {
 		return evaluator.EMPTY_SET
 	}
 	return value.Clone()
+}
+
+func pickRandomStringNotInNamedSet(
+	setSubKey string,
+	namedSetValues map[string]object.Object,
+	rng *rand.Rand,
+) (object.Object, bool) {
+	setObj, ok := namedSetValues[setSubKey]
+	if !ok {
+		return nil, false
+	}
+
+	set, ok := setObj.(*object.Set)
+	if !ok {
+		return nil, false
+	}
+
+	for range maxNotInNamedSetAttempts {
+		candidate := randomString(rng)
+		if !set.Contains(candidate) {
+			return candidate, true
+		}
+	}
+	return nil, false
 }
 
 func pickRandomStringFromNamedSet(

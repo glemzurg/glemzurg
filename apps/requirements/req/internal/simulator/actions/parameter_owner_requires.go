@@ -8,6 +8,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -24,6 +25,7 @@ const (
 	implicitReferenceRequireSubKeyPrefix = "implicit_ref_"
 	logicOwnerKindAction                 = "action"
 	logicOwnerKindQuery                  = "query"
+	maxParameterSampleAttempts           = 10
 )
 
 // ParameterOwner is an action or query that owns typed parameters and requires.
@@ -254,6 +256,71 @@ func (o ParameterOwner) RequireAssessmentError(failures []RequireAssessmentFailu
 	)
 }
 
+type parameterSamplingPrep struct {
+	samplingLogics []model_logic.Logic
+	constraints    parameterConstraints
+	nullableByName map[string]bool
+	generate       func(paramDefs []model_state.Parameter, rng *rand.Rand) map[string]object.Object
+}
+
+func (s *ParameterSampler) prepareRequiresSampling(
+	owner ParameterOwner,
+	paramDefs []model_state.Parameter,
+) (prep *parameterSamplingPrep, requiresAware bool, err error) {
+	samplingLogics, err := owner.SamplingLogicsFor(paramDefs)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(samplingLogics) == 0 {
+		return nil, false, nil
+	}
+
+	paramNames := parameterNames(paramDefs)
+	if err := validateRequiresSamplingSupport(owner.Requires, paramNames); err != nil {
+		var unsupported *UnsupportedRequiresSamplingError
+		if errors.As(err, &unsupported) {
+			unsupported.ActionName = owner.Name
+		}
+		return nil, false, err
+	}
+
+	generate := s.binder.GenerateRandomParameters
+	if s.generateOverride != nil {
+		generate = s.generateOverride
+	}
+	return &parameterSamplingPrep{
+		samplingLogics: samplingLogics,
+		constraints:    extractParameterConstraints(samplingLogics),
+		nullableByName: parameterNullableByName(paramDefs),
+		generate:       generate,
+	}, true, nil
+}
+
+func (s *ParameterSampler) sampleUntilRequiresSatisfied(
+	owner ParameterOwner,
+	paramDefs []model_state.Parameter,
+	prep *parameterSamplingPrep,
+	rng *rand.Rand,
+) (map[string]object.Object, error) {
+	for range maxParameterSampleAttempts {
+		result := prep.generate(paramDefs, rng)
+		if s.generateOverride == nil {
+			applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName)
+		}
+		enforceParameterNullability(result, paramDefs, rng)
+		satisfied, err := owner.parametersSatisfySamplingAssessments(
+			paramDefs, prep.samplingLogics, result, s.namedSetValues,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if satisfied {
+			return result, nil
+		}
+	}
+	return nil, parameterSampleExhaustedError(owner)
+}
+
 // SampleParameters generates values for paramDefs using effective requires constraints.
 func (s *ParameterSampler) SampleParameters(
 	owner ParameterOwner,
@@ -264,29 +331,102 @@ func (s *ParameterSampler) SampleParameters(
 		return map[string]object.Object{}, nil
 	}
 
-	samplingLogics, err := owner.SamplingLogicsFor(paramDefs)
+	prep, requiresAware, err := s.prepareRequiresSampling(owner, paramDefs)
 	if err != nil {
 		return nil, err
 	}
-	if len(samplingLogics) == 0 {
+	if !requiresAware {
 		return s.binder.GenerateRandomParameters(paramDefs, rng), nil
 	}
+	return s.sampleUntilRequiresSatisfied(owner, paramDefs, prep, rng)
+}
 
-	paramNames := parameterNames(paramDefs)
-	if err := validateRequiresSamplingSupport(owner.Requires, paramNames); err != nil {
-		var unsupported *UnsupportedRequiresSamplingError
-		if errors.As(err, &unsupported) {
-			unsupported.ActionName = owner.Name
-		}
-		return nil, err
+func parameterSampleExhaustedError(owner ParameterOwner) error {
+	return fmt.Errorf(
+		"%s %q: failed to sample parameters satisfying requires after %d attempts",
+		owner.Kind, owner.Name, maxParameterSampleAttempts,
+	)
+}
+
+func (o ParameterOwner) parametersSatisfySamplingAssessments(
+	paramDefs []model_state.Parameter,
+	samplingLogics []model_logic.Logic,
+	values map[string]object.Object,
+	namedSetValues map[string]object.Object,
+) (bool, error) {
+	sampledNames := parameterNames(paramDefs)
+	logics := logicsReferencingOnlySampledParams(samplingLogics, sampledNames)
+	if len(logics) == 0 {
+		return true, nil
 	}
 
-	constraints := extractParameterConstraints(samplingLogics)
-	result := s.binder.GenerateRandomParameters(paramDefs, rng)
-	nullableByName := parameterNullableByName(paramDefs)
-	applyParameterConstraints(result, constraints, rng, s.namedSetValues, nullableByName)
-	enforceParameterNullability(result, paramDefs, rng)
-	return result, nil
+	bindings := evaluator.NewBindings()
+	for name, value := range values {
+		bindings.Set(name, value, evaluator.NamespaceLocal)
+	}
+	for name, value := range namedSetValues {
+		bindings.Set(name, value, evaluator.NamespaceGlobal)
+	}
+
+	failures, err := assessLogics(o, paramDefs, bindings, "requires", func() ([]model_logic.Logic, error) {
+		return logics, nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return len(failures) == 0, nil
+}
+
+func logicsReferencingOnlySampledParams(
+	logics []model_logic.Logic,
+	sampledNames map[string]bool,
+) []model_logic.Logic {
+	if len(sampledNames) == 0 {
+		return nil
+	}
+	filtered := make([]model_logic.Logic, 0, len(logics))
+	for _, logic := range logics {
+		if logic.Type != model_logic.LogicTypeAssessment || !logic.Spec.ParseOk() {
+			continue
+		}
+		if !expressionReferencesOnlyParams(logic.Spec.Expression, sampledNames) {
+			continue
+		}
+		filtered = append(filtered, logic)
+	}
+	return filtered
+}
+
+func expressionReferencesOnlyParams(expr me.Expression, paramNames map[string]bool) bool {
+	if expr == nil {
+		return true
+	}
+	refs := referencedParamNames(expr)
+	for name := range refs {
+		if !paramNames[name] {
+			return false
+		}
+	}
+	return true
+}
+
+func referencedParamNames(expr me.Expression) map[string]bool {
+	refs := make(map[string]bool)
+	collectReferencedParamNames(expr, refs)
+	return refs
+}
+
+func collectReferencedParamNames(expr me.Expression, refs map[string]bool) {
+	if expr == nil {
+		return
+	}
+	if localVar, ok := expr.(*me.LocalVar); ok {
+		refs[localVar.Name] = true
+		return
+	}
+	for _, child := range expressionChildNodes(expr) {
+		collectReferencedParamNames(child, refs)
+	}
 }
 
 func effectiveOwnerRequires(
@@ -377,6 +517,10 @@ func paramsCoveredByConstraints(logics []model_logic.Logic) map[string]bool {
 	if constraints.nullableElseMirror != nil {
 		covered[constraints.nullableElseMirror.driverParam] = true
 		covered[constraints.nullableElseMirror.followerParam] = true
+	}
+	if constraints.nullableElseExclusionEquality != nil {
+		covered[constraints.nullableElseExclusionEquality.driverParam] = true
+		covered[constraints.nullableElseExclusionEquality.followerParam] = true
 	}
 	if constraints.nullableElseEquality != nil {
 		covered[constraints.nullableElseEquality.driverParam] = true

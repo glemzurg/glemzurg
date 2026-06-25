@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -441,31 +442,96 @@ func (s *ParameterSamplerSuite) TestCurrencyRequiresSamplingSupport() {
 
 func currencyIsoAbbrRequireSpec() logic_spec.ExpressionSpec {
 	classKey := mustKey("domain/finance/wallet/class/currency")
+	iso4217CodesKey := helper.Must(identity.NewNamedSetKey("iso4217codes"))
 	ctx := &convert.LowerContext{
 		ClassKey: classKey,
 		Parameters: map[string]bool{
 			"ISO":  true,
 			"Abbr": true,
 		},
+		NamedSets: map[string]identity.Key{
+			"_Iso4217Codes": iso4217CodesKey,
+		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `IF ISO = NULL THEN TRUE ELSE ISO = Abbr`, pf))
+	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `IF ISO = NULL THEN Abbr \notin _Iso4217Codes ELSE ISO = Abbr`, pf))
 }
 
-func (s *ParameterSamplerSuite) TestExtractNullableElseEqualityConstraint() {
+func (s *ParameterSamplerSuite) TestExtractNullableElseExclusionEqualityConstraint() {
 	constraints := extractParameterConstraints([]model_logic.Logic{
 		model_logic.NewLogic(
 			helper.Must(identity.NewActionRequireKey(helper.Must(identity.NewActionKey(mustKey("domain/finance/wallet/class/currency"), "add")), "0")),
 			model_logic.LogicTypeAssessment,
-			"When ISO is provided, Abbr must match ISO.",
+			"When ISO is provided, Abbr must match ISO; otherwise Abbr must not be an ISO code.",
 			"",
 			currencyIsoAbbrRequireSpec(),
 			nil,
 		),
 	})
-	s.Require().NotNil(constraints.nullableElseEquality)
-	s.Equal("ISO", constraints.nullableElseEquality.driverParam)
-	s.Equal("Abbr", constraints.nullableElseEquality.followerParam)
+	s.Require().NotNil(constraints.nullableElseExclusionEquality)
+	s.Equal("ISO", constraints.nullableElseExclusionEquality.driverParam)
+	s.Equal("Abbr", constraints.nullableElseExclusionEquality.followerParam)
+	s.Equal("iso4217codes", constraints.nullableElseExclusionEquality.setSubKey)
+}
+
+func (s *ParameterSamplerSuite) TestPickRandomStringNotInNamedSetExhaustsAttempts() {
+	probe := rand.New(rand.NewSource(4242)) //nolint:gosec // deterministic test seed
+	blocked := object.NewSet()
+	for range maxNotInNamedSetAttempts {
+		blocked.Add(randomString(probe))
+	}
+
+	rng := rand.New(rand.NewSource(4242)) //nolint:gosec // replay probe sequence
+	_, ok := pickRandomStringNotInNamedSet(
+		"blocked",
+		map[string]object.Object{"blocked": blocked},
+		rng,
+	)
+	s.False(ok)
+}
+
+func (s *ParameterSamplerSuite) currencyIsoAbbrAction() model_state.Action {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
+	isoParam := helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true))
+	abbrParam := helper.Must(model_state.NewParameter(actionKey, "Abbr", "abbreviation", false))
+	return model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "Add", Details: ""},
+		[]model_logic.Logic{
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+				model_logic.LogicTypeAssessment,
+				"When ISO is provided, Abbr must match ISO; otherwise Abbr must not be an ISO code.",
+				"",
+				currencyIsoAbbrRequireSpec(),
+				nil,
+			),
+		},
+		nil,
+		nil,
+		[]model_state.Parameter{isoParam, abbrParam},
+	)
+}
+
+func (s *ParameterSamplerSuite) TestSampleParametersFailsAfterMaxAttemptsWhenNotInSetUniverseBlocksSampling() {
+	action := s.currencyIsoAbbrAction()
+	owner := ParameterOwnerFromAction(action)
+
+	blocked := object.NewSetFromElements([]object.Object{object.NewString("SOCIAL")})
+	namedSets := map[string]object.Object{"iso4217codes": blocked}
+	sampler := NewParameterSampler(NewParameterBinder(), namedSets)
+	sampler.generateOverride = func(_ []model_state.Parameter, _ *rand.Rand) map[string]object.Object {
+		// ISO unset with Abbr inside the blocked ISO universe — require never satisfied.
+		return map[string]object.Object{
+			"ISO":  evaluator.EMPTY_SET,
+			"Abbr": object.NewString("SOCIAL"),
+		}
+	}
+
+	_, err := sampler.SampleParameters(owner, action.Parameters, rand.New(rand.NewSource(1))) //nolint:gosec // deterministic test seed
+	s.Require().Error(err)
+	s.Equal(parameterSampleExhaustedError(owner), err)
 }
 
 func (s *ParameterSamplerSuite) TestSampleCurrencyIsoAbbrCoupling() {
@@ -506,14 +572,17 @@ func (s *ParameterSamplerSuite) TestSampleCurrencyIsoAbbrCoupling() {
 	binder := NewParameterBinder()
 	sampler := NewParameterSampler(binder, s.iso4217NamedSet())
 
+	isoCodes := map[string]bool{"USD": true, "GBP": true, "CAD": true, "EUR": true}
 	for seed := range 200 {
 		result, err := sampler.SampleParameters(owner, action.Parameters, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
 		s.Require().NoError(err)
+		abbr := result["Abbr"].(*object.String).Value()
 		if object.IsNull(result["ISO"]) {
+			s.NotContains(isoCodes, abbr)
 			continue
 		}
-		s.Equal(result["ISO"].(*object.String).Value(), result["Abbr"].(*object.String).Value())
-		s.Contains([]string{"USD", "GBP", "CAD", "EUR"}, result["ISO"].(*object.String).Value())
+		s.Equal(result["ISO"].(*object.String).Value(), abbr)
+		s.Contains(isoCodes, abbr)
 	}
 }
 
