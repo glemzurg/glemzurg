@@ -548,6 +548,14 @@ func parameterFromYamlMap(parentKey identity.Key, paramMap map[string]any) (mode
 	if typeSpec != nil && param.DataType != nil {
 		param.DataType.TypeSpec = typeSpec
 	}
+	paramInvariants, err := logicListFromYamlData(paramMap, "invariants",
+		model_logic.LogicTypeAssessment, param.Key, identity.NewParameterInvariantKey)
+	if err != nil {
+		return model_state.Parameter{}, errors.Wrap(err, "parameter invariants")
+	}
+	if len(paramInvariants) > 0 {
+		param.SetInvariants(paramInvariants)
+	}
 	return param, nil
 }
 
@@ -1450,6 +1458,7 @@ func generateParameterSequence(builder *YamlBuilder, params []model_state.Parame
 		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
 			paramBuilder.AddField("type_spec", param.DataType.TypeSpec.Specification)
 		}
+		generateLogicSequence(paramBuilder, "invariants", param.Invariants)
 		items = append(items, paramBuilder)
 	}
 	builder.AddSequenceOfMappings("parameters", items)

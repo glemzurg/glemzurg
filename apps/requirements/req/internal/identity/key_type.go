@@ -47,6 +47,9 @@ const (
 	KEY_TYPE_ATTRIBUTE_DERIVATION = "aderive"
 	KEY_TYPE_ATTRIBUTE_INVARIANT  = "ainvariant"
 
+	// Keys with action/query parameter parents.
+	KEY_TYPE_PARAMETER_INVARIANT = "pinvariant"
+
 	// Keys with state parents.
 	KEY_TYPE_STATE_ACTION = "saction"
 
@@ -489,6 +492,18 @@ func NewParameterKey(parentKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'parameter' key", parentKey.GetKeyType())
 	}
 	return newKey(parentKey.String(), KEY_TYPE_PARAMETER, subKey)
+}
+
+func NewParameterInvariantKey(parameterKey Key, subKey string) (key Key, err error) {
+	if parameterKey.GetKeyType() != KEY_TYPE_PARAMETER {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'pinvariant' key", parameterKey.GetKeyType())
+	}
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("parameter invariant key must be a valid integer")
+		}
+	}
+	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_INVARIANT, subKey)
 }
 
 // DATA_TYPE_ROOT_SUBKEY is the sentinel subKey used for the data_type key that sits at

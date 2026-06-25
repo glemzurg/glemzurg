@@ -67,7 +67,8 @@ var validKeyTypes = map[string]bool{
 	KEY_TYPE_CLASS: true, KEY_TYPE_CLASS_GENERALIZATION: true,
 	KEY_TYPE_CLASS_ASSOCIATION: true,
 	KEY_TYPE_ATTRIBUTE:         true, KEY_TYPE_ATTRIBUTE_DERIVATION: true, KEY_TYPE_ATTRIBUTE_INVARIANT: true,
-	KEY_TYPE_STATE: true, KEY_TYPE_EVENT: true, KEY_TYPE_GUARD: true,
+	KEY_TYPE_PARAMETER_INVARIANT: true,
+	KEY_TYPE_STATE:               true, KEY_TYPE_EVENT: true, KEY_TYPE_GUARD: true,
 	KEY_TYPE_ACTION: true, KEY_TYPE_QUERY: true, KEY_TYPE_TRANSITION: true,
 	KEY_TYPE_CLASS_INVARIANT: true, KEY_TYPE_STATE_ACTION: true,
 	KEY_TYPE_ACTION_REQUIRE: true, KEY_TYPE_ACTION_GUARANTEE: true, KEY_TYPE_ACTION_SAFETY: true,
@@ -256,6 +257,9 @@ func (k *Key) ValidateParentWithContext(ctx *coreerr.ValidationContext, parent *
 
 	case KEY_TYPE_ATTRIBUTE_DERIVATION, KEY_TYPE_ATTRIBUTE_INVARIANT:
 		return k.validateRequiredParent(ctx, parent, KEY_TYPE_ATTRIBUTE)
+
+	case KEY_TYPE_PARAMETER_INVARIANT:
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_PARAMETER)
 
 	case KEY_TYPE_CLASS_ASSOCIATION:
 		return k.validateClassAssociationParent(ctx, parent)

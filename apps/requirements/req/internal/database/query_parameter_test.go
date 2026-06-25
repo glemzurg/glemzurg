@@ -79,6 +79,7 @@ func (suite *QueryParameterSuite) TestLoad() {
 	param, err = LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
 	suite.Require().NoError(err)
 	suite.Equal(model_state.Parameter{
+		Key:           helper.Must(identity.NewParameterKey(suite.queryKey, "amount")),
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
@@ -91,6 +92,7 @@ func (suite *QueryParameterSuite) TestAdd() {
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
 	suite.Require().NoError(err)
 	suite.Equal(model_state.Parameter{
+		Key:           helper.Must(identity.NewParameterKey(suite.queryKey, "amount")),
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
@@ -106,6 +108,7 @@ func (suite *QueryParameterSuite) TestUpdate() {
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
 	suite.Require().NoError(err)
 	suite.Equal(model_state.Parameter{
+		Key:           helper.Must(identity.NewParameterKey(suite.queryKey, "amount")),
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	}, param)
@@ -136,10 +139,12 @@ func (suite *QueryParameterSuite) TestQuery() {
 	suite.Equal(map[identity.Key][]model_state.Parameter{
 		suite.queryKey: {
 			{
+				Key:           helper.Must(identity.NewParameterKey(suite.queryKey, "alpha")),
 				Name:          "Alpha",
 				DataTypeRules: "Nat",
 			},
 			{
+				Key:           helper.Must(identity.NewParameterKey(suite.queryKey, "bravo")),
 				Name:          "Bravo",
 				DataTypeRules: "Int",
 				Nullable:      true,
@@ -168,6 +173,7 @@ func t_AddQueryParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey 
 func (suite *QueryParameterSuite) TestVerifyTestObjects() {
 	param := t_AddQueryParameter(suite.T(), suite.db, suite.model.Key, suite.queryKey, "Amount")
 	suite.Equal(model_state.Parameter{
+		Key:           helper.Must(identity.NewParameterKey(suite.queryKey, "amount")),
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)

@@ -772,7 +772,13 @@ func readClassTree(classDir string) (*inputClass, error) {
 	if err := readClassActions(classDir, class); err != nil {
 		errs = append(errs, err)
 	}
+	if err := readClassActionParameterInvariants(classDir, class); err != nil {
+		errs = append(errs, err)
+	}
 	if err := readClassQueries(classDir, class); err != nil {
+		errs = append(errs, err)
+	}
+	if err := readClassQueryParameterInvariants(classDir, class); err != nil {
 		errs = append(errs, err)
 	}
 	if len(errs) > 0 {
@@ -842,6 +848,40 @@ func readClassAttributeInvariants(classDir string, class *inputClass) error {
 		attrInvariantsDir := filepath.Join(classDir, "attributes", attrKey, "invariants")
 		if err := readInvariantsDir(attrInvariantsDir, &class.Attributes[i].Invariants); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// readClassActionParameterInvariants reads per-action-parameter invariant files.
+func readClassActionParameterInvariants(classDir string, class *inputClass) error {
+	for actionKey, action := range class.Actions {
+		for i := range action.Parameters {
+			paramDirKey, err := safeParameterDirKey(action.Parameters[i].Name)
+			if err != nil {
+				return err
+			}
+			paramInvariantsDir := filepath.Join(classDir, "actions", actionKey, "parameters", paramDirKey, "invariants")
+			if err := readInvariantsDir(paramInvariantsDir, &class.Actions[actionKey].Parameters[i].Invariants); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// readClassQueryParameterInvariants reads per-query-parameter invariant files.
+func readClassQueryParameterInvariants(classDir string, class *inputClass) error {
+	for queryKey, query := range class.Queries {
+		for i := range query.Parameters {
+			paramDirKey, err := safeParameterDirKey(query.Parameters[i].Name)
+			if err != nil {
+				return err
+			}
+			paramInvariantsDir := filepath.Join(classDir, "queries", queryKey, "parameters", paramDirKey, "invariants")
+			if err := readInvariantsDir(paramInvariantsDir, &class.Queries[queryKey].Parameters[i].Invariants); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

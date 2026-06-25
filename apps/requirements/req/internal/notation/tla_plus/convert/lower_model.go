@@ -174,6 +174,13 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 			return fmt.Errorf("safety rule %d: %w", i, err)
 		}
 	}
+	for i := range action.Parameters {
+		for j := range action.Parameters[i].Invariants {
+			if err := lowerLogicSpec(&action.Parameters[i].Invariants[j].Spec, ctx); err != nil {
+				return fmt.Errorf("parameter %q invariant %d: %w", action.Parameters[i].Name, j, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -188,6 +195,13 @@ func lowerQuery(query *model_state.Query, baseCtx *LowerContext) error {
 	for i := range query.Guarantees {
 		if err := lowerLogicSpec(&query.Guarantees[i].Spec, ctx); err != nil {
 			return fmt.Errorf("guarantee %d: %w", i, err)
+		}
+	}
+	for i := range query.Parameters {
+		for j := range query.Parameters[i].Invariants {
+			if err := lowerLogicSpec(&query.Parameters[i].Invariants[j].Spec, ctx); err != nil {
+				return fmt.Errorf("parameter %q invariant %d: %w", query.Parameters[i].Name, j, err)
+			}
 		}
 	}
 	return nil

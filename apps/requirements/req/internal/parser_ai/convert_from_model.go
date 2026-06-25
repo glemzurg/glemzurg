@@ -649,6 +649,7 @@ func convertParametersFromModel(params []model_state.Parameter) []inputParameter
 		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
 			ip.TypeSpec = param.DataType.TypeSpec.Specification
 		}
+		ip.Invariants = convertLogicsFromModel(param.Invariants)
 		result[i] = ip
 	}
 	return result

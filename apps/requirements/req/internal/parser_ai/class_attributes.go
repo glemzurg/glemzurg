@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // attributeKeysInOrder returns attribute keys in declaration order.
@@ -27,6 +29,15 @@ func (c *inputClass) attributeByKey(key string) (inputAttribute, bool) {
 		}
 	}
 	return inputAttribute{}, false
+}
+
+// safeParameterDirKey returns the normalized filesystem directory name for a parameter.
+func safeParameterDirKey(name string) (string, error) {
+	key := identity.NormalizeSubKey(name)
+	if key == "" || key != filepath.Base(key) || strings.Contains(key, "..") {
+		return "", fmt.Errorf("invalid parameter name %q for filesystem path", name)
+	}
+	return key, nil
 }
 
 // safeAttributeDirKey rejects attribute keys that would escape the attributes/ subtree.

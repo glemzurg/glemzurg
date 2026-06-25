@@ -155,6 +155,14 @@ func collectActionExpressionIssues(class *model_class.Class, classCtx *LowerCont
 				issues = append(issues, *issue)
 			}
 		}
+		for i := range action.Parameters {
+			for j := range action.Parameters[i].Invariants {
+				loc := fmt.Sprintf("action %q parameter %q invariant %d", actKey.String(), action.Parameters[i].Name, j)
+				if issue := diagnoseUnparsedSpec(&action.Parameters[i].Invariants[j].Spec, actPF, class.Key, loc); issue != nil {
+					issues = append(issues, *issue)
+				}
+			}
+		}
 	}
 	return issues
 }
@@ -173,6 +181,14 @@ func collectQueryExpressionIssues(class *model_class.Class, classCtx *LowerConte
 			loc := fmt.Sprintf("query %q guarantee %d", qKey.String(), i)
 			if issue := diagnoseUnparsedSpec(&query.Guarantees[i].Spec, qPF, class.Key, loc); issue != nil {
 				issues = append(issues, *issue)
+			}
+		}
+		for i := range query.Parameters {
+			for j := range query.Parameters[i].Invariants {
+				loc := fmt.Sprintf("query %q parameter %q invariant %d", qKey.String(), query.Parameters[i].Name, j)
+				if issue := diagnoseUnparsedSpec(&query.Parameters[i].Invariants[j].Spec, qPF, class.Key, loc); issue != nil {
+					issues = append(issues, *issue)
+				}
 			}
 		}
 	}

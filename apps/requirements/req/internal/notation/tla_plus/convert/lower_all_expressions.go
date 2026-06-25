@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -124,47 +125,66 @@ func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSe
 		class.Guards[gKey] = guard
 	}
 
-	// Actions.
 	for actKey, action := range class.Actions {
-		actCtx := ContextWithParameters(classCtx, action.Parameters)
-		actPF := NewExpressionParseFunc(actCtx)
-
-		for i := range action.Requires {
-			if err := relowerSpec(&action.Requires[i].Spec, actPF); err != nil {
-				return fmt.Errorf("action %q require %d: %w", actKey.String(), i, err)
-			}
-		}
-		for i := range action.Guarantees {
-			if err := relowerSpec(&action.Guarantees[i].Spec, actPF); err != nil {
-				return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
-			}
-		}
-		for i := range action.SafetyRules {
-			if err := relowerSpec(&action.SafetyRules[i].Spec, actPF); err != nil {
-				return fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err)
-			}
+		if err := relowerActionExpressions(actKey, &action, classCtx); err != nil {
+			return err
 		}
 		class.Actions[actKey] = action
 	}
 
-	// Queries.
 	for qKey, query := range class.Queries {
-		qCtx := ContextWithParameters(classCtx, query.Parameters)
-		qPF := NewExpressionParseFunc(qCtx)
-
-		for i := range query.Requires {
-			if err := relowerSpec(&query.Requires[i].Spec, qPF); err != nil {
-				return fmt.Errorf("query %q require %d: %w", qKey.String(), i, err)
-			}
-		}
-		for i := range query.Guarantees {
-			if err := relowerSpec(&query.Guarantees[i].Spec, qPF); err != nil {
-				return fmt.Errorf("query %q guarantee %d: %w", qKey.String(), i, err)
-			}
+		if err := relowerQueryExpressions(qKey, &query, classCtx); err != nil {
+			return err
 		}
 		class.Queries[qKey] = query
 	}
 
+	return nil
+}
+
+func relowerActionExpressions(actKey identity.Key, action *model_state.Action, classCtx *LowerContext) error {
+	actPF := NewExpressionParseFunc(ContextWithParameters(classCtx, action.Parameters))
+	for i := range action.Requires {
+		if err := relowerSpec(&action.Requires[i].Spec, actPF); err != nil {
+			return fmt.Errorf("action %q require %d: %w", actKey.String(), i, err)
+		}
+	}
+	for i := range action.Guarantees {
+		if err := relowerSpec(&action.Guarantees[i].Spec, actPF); err != nil {
+			return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
+		}
+	}
+	for i := range action.SafetyRules {
+		if err := relowerSpec(&action.SafetyRules[i].Spec, actPF); err != nil {
+			return fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err)
+		}
+	}
+	return relowerParameterInvariants(actKey.String(), "action", action.Parameters, actPF)
+}
+
+func relowerQueryExpressions(qKey identity.Key, query *model_state.Query, classCtx *LowerContext) error {
+	qPF := NewExpressionParseFunc(ContextWithParameters(classCtx, query.Parameters))
+	for i := range query.Requires {
+		if err := relowerSpec(&query.Requires[i].Spec, qPF); err != nil {
+			return fmt.Errorf("query %q require %d: %w", qKey.String(), i, err)
+		}
+	}
+	for i := range query.Guarantees {
+		if err := relowerSpec(&query.Guarantees[i].Spec, qPF); err != nil {
+			return fmt.Errorf("query %q guarantee %d: %w", qKey.String(), i, err)
+		}
+	}
+	return relowerParameterInvariants(qKey.String(), "query", query.Parameters, qPF)
+}
+
+func relowerParameterInvariants(ownerKey, ownerKind string, params []model_state.Parameter, pf logic_spec.ExpressionParseFunc) error {
+	for i := range params {
+		for j := range params[i].Invariants {
+			if err := relowerSpec(&params[i].Invariants[j].Spec, pf); err != nil {
+				return fmt.Errorf("%s %q parameter %q invariant %d: %w", ownerKind, ownerKey, params[i].Name, j, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -330,6 +350,13 @@ func lowerActionExpressionsStrict(class *model_class.Class, classCtx *LowerConte
 				errs = append(errs, fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err))
 			}
 		}
+		for i := range action.Parameters {
+			for j := range action.Parameters[i].Invariants {
+				if err := relowerSpecStrict(&action.Parameters[i].Invariants[j].Spec, actPF); err != nil {
+					errs = append(errs, fmt.Errorf("action %q parameter %q invariant %d: %w", actKey.String(), action.Parameters[i].Name, j, err))
+				}
+			}
+		}
 		class.Actions[actKey] = action
 	}
 	return errs
@@ -349,6 +376,13 @@ func lowerQueryExpressionsStrict(class *model_class.Class, classCtx *LowerContex
 		for i := range query.Guarantees {
 			if err := relowerSpecStrict(&query.Guarantees[i].Spec, qPF); err != nil {
 				errs = append(errs, fmt.Errorf("query %q guarantee %d: %w", qKey.String(), i, err))
+			}
+		}
+		for i := range query.Parameters {
+			for j := range query.Parameters[i].Invariants {
+				if err := relowerSpecStrict(&query.Parameters[i].Invariants[j].Spec, qPF); err != nil {
+					errs = append(errs, fmt.Errorf("query %q parameter %q invariant %d: %w", qKey.String(), query.Parameters[i].Name, j, err))
+				}
 			}
 		}
 		class.Queries[qKey] = query

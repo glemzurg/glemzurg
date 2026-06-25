@@ -361,6 +361,9 @@ func writeClassTree(class *inputClass, classDir string) error {
 			if err := writeJSON(filepath.Join(actionsDir, key+".json"), action); err != nil {
 				return err
 			}
+			if err := writeOwnerParameterInvariants(classDir, "actions", key, action.Parameters); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -373,6 +376,9 @@ func writeClassTree(class *inputClass, classDir string) error {
 		for _, key := range sortedKeys(class.Queries) {
 			query := class.Queries[key]
 			if err := writeJSON(filepath.Join(queriesDir, key+".json"), query); err != nil {
+				return err
+			}
+			if err := writeOwnerParameterInvariants(classDir, "queries", key, query.Parameters); err != nil {
 				return err
 			}
 		}
@@ -407,6 +413,30 @@ func writeUseCaseTree(useCase *inputUseCase, useCaseDir string) error {
 		}
 	}
 
+	return nil
+}
+
+// writeOwnerParameterInvariants writes per-parameter invariant files under an action or query.
+func writeOwnerParameterInvariants(classDir, ownerKind, ownerKey string, params []inputParameter) error {
+	for _, param := range params {
+		if len(param.Invariants) == 0 {
+			continue
+		}
+		paramDirKey, err := safeParameterDirKey(param.Name)
+		if err != nil {
+			return err
+		}
+		paramInvariantsDir := filepath.Join(classDir, ownerKind, ownerKey, "parameters", paramDirKey, "invariants")
+		if err := os.MkdirAll(paramInvariantsDir, 0755); err != nil {
+			return err
+		}
+		for i, inv := range param.Invariants {
+			filename := fmt.Sprintf("%03d.invariant.json", i+1)
+			if err := writeJSON(filepath.Join(paramInvariantsDir, filename), inv); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 

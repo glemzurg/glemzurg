@@ -85,11 +85,13 @@ const (
 	// ---------------------------------------------------------------
 	// Parameter errors.
 
-	ParamKeyInvalid          Code = "PARAM_KEY_INVALID"           // Parameter key failed validation.
-	ParamKeyTypeInvalid      Code = "PARAM_KEY_TYPE_INVALID"      // Parameter key is not KEY_TYPE_PARAMETER.
-	ParamNameRequired        Code = "PARAM_NAME_REQUIRED"         // Parameter Name is empty.
-	ParamDatatypesRequired   Code = "PARAM_DATATYPES_REQUIRED"    // Parameter DataTypes is empty.
-	ParamDatatypeKeyMismatch Code = "PARAM_DATATYPE_KEY_MISMATCH" // Parameter DataType.Key does not match Parameter.Name.
+	ParamKeyInvalid            Code = "PARAM_KEY_INVALID"             // Parameter key failed validation.
+	ParamKeyTypeInvalid        Code = "PARAM_KEY_TYPE_INVALID"        // Parameter key is not KEY_TYPE_PARAMETER.
+	ParamNameRequired          Code = "PARAM_NAME_REQUIRED"           // Parameter Name is empty.
+	ParamDatatypesRequired     Code = "PARAM_DATATYPES_REQUIRED"      // Parameter DataTypes is empty.
+	ParamDatatypeKeyMismatch   Code = "PARAM_DATATYPE_KEY_MISMATCH"   // Parameter DataType.Key does not match Parameter.Name.
+	ParamInvariantTypeInvalid  Code = "PARAM_INVARIANT_TYPE_INVALID"  // Parameter invariant has wrong logic type.
+	ParamInvariantDuplicateLet Code = "PARAM_INVARIANT_DUPLICATE_LET" // Parameter invariant has duplicate let target.
 
 	// ---------------------------------------------------------------
 	// Action errors.

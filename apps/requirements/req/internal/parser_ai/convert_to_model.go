@@ -1469,6 +1469,11 @@ func convertParametersToModel(params []inputParameter, parentKey identity.Key, s
 		if typeSpec != nil && built.DataType != nil {
 			built.DataType.TypeSpec = typeSpec
 		}
+		paramInvariants, err := convertLogicsToModel(param.Invariants, model_logic.LogicTypeAssessment, built.Key, identity.NewParameterInvariantKey)
+		if err != nil {
+			return nil, fmt.Errorf("parameter %d (%s) invariants: %w", i, param.Name, err)
+		}
+		built.SetInvariants(paramInvariants)
 		result[i] = built
 	}
 	return result, nil

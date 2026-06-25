@@ -5,6 +5,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -44,6 +46,12 @@ func (suite *ParameterSuite) TestValidate() {
 	otherParamKey := helper.Must(identity.NewParameterKey(testActionKey(), "other"))
 	validDtKey := helper.Must(identity.NewDataTypeKey(validKey, ""))
 	mismatchedDtKey := helper.Must(identity.NewDataTypeKey(otherParamKey, ""))
+
+	invKey1 := helper.Must(identity.NewParameterInvariantKey(validKey, "0"))
+	invKey2 := helper.Must(identity.NewParameterInvariantKey(validKey, "1"))
+	validInvariant := model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	validInvariant2 := model_logic.NewLogic(invKey2, model_logic.LogicTypeAssessment, "Must be less than 100.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongKindInvariant := model_logic.NewLogic(invKey1, model_logic.LogicTypeStateChange, "Should fail.", "target", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 
 	tests := []struct {
 		testName string
@@ -131,6 +139,85 @@ func (suite *ParameterSuite) TestValidate() {
 			},
 			errstr: "DataType.Key",
 		},
+		{
+			testName: "valid with nil invariants",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants:    nil,
+			},
+		},
+		{
+			testName: "valid with single invariant",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants:    []model_logic.Logic{validInvariant},
+			},
+		},
+		{
+			testName: "valid with multiple invariants",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants:    []model_logic.Logic{validInvariant, validInvariant2},
+			},
+		},
+		{
+			testName: "error invariant wrong logic type",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants:    []model_logic.Logic{wrongKindInvariant},
+			},
+			errstr: "logic kind must be 'assessment' or 'let'",
+		},
+		{
+			testName: "error invariant invalid logic missing key",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants: []model_logic.Logic{
+					{
+						Key:         identity.Key{},
+						Type:        model_logic.LogicTypeAssessment,
+						Description: "Missing key.",
+						Spec:        logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
+					},
+				},
+			},
+			errstr: "parameter invariant 0",
+		},
+		{
+			testName: "valid with let in invariants",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants: []model_logic.Logic{
+					model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local total.", "total", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
+					validInvariant,
+				},
+			},
+		},
+		{
+			testName: "error duplicate let target in parameter invariants",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants: []model_logic.Logic{
+					model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local a.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
+					model_logic.NewLogic(invKey2, model_logic.LogicTypeLet, "Local a again.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
+				},
+			},
+			errstr: "duplicate let target \"a\"",
+		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
@@ -209,4 +296,17 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 	// Underlying Validate failure still surfaces.
 	badParam := Parameter{Name: "amount", DataTypeRules: "Nat"} // missing key
 	suite.Require().ErrorContains(badParam.ValidateWithParent(ctx, &actionKey), "Key")
+
+	// Valid with invariants.
+	invKey := helper.Must(identity.NewParameterInvariantKey(param.Key, "0"))
+	validInvariant := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	param.SetInvariants([]model_logic.Logic{validInvariant})
+	suite.Require().NoError(param.ValidateWithParent(ctx, &actionKey))
+
+	// Invariant with wrong parent key.
+	otherParamKey := helper.Must(identity.NewParameterKey(actionKey, "other"))
+	wrongInvKey := helper.Must(identity.NewParameterInvariantKey(otherParamKey, "0"))
+	wrongParentInvariant := model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Wrong parent.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	param.SetInvariants([]model_logic.Logic{wrongParentInvariant})
+	suite.Require().ErrorContains(param.ValidateWithParent(ctx, &actionKey), "parameter invariant 0")
 }

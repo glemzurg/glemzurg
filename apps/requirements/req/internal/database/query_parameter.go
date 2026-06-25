@@ -50,6 +50,11 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 		return err
 	}
 
+	param.Key, err = identity.NewParameterKey(*queryKeyPtr, parameterKeyStr)
+	if err != nil {
+		return err
+	}
+
 	// Set nullable fields.
 	if dataTypeRules.Valid {
 		param.DataTypeRules = dataTypeRules.String

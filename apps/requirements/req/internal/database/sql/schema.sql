@@ -523,6 +523,21 @@ COMMENT ON COLUMN attribute_invariant.logic_key IS 'The logic predicate that mus
 
 --------------------------------------------------------------
 
+CREATE TABLE parameter_invariant (
+  model_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, parameter_key, logic_key),
+  CONSTRAINT fk_param_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE parameter_invariant IS 'Join table linking action and query parameters to their invariant logic predicates.';
+COMMENT ON COLUMN parameter_invariant.model_key IS 'The model this parameter invariant belongs to.';
+COMMENT ON COLUMN parameter_invariant.parameter_key IS 'The full identity key of the parameter this invariant constrains.';
+COMMENT ON COLUMN parameter_invariant.logic_key IS 'The logic predicate that must hold for the parameter value.';
+
+--------------------------------------------------------------
+
 CREATE TABLE association (
   model_key text NOT NULL,
   association_key text NOT NULL,

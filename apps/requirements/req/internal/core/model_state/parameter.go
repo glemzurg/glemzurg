@@ -6,6 +6,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -16,6 +17,7 @@ type Parameter struct {
 	DataTypeRules string                    // What are the bounds of this data type.
 	Nullable      bool                      // Whether absent (NULL) is a valid value.
 	DataType      *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
+	Invariants    []model_logic.Logic       // Invariants that must hold for this parameter's value.
 }
 
 // NewParameter constructs a Parameter whose identity.Key is parented by the owning
@@ -94,7 +96,30 @@ func (p *Parameter) Validate(ctx *coreerr.ValidationContext) error {
 			)
 		}
 	}
+
+	paramInvLetTargets := make(map[string]bool)
+	for i, inv := range p.Invariants {
+		invCtx := ctx.Child("invariant", fmt.Sprintf("%d", i))
+		if err := inv.Validate(invCtx); err != nil {
+			return coreerr.New(invCtx, coreerr.ParamInvariantTypeInvalid, fmt.Sprintf("parameter invariant %d: %s", i, err.Error()), "Invariants")
+		}
+		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
+			return coreerr.NewWithValues(invCtx, coreerr.ParamInvariantTypeInvalid, fmt.Sprintf("parameter invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type), "Invariants", inv.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
+		}
+		if inv.Type == model_logic.LogicTypeLet {
+			if paramInvLetTargets[inv.Target] {
+				return coreerr.NewWithValues(invCtx, coreerr.ParamInvariantDuplicateLet, fmt.Sprintf("parameter invariant %d: duplicate let target %q", i, inv.Target), "Invariants", inv.Target, "")
+			}
+			paramInvLetTargets[inv.Target] = true
+		}
+	}
+
 	return nil
+}
+
+// SetInvariants sets the invariants for this parameter.
+func (p *Parameter) SetInvariants(invariants []model_logic.Logic) {
+	p.Invariants = invariants
 }
 
 // ValidateWithParent validates the Parameter and verifies its key is parented by
@@ -105,6 +130,12 @@ func (p *Parameter) ValidateWithParent(ctx *coreerr.ValidationContext, parent *i
 	}
 	if err := p.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
+	}
+	for i, inv := range p.Invariants {
+		invCtx := ctx.Child("invariant", fmt.Sprintf("%d", i))
+		if err := inv.ValidateWithParent(invCtx, &p.Key); err != nil {
+			return coreerr.New(invCtx, coreerr.ParamInvariantTypeInvalid, fmt.Sprintf("parameter invariant %d: %s", i, err.Error()), "Invariants")
+		}
 	}
 	return nil
 }

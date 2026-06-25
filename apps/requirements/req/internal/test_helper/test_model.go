@@ -131,6 +131,13 @@ type testKeys struct {
 	// Queries.
 	queryStatus, queryCount, queryHistory identity.Key
 
+	// Parameters (identity keys for invariant parents).
+	paramQuantity, paramProductID identity.Key
+
+	// Parameter invariant keys.
+	paramInv1, paramInv2, paramInvLet identity.Key // quantity on actionProcess.
+	paramInv3                         identity.Key // product_id on queryStatus.
+
 	// Transitions.
 	transitionSubmit, transitionFulfill, transitionInitial, transitionFinal identity.Key
 
@@ -504,7 +511,7 @@ func buildTestModel() (core.Model, error) {
 		return core.Model{}, err
 	}
 
-	params, err := buildParameters(k)
+	params, err := buildParameters(k, logic)
 	if err != nil {
 		return core.Model{}, err
 	}
@@ -790,6 +797,31 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.queryHistory, err = identity.NewQueryKey(k.classOrder, "get_history")
+	if err != nil {
+		return k, err
+	}
+
+	k.paramQuantity, err = identity.NewParameterKey(k.actionProcess, "quantity")
+	if err != nil {
+		return k, err
+	}
+	k.paramProductID, err = identity.NewParameterKey(k.queryStatus, "product_id")
+	if err != nil {
+		return k, err
+	}
+	k.paramInv1, err = identity.NewParameterInvariantKey(k.paramQuantity, "0")
+	if err != nil {
+		return k, err
+	}
+	k.paramInv2, err = identity.NewParameterInvariantKey(k.paramQuantity, "1")
+	if err != nil {
+		return k, err
+	}
+	k.paramInvLet, err = identity.NewParameterInvariantKey(k.paramQuantity, "2")
+	if err != nil {
+		return k, err
+	}
+	k.paramInv3, err = identity.NewParameterInvariantKey(k.paramProductID, "0")
 	if err != nil {
 		return k, err
 	}
@@ -1218,6 +1250,10 @@ type testLogic struct {
 	attrInvariants1 []model_logic.Logic // Total (3).
 	attrInvariants2 []model_logic.Logic // Status (2).
 	attrInvariants3 []model_logic.Logic // Product name (1).
+
+	// Parameter-level invariants.
+	paramInvariants1 []model_logic.Logic // quantity (actionProcess).
+	paramInvariants2 []model_logic.Logic // product_id (queryStatus).
 }
 
 func buildLogic(k testKeys) (testLogic, error) {
@@ -1326,6 +1362,20 @@ func buildLogic(k testKeys) (testLogic, error) {
 	aInv6 := model_logic.NewLogic(k.attrInv6, model_logic.LogicTypeAssessment, "Product name must not be empty", "", newSpec("Len(self.name) > 0"), nil)
 	l.attrInvariants3 = []model_logic.Logic{aInv6}
 
+	// Parameter invariants — quantity (actionProcess).
+	pInv1 := model_logic.NewLogic(k.paramInv1, model_logic.LogicTypeAssessment, "Quantity must be positive.", "", parsedSpec("quantity > 0"), nil)
+	pInv2 := model_logic.NewLogic(k.paramInv2, model_logic.LogicTypeAssessment, "Quantity must not exceed ten thousand.", "", parsedSpec("quantity <= 10000"), nil)
+	paramInvLetTypeSpec, err := logic_spec.NewTypeSpec("tla_plus", "Int", nil)
+	if err != nil {
+		return l, err
+	}
+	pInvLet := model_logic.NewLogic(k.paramInvLet, model_logic.LogicTypeLet, "Compute max quantity for parameter invariants.", "maxQty", parsedSpec("10000"), &paramInvLetTypeSpec)
+	l.paramInvariants1 = []model_logic.Logic{pInvLet, pInv1, pInv2}
+
+	// Parameter invariants — product_id (queryStatus).
+	pInv3 := model_logic.NewLogic(k.paramInv3, model_logic.LogicTypeAssessment, "Product ID must be set when non-null.", "", parsedSpec("product_id /= NULL => Len(product_id) > 0"), nil)
+	l.paramInvariants2 = []model_logic.Logic{pInv3}
+
 	// Derivation with empty specification (tests empty spec path).
 	l.derivation = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "", parsedSpec("_Sum(things)"), nil)
 
@@ -1394,7 +1444,7 @@ type testParams struct {
 	queryHistory  []model_state.Parameter
 }
 
-func buildParameters(k testKeys) (testParams, error) {
+func buildParameters(k testKeys, l testLogic) (testParams, error) {
 	var p testParams
 
 	// eventSubmit: action/query param names plus an extra event-only name.
@@ -1416,6 +1466,7 @@ func buildParameters(k testKeys) (testParams, error) {
 	if err != nil {
 		return p, err
 	}
+	quantityProcess.SetInvariants(l.paramInvariants1)
 	p.actionProcess = []model_state.Parameter{quantityProcess, priorityProcess, tagsProcess}
 
 	// actionNotify: format, unconstrained_bound (span with unconstrained lower bound).
@@ -1442,6 +1493,7 @@ func buildParameters(k testKeys) (testParams, error) {
 	if err != nil {
 		return p, err
 	}
+	productIDStatus.SetInvariants(l.paramInvariants2)
 	p.queryStatus = []model_state.Parameter{productIDStatus, itemsStatus, formatStatus}
 
 	// queryHistory: format.

@@ -14,6 +14,9 @@ type inputParameter struct {
 	DataTypeRules string `json:"data_type_rules,omitempty"`
 	TypeSpec      string `json:"type_spec,omitempty"`
 	Nullable      bool   `json:"nullable,omitempty"`
+
+	// Children (not from JSON, populated during directory traversal)
+	Invariants []inputLogic `json:"-"`
 }
 
 // parameterSchema is the compiled JSON schema for parameter objects.

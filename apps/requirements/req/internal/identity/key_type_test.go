@@ -2165,6 +2165,73 @@ func (suite *KeyTypeSuite) TestNewParameterKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewParameterInvariantKey() {
+	domainKey, err := NewDomainKey("domain1")
+	suite.Require().NoError(err)
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	suite.Require().NoError(err)
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	suite.Require().NoError(err)
+	actionKey, err := NewActionKey(classKey, "action1")
+	suite.Require().NoError(err)
+	paramKey, err := NewParameterKey(actionKey, "amount")
+	suite.Require().NoError(err)
+
+	tests := []struct {
+		testName     string
+		parameterKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		{
+			testName:     "ok",
+			parameterKey: paramKey,
+			subKey:       "0",
+			expected:     helper.Must(newKey(paramKey.String(), KEY_TYPE_PARAMETER_INVARIANT, "0")),
+		},
+		{
+			testName:     "error empty parent",
+			parameterKey: Key{},
+			subKey:       "0",
+			errstr:       "parent key cannot be of type '' for 'pinvariant' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			parameterKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "0",
+			errstr:       "parent key cannot be of type 'actor' for 'pinvariant' key",
+		},
+		{
+			testName:     "error not integer subKey",
+			parameterKey: paramKey,
+			subKey:       "not_int",
+			errstr:       "parameter invariant key must be a valid integer",
+		},
+		{
+			testName:     "error blank subKey",
+			parameterKey: paramKey,
+			subKey:       "",
+			errstr:       "sub key is required",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.Run(tt.testName, func() {
+			key, err := NewParameterInvariantKey(tt.parameterKey, tt.subKey)
+			if tt.errstr == "" {
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
+			} else {
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 // TestParameterKey_ValidateParent verifies the multi-parent parent check used
 // downstream by validateRequiredParentOneOf for parameters.
 func (suite *KeyTypeSuite) TestParameterKey_ValidateParent() {
