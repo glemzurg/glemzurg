@@ -278,6 +278,59 @@ func (s *TraceSuite) TestFinalState() {
 	s.Equal("100", inst.Attributes["amount"])
 }
 
+func (s *TraceSuite) TestAssociationClassMaterializationStep() {
+	classKey := mustKey("domain/d/subdomain/s/class/link_def")
+	fromClassKey := mustKey("domain/d/subdomain/s/class/partner")
+	toClassKey := mustKey("domain/d/subdomain/s/class/jurisdiction")
+	hostAssocKey := mustKey("domain/d/subdomain/s/cassociation/class/partner/class/jurisdiction/configures")
+
+	result := &engine.SimulationResult{
+		StepsTaken:        1,
+		TerminationReason: "max_steps",
+		Steps: []*engine.SimulationStep{
+			{
+				StepNumber: 1,
+				Kind:       engine.StepKindCreation,
+				ClassKey:   classKey,
+				ClassName:  "LinkDef",
+				EventName:  "Add",
+				InstanceID: 3,
+				ToState:    "Active",
+				TransitionResult: &actions.TransitionResult{
+					InstanceID:  3,
+					WasCreation: true,
+					AssociationMaterialization: &actions.AssociationMaterialization{
+						HostAssociationName: "Configures",
+						HostAssociationKey:  hostAssocKey,
+						FromClassName:       "Partner",
+						FromClassKey:        fromClassKey,
+						ToClassName:         "Jurisdiction",
+						ToClassKey:          toClassKey,
+						FromInstanceID:      1,
+						ToInstanceID:        2,
+					},
+				},
+			},
+		},
+	}
+
+	tr := FromResult(result)
+	s.Require().Len(tr.Steps, 1)
+	mat := tr.Steps[0].AssociationMaterialization
+	s.Require().NotNil(mat)
+	s.Equal("Configures", mat.AssociationName)
+	s.Equal(hostAssocKey.String(), mat.AssociationKey)
+	s.Equal("Partner", mat.FromClassName)
+	s.Equal(fromClassKey.String(), mat.FromClassKey)
+	s.Equal("Jurisdiction", mat.ToClassName)
+	s.Equal(toClassKey.String(), mat.ToClassKey)
+	s.Equal(uint64(1), mat.FromInstanceID)
+	s.Equal(uint64(2), mat.ToInstanceID)
+
+	text := tr.FormatText()
+	s.Contains(text, "materializes: Configures (Partner#1 -> Jurisdiction#2)")
+}
+
 func (s *TraceSuite) TestFormatTextOutput() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 

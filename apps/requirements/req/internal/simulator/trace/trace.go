@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -22,20 +23,33 @@ type SimulationTrace struct {
 	FinalState        *FinalState `json:"final_state,omitempty"`
 }
 
+// AssociationMaterializationTrace records endpoint classes linked by an association-class row.
+type AssociationMaterializationTrace struct {
+	AssociationName string `json:"association_name"`
+	AssociationKey  string `json:"association_key"`
+	FromClassName   string `json:"from_class_name"`
+	FromClassKey    string `json:"from_class_key"`
+	ToClassName     string `json:"to_class_name"`
+	ToClassKey      string `json:"to_class_key"`
+	FromInstanceID  uint64 `json:"from_instance_id"`
+	ToInstanceID    uint64 `json:"to_instance_id"`
+}
+
 // TraceStep is a serializable view of one simulation step.
 type TraceStep struct { //nolint:revive // public API name
-	StepNumber    int               `json:"step_number"`
-	Kind          string            `json:"kind"`
-	ClassName     string            `json:"class_name"`
-	ClassKey      string            `json:"class_key"`
-	EventName     string            `json:"event_name,omitempty"`
-	InstanceID    uint64            `json:"instance_id"`
-	FromState     string            `json:"from_state,omitempty"`
-	ToState       string            `json:"to_state,omitempty"`
-	Parameters    map[string]string `json:"parameters,omitempty"`
-	Assignments   map[string]string `json:"assignments,omitempty"`
-	CascadedSteps []TraceStep       `json:"cascaded_steps,omitempty"`
-	Violations    []string          `json:"violations,omitempty"`
+	StepNumber                 int                              `json:"step_number"`
+	Kind                       string                           `json:"kind"`
+	ClassName                  string                           `json:"class_name"`
+	ClassKey                   string                           `json:"class_key"`
+	EventName                  string                           `json:"event_name,omitempty"`
+	InstanceID                 uint64                           `json:"instance_id"`
+	FromState                  string                           `json:"from_state,omitempty"`
+	ToState                    string                           `json:"to_state,omitempty"`
+	Parameters                 map[string]string                `json:"parameters,omitempty"`
+	Assignments                map[string]string                `json:"assignments,omitempty"`
+	AssociationMaterialization *AssociationMaterializationTrace `json:"association_materialization,omitempty"`
+	CascadedSteps              []TraceStep                      `json:"cascaded_steps,omitempty"`
+	Violations                 []string                         `json:"violations,omitempty"`
 }
 
 // FinalState is a snapshot of all instances at simulation end.
@@ -128,6 +142,10 @@ func convertStep(step *engine.SimulationStep) TraceStep {
 		ts.Assignments = extractAssignments(step.InstanceID, step.DoActionResult.PrimedAssignments)
 	}
 
+	if step.TransitionResult != nil && step.TransitionResult.AssociationMaterialization != nil {
+		ts.AssociationMaterialization = convertAssociationMaterialization(step.TransitionResult.AssociationMaterialization)
+	}
+
 	// Convert cascaded steps.
 	for _, cs := range step.CascadedSteps {
 		ts.CascadedSteps = append(ts.CascadedSteps, convertStep(cs))
@@ -139,6 +157,19 @@ func convertStep(step *engine.SimulationStep) TraceStep {
 	}
 
 	return ts
+}
+
+func convertAssociationMaterialization(mat *actions.AssociationMaterialization) *AssociationMaterializationTrace {
+	return &AssociationMaterializationTrace{
+		AssociationName: mat.HostAssociationName,
+		AssociationKey:  mat.HostAssociationKey.String(),
+		FromClassName:   mat.FromClassName,
+		FromClassKey:    mat.FromClassKey.String(),
+		ToClassName:     mat.ToClassName,
+		ToClassKey:      mat.ToClassKey.String(),
+		FromInstanceID:  uint64(mat.FromInstanceID),
+		ToInstanceID:    uint64(mat.ToInstanceID),
+	}
 }
 
 // buildFinalState creates a FinalState snapshot from SimulationState.
@@ -216,6 +247,15 @@ func writeStep(b *strings.Builder, step TraceStep, indent string) {
 	}
 	if len(step.Assignments) > 0 {
 		fmt.Fprintf(b, "%s  assigns: %s\n", indent, sortedMapEntries(step.Assignments))
+	}
+	if step.AssociationMaterialization != nil {
+		mat := step.AssociationMaterialization
+		fmt.Fprintf(b, "%s  materializes: %s (%s#%d -> %s#%d)\n",
+			indent,
+			mat.AssociationName,
+			mat.FromClassName, mat.FromInstanceID,
+			mat.ToClassName, mat.ToInstanceID,
+		)
 	}
 	for _, v := range step.Violations {
 		fmt.Fprintf(b, "%s  VIOLATION: %s\n", indent, v)

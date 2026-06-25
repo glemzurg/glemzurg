@@ -265,9 +265,22 @@ func (c *ClassCatalog) GetAssociationClassInfo(classKey identity.Key) actions.As
 	if info == nil {
 		return actions.AssociationClassLinkInfo{}
 	}
+	fromName := ""
+	if fromInfo := c.classes[info.FromClassKey]; fromInfo != nil {
+		fromName = fromInfo.Class.Name
+	}
+	toName := ""
+	if toInfo := c.classes[info.ToClassKey]; toInfo != nil {
+		toName = toInfo.Class.Name
+	}
 	return actions.AssociationClassLinkInfo{
-		Found:        true,
-		HostAssocKey: info.HostAssociation.Key,
+		Found:               true,
+		HostAssocKey:        info.HostAssociation.Key,
+		HostAssociationName: info.HostAssociation.Name,
+		FromClassKey:        info.FromClassKey,
+		FromClassName:       fromName,
+		ToClassKey:          info.ToClassKey,
+		ToClassName:         toName,
 	}
 }
 

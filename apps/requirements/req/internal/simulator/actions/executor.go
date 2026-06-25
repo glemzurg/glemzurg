@@ -50,6 +50,18 @@ type QueryResult struct {
 	Success bool
 }
 
+// AssociationMaterialization records a host association row created via an association class.
+type AssociationMaterialization struct {
+	HostAssociationName string
+	HostAssociationKey  identity.Key
+	FromClassName       string
+	FromClassKey        identity.Key
+	ToClassName         string
+	ToClassKey          identity.Key
+	FromInstanceID      state.InstanceID
+	ToInstanceID        state.InstanceID
+}
+
 // TransitionResult holds the result of executing a state machine transition.
 type TransitionResult struct {
 	// InstanceID is the instance that transitioned.
@@ -73,6 +85,9 @@ type TransitionResult struct {
 	// WasDeletion is true if the transition was to the final state (object deletion).
 	WasDeletion bool
 
+	// AssociationMaterialization is set when creation materializes a host association via an association class.
+	AssociationMaterialization *AssociationMaterialization
+
 	// ActionResult is the result of the action executed during the transition (if any).
 	ActionResult *ActionResult
 
@@ -84,12 +99,18 @@ type TransitionResult struct {
 type AssociationClassIndex interface {
 	GetAssociationClassInfo(classKey identity.Key) AssociationClassLinkInfo
 	IsAssociationClass(classKey identity.Key) bool
+	IsAssociationClassHost(assocKey identity.Key) bool
 }
 
-// AssociationClassLinkInfo holds the host association key for materializing one AC row.
+// AssociationClassLinkInfo holds host-association and endpoint metadata for one AC row.
 type AssociationClassLinkInfo struct {
-	Found        bool
-	HostAssocKey identity.Key
+	Found               bool
+	HostAssocKey        identity.Key
+	HostAssociationName string
+	FromClassKey        identity.Key
+	FromClassName       string
+	ToClassKey          identity.Key
+	ToClassName         string
 }
 
 // ActionExecutor executes actions, queries, and transitions against simulation state.
@@ -631,11 +652,13 @@ func (e *ActionExecutor) ExecuteTransition(
 	}
 
 	// Step 3: Handle creation (FromStateKey == nil)
+	var associationMaterialization *AssociationMaterialization
 	if chosen.FromStateKey == nil {
 		instance, err = e.handleCreation(class, instance, source.SourceAssocKey, source.SourceID, targetID)
 		if err != nil {
 			return nil, err
 		}
+		associationMaterialization = e.associationMaterializationForCreation(class, source, targetID)
 	}
 
 	// Step 4: Execute the action (if any). Multiplicity is deferred until after _state applies.
@@ -659,16 +682,46 @@ func (e *ActionExecutor) ExecuteTransition(
 	violations = append(violations, e.checkMultiplicityInvariants()...)
 
 	return &TransitionResult{
-		InstanceID:    instance.ID,
-		FromState:     currentStateName,
-		ToState:       toStateName,
-		EventKey:      event.Key,
-		TransitionKey: chosen.Key,
-		WasCreation:   chosen.FromStateKey == nil,
-		WasDeletion:   chosen.ToStateKey == nil,
-		ActionResult:  actionResult,
-		Violations:    violations,
+		InstanceID:                 instance.ID,
+		FromState:                  currentStateName,
+		ToState:                    toStateName,
+		EventKey:                   event.Key,
+		TransitionKey:              chosen.Key,
+		WasCreation:                chosen.FromStateKey == nil,
+		WasDeletion:                chosen.ToStateKey == nil,
+		AssociationMaterialization: associationMaterialization,
+		ActionResult:               actionResult,
+		Violations:                 violations,
 	}, nil
+}
+
+func (e *ActionExecutor) associationMaterializationForCreation(
+	class model_class.Class,
+	source CreationLinkSource,
+	targetID *state.InstanceID,
+) *AssociationMaterialization {
+	if e.acIndex == nil || !e.acIndex.IsAssociationClass(class.Key) {
+		return nil
+	}
+	if source.SourceID == nil || targetID == nil {
+		return nil
+	}
+
+	linkInfo := e.acIndex.GetAssociationClassInfo(class.Key)
+	if !linkInfo.Found {
+		return nil
+	}
+
+	return &AssociationMaterialization{
+		HostAssociationName: linkInfo.HostAssociationName,
+		HostAssociationKey:  linkInfo.HostAssocKey,
+		FromClassName:       linkInfo.FromClassName,
+		FromClassKey:        linkInfo.FromClassKey,
+		ToClassName:         linkInfo.ToClassName,
+		ToClassKey:          linkInfo.ToClassKey,
+		FromInstanceID:      *source.SourceID,
+		ToInstanceID:        *targetID,
+	}
 }
 
 // getInstanceCurrentState extracts the current state name from an instance.
@@ -769,26 +822,57 @@ func (e *ActionExecutor) handleCreation(
 	}
 
 	simState := e.bindingsBuilder.State()
-	newAttrs := object.NewRecord()
-
-	// Generate index-safe values if the class has indexes
-	if e.structuralCheckers != nil && e.structuralCheckers.Index != nil && e.rng != nil {
-		if indexInfo := e.structuralCheckers.Index.GetClassIndexInfo(class.Key); indexInfo != nil {
-			existingInstances := simState.InstancesByClass(class.Key)
-			if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, e.rng); err != nil {
-				return nil, fmt.Errorf("failed to generate index-safe values for class %s: %w", class.Name, err)
-			}
-		}
+	newAttrs, err := e.creationAttributes(class, simState)
+	if err != nil {
+		return nil, err
 	}
 
 	instance := simState.CreateInstance(class.Key, newAttrs)
-
-	// Link to parent over the association
-	if sourceAssocKey != nil && sourceID != nil {
-		simState.AddLink(*sourceAssocKey, *sourceID, instance.ID)
+	if err := e.linkPlainCreationOverAssociation(simState, sourceAssocKey, sourceID, instance.ID); err != nil {
+		return nil, err
 	}
 
 	return instance, nil
+}
+
+func (e *ActionExecutor) creationAttributes(
+	class model_class.Class,
+	simState *state.SimulationState,
+) (*object.Record, error) {
+	newAttrs := object.NewRecord()
+	if e.structuralCheckers == nil || e.structuralCheckers.Index == nil || e.rng == nil {
+		return newAttrs, nil
+	}
+
+	indexInfo := e.structuralCheckers.Index.GetClassIndexInfo(class.Key)
+	if indexInfo == nil {
+		return newAttrs, nil
+	}
+
+	existingInstances := simState.InstancesByClass(class.Key)
+	if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, e.rng); err != nil {
+		return nil, fmt.Errorf("failed to generate index-safe values for class %s: %w", class.Name, err)
+	}
+	return newAttrs, nil
+}
+
+func (e *ActionExecutor) linkPlainCreationOverAssociation(
+	simState *state.SimulationState,
+	sourceAssocKey *identity.Key,
+	sourceID *state.InstanceID,
+	newInstanceID state.InstanceID,
+) error {
+	if sourceAssocKey == nil || sourceID == nil {
+		return nil
+	}
+	if e.acIndex != nil && e.acIndex.IsAssociationClassHost(*sourceAssocKey) {
+		return fmt.Errorf(
+			"host association %s requires an association-class instance; cannot link endpoints directly",
+			sourceAssocKey.String(),
+		)
+	}
+	simState.AddLink(*sourceAssocKey, *sourceID, newInstanceID)
+	return nil
 }
 
 func (e *ActionExecutor) handleAssociationClassCreation(

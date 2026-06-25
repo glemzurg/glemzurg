@@ -1,6 +1,5 @@
 
 
-social no jurisdiction constraint
 
 test there is only 1 to 1 on association classes even though many to many
     invariants over associations

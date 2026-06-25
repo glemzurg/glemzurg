@@ -237,3 +237,5 @@
 {"id":"int-f18e742e","kind":"field_change","created_at":"2026-06-25T18:54:55.326647321Z","actor":"Justin Scott","issue_id":"glemzurg-k076","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-721449d7","kind":"field_change","created_at":"2026-06-25T19:01:59.39415894Z","actor":"Justin Scott","issue_id":"glemzurg-40eo","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-e5196cc6","kind":"field_change","created_at":"2026-06-25T19:02:34.503740913Z","actor":"Justin Scott","issue_id":"glemzurg-rvaf","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-ab7ad02a","kind":"field_change","created_at":"2026-06-25T19:10:32.716203595Z","actor":"Justin Scott","issue_id":"glemzurg-njh8","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-00e9de97","kind":"field_change","created_at":"2026-06-25T19:11:09.565634846Z","actor":"Justin Scott","issue_id":"glemzurg-oaip","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}

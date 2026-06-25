@@ -188,6 +188,15 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	result, err := ae.ExecuteTransition(linkDefClass, addEvent, nil, nil, actions.CreationLinkSource{SourceAssocKey: &hostAssocKey, SourceID: &partnerResult.InstanceID}, &jurisdictionResult.InstanceID)
 	s.Require().NoError(err)
 	s.True(result.WasCreation)
+	s.Require().NotNil(result.AssociationMaterialization)
+	s.Equal("Configures", result.AssociationMaterialization.HostAssociationName)
+	s.Equal(hostAssocKey, result.AssociationMaterialization.HostAssociationKey)
+	s.Equal("Partner", result.AssociationMaterialization.FromClassName)
+	s.Equal(tcm.partnerKey, result.AssociationMaterialization.FromClassKey)
+	s.Equal("Jurisdiction", result.AssociationMaterialization.ToClassName)
+	s.Equal(tcm.jurisdictionKey, result.AssociationMaterialization.ToClassKey)
+	s.Equal(partnerResult.InstanceID, result.AssociationMaterialization.FromInstanceID)
+	s.Equal(jurisdictionResult.InstanceID, result.AssociationMaterialization.ToInstanceID)
 
 	links := simState.AssociationLinksFromEndpoint(hostAssocKey, partnerResult.InstanceID)
 	s.Len(links, 1)
@@ -196,6 +205,36 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	s.Equal(jurisdictionResult.InstanceID, links[0].ToEndpointID)
 	s.Equal(hostAssocKey, links[0].HostAssocKey)
 
+	s.Empty(simState.GetLinkedForward(partnerResult.InstanceID, hostAssocKey))
+}
+
+func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationClass() {
+	tcm := buildAssociationClassTestModel()
+	simState := state.NewSimulationState()
+	bb := state.NewBindingsBuilder(simState)
+	catalog := NewClassCatalog(tcm.model)
+	ge := actions.NewGuardEvaluator(bb)
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
+		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
+	}, ge, catalog, rng)
+
+	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
+	jurisdictionClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.jurisdictionKey]
+
+	partnerResult, err := ae.ExecuteTransition(partnerClass, partnerClass.Events[mustKey("domain/d/subdomain/s/class/partner/event/create")], nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
+	s.Require().NoError(err)
+
+	hostAssocKey := tcm.hostAssocKey
+	_, err = ae.ExecuteTransition(
+		jurisdictionClass,
+		jurisdictionClass.Events[mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")],
+		nil, nil,
+		actions.CreationLinkSource{SourceAssocKey: &hostAssocKey, SourceID: &partnerResult.InstanceID},
+		nil,
+	)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "requires an association-class instance")
 	s.Empty(simState.GetLinkedForward(partnerResult.InstanceID, hostAssocKey))
 }
 
