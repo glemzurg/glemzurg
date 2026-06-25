@@ -48,5 +48,5 @@ func TestActionGuaranteeDisplayDescriptionInMarkdown(t *testing.T) {
 	contents, err := generateClassMdContents(reqs, class, "", "")
 	require.NoError(t, err)
 	require.Contains(t, contents, "- Set Display Name")
-	require.Contains(t, contents, "name' = Name")
+	require.Contains(t, contents, "**name' = Name**")
 }

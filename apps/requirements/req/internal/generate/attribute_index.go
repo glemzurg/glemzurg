@@ -78,7 +78,7 @@ func logicInvariantMarkdownHTML(logic model_logic.Logic) []string {
 	if desc := strings.TrimSpace(logic.Description); desc != "" {
 		parts = append(parts, desc)
 	}
-	if specLine := logicInvariantSpecLine(logic); specLine != "" {
+	if specLine := logicBoldSpecText(logic); specLine != "" {
 		parts = append(parts, specLine)
 	}
 	if logic.Target != "" && logic.TargetTypeSpec != nil {
@@ -87,20 +87,6 @@ func logicInvariantMarkdownHTML(logic model_logic.Logic) []string {
 		}
 	}
 	return parts
-}
-
-func logicInvariantSpecLine(logic model_logic.Logic) string {
-	if logic.Target != "" {
-		spec := "???"
-		if logic.Spec.Specification != "" {
-			spec = expressionSpecDisplay(logic.Spec)
-		}
-		return "**LET " + logic.Target + " = " + spec + "**"
-	}
-	if logic.Spec.Specification != "" {
-		return "**" + expressionSpecDisplay(logic.Spec) + "**"
-	}
-	return ""
 }
 
 // classAttributeTableName renders the attribute name column, including derivation prefix

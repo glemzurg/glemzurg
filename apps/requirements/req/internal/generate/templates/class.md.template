@@ -45,7 +45,7 @@ This is an actor:
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
 {{- range .Class.Attributes }}
-| {{ class_attribute_table_name . }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ expression_spec_display .DerivationPolicy.Spec }}{{ end }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ attribute_comments_invariants . }} |{{end}}
+| {{ class_attribute_table_name . }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ derivation_policy_markdown_html .DerivationPolicy }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ attribute_comments_invariants . }} |{{end}}
 
 {{- $indexes := class_indexes .Class.Attributes }}
 {{ if ne $indexes nil }}
@@ -62,11 +62,7 @@ This is an actor:
 
 {{ range .Class.Invariants -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
-{{ end -}}
+{{ logic_markdown_spec_lines . }}
 {{ end }}
 {{- end }}
 
@@ -115,9 +111,8 @@ The events for this class.
 The guards for this class.
 
 {{ range .Class.Guards -}}
-- **[{{ .Logic.Description }}]**
-{{ if ne .Logic.Spec.Specification "" }}    - {{ expression_spec_display .Logic.Spec }}
-{{ end -}}
+- {{ .Logic.Description }}
+{{ logic_markdown_spec_lines .Logic }}
 {{ end }}
 {{- end }}
 
@@ -150,11 +145,7 @@ Requires:
 
 {{ range $action.Requires -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
-{{ end -}}
+{{ logic_markdown_spec_lines . }}
 {{ end }}
 
 {{- else -}}
@@ -173,13 +164,7 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ if ne .Target "" }}{{ if eq .Type "let" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ else }}    - {{ .Target }}' = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ end -}}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
-{{ end -}}
+{{ logic_markdown_spec_lines . }}
 {{ end }}
 
 {{- else -}}
@@ -191,11 +176,7 @@ Safety Rules:
 
 {{ range $action.SafetyRules -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
-{{ end -}}
+{{ logic_markdown_spec_lines . }}
 {{ end }}
 {{ end -}}
 Triggered from:
@@ -241,11 +222,7 @@ Requires:
 
 {{ range $query.Requires -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
-{{ end -}}
+{{ logic_markdown_spec_lines . }}
 {{ end }}
 
 {{- else -}}
@@ -263,13 +240,7 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ if ne .Target "" }}{{ if eq .Type "let" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ else }}    - {{ .Target }}' = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ end -}}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
-{{ end -}}
+{{ logic_markdown_spec_lines . }}
 {{ end }}
 
 {{- else -}}

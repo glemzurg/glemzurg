@@ -151,7 +151,11 @@ var _funcMap = template.FuncMap{
 		}
 		return activeParseIssues.ClassMarker(classKey)
 	},
-	"expression_spec_display": expressionSpecDisplay,
+	"expression_spec_display":            expressionSpecDisplay,
+	"expression_spec_bold_display":       expressionSpecBoldDisplay,
+	"expression_spec_bold_indented_line": expressionSpecBoldIndentedLine,
+	"logic_markdown_spec_lines":          logicMarkdownSpecLines,
+	"derivation_policy_markdown_html":    derivationPolicyMarkdownHTML,
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
