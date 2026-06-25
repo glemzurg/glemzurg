@@ -196,16 +196,77 @@ func (s *InvariantsSuite) TestIndexCheckerNilValuesDuplicate() {
 
 	simState := state.NewSimulationState()
 
-	// Both instances have nil tail_number — treated as duplicate
+	// Unset and explicit simulator NULL share the same index slot.
 	attrs1 := object.NewRecord()
 	simState.CreateInstance(classKey, attrs1)
 
 	attrs2 := object.NewRecord()
+	attrs2.Set("tail_number", object.Null())
 	simState.CreateInstance(classKey, attrs2)
 
 	violations := checker.CheckState(simState)
 	s.True(violations.HasViolations())
 	s.Len(violations, 1)
+	s.Contains(violations[0].Message, "NULL")
+}
+
+func (s *InvariantsSuite) TestIndexCheckerNullableIndexAllowsOneNullAndDistinctValues() {
+	codeAttr := helper.Must(model_class.NewAttribute(
+		mustKey("domain/d/subdomain/s/class/jurisdiction/attribute/jurisdiction_code"),
+		model_class.AttributeDetails{Name: "Jurisdiction Code", Details: ""},
+		"unconstrained",
+		nil,
+		true,
+		model_class.AttributeAnnotations{IndexNums: []uint{0}},
+	))
+	model, classKey := indexTestModel([]model_class.Attribute{codeAttr})
+	checker := NewIndexUniquenessChecker(model)
+	simState := state.NewSimulationState()
+
+	nullJurisdiction := object.NewRecord()
+	nullJurisdiction.Set("jurisdiction_code", object.Null())
+	simState.CreateInstance(classKey, nullJurisdiction)
+
+	codedJurisdiction := object.NewRecord()
+	codedJurisdiction.Set("jurisdiction_code", object.NewTupleFromElements([]object.Object{
+		object.NewString("US"),
+		object.NewString("CA"),
+	}))
+	simState.CreateInstance(classKey, codedJurisdiction)
+
+	violations := checker.CheckState(simState)
+	s.False(violations.HasViolations())
+}
+
+func (s *InvariantsSuite) TestIndexCheckerNullableIndexRejectsSecondNull() {
+	codeAttr := helper.Must(model_class.NewAttribute(
+		mustKey("domain/d/subdomain/s/class/jurisdiction/attribute/jurisdiction_code"),
+		model_class.AttributeDetails{Name: "Jurisdiction Code", Details: ""},
+		"unconstrained",
+		nil,
+		true,
+		model_class.AttributeAnnotations{IndexNums: []uint{0}},
+	))
+	model, classKey := indexTestModel([]model_class.Attribute{codeAttr})
+	checker := NewIndexUniquenessChecker(model)
+	simState := state.NewSimulationState()
+
+	first := object.NewRecord()
+	first.Set("jurisdiction_code", object.Null())
+	simState.CreateInstance(classKey, first)
+
+	second := object.NewRecord()
+	simState.CreateInstance(classKey, second)
+
+	violations := checker.CheckState(simState)
+	s.True(violations.HasViolations())
+	s.Contains(violations[0].Message, "NULL")
+}
+
+func (s *InvariantsSuite) TestBuildTupleKeyTreatsNullRepresentationsAsEqual() {
+	keyFromUnset := BuildTupleKey(func(string) object.Object { return nil }, []string{"jurisdiction_code"})
+	keyFromNull := BuildTupleKey(func(string) object.Object { return object.Null() }, []string{"jurisdiction_code"})
+	s.Equal(keyFromUnset, keyFromNull)
 }
 
 func (s *InvariantsSuite) TestIndexCheckerUsesAttributeFieldKeyNotDisplayName() {

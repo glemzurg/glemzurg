@@ -125,12 +125,7 @@ func (c *IndexUniquenessChecker) CheckClassInstances(
 				// Build human-readable tuple values
 				tupleValues := make([]string, len(indexDef.AttrNames))
 				for i, name := range indexDef.AttrNames {
-					val := instance.GetAttribute(name)
-					if val == nil {
-						tupleValues[i] = "<nil>"
-					} else {
-						tupleValues[i] = val.Inspect()
-					}
+					tupleValues[i] = formatIndexTupleValue(instance.GetAttribute(name))
 				}
 
 				violations = append(violations, NewIndexUniquenessViolation(
@@ -161,17 +156,26 @@ func (c *IndexUniquenessChecker) HasIndexes() bool {
 }
 
 // BuildTupleKey builds a string key from attribute values for duplicate detection.
-// Uses Type() + ":" + Inspect() for each attribute, joined by "\x00".
-// Nil values become "<nil>".
+// NULL representations (unset attributes and simulator Null) share one canonical key
+// so nullable indexes treat NULL as a single occupiable value.
 func BuildTupleKey(getter func(string) object.Object, attrNames []string) string {
-	var parts []string
-	for _, name := range attrNames {
-		val := getter(name)
-		if val == nil {
-			parts = append(parts, "<nil>")
-		} else {
-			parts = append(parts, string(val.Type())+":"+val.Inspect())
-		}
+	parts := make([]string, len(attrNames))
+	for i, name := range attrNames {
+		parts[i] = indexTupleValueKey(getter(name))
 	}
 	return strings.Join(parts, "\x00")
+}
+
+func indexTupleValueKey(val object.Object) string {
+	if object.IsNull(val) {
+		return "NULL"
+	}
+	return string(val.Type()) + ":" + val.Inspect()
+}
+
+func formatIndexTupleValue(val object.Object) string {
+	if object.IsNull(val) {
+		return "NULL"
+	}
+	return val.Inspect()
 }
