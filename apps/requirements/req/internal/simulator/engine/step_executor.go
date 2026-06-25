@@ -87,7 +87,13 @@ func (e *StepExecutor) executeQuery(
 		return nil, fmt.Errorf("query is nil")
 	}
 
-	result, err := e.actionExecutor.ExecuteQuery(*pending.Query, pending.Instance, nil)
+	params, err := e.sampleQueryParameters(pending)
+	if err != nil {
+		return nil, fmt.Errorf("query %s parameter sampling: %w", pending.Query.Name, err)
+	}
+	step.Parameters = params
+
+	result, err := e.actionExecutor.ExecuteQuery(*pending.Query, pending.Instance, params)
 	if err != nil {
 		return nil, fmt.Errorf("query %s error: %w", pending.Query.Name, err)
 	}
@@ -195,6 +201,21 @@ func (e *StepExecutor) executeTransition(
 	}
 
 	return step, nil
+}
+
+// sampleQueryParameters generates parameters for a query step.
+func (e *StepExecutor) sampleQueryParameters(pending *PendingAction) (map[string]object.Object, error) {
+	if pending.Query == nil || len(pending.Query.Parameters) == 0 {
+		return map[string]object.Object{}, nil
+	}
+	if e.paramGen != nil && e.paramGen.Sampler != nil {
+		return e.paramGen.Sampler.SampleQueryFromRequires(*pending.Query, e.rng)
+	}
+	binder := actions.NewParameterBinder()
+	if e.paramGen != nil && e.paramGen.Binder != nil {
+		binder = e.paramGen.Binder
+	}
+	return binder.GenerateRandomParameters(pending.Query.Parameters, e.rng), nil
 }
 
 // sampleEventParameters generates parameters for a top-level transition event.

@@ -4,7 +4,9 @@ import (
 	"errors"
 	"math/rand"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
@@ -24,26 +26,57 @@ func NewParameterSampler(binder *ParameterBinder, namedSetValues map[string]obje
 	}
 }
 
-// SampleFromRequires builds parameters for paramDefs using constraints extracted from action requires.
+// SampleFromRequires builds parameters for paramDefs using constraints extracted from action
+// requires plus implicit enum-membership requires for enumeration parameters.
 func (s *ParameterSampler) SampleFromRequires(
 	paramDefs []model_state.Parameter,
 	action *model_state.Action,
 	rng *rand.Rand,
 ) (map[string]object.Object, error) {
-	if action == nil || len(action.Requires) == 0 {
+	if action == nil {
+		return s.binder.GenerateRandomParameters(paramDefs, rng), nil
+	}
+	return s.sampleFromOwnerRequires(action.Key, logicOwnerKindAction, action.Name, paramDefs, action.Requires, rng)
+}
+
+// SampleQueryFromRequires builds parameters for a query using explicit and implicit enum requires.
+func (s *ParameterSampler) SampleQueryFromRequires(
+	query model_state.Query,
+	rng *rand.Rand,
+) (map[string]object.Object, error) {
+	return s.sampleFromOwnerRequires(query.Key, logicOwnerKindQuery, query.Name, query.Parameters, query.Requires, rng)
+}
+
+func (s *ParameterSampler) sampleFromOwnerRequires(
+	ownerKey identity.Key,
+	ownerKind string,
+	ownerName string,
+	paramDefs []model_state.Parameter,
+	explicitRequires []model_logic.Logic,
+	rng *rand.Rand,
+) (map[string]object.Object, error) {
+	if len(paramDefs) == 0 {
+		return map[string]object.Object{}, nil
+	}
+
+	effectiveRequires, err := EffectiveRequires(ownerKey, ownerKind, paramDefs, explicitRequires)
+	if err != nil {
+		return nil, err
+	}
+	if len(effectiveRequires) == 0 {
 		return s.binder.GenerateRandomParameters(paramDefs, rng), nil
 	}
 
 	paramNames := parameterNames(paramDefs)
-	if err := ValidateRequiresSamplingSupport(action.Requires, paramNames); err != nil {
+	if err := ValidateRequiresSamplingSupport(effectiveRequires, paramNames); err != nil {
 		var unsupported *UnsupportedRequiresSamplingError
-		if errors.As(err, &unsupported) && action != nil {
-			unsupported.ActionName = action.Name
+		if errors.As(err, &unsupported) {
+			unsupported.ActionName = ownerName
 		}
 		return nil, err
 	}
 
-	constraints := extractParameterConstraints(action.Requires)
+	constraints := extractParameterConstraints(effectiveRequires)
 	result := s.binder.GenerateRandomParameters(paramDefs, rng)
 	nullableByName := parameterNullableByName(paramDefs)
 	applyParameterConstraints(result, constraints, rng, s.namedSetValues, nullableByName)

@@ -376,7 +376,7 @@ func (s *ParameterSamplerSuite) TestSampleFromRequiresReturnsUnsupportedError() 
 	s.ErrorAs(err, new(*UnsupportedRequiresSamplingError))
 }
 
-func currencyRequireSpec(tla string) logic_spec.ExpressionSpec {
+func currencyRequireSpec() logic_spec.ExpressionSpec {
 	classKey := mustKey("domain/finance/wallet/class/currency")
 	iso4217CodesKey := helper.Must(identity.NewNamedSetKey("iso4217codes"))
 	ctx := &convert.LowerContext{
@@ -389,7 +389,7 @@ func currencyRequireSpec(tla string) logic_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`, pf))
 }
 
 func (s *ParameterSamplerSuite) iso4217NamedSet() map[string]object.Object {
@@ -411,7 +411,7 @@ func (s *ParameterSamplerSuite) TestExtractNullableElseMembershipConstraint() {
 			model_logic.LogicTypeAssessment,
 			"Valid ISO 4217 code when ISO is provided.",
 			"",
-			currencyRequireSpec(`IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`),
+			currencyRequireSpec(),
 			nil,
 		),
 	})
@@ -428,7 +428,7 @@ func (s *ParameterSamplerSuite) TestCurrencyRequiresSamplingSupport() {
 		model_logic.LogicTypeAssessment,
 		"Valid ISO 4217 code when ISO is provided.",
 		"",
-		currencyRequireSpec(`IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`),
+		currencyRequireSpec(),
 		nil,
 	)
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, []model_state.Parameter{
@@ -447,7 +447,7 @@ func (s *ParameterSamplerSuite) TestSampleNullableElseMembershipFromNamedSet() {
 		model_logic.LogicTypeAssessment,
 		"Valid ISO 4217 code when ISO is provided.",
 		"",
-		currencyRequireSpec(`IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`),
+		currencyRequireSpec(),
 		nil,
 	)
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)

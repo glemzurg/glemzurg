@@ -235,6 +235,28 @@ func IsAtomicUnconstrained(dataType *DataType) bool {
 		dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_UNCONSTRAINED
 }
 
+// ContainsEnumerationConstraint reports whether dataType is a parsed atomic enumeration.
+func ContainsEnumerationConstraint(dataType *DataType) bool {
+	return dataType != nil &&
+		dataType.CollectionType == COLLECTION_TYPE_ATOMIC &&
+		dataType.Atomic != nil &&
+		dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_ENUMERATION &&
+		len(dataType.Atomic.Enums) > 0
+}
+
+// EnumerationValues returns the allowed enumeration literals, or nil when dataType is not
+// a parsed atomic enumeration.
+func EnumerationValues(dataType *DataType) []string {
+	if !ContainsEnumerationConstraint(dataType) {
+		return nil
+	}
+	values := make([]string, len(dataType.Atomic.Enums))
+	for i, enum := range dataType.Atomic.Enums {
+		values[i] = enum.Value
+	}
+	return values
+}
+
 // ContainsReferenceConstraint reports whether dataType or any nested field/element type
 // is a parsed atomic reference (ref from / ref of).
 func ContainsReferenceConstraint(dataType *DataType) bool {

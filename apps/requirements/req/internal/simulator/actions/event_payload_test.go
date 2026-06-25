@@ -70,6 +70,25 @@ func (s *EventPayloadSuite) TestSampleEventPayloadEventOnlyNamesWithoutAction() 
 	s.True(isEventOnlyValue(result["extra_telemetry"]))
 }
 
+func (s *EventPayloadSuite) TestSampleEventPayloadSamplesImplicitEnumParameter() {
+	eventKey := helper.Must(identity.NewEventKey(s.classKey, "add"))
+	event := model_state.NewEvent(eventKey, "Add", "", []string{"Type"})
+
+	typeParam := helper.Must(model_state.NewParameter(s.actionKey, "Type", "enum of SOCIAL, REAL", false))
+	action := model_state.NewAction(s.actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, nil, nil, nil, []model_state.Parameter{typeParam})
+
+	binder := NewParameterBinder()
+	sampler := NewParameterSampler(binder, nil)
+	rng := rand.New(rand.NewSource(21)) //nolint:gosec // deterministic test seed
+
+	result, err := SampleEventPayload(event, &action, binder, sampler, rng)
+	s.Require().NoError(err)
+
+	value, ok := result["Type"].(*object.String)
+	s.Require().True(ok)
+	s.Contains([]string{"SOCIAL", "REAL"}, value.Value())
+}
+
 func (s *EventPayloadSuite) TestGenerateEventOnlyParameterValueProducesStrings() {
 	binder := NewParameterBinder()
 	rng := rand.New(rand.NewSource(99)) //nolint:gosec // deterministic test seed

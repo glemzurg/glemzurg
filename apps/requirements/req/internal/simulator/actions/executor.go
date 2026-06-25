@@ -353,13 +353,18 @@ func (e *ActionExecutor) evaluateActionRequires(
 	instanceID state.InstanceID,
 	bindings *evaluator.Bindings,
 ) (invariants.ViolationErrors, error) {
+	requires, err := EffectiveRequires(action.Key, logicOwnerKindAction, action.Parameters, action.Requires)
+	if err != nil {
+		return nil, err
+	}
+
 	// Pass 1: Evaluate all let bindings in requires (in order).
-	if err := evalLetBindings(action.Requires, bindings, "action", action.Name, "requires"); err != nil {
+	if err := evalLetBindings(requires, bindings, logicOwnerKindAction, action.Name, "requires"); err != nil {
 		return nil, err
 	}
 	// Pass 2: Evaluate non-let assessment items.
 	var violations invariants.ViolationErrors
-	for i, req := range action.Requires {
+	for i, req := range requires {
 		if req.Type == model_logic.LogicTypeLet {
 			continue
 		}
@@ -544,44 +549,54 @@ func (e *ActionExecutor) executeQueryInContext(
 	}
 	defer ctx.DecrementDepth()
 
-	// Step 1: Check preconditions
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
-
-	// Pass 1: Evaluate all let bindings in requires (in order).
-	if err := evalLetBindings(query.Requires, bindings, "query", query.Name, "requires"); err != nil {
+	if err := checkQueryRequires(query, bindings); err != nil {
 		return nil, err
 	}
-	// Pass 2: Evaluate non-let assessment items.
-	for i, req := range query.Requires {
+	return evaluateQueryGuarantees(query, bindings)
+}
+
+func checkQueryRequires(query model_state.Query, bindings *evaluator.Bindings) error {
+	requires, err := EffectiveRequires(query.Key, logicOwnerKindQuery, query.Parameters, query.Requires)
+	if err != nil {
+		return err
+	}
+
+	if err := evalLetBindings(requires, bindings, logicOwnerKindQuery, query.Name, "requires"); err != nil {
+		return err
+	}
+
+	for i, req := range requires {
 		if req.Type == model_logic.LogicTypeLet {
 			continue
 		}
 		expr := req.Spec.Expression
 		if expr == nil {
-			return nil, fmt.Errorf("query %s requires[%d]: expression not lowered", query.Name, i)
+			return fmt.Errorf("query %s requires[%d]: expression not lowered", query.Name, i)
 		}
 
 		if model_bridge.ContainsAnyPrimedME(expr) {
-			return nil, fmt.Errorf("query %s requires[%d]: Requires must not contain primed variables", query.Name, i)
+			return fmt.Errorf("query %s requires[%d]: Requires must not contain primed variables", query.Name, i)
 		}
 
 		result := evaluator.Eval(expr, bindings)
 		if result.IsError() {
-			return nil, fmt.Errorf("query %s requires[%d] evaluation error: %s", query.Name, i, result.Error.Inspect())
+			return fmt.Errorf("query %s requires[%d] evaluation error: %s", query.Name, i, result.Error.Inspect())
 		}
 		if !isTrueBoolean(result.Value) {
-			return nil, fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Spec.Specification)
+			return fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Spec.Specification)
 		}
 	}
+	return nil
+}
 
-	// Step 2: Evaluate guarantees
+func evaluateQueryGuarantees(query model_state.Query, bindings *evaluator.Bindings) (map[string]object.Object, error) {
 	outputs := make(map[string]object.Object)
 
-	// Pass 1: Evaluate all let bindings in guarantees (in order).
-	if err := evalLetBindings(query.Guarantees, bindings, "query", query.Name, "guarantee"); err != nil {
+	if err := evalLetBindings(query.Guarantees, bindings, logicOwnerKindQuery, query.Name, "guarantee"); err != nil {
 		return nil, err
 	}
-	// Pass 2: Evaluate non-let query items.
+
 	for i, guar := range query.Guarantees {
 		if guar.Type == model_logic.LogicTypeLet {
 			continue
@@ -923,7 +938,7 @@ func isTrueBoolean(obj object.Object) bool {
 
 // createPostConditionViolation creates a violation from a deferred post-condition.
 func createPostConditionViolation(pc DeferredPostCondition, message string) *invariants.ViolationError {
-	if pc.SourceType == "action" {
+	if pc.SourceType == logicOwnerKindAction {
 		return invariants.NewActionGuaranteeViolation(
 			pc.SourceKey,
 			pc.SourceName,

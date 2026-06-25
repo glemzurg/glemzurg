@@ -152,6 +152,11 @@ func validateRequiresSamplingSupport(model *core.Model) error {
 						return err
 					}
 				}
+				for _, query := range class.Queries {
+					if err := actions.ValidateQueryRequiresSamplingSupport(class.Name, query); err != nil {
+						return err
+					}
+				}
 			}
 		}
 	}

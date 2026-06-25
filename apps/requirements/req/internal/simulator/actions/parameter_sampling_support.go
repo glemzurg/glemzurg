@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // UnsupportedRequiresSamplingError means a parsed action require references event parameters
@@ -65,15 +66,35 @@ func ValidateRequiresSamplingSupport(requires []model_logic.Logic, paramNames ma
 
 // ValidateActionRequiresSamplingSupport validates one action's requires against its parameters.
 func ValidateActionRequiresSamplingSupport(className string, action model_state.Action) error {
-	if len(action.Parameters) == 0 {
+	return validateOwnerRequiresSamplingSupport(className, action.Key, logicOwnerKindAction, action.Name, action.Parameters, action.Requires)
+}
+
+// ValidateQueryRequiresSamplingSupport validates one query's requires against its parameters.
+func ValidateQueryRequiresSamplingSupport(className string, query model_state.Query) error {
+	return validateOwnerRequiresSamplingSupport(className, query.Key, logicOwnerKindQuery, query.Name, query.Parameters, query.Requires)
+}
+
+func validateOwnerRequiresSamplingSupport(
+	className string,
+	ownerKey identity.Key,
+	ownerKind string,
+	ownerName string,
+	params []model_state.Parameter,
+	explicitRequires []model_logic.Logic,
+) error {
+	if len(params) == 0 {
 		return nil
 	}
-	paramNames := parameterNames(action.Parameters)
-	if err := ValidateRequiresSamplingSupport(action.Requires, paramNames); err != nil {
+	effectiveRequires, err := EffectiveRequires(ownerKey, ownerKind, params, explicitRequires)
+	if err != nil {
+		return err
+	}
+	paramNames := parameterNames(params)
+	if err := ValidateRequiresSamplingSupport(effectiveRequires, paramNames); err != nil {
 		var unsupported *UnsupportedRequiresSamplingError
 		if errors.As(err, &unsupported) {
 			unsupported.ClassName = className
-			unsupported.ActionName = action.Name
+			unsupported.ActionName = ownerName
 			return unsupported
 		}
 		return err

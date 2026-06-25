@@ -22,7 +22,8 @@ func SampleEventPayload(
 
 	var sampled map[string]object.Object
 	var err error
-	if action != nil && len(action.Requires) > 0 && len(matched) > 0 {
+	if action != nil && len(matched) > 0 && sampler != nil &&
+		(len(action.Requires) > 0 || HasImplicitEnumRequires(matched, action.Requires)) {
 		sampled, err = sampler.SampleFromRequires(matched, action, rng)
 	} else {
 		sampled = binder.GenerateRandomParameters(matched, rng)

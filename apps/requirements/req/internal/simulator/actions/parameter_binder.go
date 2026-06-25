@@ -67,6 +67,10 @@ func sampleParameterValue(param model_state.Parameter, rng *rand.Rand) object.Ob
 
 // generateRandomValue creates a random non-null value based on data type constraints.
 func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	if values := model_data_type.EnumerationValues(dataType); len(values) > 0 {
+		return object.NewString(values[rng.Intn(len(values))])
+	}
+
 	if dataType != nil && dataType.TypeSpec != nil {
 		switch strings.ToUpper(strings.TrimSpace(dataType.TypeSpec.Specification)) {
 		case "STRING":

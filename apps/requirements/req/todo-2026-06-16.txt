@@ -1,7 +1,9 @@
 
 
+test removing the if null from <<value, value>> check
 
 invariants over associations
 invariants reverse over associations
 span forced in invariant
+
 

@@ -802,6 +802,15 @@ func TestNewUnparsable(t *testing.T) {
 	assert.Nil(t, result)
 }
 
+func TestEnumerationHelpers(t *testing.T) {
+	key := t_dtKey("enum_attr")
+	dataType, err := New(key, "enum of SOCIAL, REAL", nil)
+	require.NoError(t, err)
+	require.True(t, ContainsEnumerationConstraint(dataType))
+	require.Equal(t, []string{"SOCIAL", "REAL"}, EnumerationValues(dataType))
+	require.False(t, ContainsEnumerationConstraint(nil))
+}
+
 func TestIsAtomicUnconstrained(t *testing.T) {
 	tests := []struct {
 		name     string
