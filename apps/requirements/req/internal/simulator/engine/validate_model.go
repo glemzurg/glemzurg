@@ -171,8 +171,8 @@ func validateRequiresSamplingSupport(model *core.Model) error {
 }
 
 // validateReferenceDataTypeInvariants rejects models where a reference data type lacks a
-// formal constraint the simulator can enforce. Attributes need attribute invariants;
-// action parameters need parsed requires (preconditions).
+// formal constraint the simulator can enforce on attributes. Action and query parameters
+// use parameter invariants, owner requires, or implicit reference assessments at sampling time.
 func validateReferenceDataTypeInvariants(model *core.Model) error {
 	var messages []string
 
@@ -183,7 +183,6 @@ func validateReferenceDataTypeInvariants(model *core.Model) error {
 					continue
 				}
 				messages = append(messages, collectReferenceAttributeInvariantGaps(class)...)
-				messages = append(messages, collectReferenceParameterInvariantGaps(class)...)
 			}
 		}
 	}
@@ -209,27 +208,6 @@ func collectReferenceAttributeInvariantGaps(class model_class.Class) []string {
 			`class %q attribute %q: reference data type has no invariant`,
 			class.Name, attr.Name,
 		))
-	}
-
-	return messages
-}
-
-func collectReferenceParameterInvariantGaps(class model_class.Class) []string {
-	var messages []string
-
-	for _, action := range class.Actions {
-		for _, param := range action.Parameters {
-			if !model_data_type.ContainsReferenceConstraint(param.DataType) {
-				continue
-			}
-			if hasParsedLogic(action.Requires) {
-				continue
-			}
-			messages = append(messages, fmt.Sprintf(
-				`class %q action %q parameter %q: reference data type has no invariant`,
-				class.Name, action.Name, param.Name,
-			))
-		}
 	}
 
 	return messages

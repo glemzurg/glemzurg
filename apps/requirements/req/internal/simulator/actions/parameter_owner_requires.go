@@ -20,9 +20,10 @@ import (
 )
 
 const (
-	implicitEnumRequireSubKeyPrefix = "implicit_enum_"
-	logicOwnerKindAction            = "action"
-	logicOwnerKindQuery             = "query"
+	implicitEnumRequireSubKeyPrefix      = "implicit_enum_"
+	implicitReferenceRequireSubKeyPrefix = "implicit_ref_"
+	logicOwnerKindAction                 = "action"
+	logicOwnerKindQuery                  = "query"
 )
 
 // ParameterOwner is an action or query that owns typed parameters and requires.
@@ -59,15 +60,35 @@ func ParameterOwnerFromQuery(query model_state.Query) ParameterOwner {
 }
 
 // NeedsRequiresAwareSampling reports whether paramDefs should be sampled using
-// explicit and implicit requires rather than type-only random generation.
+// explicit requires, parameter invariants, or implicit requires rather than type-only random generation.
 func (o ParameterOwner) NeedsRequiresAwareSampling(paramDefs []model_state.Parameter) bool {
-	return len(o.Requires) > 0 || o.HasImplicitEnumRequiresFor(paramDefs)
+	return len(o.Requires) > 0 || o.HasImplicitEnumRequiresFor(paramDefs) || hasParameterInvariantAssessments(paramDefs)
 }
 
-// EffectiveRequiresFor returns explicit requires plus synthesized enum-membership
-// assessments for enumeration parameters in paramDefs not already constrained.
+// EffectiveRequiresFor returns explicit owner requires plus synthesized implicit requires.
+// Parameter invariants are excluded; use SamplingLogicsFor for value generation.
 func (o ParameterOwner) EffectiveRequiresFor(paramDefs []model_state.Parameter) ([]model_logic.Logic, error) {
-	return effectiveRequires(o.Key, o.Kind, paramDefs, o.Requires)
+	return effectiveOwnerRequires(o.Key, o.Kind, paramDefs, o.Requires)
+}
+
+// SamplingLogicsFor returns owner requires plus parameter invariants for constraint extraction.
+// Nullable parameter invariants are auto-wrapped to apply only when the value is set.
+func (o ParameterOwner) SamplingLogicsFor(paramDefs []model_state.Parameter) ([]model_logic.Logic, error) {
+	ownerRequires, err := o.EffectiveRequiresFor(paramDefs)
+	if err != nil {
+		return nil, err
+	}
+	paramInv, err := parameterInvariantAssessmentsForSampling(o.Key, paramDefs)
+	if err != nil {
+		return nil, err
+	}
+	if len(paramInv) == 0 {
+		return ownerRequires, nil
+	}
+	combined := make([]model_logic.Logic, 0, len(ownerRequires)+len(paramInv))
+	combined = append(combined, ownerRequires...)
+	combined = append(combined, paramInv...)
+	return combined, nil
 }
 
 // HasImplicitEnumRequiresFor reports whether paramDefs include parsed enumeration
@@ -82,12 +103,8 @@ func (o ParameterOwner) ValidateRequiresSamplingSupport(className string) error 
 	if len(o.Parameters) == 0 {
 		return nil
 	}
-	effectiveRequires, err := o.EffectiveRequiresFor(o.Parameters)
-	if err != nil {
-		return err
-	}
 	paramNames := parameterNames(o.Parameters)
-	if err := validateRequiresSamplingSupport(effectiveRequires, paramNames); err != nil {
+	if err := validateRequiresSamplingSupport(o.Requires, paramNames); err != nil {
 		var unsupported *UnsupportedRequiresSamplingError
 		if errors.As(err, &unsupported) {
 			unsupported.ClassName = className
@@ -106,16 +123,60 @@ type RequireAssessmentFailure struct {
 	Message string
 }
 
-// AssessRequires evaluates effective requires for paramDefs against bindings.
+// AssessRequires evaluates owner requires for paramDefs against bindings.
+// Parameter invariants are assessed separately via AssessParameterInvariants.
 func (o ParameterOwner) AssessRequires(
 	paramDefs []model_state.Parameter,
 	bindings *evaluator.Bindings,
 ) ([]RequireAssessmentFailure, error) {
-	requires, err := o.EffectiveRequiresFor(paramDefs)
+	return assessLogics(o, paramDefs, bindings, "requires", func() ([]model_logic.Logic, error) {
+		return o.EffectiveRequiresFor(paramDefs)
+	})
+}
+
+// AssessParameterInvariants evaluates parameter invariants for paramDefs against bindings.
+// Nullable parameters skip invariant checks when the bound value is NULL/absent.
+func (o ParameterOwner) AssessParameterInvariants(
+	paramDefs []model_state.Parameter,
+	bindings *evaluator.Bindings,
+) ([]RequireAssessmentFailure, error) {
+	var logics []model_logic.Logic
+	for _, param := range paramDefs {
+		if param.Nullable {
+			if val, ok := bindings.GetValue(param.Name); !ok || object.IsNull(val) {
+				continue
+			}
+		}
+		for _, inv := range param.Invariants {
+			if inv.Type == model_logic.LogicTypeLet {
+				logics = append(logics, inv)
+				continue
+			}
+			if inv.Type == model_logic.LogicTypeAssessment && inv.Spec.Expression != nil {
+				logics = append(logics, inv)
+			}
+		}
+	}
+	return assessLogics(o, paramDefs, bindings, "parameter invariant", func() ([]model_logic.Logic, error) {
+		return logics, nil
+	})
+}
+
+func assessLogics(
+	o ParameterOwner,
+	_ []model_state.Parameter,
+	bindings *evaluator.Bindings,
+	kindLabel string,
+	logicsFn func() ([]model_logic.Logic, error),
+) ([]RequireAssessmentFailure, error) {
+	requires, err := logicsFn()
 	if err != nil {
 		return nil, err
 	}
-	if err := evalLetBindings(requires, bindings, o.Kind, o.Name, "requires"); err != nil {
+	if len(requires) == 0 {
+		return nil, nil
+	}
+	if err := evalLetBindings(requires, bindings, o.Kind, o.Name, kindLabel); err != nil {
 		return nil, err
 	}
 
@@ -126,15 +187,15 @@ func (o ParameterOwner) AssessRequires(
 		}
 		expr := req.Spec.Expression
 		if expr == nil {
-			return nil, fmt.Errorf("%s %s requires[%d]: expression not lowered", o.Kind, o.Name, i)
+			return nil, fmt.Errorf("%s %s %s[%d]: expression not lowered", o.Kind, o.Name, kindLabel, i)
 		}
 		if model_bridge.ContainsAnyPrimedME(expr) {
-			return nil, fmt.Errorf("%s %s requires[%d]: Requires must not contain primed variables", o.Kind, o.Name, i)
+			return nil, fmt.Errorf("%s %s %s[%d]: must not contain primed variables", o.Kind, o.Name, kindLabel, i)
 		}
 
 		result := evaluator.Eval(expr, bindings)
 		if result.IsError() {
-			return nil, fmt.Errorf("%s %s requires[%d] evaluation error: %s", o.Kind, o.Name, i, result.Error.Inspect())
+			return nil, fmt.Errorf("%s %s %s[%d] evaluation error: %s", o.Kind, o.Name, kindLabel, i, result.Error.Inspect())
 		}
 		if isTrueBoolean(result.Value) {
 			continue
@@ -147,6 +208,20 @@ func (o ParameterOwner) AssessRequires(
 		failures = append(failures, RequireAssessmentFailure{Index: i, Logic: req, Message: msg})
 	}
 	return failures, nil
+}
+
+// ParameterInvariantViolations converts parameter invariant assessment failures into violations.
+func (o ParameterOwner) ParameterInvariantViolations(
+	failures []RequireAssessmentFailure,
+	instanceID state.InstanceID,
+) invariants.ViolationErrors {
+	var violations invariants.ViolationErrors
+	for _, failure := range failures {
+		violations = append(violations, invariants.NewParameterInvariantViolation(
+			o.Key, o.Name, failure.Index, failure.Logic.Spec.Specification, instanceID, failure.Message,
+		))
+	}
+	return violations
 }
 
 // ActionRequiresViolations converts assessment failures into action-require violations.
@@ -185,16 +260,16 @@ func (s *ParameterSampler) SampleParameters(
 		return map[string]object.Object{}, nil
 	}
 
-	effectiveRequires, err := owner.EffectiveRequiresFor(paramDefs)
+	samplingLogics, err := owner.SamplingLogicsFor(paramDefs)
 	if err != nil {
 		return nil, err
 	}
-	if len(effectiveRequires) == 0 {
+	if len(samplingLogics) == 0 {
 		return s.binder.GenerateRandomParameters(paramDefs, rng), nil
 	}
 
 	paramNames := parameterNames(paramDefs)
-	if err := validateRequiresSamplingSupport(effectiveRequires, paramNames); err != nil {
+	if err := validateRequiresSamplingSupport(owner.Requires, paramNames); err != nil {
 		var unsupported *UnsupportedRequiresSamplingError
 		if errors.As(err, &unsupported) {
 			unsupported.ActionName = owner.Name
@@ -202,7 +277,7 @@ func (s *ParameterSampler) SampleParameters(
 		return nil, err
 	}
 
-	constraints := extractParameterConstraints(effectiveRequires)
+	constraints := extractParameterConstraints(samplingLogics)
 	result := s.binder.GenerateRandomParameters(paramDefs, rng)
 	nullableByName := parameterNullableByName(paramDefs)
 	applyParameterConstraints(result, constraints, rng, s.namedSetValues, nullableByName)
@@ -210,23 +285,156 @@ func (s *ParameterSampler) SampleParameters(
 	return result, nil
 }
 
-func effectiveRequires(
+func effectiveOwnerRequires(
 	ownerKey identity.Key,
 	ownerKind string,
 	params []model_state.Parameter,
 	explicitRequires []model_logic.Logic,
 ) ([]model_logic.Logic, error) {
-	implicit, err := implicitEnumRequires(ownerKey, ownerKind, params, explicitRequires)
+	combined := make([]model_logic.Logic, 0, len(explicitRequires)+len(params))
+	combined = append(combined, explicitRequires...)
+
+	implicitEnum, err := implicitEnumRequires(ownerKey, ownerKind, params, combined)
 	if err != nil {
 		return nil, err
 	}
-	if len(implicit) == 0 {
-		return explicitRequires, nil
+	combined = append(combined, implicitEnum...)
+
+	implicitRef, err := implicitReferenceRequires(ownerKey, ownerKind, params, combined)
+	if err != nil {
+		return nil, err
 	}
-	combined := make([]model_logic.Logic, 0, len(explicitRequires)+len(implicit))
-	combined = append(combined, explicitRequires...)
-	combined = append(combined, implicit...)
+	combined = append(combined, implicitRef...)
 	return combined, nil
+}
+
+// parameterInvariantAssessmentsForSampling returns parameter invariant assessments for sampling.
+// Nullable parameters get an automatic NULL guard unless the author already wrote one.
+func parameterInvariantAssessmentsForSampling(ownerKey identity.Key, params []model_state.Parameter) ([]model_logic.Logic, error) {
+	classKey, err := identity.ParseKey(ownerKey.ParentKey)
+	if err != nil {
+		return nil, fmt.Errorf("parameter invariants: owner %q: %w", ownerKey.String(), err)
+	}
+	ctx := &convert.LowerContext{
+		ClassKey:   classKey,
+		Parameters: parameterNames(params),
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+
+	var assessments []model_logic.Logic
+	for _, param := range params {
+		for _, inv := range param.Invariants {
+			if inv.Type != model_logic.LogicTypeAssessment || inv.Spec.Expression == nil {
+				continue
+			}
+			logic := inv
+			if param.Nullable && !invariants.LogicSpecHasNullableWhenUnsetGuard(inv.Spec) {
+				wrapped := invariants.NullableWhenSetSpecification(param.Name, inv.Spec.Specification)
+				spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, wrapped, pf)
+				if err != nil {
+					return nil, fmt.Errorf("parameter %q invariant: %w", param.Name, err)
+				}
+				logic = model_logic.NewLogic(
+					inv.Key,
+					inv.Type,
+					inv.Description,
+					inv.Target,
+					spec,
+					inv.TargetTypeSpec,
+				)
+			}
+			assessments = append(assessments, logic)
+		}
+	}
+	return assessments, nil
+}
+
+func hasParameterInvariantAssessments(params []model_state.Parameter) bool {
+	for _, param := range params {
+		for _, inv := range param.Invariants {
+			if inv.Type == model_logic.LogicTypeAssessment && inv.Spec.Expression != nil {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func paramsCoveredByConstraints(logics []model_logic.Logic) map[string]bool {
+	covered := make(map[string]bool)
+	constraints := extractParameterConstraints(logics)
+	for name := range constraints.enumValues {
+		covered[name] = true
+	}
+	if constraints.nullableElseMembership != nil {
+		covered[constraints.nullableElseMembership.paramName] = true
+	}
+	if constraints.nullableElseTuple != nil {
+		for _, name := range constraints.nullableElseTuple.paramNames {
+			covered[name] = true
+		}
+	}
+	if constraints.tupleInSet != nil {
+		for _, name := range constraints.tupleInSet.paramNames {
+			covered[name] = true
+		}
+	}
+	return covered
+}
+
+func implicitReferenceRequires(
+	ownerKey identity.Key,
+	ownerKind string,
+	params []model_state.Parameter,
+	logics []model_logic.Logic,
+) ([]model_logic.Logic, error) {
+	covered := paramsCoveredByConstraints(logics)
+	classKey, err := identity.ParseKey(ownerKey.ParentKey)
+	if err != nil {
+		return nil, fmt.Errorf("implicit reference requires: owner %q: %w", ownerKey.String(), err)
+	}
+
+	ctx := &convert.LowerContext{
+		ClassKey:   classKey,
+		Parameters: parameterNames(params),
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+
+	var implicit []model_logic.Logic
+	ordinal := 0
+	for _, param := range params {
+		if !model_data_type.ContainsReferenceConstraint(param.DataType) {
+			continue
+		}
+		if covered[param.Name] {
+			continue
+		}
+
+		spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "TRUE", pf)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"implicit reference require for parameter %q (owner %q): %w",
+				param.Name, ownerKey.String(), err,
+			)
+		}
+
+		requireKey, err := newOwnerRequireKey(ownerKey, ownerKind, fmt.Sprintf("%s%d", implicitReferenceRequireSubKeyPrefix, ordinal))
+		if err != nil {
+			return nil, err
+		}
+		ordinal++
+
+		implicit = append(implicit, model_logic.NewLogic(
+			requireKey,
+			model_logic.LogicTypeAssessment,
+			fmt.Sprintf("Reference parameter %q has no formal constraint; simulation accepts any value.", param.Name),
+			"",
+			spec,
+			nil,
+		))
+	}
+
+	return implicit, nil
 }
 
 func implicitEnumRequires(

@@ -21,6 +21,7 @@ const _EXPRESSION_RETURNED_NIL = "expression returned nil"
 // It checks:
 //   - Model-level invariants (Model.Invariants)
 //   - Class-level invariants (Class.Invariants, per instance)
+//   - Attribute invariants (per instance; skipped when a nullable attribute is unset)
 //   - Action post-condition guarantees
 //   - Query post-condition guarantees
 type InvariantChecker struct {
@@ -33,6 +34,9 @@ type InvariantChecker struct {
 	// parsedClassInvariants maps class key to pre-lowered class invariant items.
 	parsedClassInvariants map[identity.Key][]parsedClassInvariantItem
 
+	// parsedAttributeInvariants maps class key to per-attribute invariant items.
+	parsedAttributeInvariants map[identity.Key][]parsedAttributeInvariantItem
+
 	// actionPostConditions maps action key to post-condition expressions
 	actionPostConditions map[identity.Key][]parsedGuarantee
 
@@ -41,6 +45,19 @@ type InvariantChecker struct {
 
 	// classNameMap maps class keys to class names for bindings
 	classNameMap map[identity.Key]string
+
+	// classAttributes maps class keys to attribute definitions for nullable checks.
+	classAttributes map[identity.Key][]model_class.Attribute
+}
+
+// parsedAttributeInvariantItem holds a pre-lowered attribute invariant with metadata.
+type parsedAttributeInvariantItem struct {
+	attributeName string
+	isLet         bool
+	target        string
+	expression    me.Expression
+	originalIndex int
+	spec          string
 }
 
 // parsedClassInvariantItem holds a pre-lowered class invariant with metadata.
@@ -73,12 +90,14 @@ type parsedGuarantee struct {
 // (via parse functions passed to constructors).
 func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 	checker := &InvariantChecker{
-		model:                 model,
-		parsedInvariantItems:  make([]parsedInvariantItem, 0, len(model.Invariants)),
-		parsedClassInvariants: make(map[identity.Key][]parsedClassInvariantItem),
-		actionPostConditions:  make(map[identity.Key][]parsedGuarantee),
-		queryPostConditions:   make(map[identity.Key][]parsedGuarantee),
-		classNameMap:          make(map[identity.Key]string),
+		model:                     model,
+		parsedInvariantItems:      make([]parsedInvariantItem, 0, len(model.Invariants)),
+		parsedClassInvariants:     make(map[identity.Key][]parsedClassInvariantItem),
+		parsedAttributeInvariants: make(map[identity.Key][]parsedAttributeInvariantItem),
+		actionPostConditions:      make(map[identity.Key][]parsedGuarantee),
+		queryPostConditions:       make(map[identity.Key][]parsedGuarantee),
+		classNameMap:              make(map[identity.Key]string),
+		classAttributes:           make(map[identity.Key][]model_class.Attribute),
 	}
 
 	// Load model invariants from pre-parsed expressions.
@@ -107,7 +126,11 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
 				checker.classNameMap[class.Key] = class.Name
+				checker.classAttributes[class.Key] = class.Attributes
 				if err := checker.loadClassInvariants(class); err != nil {
+					return nil, err
+				}
+				if err := checker.loadAttributeInvariants(class); err != nil {
 					return nil, err
 				}
 			}
@@ -142,6 +165,34 @@ func (c *InvariantChecker) loadClassInvariants(class model_class.Class) error {
 	}
 	if len(items) > 0 {
 		c.parsedClassInvariants[class.Key] = items
+	}
+	return nil
+}
+
+func (c *InvariantChecker) loadAttributeInvariants(class model_class.Class) error {
+	var items []parsedAttributeInvariantItem
+	for _, attr := range class.Attributes {
+		for i, inv := range attr.Invariants {
+			expr := inv.Spec.Expression
+			if expr == nil {
+				continue
+			}
+			isLet := inv.Type == model_logic.LogicTypeLet
+			if !isLet && model_bridge.ContainsAnyPrimedME(expr) {
+				return fmt.Errorf("class %s attribute %q invariant %d must not contain primed variables: %s", class.Name, attr.Name, i, inv.Spec.Specification)
+			}
+			items = append(items, parsedAttributeInvariantItem{
+				attributeName: attr.Name,
+				isLet:         isLet,
+				target:        inv.Target,
+				expression:    expr,
+				originalIndex: i,
+				spec:          inv.Spec.Specification,
+			})
+		}
+	}
+	if len(items) > 0 {
+		c.parsedAttributeInvariants[class.Key] = items
 	}
 	return nil
 }
@@ -275,6 +326,112 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 	}
 
 	return violations
+}
+
+// CheckAttributeInvariants evaluates attribute invariants for every instance in state.
+// Nullable attributes with no value skip invariant checks.
+func (c *InvariantChecker) CheckAttributeInvariants(
+	simState *state.SimulationState,
+	bindingsBuilder *state.BindingsBuilder,
+) ViolationErrors {
+	var violations ViolationErrors
+
+	for _, instance := range simState.AllInstances() {
+		items, ok := c.parsedAttributeInvariants[instance.ClassKey]
+		if !ok {
+			continue
+		}
+		nullableByName := attributeNullableByName(c.classAttributes[instance.ClassKey])
+		violations = append(violations, checkAttributeInvariantsForInstance(instance, items, nullableByName, bindingsBuilder)...)
+	}
+
+	return violations
+}
+
+func attributeNullableByName(attrs []model_class.Attribute) map[string]bool {
+	nullable := make(map[string]bool, len(attrs))
+	for _, attr := range attrs {
+		nullable[attr.Name] = attr.Nullable
+	}
+	return nullable
+}
+
+func skipNullableUnsetAttribute(
+	nullableByName map[string]bool,
+	instance *state.ClassInstance,
+	attributeName string,
+) bool {
+	return nullableByName[attributeName] && object.IsNull(instance.GetAttribute(attributeName))
+}
+
+func checkAttributeInvariantsForInstance(
+	instance *state.ClassInstance,
+	items []parsedAttributeInvariantItem,
+	nullableByName map[string]bool,
+	bindingsBuilder *state.BindingsBuilder,
+) ViolationErrors {
+	var violations ViolationErrors
+	bindings := bindingsBuilder.BuildForInstance(instance)
+
+	for _, item := range items {
+		if skipNullableUnsetAttribute(nullableByName, instance, item.attributeName) || !item.isLet {
+			continue
+		}
+		violations = append(violations, evalAttributeInvariantLet(instance, item, bindings)...)
+	}
+
+	for _, item := range items {
+		if skipNullableUnsetAttribute(nullableByName, instance, item.attributeName) || item.isLet {
+			continue
+		}
+		violations = append(violations, evalAttributeInvariantAssessment(instance, item, bindings)...)
+	}
+
+	return violations
+}
+
+func evalAttributeInvariantLet(
+	instance *state.ClassInstance,
+	item parsedAttributeInvariantItem,
+	bindings *evaluator.Bindings,
+) ViolationErrors {
+	result := evaluator.Eval(item.expression, bindings)
+	if result.IsError() {
+		return ViolationErrors{NewAttributeInvariantViolation(
+			instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
+			fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
+		)}
+	}
+	bindings.Set(item.target, result.Value, evaluator.NamespaceLocal)
+	return nil
+}
+
+func evalAttributeInvariantAssessment(
+	instance *state.ClassInstance,
+	item parsedAttributeInvariantItem,
+	bindings *evaluator.Bindings,
+) ViolationErrors {
+	result := evaluator.Eval(item.expression, bindings)
+	if result.Error != nil {
+		return ViolationErrors{NewAttributeInvariantViolation(
+			instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
+			fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
+		)}
+	}
+	if isTrueBoolean(result.Value) {
+		return nil
+	}
+	return ViolationErrors{NewAttributeInvariantViolation(
+		instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
+		invariantAssessmentFailureMessage(result.Value),
+	)}
+}
+
+func invariantAssessmentFailureMessage(value object.Object) string {
+	if value == nil {
+		return _EXPRESSION_RETURNED_NIL
+	}
+	return fmt.Sprintf("expression returned %s", value.Inspect())
 }
 
 // CheckActionPostConditions evaluates post-condition guarantees for an action.
@@ -421,6 +578,10 @@ func (c *InvariantChecker) CheckAllInvariants(
 	// Check class invariants
 	classViolations := c.CheckClassInvariants(simState, bindingsBuilder)
 	violations = append(violations, classViolations...)
+
+	// Check attribute invariants
+	attrViolations := c.CheckAttributeInvariants(simState, bindingsBuilder)
+	violations = append(violations, attrViolations...)
 
 	// Check data type constraints
 	if dataTypeChecker != nil {

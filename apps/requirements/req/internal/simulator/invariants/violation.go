@@ -29,6 +29,12 @@ const (
 	// ViolationTypeQueryGuarantee indicates a query's TLA+ guarantee (post-condition) violation.
 	ViolationTypeQueryGuarantee
 
+	// ViolationTypeAttributeInvariant indicates a failed attribute-level invariant assessment.
+	ViolationTypeAttributeInvariant
+
+	// ViolationTypeParameterInvariant indicates a failed action or query parameter invariant assessment.
+	ViolationTypeParameterInvariant
+
 	// ViolationTypeRequiredAttribute indicates a required (non-nullable) attribute is nil.
 	ViolationTypeRequiredAttribute
 
@@ -96,6 +102,10 @@ func (v ViolationType) String() string {
 		return "action_guarantee"
 	case ViolationTypeQueryGuarantee:
 		return "query_guarantee"
+	case ViolationTypeAttributeInvariant:
+		return "attribute_invariant"
+	case ViolationTypeParameterInvariant:
+		return "parameter_invariant"
 	case ViolationTypeRequiredAttribute:
 		return "required_attribute"
 	case ViolationTypeSpanConstraint:
@@ -205,6 +215,46 @@ func NewClassInvariantViolation(
 		ClassKey:       classKey,
 		Expression:     expression,
 		InvariantIndex: index,
+	}
+}
+
+// NewAttributeInvariantViolation creates a violation for a failed attribute invariant.
+func NewAttributeInvariantViolation(
+	classKey identity.Key,
+	instanceID state.InstanceID,
+	attributeName string,
+	invariantIndex int,
+	expression string,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:           ViolationTypeAttributeInvariant,
+		Message:        fmt.Sprintf("class %s attribute %q invariant %d failed on instance %d: %s - %s", classKey.String(), attributeName, invariantIndex, instanceID, expression, message),
+		InstanceID:     instanceID,
+		ClassKey:       classKey,
+		AttributeName:  attributeName,
+		Expression:     expression,
+		InvariantIndex: invariantIndex,
+	}
+}
+
+// NewParameterInvariantViolation creates a violation for a failed parameter invariant.
+func NewParameterInvariantViolation(
+	ownerKey identity.Key,
+	ownerName string,
+	invariantIndex int,
+	expression string,
+	instanceID state.InstanceID,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeParameterInvariant,
+		Message:           fmt.Sprintf("%s %s parameter invariant %d failed: %s - %s", ownerKey.KeyType, ownerName, invariantIndex, expression, message),
+		InstanceID:        instanceID,
+		ActionOrQueryKey:  ownerKey,
+		ActionOrQueryName: ownerName,
+		Expression:        expression,
+		GuaranteeIndex:    invariantIndex,
 	}
 }
 
@@ -587,7 +637,7 @@ func (v ViolationErrors) TLAViolations() ViolationErrors {
 	for _, violation := range v {
 		//nolint:exhaustive // Only TLA+ violation types are relevant here.
 		switch violation.Type {
-		case ViolationTypeModelInvariant, ViolationTypeClassInvariant, ViolationTypeActionRequires, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee:
+		case ViolationTypeModelInvariant, ViolationTypeClassInvariant, ViolationTypeActionRequires, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee, ViolationTypeAttributeInvariant, ViolationTypeParameterInvariant:
 			result = append(result, violation)
 		default:
 			// Not a TLA+ violation; skip.

@@ -99,14 +99,58 @@ func (s *ValidateModelSuite) jurisdictionClassReferenceParamsWithoutInvariant() 
 	return class, classKey
 }
 
-func (s *ValidateModelSuite) TestValidateReferenceDataTypeInvariantsReportsMissingActionParameterInvariant() {
+func (s *ValidateModelSuite) TestValidateReferenceDataTypeInvariantsAcceptsUncoveredReferenceParameters() {
 	class, classKey := s.jurisdictionClassReferenceParamsWithoutInvariant()
 	model := testModel(classEntry(class, classKey))
 
-	err := validateSimulationModel(model)
-	s.Require().Error(err)
-	s.Contains(err.Error(), `class "Jurisdiction" action "Add" parameter "CountryCode": reference data type has no invariant`)
-	s.Contains(err.Error(), `class "Jurisdiction" action "Add" parameter "StateCode": reference data type has no invariant`)
+	s.Require().NoError(validateSimulationModel(model))
+}
+
+func (s *ValidateModelSuite) TestValidateReferenceDataTypeInvariantsAcceptsParameterInvariant() {
+	class, classKey := s.jurisdictionClassReferenceParamsWithoutInvariant()
+	actionAddKey := mustKey("domain/finance/subdomain/wallet/class/jurisdiction/action/add")
+	paramCountry := helper.Must(identity.NewParameterKey(actionAddKey, "countrycode"))
+	paramState := helper.Must(identity.NewParameterKey(actionAddKey, "statecode"))
+
+	action := class.Actions[actionAddKey]
+	action.Parameters = []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionAddKey, "Name", "unconstrained", false)),
+		withParameterInvariants(
+			helper.Must(model_state.NewParameter(actionAddKey, "CountryCode", "ref of ISO 3166-1 two-letter codes", true)),
+			[]model_logic.Logic{
+				model_logic.NewLogic(
+					helper.Must(identity.NewParameterInvariantKey(paramCountry, "0")),
+					model_logic.LogicTypeAssessment,
+					"Valid country code when provided.",
+					"",
+					parsedSpec("TRUE"),
+					nil,
+				),
+			},
+		),
+		withParameterInvariants(
+			helper.Must(model_state.NewParameter(actionAddKey, "StateCode", "ref of ISO 3166-2 subdivision codes", true)),
+			[]model_logic.Logic{
+				model_logic.NewLogic(
+					helper.Must(identity.NewParameterInvariantKey(paramState, "0")),
+					model_logic.LogicTypeAssessment,
+					"Valid state code when provided.",
+					"",
+					parsedSpec("TRUE"),
+					nil,
+				),
+			},
+		),
+	}
+	class.Actions[actionAddKey] = action
+
+	model := testModel(classEntry(class, classKey))
+	s.Require().NoError(validateSimulationModel(model))
+}
+
+func withParameterInvariants(param model_state.Parameter, invariants []model_logic.Logic) model_state.Parameter {
+	param.SetInvariants(invariants)
+	return param
 }
 
 func (s *ValidateModelSuite) TestValidateReferenceDataTypeInvariantsAcceptsActionRequire() {

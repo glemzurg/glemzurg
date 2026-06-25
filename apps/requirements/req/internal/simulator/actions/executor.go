@@ -354,11 +354,17 @@ func (e *ActionExecutor) evaluateActionRequires(
 	bindings *evaluator.Bindings,
 ) (invariants.ViolationErrors, error) {
 	owner := ParameterOwnerFromAction(action)
-	failures, err := owner.AssessRequires(action.Parameters, bindings)
+	reqFailures, err := owner.AssessRequires(action.Parameters, bindings)
 	if err != nil {
 		return nil, err
 	}
-	return owner.ActionRequiresViolations(failures, instanceID), nil
+	invFailures, err := owner.AssessParameterInvariants(action.Parameters, bindings)
+	if err != nil {
+		return nil, err
+	}
+	violations := owner.ActionRequiresViolations(reqFailures, instanceID)
+	violations = append(violations, owner.ParameterInvariantViolations(invFailures, instanceID)...)
+	return violations, nil
 }
 
 // evaluateActionGuarantees evaluates the guarantees for an action and records primed assignments.
@@ -525,11 +531,18 @@ func (e *ActionExecutor) executeQueryInContext(
 
 func checkQueryRequires(query model_state.Query, bindings *evaluator.Bindings) error {
 	owner := ParameterOwnerFromQuery(query)
-	failures, err := owner.AssessRequires(query.Parameters, bindings)
+	reqFailures, err := owner.AssessRequires(query.Parameters, bindings)
 	if err != nil {
 		return err
 	}
-	return owner.RequireAssessmentError(failures)
+	if err := owner.RequireAssessmentError(reqFailures); err != nil {
+		return err
+	}
+	invFailures, err := owner.AssessParameterInvariants(query.Parameters, bindings)
+	if err != nil {
+		return err
+	}
+	return owner.RequireAssessmentError(invFailures)
 }
 
 func evaluateQueryGuarantees(query model_state.Query, bindings *evaluator.Bindings) (map[string]object.Object, error) {

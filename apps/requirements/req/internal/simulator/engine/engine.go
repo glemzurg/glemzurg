@@ -293,11 +293,13 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 			return nil, fmt.Errorf("step %d execution error: %w", step+1, err)
 		}
 
-		// Run model- and class-level invariant checks after each step.
+		// Run model-, class-, and attribute-level invariant checks after each step.
 		modelViolations := e.invariantChecker.CheckModelInvariants(e.simState, e.bindingsBuilder)
 		stepResult.Violations = append(stepResult.Violations, modelViolations...)
 		classViolations := e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)
 		stepResult.Violations = append(stepResult.Violations, classViolations...)
+		attrViolations := e.invariantChecker.CheckAttributeInvariants(e.simState, e.bindingsBuilder)
+		stepResult.Violations = append(stepResult.Violations, attrViolations...)
 
 		result.Steps = append(result.Steps, stepResult)
 		result.StepsTaken++

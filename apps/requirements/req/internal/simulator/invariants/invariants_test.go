@@ -799,6 +799,73 @@ func (s *InvariantsSuite) TestDataTypeCheckerNormalizesEmptyStringToNull() {
 	s.False(emptyCountryViolations.HasViolations())
 }
 
+func (s *InvariantsSuite) TestCheckAttributeInvariantSkipsWhenNullableAndUnset() {
+	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
+	scoreAttrKey := helper.Must(identity.NewAttributeKey(classKey, "score"))
+	natTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil))
+	scoreAttr := helper.Must(model_class.NewAttribute(scoreAttrKey, model_class.AttributeDetails{Name: "score", Details: ""}, "positive when set", nil, true, model_class.AttributeAnnotations{}))
+	scoreAttr.DataType = &model_data_type.DataType{
+		CollectionType: "atomic",
+		Atomic:         &model_data_type.Atomic{ConstraintType: "unconstrained"},
+	}
+	scoreAttr.DataType.TypeSpec = &natTypeSpec
+	scoreCtx := &convert.LowerContext{
+		ClassKey: classKey,
+		AttributeNames: map[string]identity.Key{
+			"score": scoreAttrKey,
+		},
+	}
+	scorePF := convert.NewExpressionParseFunc(scoreCtx)
+	scoreInvariantSpec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", "self.score > 0", scorePF))
+	scoreAttr.SetInvariants([]model_logic.Logic{
+		model_logic.NewLogic(
+			helper.Must(identity.NewAttributeInvariantKey(scoreAttrKey, "0")),
+			model_logic.LogicTypeAssessment,
+			"Score must be positive when provided.",
+			"",
+			scoreInvariantSpec,
+			nil,
+		),
+	})
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes([]model_class.Attribute{scoreAttr})
+
+	subdomainKey := mustKey("domain/test_domain/subdomain/test_subdomain")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+	domainKey := mustKey("domain/test_domain")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	checker, err := NewInvariantChecker(&model)
+	s.Require().NoError(err)
+
+	simState := state.NewSimulationState()
+	unsetAttrs := object.NewRecord()
+	unsetAttrs.Set("status", object.NewString("active"))
+	unsetAttrs.Set("amount", object.NewInteger(1))
+	simState.CreateInstance(classKey, unsetAttrs)
+
+	bindingsBuilder := state.NewBindingsBuilder(simState)
+	violations := checker.CheckAttributeInvariants(simState, bindingsBuilder)
+	s.False(violations.HasViolations())
+
+	violatingAttrs := object.NewRecord()
+	violatingAttrs.Set("status", object.NewString("active"))
+	violatingAttrs.Set("amount", object.NewInteger(1))
+	violatingAttrs.Set("score", object.NewInteger(0))
+	simState2 := state.NewSimulationState()
+	simState2.CreateInstance(classKey, violatingAttrs)
+
+	violations = checker.CheckAttributeInvariants(simState2, state.NewBindingsBuilder(simState2))
+	s.True(violations.HasViolations())
+	s.Equal(ViolationTypeAttributeInvariant, violations[0].Type)
+}
+
 // Test: Primed variables in model-level invariants fail to parse without class context.
 func (s *InvariantsSuite) TestInvariantCheckerRejectsPrimedInvariants() {
 	// Primed unresolved identifier fails to parse (no class context).

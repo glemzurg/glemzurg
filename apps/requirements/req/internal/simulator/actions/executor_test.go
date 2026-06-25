@@ -1120,7 +1120,7 @@ func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 
 	_, err := executor.ExecuteAction(action, instance, nil)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "Requires must not contain primed variables")
+	s.Contains(err.Error(), "requires[0]: must not contain primed variables")
 }
 
 func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
@@ -1276,7 +1276,7 @@ func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 
 	_, err := executor.ExecuteQuery(query, instance, nil)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "Requires must not contain primed variables")
+	s.Contains(err.Error(), "requires[0]: must not contain primed variables")
 }
 
 func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
