@@ -70,3 +70,26 @@ func TestRenderMDRecoversAfterSetModel(t *testing.T) {
 		t.Errorf("expected real content after recovery, still saw error: %s", body)
 	}
 }
+
+func TestRenderMDUsesModelWideEventSource(t *testing.T) {
+	store := NewModelStore()
+	model := test_helper.GetTestModel()
+	if err := store.SetModel("test_model", &model, nil); err != nil {
+		t.Fatalf("SetModel failed: %v", err)
+	}
+	server := NewServer(store)
+
+	code, body := requestMD(server, "/test_model/model.md")
+	if code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", code)
+	}
+	if !strings.Contains(body, `EventSource("/events/test_model")`) {
+		t.Errorf("expected model-wide SSE endpoint, got: %s", body)
+	}
+	if strings.Contains(body, `EventSource("/events/test_model/model.md")`) {
+		t.Errorf("expected per-model SSE, not per-file, got: %s", body)
+	}
+	if !strings.Contains(body, `pagehide`) {
+		t.Errorf("expected pagehide listener to close EventSource, got: %s", body)
+	}
+}

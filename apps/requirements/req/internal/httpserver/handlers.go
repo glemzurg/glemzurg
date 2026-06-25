@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/perftrack"
@@ -46,16 +47,33 @@ func (s *Server) NotifyAll() {
 	s.registry.NotifyAll()
 }
 
+// eventStreamModelKey maps {model} and legacy {model}/{file} paths (after the
+// /events/ prefix is removed) to the model name used for broker lookup. One
+// stream per model avoids holding a separate browser connection for every page.
+func eventStreamModelKey(path string) string {
+	path = strings.Trim(path, "/")
+	if path == "" {
+		return ""
+	}
+	if model, _, ok := strings.Cut(path, "/"); ok {
+		return model
+	}
+	return path
+}
+
 // eventsHandler handles Server-Sent Events for refresh notifications.
 func (s *Server) eventsHandler(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/events/")
-	if path == "" {
+	model := eventStreamModelKey(strings.TrimPrefix(r.URL.Path, "/events/"))
+	if model == "" {
 		http.NotFound(w, r)
 		return
 	}
 
-	key := strings.TrimSuffix(path, "/")
-	broker := s.registry.GetBroker(key)
+	// Long-lived streams must not inherit the server's WriteTimeout.
+	rc := http.NewResponseController(w)
+	_ = rc.SetWriteDeadline(time.Time{})
+
+	broker := s.registry.GetBroker(model)
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -75,14 +93,30 @@ func (s *Server) eventsHandler(w http.ResponseWriter, r *http.Request) {
 		once.Do(closeFunc)
 	}()
 
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
 	for {
-		msg, open := <-clientChan
-		if !open {
-			break
-		}
-		_, _ = fmt.Fprintf(w, "data: %s\n\n", msg)
-		if f, ok := w.(http.Flusher); ok {
-			f.Flush()
+		select {
+		case <-r.Context().Done():
+			return
+		case <-ticker.C:
+			if _, err := fmt.Fprintf(w, ": keepalive\n\n"); err != nil {
+				return
+			}
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		case msg, open := <-clientChan:
+			if !open {
+				return
+			}
+			if _, err := fmt.Fprintf(w, "data: %s\n\n", msg); err != nil {
+				return
+			}
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
 		}
 	}
 }
@@ -197,16 +231,13 @@ func (s *Server) renderMD(ctx context.Context, model, file string, w http.Respon
 
 func buildMDPageHTML(model, file string, mdSource, mdHTML []byte) []byte {
 	escapedModel := html.EscapeString(model)
-	escapedFile := html.EscapeString(file)
+	_ = file
 
 	var buf strings.Builder
 	buf.WriteString(`<html><head><link rel="stylesheet" href="/`)
 	buf.WriteString(escapedModel)
-	buf.WriteString(`/style.css"><script>const evtSource = new EventSource("/events/`)
-	buf.WriteString(escapedModel)
-	buf.WriteString(`/`)
-	buf.WriteString(escapedFile)
-	buf.WriteString(`");evtSource.onmessage = () => location.reload();</script>`)
+	buf.WriteString(`/style.css">`)
+	buf.WriteString(generate.ReloadEventsScript(model))
 	if markdownHasMermaid(mdSource) {
 		buf.WriteString(`<script src="`)
 		buf.WriteString(mermaidJSPath)

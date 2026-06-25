@@ -43,24 +43,35 @@ func ClassErrorMarkdown(className, message string) []byte { //nolint:revive // p
 	return errorMarkdownDoc(heading, message)
 }
 
+// ReloadEventsScript returns inline JavaScript that subscribes to model-wide SSE
+// refresh notifications. The pagehide listener closes the stream promptly on
+// navigation so the browser frees its per-origin HTTP/1.1 connection slot.
+func ReloadEventsScript(model string) string {
+	escapedModel := html.EscapeString(model)
+	return fmt.Sprintf(
+		`<script>const evtSource=new EventSource("/events/%s");`+
+			`evtSource.onmessage=()=>location.reload();`+
+			`addEventListener("pagehide",()=>evtSource.close());</script>`,
+		escapedModel)
+}
+
 // ErrorPageHTML renders a generation error as a full HTML page for the web
 // display. It keeps the same stylesheet link and Server-Sent-Events reload
 // script that a normal page uses, so the page recovers automatically once the
 // source is fixed.
 func ErrorPageHTML(model, file string, err error) []byte { //nolint:revive // public API name
 	escapedModel := html.EscapeString(model)
-	escapedFile := html.EscapeString(file)
 	escapedErr := html.EscapeString(errorText(err))
 
 	page := fmt.Sprintf(
 		"<html><head>"+
 			"<link rel=\"stylesheet\" href=\"/%s/style.css\">"+
-			"<script>const evtSource = new EventSource(\"/events/%s/%s\");"+
-			"evtSource.onmessage = () => location.reload();</script>"+
+			"%s"+
 			"</head><body>"+
 			"<h1>Model Generation Failed</h1>"+
 			"<p style=\"color:%s;font-weight:bold;\">ERROR: %s</p>"+
 			"</body></html>",
-		escapedModel, escapedModel, escapedFile, errorTextColor, escapedErr)
+		escapedModel, ReloadEventsScript(model), errorTextColor, escapedErr)
+	_ = file // file is part of the URL path; SSE is keyed by model only
 	return []byte(page)
 }

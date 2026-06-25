@@ -46,9 +46,12 @@ func TestErrorPageHTML(t *testing.T) {
 	if !strings.Contains(out, "color:#cc0000") || !strings.Contains(out, "font-weight:bold") {
 		t.Errorf("expected red bold styling, got: %s", out)
 	}
-	// Recovery: must keep the SSE reload script pointed at this model/file.
-	if !strings.Contains(out, `EventSource("/events/evenplay/model.md")`) {
+	// Recovery: must keep the model-wide SSE reload script.
+	if !strings.Contains(out, `EventSource("/events/evenplay")`) {
 		t.Errorf("expected SSE reload script, got: %s", out)
+	}
+	if !strings.Contains(out, `pagehide`) {
+		t.Errorf("expected pagehide listener to close EventSource, got: %s", out)
 	}
 	if !strings.Contains(out, `href="/evenplay/style.css"`) {
 		t.Errorf("expected stylesheet link, got: %s", out)

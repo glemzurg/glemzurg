@@ -1,7 +1,10 @@
 // Package httpserver provides an HTTP server for serving model documentation.
 package httpserver
 
-import "sync"
+import (
+	"strings"
+	"sync"
+)
 
 // Broker manages Server-Sent Events (SSE) for notifying clients of changes.
 type Broker struct {
@@ -88,9 +91,10 @@ func (r *BrokerRegistry) NotifyAll() {
 
 // NotifyModel sends a refresh notification to all brokers for a specific model.
 func (r *BrokerRegistry) NotifyModel(model string) {
+	prefix := model + "/"
 	r.brokers.Range(func(key, value any) bool {
 		keyStr := key.(string)
-		if len(keyStr) > len(model) && keyStr[:len(model)+1] == model+"/" {
+		if keyStr == model || strings.HasPrefix(keyStr, prefix) {
 			value.(*Broker).Notify([]byte("refresh"))
 		}
 		return true
