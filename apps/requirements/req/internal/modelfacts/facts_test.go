@@ -5,6 +5,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
@@ -122,6 +125,131 @@ func TestFormatAssociationFact(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFormatAssociationInvariantFact(t *testing.T) {
+	t.Parallel()
+
+	domainKey := helper.Must(identity.NewDomainKey("finance"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "wallet"))
+	partnerKey := helper.Must(identity.NewClassKey(subdomainKey, "partner"))
+	jurisdictionKey := helper.Must(identity.NewClassKey(subdomainKey, "jurisdiction"))
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, partnerKey, jurisdictionKey, "configures_customers_for"))
+	invKey := helper.Must(identity.NewClassAssociationInvariantKey(assocKey, "0"))
+	anyMult := helper.Must(model_class.NewMultiplicity("any"))
+
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
+		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
+		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
+		nil,
+		"",
+	)
+	partner := model_class.NewClass(partnerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"})
+
+	spec := `∀ j1 ∈ self.ConfiguresCustomersFor : ∀ j2 ∈ self.ConfiguresCustomersFor : ((j1 ≠ j2) ⇒ (j1.jurisdiction_code ≠ j2.jurisdiction_code))`
+	got := FormatAssociationInvariantFact(
+		assoc,
+		partner,
+		model_logic.NewLogic(
+			invKey,
+			model_logic.LogicTypeAssessment,
+			"A partner cannot configure two jurisdictions with the same jurisdiction code",
+			"",
+			logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: spec},
+			nil,
+		),
+	)
+	assert.Equal(t, AssociationInvariantFact{
+		Label:       "Partner (configures customers for)",
+		Description: "A partner cannot configure two jurisdictions with the same jurisdiction code.",
+		Spec:        spec,
+	}, got)
+}
+
+func TestFormatAssociationInvariantFactUsesSpecWhenDescriptionMissing(t *testing.T) {
+	t.Parallel()
+
+	domainKey := helper.Must(identity.NewDomainKey("finance"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "wallet"))
+	partnerKey := helper.Must(identity.NewClassKey(subdomainKey, "partner"))
+	jurisdictionKey := helper.Must(identity.NewClassKey(subdomainKey, "jurisdiction"))
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, partnerKey, jurisdictionKey, "configures_customers_for"))
+	invKey := helper.Must(identity.NewClassAssociationInvariantKey(assocKey, "0"))
+	anyMult := helper.Must(model_class.NewMultiplicity("any"))
+
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
+		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
+		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
+		nil,
+		"",
+	)
+	partner := model_class.NewClass(partnerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"})
+
+	got := FormatAssociationInvariantFact(
+		assoc,
+		partner,
+		model_logic.NewLogic(
+			invKey,
+			model_logic.LogicTypeAssessment,
+			"",
+			"",
+			logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+			nil,
+		),
+	)
+	assert.Equal(t, AssociationInvariantFact{
+		Label:       "Partner (configures customers for)",
+		Description: "TRUE.",
+		Spec:        "",
+	}, got)
+}
+
+func TestAssociationInvariantFactsForSubdomain(t *testing.T) {
+	t.Parallel()
+
+	domainKey := helper.Must(identity.NewDomainKey("finance"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "wallet"))
+	partnerKey := helper.Must(identity.NewClassKey(subdomainKey, "partner"))
+	jurisdictionKey := helper.Must(identity.NewClassKey(subdomainKey, "jurisdiction"))
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, partnerKey, jurisdictionKey, "configures_customers_for"))
+	invKey := helper.Must(identity.NewClassAssociationInvariantKey(assocKey, "0"))
+	anyMult := helper.Must(model_class.NewMultiplicity("any"))
+
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
+		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
+		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
+		nil,
+		"",
+	)
+	assoc.SetInvariants([]model_logic.Logic{
+		model_logic.NewLogic(
+			invKey,
+			model_logic.LogicTypeAssessment,
+			"Jurisdiction codes must be unique per partner.",
+			"",
+			logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+			nil,
+		),
+	})
+
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		partnerKey:      model_class.NewClass(partnerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"}),
+		jurisdictionKey: model_class.NewClass(jurisdictionKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"}),
+	}
+	subdomain.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
+
+	facts := AssociationInvariantFactsForSubdomain(subdomain)
+	require.Len(t, facts, 1)
+	assert.Equal(t, "Partner (configures customers for)", facts[0].Label)
+	assert.Equal(t, "Jurisdiction codes must be unique per partner.", facts[0].Description)
+	assert.Equal(t, "TRUE", facts[0].Spec)
 }
 
 func TestFormatIndexFact(t *testing.T) {

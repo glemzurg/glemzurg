@@ -353,7 +353,11 @@ func runModelFacts(rootSourcePath, model, subdomainPath string) error {
 
 	facts := modelfacts.FactsForSubdomain(subdomain)
 	printModelFactLines(facts.Associations)
-	if len(facts.Associations) > 0 && len(facts.Indexes) > 0 {
+	if len(facts.Associations) > 0 && len(facts.AssociationInvariants) > 0 {
+		_, _ = fmt.Fprintln(os.Stdout)
+	}
+	printAssociationInvariantFacts(facts.AssociationInvariants)
+	if (len(facts.Associations) > 0 || len(facts.AssociationInvariants) > 0) && len(facts.Indexes) > 0 {
 		_, _ = fmt.Fprintln(os.Stdout)
 	}
 	printModelFactLines(facts.Indexes)
@@ -363,6 +367,15 @@ func runModelFacts(rootSourcePath, model, subdomainPath string) error {
 func printModelFactLines(lines []string) {
 	for _, line := range lines {
 		_, _ = fmt.Fprintln(os.Stdout, line)
+	}
+}
+
+func printAssociationInvariantFacts(facts []modelfacts.AssociationInvariantFact) {
+	for _, fact := range facts {
+		_, _ = fmt.Fprintf(os.Stdout, "- %s: %s\n", fact.Label, fact.Description)
+		if fact.Spec != "" {
+			_, _ = fmt.Fprintf(os.Stdout, "    - **%s**\n", fact.Spec)
+		}
 	}
 }
 

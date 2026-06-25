@@ -66,6 +66,20 @@ This is an actor:
 {{ end }}
 {{- end }}
 
+{{- $assocInvariants := class_outgoing_associations_with_invariants $reqs .Class.Key }}
+{{ if $assocInvariants -}}
+## Association Invariants
+
+{{ range $assocInvariants -}}
+### {{ .Name }}
+
+{{ range .Invariants -}}
+- {{ .Description }}
+{{ logic_markdown_spec_lines . }}
+{{ end }}
+{{ end }}
+{{- end }}
+
 ## Relations
 
 ```mermaid

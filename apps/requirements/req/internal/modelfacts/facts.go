@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -44,17 +45,26 @@ func FindSubdomain(model core.Model, path SubdomainPath) (model_domain.Subdomain
 	return model_domain.Subdomain{}, fmt.Errorf("domain %q not found in model %q", path.DomainSubKey, model.Key)
 }
 
-// SubdomainFacts groups readable model facts for one subdomain.
-type SubdomainFacts struct {
-	Associations []string
-	Indexes      []string
+// AssociationInvariantFact is one association invariant for facts rendering.
+type AssociationInvariantFact struct {
+	Label       string
+	Description string
+	Spec        string
 }
 
-// FactsForSubdomain returns association and index uniqueness facts for one subdomain.
+// SubdomainFacts groups readable model facts for one subdomain.
+type SubdomainFacts struct {
+	Associations          []string
+	AssociationInvariants []AssociationInvariantFact
+	Indexes               []string
+}
+
+// FactsForSubdomain returns association, association invariant, and index uniqueness facts for one subdomain.
 func FactsForSubdomain(subdomain model_domain.Subdomain) SubdomainFacts {
 	return SubdomainFacts{
-		Associations: AssociationFactsForSubdomain(subdomain),
-		Indexes:      IndexFactsForSubdomain(subdomain),
+		Associations:          AssociationFactsForSubdomain(subdomain),
+		AssociationInvariants: AssociationInvariantFactsForSubdomain(subdomain),
+		Indexes:               IndexFactsForSubdomain(subdomain),
 	}
 }
 
@@ -86,6 +96,33 @@ func AssociationFactsForSubdomain(subdomain model_domain.Subdomain) []string {
 	}
 
 	sort.Strings(facts)
+	return facts
+}
+
+// AssociationInvariantFactsForSubdomain returns human-readable facts for association-authored invariants.
+func AssociationInvariantFactsForSubdomain(subdomain model_domain.Subdomain) []AssociationInvariantFact {
+	classByKey := make(map[string]model_class.Class, len(subdomain.Classes))
+	for key, class := range subdomain.Classes {
+		classByKey[key.String()] = class
+	}
+
+	var facts []AssociationInvariantFact
+	for _, assoc := range subdomain.ClassAssociations {
+		if !associationWhollyInSubdomain(assoc, subdomain.Key) || len(assoc.Invariants) == 0 {
+			continue
+		}
+		fromClass, okFrom := classByKey[assoc.FromClassKey.String()]
+		if !okFrom {
+			continue
+		}
+		for _, inv := range assoc.Invariants {
+			facts = append(facts, FormatAssociationInvariantFact(assoc, fromClass, inv))
+		}
+	}
+
+	sort.Slice(facts, func(i, j int) bool {
+		return associationInvariantFactSortKey(facts[i]) < associationInvariantFactSortKey(facts[j])
+	})
 	return facts
 }
 
@@ -170,6 +207,53 @@ func FormatAssociationFact(assoc model_class.Association, fromClass, toClass mod
 	}
 	b.WriteString(".")
 	return b.String()
+}
+
+// FormatAssociationInvariantFact renders one association invariant for facts pages.
+func FormatAssociationInvariantFact(assoc model_class.Association, fromClass model_class.Class, inv model_logic.Logic) AssociationInvariantFact {
+	desc := singleLine(strings.TrimSpace(inv.Description))
+	spec := logicSpecDisplay(inv)
+
+	fact := AssociationInvariantFact{
+		Label: fmt.Sprintf("%s (%s)", fromClass.Name, associationLabel(assoc.Name)),
+	}
+
+	switch {
+	case desc != "":
+		fact.Description = ensureSentence(desc)
+		fact.Spec = spec
+	case spec != "":
+		fact.Description = ensureSentence(spec)
+	default:
+		fact.Description = "must satisfy an unspecified invariant."
+	}
+
+	return fact
+}
+
+func associationInvariantFactSortKey(fact AssociationInvariantFact) string {
+	return fact.Label + ": " + fact.Description + " " + fact.Spec
+}
+
+func ensureSentence(text string) string {
+	if text == "" {
+		return text
+	}
+	if !strings.HasSuffix(text, ".") {
+		return text + "."
+	}
+	return text
+}
+
+func logicSpecDisplay(inv model_logic.Logic) string {
+	spec := singleLine(strings.TrimSpace(inv.Spec.Specification))
+	if spec == "" {
+		return ""
+	}
+	if inv.Target != "" {
+		return "LET " + inv.Target + " = " + spec
+	}
+	return spec
 }
 
 // FormatIndexFact renders one class index as a review-friendly uniqueness sentence.

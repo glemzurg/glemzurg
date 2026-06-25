@@ -444,6 +444,9 @@ var _funcMap = template.FuncMap{
 	"class_indexes":                 classIndexListings,
 	"class_attribute_table_name":    classAttributeTableName,
 	"attribute_comments_invariants": attributeCommentsInvariants,
+	"class_outgoing_associations_with_invariants": func(reqs *req_flat.Requirements, classKey identity.Key) []model_class.Association {
+		return reqs.ClassOutgoingAssociationsWithInvariants(classKey)
+	},
 }
 
 func formatDataTypeRules(rules string, dataType *model_data_type.DataType) string {

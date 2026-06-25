@@ -617,6 +617,22 @@ func (r *Requirements) ClassInvariantLookup() map[string]model_logic.Logic {
 	return lookup
 }
 
+// ClassOutgoingAssociationsWithInvariants returns from-class associations that declare invariants.
+func (r *Requirements) ClassOutgoingAssociationsWithInvariants(classKey identity.Key) []model_class.Association {
+	r.PrepLookups()
+	associations := make([]model_class.Association, 0)
+	for _, assoc := range r.ClassAssociations {
+		if assoc.FromClassKey != classKey || len(assoc.Invariants) == 0 {
+			continue
+		}
+		associations = append(associations, assoc)
+	}
+	sort.Slice(associations, func(i, j int) bool {
+		return associations[i].Key.String() < associations[j].Key.String()
+	})
+	return associations
+}
+
 // ActorGeneralizationLookup returns actor generalizations by key.
 func (r *Requirements) ActorGeneralizationLookup() map[string]model_actor.Generalization {
 	r.PrepLookups()

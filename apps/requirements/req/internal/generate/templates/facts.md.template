@@ -9,13 +9,22 @@
 
 # Model Facts — {{ .Subdomain.Name }}
 
-Association and index uniqueness constraints for this subdomain.
+Association multiplicity, association invariant, and index uniqueness constraints for this subdomain.
 
 {{ if .Facts.Associations -}}
 ## Associations
 
 {{ range .Facts.Associations -}}
 - {{ . }}
+{{ end }}
+{{ end -}}
+{{ if .Facts.AssociationInvariants -}}
+## Association Invariants
+
+{{ range .Facts.AssociationInvariants -}}
+- {{ .Label }}: {{ .Description }}
+{{ if .Spec }}    - **{{ .Spec }}**
+{{ end }}
 {{ end }}
 {{ end -}}
 {{ if .Facts.Indexes -}}
