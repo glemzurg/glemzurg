@@ -353,45 +353,12 @@ func (e *ActionExecutor) evaluateActionRequires(
 	instanceID state.InstanceID,
 	bindings *evaluator.Bindings,
 ) (invariants.ViolationErrors, error) {
-	requires, err := EffectiveRequires(action.Key, logicOwnerKindAction, action.Parameters, action.Requires)
+	owner := ParameterOwnerFromAction(action)
+	failures, err := owner.AssessRequires(action.Parameters, bindings)
 	if err != nil {
 		return nil, err
 	}
-
-	// Pass 1: Evaluate all let bindings in requires (in order).
-	if err := evalLetBindings(requires, bindings, logicOwnerKindAction, action.Name, "requires"); err != nil {
-		return nil, err
-	}
-	// Pass 2: Evaluate non-let assessment items.
-	var violations invariants.ViolationErrors
-	for i, req := range requires {
-		if req.Type == model_logic.LogicTypeLet {
-			continue
-		}
-		expr := req.Spec.Expression
-		if expr == nil {
-			return nil, fmt.Errorf("action %s requires[%d]: expression not lowered", action.Name, i)
-		}
-
-		if model_bridge.ContainsAnyPrimedME(expr) {
-			return nil, fmt.Errorf("action %s requires[%d]: Requires must not contain primed variables", action.Name, i)
-		}
-
-		result := evaluator.Eval(expr, bindings)
-		if result.IsError() {
-			return nil, fmt.Errorf("action %s requires[%d] evaluation error: %s", action.Name, i, result.Error.Inspect())
-		}
-		if !isTrueBoolean(result.Value) {
-			msg := _EXPRESSION_RETURNED_NIL
-			if result.Value != nil {
-				msg = fmt.Sprintf("expression returned %s", result.Value.Inspect())
-			}
-			violations = append(violations, invariants.NewActionRequiresViolation(
-				action.Key, action.Name, i, req.Spec.Specification, instanceID, msg,
-			))
-		}
-	}
-	return violations, nil
+	return owner.ActionRequiresViolations(failures, instanceID), nil
 }
 
 // evaluateActionGuarantees evaluates the guarantees for an action and records primed assignments.
@@ -557,37 +524,12 @@ func (e *ActionExecutor) executeQueryInContext(
 }
 
 func checkQueryRequires(query model_state.Query, bindings *evaluator.Bindings) error {
-	requires, err := EffectiveRequires(query.Key, logicOwnerKindQuery, query.Parameters, query.Requires)
+	owner := ParameterOwnerFromQuery(query)
+	failures, err := owner.AssessRequires(query.Parameters, bindings)
 	if err != nil {
 		return err
 	}
-
-	if err := evalLetBindings(requires, bindings, logicOwnerKindQuery, query.Name, "requires"); err != nil {
-		return err
-	}
-
-	for i, req := range requires {
-		if req.Type == model_logic.LogicTypeLet {
-			continue
-		}
-		expr := req.Spec.Expression
-		if expr == nil {
-			return fmt.Errorf("query %s requires[%d]: expression not lowered", query.Name, i)
-		}
-
-		if model_bridge.ContainsAnyPrimedME(expr) {
-			return fmt.Errorf("query %s requires[%d]: Requires must not contain primed variables", query.Name, i)
-		}
-
-		result := evaluator.Eval(expr, bindings)
-		if result.IsError() {
-			return fmt.Errorf("query %s requires[%d] evaluation error: %s", query.Name, i, result.Error.Inspect())
-		}
-		if !isTrueBoolean(result.Value) {
-			return fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Spec.Specification)
-		}
-	}
-	return nil
+	return owner.RequireAssessmentError(failures)
 }
 
 func evaluateQueryGuarantees(query model_state.Query, bindings *evaluator.Bindings) (map[string]object.Object, error) {

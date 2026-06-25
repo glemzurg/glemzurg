@@ -140,6 +140,20 @@ func formatActionParametersMissingFromEvent(className, eventName, actionName str
 	}
 }
 
+func validateClassOwnerRequiresSampling(class model_class.Class) error {
+	for _, action := range class.Actions {
+		if err := actions.ValidateOwnerRequiresSamplingSupport(class.Name, actions.ParameterOwnerFromAction(action)); err != nil {
+			return err
+		}
+	}
+	for _, query := range class.Queries {
+		if err := actions.ValidateOwnerRequiresSamplingSupport(class.Name, actions.ParameterOwnerFromQuery(query)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func validateRequiresSamplingSupport(model *core.Model) error {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
@@ -147,15 +161,8 @@ func validateRequiresSamplingSupport(model *core.Model) error {
 				if len(class.States) == 0 {
 					continue
 				}
-				for _, action := range class.Actions {
-					if err := actions.ValidateActionRequiresSamplingSupport(class.Name, action); err != nil {
-						return err
-					}
-				}
-				for _, query := range class.Queries {
-					if err := actions.ValidateQueryRequiresSamplingSupport(class.Name, query); err != nil {
-						return err
-					}
+				if err := validateClassOwnerRequiresSampling(class); err != nil {
+					return err
 				}
 			}
 		}

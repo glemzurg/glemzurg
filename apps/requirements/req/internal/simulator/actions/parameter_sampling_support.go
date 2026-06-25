@@ -1,13 +1,11 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // UnsupportedRequiresSamplingError means a parsed action require references event parameters
@@ -39,9 +37,9 @@ func (e *UnsupportedRequiresSamplingError) Error() string {
 	}
 }
 
-// ValidateRequiresSamplingSupport rejects parsed assessments that reference action parameters
+// validateRequiresSamplingSupport rejects parsed assessments that reference parameters
 // without a supported random-generation strategy.
-func ValidateRequiresSamplingSupport(requires []model_logic.Logic, paramNames map[string]bool) error {
+func validateRequiresSamplingSupport(requires []model_logic.Logic, paramNames map[string]bool) error {
 	if len(paramNames) == 0 {
 		return nil
 	}
@@ -64,42 +62,19 @@ func ValidateRequiresSamplingSupport(requires []model_logic.Logic, paramNames ma
 	return nil
 }
 
+// ValidateOwnerRequiresSamplingSupport validates one parameter owner's requires.
+func ValidateOwnerRequiresSamplingSupport(className string, owner ParameterOwner) error {
+	return owner.ValidateRequiresSamplingSupport(className)
+}
+
 // ValidateActionRequiresSamplingSupport validates one action's requires against its parameters.
 func ValidateActionRequiresSamplingSupport(className string, action model_state.Action) error {
-	return validateOwnerRequiresSamplingSupport(className, action.Key, logicOwnerKindAction, action.Name, action.Parameters, action.Requires)
+	return ValidateOwnerRequiresSamplingSupport(className, ParameterOwnerFromAction(action))
 }
 
 // ValidateQueryRequiresSamplingSupport validates one query's requires against its parameters.
 func ValidateQueryRequiresSamplingSupport(className string, query model_state.Query) error {
-	return validateOwnerRequiresSamplingSupport(className, query.Key, logicOwnerKindQuery, query.Name, query.Parameters, query.Requires)
-}
-
-func validateOwnerRequiresSamplingSupport(
-	className string,
-	ownerKey identity.Key,
-	ownerKind string,
-	ownerName string,
-	params []model_state.Parameter,
-	explicitRequires []model_logic.Logic,
-) error {
-	if len(params) == 0 {
-		return nil
-	}
-	effectiveRequires, err := EffectiveRequires(ownerKey, ownerKind, params, explicitRequires)
-	if err != nil {
-		return err
-	}
-	paramNames := parameterNames(params)
-	if err := ValidateRequiresSamplingSupport(effectiveRequires, paramNames); err != nil {
-		var unsupported *UnsupportedRequiresSamplingError
-		if errors.As(err, &unsupported) {
-			unsupported.ClassName = className
-			unsupported.ActionName = ownerName
-			return unsupported
-		}
-		return err
-	}
-	return nil
+	return ValidateOwnerRequiresSamplingSupport(className, ParameterOwnerFromQuery(query))
 }
 
 func parameterNames(params []model_state.Parameter) map[string]bool {

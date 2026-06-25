@@ -88,7 +88,8 @@ func (s *ParameterSamplerSuite) TestEffectiveRequiresSkipsExplicitEnumRequire() 
 		helper.Must(model_state.NewParameter(actionKey, "SocialOnly", "enum of TRUE, FALSE", false)),
 	}
 
-	effective, err := EffectiveRequires(actionKey, logicOwnerKindAction, params, explicit)
+	owner := ParameterOwner{Key: actionKey, Kind: logicOwnerKindAction, Parameters: params, Requires: explicit}
+	effective, err := owner.EffectiveRequiresFor(params)
 	s.Require().NoError(err)
 	s.Len(effective, 1)
 }
