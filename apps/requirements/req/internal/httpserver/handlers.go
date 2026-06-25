@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"html"
@@ -9,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/perftrack"
 	"github.com/gomarkdown/markdown"
 )
 
@@ -31,7 +33,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.mainHandler)
 	mux.HandleFunc("/events/", s.eventsHandler)
-	return mux
+	return perftrack.Middleware(mux)
 }
 
 // NotifyModel sends refresh notifications for all pages of a model.
@@ -87,9 +89,10 @@ func (s *Server) eventsHandler(w http.ResponseWriter, r *http.Request) {
 
 // mainHandler handles all non-SSE requests.
 func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	if path == "" {
-		s.homeHandler(w, r)
+		s.homeHandler(ctx, w)
 		return
 	}
 	if path == strings.TrimPrefix(mermaidJSPath, "/") {
@@ -113,13 +116,13 @@ func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 		file := parts[1]
 		switch {
 		case strings.HasSuffix(file, ".md"):
-			s.renderMD(model, file, w)
+			s.renderMD(ctx, model, file, w)
 			return
 		case strings.HasSuffix(file, ".svg"):
-			s.serveSVG(model, file, w, r)
+			s.serveSVG(ctx, model, file, w, r)
 			return
 		case strings.HasSuffix(file, ".css"):
-			s.serveCSS(model, w, r)
+			s.serveCSS(ctx, model, w, r)
 			return
 		}
 	}
@@ -128,47 +131,71 @@ func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // homeHandler displays a list of available models.
-func (s *Server) homeHandler(w http.ResponseWriter, _ *http.Request) {
-	models := s.store.ListModels()
+func (s *Server) homeHandler(ctx context.Context, w http.ResponseWriter) {
+	var page string
+	perftrack.Run(ctx, "home.build", func() {
+		models := s.store.ListModels(ctx)
 
-	var list strings.Builder
-	list.WriteString("<ul>")
-	for _, model := range models {
-		escaped := html.EscapeString(model)
-		marker := ""
-		if idx, ok := s.store.GetParseIssues(model); ok && idx.HasIssues() {
-			marker = ` <span class="parse-error-marker" title="Parse errors">&#9888;</span>`
-		} else if _, ok := s.store.GetModelError(model); ok {
-			marker = ` <span class="parse-error-marker" title="Generation failed">&#9888;</span>`
+		var list strings.Builder
+		list.WriteString("<ul>")
+		for _, model := range models {
+			escaped := html.EscapeString(model)
+			marker := ""
+			if idx, ok := s.store.GetParseIssues(model); ok && idx.HasIssues() {
+				marker = ` <span class="parse-error-marker" title="Parse errors">&#9888;</span>`
+			} else if _, ok := s.store.GetModelError(model); ok {
+				marker = ` <span class="parse-error-marker" title="Generation failed">&#9888;</span>`
+			}
+			fmt.Fprintf(&list, "<li><a href=\"/%s/model.md\">%s</a>%s</li>", escaped, escaped, marker)
 		}
-		fmt.Fprintf(&list, "<li><a href=\"/%s/model.md\">%s</a>%s</li>", escaped, escaped, marker)
-	}
-	list.WriteString("</ul>")
+		list.WriteString("</ul>")
 
-	page := "<html><head><style>.parse-error-marker{color:#cc0000;font-weight:bold;}</style></head><body><h1>Models</h1>" + list.String() + "</body></html>"
+		page = "<html><head><style>.parse-error-marker{color:#cc0000;font-weight:bold;}</style></head><body><h1>Models</h1>" + list.String() + "</body></html>"
+	})
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(page))
+	perftrack.Run(ctx, "response.write", func() {
+		_, _ = w.Write([]byte(page))
+	})
 }
 
 // renderMD renders a Markdown file from the in-memory store as HTML.
-func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
-	// If the model failed to generate, render the error in place of content.
-	// A generation failure invalidates the whole model, so every .md page of
-	// that model shows the error page.
+func (s *Server) renderMD(ctx context.Context, model, file string, w http.ResponseWriter) {
 	if msg, ok := s.store.GetModelError(model); ok {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write(generate.ErrorPageHTML(model, file, errors.New(msg))) //nolint:gosec // error page HTML is escaped in generate.ErrorPageHTML
+		perftrack.Run(ctx, "response.write", func() {
+			_, _ = w.Write(generate.ErrorPageHTML(model, file, errors.New(msg))) //nolint:gosec // error page HTML is escaped in generate.ErrorPageHTML
+		})
 		return
 	}
 
-	data, ok := s.store.GetMarkdown(model, file)
-	if !ok {
+	var data []byte
+	var found bool
+	perftrack.Run(ctx, "store.getMarkdown", func() {
+		data, found = s.store.GetMarkdown(ctx, model, file)
+	})
+	if !found {
 		http.NotFound(w, nil)
 		return
 	}
 
-	mdHTML := markdown.ToHTML(data, nil, nil)
+	var mdHTML []byte
+	perftrack.Run(ctx, "markdown.toHTML", func() {
+		mdHTML = markdown.ToHTML(data, nil, nil)
+	})
 
+	var body []byte
+	perftrack.Run(ctx, "html.build", func() {
+		body = buildMDPageHTML(model, file, data, mdHTML)
+	})
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	perftrack.Run(ctx, "response.write", func() {
+		_, _ = w.Write(body)
+	})
+}
+
+func buildMDPageHTML(model, file string, mdSource, mdHTML []byte) []byte {
 	escapedModel := html.EscapeString(model)
 	escapedFile := html.EscapeString(file)
 
@@ -180,14 +207,14 @@ func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
 	buf.WriteString(`/`)
 	buf.WriteString(escapedFile)
 	buf.WriteString(`");evtSource.onmessage = () => location.reload();</script>`)
-	if markdownHasMermaid(data) {
+	if markdownHasMermaid(mdSource) {
 		buf.WriteString(`<script src="`)
 		buf.WriteString(mermaidJSPath)
 		buf.WriteString(`"></script>`)
 	}
 	buf.WriteString(`</head><body>`)
 	buf.Write(mdHTML)
-	if markdownHasMermaid(data) {
+	if markdownHasMermaid(mdSource) {
 		buf.WriteString(`<script>`)
 		buf.WriteString(`document.querySelectorAll('pre code.language-mermaid').forEach(function(el){`)
 		buf.WriteString(`var d=document.createElement('div');d.className='mermaid';`)
@@ -196,31 +223,41 @@ func (s *Server) renderMD(model, file string, w http.ResponseWriter) {
 		buf.WriteString(`</script>`)
 	}
 	buf.WriteString(`</body></html>`)
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(buf.String()))
+	return []byte(buf.String())
 }
 
 // serveSVG serves an SVG file from the in-memory store.
-func (s *Server) serveSVG(model, file string, w http.ResponseWriter, r *http.Request) {
-	data, ok := s.store.GetSVG(model, file)
+func (s *Server) serveSVG(ctx context.Context, model, file string, w http.ResponseWriter, r *http.Request) {
+	var data []byte
+	var ok bool
+	perftrack.Run(ctx, "store.getSVG", func() {
+		data, ok = s.store.GetSVG(ctx, model, file)
+	})
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
 
 	w.Header().Set("Content-Type", "image/svg+xml")
-	_, _ = w.Write(data)
+	perftrack.Run(ctx, "response.write", func() {
+		_, _ = w.Write(data)
+	})
 }
 
 // serveCSS serves the CSS file from the in-memory store.
-func (s *Server) serveCSS(model string, w http.ResponseWriter, r *http.Request) {
-	data, ok := s.store.GetCSS(model)
+func (s *Server) serveCSS(ctx context.Context, model string, w http.ResponseWriter, r *http.Request) {
+	var data []byte
+	var ok bool
+	perftrack.Run(ctx, "store.getCSS", func() {
+		data, ok = s.store.GetCSS(ctx, model)
+	})
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
-	_, _ = w.Write(data)
+	perftrack.Run(ctx, "response.write", func() {
+		_, _ = w.Write(data)
+	})
 }

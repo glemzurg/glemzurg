@@ -12,6 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/perftrack"
 )
 
 // Input format constants.
@@ -158,11 +159,14 @@ func (sw *SourceWatcher) debounceUpdate() {
 // reloads onto a red-bold error page instead of silently keeping stale content.
 // The error is still returned for logging.
 func (sw *SourceWatcher) updateModel() error {
+	tracker := perftrack.New("model.reload " + sw.modelName)
+	defer tracker.LogIfSlow()
+
 	var err error
 	if sw.inputFormat == InputFormatAIJSON {
-		err = sw.updateModelFromJSON()
+		err = sw.updateModelFromJSON(tracker)
 	} else {
-		err = sw.updateModelFromYAML()
+		err = sw.updateModelFromYAML(tracker)
 	}
 	if err != nil {
 		sw.store.SetModelError(sw.modelName, err)
@@ -173,13 +177,19 @@ func (sw *SourceWatcher) updateModel() error {
 }
 
 // updateModelFromJSON parses a model from parser_ai JSON format.
-func (sw *SourceWatcher) updateModelFromJSON() error {
-	parsedModel, err := parser_ai.ReadModel(sw.modelPath)
+func (sw *SourceWatcher) updateModelFromJSON(tracker *perftrack.Tracker) error {
+	var parsedModel core.Model
+	var err error
+	perftrack.RunOn(tracker, "parse.json", func() {
+		parsedModel, err = parser_ai.ReadModel(sw.modelPath)
+	})
 	if err != nil {
 		return err
 	}
 
-	err = sw.store.SetModel(sw.modelName, &parsedModel, nil)
+	perftrack.RunOn(tracker, "store.setModel", func() {
+		err = sw.store.SetModelTracked(sw.modelName, &parsedModel, nil, tracker)
+	})
 	if err != nil {
 		return err
 	}
@@ -193,13 +203,20 @@ func (sw *SourceWatcher) updateModelFromJSON() error {
 // A parse failure in a single .class file is not a catastrophic error: Parse
 // returns the partial model plus the per-class failures, which generation turns
 // into red-bold error blocks on those classes' pages.
-func (sw *SourceWatcher) updateModelFromYAML() error {
-	parsedModel, failures, err := parser_human.Parse(sw.modelPath)
+func (sw *SourceWatcher) updateModelFromYAML(tracker *perftrack.Tracker) error {
+	var parsedModel core.Model
+	var failures []parser_human.ParseFailure
+	var err error
+	perftrack.RunOn(tracker, "parse.yaml", func() {
+		parsedModel, failures, err = parser_human.Parse(sw.modelPath)
+	})
 	if err != nil {
 		return err
 	}
 
-	err = sw.store.SetModel(sw.modelName, &parsedModel, classErrorMap(failures))
+	perftrack.RunOn(tracker, "store.setModel", func() {
+		err = sw.store.SetModelTracked(sw.modelName, &parsedModel, classErrorMap(failures), tracker)
+	})
 	if err != nil {
 		return err
 	}

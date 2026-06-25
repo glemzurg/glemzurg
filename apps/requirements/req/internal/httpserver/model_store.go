@@ -2,10 +2,13 @@ package httpserver
 
 import (
 	"bytes"
+	"context"
 	"sync"
+	"time"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/perftrack"
 )
 
 // ModelStore manages in-memory models and their generated markdown content.
@@ -37,21 +40,39 @@ func NewModelStore() *ModelStore {
 // classErrors maps a class key string to a parse-error message; those classes'
 // pages render as red-bold error blocks. Pass nil when there are no failures.
 func (s *ModelStore) SetModel(name string, model *core.Model, classErrors map[string]string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	return s.SetModelTracked(name, model, classErrors, nil)
+}
 
-	// Generate markdown content in memory
-	mdContent, svgContent, cssContent, parseIssues, err := s.generateContent(model, classErrors)
+// SetModelTracked is SetModel with optional phase timings recorded on tracker.
+func (s *ModelStore) SetModelTracked(name string, model *core.Model, classErrors map[string]string, tracker *perftrack.Tracker) error {
+	// Generate without holding the store lock so HTTP readers can keep serving the
+	// previous snapshot while a reload runs.
+	var (
+		mdContent   map[string][]byte
+		svgContent  map[string][]byte
+		cssContent  []byte
+		parseIssues *generate.ParseIssueIndex
+		err         error
+	)
+	perftrack.RunOn(tracker, "store.generate", func() {
+		mdContent, svgContent, cssContent, parseIssues, err = s.generateContentTracked(model, classErrors, tracker)
+	})
 	if err != nil {
 		return err
 	}
 
+	lockStart := time.Now()
+	s.mu.Lock()
+	if tracker != nil {
+		tracker.Add("store.lock_wait", time.Since(lockStart))
+	}
 	s.models[name] = model
 	s.markdown[name] = mdContent
 	s.svg[name] = svgContent
 	s.css[name] = cssContent
 	s.parseIssues[name] = parseIssues
 	delete(s.modelErrors, name) // Recovery: a successful generation clears the error.
+	s.mu.Unlock()
 
 	return nil
 }
@@ -93,30 +114,47 @@ func (s *ModelStore) GetModel(name string) (*core.Model, bool) {
 }
 
 // GetMarkdown returns markdown content for a specific model and file.
-func (s *ModelStore) GetMarkdown(model, file string) ([]byte, bool) {
+func (s *ModelStore) GetMarkdown(ctx context.Context, model, file string) ([]byte, bool) {
+	lockStart := time.Now()
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-	if files, ok := s.markdown[model]; ok {
-		if content, ok := files[file]; ok {
-			return content, true
-		}
+	if tracker := perftrack.FromContext(ctx); tracker != nil {
+		tracker.Add("store.lock_wait", time.Since(lockStart))
 	}
-	return nil, false
+	defer s.mu.RUnlock()
+
+	var content []byte
+	var ok bool
+	perftrack.Run(ctx, "store.lookup", func() {
+		if files, found := s.markdown[model]; found {
+			content, ok = files[file]
+		}
+	})
+	return content, ok
 }
 
 // GetCSS returns CSS content for a model.
-func (s *ModelStore) GetCSS(model string) ([]byte, bool) {
+func (s *ModelStore) GetCSS(ctx context.Context, model string) ([]byte, bool) {
+	lockStart := time.Now()
 	s.mu.RLock()
+	if tracker := perftrack.FromContext(ctx); tracker != nil {
+		tracker.Add("store.lock_wait", time.Since(lockStart))
+	}
 	defer s.mu.RUnlock()
+
 	content, ok := s.css[model]
 	return content, ok
 }
 
 // GetSVG returns SVG content for a specific model and file.
-func (s *ModelStore) GetSVG(model, file string) ([]byte, bool) {
+func (s *ModelStore) GetSVG(ctx context.Context, model, file string) ([]byte, bool) {
+	lockStart := time.Now()
 	s.mu.RLock()
+	if tracker := perftrack.FromContext(ctx); tracker != nil {
+		tracker.Add("store.lock_wait", time.Since(lockStart))
+	}
 	defer s.mu.RUnlock()
-	if files, ok := s.svg[model]; ok {
+
+	if files, found := s.svg[model]; found {
 		if content, ok := files[file]; ok {
 			return content, true
 		}
@@ -125,9 +163,14 @@ func (s *ModelStore) GetSVG(model, file string) ([]byte, bool) {
 }
 
 // ListModels returns a list of all model names.
-func (s *ModelStore) ListModels() []string {
+func (s *ModelStore) ListModels(ctx context.Context) []string {
+	lockStart := time.Now()
 	s.mu.RLock()
+	if tracker := perftrack.FromContext(ctx); tracker != nil {
+		tracker.Add("store.lock_wait", time.Since(lockStart))
+	}
 	defer s.mu.RUnlock()
+
 	names := make([]string, 0, len(s.models))
 	for name := range s.models {
 		names = append(names, name)
@@ -135,30 +178,33 @@ func (s *ModelStore) ListModels() []string {
 	return names
 }
 
-// generateContent generates markdown, SVG, and CSS content for a model.
-func (s *ModelStore) generateContent(model *core.Model, classErrors map[string]string) (map[string][]byte, map[string][]byte, []byte, *generate.ParseIssueIndex, error) {
-	parseIssues := generate.BuildParseIssueIndex(model, classErrors)
+func (s *ModelStore) generateContentTracked(model *core.Model, classErrors map[string]string, tracker *perftrack.Tracker) (map[string][]byte, map[string][]byte, []byte, *generate.ParseIssueIndex, error) {
+	var parseIssues *generate.ParseIssueIndex
+	perftrack.RunOn(tracker, "generate.parseIssues", func() {
+		parseIssues = generate.BuildParseIssueIndex(model, classErrors)
+	})
 
-	// Use the generate package to create content in memory
 	collector := &ContentCollector{
 		Markdown: make(map[string][]byte),
 		SVG:      make(map[string][]byte),
 	}
 
-	err := generate.GenerateMdToWriter(*model, collector, classErrors)
+	var err error
+	perftrack.RunOn(tracker, "generate.markdown", func() {
+		err = generate.GenerateMdToWriter(*model, collector, classErrors)
+	})
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	mdContent := collector.Markdown
-	svgContent := collector.SVG
+	var cssContent []byte
+	perftrack.RunOn(tracker, "generate.css", func() {
+		var cssBuffer bytes.Buffer
+		generate.WriteCSS(&cssBuffer)
+		cssContent = cssBuffer.Bytes()
+	})
 
-	// Generate CSS
-	var cssBuffer bytes.Buffer
-	generate.WriteCSS(&cssBuffer)
-	cssContent := cssBuffer.Bytes()
-
-	return mdContent, svgContent, cssContent, parseIssues, nil
+	return collector.Markdown, collector.SVG, cssContent, parseIssues, nil
 }
 
 // ContentCollector implements generate.ContentWriter to collect content in memory.
