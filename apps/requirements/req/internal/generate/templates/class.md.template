@@ -42,10 +42,10 @@ This is an actor:
 
 ## Attributes
 
-| Name | Rules | Nullable | TLA+ | Comment |
-| ---- | ----- | -------- | ---- | ------- |
+| Name | Rules | Nullable | TLA+ | Comments / Invariants |
+| ---- | ----- | -------- | ---- | --------------------- |
 {{- range .Class.Attributes }}
-| {{ class_attribute_table_name . }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ expression_spec_display .DerivationPolicy.Spec }}{{ end }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ .Details }} |{{end}}
+| {{ class_attribute_table_name . }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ expression_spec_display .DerivationPolicy.Spec }}{{ end }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ attribute_comments_invariants . }} |{{end}}
 
 {{- $indexes := class_indexes .Class.Attributes }}
 {{ if ne $indexes nil }}
@@ -56,21 +56,6 @@ This is an actor:
 - {{ .Heading }} [{{ range $i, $name := .Attributes }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
 {{ end }}
 {{ end }}
-
-{{ range .Class.Attributes -}}
-{{ if ne .Invariants nil -}}
-### {{ .Name }} Invariants
-
-{{ range .Invariants -}}
-- {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ expression_spec_display .Spec }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ expression_spec_display .Spec }}
-{{ end -}}
-{{ end }}
-{{ end -}}
-{{ end -}}
 
 {{ if ne .Class.Invariants nil -}}
 ## Invariants

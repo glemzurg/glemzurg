@@ -435,8 +435,9 @@ var _funcMap = template.FuncMap{
 		})
 		return results
 	},
-	"class_indexes":              classIndexListings,
-	"class_attribute_table_name": classAttributeTableName,
+	"class_indexes":                 classIndexListings,
+	"class_attribute_table_name":    classAttributeTableName,
+	"attribute_comments_invariants": attributeCommentsInvariants,
 }
 
 func formatDataTypeRules(rules string, dataType *model_data_type.DataType) string {
