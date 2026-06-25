@@ -523,21 +523,6 @@ COMMENT ON COLUMN attribute_invariant.logic_key IS 'The logic predicate that mus
 
 --------------------------------------------------------------
 
-CREATE TABLE parameter_invariant (
-  model_key text NOT NULL,
-  parameter_key text NOT NULL,
-  logic_key text NOT NULL,
-  PRIMARY KEY (model_key, parameter_key, logic_key),
-  CONSTRAINT fk_param_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE parameter_invariant IS 'Join table linking action and query parameters to their invariant logic predicates.';
-COMMENT ON COLUMN parameter_invariant.model_key IS 'The model this parameter invariant belongs to.';
-COMMENT ON COLUMN parameter_invariant.parameter_key IS 'The full identity key of the parameter this invariant constrains.';
-COMMENT ON COLUMN parameter_invariant.logic_key IS 'The logic predicate that must hold for the parameter value.';
-
---------------------------------------------------------------
-
 CREATE TABLE association (
   model_key text NOT NULL,
   association_key text NOT NULL,
@@ -616,6 +601,24 @@ COMMENT ON COLUMN query_parameter.sort_order IS 'Parameters are an ordered list.
 COMMENT ON COLUMN query_parameter.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN query_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
 COMMENT ON COLUMN query_parameter.nullable IS 'Whether absent (NULL) is a valid value for this parameter.';
+
+--------------------------------------------------------------
+
+CREATE TABLE query_parameter_invariant (
+  model_key text NOT NULL,
+  query_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, query_key, parameter_key, logic_key),
+  CONSTRAINT fk_query_param_invariant_parameter FOREIGN KEY (model_key, query_key, parameter_key) REFERENCES query_parameter (model_key, query_key, parameter_key) ON DELETE CASCADE,
+  CONSTRAINT fk_query_param_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE query_parameter_invariant IS 'Join table linking query parameters to their invariant logic predicates.';
+COMMENT ON COLUMN query_parameter_invariant.model_key IS 'The model this query parameter invariant belongs to.';
+COMMENT ON COLUMN query_parameter_invariant.query_key IS 'The query this parameter invariant is part of.';
+COMMENT ON COLUMN query_parameter_invariant.parameter_key IS 'The parameter this invariant constrains.';
+COMMENT ON COLUMN query_parameter_invariant.logic_key IS 'The logic predicate that must hold for the parameter value.';
 
 --------------------------------------------------------------
 
@@ -774,6 +777,24 @@ COMMENT ON COLUMN action_parameter.sort_order IS 'Parameters are an ordered list
 COMMENT ON COLUMN action_parameter.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN action_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
 COMMENT ON COLUMN action_parameter.nullable IS 'Whether absent (NULL) is a valid value for this parameter.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_parameter_invariant (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, parameter_key, logic_key),
+  CONSTRAINT fk_action_param_invariant_parameter FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter (model_key, action_key, parameter_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_param_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_parameter_invariant IS 'Join table linking action parameters to their invariant logic predicates.';
+COMMENT ON COLUMN action_parameter_invariant.model_key IS 'The model this action parameter invariant belongs to.';
+COMMENT ON COLUMN action_parameter_invariant.action_key IS 'The action this parameter invariant is part of.';
+COMMENT ON COLUMN action_parameter_invariant.parameter_key IS 'The parameter this invariant constrains.';
+COMMENT ON COLUMN action_parameter_invariant.logic_key IS 'The logic predicate that must hold for the parameter value.';
 
 --------------------------------------------------------------
 

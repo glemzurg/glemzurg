@@ -547,31 +547,43 @@ func writeStateItemSubRows(tx *sql.Tx, modelKey string,
 	return writeParameterInvariants(tx, modelKey, actionsMap, queriesMap)
 }
 
-// writeParameterInvariants collects and inserts parameter invariant join rows.
+// writeParameterInvariants collects and inserts action and query parameter invariant join rows.
 func writeParameterInvariants(tx *sql.Tx, modelKey string,
 	actionsMap map[identity.Key][]model_state.Action,
 	queriesMap map[identity.Key][]model_state.Query,
 ) error {
-	paramInvariantsMap := make(map[identity.Key][]identity.Key)
+	actionInvariants := make(map[identity.Key]map[string][]identity.Key)
 	for _, actionList := range actionsMap {
 		for _, action := range actionList {
 			for _, param := range action.Parameters {
 				for _, inv := range param.Invariants {
-					paramInvariantsMap[param.Key] = append(paramInvariantsMap[param.Key], inv.Key)
+					if actionInvariants[action.Key] == nil {
+						actionInvariants[action.Key] = make(map[string][]identity.Key)
+					}
+					subKey := param.Key.SubKey
+					actionInvariants[action.Key][subKey] = append(actionInvariants[action.Key][subKey], inv.Key)
 				}
 			}
 		}
 	}
+	queryInvariants := make(map[identity.Key]map[string][]identity.Key)
 	for _, queryList := range queriesMap {
 		for _, query := range queryList {
 			for _, param := range query.Parameters {
 				for _, inv := range param.Invariants {
-					paramInvariantsMap[param.Key] = append(paramInvariantsMap[param.Key], inv.Key)
+					if queryInvariants[query.Key] == nil {
+						queryInvariants[query.Key] = make(map[string][]identity.Key)
+					}
+					subKey := param.Key.SubKey
+					queryInvariants[query.Key][subKey] = append(queryInvariants[query.Key][subKey], inv.Key)
 				}
 			}
 		}
 	}
-	return AddParameterInvariants(tx, modelKey, paramInvariantsMap)
+	if err := AddActionParameterInvariants(tx, modelKey, actionInvariants); err != nil {
+		return err
+	}
+	return AddQueryParameterInvariants(tx, modelKey, queryInvariants)
 }
 
 // collectStateItemMaps collects states, guards, actions, events, and queries from all classes.
@@ -917,7 +929,8 @@ type readDomainStructure struct {
 	classesMap                map[identity.Key][]model_class.Class
 	classInvariantsMap        map[identity.Key][]identity.Key
 	attrInvariantsMap         map[identity.Key][]identity.Key
-	paramInvariantsMap        map[identity.Key][]identity.Key
+	actionParamInvariantsMap  map[identity.Key][]identity.Key
+	queryParamInvariantsMap   map[identity.Key][]identity.Key
 	attributesMap             map[identity.Key][]model_class.Attribute
 	guardsMap                 map[identity.Key][]model_state.Guard
 	actionsMap                map[identity.Key][]model_state.Action
@@ -1075,7 +1088,12 @@ func queryClassStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) e
 		return err
 	}
 
-	ds.paramInvariantsMap, err = QueryParameterInvariants(tx, modelKey)
+	ds.actionParamInvariantsMap, err = QueryActionParameterInvariants(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.queryParamInvariantsMap, err = QueryQueryParameterInvariants(tx, modelKey)
 	if err != nil {
 		return err
 	}
@@ -1395,23 +1413,28 @@ func stitchAttributeData(ds *readDomainStructure, logicsByKey map[identity.Key]m
 func stitchParameterData(ds *readDomainStructure, logicsByKey map[identity.Key]model_logic.Logic) {
 	for classKey, queries := range ds.queriesMap {
 		for i := range queries {
-			stitchParameterExtras(&queries[i].Parameters, ds, logicsByKey)
+			stitchParameterExtras(&queries[i].Parameters, ds.dataTypes, ds.queryParamInvariantsMap, logicsByKey)
 		}
 		ds.queriesMap[classKey] = queries
 	}
 
 	for classKey, actions := range ds.actionsMap {
 		for i := range actions {
-			stitchParameterExtras(&actions[i].Parameters, ds, logicsByKey)
+			stitchParameterExtras(&actions[i].Parameters, ds.dataTypes, ds.actionParamInvariantsMap, logicsByKey)
 		}
 		ds.actionsMap[classKey] = actions
 	}
 }
 
-func stitchParameterExtras(params *[]model_state.Parameter, ds *readDomainStructure, logicsByKey map[identity.Key]model_logic.Logic) {
-	stitchParameterDataTypes(*params, ds.dataTypes)
+func stitchParameterExtras(
+	params *[]model_state.Parameter,
+	dataTypes map[string]model_data_type.DataType,
+	paramInvariantsMap map[identity.Key][]identity.Key,
+	logicsByKey map[identity.Key]model_logic.Logic,
+) {
+	stitchParameterDataTypes(*params, dataTypes)
 	for j, param := range *params {
-		if invKeys, ok := ds.paramInvariantsMap[param.Key]; ok {
+		if invKeys, ok := paramInvariantsMap[param.Key]; ok {
 			invariants := make([]model_logic.Logic, len(invKeys))
 			for k, key := range invKeys {
 				invariants[k] = logicsByKey[key]
