@@ -192,6 +192,10 @@ func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.B
 			HigherBound: assoc.ToMultiplicity.HigherBound,
 		}
 		if assoc.AssociationClassKey != nil {
+			linkClassName := ""
+			if linkInfo := catalog.GetClassInfo(*assoc.AssociationClassKey); linkInfo != nil {
+				linkClassName = linkInfo.Class.Name
+			}
 			bindingsBuilder.AddAssociationClassHost(
 				assoc.Key,
 				assoc.Name,
@@ -199,7 +203,7 @@ func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.B
 					FromClassKey: assoc.FromClassKey.String(),
 					ToClassKey:   assoc.ToClassKey.String(),
 				},
-				*assoc.AssociationClassKey,
+				linkClassName,
 				evaluator.AssociationHostMultiplicities{From: fromMult, To: toMult},
 			)
 			continue

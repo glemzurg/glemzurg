@@ -247,6 +247,8 @@ func (b *BindingsBuilder) syncLinks() {
 }
 
 func (b *BindingsBuilder) syncAssociationLinks() {
+	b.relationCtx.ClearAssociationClassRows()
+
 	for _, link := range b.state.AssociationLinks().AllLinks() {
 		fromInstance := b.state.GetInstance(link.FromEndpointID)
 		linkInstance := b.state.GetInstance(link.LinkInstanceID)
@@ -256,8 +258,13 @@ func (b *BindingsBuilder) syncAssociationLinks() {
 		}
 
 		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
-		b.relationCtx.CreateLink(hostKey, fromInstance.Attributes, linkInstance.Attributes)
-		b.relationCtx.CreateLink(hostKey, linkInstance.Attributes, toInstance.Attributes)
+		b.relationCtx.CreateLink(hostKey, fromInstance.Attributes, toInstance.Attributes)
+		b.relationCtx.AddAssociationClassRow(
+			hostKey,
+			fromInstance.Attributes,
+			toInstance.Attributes,
+			linkInstance.Attributes,
+		)
 	}
 }
 
@@ -266,14 +273,14 @@ func (b *BindingsBuilder) AddAssociationClassHost(
 	assocKey identity.Key,
 	name string,
 	endpoints evaluator.AssociationHostEndpoints,
-	linkClassKey identity.Key,
+	linkClassName string,
 	mults evaluator.AssociationHostMultiplicities,
 ) {
 	b.relationCtx.AddAssociationClassHost(
 		evaluator.AssociationKey(assocKey.String()),
 		name,
 		endpoints,
-		linkClassKey.String(),
+		linkClassName,
 		mults,
 	)
 }

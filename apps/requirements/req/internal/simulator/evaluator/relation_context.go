@@ -20,6 +20,8 @@ type RelationInfo struct {
 	TargetClassKey string         // The class we navigate TO (identity.Key.String())
 	Multiplicity   Multiplicity   // Cardinality on the target side
 	Reverse        bool           // True if this is a reverse relation (._Name)
+	// LinkClassMember is the TLA+ sub-member exposing association-class rows (host associations only).
+	LinkClassMember string
 }
 
 // RelationContext manages association metadata and runtime link state.
@@ -35,6 +37,9 @@ type RelationContext struct {
 	// Runtime state
 	identities *IdentityRegistry
 	links      *LinkTable
+
+	// associationClassRows indexes materialized host rows for AC member traversal.
+	associationClassRows []associationClassRow
 }
 
 // NewRelationContext creates a new relation context.
@@ -71,10 +76,12 @@ func (c *RelationContext) AddAssociation(
 		Reverse:        false,
 	}
 
+	fieldName := NormalizeAssociationFieldName(name)
+
 	if c.ForwardRelations[fromClassKey] == nil {
 		c.ForwardRelations[fromClassKey] = make(map[string]*RelationInfo)
 	}
-	c.ForwardRelations[fromClassKey][name] = forwardInfo
+	c.ForwardRelations[fromClassKey][fieldName] = forwardInfo
 
 	// Reverse relation: from ToClass, access ._Name to get FromClass records
 	reverseInfo := &RelationInfo{
@@ -88,7 +95,14 @@ func (c *RelationContext) AddAssociation(
 	if c.ReverseRelations[toClassKey] == nil {
 		c.ReverseRelations[toClassKey] = make(map[string]*RelationInfo)
 	}
-	c.ReverseRelations[toClassKey][name] = reverseInfo
+	c.ReverseRelations[toClassKey][fieldName] = reverseInfo
+}
+
+type associationClassRow struct {
+	hostKey    AssociationKey
+	fromRecord *object.Record
+	toRecord   *object.Record
+	linkRecord *object.Record
 }
 
 // AssociationHostEndpoints holds the from and to class keys for an association-class host.
@@ -104,41 +118,46 @@ type AssociationHostMultiplicities struct {
 }
 
 // AddAssociationClassHost registers a host association materialized by association-class instances.
-// Both endpoints navigate to link-class instances via the host association name.
+// Default traversal reaches endpoint classes; LinkClassMember exposes association-class rows.
 func (c *RelationContext) AddAssociationClassHost(
 	assocKey AssociationKey,
 	name string,
 	endpoints AssociationHostEndpoints,
-	linkClassKey string,
+	linkClassName string,
 	mults AssociationHostMultiplicities,
 ) {
 	fromClassKey := endpoints.FromClassKey
 	toClassKey := endpoints.ToClassKey
 	fromMultiplicity := mults.From
 	toMultiplicity := mults.To
+	fieldName := NormalizeAssociationFieldName(name)
+	linkClassMember := NormalizeAssociationFieldName(linkClassName)
+
 	forwardInfo := &RelationInfo{
-		AssociationKey: assocKey,
-		Name:           name,
-		TargetClassKey: linkClassKey,
-		Multiplicity:   toMultiplicity,
-		Reverse:        false,
+		AssociationKey:  assocKey,
+		Name:            name,
+		TargetClassKey:  toClassKey,
+		Multiplicity:    toMultiplicity,
+		Reverse:         false,
+		LinkClassMember: linkClassMember,
 	}
 	if c.ForwardRelations[fromClassKey] == nil {
 		c.ForwardRelations[fromClassKey] = make(map[string]*RelationInfo)
 	}
-	c.ForwardRelations[fromClassKey][name] = forwardInfo
+	c.ForwardRelations[fromClassKey][fieldName] = forwardInfo
 
 	reverseInfo := &RelationInfo{
-		AssociationKey: assocKey,
-		Name:           name,
-		TargetClassKey: linkClassKey,
-		Multiplicity:   fromMultiplicity,
-		Reverse:        true,
+		AssociationKey:  assocKey,
+		Name:            name,
+		TargetClassKey:  fromClassKey,
+		Multiplicity:    fromMultiplicity,
+		Reverse:         true,
+		LinkClassMember: linkClassMember,
 	}
 	if c.ReverseRelations[toClassKey] == nil {
 		c.ReverseRelations[toClassKey] = make(map[string]*RelationInfo)
 	}
-	c.ReverseRelations[toClassKey][name] = reverseInfo
+	c.ReverseRelations[toClassKey][fieldName] = reverseInfo
 }
 
 // GetForwardRelation returns relation info for a forward traversal (.Name).
@@ -225,6 +244,58 @@ func (c *RelationContext) GetRelatedRecords(record *object.Record, assocKey Asso
 	return records
 }
 
+// AddAssociationClassRow records one materialized host row for AC member traversal.
+func (c *RelationContext) AddAssociationClassRow(
+	hostKey AssociationKey,
+	fromRecord, toRecord, linkRecord *object.Record,
+) {
+	c.associationClassRows = append(c.associationClassRows, associationClassRow{
+		hostKey:    hostKey,
+		fromRecord: fromRecord,
+		toRecord:   toRecord,
+		linkRecord: linkRecord,
+	})
+}
+
+// GetAssociationClassLinksByEndpoint maps each far-endpoint to its association-class row.
+// Each host association row (from, to) has exactly one association-class instance.
+func (c *RelationContext) GetAssociationClassLinksByEndpoint(
+	record *object.Record,
+	assocKey AssociationKey,
+	reverse bool,
+) map[*object.Record]*object.Record {
+	anchorID, exists := c.identities.GetID(record)
+	if !exists {
+		return nil
+	}
+
+	links := make(map[*object.Record]*object.Record)
+	for _, row := range c.associationClassRows {
+		if row.hostKey != assocKey {
+			continue
+		}
+		var anchorRecord, farEndpoint *object.Record
+		if reverse {
+			anchorRecord = row.toRecord
+			farEndpoint = row.fromRecord
+		} else {
+			anchorRecord = row.fromRecord
+			farEndpoint = row.toRecord
+		}
+		rowAnchorID, ok := c.identities.GetID(anchorRecord)
+		if !ok || rowAnchorID != anchorID {
+			continue
+		}
+		links[farEndpoint] = row.linkRecord
+	}
+	return links
+}
+
+// ClearAssociationClassRows removes materialized host-row indexes.
+func (c *RelationContext) ClearAssociationClassRows() {
+	c.associationClassRows = nil
+}
+
 // RegisterRecord ensures a record has an object ID assigned.
 // Returns the assigned ID.
 func (c *RelationContext) RegisterRecord(record *object.Record) ObjectID {
@@ -251,4 +322,5 @@ func (c *RelationContext) Links() *LinkTable {
 func (c *RelationContext) Clear() {
 	c.identities.Clear()
 	c.links.Clear()
+	c.ClearAssociationClassRows()
 }

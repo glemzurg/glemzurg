@@ -269,6 +269,31 @@ func (s *RelationContextTestSuite) TestRemoveLink() {
 	s.Empty(related)
 }
 
+func (s *RelationContextTestSuite) TestAddAssociationClassHost_EndpointTargets() {
+	ctx := NewRelationContext()
+	hostKey := AssociationKey("domain/d/subdomain/s/cassociation/class/partner/class/jurisdiction/configures")
+	ctx.AddAssociationClassHost(
+		hostKey,
+		"Configures Customers For",
+		AssociationHostEndpoints{
+			FromClassKey: "domain/d/subdomain/s/class/partner",
+			ToClassKey:   "domain/d/subdomain/s/class/jurisdiction",
+		},
+		"Jurisdictional Wallet Definition",
+		AssociationHostMultiplicities{},
+	)
+
+	forward := ctx.GetForwardRelation("domain/d/subdomain/s/class/partner", "ConfiguresCustomersFor")
+	s.Require().NotNil(forward)
+	s.Equal("domain/d/subdomain/s/class/jurisdiction", forward.TargetClassKey)
+	s.Equal("JurisdictionalWalletDefinition", forward.LinkClassMember)
+
+	reverse := ctx.GetReverseRelation("domain/d/subdomain/s/class/jurisdiction", "_ConfiguresCustomersFor")
+	s.Require().NotNil(reverse)
+	s.Equal("domain/d/subdomain/s/class/partner", reverse.TargetClassKey)
+	s.Equal("JurisdictionalWalletDefinition", reverse.LinkClassMember)
+}
+
 func (s *RelationContextTestSuite) TestClear() {
 	ctx := NewRelationContext()
 
