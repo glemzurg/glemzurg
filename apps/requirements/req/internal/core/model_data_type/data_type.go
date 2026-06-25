@@ -235,6 +235,32 @@ func IsAtomicUnconstrained(dataType *DataType) bool {
 		dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_UNCONSTRAINED
 }
 
+// ContainsReferenceConstraint reports whether dataType or any nested field/element type
+// is a parsed atomic reference (ref from / ref of).
+func ContainsReferenceConstraint(dataType *DataType) bool {
+	if dataType == nil {
+		return false
+	}
+
+	switch dataType.CollectionType {
+	case COLLECTION_TYPE_ATOMIC:
+		return dataType.Atomic != nil &&
+			dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_REFERENCE
+	case COLLECTION_TYPE_RECORD:
+		for i := range dataType.RecordFields {
+			if ContainsReferenceConstraint(dataType.RecordFields[i].FieldDataType) {
+				return true
+			}
+		}
+		return false
+	case COLLECTION_TYPE_STACK, COLLECTION_TYPE_UNORDERED, COLLECTION_TYPE_ORDERED, COLLECTION_TYPE_QUEUE:
+		return dataType.Atomic != nil &&
+			dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_REFERENCE
+	default:
+		return false
+	}
+}
+
 // String returns a string representation of the DataType.
 func (d DataType) String() string {
 	switch d.CollectionType {

@@ -1,9 +1,7 @@
 
 
 
-multiplicity enforced in invariants
 invariants over associations
 invariants reverse over associations
-named sets in invariant
 span forced in invariant
 

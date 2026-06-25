@@ -7,6 +7,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
@@ -21,7 +23,10 @@ func validateSimulationModel(model *core.Model) error {
 	if err := validateEventActionParameters(model); err != nil {
 		return err
 	}
-	return validateRequiresSamplingSupport(model)
+	if err := validateRequiresSamplingSupport(model); err != nil {
+		return err
+	}
+	return validateReferenceDataTypeInvariants(model)
 }
 
 func validateAtLeastOneSimulatableClass(model *core.Model) error {
@@ -151,4 +156,78 @@ func validateRequiresSamplingSupport(model *core.Model) error {
 		}
 	}
 	return nil
+}
+
+// validateReferenceDataTypeInvariants rejects models where a reference data type lacks a
+// formal constraint the simulator can enforce. Attributes need attribute invariants;
+// action parameters need parsed requires (preconditions).
+func validateReferenceDataTypeInvariants(model *core.Model) error {
+	var messages []string
+
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				if len(class.States) == 0 {
+					continue
+				}
+				messages = append(messages, collectReferenceAttributeInvariantGaps(class)...)
+				messages = append(messages, collectReferenceParameterInvariantGaps(class)...)
+			}
+		}
+	}
+
+	if len(messages) == 0 {
+		return nil
+	}
+	sort.Strings(messages)
+	return fmt.Errorf("%s", strings.Join(messages, "; "))
+}
+
+func collectReferenceAttributeInvariantGaps(class model_class.Class) []string {
+	var messages []string
+
+	for _, attr := range class.Attributes {
+		if !model_data_type.ContainsReferenceConstraint(attr.DataType) {
+			continue
+		}
+		if hasParsedLogic(attr.Invariants) {
+			continue
+		}
+		messages = append(messages, fmt.Sprintf(
+			`class %q attribute %q: reference data type has no invariant`,
+			class.Name, attr.Name,
+		))
+	}
+
+	return messages
+}
+
+func collectReferenceParameterInvariantGaps(class model_class.Class) []string {
+	var messages []string
+
+	for _, action := range class.Actions {
+		for _, param := range action.Parameters {
+			if !model_data_type.ContainsReferenceConstraint(param.DataType) {
+				continue
+			}
+			if hasParsedLogic(action.Requires) {
+				continue
+			}
+			messages = append(messages, fmt.Sprintf(
+				`class %q action %q parameter %q: reference data type has no invariant`,
+				class.Name, action.Name, param.Name,
+			))
+		}
+	}
+
+	return messages
+}
+
+func hasParsedLogic(logics []model_logic.Logic) bool {
+	for _, logic := range logics {
+		if logic.Spec.Expression != nil {
+			return true
+		}
+	}
+	return false
 }
