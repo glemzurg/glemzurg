@@ -5,9 +5,11 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
@@ -255,6 +257,15 @@ func buildActionExecutor(
 func buildStepParameterGenerator(bindingsBuilder *state.BindingsBuilder) (*actions.ParameterBinder, *StepParameterGenerator) {
 	paramBinder := actions.NewParameterBinder()
 	paramSampler := actions.NewParameterSampler(paramBinder, bindingsBuilder.NamedSetValues())
+	paramSampler.SetPeerFieldDistinctLookup(func(classKey identity.Key, fieldSubKey string) []object.Object {
+		var values []object.Object
+		for _, inst := range bindingsBuilder.State().InstancesByClass(classKey) {
+			if val := inst.GetAttribute(fieldSubKey); val != nil {
+				values = append(values, val)
+			}
+		}
+		return values
+	})
 	return paramBinder, NewStepParameterGenerator(paramBinder, paramSampler)
 }
 

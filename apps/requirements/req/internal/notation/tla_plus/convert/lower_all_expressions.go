@@ -19,11 +19,13 @@ func LowerAllExpressions(model *core.Model) error {
 	globalFunctions := BuildGlobalFunctionMap(model)
 	namedSets := BuildNamedSetMap(model)
 	allActions := BuildAllActionsMap(model)
+	classNames := BuildClassNameMap(model)
 
 	// 1. Lower model-level invariants (no class context).
 	modelCtx := &LowerContext{
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
+		ClassNames:      classNames,
 		AllActions:      allActions,
 	}
 	modelPF := NewExpressionParseFunc(modelCtx)
@@ -42,6 +44,7 @@ func LowerAllExpressions(model *core.Model) error {
 		gfCtx := &LowerContext{
 			GlobalFunctions: globalFunctions,
 			NamedSets:       namedSets,
+			ClassNames:      classNames,
 			AllActions:      allActions,
 			Parameters:      params,
 		}
@@ -64,7 +67,7 @@ func LowerAllExpressions(model *core.Model) error {
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if err := lowerAllClassExpressions(&class, globalFunctions, namedSets, allActions); err != nil {
+				if err := lowerAllClassExpressions(&class, globalFunctions, namedSets, classNames, allActions); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -78,7 +81,7 @@ func LowerAllExpressions(model *core.Model) error {
 }
 
 // lowerAllClassExpressions re-creates all ExpressionSpecs in a class with full context.
-func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSets, allActions map[string]identity.Key) error {
+func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key) error {
 	// Build class-level context maps.
 	attrNames := BuildAttributeNameMap(class)
 	actionNames := BuildActionNameMap(class)
@@ -91,6 +94,7 @@ func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSe
 		QueryNames:      queryNames,
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
+		ClassNames:      classNames,
 		AllActions:      allActions,
 	}
 	classPF := NewExpressionParseFunc(classCtx)
@@ -209,6 +213,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 	globalFunctions := BuildGlobalFunctionMap(model)
 	namedSets := BuildNamedSetMap(model)
 	allActions := BuildAllActionsMap(model)
+	classNames := BuildClassNameMap(model)
 
 	var errs []error
 
@@ -216,6 +221,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 	modelCtx := &LowerContext{
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
+		ClassNames:      classNames,
 		AllActions:      allActions,
 	}
 	modelPF := NewExpressionParseFuncStrict(modelCtx)
@@ -234,6 +240,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 		gfCtx := &LowerContext{
 			GlobalFunctions: globalFunctions,
 			NamedSets:       namedSets,
+			ClassNames:      classNames,
 			AllActions:      allActions,
 			Parameters:      params,
 		}
@@ -256,7 +263,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if classErrs := lowerAllClassExpressionsStrict(&class, globalFunctions, namedSets, allActions); classErrs != nil {
+				if classErrs := lowerAllClassExpressionsStrict(&class, globalFunctions, namedSets, classNames, allActions); classErrs != nil {
 					errs = append(errs, fmt.Errorf("class %q: %w", cKey.String(), classErrs))
 				}
 				subdomain.Classes[cKey] = class
@@ -272,7 +279,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 // lowerAllClassExpressionsStrict collects all expression errors in a class.
 //
 //complexity:cyclo:warn=20,fail=20 Walks all class expression sites.
-func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, namedSets, allActions map[string]identity.Key) error {
+func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key) error {
 	attrNames := BuildAttributeNameMap(class)
 	actionNames := BuildActionNameMap(class)
 	queryNames := BuildQueryNameMap(class)
@@ -284,6 +291,7 @@ func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, n
 		QueryNames:      queryNames,
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
+		ClassNames:      classNames,
 		AllActions:      allActions,
 	}
 	classPF := NewExpressionParseFuncStrict(classCtx)

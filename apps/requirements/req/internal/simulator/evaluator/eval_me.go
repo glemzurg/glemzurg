@@ -304,6 +304,14 @@ func evalNamedSetRef(n *me.NamedSetRef, bindings *Bindings) *EvalResult {
 	return NewEvalResult(value)
 }
 
+func evalClassRef(n *me.ClassRef, bindings *Bindings) *EvalResult {
+	value, found := bindings.GetValue(n.Name)
+	if !found {
+		return NewEvalError("class instance set not found: %s", n.Name)
+	}
+	return NewEvalResult(value)
+}
+
 // ============================================================
 // Binary operand helpers
 // ============================================================
@@ -1090,6 +1098,11 @@ func evalRegistryCall(body me.Expression, params []string, args []object.Object,
 	}
 
 	return Eval(body, childBindings)
+}
+
+// ObjectsEqual compares two simulator objects for structural equality.
+func ObjectsEqual(left, right object.Object) bool {
+	return objectsEqual(left, right)
 }
 
 // objectsEqual compares two objects for structural equality.

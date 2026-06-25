@@ -36,6 +36,8 @@ func (s *LowerTestSuite) SetupTest() {
 	classKey2, _ := identity.NewClassKey(subKey2, "c2")
 	crossActionKey, _ := identity.NewActionKey(classKey2, "OtherAction")
 
+	currencyClassKey, _ := identity.NewClassKey(subKey, "currency")
+
 	s.ctx = &LowerContext{
 		ClassKey:        classKey,
 		AttributeNames:  map[string]identity.Key{"balance": attrKey},
@@ -43,8 +45,9 @@ func (s *LowerTestSuite) SetupTest() {
 		QueryNames:      map[string]identity.Key{"GetBalance": queryKey},
 		GlobalFunctions: map[string]identity.Key{"_Helper": globalKey},
 		NamedSets:       map[string]identity.Key{"valid_statuses": namedSetKey},
+		ClassNames:      map[string]identity.Key{"Currency": currencyClassKey},
 		AllActions:      map[string]identity.Key{"s2!c2!OtherAction": crossActionKey},
-		Parameters:      map[string]bool{"amount": true},
+		Parameters:      map[string]bool{"amount": true, "Abbr": true},
 	}
 }
 
@@ -911,6 +914,34 @@ func (s *LowerTestSuite) TestLocalVarShadowsAttribute() {
 	lv, ok := cmp.Left.(*me.LocalVar)
 	s.True(ok)
 	s.Equal("balance", lv.Name)
+}
+
+func (s *LowerTestSuite) TestLowerQuantifierOverClassName() {
+	result, err := Lower(&ast.Quantifier{
+		Quantifier: "∀",
+		Membership: &ast.Membership{
+			Operator: "∈",
+			Left:     &ast.Identifier{Value: "c"},
+			Right:    &ast.Identifier{Value: "Currency"},
+		},
+		Predicate: &ast.BinaryEquality{
+			Operator: "≠",
+			Left: &ast.FieldAccess{
+				Base:   &ast.Identifier{Value: "c"},
+				Member: "abbr",
+			},
+			Right: &ast.Identifier{Value: "Abbr"},
+		},
+	}, s.ctx)
+	s.Require().NoError(err)
+	q, ok := result.(*me.Quantifier)
+	s.True(ok)
+	classRef, ok := q.Domain.(*me.ClassRef)
+	s.True(ok)
+	s.Equal("Currency", classRef.Name)
+	cmp, ok := q.Predicate.(*me.Compare)
+	s.True(ok)
+	s.Equal(me.CompareNeq, cmp.Op)
 }
 
 func (s *LowerTestSuite) TestLowerBigInteger() {

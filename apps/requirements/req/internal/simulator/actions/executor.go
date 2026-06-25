@@ -106,6 +106,9 @@ type ActionExecutor struct {
 	// checkAllInvariants while a transition is mid-flight; ExecuteTransition
 	// runs them after links and _state are fully applied.
 	deferMultiplicityInActionCheck bool
+
+	// classNameMap binds class display names to instance sets for action requires.
+	classNameMap map[identity.Key]string
 }
 
 // InvariantRuntimeCheckers pairs the primary invariant and data-type checkers used during action execution.
@@ -123,6 +126,10 @@ func NewActionExecutor(
 	acIndex AssociationClassIndex,
 	rng *rand.Rand,
 ) *ActionExecutor {
+	var classNameMap map[identity.Key]string
+	if runtime.Checker != nil {
+		classNameMap = runtime.Checker.ClassNameMap()
+	}
 	return &ActionExecutor{
 		bindingsBuilder:    bindingsBuilder,
 		invariantChecker:   runtime.Checker,
@@ -131,6 +138,7 @@ func NewActionExecutor(
 		guardEvaluator:     guardEvaluator,
 		acIndex:            acIndex,
 		rng:                rng,
+		classNameMap:       classNameMap,
 	}
 }
 
@@ -309,6 +317,18 @@ func (e *ActionExecutor) checkMultiplicityInvariants() invariants.ViolationError
 	return e.structuralCheckers.Multiplicity.CheckState(e.bindingsBuilder.State())
 }
 
+func (e *ActionExecutor) buildRequiresBindings(
+	instance *state.ClassInstance,
+	parameters map[string]object.Object,
+) *evaluator.Bindings {
+	if len(e.classNameMap) == 0 {
+		return e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
+	}
+	return e.bindingsBuilder.BuildWithClassInstancesForInstanceWithVariables(
+		e.classNameMap, instance, parameters,
+	)
+}
+
 // executeActionInContext runs a single action within an existing context.
 // This is called both for top-level actions and for chained actions.
 func (e *ActionExecutor) executeActionInContext(
@@ -329,7 +349,7 @@ func (e *ActionExecutor) executeActionInContext(
 		)
 	}
 
-	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
+	bindings := e.buildRequiresBindings(instance, parameters)
 
 	reqViolations, err := e.evaluateActionRequires(action, instance.ID, bindings)
 	if err != nil {
@@ -522,7 +542,7 @@ func (e *ActionExecutor) executeQueryInContext(
 	}
 	defer ctx.DecrementDepth()
 
-	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
+	bindings := e.buildRequiresBindings(instance, parameters)
 	if err := checkQueryRequires(query, bindings); err != nil {
 		return nil, err
 	}

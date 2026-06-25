@@ -319,7 +319,7 @@ func ContainsAnyPrimedME(expr me.Expression) bool {
 	// Leaf nodes.
 	case *me.IntLiteral, *me.RationalLiteral, *me.BoolLiteral, *me.StringLiteral,
 		*me.SetConstant, *me.SelfRef, *me.AttributeRef, *me.LocalVar,
-		*me.PriorFieldValue, *me.NamedSetRef:
+		*me.PriorFieldValue, *me.NamedSetRef, *me.ClassRef:
 		return false
 
 	// Binary operators.

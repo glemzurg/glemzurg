@@ -231,25 +231,47 @@ func expressionSupportsParamSampling(expr me.Expression) bool {
 
 	switch node := expr.(type) {
 	case *me.IfThenElse:
-		return isNullableElseTuplePattern(node) ||
-			isNullableElseMirrorPattern(node) ||
-			isNullableElseExclusionEqualityPattern(node) ||
-			isNullableElseMembershipPattern(node) ||
-			isNullableElseEqualityPattern(node)
+		return ifThenElseSupportsParamSampling(node)
 	case *me.Membership:
-		if node.Negated {
-			return false
-		}
-		_, _, tupleOK := tupleMembershipInNamedSet(node)
-		_, _, memberOK := paramMembershipInNamedSet(node)
-		_, _, enumOK := paramInStringEnum(node)
-		return tupleOK || memberOK || enumOK
+		return membershipSupportsParamSampling(node)
 	case *me.BinaryLogic:
 		return expressionSupportsParamSampling(node.Left) &&
 			expressionSupportsParamSampling(node.Right)
+	case *me.Quantifier:
+		return quantifierSupportsParamSampling(node)
+	default:
+		return expressionLeafSupportsParamSampling(expr)
+	}
+}
+
+func ifThenElseSupportsParamSampling(node *me.IfThenElse) bool {
+	return isNullableElseTuplePattern(node) ||
+		isNullableElseMirrorPattern(node) ||
+		isNullableElseExclusionEqualityPattern(node) ||
+		isNullableElseMembershipPattern(node) ||
+		isNullableElseEqualityPattern(node)
+}
+
+func membershipSupportsParamSampling(node *me.Membership) bool {
+	if node.Negated {
+		return false
+	}
+	_, _, tupleOK := tupleMembershipInNamedSet(node)
+	_, _, memberOK := paramMembershipInNamedSet(node)
+	_, _, enumOK := paramInStringEnum(node)
+	return tupleOK || memberOK || enumOK
+}
+
+func quantifierSupportsParamSampling(node *me.Quantifier) bool {
+	_, ok := detectPeerFieldDistinctFromParam(node)
+	return ok
+}
+
+func expressionLeafSupportsParamSampling(expr me.Expression) bool {
+	switch expr.(type) {
 	case *me.LocalVar, *me.BoolLiteral, *me.IntLiteral, *me.RationalLiteral,
 		*me.StringLiteral, *me.SetLiteral, *me.TupleLiteral, *me.RecordLiteral,
-		*me.SetConstant, *me.SelfRef, *me.AttributeRef, *me.NamedSetRef, *me.PriorFieldValue:
+		*me.SetConstant, *me.SelfRef, *me.AttributeRef, *me.NamedSetRef, *me.ClassRef, *me.PriorFieldValue:
 		return true
 	default:
 		return false

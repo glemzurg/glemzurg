@@ -56,6 +56,17 @@ func mergeConstraintsFromExpr(expr me.Expression, constraints *parameterConstrai
 	case *me.BinaryLogic:
 		mergeConstraintsFromExpr(node.Left, constraints)
 		mergeConstraintsFromExpr(node.Right, constraints)
+	case *me.Quantifier:
+		tryExtractPeerFieldDistinctFromParam(node, constraints)
+	}
+}
+
+func tryExtractPeerFieldDistinctFromParam(node *me.Quantifier, constraints *parameterConstraints) {
+	if constraints.peerFieldDistinct != nil {
+		return
+	}
+	if pattern, ok := detectPeerFieldDistinctFromParam(node); ok {
+		constraints.peerFieldDistinct = &pattern
 	}
 }
 

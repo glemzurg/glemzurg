@@ -4,6 +4,7 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
@@ -15,6 +16,8 @@ const maxNotInNamedSetAttempts = 10
 type ParameterSampler struct {
 	binder         *ParameterBinder
 	namedSetValues map[string]object.Object
+	// peerFieldDistinctLookup returns field values already used by class instances.
+	peerFieldDistinctLookup func(classKey identity.Key, fieldSubKey string) []object.Object
 	// generateOverride is set only by tests to force deterministic parameter draws.
 	generateOverride func(paramDefs []model_state.Parameter, rng *rand.Rand) map[string]object.Object
 }
@@ -25,6 +28,13 @@ func NewParameterSampler(binder *ParameterBinder, namedSetValues map[string]obje
 		binder:         binder,
 		namedSetValues: namedSetValues,
 	}
+}
+
+// SetPeerFieldDistinctLookup configures lookup of field values already used by class instances.
+func (s *ParameterSampler) SetPeerFieldDistinctLookup(
+	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) {
+	s.peerFieldDistinctLookup = lookup
 }
 
 // SampleFromRequires builds parameters for paramDefs using the action's effective requires.
@@ -55,6 +65,7 @@ type parameterConstraints struct {
 	nullableElseMembership        *nullableElseMembershipConstraint
 	nullableElseEquality          *nullableElseEqualityConstraint
 	tupleInSet                    *tupleInSetConstraint
+	peerFieldDistinct             *peerFieldDistinctFromParamPattern
 	enumValues                    map[string][]string
 }
 
@@ -128,6 +139,7 @@ func applyParameterConstraints(
 	rng *rand.Rand,
 	namedSetValues map[string]object.Object,
 	nullableByName map[string]bool,
+	peerFieldDistinctLookup func(classKey identity.Key, fieldSubKey string) []object.Object,
 ) {
 	switch {
 	case constraints.nullableElseExclusionEquality != nil:
@@ -155,6 +167,38 @@ func applyParameterConstraints(
 			continue
 		}
 		result[paramName] = object.NewString(values[rng.Intn(len(values))])
+	}
+
+	if constraints.peerFieldDistinct != nil {
+		applyPeerFieldDistinct(result, constraints.peerFieldDistinct, rng, peerFieldDistinctLookup)
+	}
+}
+
+func applyPeerFieldDistinct(
+	result map[string]object.Object,
+	pattern *peerFieldDistinctFromParamPattern,
+	rng *rand.Rand,
+	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) {
+	if lookup == nil {
+		return
+	}
+	used := lookup(pattern.ClassKey, pattern.FieldSubKey)
+	if len(used) == 0 {
+		return
+	}
+	usedSet := make(map[string]bool, len(used))
+	for _, val := range used {
+		if str, ok := val.(*object.String); ok {
+			usedSet[str.Value()] = true
+		}
+	}
+	for range maxNotInNamedSetAttempts {
+		candidate := randomString(rng)
+		if str, ok := candidate.(*object.String); ok && !usedSet[str.Value()] {
+			result[pattern.ParamName] = candidate
+			return
+		}
 	}
 }
 

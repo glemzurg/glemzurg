@@ -471,6 +471,8 @@ const (
 	ExprModuleRequired        Code = "EXPR_MODULE_REQUIRED"         // BuiltinCall Module is empty.
 	ExprFunctionRequired      Code = "EXPR_FUNCTION_REQUIRED"       // BuiltinCall Function is empty.
 	ExprSetkeyInvalid         Code = "EXPR_SETKEY_INVALID"          // NamedSetRef SetKey failed validation.
+	ExprClasskeyInvalid       Code = "EXPR_CLASSKEY_INVALID"        // ClassRef ClassKey failed validation.
+	ExprClassNameRequired     Code = "EXPR_CLASS_NAME_REQUIRED"     // ClassRef Name is empty.
 
 	// ---------------------------------------------------------------
 	// DataType errors — data type validation.

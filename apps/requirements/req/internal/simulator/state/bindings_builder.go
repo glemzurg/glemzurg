@@ -177,6 +177,19 @@ func (b *BindingsBuilder) BuildWithClassInstancesForInstance(
 	return bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
 }
 
+// BuildWithClassInstancesForInstanceWithVariables combines class instance sets, self, and parameters.
+func (b *BindingsBuilder) BuildWithClassInstancesForInstanceWithVariables(
+	classNameMap map[identity.Key]string,
+	instance *ClassInstance,
+	variables map[string]object.Object,
+) *evaluator.Bindings {
+	bindings := b.BuildWithClassInstancesForInstance(classNameMap, instance)
+	for name, value := range variables {
+		bindings.Set(name, value, evaluator.NamespaceLocal)
+	}
+	return bindings
+}
+
 // resolveAttributes returns the instance's attributes with derived values injected.
 // If no DerivedAttributeResolver is set, returns the original attributes unchanged.
 func (b *BindingsBuilder) resolveAttributes(instance *ClassInstance) *object.Record {

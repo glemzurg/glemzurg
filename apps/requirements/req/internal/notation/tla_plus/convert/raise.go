@@ -28,6 +28,9 @@ type RaiseContext struct {
 	// NamedSets maps named set identity keys to their display names.
 	NamedSets map[identity.Key]string
 
+	// ClassNames maps class identity keys to their display names.
+	ClassNames map[identity.Key]string
+
 	// ActionScopePaths maps cross-class action identity keys to their
 	// fully scoped path (e.g., "Domain!Subdomain!Class!ActionName").
 	ActionScopePaths map[identity.Key]string
@@ -91,6 +94,9 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 
 	case *me.NamedSetRef:
 		return raiseNamedSetRef(e, ctx)
+
+	case *me.ClassRef:
+		return raiseClassRef(e, ctx)
 
 	// --- Unary operators ---
 	case *me.Negate:
@@ -375,6 +381,18 @@ func raiseNamedSetRef(e *me.NamedSetRef, ctx *RaiseContext) (ast.Expression, err
 	name, ok := ctx.NamedSets[e.SetKey]
 	if !ok {
 		return nil, fmt.Errorf("unresolved named set key: %v", e.SetKey)
+	}
+	return &ast.Identifier{Value: name}, nil
+}
+
+func raiseClassRef(e *me.ClassRef, ctx *RaiseContext) (ast.Expression, error) {
+	name := e.Name
+	if name == "" {
+		var ok bool
+		name, ok = ctx.ClassNames[e.ClassKey]
+		if !ok {
+			return nil, fmt.Errorf("unresolved class key: %v", e.ClassKey)
+		}
 	}
 	return &ast.Identifier{Value: name}, nil
 }

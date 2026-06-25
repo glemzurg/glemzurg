@@ -398,3 +398,13 @@ type NamedSetRef struct {
 
 func (n *NamedSetRef) expressionNode()  {}
 func (n *NamedSetRef) NodeType() string { return NodeNamedSetRef }
+
+// ClassRef references a class instance set by key. Name is the class display name
+// used for simulator binding lookup and TLA+ round-trip.
+type ClassRef struct {
+	ClassKey identity.Key
+	Name     string
+}
+
+func (n *ClassRef) expressionNode()  {}
+func (n *ClassRef) NodeType() string { return NodeClassRef }

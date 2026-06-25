@@ -69,6 +69,7 @@ const (
 	NodeGlobalCall  = "global_call"
 	NodeBuiltinCall = "builtin_call"
 	NodeNamedSetRef = "named_set_ref"
+	NodeClassRef    = "class_ref"
 )
 
 // ValidateExpression validates an Expression if it is non-nil.

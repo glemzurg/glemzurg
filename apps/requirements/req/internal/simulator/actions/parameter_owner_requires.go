@@ -191,29 +191,56 @@ func assessLogics(
 		if req.Type == model_logic.LogicTypeLet {
 			continue
 		}
-		expr := req.Spec.Expression
-		if expr == nil {
-			return nil, fmt.Errorf("%s %s %s[%d]: expression not lowered", o.Kind, o.Name, kindLabel, i)
+		failure, failed, err := assessOneLogic(o, bindings, kindLabel, i, req)
+		if err != nil {
+			return nil, err
 		}
-		if model_bridge.ContainsAnyPrimedME(expr) {
-			return nil, fmt.Errorf("%s %s %s[%d]: must not contain primed variables", o.Kind, o.Name, kindLabel, i)
+		if failed {
+			failures = append(failures, failure)
 		}
-
-		result := evaluator.Eval(expr, bindings)
-		if result.IsError() {
-			return nil, fmt.Errorf("%s %s %s[%d] evaluation error: %s", o.Kind, o.Name, kindLabel, i, result.Error.Inspect())
-		}
-		if isTrueBoolean(result.Value) {
-			continue
-		}
-
-		msg := _EXPRESSION_RETURNED_NIL
-		if result.Value != nil {
-			msg = fmt.Sprintf("expression returned %s", result.Value.Inspect())
-		}
-		failures = append(failures, RequireAssessmentFailure{Index: i, Logic: req, Message: msg})
 	}
 	return failures, nil
+}
+
+func assessOneLogic(
+	o ParameterOwner,
+	bindings *evaluator.Bindings,
+	kindLabel string,
+	index int,
+	req model_logic.Logic,
+) (RequireAssessmentFailure, bool, error) {
+	expr := req.Spec.Expression
+	if expr == nil {
+		return RequireAssessmentFailure{}, false, fmt.Errorf("%s %s %s[%d]: expression not lowered", o.Kind, o.Name, kindLabel, index)
+	}
+	if model_bridge.ContainsAnyPrimedME(expr) {
+		return RequireAssessmentFailure{}, false, fmt.Errorf("%s %s %s[%d]: must not contain primed variables", o.Kind, o.Name, kindLabel, index)
+	}
+
+	if pattern, ok := detectPeerFieldDistinctFromParam(expr); ok {
+		if assessPeerFieldDistinctFromParam(pattern, bindings) {
+			return RequireAssessmentFailure{}, false, nil
+		}
+		return RequireAssessmentFailure{
+			Index:   index,
+			Logic:   req,
+			Message: fmt.Sprintf("expression returned %s", "FALSE"),
+		}, true, nil
+	}
+
+	result := evaluator.Eval(expr, bindings)
+	if result.IsError() {
+		return RequireAssessmentFailure{}, false, fmt.Errorf("%s %s %s[%d] evaluation error: %s", o.Kind, o.Name, kindLabel, index, result.Error.Inspect())
+	}
+	if isTrueBoolean(result.Value) {
+		return RequireAssessmentFailure{}, false, nil
+	}
+
+	msg := _EXPRESSION_RETURNED_NIL
+	if result.Value != nil {
+		msg = fmt.Sprintf("expression returned %s", result.Value.Inspect())
+	}
+	return RequireAssessmentFailure{Index: index, Logic: req, Message: msg}, true, nil
 }
 
 // ParameterInvariantViolations converts parameter invariant assessment failures into violations.
@@ -305,7 +332,7 @@ func (s *ParameterSampler) sampleUntilRequiresSatisfied(
 	for range maxParameterSampleAttempts {
 		result := prep.generate(paramDefs, rng)
 		if s.generateOverride == nil {
-			applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName)
+			applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName, s.peerFieldDistinctLookup)
 		}
 		enforceParameterNullability(result, paramDefs, rng)
 		satisfied, err := owner.parametersSatisfySamplingAssessments(

@@ -48,6 +48,13 @@ func validNamedSetKey() identity.Key {
 	return key
 }
 
+func validClassKey() identity.Key {
+	domainKey, _ := identity.NewDomainKey("finance")
+	subKey, _ := identity.NewSubdomainKey(domainKey, "wallet")
+	key, _ := identity.NewClassKey(subKey, "currency")
+	return key
+}
+
 func (s *ExpressionTestSuite) TestValidateLiterals() {
 	tests := []struct {
 		testName string
@@ -312,6 +319,9 @@ func (s *ExpressionTestSuite) TestValidateCalls() {
 		{testName: "error builtin call no function", expr: &BuiltinCall{Module: "_Seq"}, errstr: "Function"},
 		{testName: "valid named set ref", expr: &NamedSetRef{SetKey: validNamedSetKey()}},
 		{testName: "error named set ref empty key", expr: &NamedSetRef{}, errstr: "SetKey"},
+		{testName: "valid class ref", expr: &ClassRef{ClassKey: validClassKey(), Name: "Currency"}},
+		{testName: "error class ref empty key", expr: &ClassRef{Name: "Currency"}, errstr: "ClassKey"},
+		{testName: "error class ref empty name", expr: &ClassRef{ClassKey: validClassKey()}, errstr: "Name"},
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
@@ -347,6 +357,7 @@ func (s *ExpressionTestSuite) TestNodeType() {
 	s.Equal(NodeIfThenElse, (&IfThenElse{}).NodeType())
 	s.Equal(NodeRecordUpdate, (&RecordUpdate{}).NodeType())
 	s.Equal(NodeNamedSetRef, (&NamedSetRef{}).NodeType())
+	s.Equal(NodeClassRef, (&ClassRef{}).NodeType())
 }
 
 func (s *ExpressionTestSuite) TestRecursiveValidation() {

@@ -265,6 +265,32 @@ func BuildNamedSetMap(model *core.Model) map[string]identity.Key {
 	return m
 }
 
+// BuildClassNameMap maps class display names to identity keys across the whole model.
+func BuildClassNameMap(model *core.Model) map[string]identity.Key {
+	m := make(map[string]identity.Key)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				m[class.Name] = class.Key
+			}
+		}
+	}
+	return m
+}
+
+// BuildClassKeyToNameMap maps class identity keys to display names across the whole model.
+func BuildClassKeyToNameMap(model *core.Model) map[identity.Key]string {
+	m := make(map[identity.Key]string)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				m[class.Key] = class.Name
+			}
+		}
+	}
+	return m
+}
+
 func BuildAllActionsMap(model *core.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key)
 	for _, domain := range model.Domains {

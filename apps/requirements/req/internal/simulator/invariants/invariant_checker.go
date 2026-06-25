@@ -86,6 +86,11 @@ type parsedGuarantee struct {
 	index      int    // Index in the original guarantees array
 }
 
+// ClassNameMap returns class keys mapped to display names for class-set bindings.
+func (c *InvariantChecker) ClassNameMap() map[identity.Key]string {
+	return c.classNameMap
+}
+
 // NewInvariantChecker creates a new invariant checker from a model.
 // The model's ExpressionSpec.Expression fields must be populated
 // (via parse functions passed to constructors).

@@ -60,6 +60,9 @@ type LowerContext struct {
 	// NamedSets maps named set names to their identity keys.
 	NamedSets map[string]identity.Key
 
+	// ClassNames maps class display names to their identity keys for quantifier domains.
+	ClassNames map[string]identity.Key
+
 	// AllActions maps fully scoped action names (Domain!Subdomain!Class!Action) to identity keys
 	// for cross-class action calls.
 	AllActions map[string]identity.Key
@@ -374,6 +377,11 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 		return &me.NamedSetRef{SetKey: key}, nil
 	}
 
+	// Check class display names → ClassRef.
+	if key, ok := ctx.ClassNames[name]; ok {
+		return &me.ClassRef{ClassKey: key, Name: name}, nil
+	}
+
 	// NULL is the model's absent-value sentinel; the simulator represents it as {}.
 	if name == "NULL" {
 		return &me.SetLiteral{Elements: []me.Expression{}}, nil
@@ -390,6 +398,7 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 	var available []string
 	available = append(available, mapKeys(ctx.AttributeNames)...)
 	available = append(available, mapKeys(ctx.NamedSets)...)
+	available = append(available, mapKeys(ctx.ClassNames)...)
 	for k := range ctx.Parameters {
 		available = append(available, k)
 	}

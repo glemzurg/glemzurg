@@ -2,6 +2,7 @@ package logic_expression
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
@@ -650,6 +651,16 @@ func (n *BuiltinCall) Validate(ctx *coreerr.ValidationContext) error {
 func (n *NamedSetRef) Validate(ctx *coreerr.ValidationContext) error {
 	if err := n.SetKey.ValidateWithContext(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.ExprSetkeyInvalid, fmt.Sprintf("NamedSetRef.SetKey: %s", err.Error()), "SetKey")
+	}
+	return nil
+}
+
+func (n *ClassRef) Validate(ctx *coreerr.ValidationContext) error {
+	if err := n.ClassKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprClasskeyInvalid, fmt.Sprintf("ClassRef.ClassKey: %s", err.Error()), "ClassKey")
+	}
+	if strings.TrimSpace(n.Name) == "" {
+		return coreerr.New(ctx, coreerr.ExprClassNameRequired, "ClassRef.Name: is required", "Name")
 	}
 	return nil
 }

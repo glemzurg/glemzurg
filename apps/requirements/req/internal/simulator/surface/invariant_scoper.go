@@ -87,7 +87,7 @@ func walkIdentifiersLeaf(expr me.Expression, result map[string]bool) bool {
 	case *me.AttributeRef, *me.SelfRef, *me.PriorFieldValue:
 		// No identifier names to collect.
 	case *me.BoolLiteral, *me.IntLiteral, *me.RationalLiteral,
-		*me.StringLiteral, *me.SetConstant, *me.NamedSetRef:
+		*me.StringLiteral, *me.SetConstant, *me.NamedSetRef, *me.ClassRef:
 		// No expression children.
 	default:
 		return false
