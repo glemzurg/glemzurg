@@ -17,13 +17,13 @@
     },
     "parameters": {
       "type": "array",
-      "description": "Parameters for the action. Each parameter has a name and optional data type rules.",
+      "description": "Parameters for the action. Each entry matches parameter.schema.json (name, data_type_rules, type_spec, nullable). Parameter invariants are not listed here; they are separate logic files at actions/{action_key}/parameters/{normalized_param_name}/invariants/NNN.invariant.json relative to the class directory, where normalized_param_name is the parameter name lowercased with spaces replaced by underscores. Each invariant file validates against logic.schema.json with type 'assessment' or 'let'.",
       "items": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "description": "The name of the parameter.",
+            "description": "The name of the parameter. Also determines the parameters/ subdirectory name after normalization (see parameter.schema.json).",
             "minLength": 1
           },
           "data_type_rules": {

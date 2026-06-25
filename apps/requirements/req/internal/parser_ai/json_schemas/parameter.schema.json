@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "parameter.schema.json",
   "title": "Parameter",
-  "description": "Schema for a typed action or query parameter object. A parameter must have a name and may optionally include data type rules describing the expected value type. If validation fails, verify 'name' is present and non-empty.",
+  "description": "Schema for a typed action or query parameter object embedded in action or query JSON files. A parameter must have a name and may optionally include data type rules describing the expected value type. Parameter invariants are not inline in this object; they live in sibling directories validated separately with logic.schema.json. For an action parameter named 'Amount' on action key 'process_order', invariant files belong at classes/{class}/actions/process_order/parameters/amount/invariants/NNN.invariant.json (parameter directory name is the normalized parameter name: lowercase, spaces to underscores). Query parameters use classes/{class}/queries/{query_key}/parameters/{normalized_name}/invariants/NNN.invariant.json. Each invariant file is a Logic object whose type must be 'assessment' or 'let'. Invariant identity keys are pinvariant children of the parameter key. If validation fails, verify 'name' is present and non-empty.",
   "type": "object",
   "properties": {
     "name": {

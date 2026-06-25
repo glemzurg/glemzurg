@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "logic.schema.json",
   "title": "Logic",
-  "description": "Schema for a logic specification object. Logic objects represent formal or informal specifications used for preconditions (requires), postconditions (guarantees), safety rules, invariants, guards, and derivation policies. A logic object must have a description and may optionally include a formal notation and specification. If validation fails, verify 'description' is present and non-empty.",
+  "description": "Schema for a logic specification object. Logic objects represent formal or informal specifications used for preconditions (requires), postconditions (guarantees), safety rules, invariants (model, class, attribute, and action/query parameter), guards, and derivation policies. Parameter invariant files (pinvariant keys) live under actions/{action_key}/parameters/{param}/invariants/ or queries/{query_key}/parameters/{param}/invariants/ and must use type 'assessment' or 'let'. Attribute invariant files use the same assessment/let constraint. A logic object must have a description and may optionally include a formal notation and specification. If validation fails, verify 'description' is present and non-empty.",
   "type": "object",
   "properties": {
     "type": {
