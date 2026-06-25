@@ -52,12 +52,13 @@ type InvariantChecker struct {
 
 // parsedAttributeInvariantItem holds a pre-lowered attribute invariant with metadata.
 type parsedAttributeInvariantItem struct {
-	attributeName string
-	isLet         bool
-	target        string
-	expression    me.Expression
-	originalIndex int
-	spec          string
+	attributeFieldKey string // YAML field key (attribute SubKey) for instance lookup.
+	attributeName     string // Display name for violation messages.
+	isLet             bool
+	target            string
+	expression        me.Expression
+	originalIndex     int
+	spec              string
 }
 
 // parsedClassInvariantItem holds a pre-lowered class invariant with metadata.
@@ -182,12 +183,13 @@ func (c *InvariantChecker) loadAttributeInvariants(class model_class.Class) erro
 				return fmt.Errorf("class %s attribute %q invariant %d must not contain primed variables: %s", class.Name, attr.Name, i, inv.Spec.Specification)
 			}
 			items = append(items, parsedAttributeInvariantItem{
-				attributeName: attr.Name,
-				isLet:         isLet,
-				target:        inv.Target,
-				expression:    expr,
-				originalIndex: i,
-				spec:          inv.Spec.Specification,
+				attributeFieldKey: attr.Key.SubKey,
+				attributeName:     attr.Name,
+				isLet:             isLet,
+				target:            inv.Target,
+				expression:        expr,
+				originalIndex:     i,
+				spec:              inv.Spec.Specification,
 			})
 		}
 	}
@@ -341,47 +343,47 @@ func (c *InvariantChecker) CheckAttributeInvariants(
 		if !ok {
 			continue
 		}
-		nullableByName := attributeNullableByName(c.classAttributes[instance.ClassKey])
-		violations = append(violations, checkAttributeInvariantsForInstance(instance, items, nullableByName, bindingsBuilder)...)
+		nullableByFieldKey := attributeNullableByFieldKey(c.classAttributes[instance.ClassKey])
+		violations = append(violations, checkAttributeInvariantsForInstance(instance, items, nullableByFieldKey, bindingsBuilder)...)
 	}
 
 	return violations
 }
 
-func attributeNullableByName(attrs []model_class.Attribute) map[string]bool {
+func attributeNullableByFieldKey(attrs []model_class.Attribute) map[string]bool {
 	nullable := make(map[string]bool, len(attrs))
 	for _, attr := range attrs {
-		nullable[attr.Name] = attr.Nullable
+		nullable[attr.Key.SubKey] = attr.Nullable
 	}
 	return nullable
 }
 
 func skipNullableUnsetAttribute(
-	nullableByName map[string]bool,
+	nullableByFieldKey map[string]bool,
 	instance *state.ClassInstance,
-	attributeName string,
+	attributeFieldKey string,
 ) bool {
-	return nullableByName[attributeName] && object.IsNull(instance.GetAttribute(attributeName))
+	return nullableByFieldKey[attributeFieldKey] && object.IsNull(instance.GetAttribute(attributeFieldKey))
 }
 
 func checkAttributeInvariantsForInstance(
 	instance *state.ClassInstance,
 	items []parsedAttributeInvariantItem,
-	nullableByName map[string]bool,
+	nullableByFieldKey map[string]bool,
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
 	var violations ViolationErrors
 	bindings := bindingsBuilder.BuildForInstance(instance)
 
 	for _, item := range items {
-		if skipNullableUnsetAttribute(nullableByName, instance, item.attributeName) || !item.isLet {
+		if skipNullableUnsetAttribute(nullableByFieldKey, instance, item.attributeFieldKey) || !item.isLet {
 			continue
 		}
 		violations = append(violations, evalAttributeInvariantLet(instance, item, bindings)...)
 	}
 
 	for _, item := range items {
-		if skipNullableUnsetAttribute(nullableByName, instance, item.attributeName) || item.isLet {
+		if skipNullableUnsetAttribute(nullableByFieldKey, instance, item.attributeFieldKey) || item.isLet {
 			continue
 		}
 		violations = append(violations, evalAttributeInvariantAssessment(instance, item, bindings)...)
