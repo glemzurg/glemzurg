@@ -374,6 +374,14 @@ func paramsCoveredByConstraints(logics []model_logic.Logic) map[string]bool {
 	if constraints.nullableElseMembership != nil {
 		covered[constraints.nullableElseMembership.paramName] = true
 	}
+	if constraints.nullableElseMirror != nil {
+		covered[constraints.nullableElseMirror.driverParam] = true
+		covered[constraints.nullableElseMirror.followerParam] = true
+	}
+	if constraints.nullableElseEquality != nil {
+		covered[constraints.nullableElseEquality.driverParam] = true
+		covered[constraints.nullableElseEquality.followerParam] = true
+	}
 	if constraints.nullableElseTuple != nil {
 		for _, name := range constraints.nullableElseTuple.paramNames {
 			covered[name] = true

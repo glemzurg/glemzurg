@@ -8,12 +8,18 @@ import (
 // SamplingConstraintsForTest exposes constraint extraction for integration tests.
 type SamplingConstraintsForTest struct {
 	NullableElseMembership *nullableElseMembershipConstraint
+	NullableElseEquality   *nullableElseEqualityConstraint
+	NullableElseMirror     *nullableElseMirrorConstraint
 }
 
 // ExtractSamplingConstraintsForTest returns constraints extracted from sampling logics.
 func ExtractSamplingConstraintsForTest(logics []model_logic.Logic) SamplingConstraintsForTest {
 	c := extractParameterConstraints(logics)
-	return SamplingConstraintsForTest{NullableElseMembership: c.nullableElseMembership}
+	return SamplingConstraintsForTest{
+		NullableElseMembership: c.nullableElseMembership,
+		NullableElseEquality:   c.nullableElseEquality,
+		NullableElseMirror:     c.nullableElseMirror,
+	}
 }
 
 func extractParameterConstraints(requires []model_logic.Logic) parameterConstraints {
@@ -39,12 +45,66 @@ func mergeConstraintsFromExpr(expr me.Expression, constraints *parameterConstrai
 	switch node := expr.(type) {
 	case *me.IfThenElse:
 		tryExtractNullableElseTuple(node, constraints)
+		tryExtractNullableElseMirror(node, constraints)
 		tryExtractNullableElseMembership(node, constraints)
+		tryExtractNullableElseEquality(node, constraints)
 	case *me.Membership:
 		tryExtractMembershipConstraint(node, constraints)
 	case *me.BinaryLogic:
 		mergeConstraintsFromExpr(node.Left, constraints)
 		mergeConstraintsFromExpr(node.Right, constraints)
+	}
+}
+
+func tryExtractNullableElseMirror(node *me.IfThenElse, constraints *parameterConstraints) {
+	if constraints.nullableElseMirror != nil {
+		return
+	}
+
+	driver, condOk := nullCompareParam(node.Condition)
+	if !condOk || !isTrueLiteral(node.Then) {
+		return
+	}
+
+	membership, equality, ok := mirrorElseMembershipAndEquality(node.Else)
+	if !ok {
+		return
+	}
+
+	memberParam, setSubKey, ok := paramMembershipInNamedSet(membership)
+	if !ok || memberParam != driver {
+		return
+	}
+	eqDriver, follower, ok := paramEquality(equality)
+	if !ok || eqDriver != driver {
+		return
+	}
+
+	constraints.nullableElseMirror = &nullableElseMirrorConstraint{
+		driverParam:   driver,
+		followerParam: follower,
+		setSubKey:     setSubKey,
+	}
+}
+
+func tryExtractNullableElseEquality(node *me.IfThenElse, constraints *parameterConstraints) {
+	if constraints.nullableElseEquality != nil {
+		return
+	}
+
+	driver, condOk := nullCompareParam(node.Condition)
+	if !condOk || !isTrueLiteral(node.Then) {
+		return
+	}
+
+	eqDriver, follower, ok := paramEquality(node.Else)
+	if !ok || eqDriver != driver {
+		return
+	}
+
+	constraints.nullableElseEquality = &nullableElseEqualityConstraint{
+		driverParam:   driver,
+		followerParam: follower,
 	}
 }
 
@@ -182,6 +242,50 @@ func tupleMembershipInNamedSet(node *me.Membership) ([]string, string, bool) {
 	}
 
 	return paramNames, ref.SetKey.SubKey, true
+}
+
+func mirrorElseMembershipAndEquality(
+	elseExpr me.Expression,
+) (membership *me.Membership, equality *me.Compare, ok bool) {
+	and, ok := elseExpr.(*me.BinaryLogic)
+	if !ok || and.Op != me.LogicAnd {
+		return nil, nil, false
+	}
+
+	leftMembership, leftEq := membershipAndEqualityBranches(and.Left, and.Right)
+	if leftMembership != nil {
+		return leftMembership, leftEq, leftEq != nil
+	}
+
+	rightMembership, rightEq := membershipAndEqualityBranches(and.Right, and.Left)
+	if rightMembership != nil {
+		return rightMembership, rightEq, rightEq != nil
+	}
+	return nil, nil, false
+}
+
+func membershipAndEqualityBranches(
+	first, second me.Expression,
+) (membership *me.Membership, equality *me.Compare) {
+	if m, ok := first.(*me.Membership); ok && !m.Negated {
+		if eq, ok := second.(*me.Compare); ok && eq.Op == me.CompareEq {
+			return m, eq
+		}
+	}
+	return nil, nil
+}
+
+func paramEquality(expr me.Expression) (driver, follower string, ok bool) {
+	cmp, ok := expr.(*me.Compare)
+	if !ok || cmp.Op != me.CompareEq {
+		return "", "", false
+	}
+	left, lok := cmp.Left.(*me.LocalVar)
+	right, rok := cmp.Right.(*me.LocalVar)
+	if !lok || !rok {
+		return "", "", false
+	}
+	return left.Name, right.Name, true
 }
 
 func paramInStringEnum(node *me.Membership) (string, []string, bool) {

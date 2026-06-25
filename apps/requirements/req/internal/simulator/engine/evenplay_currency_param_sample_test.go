@@ -26,6 +26,7 @@ func TestEvenplayCurrencyAddSamplesISOFromNamedSet(t *testing.T) {
 	require.NoError(t, err)
 	constraints := actions.ExtractSamplingConstraintsForTest(logics)
 	require.NotNil(t, constraints.NullableElseMembership)
+	require.NotNil(t, constraints.NullableElseEquality)
 
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
@@ -40,7 +41,9 @@ func TestEvenplayCurrencyAddSamplesISOFromNamedSet(t *testing.T) {
 		if object.IsNull(result["ISO"]) {
 			continue
 		}
-		require.Len(t, result["ISO"].(*object.String).Value(), 3)
+		iso := result["ISO"].(*object.String).Value()
+		require.Len(t, iso, 3)
+		require.Equal(t, iso, result["Abbr"].(*object.String).Value())
 	}
 }
 

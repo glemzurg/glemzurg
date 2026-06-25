@@ -231,7 +231,10 @@ func expressionSupportsParamSampling(expr me.Expression) bool {
 
 	switch node := expr.(type) {
 	case *me.IfThenElse:
-		return isNullableElseTuplePattern(node) || isNullableElseMembershipPattern(node)
+		return isNullableElseTuplePattern(node) ||
+			isNullableElseMirrorPattern(node) ||
+			isNullableElseMembershipPattern(node) ||
+			isNullableElseEqualityPattern(node)
 	case *me.Membership:
 		if node.Negated {
 			return false
@@ -263,6 +266,32 @@ func isNullableElseMembershipPattern(node *me.IfThenElse) bool {
 	}
 	memberParam, _, ok := paramMembershipInNamedSet(membership)
 	return ok && memberParam == paramName
+}
+
+func isNullableElseEqualityPattern(node *me.IfThenElse) bool {
+	driver, ok := nullCompareParam(node.Condition)
+	if !ok || !isTrueLiteral(node.Then) {
+		return false
+	}
+	eqDriver, _, ok := paramEquality(node.Else)
+	return ok && eqDriver == driver
+}
+
+func isNullableElseMirrorPattern(node *me.IfThenElse) bool {
+	driver, ok := nullCompareParam(node.Condition)
+	if !ok || !isTrueLiteral(node.Then) {
+		return false
+	}
+	membership, equality, ok := mirrorElseMembershipAndEquality(node.Else)
+	if !ok {
+		return false
+	}
+	memberParam, _, ok := paramMembershipInNamedSet(membership)
+	if !ok || memberParam != driver {
+		return false
+	}
+	eqDriver, _, ok := paramEquality(equality)
+	return ok && eqDriver == driver
 }
 
 func isNullableElseTuplePattern(node *me.IfThenElse) bool {

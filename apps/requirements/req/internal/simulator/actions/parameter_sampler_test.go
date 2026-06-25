@@ -439,6 +439,84 @@ func (s *ParameterSamplerSuite) TestCurrencyRequiresSamplingSupport() {
 	s.NoError(err)
 }
 
+func currencyIsoAbbrRequireSpec() logic_spec.ExpressionSpec {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	ctx := &convert.LowerContext{
+		ClassKey: classKey,
+		Parameters: map[string]bool{
+			"ISO":  true,
+			"Abbr": true,
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `IF ISO = NULL THEN TRUE ELSE ISO = Abbr`, pf))
+}
+
+func (s *ParameterSamplerSuite) TestExtractNullableElseEqualityConstraint() {
+	constraints := extractParameterConstraints([]model_logic.Logic{
+		model_logic.NewLogic(
+			helper.Must(identity.NewActionRequireKey(helper.Must(identity.NewActionKey(mustKey("domain/finance/wallet/class/currency"), "add")), "0")),
+			model_logic.LogicTypeAssessment,
+			"When ISO is provided, Abbr must match ISO.",
+			"",
+			currencyIsoAbbrRequireSpec(),
+			nil,
+		),
+	})
+	s.Require().NotNil(constraints.nullableElseEquality)
+	s.Equal("ISO", constraints.nullableElseEquality.driverParam)
+	s.Equal("Abbr", constraints.nullableElseEquality.followerParam)
+}
+
+func (s *ParameterSamplerSuite) TestSampleCurrencyIsoAbbrCoupling() {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
+	isoParamKey := helper.Must(identity.NewParameterKey(actionKey, "iso"))
+	isoParam := helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true))
+	isoParam.SetInvariants([]model_logic.Logic{
+		model_logic.NewLogic(
+			helper.Must(identity.NewParameterInvariantKey(isoParamKey, "0")),
+			model_logic.LogicTypeAssessment,
+			"Valid ISO 4217 code when ISO is provided.",
+			"",
+			bareISOInvariantSpec(),
+			nil,
+		),
+	})
+	abbrParam := helper.Must(model_state.NewParameter(actionKey, "Abbr", "abbreviation", false))
+	action := model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "Add", Details: ""},
+		[]model_logic.Logic{
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+				model_logic.LogicTypeAssessment,
+				"When ISO is provided, Abbr must match ISO.",
+				"",
+				currencyIsoAbbrRequireSpec(),
+				nil,
+			),
+		},
+		nil,
+		nil,
+		[]model_state.Parameter{isoParam, abbrParam},
+	)
+	owner := ParameterOwnerFromAction(action)
+
+	binder := NewParameterBinder()
+	sampler := NewParameterSampler(binder, s.iso4217NamedSet())
+
+	for seed := range 200 {
+		result, err := sampler.SampleParameters(owner, action.Parameters, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		s.Require().NoError(err)
+		if object.IsNull(result["ISO"]) {
+			continue
+		}
+		s.Equal(result["ISO"].(*object.String).Value(), result["Abbr"].(*object.String).Value())
+		s.Contains([]string{"USD", "GBP", "CAD", "EUR"}, result["ISO"].(*object.String).Value())
+	}
+}
+
 func (s *ParameterSamplerSuite) TestSampleNullableElseMembershipFromNamedSet() {
 	classKey := mustKey("domain/finance/wallet/class/currency")
 	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))

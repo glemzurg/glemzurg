@@ -46,7 +46,9 @@ func (s *ParameterSampler) SampleQueryFromRequires(
 // parameterConstraints captures sampling hints extracted from require expression trees.
 type parameterConstraints struct {
 	nullableElseTuple      *nullableElseTupleConstraint
+	nullableElseMirror     *nullableElseMirrorConstraint
 	nullableElseMembership *nullableElseMembershipConstraint
+	nullableElseEquality   *nullableElseEqualityConstraint
 	tupleInSet             *tupleInSetConstraint
 	enumValues             map[string][]string
 }
@@ -66,6 +68,21 @@ type nullableElseTupleConstraint struct {
 type tupleInSetConstraint struct {
 	paramNames []string
 	setSubKey  string
+}
+
+// nullableElseMirrorConstraint couples a nullable driver to a follower when the driver is set:
+// IF driver = NULL THEN TRUE ELSE (driver ∈ namedSet ∧ driver = follower).
+type nullableElseMirrorConstraint struct {
+	driverParam   string
+	followerParam string
+	setSubKey     string
+}
+
+// nullableElseEqualityConstraint copies the driver onto the follower when the driver is set:
+// IF driver = NULL THEN TRUE ELSE driver = follower.
+type nullableElseEqualityConstraint struct {
+	driverParam   string
+	followerParam string
 }
 
 func parameterNullableByName(paramDefs []model_state.Parameter) map[string]bool {
@@ -102,9 +119,17 @@ func applyParameterConstraints(
 	switch {
 	case constraints.nullableElseTuple != nil:
 		applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues, nullableByName)
+	case constraints.nullableElseMirror != nil:
+		applyNullableElseMirror(result, constraints.nullableElseMirror, rng, namedSetValues, nullableByName)
 	case constraints.nullableElseMembership != nil:
 		applyNullableElseMembership(result, constraints.nullableElseMembership, rng, namedSetValues, nullableByName)
-	case constraints.tupleInSet != nil:
+	}
+
+	if constraints.nullableElseEquality != nil && constraints.nullableElseMirror == nil {
+		applyNullableElseEquality(result, constraints.nullableElseEquality, nullableByName)
+	}
+
+	if constraints.tupleInSet != nil {
 		applyTupleInSet(result, constraints.tupleInSet, rng, namedSetValues)
 	}
 
@@ -113,6 +138,40 @@ func applyParameterConstraints(
 			continue
 		}
 		result[paramName] = object.NewString(values[rng.Intn(len(values))])
+	}
+}
+
+func applyNullableElseMirror(
+	result map[string]object.Object,
+	constraint *nullableElseMirrorConstraint,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+	nullableByName map[string]bool,
+) {
+	if nullableByName[constraint.driverParam] && rng.Intn(5) == 0 {
+		result[constraint.driverParam] = evaluator.EMPTY_SET
+		return
+	}
+
+	value, ok := pickRandomStringFromNamedSet(constraint.setSubKey, namedSetValues, rng)
+	if !ok {
+		return
+	}
+
+	result[constraint.driverParam] = value
+	result[constraint.followerParam] = value.Clone()
+}
+
+func applyNullableElseEquality(
+	result map[string]object.Object,
+	constraint *nullableElseEqualityConstraint,
+	nullableByName map[string]bool,
+) {
+	if nullableByName[constraint.driverParam] && object.IsNull(result[constraint.driverParam]) {
+		return
+	}
+	if val, ok := result[constraint.driverParam]; ok && !object.IsNull(val) {
+		result[constraint.followerParam] = val.Clone()
 	}
 }
 
