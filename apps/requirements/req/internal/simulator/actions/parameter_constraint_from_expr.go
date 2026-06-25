@@ -52,6 +52,8 @@ func mergeConstraintsFromExpr(expr me.Expression, constraints *parameterConstrai
 		tryExtractNullableElseMembership(node, constraints)
 		tryExtractNullableElseEquality(node, constraints)
 		tryExtractNullableElseBooleanConstant(node, constraints)
+		mergeConstraintsFromExpr(node.Then, constraints)
+		mergeConstraintsFromExpr(node.Else, constraints)
 	case *me.Membership:
 		tryExtractMembershipConstraint(node, constraints)
 	case *me.BinaryLogic:

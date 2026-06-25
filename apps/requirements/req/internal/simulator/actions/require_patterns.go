@@ -81,9 +81,19 @@ func assessPeerFieldDistinctFromParam(pattern peerFieldDistinctFromParamPattern,
 			continue
 		}
 		fieldVal := peerRecord.Get(pattern.FieldSubKey)
-		if fieldVal != nil && evaluator.ObjectsEqual(fieldVal, paramVal) {
+		if peerFieldValueConflicts(fieldVal, paramVal) {
 			return false
 		}
 	}
 	return true
+}
+
+func peerFieldValueConflicts(peerVal, paramVal object.Object) bool {
+	if object.IsNull(peerVal) && object.IsNull(paramVal) {
+		return true
+	}
+	if object.IsNull(peerVal) || object.IsNull(paramVal) {
+		return false
+	}
+	return evaluator.ObjectsEqual(peerVal, paramVal)
 }

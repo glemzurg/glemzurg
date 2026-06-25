@@ -86,3 +86,27 @@ func TestAssessPeerFieldDistinctFromParamFailsOnDuplicatePeer(t *testing.T) {
 	}
 	require.False(t, assessPeerFieldDistinctFromParam(pattern, child))
 }
+
+func TestAssessPeerFieldDistinctFromParamFailsOnDuplicateNullPeer(t *testing.T) {
+	classKey := identity.Key{SubKey: "jurisdiction"}
+	self := object.NewRecord()
+	peer := object.NewRecord()
+	peer.Set("jurisdiction_code", object.Null())
+
+	classSet := object.NewSet()
+	classSet.Add(self)
+	classSet.Add(peer)
+
+	bindings := evaluator.NewBindings()
+	bindings.Set("Jurisdiction", classSet, evaluator.NamespaceGlobal)
+	child := bindings.WithSelf(self)
+	child.Set("JurisdictionCode", object.Null(), evaluator.NamespaceLocal)
+
+	pattern := peerFieldDistinctFromParamPattern{
+		ClassKey:    classKey,
+		ClassName:   "Jurisdiction",
+		FieldSubKey: "jurisdiction_code",
+		ParamName:   "JurisdictionCode",
+	}
+	require.False(t, assessPeerFieldDistinctFromParam(pattern, child))
+}
