@@ -64,6 +64,7 @@ type parameterConstraints struct {
 	nullableElseExclusionEquality *nullableElseExclusionEqualityConstraint
 	nullableElseMembership        *nullableElseMembershipConstraint
 	nullableElseEquality          *nullableElseEqualityConstraint
+	nullableElseBooleanConstant   *nullableElseBooleanConstantConstraint
 	tupleInSet                    *tupleInSetConstraint
 	peerFieldDistinct             *peerFieldDistinctFromParamPattern
 	enumValues                    map[string][]string
@@ -99,6 +100,14 @@ type nullableElseMirrorConstraint struct {
 type nullableElseEqualityConstraint struct {
 	driverParam   string
 	followerParam string
+}
+
+// nullableElseBooleanConstantConstraint fixes the follower when the nullable driver is null:
+// IF driver = NULL THEN follower = const ELSE TRUE.
+type nullableElseBooleanConstantConstraint struct {
+	driverParam   string
+	followerParam string
+	value         bool
 }
 
 // nullableElseExclusionEqualityConstraint couples a nullable driver to a follower across branches:
@@ -147,6 +156,22 @@ func applyParameterConstraints(
 	nullableByName map[string]bool,
 	peerFieldDistinctLookup func(classKey identity.Key, fieldSubKey string) []object.Object,
 ) {
+	applyPrimaryNullableElseConstraints(
+		result, constraints, rng, namedSetValues, nullableByName, peerFieldDistinctLookup,
+	)
+	applyFollowOnParameterConstraints(
+		result, constraints, rng, namedSetValues, nullableByName, peerFieldDistinctLookup,
+	)
+}
+
+func applyPrimaryNullableElseConstraints(
+	result map[string]object.Object,
+	constraints parameterConstraints,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+	nullableByName map[string]bool,
+	peerFieldDistinctLookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) {
 	if constraints.nullableElseExclusionEquality != nil &&
 		constraints.peerFieldDistinct != nil &&
 		constraints.peerFieldDistinct.ParamName == constraints.nullableElseExclusionEquality.followerParam {
@@ -161,19 +186,33 @@ func applyParameterConstraints(
 			nullableByName,
 			peerFieldDistinctLookup,
 		)
-	} else {
-		switch {
-		case constraints.nullableElseExclusionEquality != nil:
-			applyNullableElseExclusionEquality(result, constraints.nullableElseExclusionEquality, rng, namedSetValues, nullableByName)
-		case constraints.nullableElseTuple != nil:
-			applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues, nullableByName)
-		case constraints.nullableElseMirror != nil:
-			applyNullableElseMirror(result, constraints.nullableElseMirror, rng, namedSetValues, nullableByName)
-		case constraints.nullableElseMembership != nil:
-			applyNullableElseMembership(result, constraints.nullableElseMembership, rng, namedSetValues, nullableByName)
-		}
+		return
 	}
 
+	switch {
+	case constraints.nullableElseExclusionEquality != nil:
+		applyNullableElseExclusionEquality(result, constraints.nullableElseExclusionEquality, rng, namedSetValues, nullableByName)
+	case constraints.nullableElseTuple != nil:
+		applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues, nullableByName)
+	case constraints.nullableElseMirror != nil:
+		applyNullableElseMirror(result, constraints.nullableElseMirror, rng, namedSetValues, nullableByName)
+	case constraints.nullableElseMembership != nil:
+		applyNullableElseMembership(result, constraints.nullableElseMembership, rng, namedSetValues, nullableByName)
+	}
+
+	if constraints.nullableElseBooleanConstant != nil {
+		applyNullableElseBooleanConstant(result, constraints.nullableElseBooleanConstant)
+	}
+}
+
+func applyFollowOnParameterConstraints(
+	result map[string]object.Object,
+	constraints parameterConstraints,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+	nullableByName map[string]bool,
+	peerFieldDistinctLookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) {
 	integratedPeerIsoAbbr := constraints.nullableElseExclusionEquality != nil &&
 		constraints.peerFieldDistinct != nil &&
 		constraints.peerFieldDistinct.ParamName == constraints.nullableElseExclusionEquality.followerParam
@@ -322,6 +361,15 @@ func applyNullableElseMirror(
 
 	result[constraint.driverParam] = value
 	result[constraint.followerParam] = value.Clone()
+}
+
+func applyNullableElseBooleanConstant(
+	result map[string]object.Object,
+	constraint *nullableElseBooleanConstantConstraint,
+) {
+	if val, ok := result[constraint.driverParam]; ok && object.IsNull(val) {
+		result[constraint.followerParam] = object.NewBoolean(constraint.value)
+	}
 }
 
 func applyNullableElseEquality(

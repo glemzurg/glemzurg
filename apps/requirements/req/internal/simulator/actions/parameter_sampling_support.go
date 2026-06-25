@@ -249,7 +249,8 @@ func ifThenElseSupportsParamSampling(node *me.IfThenElse) bool {
 		isNullableElseMirrorPattern(node) ||
 		isNullableElseExclusionEqualityPattern(node) ||
 		isNullableElseMembershipPattern(node) ||
-		isNullableElseEqualityPattern(node)
+		isNullableElseEqualityPattern(node) ||
+		isNullableElseBooleanConstantPattern(node)
 }
 
 func membershipSupportsParamSampling(node *me.Membership) bool {
@@ -312,6 +313,15 @@ func isNullableElseEqualityPattern(node *me.IfThenElse) bool {
 	}
 	eqDriver, _, ok := paramEquality(node.Else)
 	return ok && eqDriver == driver
+}
+
+func isNullableElseBooleanConstantPattern(node *me.IfThenElse) bool {
+	driver, ok := nullCompareParam(node.Condition)
+	if !ok || !isTrueLiteral(node.Else) {
+		return false
+	}
+	_, _, ok = paramCompareBoolLiteral(node.Then)
+	return ok && driver != ""
 }
 
 func isNullableElseMirrorPattern(node *me.IfThenElse) bool {

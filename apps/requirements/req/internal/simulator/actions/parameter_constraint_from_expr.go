@@ -51,6 +51,7 @@ func mergeConstraintsFromExpr(expr me.Expression, constraints *parameterConstrai
 		tryExtractNullableElseMirror(node, constraints)
 		tryExtractNullableElseMembership(node, constraints)
 		tryExtractNullableElseEquality(node, constraints)
+		tryExtractNullableElseBooleanConstant(node, constraints)
 	case *me.Membership:
 		tryExtractMembershipConstraint(node, constraints)
 	case *me.BinaryLogic:
@@ -146,6 +147,28 @@ func tryExtractNullableElseEquality(node *me.IfThenElse, constraints *parameterC
 	constraints.nullableElseEquality = &nullableElseEqualityConstraint{
 		driverParam:   driver,
 		followerParam: follower,
+	}
+}
+
+func tryExtractNullableElseBooleanConstant(node *me.IfThenElse, constraints *parameterConstraints) {
+	if constraints.nullableElseBooleanConstant != nil {
+		return
+	}
+
+	driver, condOk := nullCompareParam(node.Condition)
+	if !condOk || !isTrueLiteral(node.Else) {
+		return
+	}
+
+	follower, value, ok := paramCompareBoolLiteral(node.Then)
+	if !ok {
+		return
+	}
+
+	constraints.nullableElseBooleanConstant = &nullableElseBooleanConstantConstraint{
+		driverParam:   driver,
+		followerParam: follower,
+		value:         value,
 	}
 }
 
@@ -327,6 +350,25 @@ func membershipAndEqualityBranches(
 		}
 	}
 	return nil, nil
+}
+
+func paramCompareBoolLiteral(expr me.Expression) (paramName string, value bool, ok bool) {
+	cmp, ok := expr.(*me.Compare)
+	if !ok || cmp.Op != me.CompareEq {
+		return "", false, false
+	}
+
+	if localVar, lok := cmp.Left.(*me.LocalVar); lok {
+		if boolLit, rok := cmp.Right.(*me.BoolLiteral); rok {
+			return localVar.Name, boolLit.Value, true
+		}
+	}
+	if boolLit, lok := cmp.Left.(*me.BoolLiteral); lok {
+		if localVar, rok := cmp.Right.(*me.LocalVar); rok {
+			return localVar.Name, boolLit.Value, true
+		}
+	}
+	return "", false, false
 }
 
 func paramEquality(expr me.Expression) (driver, follower string, ok bool) {

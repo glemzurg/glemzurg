@@ -609,6 +609,10 @@ func paramsCoveredByConstraints(logics []model_logic.Logic) map[string]bool {
 		covered[constraints.nullableElseEquality.driverParam] = true
 		covered[constraints.nullableElseEquality.followerParam] = true
 	}
+	if constraints.nullableElseBooleanConstant != nil {
+		covered[constraints.nullableElseBooleanConstant.driverParam] = true
+		covered[constraints.nullableElseBooleanConstant.followerParam] = true
+	}
 	if constraints.nullableElseTuple != nil {
 		for _, name := range constraints.nullableElseTuple.paramNames {
 			covered[name] = true
