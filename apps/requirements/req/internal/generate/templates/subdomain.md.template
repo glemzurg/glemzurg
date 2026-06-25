@@ -4,6 +4,8 @@
 
 # {{ .Subdomain.Name }}
 
+[Model facts]({{ filename "subdomain" .Subdomain.Key "facts" ".md" }})
+
 {{ .Subdomain.Details }}{{ unfinished_notes_block .Subdomain.UnfinishedNotes }}
 ## Classes
 

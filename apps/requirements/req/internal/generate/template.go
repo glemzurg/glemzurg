@@ -47,6 +47,7 @@ var _templateRegistry = map[string]**template.Template{
 	"use_case.md.template":         &_useCaseMdTemplate,
 	"subdomain.md.template":        &_subdomainMdTemplate,
 	"subdomains.mermaid.template":  &_subdomainsMermaidTemplate,
+	"facts.md.template":            &_factsMdTemplate,
 }
 
 func init() {
@@ -113,6 +114,7 @@ var _classStateMermaidTemplate *template.Template
 var _useCaseMdTemplate *template.Template
 var _subdomainMdTemplate *template.Template
 var _subdomainsMermaidTemplate *template.Template
+var _factsMdTemplate *template.Template
 
 // Define some function for our templates.
 var _funcMap = template.FuncMap{

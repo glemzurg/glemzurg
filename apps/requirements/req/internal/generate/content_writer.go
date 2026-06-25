@@ -191,6 +191,14 @@ func generateDomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWrit
 		if err := writer.WriteMarkdown(modelFilename, []byte(mdContents)); err != nil {
 			return err
 		}
+
+		if len(domain.Subdomains) == 1 {
+			for _, subdomain := range domain.Subdomains {
+				if err := writeSubdomainFactsToWriter(reqs, writer, domain, subdomain); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	return nil
@@ -313,7 +321,20 @@ func generateSingleSubdomainFiles(reqs *req_flat.Requirements, writer ContentWri
 		return err
 	}
 
+	if err := writeSubdomainFactsToWriter(reqs, writer, domain, subdomain); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func writeSubdomainFactsToWriter(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain, subdomain model_domain.Subdomain) error {
+	factsFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "facts", ".md")
+	mdContents, err := generateSubdomainFactsMdContents(reqs, reqs.Model, domain, subdomain)
+	if err != nil {
+		return err
+	}
+	return writer.WriteMarkdown(factsFilename, []byte(mdContents))
 }
 
 // buildSubdomainUseCasesDiagram generates a Mermaid use case diagram for a subdomain.

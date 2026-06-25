@@ -27,6 +27,8 @@ The subdomains of this domain.
 
 {{ .Details }}{{ unfinished_notes_block .UnfinishedNotes }}
 {{ end -}}
+[Model facts]({{ filename "subdomain" .Key "facts" ".md" }})
+
 {{ end }}
 ## Classes
 
