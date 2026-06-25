@@ -208,6 +208,36 @@ func (s *InvariantsSuite) TestIndexCheckerNilValuesDuplicate() {
 	s.Len(violations, 1)
 }
 
+func (s *InvariantsSuite) TestIndexCheckerUsesAttributeFieldKeyNotDisplayName() {
+	abbrAttr := helper.Must(model_class.NewAttribute(
+		mustKey("domain/d/subdomain/s/class/currency/attribute/abbr"),
+		model_class.AttributeDetails{Name: "Abbr", Details: ""},
+		"unconstrained",
+		nil,
+		false,
+		model_class.AttributeAnnotations{IndexNums: []uint{0}},
+	))
+	model, classKey := indexTestModel([]model_class.Attribute{abbrAttr})
+
+	checker := NewIndexUniquenessChecker(model)
+	info := checker.GetClassIndexInfo(classKey)
+	s.Require().NotNil(info)
+	s.Require().Len(info.Indexes, 1)
+	s.Equal([]string{"abbr"}, info.Indexes[0].AttrNames)
+
+	simState := state.NewSimulationState()
+	attrs := object.NewRecord()
+	attrs.Set("abbr", object.NewString("USD"))
+	simState.CreateInstance(classKey, attrs)
+
+	attrs2 := object.NewRecord()
+	attrs2.Set("abbr", object.NewString("USD"))
+	simState.CreateInstance(classKey, attrs2)
+
+	violations := checker.CheckState(simState)
+	s.True(violations.HasViolations())
+}
+
 func (s *InvariantsSuite) TestIndexCheckerMixedTypesNotEqual() {
 	// Number 42 should not equal String "42"
 	attr := spanAttr("id", []uint{1})

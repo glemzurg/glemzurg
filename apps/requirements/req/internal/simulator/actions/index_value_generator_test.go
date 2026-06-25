@@ -62,6 +62,33 @@ func makeIndexInfo(classKey identity.Key, indexes []invariants.IndexDefinition) 
 
 // --- Tests ---
 
+func (s *ActionsSuite) TestGenerateIndexSafeValuesUsesAttributeFieldKeyNotDisplayName() {
+	classKey := mustKey("domain/d/subdomain/s/class/currency")
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
+
+	abbrAttr := helper.Must(model_class.NewAttribute(
+		mustKey("domain/d/subdomain/s/class/currency/attribute/abbr"),
+		model_class.AttributeDetails{Name: "Abbr", Details: ""},
+		"unconstrained",
+		nil,
+		false,
+		model_class.AttributeAnnotations{IndexNums: []uint{0}},
+	))
+	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
+		{
+			IndexNum:  0,
+			AttrNames: []string{"abbr"},
+			AttrDefs:  []*model_class.Attribute{&abbrAttr},
+		},
+	})
+
+	attrs := object.NewRecord()
+	err := generateIndexSafeValues(attrs, indexInfo, nil, rng)
+	s.Require().NoError(err)
+	s.NotNil(attrs.Get("abbr"))
+	s.Nil(attrs.Get("Abbr"))
+}
+
 func (s *ActionsSuite) TestGenerateIndexSafeValuesNoIndexes() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests

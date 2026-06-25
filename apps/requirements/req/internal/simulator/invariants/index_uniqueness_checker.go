@@ -15,7 +15,7 @@ import (
 // IndexDefinition describes one composite index for a class.
 type IndexDefinition struct {
 	IndexNum  uint
-	AttrNames []string                 // sorted alphabetically for deterministic tuples
+	AttrNames []string                 // attribute field keys (SubKey), sorted for deterministic tuples
 	AttrDefs  []*model_class.Attribute // parallel to AttrNames
 }
 
@@ -67,12 +67,11 @@ func NewIndexUniquenessChecker(model *core.Model) *IndexUniquenessChecker {
 
 				for _, indexNum := range indexNums {
 					attrs := indexGroups[indexNum]
-					// Sort attributes alphabetically by name
-					sort.Slice(attrs, func(i, j int) bool { return attrs[i].Name < attrs[j].Name })
+					sort.Slice(attrs, func(i, j int) bool { return attrs[i].Key.SubKey < attrs[j].Key.SubKey })
 
 					names := make([]string, len(attrs))
 					for i, a := range attrs {
-						names[i] = a.Name
+						names[i] = a.Key.SubKey
 					}
 
 					info.Indexes = append(info.Indexes, IndexDefinition{
