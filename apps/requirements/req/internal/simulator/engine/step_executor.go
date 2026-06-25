@@ -231,6 +231,14 @@ func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string
 		actionPtr = action
 	}
 
+	if e.paramGen != nil && e.paramGen.Sampler != nil {
+		if pending.Instance != nil {
+			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.ID)
+		} else {
+			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(0)
+		}
+	}
+
 	params, err := sampleEventPayload(pending.Event, actionPtr, e.paramGen, e.rng)
 	if err != nil {
 		var unsupported *actions.UnsupportedRequiresSamplingError

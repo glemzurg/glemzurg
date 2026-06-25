@@ -781,3 +781,141 @@ func (s *ParameterSamplerSuite) TestSampleJurisdictionCodeWithPeerDistinctAvoids
 		s.False(evaluator.ObjectsEqual(result["JurisdictionCode"], usedTuple), "seed %d", seed)
 	}
 }
+
+func (s *ParameterSamplerSuite) TestSampleJurisdictionCodeWithPeerDistinctAvoidsPeerNull() {
+	classKey := mustKey("domain/finance/wallet/class/jurisdiction")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "update"))
+	codeParamKey := helper.Must(identity.NewParameterKey(actionKey, "jurisdictioncode"))
+	codeParam := helper.Must(model_state.NewParameter(actionKey, "JurisdictionCode", "jurisdiction code", true))
+	codeParam.SetInvariants([]model_logic.Logic{
+		model_logic.NewLogic(
+			helper.Must(identity.NewParameterInvariantKey(codeParamKey, "0")),
+			model_logic.LogicTypeAssessment,
+			"Jurisdiction code must not already be used by another jurisdiction.",
+			"",
+			jurisdictionCodeParamInvariantSpec(),
+			nil,
+		),
+	})
+	socialParam := helper.Must(model_state.NewParameter(actionKey, "SocialOnly", "social only", false))
+	nameParam := helper.Must(model_state.NewParameter(actionKey, "Name", "name", false))
+
+	action := model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "Update", Details: ""},
+		[]model_logic.Logic{
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+				model_logic.LogicTypeAssessment,
+				"Allowed jurisdiction code.",
+				"",
+				jurisdictionCodeRequireSpec(`IF JurisdictionCode = NULL THEN TRUE ELSE JurisdictionCode \in _JurisdictionCodes`),
+				nil,
+			),
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "1")),
+				model_logic.LogicTypeAssessment,
+				"Null code implies social only.",
+				"",
+				helper.Must(logic_spec.NewExpressionSpec(
+					"tla_plus",
+					`IF JurisdictionCode = NULL THEN SocialOnly = TRUE ELSE TRUE`,
+					convert.NewExpressionParseFunc(&convert.LowerContext{
+						ClassKey:   classKey,
+						Parameters: map[string]bool{"JurisdictionCode": true, "SocialOnly": true},
+					}),
+				)),
+				nil,
+			),
+		},
+		nil,
+		nil,
+		[]model_state.Parameter{nameParam, socialParam, codeParam},
+	)
+	owner := ParameterOwnerFromAction(action)
+
+	namedSets := s.jurisdictionNamedSet()
+	sampler := NewParameterSampler(NewParameterBinder(), namedSets)
+	sampler.SetPeerFieldDistinctLookup(func(_ identity.Key, fieldSubKey string) []object.Object {
+		s.Equal("jurisdiction_code", fieldSubKey)
+		return []object.Object{object.Null()}
+	})
+
+	for seed := range 200 {
+		result, err := sampler.SampleParameters(owner, action.Parameters, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		s.Require().NoError(err, "seed %d", seed)
+		s.False(object.IsNull(result["JurisdictionCode"]), "seed %d", seed)
+	}
+}
+
+func (s *ParameterSamplerSuite) TestSampleJurisdictionUpdateAvoidsPeerTuple() {
+	classKey := mustKey("domain/finance/wallet/class/jurisdiction")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "update"))
+	codeParamKey := helper.Must(identity.NewParameterKey(actionKey, "jurisdictioncode"))
+	codeParam := helper.Must(model_state.NewParameter(actionKey, "JurisdictionCode", "jurisdiction code", true))
+	codeParam.SetInvariants([]model_logic.Logic{
+		model_logic.NewLogic(
+			helper.Must(identity.NewParameterInvariantKey(codeParamKey, "0")),
+			model_logic.LogicTypeAssessment,
+			"Jurisdiction code must not already be used by another jurisdiction.",
+			"",
+			jurisdictionCodeParamInvariantSpec(),
+			nil,
+		),
+	})
+	socialParam := helper.Must(model_state.NewParameter(actionKey, "SocialOnly", "social only", false))
+	nameParam := helper.Must(model_state.NewParameter(actionKey, "Name", "name", false))
+
+	action := model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "Update", Details: ""},
+		[]model_logic.Logic{
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+				model_logic.LogicTypeAssessment,
+				"Allowed jurisdiction code.",
+				"",
+				jurisdictionCodeRequireSpec(`IF JurisdictionCode = NULL THEN TRUE ELSE JurisdictionCode \in _JurisdictionCodes`),
+				nil,
+			),
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "1")),
+				model_logic.LogicTypeAssessment,
+				"Null code implies social only.",
+				"",
+				helper.Must(logic_spec.NewExpressionSpec(
+					"tla_plus",
+					`IF JurisdictionCode = NULL THEN SocialOnly = TRUE ELSE TRUE`,
+					convert.NewExpressionParseFunc(&convert.LowerContext{
+						ClassKey:   classKey,
+						Parameters: map[string]bool{"JurisdictionCode": true, "SocialOnly": true},
+					}),
+				)),
+				nil,
+			),
+		},
+		nil,
+		nil,
+		[]model_state.Parameter{nameParam, socialParam, codeParam},
+	)
+	owner := ParameterOwnerFromAction(action)
+
+	usedTuple := object.NewTupleFromElements([]object.Object{object.NewString("CA"), object.NewString("ON")})
+	ownTuple := object.NewTupleFromElements([]object.Object{object.NewString("US"), object.NewString("NY")})
+	namedSets := s.jurisdictionNamedSet()
+	sampler := NewParameterSampler(NewParameterBinder(), namedSets)
+	sampler.SetPeerFieldDistinctLookup(func(_ identity.Key, fieldSubKey string) []object.Object {
+		s.Equal("jurisdiction_code", fieldSubKey)
+		return []object.Object{usedTuple, ownTuple}
+	})
+	sampler.SetPeerFieldDistinctExcludeInstanceID(99)
+
+	for seed := range 200 {
+		result, err := sampler.SampleParameters(owner, action.Parameters, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		s.Require().NoError(err, "seed %d", seed)
+		if object.IsNull(result["JurisdictionCode"]) {
+			continue
+		}
+		s.False(evaluator.ObjectsEqual(result["JurisdictionCode"], usedTuple), "seed %d", seed)
+	}
+}

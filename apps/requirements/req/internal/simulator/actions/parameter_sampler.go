@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 const maxNotInNamedSetAttempts = 10
@@ -18,6 +19,8 @@ type ParameterSampler struct {
 	namedSetValues map[string]object.Object
 	// peerFieldDistinctLookup returns field values already used by class instances.
 	peerFieldDistinctLookup func(classKey identity.Key, fieldSubKey string) []object.Object
+	// peerFieldDistinctExcludeInstanceID skips one instance during peer lookup (the update target).
+	peerFieldDistinctExcludeInstanceID state.InstanceID
 	// generateOverride is set only by tests to force deterministic parameter draws.
 	generateOverride func(paramDefs []model_state.Parameter, rng *rand.Rand) map[string]object.Object
 }
@@ -35,6 +38,17 @@ func (s *ParameterSampler) SetPeerFieldDistinctLookup(
 	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
 ) {
 	s.peerFieldDistinctLookup = lookup
+}
+
+// SetPeerFieldDistinctExcludeInstanceID configures peer lookup to skip one instance,
+// typically the instance being updated so its current field value stays available.
+func (s *ParameterSampler) SetPeerFieldDistinctExcludeInstanceID(id state.InstanceID) {
+	s.peerFieldDistinctExcludeInstanceID = id
+}
+
+// PeerFieldDistinctExcludeInstanceID returns the instance excluded from peer lookup.
+func (s *ParameterSampler) PeerFieldDistinctExcludeInstanceID() state.InstanceID {
+	return s.peerFieldDistinctExcludeInstanceID
 }
 
 // SampleFromRequires builds parameters for paramDefs using the action's effective requires.
@@ -421,18 +435,43 @@ func applyNullableElseMembershipWithPeerDistinct(
 ) {
 	constraint := coupled.membership
 	used := peerUsedObjectKeys(coupled.peer, lookup)
+	nullTaken := used[distinctObjectKey(nil)]
 
-	if nullableByName[constraint.paramName] && !used[distinctObjectKey(nil)] && rng.Intn(5) == 0 {
+	if nullableByName[constraint.paramName] && !nullTaken && rng.Intn(5) == 0 {
 		result[constraint.paramName] = evaluator.EMPTY_SET
 		return
 	}
 
-	value, ok := pickRandomValueFromNamedSetExcluding(constraint.setSubKey, namedSetValues, used, rng)
-	if !ok {
+	for range maxNotInNamedSetAttempts {
+		value, ok := pickRandomValueFromNamedSetExcluding(constraint.setSubKey, namedSetValues, used, rng)
+		if !ok {
+			continue
+		}
+		result[constraint.paramName] = value.Clone()
 		return
 	}
 
-	result[constraint.paramName] = value.Clone()
+	// Nullable index allows only one NULL; drop a generated NULL so retry can pick a concrete code.
+	if nullTaken && object.IsNull(result[constraint.paramName]) {
+		delete(result, constraint.paramName)
+	}
+}
+
+// samplingPeerFieldDistinctConflict reports whether a sampled value collides with a peer field value.
+func samplingPeerFieldDistinctConflict(
+	result map[string]object.Object,
+	constraints parameterConstraints,
+	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) bool {
+	if constraints.peerFieldDistinct == nil || lookup == nil {
+		return false
+	}
+	pattern := constraints.peerFieldDistinct
+	val, ok := result[pattern.ParamName]
+	if !ok {
+		return false
+	}
+	return peerUsedObjectKeys(pattern, lookup)[distinctObjectKey(val)]
 }
 
 func applyNullableElseTuple(

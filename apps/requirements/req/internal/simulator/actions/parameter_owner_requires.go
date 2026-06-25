@@ -337,6 +337,11 @@ func (s *ParameterSampler) sampleUntilRequiresSatisfied(
 		result := prep.generate(paramDefs, rng)
 		if s.generateOverride == nil {
 			applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName, s.peerFieldDistinctLookup)
+			if samplingPeerFieldDistinctConflict(result, prep.constraints, s.peerFieldDistinctLookup) {
+				lastAttempt = formatSampledParameters(result)
+				lastRejectReason = "peer field value already used by another instance"
+				continue
+			}
 		}
 		enforceParameterNullability(result, paramDefs, rng)
 		coerceSampledParameters(paramDefs, result)

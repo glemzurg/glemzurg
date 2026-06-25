@@ -270,7 +270,11 @@ func buildStepParameterGenerator(bindingsBuilder *state.BindingsBuilder) (*actio
 	paramSampler := actions.NewParameterSampler(paramBinder, bindingsBuilder.NamedSetValues())
 	paramSampler.SetPeerFieldDistinctLookup(func(classKey identity.Key, fieldSubKey string) []object.Object {
 		var values []object.Object
+		excludeID := paramSampler.PeerFieldDistinctExcludeInstanceID()
 		for _, inst := range bindingsBuilder.State().InstancesByClass(classKey) {
+			if excludeID != 0 && inst.ID == excludeID {
+				continue
+			}
 			values = append(values, inst.GetAttribute(fieldSubKey))
 		}
 		return values
