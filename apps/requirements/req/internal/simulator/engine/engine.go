@@ -47,6 +47,9 @@ type SimulationResult struct {
 
 	// FinalState is the simulation state when the run ended.
 	FinalState *state.SimulationState
+
+	// Catalog holds scoped class metadata for trace rendering (association-class endpoints).
+	Catalog *ClassCatalog
 }
 
 // SimulationEngine drives the state machine simulation loop.
@@ -58,6 +61,7 @@ type SimulationEngine struct {
 	bindingsBuilder *state.BindingsBuilder
 
 	// Components
+	catalog          *ClassCatalog
 	stepExecutor     *StepExecutor
 	selector         *ActionSelector
 	invariantChecker *invariants.InvariantChecker
@@ -104,6 +108,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		config:           config,
 		simState:         simState,
 		bindingsBuilder:  bindingsBuilder,
+		catalog:          catalog,
 		stepExecutor:     stepExecutor,
 		selector:         selector,
 		invariantChecker: checkers.invariantChecker,
@@ -340,6 +345,7 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	}
 
 	result.FinalState = e.simState
+	result.Catalog = e.catalog
 
 	if e.dataTypeChecker != nil {
 		result.Violations = append(result.Violations, e.dataTypeChecker.UnparsedAttributeDefinitionViolations()...)

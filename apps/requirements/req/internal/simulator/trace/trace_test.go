@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
@@ -276,6 +281,104 @@ func (s *TraceSuite) TestFinalState() {
 	s.Equal(uint64(1), inst.InstanceID)
 	s.Equal(classKey.String(), inst.ClassKey)
 	s.Equal("100", inst.Attributes["amount"])
+}
+
+func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
+	partnerKey := mustKey("domain/d/subdomain/s/class/partner")
+	jurisdictionKey := mustKey("domain/d/subdomain/s/class/jurisdiction")
+	linkDefKey := mustKey("domain/d/subdomain/s/class/link_def")
+	hostAssocKey := mustKey("domain/d/subdomain/s/cassociation/class/partner/class/jurisdiction/configures")
+
+	partnerClass := traceSimpleClass(partnerKey, "Partner")
+	jurisdictionClass := traceSimpleClass(jurisdictionKey, "Jurisdiction")
+	linkDefClass := traceSimpleClass(linkDefKey, "LinkDef")
+
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
+	hostAssoc := model_class.NewAssociation(
+		hostAssocKey,
+		model_class.AssociationDetails{Name: "Configures", Details: ""},
+		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: toMult},
+		&linkDefKey,
+		"",
+	)
+
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	domainKey := mustKey("domain/d")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		partnerKey:      partnerClass,
+		jurisdictionKey: jurisdictionClass,
+		linkDefKey:      linkDefClass,
+	}
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+	model.ClassAssociations = map[identity.Key]model_class.Association{hostAssocKey: hostAssoc}
+
+	catalog := engine.NewClassCatalog(&model)
+
+	simState := state.NewSimulationState()
+	partner := simState.CreateInstance(partnerKey, object.NewRecord())
+	jurisdiction := simState.CreateInstance(jurisdictionKey, object.NewRecord())
+	linkInst := simState.CreateInstance(linkDefKey, object.NewRecord())
+	simState.AddAssociationLink(hostAssocKey, partner.ID, jurisdiction.ID, linkInst.ID)
+
+	result := &engine.SimulationResult{
+		StepsTaken:        1,
+		TerminationReason: "max_steps",
+		FinalState:        simState,
+		Catalog:           catalog,
+	}
+
+	tr := FromResult(result)
+	text := tr.FormatText()
+
+	s.Require().NotNil(tr.FinalState)
+	var linkRow *InstanceState
+	for i := range tr.FinalState.Instances {
+		if tr.FinalState.Instances[i].InstanceID == uint64(linkInst.ID) {
+			linkRow = &tr.FinalState.Instances[i]
+			break
+		}
+	}
+	s.Require().NotNil(linkRow)
+	s.Require().NotNil(linkRow.Endpoints)
+	s.Equal("Configures", linkRow.Endpoints.AssociationName)
+	s.Equal("Partner", linkRow.Endpoints.FromClassName)
+	s.Equal(uint64(partner.ID), linkRow.Endpoints.FromInstanceID)
+	s.Equal("Jurisdiction", linkRow.Endpoints.ToClassName)
+	s.Equal(uint64(jurisdiction.ID), linkRow.Endpoints.ToInstanceID)
+	s.Contains(text, "Configures (Partner#")
+	s.Contains(text, "-> Jurisdiction#")
+}
+
+func traceSimpleClass(classKey identity.Key, name string) model_class.Class {
+	stateActiveKey := helper.Must(identity.NewStateKey(classKey, "active"))
+	eventCreateKey := helper.Must(identity.NewEventKey(classKey, "create"))
+	transCreateKey := mustKey(classKey.String() + "/transition/create")
+
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
+	transCreate := model_state.NewTransition(
+		transCreateKey,
+		eventCreateKey,
+		model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey},
+		model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil},
+		"",
+	)
+
+	class := model_class.NewClass(
+		classKey,
+		model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil},
+		model_class.ClassDetails{Name: name, Details: "", UnfinishedNotes: "", UmlComment: ""},
+	)
+	class.SetStates(map[identity.Key]model_state.State{stateActiveKey: stateActive})
+	class.SetEvents(map[identity.Key]model_state.Event{eventCreateKey: eventCreate})
+	class.SetTransitions(map[identity.Key]model_state.Transition{transCreateKey: transCreate})
+	return class
 }
 
 func (s *TraceSuite) TestAssociationClassMaterializationStep() {

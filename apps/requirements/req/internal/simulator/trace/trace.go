@@ -61,9 +61,10 @@ type FinalState struct {
 
 // InstanceState is one instance's final attribute values.
 type InstanceState struct {
-	InstanceID uint64            `json:"instance_id"`
-	ClassKey   string            `json:"class_key"`
-	Attributes map[string]string `json:"attributes"`
+	InstanceID uint64                           `json:"instance_id"`
+	ClassKey   string                           `json:"class_key"`
+	Attributes map[string]string                `json:"attributes"`
+	Endpoints  *AssociationMaterializationTrace `json:"association_endpoints,omitempty"`
 }
 
 // FromResult builds a SimulationTrace from a SimulationResult.
@@ -78,7 +79,7 @@ func FromResult(result *engine.SimulationResult) *SimulationTrace {
 	}
 
 	if result.FinalState != nil {
-		t.FinalState = buildFinalState(result.FinalState)
+		t.FinalState = buildFinalState(result.FinalState, result.Catalog)
 	}
 
 	return t
@@ -101,6 +102,14 @@ func (t *SimulationTrace) FormatText() string {
 			if len(inst.Attributes) > 0 {
 				attrs := sortedMapEntries(inst.Attributes)
 				fmt.Fprintf(&b, " {%s}", attrs)
+			}
+			if inst.Endpoints != nil {
+				mat := inst.Endpoints
+				fmt.Fprintf(&b, " %s (%s#%d -> %s#%d)",
+					mat.AssociationName,
+					mat.FromClassName, mat.FromInstanceID,
+					mat.ToClassName, mat.ToInstanceID,
+				)
 			}
 			fmt.Fprintln(&b)
 		}
@@ -173,7 +182,7 @@ func convertAssociationMaterialization(mat *actions.AssociationMaterialization) 
 }
 
 // buildFinalState creates a FinalState snapshot from SimulationState.
-func buildFinalState(simState *state.SimulationState) *FinalState {
+func buildFinalState(simState *state.SimulationState, catalog *engine.ClassCatalog) *FinalState {
 	instances := simState.AllInstances()
 
 	// Sort by ID for deterministic output.
@@ -198,10 +207,39 @@ func buildFinalState(simState *state.SimulationState) *FinalState {
 				is.Attributes[name] = val.Inspect()
 			}
 		}
+		is.Endpoints = associationEndpointsForInstance(inst, simState, catalog)
 		fs.Instances = append(fs.Instances, is)
 	}
 
 	return fs
+}
+
+func associationEndpointsForInstance(
+	inst *state.ClassInstance,
+	simState *state.SimulationState,
+	catalog *engine.ClassCatalog,
+) *AssociationMaterializationTrace {
+	if catalog == nil || !catalog.IsAssociationClass(inst.ClassKey) {
+		return nil
+	}
+	link, ok := simState.AssociationLinkByInstance(inst.ID)
+	if !ok {
+		return nil
+	}
+	linkInfo := catalog.GetAssociationClassInfo(inst.ClassKey)
+	if !linkInfo.Found {
+		return nil
+	}
+	return &AssociationMaterializationTrace{
+		AssociationName: linkInfo.HostAssociationName,
+		AssociationKey:  linkInfo.HostAssocKey.String(),
+		FromClassName:   linkInfo.FromClassName,
+		FromClassKey:    linkInfo.FromClassKey.String(),
+		ToClassName:     linkInfo.ToClassName,
+		ToClassKey:      linkInfo.ToClassKey.String(),
+		FromInstanceID:  uint64(link.FromEndpointID),
+		ToInstanceID:    uint64(link.ToEndpointID),
+	}
 }
 
 // extractAssignments gets the primed assignments for the primary instance.
