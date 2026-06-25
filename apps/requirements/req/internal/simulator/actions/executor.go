@@ -189,7 +189,13 @@ func (e *ActionExecutor) ExecuteAction(
 func (e *ActionExecutor) applyPrimedAssignments(ctx *ExecutionContext) error {
 	simState := e.bindingsBuilder.State()
 	for instanceID, primedFields := range ctx.GetAllPrimedAssignments() {
+		instance := simState.GetInstance(instanceID)
 		for fieldName, value := range primedFields {
+			if instance != nil && e.dataTypeChecker != nil {
+				if attr := e.dataTypeChecker.AttributeDef(instance.ClassKey, fieldName); attr != nil {
+					value = CoerceValueForDataType(attr.DataType, value)
+				}
+			}
 			if err := simState.UpdateInstanceField(instanceID, fieldName, value); err != nil {
 				return fmt.Errorf("failed to apply primed assignment %s on instance %d: %w", fieldName, instanceID, err)
 			}

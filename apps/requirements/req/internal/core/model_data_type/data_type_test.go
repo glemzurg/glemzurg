@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -809,6 +811,27 @@ func TestEnumerationHelpers(t *testing.T) {
 	require.True(t, ContainsEnumerationConstraint(dataType))
 	require.Equal(t, []string{"SOCIAL", "REAL"}, EnumerationValues(dataType))
 	require.False(t, ContainsEnumerationConstraint(nil))
+}
+
+func TestBooleanTypeSpecHelpers(t *testing.T) {
+	key := t_dtKey("bool_enum_attr")
+	dataType, err := New(key, "enum of TRUE, FALSE", nil)
+	require.NoError(t, err)
+	require.False(t, HasBooleanTypeSpec(dataType))
+
+	boolTypeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "BOOLEAN", nil)
+	require.NoError(t, err)
+	dataType.TypeSpec = &boolTypeSpec
+	require.True(t, HasBooleanTypeSpec(dataType))
+
+	value, ok := BooleanFromEnumerationLiteral("TRUE")
+	require.True(t, ok)
+	require.True(t, value)
+	value, ok = BooleanFromEnumerationLiteral("false")
+	require.True(t, ok)
+	require.False(t, value)
+	_, ok = BooleanFromEnumerationLiteral("maybe")
+	require.False(t, ok)
 }
 
 func TestIsAtomicUnconstrained(t *testing.T) {

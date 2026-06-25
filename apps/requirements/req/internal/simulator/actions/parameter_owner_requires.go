@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -329,23 +330,34 @@ func (s *ParameterSampler) sampleUntilRequiresSatisfied(
 	prep *parameterSamplingPrep,
 	rng *rand.Rand,
 ) (map[string]object.Object, error) {
+	var lastAttempt string
+	var lastRejectReason string
+
 	for range maxParameterSampleAttempts {
 		result := prep.generate(paramDefs, rng)
 		if s.generateOverride == nil {
 			applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName, s.peerFieldDistinctLookup)
 		}
 		enforceParameterNullability(result, paramDefs, rng)
-		satisfied, err := owner.parametersSatisfySamplingAssessments(
+		coerceSampledParameters(paramDefs, result)
+		failures, err := owner.samplingAssessmentFailures(
 			paramDefs, prep.samplingLogics, result, s.namedSetValues,
 		)
 		if err != nil {
 			return nil, err
 		}
-		if satisfied {
+		if len(failures) == 0 {
 			return result, nil
 		}
+		lastAttempt = formatSampledParameters(result)
+		lastRejectReason = formatSamplingFailures(failures)
 	}
-	return nil, parameterSampleExhaustedError(owner)
+	return nil, &ParameterSampleExhaustedError{
+		Owner:            owner,
+		Attempts:         maxParameterSampleAttempts,
+		LastAttempt:      lastAttempt,
+		LastRejectReason: lastRejectReason,
+	}
 }
 
 // SampleParameters generates values for paramDefs using effective requires constraints.
@@ -368,23 +380,71 @@ func (s *ParameterSampler) SampleParameters(
 	return s.sampleUntilRequiresSatisfied(owner, paramDefs, prep, rng)
 }
 
-func parameterSampleExhaustedError(owner ParameterOwner) error {
-	return fmt.Errorf(
-		"%s %q: failed to sample parameters satisfying requires after %d attempts",
-		owner.Kind, owner.Name, maxParameterSampleAttempts,
-	)
+// ParameterSampleExhaustedError reports requires-aware parameter sampling exhaustion.
+type ParameterSampleExhaustedError struct {
+	Owner            ParameterOwner
+	Attempts         int
+	LastAttempt      string
+	LastRejectReason string
 }
 
-func (o ParameterOwner) parametersSatisfySamplingAssessments(
+func (e *ParameterSampleExhaustedError) Error() string {
+	msg := fmt.Sprintf(
+		"%s %q: failed to sample parameters satisfying requires after %d attempts",
+		e.Owner.Kind, e.Owner.Name, e.Attempts,
+	)
+	if e.LastAttempt != "" {
+		msg += fmt.Sprintf("; last attempt: %s", e.LastAttempt)
+	}
+	if e.LastRejectReason != "" {
+		msg += fmt.Sprintf("; reject reason: %s", e.LastRejectReason)
+	}
+	return msg
+}
+
+func formatSampledParameters(values map[string]object.Object) string {
+	if len(values) == 0 {
+		return "{}"
+	}
+	names := make([]string, 0, len(values))
+	for name := range values {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	parts := make([]string, 0, len(names))
+	for _, name := range names {
+		val := values[name]
+		if val == nil {
+			parts = append(parts, fmt.Sprintf("%s=nil", name))
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s=%s", name, val.Inspect()))
+	}
+	return "{" + strings.Join(parts, ", ") + "}"
+}
+
+func formatSamplingFailures(failures []RequireAssessmentFailure) string {
+	if len(failures) == 0 {
+		return ""
+	}
+	failure := failures[0]
+	spec := failure.Logic.Spec.Specification
+	if spec == "" {
+		spec = fmt.Sprintf("requires[%d]", failure.Index)
+	}
+	return fmt.Sprintf("%s (%s)", spec, failure.Message)
+}
+
+func (o ParameterOwner) samplingAssessmentFailures(
 	paramDefs []model_state.Parameter,
 	samplingLogics []model_logic.Logic,
 	values map[string]object.Object,
 	namedSetValues map[string]object.Object,
-) (bool, error) {
+) ([]RequireAssessmentFailure, error) {
 	sampledNames := parameterNames(paramDefs)
 	logics := logicsReferencingOnlySampledParams(samplingLogics, sampledNames)
 	if len(logics) == 0 {
-		return true, nil
+		return nil, nil
 	}
 
 	bindings := evaluator.NewBindings()
@@ -395,13 +455,9 @@ func (o ParameterOwner) parametersSatisfySamplingAssessments(
 		bindings.Set(name, value, evaluator.NamespaceGlobal)
 	}
 
-	failures, err := assessLogics(o, paramDefs, bindings, "requires", func() ([]model_logic.Logic, error) {
+	return assessLogics(o, paramDefs, bindings, "requires", func() ([]model_logic.Logic, error) {
 		return logics, nil
 	})
-	if err != nil {
-		return false, err
-	}
-	return len(failures) == 0, nil
 }
 
 func logicsReferencingOnlySampledParams(
@@ -657,7 +713,7 @@ func implicitEnumRequires(
 			continue
 		}
 
-		specText := enumMembershipSpecification(param.Name, values, param.Nullable)
+		specText := enumMembershipSpecification(param.Name, param.DataType, values, param.Nullable)
 		spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specText, pf)
 		if err != nil {
 			return nil, fmt.Errorf(
@@ -711,8 +767,18 @@ func newOwnerRequireKey(ownerKey identity.Key, ownerKind, subKey string) (identi
 	}
 }
 
-func enumMembershipSpecification(paramName string, values []string, nullable bool) string {
-	membership := fmt.Sprintf(`%s \in %s`, paramName, formatTLAPlusStringSet(values))
+func enumMembershipSpecification(
+	paramName string,
+	dataType *model_data_type.DataType,
+	values []string,
+	nullable bool,
+) string {
+	var membership string
+	if model_data_type.HasBooleanTypeSpec(dataType) {
+		membership = fmt.Sprintf(`%s \in BOOLEAN`, paramName)
+	} else {
+		membership = fmt.Sprintf(`%s \in %s`, paramName, formatTLAPlusStringSet(values))
+	}
 	if !nullable {
 		return membership
 	}

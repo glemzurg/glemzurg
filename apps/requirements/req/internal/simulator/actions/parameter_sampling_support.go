@@ -259,7 +259,8 @@ func membershipSupportsParamSampling(node *me.Membership) bool {
 	_, _, tupleOK := tupleMembershipInNamedSet(node)
 	_, _, memberOK := paramMembershipInNamedSet(node)
 	_, _, enumOK := paramInStringEnum(node)
-	return tupleOK || memberOK || enumOK
+	_, booleanOK := paramInBooleanSet(node)
+	return tupleOK || memberOK || enumOK || booleanOK
 }
 
 func quantifierSupportsParamSampling(node *me.Quantifier) bool {

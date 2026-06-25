@@ -244,6 +244,27 @@ func ContainsEnumerationConstraint(dataType *DataType) bool {
 		len(dataType.Atomic.Enums) > 0
 }
 
+// HasBooleanTypeSpec reports whether dataType carries a TLA+ BOOLEAN type_spec.
+func HasBooleanTypeSpec(dataType *DataType) bool {
+	if dataType == nil || dataType.TypeSpec == nil {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(dataType.TypeSpec.Specification), "BOOLEAN")
+}
+
+// BooleanFromEnumerationLiteral maps enum literals TRUE/FALSE to a bool.
+// Returns ok=false when literal is not a recognized boolean enumeration value.
+func BooleanFromEnumerationLiteral(literal string) (value bool, ok bool) {
+	switch strings.ToUpper(strings.TrimSpace(literal)) {
+	case "TRUE":
+		return true, true
+	case "FALSE":
+		return false, true
+	default:
+		return false, false
+	}
+}
+
 // EnumerationValues returns the allowed enumeration literals, or nil when dataType is not
 // a parsed atomic enumeration.
 func EnumerationValues(dataType *DataType) []string {

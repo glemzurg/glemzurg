@@ -180,12 +180,12 @@ func (s *ParameterSamplerSuite) TestSampleEnumConstraint() {
 		model_logic.LogicTypeAssessment,
 		"Social only flag must be valid.",
 		"",
-		helper.Must(logic_spec.NewExpressionSpec("tla_plus", `SocialOnly \in {"TRUE", "FALSE"}`, pf)),
+		helper.Must(logic_spec.NewExpressionSpec("tla_plus", `SocialOnly \in BOOLEAN`, pf)),
 		nil,
 	)
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
 	params := []model_state.Parameter{
-		helper.Must(model_state.NewParameter(actionKey, "SocialOnly", "enum of TRUE, FALSE", false)),
+		booleanEnumParameter(actionKey, "SocialOnly"),
 	}
 
 	binder := NewParameterBinder()
@@ -194,9 +194,9 @@ func (s *ParameterSamplerSuite) TestSampleEnumConstraint() {
 
 	result, err := sampler.SampleFromRequires(params, &action, rng)
 	s.Require().NoError(err)
-	value, ok := result["SocialOnly"].(*object.String)
+	value, ok := result["SocialOnly"].(*object.Boolean)
 	s.Require().True(ok)
-	s.Contains([]string{"TRUE", "FALSE"}, value.Value())
+	s.Contains([]bool{true, false}, value.Value())
 }
 
 func (s *ParameterSamplerSuite) TestSampleFallsBackWithoutRequires() {
@@ -531,7 +531,10 @@ func (s *ParameterSamplerSuite) TestSampleParametersFailsAfterMaxAttemptsWhenNot
 
 	_, err := sampler.SampleParameters(owner, action.Parameters, rand.New(rand.NewSource(1))) //nolint:gosec // deterministic test seed
 	s.Require().Error(err)
-	s.Equal(parameterSampleExhaustedError(owner), err)
+	var exhausted *ParameterSampleExhaustedError
+	s.Require().ErrorAs(err, &exhausted)
+	s.Equal(owner.Name, exhausted.Owner.Name)
+	s.Equal(maxParameterSampleAttempts, exhausted.Attempts)
 }
 
 func (s *ParameterSamplerSuite) TestSampleCurrencyIsoAbbrCoupling() {
@@ -612,5 +615,68 @@ func (s *ParameterSamplerSuite) TestSampleNullableElseMembershipFromNamedSet() {
 			continue
 		}
 		s.Contains([]string{"USD", "GBP", "CAD", "EUR"}, result["ISO"].(*object.String).Value())
+	}
+}
+
+func currencyPeerAbbrRequireSpec() logic_spec.ExpressionSpec {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	ctx := &convert.LowerContext{
+		ClassKey:   classKey,
+		ClassNames: map[string]identity.Key{"Currency": classKey},
+		Parameters: map[string]bool{"Abbr": true},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `\A c \in Currency : c.abbr # Abbr`, pf))
+}
+
+func (s *ParameterSamplerSuite) TestSampleCurrencyIsoAbbrWithPeerDistinctAvoidsUsedAbbr() {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
+	isoParam := helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true))
+	abbrParam := helper.Must(model_state.NewParameter(actionKey, "Abbr", "abbreviation", false))
+	action := model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "Add", Details: ""},
+		[]model_logic.Logic{
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "0")),
+				model_logic.LogicTypeAssessment,
+				"When ISO is provided, Abbr must match ISO.",
+				"",
+				currencyIsoAbbrRequireSpec(),
+				nil,
+			),
+			model_logic.NewLogic(
+				helper.Must(identity.NewActionRequireKey(actionKey, "1")),
+				model_logic.LogicTypeAssessment,
+				"Abbr must not already be used by another currency.",
+				"",
+				currencyPeerAbbrRequireSpec(),
+				nil,
+			),
+		},
+		nil,
+		nil,
+		[]model_state.Parameter{isoParam, abbrParam},
+	)
+	owner := ParameterOwnerFromAction(action)
+
+	sampler := NewParameterSampler(NewParameterBinder(), s.iso4217NamedSet())
+	sampler.SetPeerFieldDistinctLookup(func(_ identity.Key, fieldSubKey string) []object.Object {
+		s.Equal("abbr", fieldSubKey)
+		return []object.Object{object.NewString("USD")}
+	})
+
+	for seed := range 200 {
+		result, err := sampler.SampleParameters(owner, action.Parameters, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		s.Require().NoError(err, "seed %d", seed)
+		abbr := result["Abbr"].(*object.String).Value()
+		s.NotEqual("USD", abbr)
+		if object.IsNull(result["ISO"]) {
+			s.NotContains(map[string]bool{"USD": true, "GBP": true, "CAD": true, "EUR": true}, abbr)
+			continue
+		}
+		s.Equal(result["ISO"].(*object.String).Value(), abbr)
+		s.Contains([]string{"GBP", "CAD", "EUR"}, abbr)
 	}
 }

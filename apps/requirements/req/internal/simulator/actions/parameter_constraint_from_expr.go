@@ -221,6 +221,11 @@ func tryExtractMembershipConstraint(node *me.Membership, constraints *parameterC
 
 	if paramName, values, ok := paramInStringEnum(node); ok {
 		constraints.enumValues[paramName] = values
+		return
+	}
+
+	if paramName, ok := paramInBooleanSet(node); ok {
+		constraints.enumValues[paramName] = []string{"TRUE", "FALSE"}
 	}
 }
 
@@ -335,6 +340,20 @@ func paramEquality(expr me.Expression) (driver, follower string, ok bool) {
 		return "", "", false
 	}
 	return left.Name, right.Name, true
+}
+
+func paramInBooleanSet(node *me.Membership) (string, bool) {
+	localVar, ok := node.Element.(*me.LocalVar)
+	if !ok {
+		return "", false
+	}
+
+	setConst, ok := node.Set.(*me.SetConstant)
+	if !ok || setConst.Kind != me.SetConstantBoolean {
+		return "", false
+	}
+
+	return localVar.Name, true
 }
 
 func paramInStringEnum(node *me.Membership) (string, []string, bool) {

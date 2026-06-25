@@ -157,6 +157,7 @@ func (c *DataTypeChecker) checkDataTypeConstraints(
 			classKey,
 			attrName,
 			value,
+			dataType,
 			dataType.Atomic,
 		)
 		violations = append(violations, atomicViolations...)
@@ -239,6 +240,7 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
+	dataType *model_data_type.DataType,
 	atomic *model_data_type.Atomic,
 ) ViolationErrors {
 	var violations ViolationErrors
@@ -257,7 +259,7 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 
 	case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
 		if len(atomic.Enums) > 0 {
-			if violation := c.checkEnumConstraint(instanceID, classKey, attrName, value, atomic.Enums); violation != nil {
+			if violation := c.checkEnumConstraint(instanceID, classKey, attrName, value, dataType, atomic.Enums); violation != nil {
 				violations = append(violations, violation)
 			}
 		}
@@ -413,14 +415,50 @@ func formatSpanValue(value *int, denom *int) string {
 	return fmt.Sprintf("%d/%d", *value, *denom)
 }
 
+// AttributeDef returns the attribute definition for a class field sub-key, if known.
+func (c *DataTypeChecker) AttributeDef(classKey identity.Key, fieldSubKey string) *model_class.Attribute {
+	attrs, ok := c.classAttributes[classKey]
+	if !ok {
+		return nil
+	}
+	return attrs[fieldSubKey]
+}
+
 // checkEnumConstraint validates a value against enumeration constraint.
 func (c *DataTypeChecker) checkEnumConstraint(
 	instanceID state.InstanceID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
+	dataType *model_data_type.DataType,
 	enums []model_data_type.AtomicEnum,
 ) *ViolationError {
+	allowedValues := make([]string, len(enums))
+	for i, enum := range enums {
+		allowedValues[i] = enum.Value
+	}
+
+	if model_data_type.HasBooleanTypeSpec(dataType) {
+		if boolVal, ok := value.(*object.Boolean); ok {
+			literal := "FALSE"
+			if boolVal.Value() {
+				literal = "TRUE"
+			}
+			for _, enum := range enums {
+				if enum.Value == literal {
+					return nil
+				}
+			}
+			return NewEnumConstraintViolation(
+				instanceID,
+				classKey,
+				attrName,
+				literal,
+				allowedValues,
+			)
+		}
+	}
+
 	// Get string value
 	str, ok := value.(*object.String)
 	if !ok {
@@ -431,9 +469,7 @@ func (c *DataTypeChecker) checkEnumConstraint(
 	strVal := str.Value()
 
 	// Check if value is in allowed enumeration
-	allowedValues := make([]string, len(enums))
-	for i, enum := range enums {
-		allowedValues[i] = enum.Value
+	for _, enum := range enums {
 		if enum.Value == strVal {
 			return nil // Value found in enumeration
 		}

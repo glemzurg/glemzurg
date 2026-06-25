@@ -35,7 +35,7 @@ func (b *ParameterBinder) BindParameters(
 		if !exists {
 			return nil, fmt.Errorf("missing required parameter: %s", paramDef.Name)
 		}
-		result[paramDef.Name] = value
+		result[paramDef.Name] = CoerceValueForDataType(paramDef.DataType, value)
 	}
 
 	return result, nil
@@ -53,6 +53,7 @@ func (b *ParameterBinder) GenerateRandomParameters(
 		result[paramDef.Name] = sampleParameterValue(paramDef, rng)
 	}
 
+	coerceSampledParameters(paramDefs, result)
 	return result
 }
 
@@ -68,7 +69,7 @@ func sampleParameterValue(param model_state.Parameter, rng *rand.Rand) object.Ob
 // generateRandomValue creates a random non-null value based on data type constraints.
 func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
 	if values := model_data_type.EnumerationValues(dataType); len(values) > 0 {
-		return object.NewString(values[rng.Intn(len(values))])
+		return randomEnumerationValue(dataType, values, rng)
 	}
 
 	if dataType != nil && dataType.TypeSpec != nil {
@@ -98,8 +99,11 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 		if len(atomic.Enums) == 0 {
 			return evaluator.EMPTY_SET
 		}
-		idx := rng.Intn(len(atomic.Enums))
-		return object.NewString(atomic.Enums[idx].Value)
+		values := make([]string, len(atomic.Enums))
+		for i, enum := range atomic.Enums {
+			values[i] = enum.Value
+		}
+		return randomEnumerationValue(dataType, values, rng)
 
 	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
 		return randomString(rng)

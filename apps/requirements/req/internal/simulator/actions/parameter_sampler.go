@@ -109,6 +109,12 @@ type nullableElseExclusionEqualityConstraint struct {
 	setSubKey     string
 }
 
+// nullableExclusionWithPeerDistinct couples exclusion-equality sampling with peer-field distinctness on the follower.
+type nullableExclusionWithPeerDistinct struct {
+	exclusion *nullableElseExclusionEqualityConstraint
+	peer      *peerFieldDistinctFromParamPattern
+}
+
 func parameterNullableByName(paramDefs []model_state.Parameter) map[string]bool {
 	nullable := make(map[string]bool, len(paramDefs))
 	for _, param := range paramDefs {
@@ -141,20 +147,41 @@ func applyParameterConstraints(
 	nullableByName map[string]bool,
 	peerFieldDistinctLookup func(classKey identity.Key, fieldSubKey string) []object.Object,
 ) {
-	switch {
-	case constraints.nullableElseExclusionEquality != nil:
-		applyNullableElseExclusionEquality(result, constraints.nullableElseExclusionEquality, rng, namedSetValues, nullableByName)
-	case constraints.nullableElseTuple != nil:
-		applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues, nullableByName)
-	case constraints.nullableElseMirror != nil:
-		applyNullableElseMirror(result, constraints.nullableElseMirror, rng, namedSetValues, nullableByName)
-	case constraints.nullableElseMembership != nil:
-		applyNullableElseMembership(result, constraints.nullableElseMembership, rng, namedSetValues, nullableByName)
+	if constraints.nullableElseExclusionEquality != nil &&
+		constraints.peerFieldDistinct != nil &&
+		constraints.peerFieldDistinct.ParamName == constraints.nullableElseExclusionEquality.followerParam {
+		applyNullableElseExclusionWithPeerDistinct(
+			result,
+			nullableExclusionWithPeerDistinct{
+				exclusion: constraints.nullableElseExclusionEquality,
+				peer:      constraints.peerFieldDistinct,
+			},
+			rng,
+			namedSetValues,
+			nullableByName,
+			peerFieldDistinctLookup,
+		)
+	} else {
+		switch {
+		case constraints.nullableElseExclusionEquality != nil:
+			applyNullableElseExclusionEquality(result, constraints.nullableElseExclusionEquality, rng, namedSetValues, nullableByName)
+		case constraints.nullableElseTuple != nil:
+			applyNullableElseTuple(result, constraints.nullableElseTuple, rng, namedSetValues, nullableByName)
+		case constraints.nullableElseMirror != nil:
+			applyNullableElseMirror(result, constraints.nullableElseMirror, rng, namedSetValues, nullableByName)
+		case constraints.nullableElseMembership != nil:
+			applyNullableElseMembership(result, constraints.nullableElseMembership, rng, namedSetValues, nullableByName)
+		}
 	}
+
+	integratedPeerIsoAbbr := constraints.nullableElseExclusionEquality != nil &&
+		constraints.peerFieldDistinct != nil &&
+		constraints.peerFieldDistinct.ParamName == constraints.nullableElseExclusionEquality.followerParam
 
 	if constraints.nullableElseEquality != nil &&
 		constraints.nullableElseMirror == nil &&
-		constraints.nullableElseExclusionEquality == nil {
+		constraints.nullableElseExclusionEquality == nil &&
+		!integratedPeerIsoAbbr {
 		applyNullableElseEquality(result, constraints.nullableElseEquality, nullableByName)
 	}
 
@@ -169,9 +196,58 @@ func applyParameterConstraints(
 		result[paramName] = object.NewString(values[rng.Intn(len(values))])
 	}
 
-	if constraints.peerFieldDistinct != nil {
+	if constraints.peerFieldDistinct != nil &&
+		(constraints.nullableElseExclusionEquality == nil ||
+			constraints.peerFieldDistinct.ParamName != constraints.nullableElseExclusionEquality.followerParam) {
 		applyPeerFieldDistinct(result, constraints.peerFieldDistinct, rng, peerFieldDistinctLookup)
 	}
+}
+
+// applyNullableElseExclusionWithPeerDistinct samples ISO/Abbr coupling and peer-uniqueness together
+// so Abbr is never overwritten after ISO is set.
+func applyNullableElseExclusionWithPeerDistinct(
+	result map[string]object.Object,
+	coupled nullableExclusionWithPeerDistinct,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+	nullableByName map[string]bool,
+	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) {
+	exclusion := coupled.exclusion
+	usedAbbrs := peerUsedStringSet(coupled.peer, lookup)
+
+	if nullableByName[exclusion.driverParam] && rng.Intn(5) == 0 {
+		result[exclusion.driverParam] = evaluator.EMPTY_SET
+		if value, ok := pickRandomStringNotInNamedSetExcluding(
+			exclusion.setSubKey, namedSetValues, usedAbbrs, rng,
+		); ok {
+			result[exclusion.followerParam] = value
+		}
+		return
+	}
+
+	value, ok := pickRandomStringFromNamedSetExcluding(exclusion.setSubKey, namedSetValues, usedAbbrs, rng)
+	if !ok {
+		return
+	}
+	result[exclusion.driverParam] = value
+	result[exclusion.followerParam] = value.Clone()
+}
+
+func peerUsedStringSet(
+	peer *peerFieldDistinctFromParamPattern,
+	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) map[string]bool {
+	used := make(map[string]bool)
+	if lookup == nil {
+		return used
+	}
+	for _, val := range lookup(peer.ClassKey, peer.FieldSubKey) {
+		if str, ok := val.(*object.String); ok {
+			used[str.Value()] = true
+		}
+	}
+	return used
 }
 
 func applyPeerFieldDistinct(
@@ -347,6 +423,15 @@ func pickRandomStringNotInNamedSet(
 	namedSetValues map[string]object.Object,
 	rng *rand.Rand,
 ) (object.Object, bool) {
+	return pickRandomStringNotInNamedSetExcluding(setSubKey, namedSetValues, nil, rng)
+}
+
+func pickRandomStringNotInNamedSetExcluding(
+	setSubKey string,
+	namedSetValues map[string]object.Object,
+	excluded map[string]bool,
+	rng *rand.Rand,
+) (object.Object, bool) {
 	setObj, ok := namedSetValues[setSubKey]
 	if !ok {
 		return nil, false
@@ -359,6 +444,9 @@ func pickRandomStringNotInNamedSet(
 
 	for range maxNotInNamedSetAttempts {
 		candidate := randomString(rng)
+		if str, ok := candidate.(*object.String); ok && excluded != nil && excluded[str.Value()] {
+			continue
+		}
 		if !set.Contains(candidate) {
 			return candidate, true
 		}
@@ -371,6 +459,15 @@ func pickRandomStringFromNamedSet(
 	namedSetValues map[string]object.Object,
 	rng *rand.Rand,
 ) (object.Object, bool) {
+	return pickRandomStringFromNamedSetExcluding(setSubKey, namedSetValues, nil, rng)
+}
+
+func pickRandomStringFromNamedSetExcluding(
+	setSubKey string,
+	namedSetValues map[string]object.Object,
+	excluded map[string]bool,
+	rng *rand.Rand,
+) (object.Object, bool) {
 	setObj, ok := namedSetValues[setSubKey]
 	if !ok {
 		return nil, false
@@ -381,9 +478,17 @@ func pickRandomStringFromNamedSet(
 		return nil, false
 	}
 
-	elements := set.Elements()
-	chosen := elements[rng.Intn(len(elements))]
-	return chosen.Clone(), true
+	available := make([]object.Object, 0, set.Size())
+	for _, elem := range set.Elements() {
+		if str, ok := elem.(*object.String); ok && excluded != nil && excluded[str.Value()] {
+			continue
+		}
+		available = append(available, elem)
+	}
+	if len(available) == 0 {
+		return nil, false
+	}
+	return available[rng.Intn(len(available))].Clone(), true
 }
 
 func pickRandomTuple(
