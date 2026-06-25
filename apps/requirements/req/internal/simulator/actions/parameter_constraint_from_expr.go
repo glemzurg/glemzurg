@@ -5,6 +5,17 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 )
 
+// SamplingConstraintsForTest exposes constraint extraction for integration tests.
+type SamplingConstraintsForTest struct {
+	NullableElseMembership *nullableElseMembershipConstraint
+}
+
+// ExtractSamplingConstraintsForTest returns constraints extracted from sampling logics.
+func ExtractSamplingConstraintsForTest(logics []model_logic.Logic) SamplingConstraintsForTest {
+	c := extractParameterConstraints(logics)
+	return SamplingConstraintsForTest{NullableElseMembership: c.nullableElseMembership}
+}
+
 func extractParameterConstraints(requires []model_logic.Logic) parameterConstraints {
 	constraints := parameterConstraints{
 		enumValues: make(map[string][]string),

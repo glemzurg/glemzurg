@@ -55,3 +55,29 @@ func isTrueLiteral(expr me.Expression) bool {
 	literal, ok := expr.(*me.BoolLiteral)
 	return ok && literal.Value
 }
+
+// WrapNullableWhenSetExpression wraps inner so NULL/absent is valid and inner applies only when set.
+// Reuses the already-lowered inner tree so sampling does not need to re-parse named set references.
+func WrapNullableWhenSetExpression(paramName string, inner me.Expression) me.Expression {
+	return &me.IfThenElse{
+		Condition: &me.Compare{
+			Op:    me.CompareEq,
+			Left:  &me.LocalVar{Name: paramName},
+			Right: &me.SetLiteral{Elements: nil},
+		},
+		Then: &me.BoolLiteral{Value: true},
+		Else: inner,
+	}
+}
+
+// IsParameterEqualityInvariant reports whether expr equates two action/query parameters.
+// Coupling invariants like ISO = Abbr are not sampled yet.
+func IsParameterEqualityInvariant(expr me.Expression) bool {
+	cmp, ok := expr.(*me.Compare)
+	if !ok || cmp.Op != me.CompareEq {
+		return false
+	}
+	_, leftOk := cmp.Left.(*me.LocalVar)
+	_, rightOk := cmp.Right.(*me.LocalVar)
+	return leftOk && rightOk
+}

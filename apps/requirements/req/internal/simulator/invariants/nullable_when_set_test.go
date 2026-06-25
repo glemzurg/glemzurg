@@ -33,3 +33,20 @@ func (s *NullableWhenSetSuite) TestLogicSpecHasNullableWhenUnsetGuardRejectsBare
 	spec := helper.Must(logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "accountId > 0", pf))
 	s.False(LogicSpecHasNullableWhenUnsetGuard(spec))
 }
+
+func (s *NullableWhenSetSuite) TestIsParameterEqualityInvariant() {
+	ctx := &convert.LowerContext{Parameters: map[string]bool{"ISO": true, "Abbr": true}}
+	pf := convert.NewExpressionParseFunc(ctx)
+	isoAbbr := helper.Must(logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "ISO = Abbr", pf))
+	s.True(IsParameterEqualityInvariant(isoAbbr.Expression))
+
+	membership := helper.Must(logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "ISO \\in { \"USD\" }", pf))
+	s.False(IsParameterEqualityInvariant(membership.Expression))
+}
+
+func (s *NullableWhenSetSuite) TestWrapNullableWhenSetExpressionPreservesParseOk() {
+	pf := convert.NewExpressionParseFunc(nil)
+	inner := helper.Must(logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "ISO > 0", pf))
+	wrapped := WrapNullableWhenSetExpression("ISO", inner.Expression)
+	s.True(LogicHasNullableWhenUnsetGuard(wrapped))
+}

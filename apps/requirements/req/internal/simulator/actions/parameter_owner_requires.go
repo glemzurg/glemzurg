@@ -152,9 +152,13 @@ func (o ParameterOwner) AssessParameterInvariants(
 				logics = append(logics, inv)
 				continue
 			}
-			if inv.Type == model_logic.LogicTypeAssessment && inv.Spec.Expression != nil {
-				logics = append(logics, inv)
+			if inv.Type != model_logic.LogicTypeAssessment || inv.Spec.Expression == nil {
+				continue
 			}
+			if invariants.IsParameterEqualityInvariant(inv.Spec.Expression) {
+				continue
+			}
+			logics = append(logics, inv)
 		}
 	}
 	return assessLogics(o, paramDefs, bindings, "parameter invariant", func() ([]model_logic.Logic, error) {
@@ -311,15 +315,9 @@ func effectiveOwnerRequires(
 // parameterInvariantAssessmentsForSampling returns parameter invariant assessments for sampling.
 // Nullable parameters get an automatic NULL guard unless the author already wrote one.
 func parameterInvariantAssessmentsForSampling(ownerKey identity.Key, params []model_state.Parameter) ([]model_logic.Logic, error) {
-	classKey, err := identity.ParseKey(ownerKey.ParentKey)
-	if err != nil {
+	if _, err := identity.ParseKey(ownerKey.ParentKey); err != nil {
 		return nil, fmt.Errorf("parameter invariants: owner %q: %w", ownerKey.String(), err)
 	}
-	ctx := &convert.LowerContext{
-		ClassKey:   classKey,
-		Parameters: parameterNames(params),
-	}
-	pf := convert.NewExpressionParseFunc(ctx)
 
 	var assessments []model_logic.Logic
 	for _, param := range params {
@@ -327,12 +325,15 @@ func parameterInvariantAssessmentsForSampling(ownerKey identity.Key, params []mo
 			if inv.Type != model_logic.LogicTypeAssessment || inv.Spec.Expression == nil {
 				continue
 			}
+			if invariants.IsParameterEqualityInvariant(inv.Spec.Expression) {
+				continue
+			}
 			logic := inv
 			if param.Nullable && !invariants.LogicSpecHasNullableWhenUnsetGuard(inv.Spec) {
-				wrapped := invariants.NullableWhenSetSpecification(param.Name, inv.Spec.Specification)
-				spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, wrapped, pf)
-				if err != nil {
-					return nil, fmt.Errorf("parameter %q invariant: %w", param.Name, err)
+				spec := logic_spec.ExpressionSpec{
+					Notation:      inv.Spec.Notation,
+					Specification: invariants.NullableWhenSetSpecification(param.Name, inv.Spec.Specification),
+					Expression:    invariants.WrapNullableWhenSetExpression(param.Name, inv.Spec.Expression),
 				}
 				logic = model_logic.NewLogic(
 					inv.Key,
@@ -352,9 +353,13 @@ func parameterInvariantAssessmentsForSampling(ownerKey identity.Key, params []mo
 func hasParameterInvariantAssessments(params []model_state.Parameter) bool {
 	for _, param := range params {
 		for _, inv := range param.Invariants {
-			if inv.Type == model_logic.LogicTypeAssessment && inv.Spec.Expression != nil {
-				return true
+			if inv.Type != model_logic.LogicTypeAssessment || inv.Spec.Expression == nil {
+				continue
 			}
+			if invariants.IsParameterEqualityInvariant(inv.Spec.Expression) {
+				continue
+			}
+			return true
 		}
 	}
 	return false

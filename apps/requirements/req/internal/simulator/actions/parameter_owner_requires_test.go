@@ -227,6 +227,38 @@ func (s *ParameterSamplerSuite) TestAssessParameterInvariantSkipsWhenNullableAnd
 	s.Empty(failures)
 }
 
+func (s *ParameterSamplerSuite) TestAssessParameterInvariantSkipsParameterEquality() {
+	classKey := mustKey("domain/finance/wallet/class/currency")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "add"))
+	isoParamKey := helper.Must(identity.NewParameterKey(actionKey, "iso"))
+	isoParam := helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true))
+	abbrParam := helper.Must(model_state.NewParameter(actionKey, "Abbr", "abbreviation", false))
+	ctx := &convert.LowerContext{
+		ClassKey:   classKey,
+		Parameters: map[string]bool{"ISO": true, "Abbr": true},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	isoParam.SetInvariants([]model_logic.Logic{
+		model_logic.NewLogic(
+			helper.Must(identity.NewParameterInvariantKey(isoParamKey, "1")),
+			model_logic.LogicTypeAssessment,
+			"ISO must match Abbr when provided.",
+			"",
+			helper.Must(logic_spec.NewExpressionSpec("tla_plus", "ISO = Abbr", pf)),
+			nil,
+		),
+	})
+	owner := ParameterOwnerFromAction(model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, nil, nil, nil, []model_state.Parameter{isoParam, abbrParam}))
+
+	bindings := evaluator.NewBindings()
+	bindings.Set("ISO", object.NewString("USD"), evaluator.NamespaceLocal)
+	bindings.Set("Abbr", object.NewString("NS"), evaluator.NamespaceLocal)
+
+	failures, err := owner.AssessParameterInvariants([]model_state.Parameter{isoParam, abbrParam}, bindings)
+	s.Require().NoError(err)
+	s.Empty(failures)
+}
+
 func (s *ParameterSamplerSuite) TestAssessParameterInvariantFailsWhenSetAndViolated() {
 	classKey := mustKey("domain/finance/wallet/class/account")
 	actionKey := helper.Must(identity.NewActionKey(classKey, "open"))
