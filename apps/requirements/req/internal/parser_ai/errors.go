@@ -69,6 +69,7 @@ const (
 	ErrAssocFilenameInvalid     = 6013
 	ErrAssocDuplicateKey        = 6014
 	ErrAssocNameMismatch        = 6015
+	ErrAssocUniquenessRequired  = 6016
 
 	// State machine errors (7xxx).
 	ErrStateMachineInvalidJSON     = 7001

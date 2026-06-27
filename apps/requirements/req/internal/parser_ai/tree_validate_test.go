@@ -522,6 +522,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocFromClassNotFound() {
 			FromMultiplicity: "1",
 			ToClassKey:       "class1",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -546,6 +548,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocToClassNotFound() {
 			FromMultiplicity: "1",
 			ToClassKey:       "missing_class",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -567,11 +571,13 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
 	missingClass := "missing_class"
 	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
-			Name:                "Test Association",
-			FromClassKey:        "class1",
-			FromMultiplicity:    "1",
-			ToClassKey:          "class2",
-			ToMultiplicity:      "*",
+			Name:             "Test Association",
+			FromClassKey:     "class1",
+			FromMultiplicity: "1",
+			ToClassKey:       "class2",
+			ToMultiplicity:   "*",
+
+			Uniqueness:          "any",
 			AssociationClassKey: &missingClass,
 		},
 	}
@@ -594,11 +600,13 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
 	sameAsFrom := "class1"
 	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
-			Name:                "Test Association",
-			FromClassKey:        "class1",
-			FromMultiplicity:    "1",
-			ToClassKey:          "class2",
-			ToMultiplicity:      "*",
+			Name:             "Test Association",
+			FromClassKey:     "class1",
+			FromMultiplicity: "1",
+			ToClassKey:       "class2",
+			ToMultiplicity:   "*",
+
+			Uniqueness:          "any",
 			AssociationClassKey: &sameAsFrom,
 		},
 	}
@@ -622,11 +630,13 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
 	sameAsTo := "class2"
 	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
-			Name:                "Test Association",
-			FromClassKey:        "class1",
-			FromMultiplicity:    "1",
-			ToClassKey:          "class2",
-			ToMultiplicity:      "*",
+			Name:             "Test Association",
+			FromClassKey:     "class1",
+			FromMultiplicity: "1",
+			ToClassKey:       "class2",
+			ToMultiplicity:   "*",
+
+			Uniqueness:          "any",
 			AssociationClassKey: &sameAsTo,
 		},
 	}
@@ -654,6 +664,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocMultiplicityInvalid() {
 			FromMultiplicity: "invalid",
 			ToClassKey:       "class2",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -684,6 +696,8 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 			FromMultiplicity: "1",
 			ToClassKey:       "subdomain2/class2",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -707,6 +721,8 @@ func (suite *TreeValidateSuite) TestDomainAssocInvalidKeyFormat() {
 			FromMultiplicity: "1",
 			ToClassKey:       "subdomain1/class1",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -742,6 +758,8 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 			FromMultiplicity: "1",
 			ToClassKey:       "domain2/subdomain1/class1",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -777,6 +795,8 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 			FromMultiplicity: "1",
 			ToClassKey:       "domain2/subdomain1/missing_class",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -800,6 +820,8 @@ func (suite *TreeValidateSuite) TestModelAssocInvalidKeyFormat() {
 			FromMultiplicity: "1",
 			ToClassKey:       "domain1/subdomain1/class1",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -945,6 +967,8 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsHasDefault() {
 				FromMultiplicity: "1",
 				ToClassKey:       "tracking",
 				ToMultiplicity:   "*",
+
+				Uniqueness: "any",
 			},
 		},
 	}
@@ -982,6 +1006,8 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsValid() {
 				FromMultiplicity: "1",
 				ToClassKey:       "tracking",
 				ToMultiplicity:   "*",
+
+				Uniqueness: "any",
 			},
 		},
 	}
@@ -1006,6 +1032,8 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
 			FromMultiplicity: "1",
 			ToClassKey:       "order",
 			ToMultiplicity:   "*",
+
+			Uniqueness: "any",
 		},
 	}
 
@@ -1166,6 +1194,8 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 						FromMultiplicity: "1",
 						ToClassKey:       "order",
 						ToMultiplicity:   "*",
+
+						Uniqueness: "any",
 					},
 				}
 				return m
@@ -1478,6 +1508,8 @@ func t_buildValidModelTree() *inputModel {
 								FromMultiplicity: "1",
 								ToClassKey:       "line_item",
 								ToMultiplicity:   "1..*",
+
+								Uniqueness: "any",
 							},
 						},
 					},
@@ -1515,6 +1547,8 @@ func t_buildCompleteModelTree() *inputModel {
 								FromMultiplicity: "1",
 								ToClassKey:       "line_item",
 								ToMultiplicity:   "1..*",
+
+								Uniqueness: "any",
 							},
 						},
 					},

@@ -16,6 +16,7 @@ type inputClassAssociation struct {
 	FromMultiplicity    string  `json:"from_multiplicity"`
 	ToClassKey          string  `json:"to_class_key"`
 	ToMultiplicity      string  `json:"to_multiplicity"`
+	Uniqueness          string  `json:"uniqueness"`
 	AssociationClassKey *string `json:"association_class_key,omitempty"`
 	UmlComment          string  `json:"uml_comment,omitempty"`
 
@@ -98,6 +99,14 @@ func validateAssociation(assoc *inputClassAssociation, filename string) error {
 	}
 	if strings.TrimSpace(assoc.ToClassKey) == "" {
 		return NewParseError(ErrAssocToClassRequired, "association to_class_key cannot be empty or whitespace only, got '"+assoc.ToClassKey+"'", filename).WithField("to_class_key").WithHint("add a non-empty \"to_class_key\" referencing a defined class")
+	}
+
+	// Validate uniqueness
+	if assoc.Uniqueness == "" {
+		return NewParseError(ErrAssocUniquenessRequired, "association uniqueness is required, got ''", filename).WithField("uniqueness").WithHint("add \"uniqueness\": one of \"1\", \"0..1\", \"*\", \"0..*\", \"1..*\", or \"any\"")
+	}
+	if strings.TrimSpace(assoc.Uniqueness) == "" {
+		return NewParseError(ErrAssocUniquenessRequired, "association uniqueness cannot be empty or whitespace only, got '"+assoc.Uniqueness+"'", filename).WithField("uniqueness").WithHint("add \"uniqueness\": one of \"1\", \"0..1\", \"*\", \"0..*\", \"1..*\", or \"any\"")
 	}
 
 	// Validate to_multiplicity

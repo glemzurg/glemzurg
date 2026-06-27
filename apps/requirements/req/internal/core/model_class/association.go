@@ -37,11 +37,17 @@ type AssociationDetails struct {
 	Details string
 }
 
+// AssociationOptions holds optional association-class and diagram metadata.
+type AssociationOptions struct {
+	AssociationClassKey *identity.Key
+	UmlComment          string
+}
+
 func (a *Association) SetInvariants(invariants []model_logic.Logic) {
 	a.Invariants = invariants
 }
 
-func NewAssociation(key identity.Key, details AssociationDetails, from, to AssociationEnd, associationClassKey *identity.Key, umlComment string) Association {
+func NewAssociation(key identity.Key, details AssociationDetails, from, to AssociationEnd, uniqueness Multiplicity, options AssociationOptions) Association {
 	return Association{
 		Key:                 key,
 		Name:                details.Name,
@@ -50,8 +56,9 @@ func NewAssociation(key identity.Key, details AssociationDetails, from, to Assoc
 		FromMultiplicity:    from.Multiplicity,
 		ToClassKey:          to.ClassKey,
 		ToMultiplicity:      to.Multiplicity,
-		AssociationClassKey: associationClassKey,
-		UmlComment:          umlComment,
+		Uniqueness:          uniqueness,
+		AssociationClassKey: options.AssociationClassKey,
+		UmlComment:          options.UmlComment,
 	}
 }
 
@@ -92,6 +99,9 @@ func (a *Association) Validate(ctx *coreerr.ValidationContext) error {
 	}
 	if err := a.ToMultiplicity.Validate(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.AssocToMultInvalid, fmt.Sprintf("ToMultiplicity: %s", err.Error()), "ToMultiplicity")
+	}
+	if err := a.Uniqueness.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.AssocUniquenessInvalid, fmt.Sprintf("Uniqueness: %s", err.Error()), "Uniqueness")
 	}
 	// Validate AssociationClassKey FK key type and constraints.
 	if a.AssociationClassKey != nil {

@@ -16,7 +16,7 @@ func scanAssociation(scanner Scanner, association *model_class.Association) (err
 	var fromClassKeyStr string
 	var toClassKeyStr string
 	var associationClassKeyPtr *string
-	var fromLowerBound, fromHigherBound, toLowerBound, toHigherBound uint
+	var fromLowerBound, fromHigherBound, toLowerBound, toHigherBound, uniquenessLower, uniquenessHigher uint
 
 	if err = scanner.Scan(
 		&associationKeyStr,
@@ -28,6 +28,8 @@ func scanAssociation(scanner Scanner, association *model_class.Association) (err
 		&toClassKeyStr,
 		&toLowerBound,
 		&toHigherBound,
+		&uniquenessLower,
+		&uniquenessHigher,
 		&associationClassKeyPtr,
 		&association.UmlComment,
 	); err != nil {
@@ -57,6 +59,7 @@ func scanAssociation(scanner Scanner, association *model_class.Association) (err
 
 	association.FromMultiplicity = model_class.Multiplicity{LowerBound: fromLowerBound, HigherBound: fromHigherBound}
 	association.ToMultiplicity = model_class.Multiplicity{LowerBound: toLowerBound, HigherBound: toHigherBound}
+	association.Uniqueness = model_class.Multiplicity{LowerBound: uniquenessLower, HigherBound: uniquenessHigher}
 
 	if associationClassKeyPtr != nil {
 		associationClassKey, err := identity.ParseKey(*associationClassKeyPtr)
@@ -90,6 +93,8 @@ func LoadAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key
 			to_class_key             ,
 			to_multiplicity_lower    ,
 			to_multiplicity_higher   ,
+			uniqueness_lower         ,
+			uniqueness_higher        ,
 			association_class_key    ,
 			uml_comment
 		FROM
@@ -135,8 +140,10 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.A
 			to_class_key             = $8  ,
 			to_multiplicity_lower    = $9  ,
 			to_multiplicity_higher   = $10 ,
-			association_class_key    = $11 ,
-			uml_comment              = $12
+			uniqueness_lower         = $11 ,
+			uniqueness_higher        = $12 ,
+			association_class_key    = $13 ,
+			uml_comment              = $14
 		WHERE
 			association_key = $2
 		AND
@@ -151,6 +158,8 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.A
 		association.ToClassKey.String(),
 		association.ToMultiplicity.LowerBound,
 		association.ToMultiplicity.HigherBound,
+		association.Uniqueness.LowerBound,
+		association.Uniqueness.HigherBound,
 		associationClassKeyPtr,
 		association.UmlComment)
 	if err != nil {
@@ -202,6 +211,8 @@ func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_cla
 			to_class_key             ,
 			to_multiplicity_lower    ,
 			to_multiplicity_higher   ,
+			uniqueness_lower         ,
+			uniqueness_higher        ,
 			association_class_key    ,
 			uml_comment
 		FROM
@@ -225,14 +236,14 @@ func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.
 
 	// Build the bulk insert query.
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`INSERT INTO association (model_key, association_key, name, details, from_class_key, from_multiplicity_lower, from_multiplicity_higher, to_class_key, to_multiplicity_lower, to_multiplicity_higher, association_class_key, uml_comment) VALUES `)
-	args := make([]any, 0, len(associations)*12)
+	queryBuilder.WriteString(`INSERT INTO association (model_key, association_key, name, details, from_class_key, from_multiplicity_lower, from_multiplicity_higher, to_class_key, to_multiplicity_lower, to_multiplicity_higher, uniqueness_lower, uniqueness_higher, association_class_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(associations)*14)
 	for i, assoc := range associations {
 		if i > 0 {
 			queryBuilder.WriteString(", ")
 		}
-		base := i * 12
-		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12)
+		base := i * 14
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12, base+13, base+14)
 
 		// Handle optional association class key.
 		var associationClassKeyPtr *string
@@ -241,7 +252,7 @@ func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.
 			associationClassKeyPtr = &s
 		}
 
-		args = append(args, modelKey, assoc.Key.String(), assoc.Name, assoc.Details, assoc.FromClassKey.String(), assoc.FromMultiplicity.LowerBound, assoc.FromMultiplicity.HigherBound, assoc.ToClassKey.String(), assoc.ToMultiplicity.LowerBound, assoc.ToMultiplicity.HigherBound, associationClassKeyPtr, assoc.UmlComment)
+		args = append(args, modelKey, assoc.Key.String(), assoc.Name, assoc.Details, assoc.FromClassKey.String(), assoc.FromMultiplicity.LowerBound, assoc.FromMultiplicity.HigherBound, assoc.ToClassKey.String(), assoc.ToMultiplicity.LowerBound, assoc.ToMultiplicity.HigherBound, assoc.Uniqueness.LowerBound, assoc.Uniqueness.HigherBound, associationClassKeyPtr, assoc.UmlComment)
 	}
 
 	err = dbExec(dbOrTx, queryBuilder.String(), args...)

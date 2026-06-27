@@ -4,5 +4,6 @@
     "from_multiplicity": "*",
     "to_class_key": "academic.course",
     "to_multiplicity": "*",
-    "association_class_key": "academic.enrollment"
+    "association_class_key": "academic.enrollment",
+    "uniqueness": "any"
 }

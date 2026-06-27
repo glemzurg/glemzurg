@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -733,6 +734,10 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
+	if err := validateAssociationUniqueness(assoc, assocKey, assocPath); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -873,6 +878,10 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 				assocKey, assoc.ToMultiplicity, err.Error()),
 			assocPath,
 		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
+	}
+
+	if err := validateAssociationUniqueness(assoc, assocKey, assocPath); err != nil {
+		return err
 	}
 
 	return nil
@@ -1049,6 +1058,29 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
+	if err := validateAssociationUniqueness(assoc, assocKey, assocPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateAssociationUniqueness(assoc *inputClassAssociation, assocKey, assocPath string) error {
+	if strings.TrimSpace(assoc.Uniqueness) == "" {
+		return NewParseError(
+			ErrAssocUniquenessRequired,
+			fmt.Sprintf("association '%s' uniqueness is required, got ''", assocKey),
+			assocPath,
+		).WithField("uniqueness").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
+	}
+	if err := validateMultiplicity(assoc.Uniqueness); err != nil {
+		return NewParseError(
+			ErrTreeAssocMultiplicityInvalid,
+			fmt.Sprintf("association '%s' uniqueness '%s' is invalid: %s",
+				assocKey, assoc.Uniqueness, err.Error()),
+			assocPath,
+		).WithField("uniqueness").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
+	}
 	return nil
 }
 
@@ -1077,6 +1109,9 @@ var multiplicityPattern = regexp.MustCompile(`^(\d+|\*)$|^(\d+)\.\.(\d+|\*)$`)
 func validateMultiplicity(mult string) error {
 	if mult == "" {
 		return fmt.Errorf("multiplicity cannot be empty")
+	}
+	if mult == model_class.MULTIPLICITY_ANY || mult == "many" {
+		return nil
 	}
 
 	if !multiplicityPattern.MatchString(mult) {

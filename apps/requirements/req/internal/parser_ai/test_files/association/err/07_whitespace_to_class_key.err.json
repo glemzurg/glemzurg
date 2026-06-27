@@ -3,5 +3,6 @@
     "from_class_key": "order_management.order",
     "from_multiplicity": "1",
     "to_class_key": "   ",
-    "to_multiplicity": "1..*"
+    "to_multiplicity": "1..*",
+    "uniqueness": "any"
 }

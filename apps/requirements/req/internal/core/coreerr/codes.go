@@ -230,6 +230,7 @@ const (
 	AssocTokeyTypeInvalid      Code = "ASSOC_TOKEY_TYPE_INVALID"      // ToClassKey is not KEY_TYPE_CLASS.
 	AssocFromMultInvalid       Code = "ASSOC_FROM_MULT_INVALID"       // FromMultiplicity failed validation.
 	AssocToMultInvalid         Code = "ASSOC_TO_MULT_INVALID"         // ToMultiplicity failed validation.
+	AssocUniquenessInvalid     Code = "ASSOC_UNIQUENESS_INVALID"      // Uniqueness failed validation.
 	AssocAssocclassInvalid     Code = "ASSOC_ASSOCCLASS_INVALID"      // AssociationClassKey failed validation.
 	AssocAssocclassType        Code = "ASSOC_ASSOCCLASS_TYPE"         // AssociationClassKey is not KEY_TYPE_CLASS.
 	AssocAssocclassSameFrom    Code = "ASSOC_ASSOCCLASS_SAME_FROM"    // AssociationClassKey same as FromClassKey.

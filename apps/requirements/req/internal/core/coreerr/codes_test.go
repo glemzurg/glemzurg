@@ -229,6 +229,7 @@ func allCodeConstants() map[string]Code {
 		"AssocTokeyTypeInvalid":   AssocTokeyTypeInvalid,
 		"AssocFromMultInvalid":    AssocFromMultInvalid,
 		"AssocToMultInvalid":      AssocToMultInvalid,
+		"AssocUniquenessInvalid":  AssocUniquenessInvalid,
 		"AssocAssocclassInvalid":  AssocAssocclassInvalid,
 		"AssocAssocclassType":     AssocAssocclassType,
 		"AssocAssocclassSameFrom": AssocAssocclassSameFrom,

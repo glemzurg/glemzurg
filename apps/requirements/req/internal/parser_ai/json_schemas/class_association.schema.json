@@ -34,6 +34,11 @@
       "description": "Multiplicity at the target (to) end of the association. Format is either a single number (e.g., '1', '2') or a range 'lower..upper'. Use '*' for unbounded (converted internally to 'any' or 'many'). Common values: '1' (exactly one), '0..1' (zero or one), '*' or 'any' (zero or more), '1..*' or '1..many' (one or more), or specific ranges like '2..5'. The upper bound must be >= the lower bound. This indicates how many instances of the to_class can be associated with one instance of the from_class. If validation fails: ensure this follows the format 'N', 'N..M', 'N..*', or 'N..many' where N and M are non-negative integers.",
       "minLength": 1
     },
+    "uniqueness": {
+      "type": "string",
+      "description": "Cap on how many links may exist between the same from-class and to-class instances for this association. Uses the same multiplicity format as from_multiplicity and to_multiplicity. Use 'any' for no per-pair cap. Example: '0..1' allows at most one link per instance pair; '1' requires exactly one when linked.",
+      "minLength": 1
+    },
     "association_class_key": {
       "type": ["string", "null"],
       "description": "Optional key referencing an association class that holds attributes about the relationship itself. For example, an 'Enrollment' class between 'Student' and 'Course' might hold 'grade' and 'enrollment_date'. The association class must exist in the same scope as the association. Use the same scoping format as from_class_key and to_class_key. Set to null or omit if there is no association class. If validation fails: verify the association class file exists and the key uses the correct scoping format for this directory level."
@@ -43,6 +48,6 @@
       "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the association line in generated UML diagrams. Use for diagram-specific clarifications."
     }
   },
-  "required": ["name", "from_class_key", "from_multiplicity", "to_class_key", "to_multiplicity"],
+  "required": ["name", "from_class_key", "from_multiplicity", "to_class_key", "to_multiplicity", "uniqueness"],
   "additionalProperties": false
 }

@@ -132,6 +132,20 @@ func (suite *AssociationSuite) TestValidate() {
 			errstr: "AssociationClassKey cannot be the same as ToClassKey",
 		},
 		{
+			testName: "error invalid uniqueness bounds",
+			association: func() Association {
+				badMult, _ := NewMultiplicity("3..2")
+				return Association{
+					Key:          validKey,
+					Name:         "Name",
+					FromClassKey: fromClassKey,
+					ToClassKey:   toClassKey,
+					Uniqueness:   badMult,
+				}
+			}(),
+			errstr: "Uniqueness",
+		},
+		{
 			testName: "error AssociationClassKey wrong key type",
 			association: func() Association {
 				wrongKey := domainKey
@@ -172,7 +186,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, &assocClassKey, "UmlComment")
+	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, multiplicity, AssociationOptions{AssociationClassKey: &assocClassKey, UmlComment: "UmlComment"})
 	suite.Equal(Association{
 		Key:                 key,
 		Name:                "Name",
@@ -181,6 +195,7 @@ func (suite *AssociationSuite) TestNew() {
 		FromMultiplicity:    multiplicity,
 		ToClassKey:          toClassKey,
 		ToMultiplicity:      multiplicity,
+		Uniqueness:          multiplicity,
 		AssociationClassKey: &assocClassKey,
 		UmlComment:          "UmlComment",
 	}, assoc)

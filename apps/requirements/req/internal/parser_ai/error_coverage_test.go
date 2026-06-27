@@ -81,6 +81,7 @@ func allErrorCodes() map[int]string {
 		ErrAssocFilenameInvalid:     "ErrAssocFilenameInvalid",
 		ErrAssocDuplicateKey:        "ErrAssocDuplicateKey",
 		ErrAssocNameMismatch:        "ErrAssocNameMismatch",
+		ErrAssocUniquenessRequired:  "ErrAssocUniquenessRequired",
 
 		// State machine errors (7xxx).
 		ErrStateMachineInvalidJSON:     "ErrStateMachineInvalidJSON",
@@ -403,8 +404,8 @@ func (s *ErrorCoverageSuite) TestAllDocsAreNonEmpty() {
 // This test catches cases where a new constant is added to errors.go but not to allErrorCodes().
 func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
-	// 239 error codes as of current implementation.
+	// 240 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 239,
+	s.Len(codes, 240,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }

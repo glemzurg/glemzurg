@@ -322,6 +322,7 @@ var coreToParserCode = map[coreerr.Code]int{
 	coreerr.AssocNameRequired:         ErrConvInternalKeyError,
 	coreerr.AssocFromMultInvalid:      ErrConvInternalKeyError,
 	coreerr.AssocToMultInvalid:        ErrConvInternalKeyError,
+	coreerr.AssocUniquenessInvalid:    ErrConvInternalKeyError,
 	coreerr.CgenNameRequired:          ErrConvInternalKeyError,
 	coreerr.AgenNameRequired:          ErrConvInternalKeyError,
 	coreerr.UcgenNameRequired:         ErrConvInternalKeyError,

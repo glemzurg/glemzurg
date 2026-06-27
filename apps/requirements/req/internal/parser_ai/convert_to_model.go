@@ -1583,6 +1583,11 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 		).WithField("to_multiplicity")
 	}
 
+	uniqueness, err := parseAssociationUniqueness(assoc, assocFile)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+
 	result := model_class.Association{
 		Key:              assocKey,
 		Name:             assoc.Name,
@@ -1591,6 +1596,7 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 		FromMultiplicity: fromMult,
 		ToClassKey:       toClassKey,
 		ToMultiplicity:   toMult,
+		Uniqueness:       uniqueness,
 		UmlComment:       assoc.UmlComment,
 	}
 
@@ -1710,6 +1716,11 @@ func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssoci
 		).WithField("to_multiplicity")
 	}
 
+	uniqueness, err := parseAssociationUniqueness(assoc, assocFile)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+
 	result := model_class.Association{
 		Key:              assocKey,
 		Name:             assoc.Name,
@@ -1718,6 +1729,7 @@ func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssoci
 		FromMultiplicity: fromMult,
 		ToClassKey:       toClassKey,
 		ToMultiplicity:   toMult,
+		Uniqueness:       uniqueness,
 		UmlComment:       assoc.UmlComment,
 	}
 
@@ -1823,6 +1835,11 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 		).WithField("to_multiplicity")
 	}
 
+	uniqueness, err := parseAssociationUniqueness(assoc, assocFile)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+
 	result := model_class.Association{
 		Key:              assocKey,
 		Name:             assoc.Name,
@@ -1831,6 +1848,7 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 		FromMultiplicity: fromMult,
 		ToClassKey:       toClassKey,
 		ToMultiplicity:   toMult,
+		Uniqueness:       uniqueness,
 		UmlComment:       assoc.UmlComment,
 	}
 
@@ -1841,12 +1859,31 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 	return result, nil
 }
 
+func parseAssociationUniqueness(assoc *inputClassAssociation, assocFile string) (model_class.Multiplicity, error) {
+	if strings.TrimSpace(assoc.Uniqueness) == "" {
+		return model_class.Multiplicity{}, convErr(
+			ErrConvMultiplicityInvalid,
+			"association uniqueness is required, got ''",
+			assocFile,
+		).WithField("uniqueness")
+	}
+	uniqueness, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.Uniqueness))
+	if err != nil {
+		return model_class.Multiplicity{}, convErr(
+			ErrConvMultiplicityInvalid,
+			fmt.Sprintf("failed to parse uniqueness '%s': %s", assoc.Uniqueness, err.Error()),
+			assocFile,
+		).WithField("uniqueness")
+	}
+	return uniqueness, nil
+}
+
 // normalizeMultiplicity converts user-friendly multiplicity strings to the format expected by model_class.NewMultiplicity.
 // "*" -> "any", "1..*" -> "1..many", etc.
 func normalizeMultiplicity(mult string) string {
 	// Handle standalone "*"
 	if mult == "*" {
-		return "any"
+		return model_class.MULTIPLICITY_ANY
 	}
 	// Handle "n..*" patterns -> "n..many"
 	if trimmed, ok := strings.CutSuffix(mult, "..*"); ok {
