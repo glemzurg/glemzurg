@@ -20,6 +20,7 @@ type Association struct {
 	ToClassKey          identity.Key  // The class on the other end of the association.
 	ToMultiplicity      Multiplicity  // The multiplicity on the other end of the association.
 	AssociationClassKey *identity.Key // Any class that points to this association.
+	Uniqueness          Multiplicity  // How many of the associations can be linked between the from and to classes.
 	UmlComment          string
 	Invariants          []model_logic.Logic // Constraints on link sets from the from-class anchor.
 }
