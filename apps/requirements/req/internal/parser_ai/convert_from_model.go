@@ -605,6 +605,9 @@ func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
 	if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
 		result.TargetTypeSpec = logic.TargetTypeSpec.Specification
 	}
+	if logic.OverAssociationKey != nil {
+		result.OverAssociationKey = logic.OverAssociationKey.String()
+	}
 	return result
 }
 

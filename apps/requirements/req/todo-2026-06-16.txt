@@ -1,9 +1,8 @@
 
 
 
-test there is only 1 to 1 on association classes even though many to many
-    invariants over associations
-    invariants reverse over associations
+
+association uniquness constraint
 
 span forced in invariant
 

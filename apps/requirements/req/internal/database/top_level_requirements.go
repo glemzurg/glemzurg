@@ -375,6 +375,9 @@ func writeClassesAndInvariants(tx *sql.Tx, modelKey string, model core.Model) er
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
 				for _, inv := range class.Invariants {
+					if inv.OverAssociationKey != nil {
+						continue
+					}
 					classInvariantsMap[class.Key] = append(classInvariantsMap[class.Key], inv.Key)
 				}
 			}
@@ -481,17 +484,36 @@ func writeClassIndexes(tx *sql.Tx, modelKey string, model core.Model) error {
 func writeClassAssociations(tx *sql.Tx, modelKey string, model core.Model) error {
 	allClassAssociations := model.GetClassAssociations()
 	var classAssociationsList []model_class.Association
-	associationInvariantsMap := make(map[identity.Key][]identity.Key)
+	var assocInvariantLinks []AssociationInvariantLink
 	for _, assoc := range allClassAssociations {
 		classAssociationsList = append(classAssociationsList, assoc)
 		for _, inv := range assoc.Invariants {
-			associationInvariantsMap[assoc.Key] = append(associationInvariantsMap[assoc.Key], inv.Key)
+			assocInvariantLinks = append(assocInvariantLinks, AssociationInvariantLink{
+				AssociationKey: assoc.Key,
+				LogicKey:       inv.Key,
+			})
+		}
+	}
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				for _, inv := range class.Invariants {
+					if inv.OverAssociationKey == nil {
+						continue
+					}
+					assocInvariantLinks = append(assocInvariantLinks, AssociationInvariantLink{
+						AssociationKey: *inv.OverAssociationKey,
+						LogicKey:       inv.Key,
+						ToClassAnchor:  true,
+					})
+				}
+			}
 		}
 	}
 	if err := AddAssociations(tx, modelKey, classAssociationsList); err != nil {
 		return err
 	}
-	return AddAssociationInvariants(tx, modelKey, associationInvariantsMap)
+	return AddAssociationInvariantLinks(tx, modelKey, assocInvariantLinks)
 }
 
 // writeStateItems inserts states, guards, actions, events, queries and their related sub-items.
@@ -945,6 +967,7 @@ type readDomainStructure struct {
 	scenariosMap              map[identity.Key][]model_scenario.Scenario
 	classesMap                map[identity.Key][]model_class.Class
 	classInvariantsMap        map[identity.Key][]identity.Key
+	toAnchoredAssocKeyByLogic map[identity.Key]identity.Key
 	attrInvariantsMap         map[identity.Key][]identity.Key
 	actionParamInvariantsMap  map[identity.Key][]identity.Key
 	queryParamInvariantsMap   map[identity.Key][]identity.Key
@@ -1002,10 +1025,11 @@ func attachClassAssociations(
 		return nil
 	}
 
-	assocInvariantsMap, err := QueryAssociationInvariants(tx, modelKey)
+	assocInvariantLinks, err := QueryAssociationInvariantLinks(tx, modelKey)
 	if err != nil {
 		return err
 	}
+	assocInvariantsMap := FromAnchoredInvariantKeysByAssociation(assocInvariantLinks)
 
 	allClassAssocs := make(map[identity.Key]model_class.Association)
 	for i := range classAssociationsSlice {
@@ -1111,6 +1135,12 @@ func queryClassStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) e
 	if err != nil {
 		return err
 	}
+
+	assocInvariantLinks, err := QueryAssociationInvariantLinks(tx, modelKey)
+	if err != nil {
+		return err
+	}
+	ds.toAnchoredAssocKeyByLogic = ToAnchoredAssociationKeyByLogic(assocInvariantLinks)
 
 	ds.attrInvariantsMap, err = QueryAttributeInvariants(tx, modelKey)
 	if err != nil {
@@ -1586,6 +1616,7 @@ func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKe
 	classKey := class.Key
 
 	assembleClassInvariants(class, ds.classInvariantsMap[classKey], logicsByKey)
+	applyToAnchoredAssociationKeys(class, ds.toAnchoredAssocKeyByLogic)
 	assembleClassStructure(class, classKey, ds)
 	assembleClassBehavior(class, classKey, ds)
 }
@@ -1598,6 +1629,20 @@ func assembleAssociationInvariants(assoc *model_class.Association, invKeys []ide
 	assoc.Invariants = make([]model_logic.Logic, len(invKeys))
 	for j, key := range invKeys {
 		assoc.Invariants[j] = logicsByKey[key]
+	}
+}
+
+// applyToAnchoredAssociationKeys sets OverAssociationKey on class invariants stored via association_invariant.
+func applyToAnchoredAssociationKeys(class *model_class.Class, toAnchoredAssocKeyByLogic map[identity.Key]identity.Key) {
+	if len(toAnchoredAssocKeyByLogic) == 0 || len(class.Invariants) == 0 {
+		return
+	}
+	for i := range class.Invariants {
+		assocKey, ok := toAnchoredAssocKeyByLogic[class.Invariants[i].Key]
+		if !ok {
+			continue
+		}
+		class.Invariants[i].SetOverAssociationKey(&assocKey)
 	}
 }
 

@@ -25,6 +25,10 @@
       "type": "string",
       "description": "Optional type specification for the target. Declares the TLA+ type of the logic's result (e.g., 'Int', 'STRING', 'SUBSET STRING'). Only meaningful for logic types that have a target ('state_change', 'query', 'let')."
     },
+    "over_association_key": {
+      "type": "string",
+      "description": "Optional class association key reference for class invariants that should render as association invariants in facts and docs. Use a full association key or a relative from_subkey/distilled_name form from the owning class file."
+    },
     "notation": {
       "type": "string",
       "description": "Required. The formal notation system used for any specification. Currently the only supported value is 'tla_plus' (TLA+ notation). Must always be present, even when specification is omitted. If validation fails: ensure this is exactly 'tla_plus'.",

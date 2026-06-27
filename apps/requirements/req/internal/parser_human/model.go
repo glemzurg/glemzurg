@@ -53,7 +53,7 @@ func parseModelYamlData(data string) ([]model_logic.Logic, map[identity.Key]mode
 		return identity.NewInvariantKey(subKey)
 	}
 	invariants, err := logicListFromYamlData(yamlData, "invariants",
-		model_logic.LogicTypeAssessment, identity.Key{}, invariantKeyFunc)
+		model_logic.LogicTypeAssessment, identity.Key{}, invariantKeyFunc, nil)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "model invariants")
 	}

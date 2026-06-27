@@ -924,7 +924,11 @@ func convertClassToModel(keyStr string, class *inputClass, ctx subdomainConvCont
 	}
 
 	// Convert attributes and invariants
-	if err := convertClassAttributesAndInvariants(class, &result, classKey, classFile); err != nil {
+	subdomainKey, err := identity.ParseKey(classKey.ParentKey)
+	if err != nil {
+		return model_class.Class{}, convErr(ErrConvKeyConstruction, fmt.Sprintf("failed to parse subdomain key: %s", err.Error()), classFile)
+	}
+	if err := convertClassAttributesAndInvariants(class, &result, subdomainKey, classKey, classFile); err != nil {
 		return model_class.Class{}, err
 	}
 
@@ -944,7 +948,7 @@ func convertClassToModel(keyStr string, class *inputClass, ctx subdomainConvCont
 }
 
 // convertClassAttributesAndInvariants converts attributes and class-level invariants into the result class.
-func convertClassAttributesAndInvariants(class *inputClass, result *model_class.Class, classKey identity.Key, classFile string) error {
+func convertClassAttributesAndInvariants(class *inputClass, result *model_class.Class, subdomainKey, classKey identity.Key, classFile string) error {
 	for i := range class.Attributes {
 		attr := &class.Attributes[i]
 		converted, err := convertAttributeToModel(attr, classKey, class.Indexes, classFile)
@@ -954,9 +958,9 @@ func convertClassAttributesAndInvariants(class *inputClass, result *model_class.
 		result.Attributes = append(result.Attributes, converted)
 	}
 
-	classInvariants, err := convertLogicsToModel(class.Invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	classInvariants, err := convertClassInvariantsToModel(class.Invariants, subdomainKey, classKey, classFile)
 	if err != nil {
-		return convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert class invariants: %s", err.Error()), classFile)
+		return err
 	}
 	result.SetInvariants(classInvariants)
 	return nil
@@ -1407,6 +1411,25 @@ func resolveLogicType(input *inputLogic, defaultType string) string {
 		return model_logic.LogicTypeLet
 	}
 	return defaultType
+}
+
+// convertClassInvariantsToModel converts class invariants, resolving optional over_association_key references.
+func convertClassInvariantsToModel(invariants []inputLogic, subdomainKey, classKey identity.Key, classFile string) ([]model_logic.Logic, error) {
+	logics, err := convertLogicsToModel(invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	if err != nil {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert class invariants: %s", err.Error()), classFile)
+	}
+	for i := range logics {
+		if invariants[i].OverAssociationKey == "" {
+			continue
+		}
+		overKey, err := model_class.ResolveClassAssociationKeyFromRelative(subdomainKey, classKey, invariants[i].OverAssociationKey)
+		if err != nil {
+			return nil, convErr(ErrConvModelValidation, fmt.Sprintf("class invariant %d over_association_key: %s", i, err.Error()), classFile)
+		}
+		logics[i].SetOverAssociationKey(&overKey)
+	}
+	return logics, nil
 }
 
 // convertLogicToModel converts an inputLogic to a model_logic.Logic with the given key.

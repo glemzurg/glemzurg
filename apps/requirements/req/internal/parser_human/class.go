@@ -118,7 +118,10 @@ func parseGeneralizationRefKey(subdomainKey identity.Key, yamlData map[string]an
 // actions, states, events, guards, queries, transitions) from YAML data and attaches them to the class.
 func parseClassComponents(class *model_class.Class, subdomainKey, classKey identity.Key, yamlData map[string]any) ([]model_class.Association, error) {
 	// Add any invariants we found.
-	invariants, err := logicListFromYamlData(yamlData, "invariants", model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	invariants, err := logicListFromYamlData(yamlData, "invariants", model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey, &classInvariantLogicOptions{
+		subdomainKey:  subdomainKey,
+		ownerClassKey: classKey,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +428,7 @@ func attributeExtrasFromYamlData(classKey identity.Key, attrSubKey string, attri
 	extras.typeSpec = typeSpec
 
 	attrInvariants, err := logicListFromYamlData(attributeData, "invariants",
-		model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
+		model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey, nil)
 	if err != nil {
 		return attributeYamlExtras{}, errors.Wrap(err, "attribute invariants")
 	}
@@ -549,7 +552,7 @@ func parameterFromYamlMap(parentKey identity.Key, paramMap map[string]any) (mode
 		param.DataType.TypeSpec = typeSpec
 	}
 	paramInvariants, err := logicListFromYamlData(paramMap, "invariants",
-		model_logic.LogicTypeAssessment, param.Key, identity.NewParameterInvariantKey)
+		model_logic.LogicTypeAssessment, param.Key, identity.NewParameterInvariantKey, nil)
 	if err != nil {
 		return model_state.Parameter{}, errors.Wrap(err, "parameter invariants")
 	}
@@ -662,7 +665,7 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			associationClassKey,
 			umlComment)
 
-		invariants, err := logicListFromYamlData(associationData, "invariants", model_logic.LogicTypeAssessment, assocKey, identity.NewClassAssociationInvariantKey)
+		invariants, err := logicListFromYamlData(associationData, "invariants", model_logic.LogicTypeAssessment, assocKey, identity.NewClassAssociationInvariantKey, nil)
 		if err != nil {
 			return model_class.Association{}, err
 		}
@@ -924,19 +927,19 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 		}
 
 		// Parse requires.
-		requires, err = logicListFromYamlData(actionData, "requires", model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey)
+		requires, err = logicListFromYamlData(actionData, "requires", model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey, nil)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
 
 		// Parse guarantees.
-		guarantees, err = logicListFromYamlData(actionData, "guarantees", model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey)
+		guarantees, err = logicListFromYamlData(actionData, "guarantees", model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey, nil)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
 
 		// Parse safety rules.
-		safetyRules, err = logicListFromYamlData(actionData, "safety_rules", model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey)
+		safetyRules, err = logicListFromYamlData(actionData, "safety_rules", model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey, nil)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
@@ -994,13 +997,13 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 		}
 
 		// Parse requires.
-		requires, err = logicListFromYamlData(queryData, "requires", model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey)
+		requires, err = logicListFromYamlData(queryData, "requires", model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey, nil)
 		if err != nil {
 			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
 		}
 
 		// Parse guarantees.
-		guarantees, err = logicListFromYamlData(queryData, "guarantees", model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey)
+		guarantees, err = logicListFromYamlData(queryData, "guarantees", model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey, nil)
 		if err != nil {
 			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
 		}
@@ -1017,8 +1020,14 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 	return query, nil
 }
 
+// classInvariantLogicOptions supplies subdomain and class context for over_association_key on class invariants.
+type classInvariantLogicOptions struct {
+	subdomainKey  identity.Key
+	ownerClassKey identity.Key
+}
+
 // logicListFromYamlData parses a YAML sequence of logic mappings (details + optional specification).
-func logicListFromYamlData(data map[string]any, field string, logicType string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error)) ([]model_logic.Logic, error) {
+func logicListFromYamlData(data map[string]any, field string, logicType string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error), classInvariantOpts *classInvariantLogicOptions) ([]model_logic.Logic, error) {
 	listAny, found := data[field]
 	if !found {
 		return nil, nil
@@ -1065,8 +1074,14 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		logic := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
-		if overAssociation, _ := itemMap["over_association"].(string); overAssociation != "" {
-			logic.OverAssociationName = overAssociation
+		if classInvariantOpts != nil {
+			if overAssociationKeyStr, _ := itemMap["over_association_key"].(string); overAssociationKeyStr != "" {
+				overKey, err := model_class.ResolveClassAssociationKeyFromRelative(classInvariantOpts.subdomainKey, classInvariantOpts.ownerClassKey, overAssociationKeyStr)
+				if err != nil {
+					return nil, errors.Wrapf(err, "%s[%d] over_association_key", field, i)
+				}
+				logic.SetOverAssociationKey(&overKey)
+			}
 		}
 
 		logics = append(logics, logic)
@@ -1181,7 +1196,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 // generateClassStructuralYaml generates structural sections: top-level fields, invariants, attributes, associations.
 func generateClassStructuralYaml(builder *YamlBuilder, class model_class.Class, associations []model_class.Association) {
 	generateClassTopLevelFields(builder, class)
-	generateLogicSequence(builder, "invariants", class.Invariants)
+	generateClassInvariantLogicSequence(builder, class, class.Invariants)
 	generateClassAttributesYaml(builder, class)
 	generateClassAssociationsYaml(builder, class, associations)
 }
@@ -1489,20 +1504,40 @@ func generateLogicSequence(builder *YamlBuilder, field string, logics []model_lo
 	}
 	items := make([]*YamlBuilder, 0, len(logics))
 	for _, logic := range logics {
-		logicBuilder := NewYamlBuilder()
-		if logic.Type == model_logic.LogicTypeLet {
-			logicBuilder.AddField("type", "let")
-		}
-		logicBuilder.AddField("details", logic.Description)
-		logicBuilder.AddField("target", logic.Target)
-		logicBuilder.AddField("over_association", logic.OverAssociationName)
-		logicBuilder.AddQuotedField("specification", logic.Spec.Specification)
-		if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
-			logicBuilder.AddField("target_type_spec", logic.TargetTypeSpec.Specification)
-		}
-		items = append(items, logicBuilder)
+		items = append(items, buildLogicMappingBuilder(logic, nil))
 	}
 	builder.AddSequenceOfMappings(field, items)
+}
+
+// generateClassInvariantLogicSequence adds class invariants, including optional over_association_key.
+func generateClassInvariantLogicSequence(builder *YamlBuilder, class model_class.Class, logics []model_logic.Logic) {
+	if len(logics) == 0 {
+		return
+	}
+	items := make([]*YamlBuilder, 0, len(logics))
+	for _, logic := range logics {
+		items = append(items, buildLogicMappingBuilder(logic, &class))
+	}
+	builder.AddSequenceOfMappings("invariants", items)
+}
+
+func buildLogicMappingBuilder(logic model_logic.Logic, ownerClass *model_class.Class) *YamlBuilder {
+	logicBuilder := NewYamlBuilder()
+	if logic.Type == model_logic.LogicTypeLet {
+		logicBuilder.AddField("type", "let")
+	}
+	logicBuilder.AddField("details", logic.Description)
+	logicBuilder.AddField("target", logic.Target)
+	if ownerClass != nil && logic.OverAssociationKey != nil {
+		if relative, err := model_class.RelativeClassAssociationKey(ownerClass.Key, *logic.OverAssociationKey); err == nil {
+			logicBuilder.AddField("over_association_key", relative)
+		}
+	}
+	logicBuilder.AddQuotedField("specification", logic.Spec.Specification)
+	if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
+		logicBuilder.AddField("target_type_spec", logic.TargetTypeSpec.Specification)
+	}
+	return logicBuilder
 }
 
 // classAssociationRelativeKey returns the shortest relative key string for a target class key

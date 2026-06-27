@@ -633,10 +633,14 @@ func (r *Requirements) ClassAssociationTaggedInvariantGroups(classKey identity.K
 
 	byName := make(map[string][]model_logic.Logic)
 	for _, inv := range class.Invariants {
-		if inv.OverAssociationName == "" {
+		if inv.OverAssociationKey == nil {
 			continue
 		}
-		byName[inv.OverAssociationName] = append(byName[inv.OverAssociationName], inv)
+		assoc, ok := r.ClassAssociations[*inv.OverAssociationKey]
+		if !ok {
+			continue
+		}
+		byName[assoc.Name] = append(byName[assoc.Name], inv)
 	}
 	if len(byName) == 0 {
 		return nil
@@ -665,7 +669,7 @@ func ClassInvariantsWithoutAssociationTag(invariants []model_logic.Logic) []mode
 	}
 	filtered := make([]model_logic.Logic, 0, len(invariants))
 	for _, inv := range invariants {
-		if inv.OverAssociationName != "" {
+		if inv.OverAssociationKey != nil {
 			continue
 		}
 		filtered = append(filtered, inv)

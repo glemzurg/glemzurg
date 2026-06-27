@@ -13,12 +13,13 @@ const _LOGIC_TYPE_QUERY = "query"
 
 // inputLogic represents a formal logic specification in JSON.
 type inputLogic struct {
-	Type           string `json:"type"`
-	Description    string `json:"description"`
-	Target         string `json:"target,omitempty"`
-	TargetTypeSpec string `json:"target_type_spec,omitempty"`
-	Notation       string `json:"notation,omitempty"`
-	Specification  string `json:"specification,omitempty"`
+	Type               string `json:"type"`
+	Description        string `json:"description"`
+	Target             string `json:"target,omitempty"`
+	TargetTypeSpec     string `json:"target_type_spec,omitempty"`
+	OverAssociationKey string `json:"over_association_key,omitempty"`
+	Notation           string `json:"notation,omitempty"`
+	Specification      string `json:"specification,omitempty"`
 }
 
 // logicSchema is the compiled JSON schema for logic objects.

@@ -44,7 +44,7 @@ func TestAssociationInvariantFactsIncludeClassInvariantTaggedOverAssociation(t *
 			nil,
 		),
 	})
-	jurisdiction.Invariants[0].OverAssociationName = "Configures Customers For"
+	jurisdiction.Invariants[0].SetOverAssociationKey(&assocKey)
 
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
