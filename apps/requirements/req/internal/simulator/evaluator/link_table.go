@@ -118,6 +118,17 @@ func (t *LinkTable) GetAllReverse(toID ObjectID) []Link {
 	return t.byTo[toID]
 }
 
+// CountPairLinks returns how many links exist for one association between a from/to pair.
+func (t *LinkTable) CountPairLinks(assocKey AssociationKey, fromID, toID ObjectID) int {
+	count := 0
+	for _, link := range t.byFrom[fromID] {
+		if link.AssociationKey == assocKey && link.ToID == toID {
+			count++
+		}
+	}
+	return count
+}
+
 // hasLink checks if a specific link already exists.
 func (t *LinkTable) hasLink(assocKey AssociationKey, fromID, toID ObjectID) bool {
 	for _, link := range t.byFrom[fromID] {

@@ -7,6 +7,7 @@ import (
 	"maps"
 	"sync"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -253,6 +254,59 @@ func (s *SimulationState) GetLinkedReverse(toID InstanceID, assocKey identity.Ke
 		ids[i] = InstanceID(objID)
 	}
 	return ids
+}
+
+// ActiveInstanceFilter decides whether an instance counts toward association structural limits.
+type ActiveInstanceFilter func(classKey identity.Key, stateName string) bool
+
+// CountActivePairLinks counts live links for one association between a from/to instance pair.
+func (s *SimulationState) CountActivePairLinks(
+	assoc model_class.Association,
+	fromID, toID InstanceID,
+	isActive ActiveInstanceFilter,
+) int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if assoc.AssociationClassKey != nil {
+		links := s.associationLinks.LinksFromEndpoint(assoc.Key, fromID)
+		count := 0
+		for _, link := range links {
+			if link.ToEndpointID != toID {
+				continue
+			}
+			linkInst := s.instances[link.LinkInstanceID]
+			if linkInst == nil {
+				continue
+			}
+			stateName := instanceStateNameFrom(linkInst)
+			if isActive != nil && !isActive(linkInst.ClassKey, stateName) {
+				continue
+			}
+			count++
+		}
+		return count
+	}
+
+	return s.links.CountPairLinks(
+		evaluator.AssociationKey(assoc.Key.String()),
+		evaluator.ObjectID(fromID),
+		evaluator.ObjectID(toID),
+	)
+}
+
+func instanceStateNameFrom(instance *ClassInstance) string {
+	if instance == nil {
+		return ""
+	}
+	stateAttr := instance.GetAttribute("_state")
+	if stateAttr == nil {
+		return ""
+	}
+	if strObj, ok := stateAttr.(*object.String); ok {
+		return strObj.Value()
+	}
+	return ""
 }
 
 // LinkCount returns the total number of links.

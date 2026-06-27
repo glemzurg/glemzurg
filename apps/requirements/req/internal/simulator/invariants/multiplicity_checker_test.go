@@ -29,7 +29,7 @@ func (s *MultiplicityCheckerSuite) TestValidMultiplicities() {
 	assocKey := multiplicityTestAssocKey(orderKey, itemKey)
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..3"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := multiplicityTestModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -54,7 +54,7 @@ func (s *MultiplicityCheckerSuite) TestLowerBoundViolation() {
 	assocKey := multiplicityTestAssocKey(orderKey, itemKey)
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("2..many"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := multiplicityTestModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -80,7 +80,7 @@ func (s *MultiplicityCheckerSuite) TestUpperBoundViolation() {
 	assocKey := multiplicityTestAssocKey(orderKey, itemKey)
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("0..1"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := multiplicityTestModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -108,7 +108,7 @@ func (s *MultiplicityCheckerSuite) TestOptionalAssociationNeverViolated() {
 	assocKey := multiplicityTestAssocKey(orderKey, itemKey)
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := multiplicityTestModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{

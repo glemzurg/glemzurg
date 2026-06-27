@@ -213,6 +213,10 @@ func FormatAssociationFact(assoc model_class.Association, fromClass, toClass mod
 		b.WriteString(" is a ")
 		b.WriteString(classPhrase(associationClass.Name).lower())
 	}
+	if pairUniq := pairUniquenessConstraint(assoc.Uniqueness, fromPhrase, toPhrase); pairUniq != "" {
+		b.WriteString("; ")
+		b.WriteString(pairUniq)
+	}
 	if details := strings.TrimSpace(assoc.Details); details != "" {
 		b.WriteString(" (")
 		b.WriteString(singleLine(details))
@@ -290,6 +294,25 @@ func attributeListPhrase(names []string) string {
 		return names[0] + " and " + names[1]
 	default:
 		return strings.Join(names[:len(names)-1], ", ") + ", and " + names[len(names)-1]
+	}
+}
+
+func pairUniquenessConstraint(m model_class.Multiplicity, fromPhrase, toPhrase classPhrase) string {
+	if m.LowerBound == 0 && m.HigherBound == 0 {
+		return ""
+	}
+	pair := pairingPhrase(fromPhrase, toPhrase)
+	switch {
+	case m.LowerBound == 0 && m.HigherBound == 1:
+		return fmt.Sprintf("at most one link between each %s", pair)
+	case m.LowerBound == 1 && m.HigherBound == 1:
+		return fmt.Sprintf("exactly one link between each %s", pair)
+	case m.HigherBound == 0:
+		return fmt.Sprintf("each %s has %d or more links", pair, m.LowerBound)
+	case m.LowerBound == m.HigherBound:
+		return fmt.Sprintf("each %s has exactly %d links", pair, m.LowerBound)
+	default:
+		return fmt.Sprintf("each %s has between %d and %d links", pair, m.LowerBound, m.HigherBound)
 	}
 }
 

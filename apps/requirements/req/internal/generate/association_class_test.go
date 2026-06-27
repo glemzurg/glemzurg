@@ -33,7 +33,7 @@ func buildAssocClassTestModel(t *testing.T) (model core.Model, aKey, bKey, cKey 
 	one := helper.Must(model_class.NewMultiplicity("1"))
 	assocName := "links"
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, aKey, bKey, assocName))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: assocName, Details: "details"}, model_class.AssociationEnd{ClassKey: aKey, Multiplicity: one}, model_class.AssociationEnd{ClassKey: bKey, Multiplicity: one}, &cKey, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: assocName, Details: "details"}, model_class.AssociationEnd{ClassKey: aKey, Multiplicity: one}, model_class.AssociationEnd{ClassKey: bKey, Multiplicity: one}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: &cKey, UmlComment: ""})
 
 	subdomain := model_domain.Subdomain{
 		Key:  subdomainKey,

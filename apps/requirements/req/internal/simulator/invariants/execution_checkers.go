@@ -4,5 +4,6 @@ package invariants
 type StructuralInvariantCheckers struct {
 	Index                 *IndexUniquenessChecker
 	Multiplicity          *MultiplicityChecker
+	AssociationUniqueness *AssociationUniquenessChecker
 	AssociationInvariants *AssociationInvariantChecker
 }

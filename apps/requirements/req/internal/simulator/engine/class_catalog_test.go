@@ -101,7 +101,7 @@ func (s *ClassCatalogSuite) TestMandatoryAssociationsDetected() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -185,7 +185,7 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{

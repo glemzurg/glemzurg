@@ -29,8 +29,8 @@ func TestGenerateSubdomainFactsRendersAssociationInvariants(t *testing.T) {
 		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
-		nil,
-		"",
+		model_class.Multiplicity{},
+		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	spec := `∀ j1 ∈ self.ConfiguresCustomersFor : ∀ j2 ∈ self.ConfiguresCustomersFor : ((j1 ≠ j2) ⇒ (j1.jurisdiction_code ≠ j2.jurisdiction_code))`
 	assoc.SetInvariants([]model_logic.Logic{

@@ -2,16 +2,17 @@ package generate
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/modelfacts"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/stretchr/testify/require"
 )
 
-func TestEvenplayJurisdictionClassMarkdownRendersPartnerLinkInvariant(t *testing.T) {
+func TestEvenplayWalletFactsRendersPartnerJurisdictionUniqueness(t *testing.T) {
 	modelPath := filepath.Join("..", "..", "..", "..", "..", "data_sandbox", "model", "evenplay")
 	model, failures, err := parser_human.Parse(modelPath)
 	require.NoError(t, err)
@@ -19,14 +20,18 @@ func TestEvenplayJurisdictionClassMarkdownRendersPartnerLinkInvariant(t *testing
 
 	domainKey := helper.Must(identity.NewDomainKey("finance"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "wallet"))
-	jurisdictionKey := helper.Must(identity.NewClassKey(subdomainKey, "jurisdiction"))
-	jurisdiction := model.Domains[domainKey].Subdomains[subdomainKey].Classes[jurisdictionKey]
+	subdomain := model.Domains[domainKey].Subdomains[subdomainKey]
 
-	reqs := req_flat.NewRequirements(model)
-	contents, err := generateClassMdContents(reqs, jurisdiction, "", "")
-	require.NoError(t, err)
-	require.Contains(t, contents, "## Association Invariants")
-	require.Contains(t, contents, "### Configures Customers For")
-	require.Contains(t, contents, "A jurisdiction cannot be linked to a given partner more than once.")
-	require.Contains(t, contents, "self._ConfiguresCustomersFor")
+	facts := modelfacts.FactsForSubdomain(subdomain)
+	require.NotEmpty(t, facts.Associations)
+
+	var configuresFact string
+	for _, fact := range facts.Associations {
+		lower := strings.ToLower(fact)
+		if strings.Contains(lower, "configures customers for") && strings.Contains(lower, "at most one link between each partner") {
+			configuresFact = fact
+			break
+		}
+	}
+	require.NotEmpty(t, configuresFact, "expected configures customers for uniqueness fact, got: %v", facts.Associations)
 }

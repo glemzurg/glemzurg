@@ -159,11 +159,12 @@ func setupState(model *core.Model, catalog *ClassCatalog) (*state.SimulationStat
 
 // simulationCheckers groups all invariant/constraint checkers.
 type simulationCheckers struct {
-	invariantChecker      *invariants.InvariantChecker
-	dataTypeChecker       *invariants.DataTypeChecker
-	indexChecker          *invariants.IndexUniquenessChecker
-	multChecker           *invariants.MultiplicityChecker
-	associationInvChecker *invariants.AssociationInvariantChecker
+	invariantChecker       *invariants.InvariantChecker
+	dataTypeChecker        *invariants.DataTypeChecker
+	indexChecker           *invariants.IndexUniquenessChecker
+	multChecker            *invariants.MultiplicityChecker
+	assocUniquenessChecker *invariants.AssociationUniquenessChecker
+	associationInvChecker  *invariants.AssociationInvariantChecker
 }
 
 // setupCheckers creates all invariant and constraint checkers.
@@ -177,17 +178,19 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 
 	indexChecker := invariants.NewIndexUniquenessChecker(model)
 	multChecker := invariants.NewMultiplicityChecker(model)
+	assocUniquenessChecker := invariants.NewAssociationUniquenessChecker(model)
 	associationInvChecker, err := invariants.NewAssociationInvariantChecker(model)
 	if err != nil {
 		return nil, fmt.Errorf("association invariant checker setup: %w", err)
 	}
 
 	return &simulationCheckers{
-		invariantChecker:      invariantChecker,
-		dataTypeChecker:       dataTypeChecker,
-		indexChecker:          indexChecker,
-		multChecker:           multChecker,
-		associationInvChecker: associationInvChecker,
+		invariantChecker:       invariantChecker,
+		dataTypeChecker:        dataTypeChecker,
+		indexChecker:           indexChecker,
+		multChecker:            multChecker,
+		assocUniquenessChecker: assocUniquenessChecker,
+		associationInvChecker:  associationInvChecker,
 	}, nil
 }
 
@@ -259,6 +262,7 @@ func buildActionExecutor(
 	structuralCheckers := &invariants.StructuralInvariantCheckers{
 		Index:                 checkers.indexChecker,
 		Multiplicity:          checkers.multChecker,
+		AssociationUniqueness: checkers.assocUniquenessChecker,
 		AssociationInvariants: checkers.associationInvChecker,
 	}
 	return actions.NewActionExecutor(

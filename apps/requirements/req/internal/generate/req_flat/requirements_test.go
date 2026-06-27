@@ -168,7 +168,7 @@ func buildTestModel() core.Model {
 		tUseCaseKey: useCase,
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		tAssocKey: model_class.NewAssociation(tAssocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: tClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: tClass2Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""),
+		tAssocKey: model_class.NewAssociation(tAssocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: tClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: tClass2Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""}),
 	}
 
 	// Domain.

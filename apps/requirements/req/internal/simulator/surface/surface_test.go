@@ -165,7 +165,7 @@ func buildTwoDomainModel() *core.Model {
 		itemClassKey:  makeItemClass(),
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, ""),
+		assocKey: model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""}),
 	}
 
 	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
@@ -713,7 +713,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations: map[identity.Key]model_class.Association{
-			assocKey: model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""),
+			assocKey: model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""}),
 		},
 		ModelInvariants: []model_logic.Logic{},
 	}

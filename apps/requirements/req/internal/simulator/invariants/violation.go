@@ -65,6 +65,9 @@ const (
 	// ViolationTypeMultiplicity indicates an association multiplicity constraint is not met.
 	ViolationTypeMultiplicity
 
+	// ViolationTypeAssociationUniqueness indicates a per-pair association link cap is not met.
+	ViolationTypeAssociationUniqueness
+
 	// ViolationTypeSafetyRule indicates an action's safety rule was violated.
 	ViolationTypeSafetyRule
 
@@ -129,6 +132,8 @@ func (v ViolationType) String() string {
 		return "association_invariant"
 	case ViolationTypeMultiplicity:
 		return "multiplicity"
+	case ViolationTypeAssociationUniqueness:
+		return "association_uniqueness"
 	case ViolationTypeSafetyRule:
 		return "safety_rule"
 	case ViolationTypeLivenessClassNotInstantiated:
@@ -578,6 +583,32 @@ func NewMultiplicityViolation(params MultiplicityViolationParams) *ViolationErro
 		Message:    fmt.Sprintf("multiplicity violation on instance %d of class %s: association %s (%s) %s", params.InstanceID, params.ClassKey.String(), params.AssociationName, params.Direction, params.Message),
 		InstanceID: params.InstanceID,
 		ClassKey:   params.ClassKey,
+	}
+}
+
+// AssociationUniquenessViolationParams holds parameters for a per-pair association uniqueness failure.
+type AssociationUniquenessViolationParams struct {
+	AssociationName string
+	FromInstanceID  state.InstanceID
+	ToInstanceID    state.InstanceID
+	ActualCount     int
+	RequiredMin     uint
+	RequiredMax     uint
+	Message         string
+}
+
+// NewAssociationUniquenessViolation creates a violation for a per-pair association link cap failure.
+func NewAssociationUniquenessViolation(params AssociationUniquenessViolationParams) *ViolationError {
+	return &ViolationError{
+		Type: ViolationTypeAssociationUniqueness,
+		Message: fmt.Sprintf(
+			"association uniqueness violation: association %s between instances %d and %d %s",
+			params.AssociationName,
+			params.FromInstanceID,
+			params.ToInstanceID,
+			params.Message,
+		),
+		InstanceID: params.FromInstanceID,
 	}
 }
 

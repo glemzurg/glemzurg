@@ -345,6 +345,9 @@ func (e *ActionExecutor) checkAssociationStructuralInvariants() invariants.Viola
 	if e.structuralCheckers.Multiplicity != nil {
 		violations = append(violations, e.structuralCheckers.Multiplicity.CheckState(e.bindingsBuilder.State())...)
 	}
+	if e.structuralCheckers.AssociationUniqueness != nil {
+		violations = append(violations, e.structuralCheckers.AssociationUniqueness.CheckState(e.bindingsBuilder.State())...)
+	}
 	if e.structuralCheckers.AssociationInvariants != nil {
 		violations = append(violations, e.structuralCheckers.AssociationInvariants.CheckState(
 			e.bindingsBuilder.State(),

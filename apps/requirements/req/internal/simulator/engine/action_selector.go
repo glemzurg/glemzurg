@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"sort"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -140,10 +141,14 @@ func (s *ActionSelector) collectAssociationClassCreations(
 	var eligible []PendingAction
 	hostAssocKey := acInfo.HostAssociation.Key
 
+	hostAssoc := acInfo.HostAssociation
 	for _, fromInst := range fromInstances {
 		for _, toInst := range toInstances {
 			fromID := fromInst.ID
 			toID := toInst.ID
+			if !s.pairAllowsAnotherLink(hostAssoc, simState, fromID, toID) {
+				continue
+			}
 			eligible = append(eligible, PendingAction{
 				Class:            classInfo,
 				Event:            &creationEvent,
@@ -156,6 +161,24 @@ func (s *ActionSelector) collectAssociationClassCreations(
 		}
 	}
 	return eligible
+}
+
+func (s *ActionSelector) pairAllowsAnotherLink(
+	assoc model_class.Association,
+	simState *state.SimulationState,
+	fromID, toID state.InstanceID,
+) bool {
+	if assoc.Uniqueness.LowerBound == 0 && assoc.Uniqueness.HigherBound == 0 {
+		return true
+	}
+	upper := assoc.Uniqueness.HigherBound
+	if upper == 0 {
+		return true
+	}
+	count := simState.CountActivePairLinks(assoc, fromID, toID, func(classKey identity.Key, stateName string) bool {
+		return IsActiveAssociationClassInstance(s.catalog, classKey, stateName)
+	})
+	return uint(count) < upper //nolint:gosec // count is a link count from a small in-memory graph
 }
 
 func (s *ActionSelector) activeInstancesByClass(simState *state.SimulationState, classKey identity.Key) []*state.ClassInstance {

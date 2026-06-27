@@ -618,6 +618,21 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			return model_class.Association{}, err
 		}
 
+		uniquenessValue, err := yamlString(associationData, "uniqueness")
+		if err != nil {
+			return model_class.Association{}, err
+		}
+		var uniqueness model_class.Multiplicity
+		if strings.TrimSpace(uniquenessValue) == "" {
+			// Omitted uniqueness means no per-pair cap.
+			uniqueness = model_class.Multiplicity{}
+		} else {
+			uniqueness, err = model_class.NewMultiplicity(uniquenessValue)
+			if err != nil {
+				return model_class.Association{}, err
+			}
+		}
+
 		// Resolve the to-class key based on the path format.
 		// Simple key (no /): same subdomain.
 		// Starts with "subdomain/": same domain, different subdomain — prepend domain prefix.
@@ -662,8 +677,8 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			model_class.AssociationDetails{Name: name, Details: details},
 			model_class.AssociationEnd{ClassKey: fromClassKey, Multiplicity: fromMultiplicity},
 			model_class.AssociationEnd{ClassKey: toClassKey, Multiplicity: toMultiplicity},
-			associationClassKey,
-			umlComment)
+			uniqueness,
+			model_class.AssociationOptions{AssociationClassKey: associationClassKey, UmlComment: umlComment})
 
 		invariants, err := logicListFromYamlData(associationData, "invariants", model_logic.LogicTypeAssessment, assocKey, identity.NewClassAssociationInvariantKey, nil)
 		if err != nil {
@@ -1312,6 +1327,9 @@ func generateClassAssociationsYaml(builder *YamlBuilder, class model_class.Class
 		addMultiplicityField(assocBuilder, "from_multiplicity", assoc.FromMultiplicity)
 		assocBuilder.AddField("to_class_key", classAssociationRelativeKey(class, assoc.ToClassKey))
 		addMultiplicityField(assocBuilder, "to_multiplicity", assoc.ToMultiplicity)
+		if assoc.Uniqueness.LowerBound != 0 || assoc.Uniqueness.HigherBound != 0 {
+			addMultiplicityField(assocBuilder, "uniqueness", assoc.Uniqueness)
+		}
 		if assoc.AssociationClassKey != nil {
 			assocBuilder.AddField("association_class_key", classAssociationRelativeKey(class, *assoc.AssociationClassKey))
 		}

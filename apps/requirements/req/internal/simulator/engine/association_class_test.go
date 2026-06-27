@@ -40,7 +40,7 @@ func buildAssociationClassTestModel() *acTestModel {
 	hostAssocKey := testAssocKey(partnerKey, jurisdictionKey, "Configures")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	hostAssoc := model_class.NewAssociation(hostAssocKey, model_class.AssociationDetails{Name: "Configures", Details: ""}, model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: toMult}, &linkDefKey, "")
+	hostAssoc := model_class.NewAssociation(hostAssocKey, model_class.AssociationDetails{Name: "Configures", Details: ""}, model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: &linkDefKey, UmlComment: ""})
 
 	m := testModel(
 		classEntry(partnerClass, partnerKey),

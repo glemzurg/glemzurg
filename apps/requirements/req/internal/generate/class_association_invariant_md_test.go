@@ -31,8 +31,8 @@ func TestClassMarkdownRendersAssociationInvariants(t *testing.T) {
 		},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
-		nil,
-		"",
+		model_class.Multiplicity{},
+		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	assoc.SetInvariants([]model_logic.Logic{
 		model_logic.NewLogic(
@@ -86,8 +86,8 @@ func TestClassMarkdownOmitsAssociationInvariantsWhenNone(t *testing.T) {
 		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
-		nil,
-		"",
+		model_class.Multiplicity{},
+		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 
 	partner := model_class.NewClass(partnerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"})
@@ -126,16 +126,16 @@ func TestClassOutgoingAssociationsWithInvariantsOnlyFromClass(t *testing.T) {
 		model_class.AssociationDetails{Name: "Outgoing", Details: ""},
 		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: anyMult},
-		nil,
-		"",
+		model_class.Multiplicity{},
+		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	incoming := model_class.NewAssociation(
 		incomingKey,
 		model_class.AssociationDetails{Name: "Incoming", Details: ""},
 		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: anyMult},
-		nil,
-		"",
+		model_class.Multiplicity{},
+		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	incoming.SetInvariants([]model_logic.Logic{
 		model_logic.NewLogic(
