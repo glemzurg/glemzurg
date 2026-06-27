@@ -39,11 +39,7 @@ func NewMultiplicityChecker(model *core.Model) *MultiplicityChecker {
 		}
 	}
 
-	allAssocs := model.GetClassAssociations()
-	for _, assoc := range allAssocs {
-		if model_class.IsReverseInvariantOnlyAssociation(allAssocs, assoc) {
-			continue
-		}
+	for _, assoc := range model.GetClassAssociations() {
 		if _, ok := classes[assoc.FromClassKey]; !ok {
 			continue
 		}

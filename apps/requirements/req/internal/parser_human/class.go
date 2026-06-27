@@ -1065,6 +1065,9 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		logic := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
+		if overAssociation, _ := itemMap["over_association"].(string); overAssociation != "" {
+			logic.OverAssociationName = overAssociation
+		}
 
 		logics = append(logics, logic)
 	}
@@ -1492,6 +1495,7 @@ func generateLogicSequence(builder *YamlBuilder, field string, logics []model_lo
 		}
 		logicBuilder.AddField("details", logic.Description)
 		logicBuilder.AddField("target", logic.Target)
+		logicBuilder.AddField("over_association", logic.OverAssociationName)
 		logicBuilder.AddQuotedField("specification", logic.Spec.Specification)
 		if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
 			logicBuilder.AddField("target_type_spec", logic.TargetTypeSpec.Specification)

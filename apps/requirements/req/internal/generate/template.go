@@ -447,6 +447,10 @@ var _funcMap = template.FuncMap{
 	"class_outgoing_associations_with_invariants": func(reqs *req_flat.Requirements, classKey identity.Key) []model_class.Association {
 		return reqs.ClassOutgoingAssociationsWithInvariants(classKey)
 	},
+	"class_association_tagged_invariant_groups": func(reqs *req_flat.Requirements, classKey identity.Key) []req_flat.ClassAssociationInvariantGroup {
+		return reqs.ClassAssociationTaggedInvariantGroups(classKey)
+	},
+	"class_invariants_without_association_tag": req_flat.ClassInvariantsWithoutAssociationTag,
 }
 
 func formatDataTypeRules(rules string, dataType *model_data_type.DataType) string {

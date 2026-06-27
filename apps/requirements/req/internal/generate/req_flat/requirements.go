@@ -617,6 +617,62 @@ func (r *Requirements) ClassInvariantLookup() map[string]model_logic.Logic {
 	return lookup
 }
 
+// ClassAssociationInvariantGroup groups class invariants tagged with over_association.
+type ClassAssociationInvariantGroup struct {
+	Name       string
+	Invariants []model_logic.Logic
+}
+
+// ClassAssociationTaggedInvariantGroups returns class invariants tagged as association invariants.
+func (r *Requirements) ClassAssociationTaggedInvariantGroups(classKey identity.Key) []ClassAssociationInvariantGroup {
+	r.PrepLookups()
+	class, ok := r.Classes[classKey]
+	if !ok {
+		return nil
+	}
+
+	byName := make(map[string][]model_logic.Logic)
+	for _, inv := range class.Invariants {
+		if inv.OverAssociationName == "" {
+			continue
+		}
+		byName[inv.OverAssociationName] = append(byName[inv.OverAssociationName], inv)
+	}
+	if len(byName) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(byName))
+	for name := range byName {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	groups := make([]ClassAssociationInvariantGroup, 0, len(names))
+	for _, name := range names {
+		groups = append(groups, ClassAssociationInvariantGroup{
+			Name:       name,
+			Invariants: byName[name],
+		})
+	}
+	return groups
+}
+
+// ClassInvariantsWithoutAssociationTag returns class invariants not tagged over_association.
+func ClassInvariantsWithoutAssociationTag(invariants []model_logic.Logic) []model_logic.Logic {
+	if len(invariants) == 0 {
+		return nil
+	}
+	filtered := make([]model_logic.Logic, 0, len(invariants))
+	for _, inv := range invariants {
+		if inv.OverAssociationName != "" {
+			continue
+		}
+		filtered = append(filtered, inv)
+	}
+	return filtered
+}
+
 // ClassOutgoingAssociationsWithInvariants returns from-class associations that declare invariants.
 func (r *Requirements) ClassOutgoingAssociationsWithInvariants(classKey identity.Key) []model_class.Association {
 	r.PrepLookups()

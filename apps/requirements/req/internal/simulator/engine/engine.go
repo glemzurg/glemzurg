@@ -5,7 +5,6 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
@@ -193,16 +192,8 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 }
 
 func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.BindingsBuilder) {
-	assocByKey := make(map[identity.Key]model_class.Association, len(catalog.AllAssociations()))
-	for _, ai := range catalog.AllAssociations() {
-		assocByKey[ai.Association.Key] = ai.Association
-	}
-
 	for _, ai := range catalog.AllAssociations() {
 		assoc := ai.Association
-		if model_class.IsReverseInvariantOnlyAssociation(assocByKey, assoc) {
-			continue
-		}
 		fromMult := evaluator.Multiplicity{
 			LowerBound:  assoc.FromMultiplicity.LowerBound,
 			HigherBound: assoc.FromMultiplicity.HigherBound,

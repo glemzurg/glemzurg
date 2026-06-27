@@ -120,6 +120,19 @@ func AssociationInvariantFactsForSubdomain(subdomain model_domain.Subdomain) []A
 		}
 	}
 
+	for _, class := range subdomain.Classes {
+		for _, inv := range class.Invariants {
+			if inv.OverAssociationName == "" {
+				continue
+			}
+			assoc, ok := associationNamedForClass(subdomain.ClassAssociations, class.Key, inv.OverAssociationName)
+			if !ok {
+				continue
+			}
+			facts = append(facts, FormatAssociationInvariantFact(assoc, class, inv))
+		}
+	}
+
 	sort.Slice(facts, func(i, j int) bool {
 		return associationInvariantFactSortKey(facts[i]) < associationInvariantFactSortKey(facts[j])
 	})
@@ -163,6 +176,20 @@ func IndexFactsForSubdomain(subdomain model_domain.Subdomain) []string {
 
 	sort.Strings(facts)
 	return facts
+}
+
+func associationNamedForClass(
+	associations map[identity.Key]model_class.Association,
+	classKey identity.Key,
+	name string,
+) (model_class.Association, bool) {
+	for _, assoc := range associations {
+		if assoc.Name != name || !assoc.Includes(classKey) {
+			continue
+		}
+		return assoc, true
+	}
+	return model_class.Association{}, false
 }
 
 func associationWhollyInSubdomain(assoc model_class.Association, subdomainKey identity.Key) bool {

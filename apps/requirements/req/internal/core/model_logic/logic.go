@@ -40,6 +40,9 @@ type Logic struct {
 	Target         string                    // Identifier or attribute to set. Required for state_change and query types.
 	Spec           logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
 	TargetTypeSpec *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
+	// OverAssociationName tags a class invariant as constraining a named association; facts and docs
+	// render it as an association invariant while evaluation stays on the owning class.
+	OverAssociationName string
 }
 
 // NewLogic creates a new Logic.

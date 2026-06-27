@@ -57,20 +57,30 @@ This is an actor:
 {{ end }}
 {{ end }}
 
-{{ if ne .Class.Invariants nil -}}
+{{- $plainInvariants := class_invariants_without_association_tag .Class.Invariants }}
+{{ if $plainInvariants -}}
 ## Invariants
 
-{{ range .Class.Invariants -}}
+{{ range $plainInvariants -}}
 - {{ .Description }}
 {{ logic_markdown_spec_lines . }}
 {{ end }}
 {{- end }}
 
 {{- $assocInvariants := class_outgoing_associations_with_invariants $reqs .Class.Key }}
-{{ if $assocInvariants -}}
+{{- $taggedAssocInvariants := class_association_tagged_invariant_groups $reqs .Class.Key }}
+{{ if or $assocInvariants $taggedAssocInvariants -}}
 ## Association Invariants
 
 {{ range $assocInvariants -}}
+### {{ .Name }}
+
+{{ range .Invariants -}}
+- {{ .Description }}
+{{ logic_markdown_spec_lines . }}
+{{ end }}
+{{ end }}
+{{ range $taggedAssocInvariants -}}
 ### {{ .Name }}
 
 {{ range .Invariants -}}
