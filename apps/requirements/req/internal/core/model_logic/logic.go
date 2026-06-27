@@ -40,9 +40,14 @@ type Logic struct {
 	Target         string                    // Identifier or attribute to set. Required for state_change and query types.
 	Spec           logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
 	TargetTypeSpec *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
-	// OverAssociationName tags a class invariant as constraining a named association; facts and docs
+	// OverAssociationKey tags a class invariant as constraining an association; facts and docs
 	// render it as an association invariant while evaluation stays on the owning class.
-	OverAssociationName string
+	OverAssociationKey *identity.Key
+}
+
+// SetOverAssociationKey tags this logic as constraining the given class association.
+func (l *Logic) SetOverAssociationKey(key *identity.Key) {
+	l.OverAssociationKey = key
 }
 
 // NewLogic creates a new Logic.
@@ -94,6 +99,16 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 	if l.TargetTypeSpec != nil {
 		if err := l.TargetTypeSpec.Validate(ctx); err != nil {
 			return coreerr.New(ctx, coreerr.LogicTargetTypespecInvalid, fmt.Sprintf("logic %q target type spec: %s", l.Key.String(), err.Error()), "TargetTypeSpec")
+		}
+	}
+	if l.OverAssociationKey != nil {
+		if err := l.OverAssociationKey.ValidateWithContext(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.LogicOverAssociationKeyInvalid, fmt.Sprintf("logic %q over association key: %s", l.Key.String(), err.Error()), "OverAssociationKey")
+		}
+		if l.OverAssociationKey.KeyType != identity.KEY_TYPE_CLASS_ASSOCIATION {
+			return coreerr.NewWithValues(ctx, coreerr.LogicOverAssociationKeyTypeInvalid,
+				fmt.Sprintf("logic %q over association key has type %q", l.Key.String(), l.OverAssociationKey.KeyType),
+				"OverAssociationKey", l.OverAssociationKey.KeyType, identity.KEY_TYPE_CLASS_ASSOCIATION)
 		}
 	}
 	return nil

@@ -52,15 +52,17 @@ const (
 	// ---------------------------------------------------------------
 	// Logic errors.
 
-	LogicKeyInvalid            Code = "LOGIC_KEY_INVALID"             // Logic key failed validation.
-	LogicTypeRequired          Code = "LOGIC_TYPE_REQUIRED"           // Logic Type is empty.
-	LogicTypeInvalid           Code = "LOGIC_TYPE_INVALID"            // Logic Type is not a valid value.
-	LogicDescRequired          Code = "LOGIC_DESC_REQUIRED"           // Logic Description is empty.
-	LogicTargetRequired        Code = "LOGIC_TARGET_REQUIRED"         // Logic Type requires a non-empty Target.
-	LogicTargetMustBeEmpty     Code = "LOGIC_TARGET_MUST_BE_EMPTY"    // Logic Type requires an empty Target.
-	LogicTargetNoUnderscore    Code = "LOGIC_TARGET_NO_UNDERSCORE"    // Query/let Target cannot start with underscore.
-	LogicSpecInvalid           Code = "LOGIC_SPEC_INVALID"            // Logic Spec failed validation.
-	LogicTargetTypespecInvalid Code = "LOGIC_TARGET_TYPESPEC_INVALID" // Logic TargetTypeSpec failed validation.
+	LogicKeyInvalid                    Code = "LOGIC_KEY_INVALID"                       // Logic key failed validation.
+	LogicTypeRequired                  Code = "LOGIC_TYPE_REQUIRED"                     // Logic Type is empty.
+	LogicTypeInvalid                   Code = "LOGIC_TYPE_INVALID"                      // Logic Type is not a valid value.
+	LogicDescRequired                  Code = "LOGIC_DESC_REQUIRED"                     // Logic Description is empty.
+	LogicTargetRequired                Code = "LOGIC_TARGET_REQUIRED"                   // Logic Type requires a non-empty Target.
+	LogicTargetMustBeEmpty             Code = "LOGIC_TARGET_MUST_BE_EMPTY"              // Logic Type requires an empty Target.
+	LogicTargetNoUnderscore            Code = "LOGIC_TARGET_NO_UNDERSCORE"              // Query/let Target cannot start with underscore.
+	LogicSpecInvalid                   Code = "LOGIC_SPEC_INVALID"                      // Logic Spec failed validation.
+	LogicTargetTypespecInvalid         Code = "LOGIC_TARGET_TYPESPEC_INVALID"           // Logic TargetTypeSpec failed validation.
+	LogicOverAssociationKeyInvalid     Code = "LOGIC_OVER_ASSOCIATION_KEY_INVALID"      // OverAssociationKey failed validation.
+	LogicOverAssociationKeyTypeInvalid Code = "LOGIC_OVER_ASSOCIATION_KEY_TYPE_INVALID" // OverAssociationKey is not CLASS_ASSOCIATION.
 
 	// ---------------------------------------------------------------
 	// GlobalFunction errors.

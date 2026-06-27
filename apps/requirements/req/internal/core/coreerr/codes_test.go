@@ -78,15 +78,17 @@ func allCodeConstants() map[string]Code {
 		"TypespecExprtypeInvalid":  TypespecExprtypeInvalid,
 
 		// Logic errors.
-		"LogicKeyInvalid":            LogicKeyInvalid,
-		"LogicTypeRequired":          LogicTypeRequired,
-		"LogicTypeInvalid":           LogicTypeInvalid,
-		"LogicDescRequired":          LogicDescRequired,
-		"LogicTargetRequired":        LogicTargetRequired,
-		"LogicTargetMustBeEmpty":     LogicTargetMustBeEmpty,
-		"LogicTargetNoUnderscore":    LogicTargetNoUnderscore,
-		"LogicSpecInvalid":           LogicSpecInvalid,
-		"LogicTargetTypespecInvalid": LogicTargetTypespecInvalid,
+		"LogicKeyInvalid":                    LogicKeyInvalid,
+		"LogicTypeRequired":                  LogicTypeRequired,
+		"LogicTypeInvalid":                   LogicTypeInvalid,
+		"LogicDescRequired":                  LogicDescRequired,
+		"LogicTargetRequired":                LogicTargetRequired,
+		"LogicTargetMustBeEmpty":             LogicTargetMustBeEmpty,
+		"LogicTargetNoUnderscore":            LogicTargetNoUnderscore,
+		"LogicSpecInvalid":                   LogicSpecInvalid,
+		"LogicTargetTypespecInvalid":         LogicTargetTypespecInvalid,
+		"LogicOverAssociationKeyInvalid":     LogicOverAssociationKeyInvalid,
+		"LogicOverAssociationKeyTypeInvalid": LogicOverAssociationKeyTypeInvalid,
 
 		// GlobalFunction errors.
 		"GfuncKeyInvalid":       GfuncKeyInvalid,
