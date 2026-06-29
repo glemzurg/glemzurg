@@ -91,6 +91,9 @@ const (
 
 	// ViolationTypeLivenessActionNotExecuted indicates an action was never executed during simulation.
 	ViolationTypeLivenessActionNotExecuted
+
+	// ViolationTypeStateMachineIncomplete indicates a class state machine lacks the system _new event.
+	ViolationTypeStateMachineIncomplete
 )
 
 // String returns a human-readable name for the violation type.
@@ -150,6 +153,8 @@ func (v ViolationType) String() string {
 		return "liveness_query_not_run"
 	case ViolationTypeLivenessActionNotExecuted:
 		return "liveness_action_not_executed"
+	case ViolationTypeStateMachineIncomplete:
+		return "state_machine_incomplete"
 	default:
 		return "unknown"
 	}
@@ -665,6 +670,15 @@ func NewLivenessActionNotExecutedViolation(classKey identity.Key, className, act
 		Message:           fmt.Sprintf("liveness: action %s on class %s was never executed during simulation", actionName, className),
 		ClassKey:          classKey,
 		ActionOrQueryName: actionName,
+	}
+}
+
+// NewStateMachineIncompleteViolation creates a violation for a class state machine that omits _new.
+func NewStateMachineIncompleteViolation(classKey identity.Key, className string) *ViolationError {
+	return &ViolationError{
+		Type:     ViolationTypeStateMachineIncomplete,
+		Message:  fmt.Sprintf("state machine incomplete: class %s has no «new» event for creation transitions", className),
+		ClassKey: classKey,
 	}
 }
 

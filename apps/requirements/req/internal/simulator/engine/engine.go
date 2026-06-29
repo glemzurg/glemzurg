@@ -61,12 +61,13 @@ type SimulationEngine struct {
 	bindingsBuilder *state.BindingsBuilder
 
 	// Components
-	catalog          *ClassCatalog
-	stepExecutor     *StepExecutor
-	selector         *ActionSelector
-	invariantChecker *invariants.InvariantChecker
-	dataTypeChecker  *invariants.DataTypeChecker
-	livenessChecker  *LivenessChecker
+	catalog             *ClassCatalog
+	stepExecutor        *StepExecutor
+	selector            *ActionSelector
+	invariantChecker    *invariants.InvariantChecker
+	dataTypeChecker     *invariants.DataTypeChecker
+	livenessChecker     *LivenessChecker
+	stateMachineChecker *StateMachineChecker
 }
 
 // NewSimulationEngine creates and wires up all simulation components.
@@ -105,15 +106,16 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	}
 
 	return &SimulationEngine{
-		config:           config,
-		simState:         simState,
-		bindingsBuilder:  bindingsBuilder,
-		catalog:          catalog,
-		stepExecutor:     stepExecutor,
-		selector:         selector,
-		invariantChecker: checkers.invariantChecker,
-		dataTypeChecker:  checkers.dataTypeChecker,
-		livenessChecker:  livenessChecker,
+		config:              config,
+		simState:            simState,
+		bindingsBuilder:     bindingsBuilder,
+		catalog:             catalog,
+		stepExecutor:        stepExecutor,
+		selector:            selector,
+		invariantChecker:    checkers.invariantChecker,
+		dataTypeChecker:     checkers.dataTypeChecker,
+		livenessChecker:     livenessChecker,
+		stateMachineChecker: NewStateMachineChecker(catalog),
 	}, nil
 }
 
@@ -354,6 +356,9 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	if e.dataTypeChecker != nil {
 		result.Violations = append(result.Violations, e.dataTypeChecker.UnparsedAttributeDefinitionViolations()...)
 	}
+
+	// Run post-simulation model checks.
+	result.Violations = append(result.Violations, e.stateMachineChecker.Check()...)
 
 	// Run liveness checks after simulation completes.
 	livenessViolations := e.livenessChecker.Check(result)
