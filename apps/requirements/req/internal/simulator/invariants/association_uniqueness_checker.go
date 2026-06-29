@@ -13,14 +13,11 @@ import (
 // AssociationUniquenessChecker validates per-pair link caps declared on associations.
 type AssociationUniquenessChecker struct {
 	associations []model_class.Association
-	acInactive   map[identity.Key]map[string]bool
 }
 
 // NewAssociationUniquenessChecker builds association uniqueness metadata from the model.
 func NewAssociationUniquenessChecker(model *core.Model) *AssociationUniquenessChecker {
-	checker := &AssociationUniquenessChecker{
-		acInactive: make(map[identity.Key]map[string]bool),
-	}
+	checker := &AssociationUniquenessChecker{}
 
 	classes := make(map[identity.Key]model_class.Class)
 	for _, domain := range model.Domains {
@@ -42,11 +39,6 @@ func NewAssociationUniquenessChecker(model *core.Model) *AssociationUniquenessCh
 			continue
 		}
 		checker.associations = append(checker.associations, assoc)
-		if assoc.AssociationClassKey != nil {
-			if acClass, ok := classes[*assoc.AssociationClassKey]; ok {
-				checker.acInactive[*assoc.AssociationClassKey] = inactiveAssociationClassStates(acClass)
-			}
-		}
 	}
 
 	return checker
@@ -65,17 +57,15 @@ func (c *AssociationUniquenessChecker) checkAssociation(
 	simState *state.SimulationState,
 	assoc model_class.Association,
 ) ViolationErrors {
-	isActive := c.activeFilter()
 	if assoc.AssociationClassKey != nil {
-		return c.checkAssociationClassPairs(simState, assoc, isActive)
+		return c.checkAssociationClassPairs(simState, assoc)
 	}
-	return c.checkDirectAssociationPairs(simState, assoc, isActive)
+	return c.checkDirectAssociationPairs(simState, assoc)
 }
 
 func (c *AssociationUniquenessChecker) checkAssociationClassPairs(
 	simState *state.SimulationState,
 	assoc model_class.Association,
-	isActive state.ActiveInstanceFilter,
 ) ViolationErrors {
 	seen := make(map[string]bool)
 	var violations ViolationErrors
@@ -83,7 +73,7 @@ func (c *AssociationUniquenessChecker) checkAssociationClassPairs(
 		if link.HostAssocKey != assoc.Key {
 			continue
 		}
-		violations = append(violations, c.violationForPair(simState, assoc, isActive, seen, link.FromEndpointID, link.ToEndpointID)...)
+		violations = append(violations, c.violationForPair(simState, assoc, seen, link.FromEndpointID, link.ToEndpointID)...)
 	}
 	return violations
 }
@@ -91,7 +81,6 @@ func (c *AssociationUniquenessChecker) checkAssociationClassPairs(
 func (c *AssociationUniquenessChecker) checkDirectAssociationPairs(
 	simState *state.SimulationState,
 	assoc model_class.Association,
-	isActive state.ActiveInstanceFilter,
 ) ViolationErrors {
 	seen := make(map[string]bool)
 	var violations ViolationErrors
@@ -104,7 +93,7 @@ func (c *AssociationUniquenessChecker) checkDirectAssociationPairs(
 			if link.AssociationKey != assocKey {
 				continue
 			}
-			violations = append(violations, c.violationForPair(simState, assoc, isActive, seen, inst.ID, state.InstanceID(link.ToID))...)
+			violations = append(violations, c.violationForPair(simState, assoc, seen, inst.ID, state.InstanceID(link.ToID))...)
 		}
 	}
 	return violations
@@ -113,7 +102,6 @@ func (c *AssociationUniquenessChecker) checkDirectAssociationPairs(
 func (c *AssociationUniquenessChecker) violationForPair(
 	simState *state.SimulationState,
 	assoc model_class.Association,
-	isActive state.ActiveInstanceFilter,
 	seen map[string]bool,
 	fromID, toID state.InstanceID,
 ) ViolationErrors {
@@ -123,8 +111,8 @@ func (c *AssociationUniquenessChecker) violationForPair(
 	}
 	seen[pairKey] = true
 
-	count := simState.CountActivePairLinks(assoc, fromID, toID, isActive)
-	msg := checkMultiplicityBounds(count, assoc.Uniqueness.LowerBound, assoc.Uniqueness.HigherBound)
+	count := simState.CountActivePairLinks(assoc, fromID, toID)
+	msg := checkUniquenessUpperBound(count, assoc.Uniqueness)
 	if msg == "" {
 		return nil
 	}
@@ -133,18 +121,8 @@ func (c *AssociationUniquenessChecker) violationForPair(
 		FromInstanceID:  fromID,
 		ToInstanceID:    toID,
 		ActualCount:     count,
-		RequiredMin:     assoc.Uniqueness.LowerBound,
+		RequiredMin:     0,
 		RequiredMax:     assoc.Uniqueness.HigherBound,
 		Message:         msg,
 	})}
-}
-
-func (c *AssociationUniquenessChecker) activeFilter() state.ActiveInstanceFilter {
-	return func(classKey identity.Key, stateName string) bool {
-		inactive, isAC := c.acInactive[classKey]
-		if !isAC || len(inactive) == 0 {
-			return true
-		}
-		return !inactive[stateName]
-	}
 }

@@ -131,8 +131,10 @@ func (s *ActionSelector) collectAssociationClassCreations(
 		return nil
 	}
 
-	fromInstances := s.activeInstancesByClass(simState, acInfo.FromClassKey)
-	toInstances := s.activeInstancesByClass(simState, acInfo.ToClassKey)
+	fromInstances := simState.InstancesByClass(acInfo.FromClassKey)
+	toInstances := simState.InstancesByClass(acInfo.ToClassKey)
+	sort.Slice(fromInstances, func(i, j int) bool { return fromInstances[i].ID < fromInstances[j].ID })
+	sort.Slice(toInstances, func(i, j int) bool { return toInstances[i].ID < toInstances[j].ID })
 	if len(fromInstances) == 0 || len(toInstances) == 0 {
 		return nil
 	}
@@ -175,23 +177,8 @@ func (s *ActionSelector) pairAllowsAnotherLink(
 	if upper == 0 {
 		return true
 	}
-	count := simState.CountActivePairLinks(assoc, fromID, toID, func(classKey identity.Key, stateName string) bool {
-		return IsActiveAssociationClassInstance(s.catalog, classKey, stateName)
-	})
+	count := simState.CountActivePairLinks(assoc, fromID, toID)
 	return uint(count) < upper //nolint:gosec // count is a link count from a small in-memory graph
-}
-
-func (s *ActionSelector) activeInstancesByClass(simState *state.SimulationState, classKey identity.Key) []*state.ClassInstance {
-	instances := simState.InstancesByClass(classKey)
-	var active []*state.ClassInstance
-	for _, inst := range instances {
-		if !IsActiveAssociationClassInstance(s.catalog, inst.ClassKey, getInstanceStateName(inst)) {
-			continue
-		}
-		active = append(active, inst)
-	}
-	sort.Slice(active, func(i, j int) bool { return active[i].ID < active[j].ID })
-	return active
 }
 
 // getInstanceStateName extracts the current state name from an instance's _state attribute.

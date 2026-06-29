@@ -70,6 +70,18 @@ func (s *AssociationUniquenessCheckerSuite) TestWithinCapNoViolation() {
 	s.Empty(violations)
 }
 
+func (s *AssociationUniquenessCheckerSuite) TestNoLinksDoesNotViolate() {
+	model, _, _, _, _ := s.buildModel("1")
+	checker := NewAssociationUniquenessChecker(model)
+
+	simState := state.NewSimulationState()
+	simState.CreateInstance(multiplicityMustKey("domain/d/subdomain/s/class/order"), object.NewRecord())
+	simState.CreateInstance(multiplicityMustKey("domain/d/subdomain/s/class/item"), object.NewRecord())
+
+	violations := checker.CheckState(simState)
+	s.Empty(violations)
+}
+
 func (s *AssociationUniquenessCheckerSuite) TestExceedsCapReportsViolation() {
 	model, assocKey, fromKey, toKey, acKey := s.buildModel("0..1")
 	checker := NewAssociationUniquenessChecker(model)

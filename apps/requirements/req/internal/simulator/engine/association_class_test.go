@@ -147,7 +147,6 @@ func (s *AssociationClassSuite) TestCatalogIndexesAssociationClass() {
 	s.Equal(tcm.partnerKey, acInfo.FromClassKey)
 	s.Equal(tcm.jurisdictionKey, acInfo.ToClassKey)
 	s.Equal(tcm.hostAssocKey, acInfo.HostAssociation.Key)
-	s.True(acInfo.InactiveStates["Deleted"])
 
 	assocs := catalog.AllAssociations()
 	s.Len(assocs, 1)
@@ -257,7 +256,7 @@ func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 	s.Contains(err.Error(), "requires both endpoint instances")
 }
 
-func (s *AssociationClassSuite) TestDeleteSoftDeleteExcludesFromActiveCount() {
+func (s *AssociationClassSuite) TestDeleteToNamedStateStillCountsAsLink() {
 	tcm := buildAssociationClassTestModel()
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
@@ -291,11 +290,9 @@ func (s *AssociationClassSuite) TestDeleteSoftDeleteExcludesFromActiveCount() {
 	deleteResult, err := ae.ExecuteTransition(linkDefClass, deleteEvent, acInstance, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
-	multViolations := deleteResult.Violations.ByType(invariants.ViolationTypeMultiplicity)
-	s.Require().Len(multViolations, 2)
-	for _, v := range multViolations {
-		s.Contains(v.Message, "expected at least 1 links, got 0")
-	}
+	s.Empty(deleteResult.Violations.ByType(invariants.ViolationTypeMultiplicity))
+	s.Empty(deleteResult.Violations.ByType(invariants.ViolationTypeAssociationUniqueness))
+	s.Equal("Deleted", getInstanceStateName(simState.GetInstance(addResult.InstanceID)))
 }
 
 func (s *AssociationClassSuite) TestSimulationRunsAssociationClassScenario() {

@@ -256,14 +256,11 @@ func (s *SimulationState) GetLinkedReverse(toID InstanceID, assocKey identity.Ke
 	return ids
 }
 
-// ActiveInstanceFilter decides whether an instance counts toward association structural limits.
-type ActiveInstanceFilter func(classKey identity.Key, stateName string) bool
-
-// CountActivePairLinks counts live links for one association between a from/to instance pair.
+// CountActivePairLinks counts links for one association between a from/to instance pair.
+// Only instances still present in simulation state count; Final transitions remove rows entirely.
 func (s *SimulationState) CountActivePairLinks(
 	assoc model_class.Association,
 	fromID, toID InstanceID,
-	isActive ActiveInstanceFilter,
 ) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -275,15 +272,9 @@ func (s *SimulationState) CountActivePairLinks(
 			if link.ToEndpointID != toID {
 				continue
 			}
-			linkInst := s.instances[link.LinkInstanceID]
-			if linkInst == nil {
-				continue
+			if s.instances[link.LinkInstanceID] != nil {
+				count++
 			}
-			stateName := instanceStateNameFrom(linkInst)
-			if isActive != nil && !isActive(linkInst.ClassKey, stateName) {
-				continue
-			}
-			count++
 		}
 		return count
 	}
@@ -293,20 +284,6 @@ func (s *SimulationState) CountActivePairLinks(
 		evaluator.ObjectID(fromID),
 		evaluator.ObjectID(toID),
 	)
-}
-
-func instanceStateNameFrom(instance *ClassInstance) string {
-	if instance == nil {
-		return ""
-	}
-	stateAttr := instance.GetAttribute("_state")
-	if stateAttr == nil {
-		return ""
-	}
-	if strObj, ok := stateAttr.(*object.String); ok {
-		return strObj.Value()
-	}
-	return ""
 }
 
 // LinkCount returns the total number of links.

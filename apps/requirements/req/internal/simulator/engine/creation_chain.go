@@ -420,15 +420,7 @@ func (h *CreationChainHandler) activeToEndpointInstances(
 	simState *state.SimulationState,
 	classKey identity.Key,
 ) []*state.ClassInstance {
-	instances := simState.InstancesByClass(classKey)
-	var active []*state.ClassInstance
-	for _, inst := range instances {
-		if !IsActiveAssociationClassInstance(h.catalog, inst.ClassKey, getInstanceStateName(inst)) {
-			continue
-		}
-		active = append(active, inst)
-	}
-	return active
+	return simState.InstancesByClass(classKey)
 }
 
 // stateNameToKey looks up a state name in the class and returns its key.

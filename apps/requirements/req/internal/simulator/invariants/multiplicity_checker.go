@@ -6,7 +6,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -20,14 +19,12 @@ type associationBinding struct {
 // MultiplicityChecker validates association multiplicity constraints as implicit invariants.
 type MultiplicityChecker struct {
 	classAssocs map[identity.Key][]associationBinding
-	acInactive  map[identity.Key]map[string]bool
 }
 
 // NewMultiplicityChecker builds association multiplicity metadata from the model.
 func NewMultiplicityChecker(model *core.Model) *MultiplicityChecker {
 	checker := &MultiplicityChecker{
 		classAssocs: make(map[identity.Key][]associationBinding),
-		acInactive:  make(map[identity.Key]map[string]bool),
 	}
 
 	classes := make(map[identity.Key]model_class.Class)
@@ -54,11 +51,6 @@ func NewMultiplicityChecker(model *core.Model) *MultiplicityChecker {
 		checker.classAssocs[assoc.FromClassKey] = append(checker.classAssocs[assoc.FromClassKey], binding)
 		if assoc.FromClassKey != assoc.ToClassKey {
 			checker.classAssocs[assoc.ToClassKey] = append(checker.classAssocs[assoc.ToClassKey], binding)
-		}
-		if assoc.AssociationClassKey != nil {
-			if acClass, ok := classes[*assoc.AssociationClassKey]; ok {
-				checker.acInactive[*assoc.AssociationClassKey] = inactiveAssociationClassStates(acClass)
-			}
 		}
 	}
 
@@ -160,10 +152,7 @@ func (c *MultiplicityChecker) countActiveAssociationLinksFrom(
 	count := 0
 	for _, link := range links {
 		linkInst := simState.GetInstance(link.LinkInstanceID)
-		if linkInst == nil {
-			continue
-		}
-		if c.isActiveAssociationClassInstance(linkInst.ClassKey, instanceStateName(linkInst)) {
+		if linkInst != nil {
 			count++
 		}
 	}
@@ -179,10 +168,7 @@ func (c *MultiplicityChecker) countActiveAssociationLinksTo(
 	count := 0
 	for _, link := range links {
 		linkInst := simState.GetInstance(link.LinkInstanceID)
-		if linkInst == nil {
-			continue
-		}
-		if c.isActiveAssociationClassInstance(linkInst.ClassKey, instanceStateName(linkInst)) {
+		if linkInst != nil {
 			count++
 		}
 	}
@@ -196,23 +182,11 @@ func (c *MultiplicityChecker) countActiveLinkedInstances(
 	count := 0
 	for _, id := range linked {
 		inst := simState.GetInstance(id)
-		if inst == nil {
-			continue
+		if inst != nil {
+			count++
 		}
-		if !c.isActiveAssociationClassInstance(inst.ClassKey, instanceStateName(inst)) {
-			continue
-		}
-		count++
 	}
 	return count
-}
-
-func (c *MultiplicityChecker) isActiveAssociationClassInstance(classKey identity.Key, stateName string) bool {
-	inactive, isAC := c.acInactive[classKey]
-	if !isAC || len(inactive) == 0 {
-		return true
-	}
-	return !inactive[stateName]
 }
 
 func checkMultiplicityBounds(count int, lowerBound, upperBound uint) string {
@@ -225,100 +199,17 @@ func checkMultiplicityBounds(count int, lowerBound, upperBound uint) string {
 	return ""
 }
 
-func instanceStateName(instance *state.ClassInstance) string {
-	if instance == nil {
+// checkUniquenessUpperBound validates per-pair link caps. Uniqueness never requires links to exist.
+func checkUniquenessUpperBound(count int, uniqueness model_class.Multiplicity) string {
+	if uniqueness.LowerBound == 0 && uniqueness.HigherBound == 0 {
 		return ""
 	}
-	stateAttr := instance.GetAttribute("_state")
-	if stateAttr == nil {
+	upper := uniqueness.HigherBound
+	if upper == 0 {
 		return ""
 	}
-	if strObj, ok := stateAttr.(*object.String); ok {
-		return strObj.Value()
+	if uint(count) > upper { //nolint:gosec // count is a link count from a small in-memory graph, no overflow risk
+		return fmt.Sprintf("expected at most %d links, got %d", upper, count)
 	}
 	return ""
-}
-
-// inactiveAssociationClassStates marks AC states that cannot reach any creation target state.
-func inactiveAssociationClassStates(class model_class.Class) map[string]bool {
-	creationStates := creationTargetStateNames(class)
-	inactive := make(map[string]bool)
-	for _, state := range class.States {
-		if !stateCanReachCreation(class, state.Name, creationStates) {
-			inactive[state.Name] = true
-		}
-	}
-	return inactive
-}
-
-func stateCanReachCreation(class model_class.Class, startName string, creationStates map[string]bool) bool {
-	if creationStates[startName] {
-		return true
-	}
-	reachable := statesReachableFrom(class, map[string]bool{startName: true})
-	for name := range creationStates {
-		if reachable[name] {
-			return true
-		}
-	}
-	return false
-}
-
-func creationTargetStateNames(class model_class.Class) map[string]bool {
-	targets := make(map[string]bool)
-	for _, t := range class.Transitions {
-		if t.FromStateKey != nil || t.ToStateKey == nil {
-			continue
-		}
-		if name := stateKeyToNameInClass(*t.ToStateKey, class); name != "" {
-			targets[name] = true
-		}
-	}
-	return targets
-}
-
-func statesReachableFrom(class model_class.Class, seeds map[string]bool) map[string]bool {
-	reachable := make(map[string]bool)
-	queue := make([]string, 0, len(seeds))
-	for name := range seeds {
-		reachable[name] = true
-		queue = append(queue, name)
-	}
-	for len(queue) > 0 {
-		current := queue[0]
-		queue = queue[1:]
-		currentKey := stateNameToKeyInClass(current, class)
-		if currentKey == nil {
-			continue
-		}
-		for _, t := range class.Transitions {
-			if t.FromStateKey == nil || *t.FromStateKey != *currentKey || t.ToStateKey == nil {
-				continue
-			}
-			nextName := stateKeyToNameInClass(*t.ToStateKey, class)
-			if nextName == "" || reachable[nextName] {
-				continue
-			}
-			reachable[nextName] = true
-			queue = append(queue, nextName)
-		}
-	}
-	return reachable
-}
-
-func stateKeyToNameInClass(stateKey identity.Key, class model_class.Class) string {
-	if s, ok := class.States[stateKey]; ok {
-		return s.Name
-	}
-	return ""
-}
-
-func stateNameToKeyInClass(stateName string, class model_class.Class) *identity.Key {
-	for _, s := range class.States {
-		if s.Name == stateName {
-			key := s.Key
-			return &key
-		}
-	}
-	return nil
 }
