@@ -120,7 +120,7 @@ type testKeys struct {
 	stateNew, stateProcessing, stateComplete identity.Key
 
 	// Events.
-	eventSubmit, eventFulfill, eventCancel identity.Key
+	eventSubmit, eventFulfill, eventCancel, eventNew, eventDestroy identity.Key
 
 	// Guards.
 	guardHasItems, guardIsValid, guardInStock identity.Key
@@ -300,18 +300,18 @@ func GetStrictTestModel() core.Model {
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy state key: %v", err))
 					}
-					eventKey, err := identity.NewEventKey(classKey, "create")
+					eventKey, err := identity.NewEventKey(classKey, "_new")
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy event key: %v", err))
 					}
-					transitionKey, err := identity.NewTransitionKey(classKey, "", "create", "", "", "existing")
+					transitionKey, err := identity.NewTransitionKey(classKey, "", "_new", "", "", "existing")
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy transition key: %v", err))
 					}
 
 					// Create objects.
 					state := model_state.NewState(stateKey, "Existing", "The entity exists in the system.", "")
-					event := model_state.NewEvent(eventKey, "Create", "Creates the entity.", nil)
+					event := model_state.NewEvent(eventKey, model_state.EventNameNew, "Creates the entity.", nil)
 					transition := model_state.NewTransition(transitionKey, eventKey,
 						model_state.TransitionStateKeys{ToStateKey: &stateKey},
 						model_state.TransitionLogicKeys{},
@@ -758,6 +758,14 @@ func buildKeys() (testKeys, error) {
 	if err != nil {
 		return k, err
 	}
+	k.eventNew, err = identity.NewEventKey(k.classOrder, "_new")
+	if err != nil {
+		return k, err
+	}
+	k.eventDestroy, err = identity.NewEventKey(k.classOrder, "_delete")
+	if err != nil {
+		return k, err
+	}
 
 	// Guards.
 	k.guardHasItems, err = identity.NewGuardKey(k.classOrder, "has_items")
@@ -835,11 +843,11 @@ func buildKeys() (testKeys, error) {
 	if err != nil {
 		return k, err
 	}
-	k.transitionInitial, err = identity.NewTransitionKey(k.classOrder, "", "cancel", "", "", "new")
+	k.transitionInitial, err = identity.NewTransitionKey(k.classOrder, "", "_new", "", "", "new")
 	if err != nil {
 		return k, err
 	}
-	k.transitionFinal, err = identity.NewTransitionKey(k.classOrder, "complete", "cancel", "", "", "")
+	k.transitionFinal, err = identity.NewTransitionKey(k.classOrder, "complete", "_delete", "", "", "")
 	if err != nil {
 		return k, err
 	}
@@ -1554,11 +1562,15 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// eventCancel: no parameter names.
 	eventCancel := model_state.NewEvent(k.eventCancel, "Cancel", "Order is cancelled.", nil)
+	eventNew := model_state.NewEvent(k.eventNew, model_state.EventNameNew, "Creates a new order.", nil)
+	eventDestroy := model_state.NewEvent(k.eventDestroy, model_state.EventNameDelete, "Deletes the order.", nil)
 
 	sm.events = map[identity.Key]model_state.Event{
 		k.eventSubmit:  eventSubmit,
 		k.eventFulfill: eventFulfill,
 		k.eventCancel:  eventCancel,
+		k.eventNew:     eventNew,
+		k.eventDestroy: eventDestroy,
 	}
 
 	// --- Guards (3) ---
@@ -1646,7 +1658,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// Initial transition: nil FromStateKey.
 	transitionInitial := model_state.NewTransition(
-		k.transitionInitial, k.eventCancel,
+		k.transitionInitial, k.eventNew,
 		model_state.TransitionStateKeys{ToStateKey: &k.stateNew},
 		model_state.TransitionLogicKeys{},
 		"initial transition",
@@ -1654,7 +1666,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// Final transition: nil ToStateKey.
 	transitionFinal := model_state.NewTransition(
-		k.transitionFinal, k.eventCancel,
+		k.transitionFinal, k.eventDestroy,
 		model_state.TransitionStateKeys{FromStateKey: &k.stateComplete},
 		model_state.TransitionLogicKeys{},
 		"",

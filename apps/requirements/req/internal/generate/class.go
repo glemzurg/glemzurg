@@ -2,6 +2,7 @@ package generate
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -30,7 +31,7 @@ func generateClassMdContents(reqs *req_flat.Requirements, class model_class.Clas
 func generateClassStateMermaidContents(reqs *req_flat.Requirements, class model_class.Class) (contents string, err error) {
 	eventNameLookup := map[string]string{}
 	for _, event := range class.Events {
-		eventNameLookup[event.Key.String()] = event.Name
+		eventNameLookup[event.Key.String()] = model_state.SystemEventDisplayName(event.Name)
 	}
 	guardDetailsLookup := map[string]string{}
 	for _, guard := range class.Guards {

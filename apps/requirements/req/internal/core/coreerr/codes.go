@@ -166,24 +166,26 @@ const (
 	// ---------------------------------------------------------------
 	// Transition errors.
 
-	TransitionKeyInvalid          Code = "TRANSITION_KEY_INVALID"          // Transition key failed validation.
-	TransitionKeyTypeInvalid      Code = "TRANSITION_KEY_TYPE_INVALID"     // Key is not KEY_TYPE_TRANSITION.
-	TransitionNoState             Code = "TRANSITION_NO_STATE"             // Neither FromStateKey nor ToStateKey set.
-	TransitionFromstatekeyInvalid Code = "TRANSITION_FROMSTATEKEY_INVALID" // FromStateKey failed validation.
-	TransitionFromstatekeyType    Code = "TRANSITION_FROMSTATEKEY_TYPE"    // FromStateKey is not KEY_TYPE_STATE.
-	TransitionTostatekeyInvalid   Code = "TRANSITION_TOSTATEKEY_INVALID"   // ToStateKey failed validation.
-	TransitionTostatekeyType      Code = "TRANSITION_TOSTATEKEY_TYPE"      // ToStateKey is not KEY_TYPE_STATE.
-	TransitionEventkeyInvalid     Code = "TRANSITION_EVENTKEY_INVALID"     // EventKey failed validation.
-	TransitionEventkeyType        Code = "TRANSITION_EVENTKEY_TYPE"        // EventKey is not KEY_TYPE_EVENT.
-	TransitionGuardkeyInvalid     Code = "TRANSITION_GUARDKEY_INVALID"     // GuardKey failed validation.
-	TransitionGuardkeyType        Code = "TRANSITION_GUARDKEY_TYPE"        // GuardKey is not KEY_TYPE_GUARD.
-	TransitionActionkeyInvalid    Code = "TRANSITION_ACTIONKEY_INVALID"    // ActionKey failed validation.
-	TransitionActionkeyType       Code = "TRANSITION_ACTIONKEY_TYPE"       // ActionKey is not KEY_TYPE_ACTION.
-	TransitionFromstateNotfound   Code = "TRANSITION_FROMSTATE_NOTFOUND"   // FromStateKey references non-existent state.
-	TransitionTostateNotfound     Code = "TRANSITION_TOSTATE_NOTFOUND"     // ToStateKey references non-existent state.
-	TransitionEventNotfound       Code = "TRANSITION_EVENT_NOTFOUND"       // EventKey references non-existent event.
-	TransitionGuardNotfound       Code = "TRANSITION_GUARD_NOTFOUND"       // GuardKey references non-existent guard.
-	TransitionActionNotfound      Code = "TRANSITION_ACTION_NOTFOUND"      // ActionKey references non-existent action.
+	TransitionKeyInvalid          Code = "TRANSITION_KEY_INVALID"           // Transition key failed validation.
+	TransitionKeyTypeInvalid      Code = "TRANSITION_KEY_TYPE_INVALID"      // Key is not KEY_TYPE_TRANSITION.
+	TransitionNoState             Code = "TRANSITION_NO_STATE"              // Neither FromStateKey nor ToStateKey set.
+	TransitionFromstatekeyInvalid Code = "TRANSITION_FROMSTATEKEY_INVALID"  // FromStateKey failed validation.
+	TransitionFromstatekeyType    Code = "TRANSITION_FROMSTATEKEY_TYPE"     // FromStateKey is not KEY_TYPE_STATE.
+	TransitionTostatekeyInvalid   Code = "TRANSITION_TOSTATEKEY_INVALID"    // ToStateKey failed validation.
+	TransitionTostatekeyType      Code = "TRANSITION_TOSTATEKEY_TYPE"       // ToStateKey is not KEY_TYPE_STATE.
+	TransitionEventkeyInvalid     Code = "TRANSITION_EVENTKEY_INVALID"      // EventKey failed validation.
+	TransitionEventkeyType        Code = "TRANSITION_EVENTKEY_TYPE"         // EventKey is not KEY_TYPE_EVENT.
+	TransitionGuardkeyInvalid     Code = "TRANSITION_GUARDKEY_INVALID"      // GuardKey failed validation.
+	TransitionGuardkeyType        Code = "TRANSITION_GUARDKEY_TYPE"         // GuardKey is not KEY_TYPE_GUARD.
+	TransitionActionkeyInvalid    Code = "TRANSITION_ACTIONKEY_INVALID"     // ActionKey failed validation.
+	TransitionActionkeyType       Code = "TRANSITION_ACTIONKEY_TYPE"        // ActionKey is not KEY_TYPE_ACTION.
+	TransitionFromstateNotfound   Code = "TRANSITION_FROMSTATE_NOTFOUND"    // FromStateKey references non-existent state.
+	TransitionTostateNotfound     Code = "TRANSITION_TOSTATE_NOTFOUND"      // ToStateKey references non-existent state.
+	TransitionEventNotfound       Code = "TRANSITION_EVENT_NOTFOUND"        // EventKey references non-existent event.
+	TransitionGuardNotfound       Code = "TRANSITION_GUARD_NOTFOUND"        // GuardKey references non-existent guard.
+	TransitionActionNotfound      Code = "TRANSITION_ACTION_NOTFOUND"       // ActionKey references non-existent action.
+	TransitionInitialEventInvalid Code = "TRANSITION_INITIAL_EVENT_INVALID" // FromStateKey nil but event is not _new.
+	TransitionFinalEventInvalid   Code = "TRANSITION_FINAL_EVENT_INVALID"   // ToStateKey nil but event is not _delete.
 
 	// ---------------------------------------------------------------
 	// Class errors.

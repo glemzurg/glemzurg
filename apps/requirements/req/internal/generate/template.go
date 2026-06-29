@@ -145,8 +145,12 @@ var _funcMap = template.FuncMap{
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},
-	"unfinished_notes_block":  unfinishedNotesBlock,
-	"unfinished_notes_marker": unfinishedNotesMarker,
+	"unfinished_notes_block":            unfinishedNotesBlock,
+	"unfinished_notes_marker":           unfinishedNotesMarker,
+	"state_machine_incomplete_marker":   stateMachineIncompleteMarker,
+	"class_has_state_machine":           classHasStateMachine,
+	"class_state_machine_has_new_event": classStateMachineHasNewEvent,
+	"event_display_name":                model_state.SystemEventDisplayName,
 	"parse_error_marker": func(classKey identity.Key) string {
 		if activeParseIssues == nil {
 			return ""
@@ -196,7 +200,7 @@ var _funcMap = template.FuncMap{
 		signature := strings.Join(paramNames, ", ")
 
 		// The main call.
-		eventCall = event.Name + "(" + signature + ")"
+		eventCall = model_state.SystemEventDisplayName(event.Name) + "(" + signature + ")"
 
 		// Add a guard if there is one.
 		if transition.GuardKey != nil {

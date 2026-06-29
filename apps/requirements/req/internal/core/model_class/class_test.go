@@ -596,3 +596,132 @@ func (suite *ClassSuite) TestValidateReferences() {
 		})
 	}
 }
+
+func (suite *ClassSuite) TestValidateTransitionSystemEvents() {
+	ctx := coreerr.NewContext("test", "")
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	stateActiveKey := helper.Must(identity.NewStateKey(classKey, "active"))
+	eventNewKey := helper.Must(identity.NewEventKey(classKey, "_new"))
+	eventAddKey := helper.Must(identity.NewEventKey(classKey, "add"))
+	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, "_delete"))
+	eventOtherDeleteKey := helper.Must(identity.NewEventKey(classKey, "delete"))
+	transCreateKey := helper.Must(identity.NewTransitionKey(classKey, "", "_new", "", "", "active"))
+	transCreateBadKey := helper.Must(identity.NewTransitionKey(classKey, "", "add", "", "", "active"))
+	transFinalKey := helper.Must(identity.NewTransitionKey(classKey, "active", "_delete", "", "", ""))
+	transFinalBadKey := helper.Must(identity.NewTransitionKey(classKey, "active", "delete", "", "", ""))
+
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
+	eventNew := model_state.NewEvent(eventNewKey, model_state.EventNameNew, "", nil)
+	eventAdd := model_state.NewEvent(eventAddKey, "Add", "", nil)
+	eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDelete, "", nil)
+	eventOtherDelete := model_state.NewEvent(eventOtherDeleteKey, "Delete", "", nil)
+
+	tests := []struct {
+		testName string
+		class    Class
+		errstr   string
+	}{
+		{
+			testName: "valid initial transition with «new»",
+			class: Class{
+				Key:  classKey,
+				Name: "Name",
+				States: map[identity.Key]model_state.State{
+					stateActiveKey: stateActive,
+				},
+				Events: map[identity.Key]model_state.Event{
+					eventNewKey: eventNew,
+				},
+				Transitions: map[identity.Key]model_state.Transition{
+					transCreateKey: model_state.NewTransition(
+						transCreateKey,
+						eventNewKey,
+						model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey},
+						model_state.TransitionLogicKeys{},
+						"",
+					),
+				},
+			},
+		},
+		{
+			testName: "error initial transition without «new»",
+			class: Class{
+				Key:  classKey,
+				Name: "Name",
+				States: map[identity.Key]model_state.State{
+					stateActiveKey: stateActive,
+				},
+				Events: map[identity.Key]model_state.Event{
+					eventAddKey: eventAdd,
+				},
+				Transitions: map[identity.Key]model_state.Transition{
+					transCreateBadKey: model_state.NewTransition(
+						transCreateBadKey,
+						eventAddKey,
+						model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey},
+						model_state.TransitionLogicKeys{},
+						"",
+					),
+				},
+			},
+			errstr: "TRANSITION_INITIAL_EVENT_INVALID",
+		},
+		{
+			testName: "valid final transition with _delete",
+			class: Class{
+				Key:  classKey,
+				Name: "Name",
+				States: map[identity.Key]model_state.State{
+					stateActiveKey: stateActive,
+				},
+				Events: map[identity.Key]model_state.Event{
+					eventDeleteKey: eventDelete,
+				},
+				Transitions: map[identity.Key]model_state.Transition{
+					transFinalKey: model_state.NewTransition(
+						transFinalKey,
+						eventDeleteKey,
+						model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil},
+						model_state.TransitionLogicKeys{},
+						"",
+					),
+				},
+			},
+		},
+		{
+			testName: "error final transition without _delete",
+			class: Class{
+				Key:  classKey,
+				Name: "Name",
+				States: map[identity.Key]model_state.State{
+					stateActiveKey: stateActive,
+				},
+				Events: map[identity.Key]model_state.Event{
+					eventOtherDeleteKey: eventOtherDelete,
+				},
+				Transitions: map[identity.Key]model_state.Transition{
+					transFinalBadKey: model_state.NewTransition(
+						transFinalBadKey,
+						eventOtherDeleteKey,
+						model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil},
+						model_state.TransitionLogicKeys{},
+						"",
+					),
+				},
+			},
+			errstr: "TRANSITION_FINAL_EVENT_INVALID",
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.testName, func() {
+			err := tt.class.ValidateWithParent(ctx, &subdomainKey)
+			if tt.errstr == "" {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().ErrorContains(err, tt.errstr)
+			}
+		})
+	}
+}

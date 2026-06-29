@@ -97,8 +97,7 @@ This is an actor:
 ```
 
 # State Machine
-
-{{ if ne .StateDiagram "" -}}
+{{ state_machine_incomplete_marker .Class }}{{ if ne .StateDiagram "" -}}
 ```mermaid
 {{ .StateDiagram }}
 ```
@@ -122,7 +121,7 @@ The events for this class.
 
 {{ range .Class.Events -}}
 
-- **{{ .Name }}.** {{ .Details }}{{ if ne .ParameterNames nil }} Parameters:
+- **{{ event_display_name .Name }}.** {{ .Details }}{{ if ne .ParameterNames nil }} Parameters:
 {{ range .ParameterNames }}   - *{{ . }}.*
 {{ end }}{{- end }}
 {{ end }}

@@ -293,7 +293,7 @@ func parseClassEvents(class *model_class.Class, classKey identity.Key, yamlData 
 		if err != nil {
 			return nil, err
 		}
-		eventKeyLookup[event.Name] = event.Key
+		eventKeyLookup[name] = event.Key
 		events[event.Key] = event
 	}
 	class.SetEvents(events)

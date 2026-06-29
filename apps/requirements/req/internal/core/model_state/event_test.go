@@ -37,6 +37,20 @@ func (suite *EventSuite) TestValidate() {
 			},
 		},
 		{
+			testName: "valid system creation event name",
+			event: Event{
+				Key:  validKey,
+				Name: EventNameNew,
+			},
+		},
+		{
+			testName: "valid system final event name",
+			event: Event{
+				Key:  validKey,
+				Name: EventNameDelete,
+			},
+		},
+		{
 			testName: "valid event with all optional fields",
 			event: Event{
 				Key:            validKey,
@@ -166,4 +180,14 @@ func (suite *EventSuite) TestValidateWithParent() {
 	}
 	err = event.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
+}
+
+func (suite *EventSuite) TestSystemEventNames() {
+	suite.True(IsSystemCreationEvent(EventNameNew))
+	suite.False(IsSystemCreationEvent("Add"))
+	suite.True(IsSystemFinalEvent(EventNameDelete))
+	suite.False(IsSystemFinalEvent("Delete"))
+	suite.Equal("«new»", SystemEventDisplayName(EventNameNew))
+	suite.Equal("«delete»", SystemEventDisplayName(EventNameDelete))
+	suite.Equal("Submit", SystemEventDisplayName("Submit"))
 }

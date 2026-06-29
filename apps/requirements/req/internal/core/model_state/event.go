@@ -8,6 +8,35 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
+// System event names reserved for implicit initial and final pseudo-states.
+// Stored and authored as _new / _delete; rendered as «new» / «delete» in diagrams and docs.
+const (
+	EventNameNew    = "_new"
+	EventNameDelete = "_delete"
+)
+
+// IsSystemCreationEvent reports whether name is the reserved creation event _new.
+func IsSystemCreationEvent(name string) bool {
+	return name == EventNameNew
+}
+
+// IsSystemFinalEvent reports whether name is the reserved finalization event _delete.
+func IsSystemFinalEvent(name string) bool {
+	return name == EventNameDelete
+}
+
+// SystemEventDisplayName returns the UML stereotype label for system events.
+func SystemEventDisplayName(name string) string {
+	switch name {
+	case EventNameNew:
+		return "«new»"
+	case EventNameDelete:
+		return "«delete»"
+	default:
+		return name
+	}
+}
+
 // Event is what triggers a transition between states.
 type Event struct {
 	Key     identity.Key
@@ -37,11 +66,8 @@ func (e *Event) Validate(ctx *coreerr.ValidationContext) error {
 		return coreerr.NewWithValues(ctx, coreerr.EventKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for event", e.Key.KeyType), "Key", e.Key.KeyType, identity.KEY_TYPE_EVENT)
 	}
 
-	if e.Name == "" {
-		return coreerr.New(ctx, coreerr.EventNameRequired, "Name is required", "Name")
-	}
-	if badChar := coreerr.ValidateNameChars(e.Name); badChar != "" {
-		return coreerr.NewWithValues(ctx, coreerr.EventNameInvalidChars, fmt.Sprintf("Name contains invalid character %q", badChar), "Name", e.Name, "A-Za-z0-9 space hyphen underscore")
+	if err := validateEventName(ctx, e.Name); err != nil {
+		return err
 	}
 
 	return validateEventParameterNames(ctx, e.ParameterNames)
@@ -57,6 +83,16 @@ func (e *Event) ValidateWithParent(ctx *coreerr.ValidationContext, parent *ident
 	// Validate the key has the correct parent.
 	if err := e.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
+	}
+	return nil
+}
+
+func validateEventName(ctx *coreerr.ValidationContext, name string) error {
+	if name == "" {
+		return coreerr.New(ctx, coreerr.EventNameRequired, "Name is required", "Name")
+	}
+	if badChar := coreerr.ValidateNameChars(name); badChar != "" {
+		return coreerr.NewWithValues(ctx, coreerr.EventNameInvalidChars, fmt.Sprintf("Name contains invalid character %q", badChar), "Name", name, "A-Za-z0-9 space hyphen underscore")
 	}
 	return nil
 }

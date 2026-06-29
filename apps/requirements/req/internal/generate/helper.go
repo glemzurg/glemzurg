@@ -4,6 +4,9 @@ import (
 	"html"
 	"strings"
 	"unicode"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 const _unfinishedNotesGlyph = "\u26a0" // ⚠ WARNING SIGN — block leader and list-item marker
@@ -27,6 +30,29 @@ func unfinishedNotesMarker(notes string) string {
 		return ""
 	}
 	return ` <span class="unfinished-notes-glyph">` + _unfinishedNotesGlyph + `</span>`
+}
+
+// classHasStateMachine reports whether the class declares any states or transitions.
+func classHasStateMachine(class model_class.Class) bool {
+	return len(class.States) > 0 || len(class.Transitions) > 0
+}
+
+// classStateMachineHasNewEvent reports whether the class defines the system «new» event.
+func classStateMachineHasNewEvent(class model_class.Class) bool {
+	for _, event := range class.Events {
+		if model_state.IsSystemCreationEvent(event.Name) {
+			return true
+		}
+	}
+	return false
+}
+
+// stateMachineIncompleteMarker flags state machines that omit the system «new» event.
+func stateMachineIncompleteMarker(class model_class.Class) string {
+	if !classHasStateMachine(class) || classStateMachineHasNewEvent(class) {
+		return ""
+	}
+	return "\n\n**«incomplete»** — no «new» event defined for creation transitions.\n"
 }
 
 // Skip the header and grab the first markdown paragraph as a summary for showing in table of contents pages.

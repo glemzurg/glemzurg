@@ -259,7 +259,7 @@ func buildEventText(ctx stepContext, stmt model_scenario.Step) string {
 	if stmt.EventKey != nil {
 		event, found := ctx.eventLookup[stmt.EventKey.String()]
 		if found {
-			textBuilder.WriteString(event.Name)
+			textBuilder.WriteString(model_state.SystemEventDisplayName(event.Name))
 			if len(event.ParameterNames) > 0 {
 				textBuilder.WriteString("(")
 				for i, name := range event.ParameterNames {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -1573,14 +1574,14 @@ func t_buildCompleteClass() *inputClass {
 				"active": {Name: "Active"},
 			},
 			Events: map[string]*inputEvent{
-				"create": {Name: "create"},
+				"_new": {Name: model_state.EventNameNew},
 			},
 			Guards: map[string]*inputGuard{},
 			Transitions: []inputTransition{
 				{
 					FromStateKey: nil, // Initial transition
 					ToStateKey:   &toState,
-					EventKey:     "create",
+					EventKey:     "_new",
 				},
 			},
 		},

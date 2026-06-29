@@ -47,15 +47,10 @@ func Parse(modelPath string) (model core.Model, failures []ParseFailure, err err
 
 	// Verify the model is well-formed after the parse.
 	if err = model.Validate(); err != nil {
-		// With parse failures the model is known-partial — a placeholder class
-		// can, for example, drop a generalization's superclass linkage. Treat
-		// that validation error as a symptom, not catastrophic: hand back the
-		// partial model + failures so the rest still renders.
-		if len(failures) > 0 {
-			log.Printf("   model validation reported issues (expected with %d parse failure(s)): %v", len(failures), err)
-			return model, failures, nil
-		}
-		return core.Model{}, nil, errors.WithStack(err)
+		// Validation defects (e.g. state-machine _new/_delete rules) should not
+		// block rendering — class pages surface «incomplete» and other markers instead.
+		log.Printf("   model validation reported issues: %v", err)
+		return model, failures, nil
 	}
 
 	return model, failures, nil

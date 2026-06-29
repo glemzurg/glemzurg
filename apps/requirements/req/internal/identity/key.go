@@ -81,6 +81,19 @@ var validKeyTypes = map[string]bool{
 // identifierPattern is the regex that SubKeys must match for key types that become filenames/directories.
 var identifierPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
+// systemEventSubkeys are reserved state-machine event keys (_new, _delete) allowed despite a leading underscore.
+var systemEventSubkeys = map[string]bool{
+	"_new":    true,
+	"_delete": true,
+}
+
+func isValidIdentifierSubKey(keyType, subKey string) bool {
+	if keyType == KEY_TYPE_EVENT && systemEventSubkeys[subKey] {
+		return true
+	}
+	return identifierPattern.MatchString(subKey)
+}
+
 // identifierSubKeyTypes lists key types whose SubKey must be a valid identifier (matches identifierPattern).
 // Key types NOT in this set have special SubKey formats (integers, composites, class paths).
 var identifierSubKeyTypes = map[string]bool{
@@ -126,7 +139,7 @@ func (k *Key) ValidateWithContext(ctx *coreerr.ValidationContext) error {
 
 	// Validate SubKey format for key types that require identifier SubKeys.
 	if identifierSubKeyTypes[k.KeyType] {
-		if !identifierPattern.MatchString(k.SubKey) {
+		if !isValidIdentifierSubKey(k.KeyType, k.SubKey) {
 			return coreerr.NewWithValues(ctx, coreerr.KeySubkeyInvalidFormat,
 				fmt.Sprintf("sub key '%s' must match pattern [a-z][a-z0-9_]* for key type '%s'", k.SubKey, k.KeyType),
 				"SubKey", k.SubKey, "a value matching ^[a-z][a-z0-9_]*$")

@@ -309,6 +309,37 @@ func (c *Class) validateTransitions(ctx *coreerr.ValidationContext) error {
 		if err := transition.ValidateReferences(transCtx, stateKeys, eventKeys, guardKeys, actionKeys); err != nil {
 			return err
 		}
+		if err := validateTransitionSystemEvents(transCtx, transition, c.Events); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateTransitionSystemEvents(ctx *coreerr.ValidationContext, transition model_state.Transition, events map[identity.Key]model_state.Event) error {
+	event, ok := events[transition.EventKey]
+	if !ok {
+		return nil // ValidateReferences already reported a missing event.
+	}
+	if transition.FromStateKey == nil && !model_state.IsSystemCreationEvent(event.Name) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.TransitionInitialEventInvalid,
+			fmt.Sprintf("transition '%s' leaves initial but event %q is not %q", transition.Key.String(), event.Name, model_state.EventNameNew),
+			"EventKey",
+			event.Name,
+			model_state.EventNameNew,
+		)
+	}
+	if transition.ToStateKey == nil && !model_state.IsSystemFinalEvent(event.Name) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.TransitionFinalEventInvalid,
+			fmt.Sprintf("transition '%s' reaches final but event %q is not %q", transition.Key.String(), event.Name, model_state.EventNameDelete),
+			"EventKey",
+			event.Name,
+			model_state.EventNameDelete,
+		)
 	}
 	return nil
 }
