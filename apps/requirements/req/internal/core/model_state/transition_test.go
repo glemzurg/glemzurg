@@ -231,6 +231,102 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 	suite.Require().NoError(err)
 }
 
+// TestValidateSystemEventEdges tests initial and final pseudo-state event rules.
+func (suite *TransitionSuite) TestValidateSystemEventEdges() {
+	ctx := coreerr.NewContext("test", "")
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	stateActiveKey := helper.Must(identity.NewStateKey(classKey, "active"))
+	eventNewKey := helper.Must(identity.NewEventKey(classKey, "_new"))
+	eventAddKey := helper.Must(identity.NewEventKey(classKey, "add"))
+	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, "_delete"))
+	eventOtherDeleteKey := helper.Must(identity.NewEventKey(classKey, "delete"))
+	transCreateKey := helper.Must(identity.NewTransitionKey(classKey, "", "_new", "", "", "active"))
+	transCreateBadKey := helper.Must(identity.NewTransitionKey(classKey, "", "add", "", "", "active"))
+	transFinalKey := helper.Must(identity.NewTransitionKey(classKey, "active", "_delete", "", "", ""))
+	transFinalBadKey := helper.Must(identity.NewTransitionKey(classKey, "active", "delete", "", "", ""))
+	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
+	fromStateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
+	toStateKey := helper.Must(identity.NewStateKey(classKey, "state2"))
+	midTransitionKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "", "", "state2"))
+
+	tests := []struct {
+		testName   string
+		transition Transition
+		eventName  string
+		errstr     string
+	}{
+		{
+			testName: "valid initial transition with _new",
+			transition: NewTransition(
+				transCreateKey,
+				eventNewKey,
+				TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey},
+				TransitionLogicKeys{},
+				"",
+			),
+			eventName: EventNameNew,
+		},
+		{
+			testName: "error initial transition without _new",
+			transition: NewTransition(
+				transCreateBadKey,
+				eventAddKey,
+				TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey},
+				TransitionLogicKeys{},
+				"",
+			),
+			eventName: "Add",
+			errstr:    "TRANSITION_INITIAL_EVENT_INVALID",
+		},
+		{
+			testName: "valid final transition with _delete",
+			transition: NewTransition(
+				transFinalKey,
+				eventDeleteKey,
+				TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil},
+				TransitionLogicKeys{},
+				"",
+			),
+			eventName: EventNameDelete,
+		},
+		{
+			testName: "error final transition without _delete",
+			transition: NewTransition(
+				transFinalBadKey,
+				eventOtherDeleteKey,
+				TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil},
+				TransitionLogicKeys{},
+				"",
+			),
+			eventName: "Delete",
+			errstr:    "TRANSITION_FINAL_EVENT_INVALID",
+		},
+		{
+			testName: "mid-state transition ignores system event rules",
+			transition: NewTransition(
+				midTransitionKey,
+				eventKey,
+				TransitionStateKeys{FromStateKey: &fromStateKey, ToStateKey: &toStateKey},
+				TransitionLogicKeys{},
+				"",
+			),
+			eventName: "event1",
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.testName, func() {
+			err := tt.transition.ValidateSystemEventEdges(ctx, tt.eventName)
+			if tt.errstr == "" {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().ErrorContains(err, tt.errstr)
+			}
+		})
+	}
+}
+
 // TestValidateReferences tests that ValidateReferences validates all reference keys correctly.
 func (suite *TransitionSuite) TestValidateReferences() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))

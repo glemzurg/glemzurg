@@ -104,6 +104,32 @@ func (t *Transition) Validate(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
+// ValidateSystemEventEdges rejects non-system events on initial and final pseudo-state edges.
+// Initial transitions (FromStateKey nil) must use _new; final transitions (ToStateKey nil) must use _delete.
+func (t *Transition) ValidateSystemEventEdges(ctx *coreerr.ValidationContext, eventName string) error {
+	if t.FromStateKey == nil && !IsSystemCreationEvent(eventName) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.TransitionInitialEventInvalid,
+			fmt.Sprintf("transition '%s' leaves initial but event %q is not %q", t.Key.String(), eventName, EventNameNew),
+			"EventKey",
+			eventName,
+			EventNameNew,
+		)
+	}
+	if t.ToStateKey == nil && !IsSystemFinalEvent(eventName) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.TransitionFinalEventInvalid,
+			fmt.Sprintf("transition '%s' reaches final but event %q is not %q", t.Key.String(), eventName, EventNameDelete),
+			"EventKey",
+			eventName,
+			EventNameDelete,
+		)
+	}
+	return nil
+}
+
 // ValidateWithParent validates the Transition, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (t *Transition) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
