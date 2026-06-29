@@ -101,6 +101,10 @@ func (s *MapValidationErrorSuite) TestMappedCoreCodeWithPath() {
 		{"dtype key required", coreerr.DtypeKeyRequired, ErrConvLogicSpecInvalid},
 		{"dtype collection type invalid", coreerr.DtypeCollectiontypeInvalid, ErrConvLogicSpecInvalid},
 
+		// Transition system-event edge errors.
+		{"transition initial event invalid", coreerr.TransitionInitialEventInvalid, ErrConvTransitionInitialEventInvalid},
+		{"transition final event invalid", coreerr.TransitionFinalEventInvalid, ErrConvTransitionFinalEventInvalid},
+
 		// Internal key errors.
 		{"key type invalid", coreerr.KeyTypeInvalid, ErrConvInternalKeyError},
 		{"class key invalid", coreerr.ClassKeyInvalid, ErrConvInternalKeyError},
@@ -243,24 +247,26 @@ func (s *MapValidationErrorSuite) TestFilePathIsBlankForMappedErrors() {
 // TestAllCoreCodesInMapHaveMatchingParserCode verifies every entry in coreToParserCode maps to a valid parser_ai code.
 func (s *MapValidationErrorSuite) TestAllCoreCodesInMapHaveMatchingParserCode() {
 	validParserCodes := map[int]bool{
-		ErrConvParamDatatypeRequired:     true,
-		ErrConvParamNameRequired:         true,
-		ErrConvLogicTypeInvalid:          true,
-		ErrConvLogicDuplicateLet:         true,
-		ErrConvLogicDuplicateTarget:      true,
-		ErrConvLogicTargetRequired:       true,
-		ErrConvLogicTargetNotAllowed:     true,
-		ErrConvLogicTargetNoUnderscore:   true,
-		ErrConvReferenceNotFound:         true,
-		ErrConvGenCardinalityInvalid:     true,
-		ErrConvDomainStructureInvalid:    true,
-		ErrConvScenarioStepInvalid:       true,
-		ErrConvGuaranteeInvalidTarget:    true,
-		ErrConvAssocClassSameAsEndpoint:  true,
-		ErrConvInternalKeyError:          true,
-		ErrConvUseCaseActorNotActorClass: true,
-		ErrConvLogicSpecInvalid:          true,
-		ErrConvDomainAssocSameDomains:    true,
+		ErrConvParamDatatypeRequired:         true,
+		ErrConvParamNameRequired:             true,
+		ErrConvLogicTypeInvalid:              true,
+		ErrConvLogicDuplicateLet:             true,
+		ErrConvLogicDuplicateTarget:          true,
+		ErrConvLogicTargetRequired:           true,
+		ErrConvLogicTargetNotAllowed:         true,
+		ErrConvLogicTargetNoUnderscore:       true,
+		ErrConvReferenceNotFound:             true,
+		ErrConvGenCardinalityInvalid:         true,
+		ErrConvDomainStructureInvalid:        true,
+		ErrConvScenarioStepInvalid:           true,
+		ErrConvGuaranteeInvalidTarget:        true,
+		ErrConvAssocClassSameAsEndpoint:      true,
+		ErrConvInternalKeyError:              true,
+		ErrConvUseCaseActorNotActorClass:     true,
+		ErrConvLogicSpecInvalid:              true,
+		ErrConvDomainAssocSameDomains:        true,
+		ErrConvTransitionInitialEventInvalid: true,
+		ErrConvTransitionFinalEventInvalid:   true,
 	}
 
 	for coreCode, parserCode := range coreToParserCode {

@@ -123,14 +123,14 @@ func (suite *TreeValidateSuite) TestTransitionNoStates() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   nil,
-				EventKey:     "create",
+				EventKey:     "_new",
 			},
 		},
 	}
@@ -214,6 +214,72 @@ func (suite *TreeValidateSuite) TestTransitionToStateNotFound() {
 	suite.Equal("transitions[0].to_state_key", parseErr.Field)
 }
 
+// TestTransitionInitialEventInvalid verifies error when an initial transition does not use _new.
+func (suite *TreeValidateSuite) TestTransitionInitialEventInvalid() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	toState := "pending"
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{
+			"create": {Name: "create"},
+		},
+		Guards: map[string]*inputGuard{},
+		Transitions: []inputTransition{
+			{
+				FromStateKey: nil,
+				ToStateKey:   &toState,
+				EventKey:     "create",
+			},
+		},
+	}
+	class.Actions = map[string]*inputAction{}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrTreeTransitionInitialEventInvalid, parseErr.Code)
+	suite.Equal("transitions[0].event_key", parseErr.Field)
+}
+
+// TestTransitionFinalEventInvalid verifies error when a final transition does not use _delete.
+func (suite *TreeValidateSuite) TestTransitionFinalEventInvalid() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	fromState := "pending"
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{
+			"complete": {Name: "complete"},
+		},
+		Guards: map[string]*inputGuard{},
+		Transitions: []inputTransition{
+			{
+				FromStateKey: &fromState,
+				ToStateKey:   nil,
+				EventKey:     "complete",
+			},
+		},
+	}
+	class.Actions = map[string]*inputAction{}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrTreeTransitionFinalEventInvalid, parseErr.Code)
+	suite.Equal("transitions[0].event_key", parseErr.Field)
+}
+
 // TestTransitionEventNotFound verifies error when transition event_key doesn't exist.
 func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
 	model := t_buildMinimalModelTree()
@@ -256,14 +322,14 @@ func (suite *TreeValidateSuite) TestTransitionGuardNotFound() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 				GuardKey:     &missingGuard,
 			},
 		},
@@ -291,14 +357,14 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 				ActionKey:    &missingAction,
 			},
 		},
@@ -325,14 +391,14 @@ func (suite *TreeValidateSuite) TestActionUnreferenced() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 				// No action_key - the action is not referenced
 			},
 		},
@@ -369,14 +435,14 @@ func (suite *TreeValidateSuite) TestActionReferencedByStateAction() {
 			},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 			},
 		},
 	}
@@ -399,14 +465,14 @@ func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 				ActionKey:    &actionKey,
 			},
 		},

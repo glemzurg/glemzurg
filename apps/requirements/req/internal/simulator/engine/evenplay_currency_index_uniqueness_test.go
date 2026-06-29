@@ -95,7 +95,7 @@ func findCurrencyClassAndAddEvent(model *core.Model) (model_class.Class, model_s
 					continue
 				}
 				for _, event := range class.Events {
-					if event.Name == "Add" {
+					if model_state.IsSystemCreationEvent(event.Name) {
 						return class, event, true
 					}
 				}

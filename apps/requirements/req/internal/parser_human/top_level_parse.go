@@ -21,11 +21,12 @@ const _DEFAULT_SUBDOMAIN_NAME = "default"
 
 // Parse reads a model from its source directory.
 //
-// A parse failure in a single .class file does not abort the whole model: that
-// class becomes an empty placeholder and its error is returned in the
-// []ParseFailure slice, so every other entity still renders. A failure in a
-// .model / .domain / .subdomain file (entities that others depend on) or a
-// filesystem walk error is catastrophic and returned as the error.
+// A parse failure in a single .class file does not abort assembly: that class
+// becomes an empty placeholder and its error is returned in the []ParseFailure
+// slice. After assembly, model.Validate() runs; validation errors are returned
+// as err (same contract as parser_ai ReadModel). A failure in a .model / .domain
+// / .subdomain file (entities that others depend on) or a filesystem walk error
+// is catastrophic and returned as err before validation.
 func Parse(modelPath string) (model core.Model, failures []ParseFailure, err error) {
 	log.Printf("Parse files in '%s'", modelPath)
 
@@ -45,12 +46,8 @@ func Parse(modelPath string) (model core.Model, failures []ParseFailure, err err
 		return core.Model{}, nil, errors.WithStack(err)
 	}
 
-	// Verify the model is well-formed after the parse.
 	if err = model.Validate(); err != nil {
-		// Validation defects (e.g. state-machine _new/_delete rules) should not
-		// block rendering — class pages surface «incomplete» and other markers instead.
-		log.Printf("   model validation reported issues: %v", err)
-		return model, failures, nil
+		return core.Model{}, failures, errors.WithStack(err)
 	}
 
 	return model, failures, nil

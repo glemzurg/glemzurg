@@ -124,6 +124,8 @@ var coreToParserCode = map[coreerr.Code]int{
 	coreerr.TransitionEventNotfound:         ErrConvReferenceNotFound,
 	coreerr.TransitionGuardNotfound:         ErrConvReferenceNotFound,
 	coreerr.TransitionActionNotfound:        ErrConvReferenceNotFound,
+	coreerr.TransitionInitialEventInvalid:   ErrConvTransitionInitialEventInvalid,
+	coreerr.TransitionFinalEventInvalid:     ErrConvTransitionFinalEventInvalid,
 	coreerr.StateactionActionNotfound:       ErrConvReferenceNotFound,
 	coreerr.ModelCassocOrphanParent:         ErrConvReferenceNotFound,
 	coreerr.DomainCassocOrphan:              ErrConvReferenceNotFound,

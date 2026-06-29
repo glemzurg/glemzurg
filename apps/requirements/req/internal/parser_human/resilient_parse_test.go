@@ -25,24 +25,26 @@ func countClasses(t *testing.T, modelPath string) int {
 	return n
 }
 
-// findFirstClassFile returns the path of any one .class file under root.
-func findFirstClassFile(t *testing.T, root string) string {
+// findIsolatedClassFile returns a .class file whose placeholder does not break
+// model-wide validation (no generalization superclass/subclass links).
+func findIsolatedClassFile(t *testing.T, root string) string {
 	t.Helper()
+	const isolatedClass = "warehouse.class"
 	var found string
 	_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-		if err == nil && !d.IsDir() && found == "" && strings.HasSuffix(path, ".class") {
+		if err == nil && !d.IsDir() && found == "" && strings.HasSuffix(path, isolatedClass) {
 			found = path
 		}
 		return nil
 	})
 	if found == "" {
-		t.Fatal("expected at least one .class file in the written model")
+		t.Fatalf("expected %s in the written model", isolatedClass)
 	}
 	return found
 }
 
-// A single unparseable .class file must not abort the model: it becomes a
-// placeholder class and the failure is reported, while every other class parses.
+// A single unparseable .class file is isolated as a ParseFailure and placeholder
+// when the rest of the model still passes model.Validate().
 func TestParseIsolatesBrokenClass(t *testing.T) {
 	tempDir := t.TempDir()
 	model := test_helper.GetTestModel()
@@ -55,8 +57,8 @@ func TestParseIsolatesBrokenClass(t *testing.T) {
 		t.Skip("test model has no classes; nothing to isolate")
 	}
 
-	// Corrupt one class file: append an unterminated YAML quote.
-	classPath := findFirstClassFile(t, tempDir)
+	// Corrupt an isolated class file: append an unterminated YAML quote.
+	classPath := findIsolatedClassFile(t, tempDir)
 	orig, err := os.ReadFile(classPath)
 	if err != nil {
 		t.Fatalf("read class file: %v", err)

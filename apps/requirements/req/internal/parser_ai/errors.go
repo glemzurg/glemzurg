@@ -244,6 +244,10 @@ const (
 	ErrTreeScenarioStepEventNotFound  = 11035 // Scenario step references an event that doesn't exist on the referenced class
 	ErrTreeScenarioStepQueryNotFound  = 11036 // Scenario step references a query that doesn't exist on the referenced class
 
+	// State machine system-event edge errors (11037+).
+	ErrTreeTransitionInitialEventInvalid = 11037 // Initial transition must use event _new
+	ErrTreeTransitionFinalEventInvalid   = 11038 // Final transition must use event _delete
+
 	// Use case errors (18xxx).
 	ErrUseCaseNameRequired    = 18001
 	ErrUseCaseNameEmpty       = 18002
@@ -285,22 +289,24 @@ const (
 	ErrConvSourceModelValidation = 21008 // Source model validation failed before ConvertFromModel
 
 	// Mapped core validation errors (21100-21199) - specific core errors mapped to parser_ai errors.
-	ErrConvParamDatatypeRequired     = 21100 // Parameter data_type_rules is empty
-	ErrConvParamNameRequired         = 21101 // Parameter name is empty
-	ErrConvLogicTypeInvalid          = 21102 // Logic has wrong type for its context (e.g., invariant must be assessment/let)
-	ErrConvLogicDuplicateLet         = 21103 // Duplicate let target in logic list
-	ErrConvLogicDuplicateTarget      = 21104 // Duplicate guarantee target in action/query
-	ErrConvLogicTargetRequired       = 21105 // Logic target (attribute) is required but empty
-	ErrConvLogicTargetNotAllowed     = 21106 // Logic target must be empty for this logic type
-	ErrConvLogicTargetNoUnderscore   = 21107 // Logic target must not start with underscore
-	ErrConvReferenceNotFound         = 21108 // Cross-reference to another entity not found
-	ErrConvGenCardinalityInvalid     = 21109 // Generalization has wrong number of super/subclasses
-	ErrConvDomainStructureInvalid    = 21110 // Domain structural rule violated (subdomain naming, orphan associations)
-	ErrConvScenarioStepInvalid       = 21111 // Scenario step structural rule violated
-	ErrConvGuaranteeInvalidTarget    = 21112 // Guarantee targets an attribute that doesn't exist
-	ErrConvAssocClassSameAsEndpoint  = 21113 // Association class cannot be same as from or to class
-	ErrConvInternalKeyError          = 21114 // Internal key validation error (should not normally occur)
-	ErrConvUseCaseActorNotActorClass = 21115 // Use case references class that is not an actor class
-	ErrConvLogicSpecInvalid          = 21116 // Logic specification (TLA+ expression) failed validation
-	ErrConvDomainAssocSameDomains    = 21117 // Domain association references same domain for problem and solution
+	ErrConvParamDatatypeRequired         = 21100 // Parameter data_type_rules is empty
+	ErrConvParamNameRequired             = 21101 // Parameter name is empty
+	ErrConvLogicTypeInvalid              = 21102 // Logic has wrong type for its context (e.g., invariant must be assessment/let)
+	ErrConvLogicDuplicateLet             = 21103 // Duplicate let target in logic list
+	ErrConvLogicDuplicateTarget          = 21104 // Duplicate guarantee target in action/query
+	ErrConvLogicTargetRequired           = 21105 // Logic target (attribute) is required but empty
+	ErrConvLogicTargetNotAllowed         = 21106 // Logic target must be empty for this logic type
+	ErrConvLogicTargetNoUnderscore       = 21107 // Logic target must not start with underscore
+	ErrConvReferenceNotFound             = 21108 // Cross-reference to another entity not found
+	ErrConvGenCardinalityInvalid         = 21109 // Generalization has wrong number of super/subclasses
+	ErrConvDomainStructureInvalid        = 21110 // Domain structural rule violated (subdomain naming, orphan associations)
+	ErrConvScenarioStepInvalid           = 21111 // Scenario step structural rule violated
+	ErrConvGuaranteeInvalidTarget        = 21112 // Guarantee targets an attribute that doesn't exist
+	ErrConvAssocClassSameAsEndpoint      = 21113 // Association class cannot be same as from or to class
+	ErrConvInternalKeyError              = 21114 // Internal key validation error (should not normally occur)
+	ErrConvUseCaseActorNotActorClass     = 21115 // Use case references class that is not an actor class
+	ErrConvLogicSpecInvalid              = 21116 // Logic specification (TLA+ expression) failed validation
+	ErrConvDomainAssocSameDomains        = 21117 // Domain association references same domain for problem and solution
+	ErrConvTransitionInitialEventInvalid = 21118 // Initial transition event is not _new
+	ErrConvTransitionFinalEventInvalid   = 21119 // Final transition event is not _delete
 )

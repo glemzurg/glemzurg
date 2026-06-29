@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -464,12 +465,31 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 		}
 	}
 
-	if _, ok := sm.Events[transition.EventKey]; !ok {
+	event, eventOK := sm.Events[transition.EventKey]
+	if !eventOK {
 		return NewParseError(
 			ErrTreeStateMachineEventNotFound,
 			fmt.Sprintf("transition[%d] event_key '%s' does not exist", i, transition.EventKey),
 			smPath,
 		).WithField(fmt.Sprintf("transitions[%d].event_key", i)).WithHint(fmt.Sprintf("available events: %s", strings.Join(sortedKeys(sm.Events), ", ")))
+	}
+
+	if transition.FromStateKey == nil && !model_state.IsSystemCreationEvent(event.Name) {
+		return NewParseError(
+			ErrTreeTransitionInitialEventInvalid,
+			fmt.Sprintf("transition[%d] leaves initial but event_key %q (name %q) is not %q", i, transition.EventKey, event.Name, model_state.EventNameNew),
+			smPath,
+		).WithField(fmt.Sprintf("transitions[%d].event_key", i)).
+			WithHint(fmt.Sprintf("declare events.%s and use event_key %q for creation transitions", model_state.EventNameNew, model_state.EventNameNew))
+	}
+
+	if transition.ToStateKey == nil && !model_state.IsSystemFinalEvent(event.Name) {
+		return NewParseError(
+			ErrTreeTransitionFinalEventInvalid,
+			fmt.Sprintf("transition[%d] reaches final but event_key %q (name %q) is not %q", i, transition.EventKey, event.Name, model_state.EventNameDelete),
+			smPath,
+		).WithField(fmt.Sprintf("transitions[%d].event_key", i)).
+			WithHint(fmt.Sprintf("declare events.%s and use event_key %q for finalization transitions", model_state.EventNameDelete, model_state.EventNameDelete))
 	}
 
 	if transition.GuardKey != nil {
