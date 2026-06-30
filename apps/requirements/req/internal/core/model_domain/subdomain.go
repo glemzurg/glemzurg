@@ -93,7 +93,7 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.Validatio
 	if err := s.validateUseCaseGeneralizationUsage(ctx); err != nil {
 		return err
 	}
-	if err := s.validateSubdomainAssociations(ctx, refs.Classes); err != nil {
+	if err := s.validateSubdomainAssociations(ctx, refs); err != nil {
 		return err
 	}
 	if err := s.validateUseCaseShares(ctx); err != nil {
@@ -220,13 +220,17 @@ func (s *Subdomain) validateUseCaseGeneralizationUsage(ctx *coreerr.ValidationCo
 	return nil
 }
 
-func (s *Subdomain) validateSubdomainAssociations(ctx *coreerr.ValidationContext, classes map[identity.Key]bool) error {
+func (s *Subdomain) validateSubdomainAssociations(ctx *coreerr.ValidationContext, refs ModelCrossRefs) error {
+	allClasses := refs.AllClasses
+	if allClasses == nil {
+		allClasses = make(map[identity.Key]model_class.Class)
+	}
 	for _, classAssoc := range s.ClassAssociations {
 		assocCtx := ctx.Child("classAssociation", classAssoc.Key.String())
 		if err := classAssoc.ValidateWithParent(assocCtx, &s.Key); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(assocCtx, classes); err != nil {
+		if err := classAssoc.ValidateReferences(assocCtx, allClasses); err != nil {
 			return err
 		}
 	}

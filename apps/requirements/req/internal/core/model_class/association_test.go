@@ -132,18 +132,21 @@ func (suite *AssociationSuite) TestValidate() {
 			errstr: "AssociationClassKey cannot be the same as ToClassKey",
 		},
 		{
-			testName: "error invalid uniqueness bounds",
-			association: func() Association {
-				badMult, _ := NewMultiplicity("3..2")
-				return Association{
-					Key:          validKey,
-					Name:         "Name",
-					FromClassKey: fromClassKey,
-					ToClassKey:   toClassKey,
-					Uniqueness:   badMult,
-				}
-			}(),
-			errstr: "Uniqueness",
+			testName: "error invalid uniqueness scope",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+				UniquenessConstraints: []AssociationUniquenessConstraint{{
+					Scope: "invalid",
+					Key: AssociationUniquenessKey{
+						ToAttributeKeys: []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))},
+					},
+					MaxCount: 1,
+				}},
+			},
+			errstr: "scope",
 		},
 		{
 			testName: "error AssociationClassKey wrong key type",
@@ -186,18 +189,25 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, multiplicity, AssociationOptions{AssociationClassKey: &assocClassKey, UmlComment: "UmlComment"})
+	constraint := NewAssociationUniquenessConstraint(
+		AssociationUniquenessScopePerFromInstance,
+		AssociationUniquenessKey{
+			ToAttributeKeys: []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))},
+		},
+		1,
+	)
+	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, AssociationOptions{AssociationClassKey: &assocClassKey, UniquenessConstraints: []AssociationUniquenessConstraint{constraint}, UmlComment: "UmlComment"})
 	suite.Equal(Association{
-		Key:                 key,
-		Name:                "Name",
-		Details:             "Details",
-		FromClassKey:        fromClassKey,
-		FromMultiplicity:    multiplicity,
-		ToClassKey:          toClassKey,
-		ToMultiplicity:      multiplicity,
-		Uniqueness:          multiplicity,
-		AssociationClassKey: &assocClassKey,
-		UmlComment:          "UmlComment",
+		Key:                   key,
+		Name:                  "Name",
+		Details:               "Details",
+		FromClassKey:          fromClassKey,
+		FromMultiplicity:      multiplicity,
+		ToClassKey:            toClassKey,
+		ToMultiplicity:        multiplicity,
+		UniquenessConstraints: []AssociationUniquenessConstraint{constraint},
+		AssociationClassKey:   &assocClassKey,
+		UmlComment:            "UmlComment",
 	}, assoc)
 }
 
@@ -248,16 +258,16 @@ func (suite *AssociationSuite) TestValidateReferences() {
 	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 
 	// Build lookup map with all valid classes.
-	classes := map[identity.Key]bool{
-		fromClassKey:  true,
-		toClassKey:    true,
-		assocClassKey: true,
+	classes := map[identity.Key]Class{
+		fromClassKey:  NewClass(fromClassKey, ClassLinks{}, ClassDetails{Name: "From"}),
+		toClassKey:    NewClass(toClassKey, ClassLinks{}, ClassDetails{Name: "To"}),
+		assocClassKey: NewClass(assocClassKey, ClassLinks{}, ClassDetails{Name: "Assoc"}),
 	}
 
 	tests := []struct {
 		testName    string
 		association Association
-		classes     map[identity.Key]bool
+		classes     map[identity.Key]Class
 		errstr      string
 	}{
 		{

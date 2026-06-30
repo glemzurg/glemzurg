@@ -231,25 +231,30 @@ const (
 	// ---------------------------------------------------------------
 	// Association errors.
 
-	AssocKeyInvalid            Code = "ASSOC_KEY_INVALID"             // Association key failed validation.
-	AssocKeyTypeInvalid        Code = "ASSOC_KEY_TYPE_INVALID"        // Key is not KEY_TYPE_CLASS_ASSOCIATION.
-	AssocNameRequired          Code = "ASSOC_NAME_REQUIRED"           // Association Name is empty.
-	AssocFromkeyInvalid        Code = "ASSOC_FROMKEY_INVALID"         // FromClassKey failed validation.
-	AssocFromkeyTypeInvalid    Code = "ASSOC_FROMKEY_TYPE_INVALID"    // FromClassKey is not KEY_TYPE_CLASS.
-	AssocTokeyInvalid          Code = "ASSOC_TOKEY_INVALID"           // ToClassKey failed validation.
-	AssocTokeyTypeInvalid      Code = "ASSOC_TOKEY_TYPE_INVALID"      // ToClassKey is not KEY_TYPE_CLASS.
-	AssocFromMultInvalid       Code = "ASSOC_FROM_MULT_INVALID"       // FromMultiplicity failed validation.
-	AssocToMultInvalid         Code = "ASSOC_TO_MULT_INVALID"         // ToMultiplicity failed validation.
-	AssocUniquenessInvalid     Code = "ASSOC_UNIQUENESS_INVALID"      // Uniqueness failed validation.
-	AssocAssocclassInvalid     Code = "ASSOC_ASSOCCLASS_INVALID"      // AssociationClassKey failed validation.
-	AssocAssocclassType        Code = "ASSOC_ASSOCCLASS_TYPE"         // AssociationClassKey is not KEY_TYPE_CLASS.
-	AssocAssocclassSameFrom    Code = "ASSOC_ASSOCCLASS_SAME_FROM"    // AssociationClassKey same as FromClassKey.
-	AssocAssocclassSameTo      Code = "ASSOC_ASSOCCLASS_SAME_TO"      // AssociationClassKey same as ToClassKey.
-	AssocFromNotfound          Code = "ASSOC_FROM_NOTFOUND"           // FromClassKey references non-existent class.
-	AssocToNotfound            Code = "ASSOC_TO_NOTFOUND"             // ToClassKey references non-existent class.
-	AssocAssocclassNotfound    Code = "ASSOC_ASSOCCLASS_NOTFOUND"     // AssociationClassKey references non-existent class.
-	AssocInvariantTypeInvalid  Code = "ASSOC_INVARIANT_TYPE_INVALID"  // Association invariant has wrong logic type.
-	AssocInvariantDuplicateLet Code = "ASSOC_INVARIANT_DUPLICATE_LET" // Association invariant has duplicate let target.
+	AssocKeyInvalid                 Code = "ASSOC_KEY_INVALID"                   // Association key failed validation.
+	AssocKeyTypeInvalid             Code = "ASSOC_KEY_TYPE_INVALID"              // Key is not KEY_TYPE_CLASS_ASSOCIATION.
+	AssocNameRequired               Code = "ASSOC_NAME_REQUIRED"                 // Association Name is empty.
+	AssocFromkeyInvalid             Code = "ASSOC_FROMKEY_INVALID"               // FromClassKey failed validation.
+	AssocFromkeyTypeInvalid         Code = "ASSOC_FROMKEY_TYPE_INVALID"          // FromClassKey is not KEY_TYPE_CLASS.
+	AssocTokeyInvalid               Code = "ASSOC_TOKEY_INVALID"                 // ToClassKey failed validation.
+	AssocTokeyTypeInvalid           Code = "ASSOC_TOKEY_TYPE_INVALID"            // ToClassKey is not KEY_TYPE_CLASS.
+	AssocFromMultInvalid            Code = "ASSOC_FROM_MULT_INVALID"             // FromMultiplicity failed validation.
+	AssocToMultInvalid              Code = "ASSOC_TO_MULT_INVALID"               // ToMultiplicity failed validation.
+	AssocUniquenessScopeInvalid     Code = "ASSOC_UNIQUENESS_SCOPE_INVALID"      // Uniqueness constraint scope is not valid.
+	AssocUniquenessKeyRequired      Code = "ASSOC_UNIQUENESS_KEY_REQUIRED"       // Uniqueness constraint needs at least one attribute key.
+	AssocUniquenessMaxInvalid       Code = "ASSOC_UNIQUENESS_MAX_INVALID"        // Uniqueness constraint max must be at least 1.
+	AssocUniquenessDuplicate        Code = "ASSOC_UNIQUENESS_DUPLICATE"          // Duplicate uniqueness constraint on association.
+	AssocUniquenessFromAttrNotfound Code = "ASSOC_UNIQUENESS_FROM_ATTR_NOTFOUND" // from_attributes SubKey not on from class.
+	AssocUniquenessToAttrNotfound   Code = "ASSOC_UNIQUENESS_TO_ATTR_NOTFOUND"   // to_attributes SubKey not on to class.
+	AssocAssocclassInvalid          Code = "ASSOC_ASSOCCLASS_INVALID"            // AssociationClassKey failed validation.
+	AssocAssocclassType             Code = "ASSOC_ASSOCCLASS_TYPE"               // AssociationClassKey is not KEY_TYPE_CLASS.
+	AssocAssocclassSameFrom         Code = "ASSOC_ASSOCCLASS_SAME_FROM"          // AssociationClassKey same as FromClassKey.
+	AssocAssocclassSameTo           Code = "ASSOC_ASSOCCLASS_SAME_TO"            // AssociationClassKey same as ToClassKey.
+	AssocFromNotfound               Code = "ASSOC_FROM_NOTFOUND"                 // FromClassKey references non-existent class.
+	AssocToNotfound                 Code = "ASSOC_TO_NOTFOUND"                   // ToClassKey references non-existent class.
+	AssocAssocclassNotfound         Code = "ASSOC_ASSOCCLASS_NOTFOUND"           // AssociationClassKey references non-existent class.
+	AssocInvariantTypeInvalid       Code = "ASSOC_INVARIANT_TYPE_INVALID"        // Association invariant has wrong logic type.
+	AssocInvariantDuplicateLet      Code = "ASSOC_INVARIANT_DUPLICATE_LET"       // Association invariant has duplicate let target.
 
 	// ---------------------------------------------------------------
 	// ClassGeneralization errors.

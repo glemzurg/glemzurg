@@ -12,17 +12,17 @@ import (
 
 // Association is how two classes relate to each other.
 type Association struct {
-	Key                 identity.Key
-	Name                string
-	Details             string        // Markdown.
-	FromClassKey        identity.Key  // The class on one end of the association.
-	FromMultiplicity    Multiplicity  // The multiplicity from one end of the association.
-	ToClassKey          identity.Key  // The class on the other end of the association.
-	ToMultiplicity      Multiplicity  // The multiplicity on the other end of the association.
-	AssociationClassKey *identity.Key // Any class that points to this association.
-	Uniqueness          Multiplicity  // How many of the associations can be linked between the from and to classes.
-	UmlComment          string
-	Invariants          []model_logic.Logic // Constraints on link sets from the from-class anchor.
+	Key                   identity.Key
+	Name                  string
+	Details               string        // Markdown.
+	FromClassKey          identity.Key  // The class on one end of the association.
+	FromMultiplicity      Multiplicity  // The multiplicity from one end of the association.
+	ToClassKey            identity.Key  // The class on the other end of the association.
+	ToMultiplicity        Multiplicity  // The multiplicity on the other end of the association.
+	AssociationClassKey   *identity.Key // Any class that points to this association.
+	UniquenessConstraints []AssociationUniquenessConstraint
+	UmlComment            string
+	Invariants            []model_logic.Logic // Constraints on link sets from the from-class anchor.
 }
 
 // AssociationEnd describes one end of an association: which class and its multiplicity.
@@ -37,28 +37,29 @@ type AssociationDetails struct {
 	Details string
 }
 
-// AssociationOptions holds optional association-class and diagram metadata.
+// AssociationOptions holds optional association-class, uniqueness, and diagram metadata.
 type AssociationOptions struct {
-	AssociationClassKey *identity.Key
-	UmlComment          string
+	AssociationClassKey   *identity.Key
+	UniquenessConstraints []AssociationUniquenessConstraint
+	UmlComment            string
 }
 
 func (a *Association) SetInvariants(invariants []model_logic.Logic) {
 	a.Invariants = invariants
 }
 
-func NewAssociation(key identity.Key, details AssociationDetails, from, to AssociationEnd, uniqueness Multiplicity, options AssociationOptions) Association {
+func NewAssociation(key identity.Key, details AssociationDetails, from, to AssociationEnd, options AssociationOptions) Association {
 	return Association{
-		Key:                 key,
-		Name:                details.Name,
-		Details:             details.Details,
-		FromClassKey:        from.ClassKey,
-		FromMultiplicity:    from.Multiplicity,
-		ToClassKey:          to.ClassKey,
-		ToMultiplicity:      to.Multiplicity,
-		Uniqueness:          uniqueness,
-		AssociationClassKey: options.AssociationClassKey,
-		UmlComment:          options.UmlComment,
+		Key:                   key,
+		Name:                  details.Name,
+		Details:               details.Details,
+		FromClassKey:          from.ClassKey,
+		FromMultiplicity:      from.Multiplicity,
+		ToClassKey:            to.ClassKey,
+		ToMultiplicity:        to.Multiplicity,
+		UniquenessConstraints: options.UniquenessConstraints,
+		AssociationClassKey:   options.AssociationClassKey,
+		UmlComment:            options.UmlComment,
 	}
 }
 
@@ -100,8 +101,8 @@ func (a *Association) Validate(ctx *coreerr.ValidationContext) error {
 	if err := a.ToMultiplicity.Validate(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.AssocToMultInvalid, fmt.Sprintf("ToMultiplicity: %s", err.Error()), "ToMultiplicity")
 	}
-	if err := a.Uniqueness.Validate(ctx); err != nil {
-		return coreerr.New(ctx, coreerr.AssocUniquenessInvalid, fmt.Sprintf("Uniqueness: %s", err.Error()), "Uniqueness")
+	if err := a.validateUniquenessConstraints(ctx); err != nil {
+		return err
 	}
 	// Validate AssociationClassKey FK key type and constraints.
 	if a.AssociationClassKey != nil {
@@ -183,20 +184,26 @@ func (a *Association) validateAssociationInvariants(ctx *coreerr.ValidationConte
 	return nil
 }
 
-// ValidateReferences validates that the association's class keys reference real classes.
-// - FromClassKey must exist in the classes map
-// - ToClassKey must exist in the classes map
-// - AssociationClassKey (if set) must exist in the classes map.
-func (a *Association) ValidateReferences(ctx *coreerr.ValidationContext, classes map[identity.Key]bool) error {
-	if !classes[a.FromClassKey] {
+// ValidateReferences validates that the association's class keys reference real classes
+// and that uniqueness constraint attributes exist on the endpoint classes.
+func (a *Association) ValidateReferences(ctx *coreerr.ValidationContext, allClasses map[identity.Key]Class) error {
+	fromClass, okFrom := allClasses[a.FromClassKey]
+	if !okFrom {
 		return coreerr.NewWithValues(ctx, coreerr.AssocFromNotfound, fmt.Sprintf("association '%s' references non-existent from class '%s'", a.Key.String(), a.FromClassKey.String()), "FromClassKey", a.FromClassKey.String(), "")
 	}
-	if !classes[a.ToClassKey] {
+	toClass, okTo := allClasses[a.ToClassKey]
+	if !okTo {
 		return coreerr.NewWithValues(ctx, coreerr.AssocToNotfound, fmt.Sprintf("association '%s' references non-existent to class '%s'", a.Key.String(), a.ToClassKey.String()), "ToClassKey", a.ToClassKey.String(), "")
 	}
 	if a.AssociationClassKey != nil {
-		if !classes[*a.AssociationClassKey] {
+		if _, ok := allClasses[*a.AssociationClassKey]; !ok {
 			return coreerr.NewWithValues(ctx, coreerr.AssocAssocclassNotfound, fmt.Sprintf("association '%s' references non-existent association class '%s'", a.Key.String(), a.AssociationClassKey.String()), "AssociationClassKey", a.AssociationClassKey.String(), "")
+		}
+	}
+	for i, constraint := range a.UniquenessConstraints {
+		constraintCtx := ctx.Child("uniquenessConstraint", fmt.Sprintf("%d", i))
+		if err := constraint.ValidateAttributeReferences(constraintCtx, fromClass, toClass); err != nil {
+			return err
 		}
 	}
 	return nil

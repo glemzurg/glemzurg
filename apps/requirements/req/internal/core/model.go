@@ -269,13 +269,13 @@ func (m *Model) validateDomainAssociations(ctx *coreerr.ValidationContext) error
 }
 
 func (m *Model) validateClassAssociations(ctx *coreerr.ValidationContext) error {
-	classKeys := m.buildClassKeys()
+	allClasses := m.buildAllClasses()
 	for _, classAssoc := range m.ClassAssociations {
 		childCtx := ctx.Child("classAssociation", classAssoc.Key.String())
 		if err := classAssoc.ValidateWithParent(childCtx, nil); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(childCtx, classKeys); err != nil {
+		if err := classAssoc.ValidateReferences(childCtx, allClasses); err != nil {
 			return err
 		}
 	}

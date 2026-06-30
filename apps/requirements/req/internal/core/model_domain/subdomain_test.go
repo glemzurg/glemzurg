@@ -139,7 +139,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 
 	// Test: valid association with subdomain as parent.
 	validAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2, "valid association"))
-	validAssoc := model_class.NewAssociation(validAssocKey, model_class.AssociationDetails{Name: "Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	validAssoc := model_class.NewAssociation(validAssocKey, model_class.AssociationDetails{Name: "Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	err := subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		validAssocKey: validAssoc,
 	})
@@ -151,7 +151,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	otherDomainSubdomainKey := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain1"))
 	crossDomainClassKey := helper.Must(identity.NewClassKey(otherDomainSubdomainKey, "class1"))
 	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKey1, crossDomainClassKey, "model level association"))
-	modelLevelAssoc := model_class.NewAssociation(modelLevelAssocKey, model_class.AssociationDetails{Name: "Model Level Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	modelLevelAssoc := model_class.NewAssociation(modelLevelAssocKey, model_class.AssociationDetails{Name: "Model Level Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	err = subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		modelLevelAssocKey: modelLevelAssoc,
 	})
@@ -159,7 +159,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 
 	// Test: error when association parent is different subdomain.
 	wrongParentAssocKey := helper.Must(identity.NewClassAssociationKey(otherSubdomainKey, otherClassKey1, otherClassKey2, "wrong parent association"))
-	wrongParentAssoc := model_class.NewAssociation(wrongParentAssocKey, model_class.AssociationDetails{Name: "Wrong Parent Association", Details: ""}, model_class.AssociationEnd{ClassKey: otherClassKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: otherClassKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	wrongParentAssoc := model_class.NewAssociation(wrongParentAssocKey, model_class.AssociationDetails{Name: "Wrong Parent Association", Details: ""}, model_class.AssociationEnd{ClassKey: otherClassKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: otherClassKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	err = subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		wrongParentAssocKey: wrongParentAssoc,
 	})
@@ -174,7 +174,7 @@ func (suite *SubdomainSuite) TestGetClassAssociations() {
 
 	// Create a subdomain with associations.
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2, "association"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	subdomain := Subdomain{
 		Key:  subdomainKey,
 		Name: "Subdomain",
@@ -192,7 +192,7 @@ func (suite *SubdomainSuite) TestGetClassAssociations() {
 	// Test: returned map is a copy, not the original.
 	classKey3 := helper.Must(identity.NewClassKey(subdomainKey, "class3"))
 	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey3, "new association"))
-	result[newAssocKey] = model_class.NewAssociation(newAssocKey, model_class.AssociationDetails{Name: "New", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey3, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	result[newAssocKey] = model_class.NewAssociation(newAssocKey, model_class.AssociationDetails{Name: "New", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey3, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	suite.Len(subdomain.ClassAssociations, 1, "Original should not be modified")
 	suite.Len(result, 2, "Copy should have new entry")
 

@@ -108,7 +108,7 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationCo
 		if err := classAssoc.ValidateWithParent(assocCtx, &d.Key); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(assocCtx, refs.Classes); err != nil {
+		if err := classAssoc.ValidateReferences(assocCtx, refs.AllClasses); err != nil {
 			return err
 		}
 	}

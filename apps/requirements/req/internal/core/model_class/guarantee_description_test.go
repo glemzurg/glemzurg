@@ -101,7 +101,6 @@ func TestComputedAssociationDestroyGuaranteeDescription(t *testing.T) {
 		AssociationDetails{Name: "Applies Social Currency Logic", Details: ""},
 		AssociationEnd{ClassKey: fromKey, Multiplicity: helper.Must(NewMultiplicity("1"))},
 		AssociationEnd{ClassKey: toKey, Multiplicity: helper.Must(NewMultiplicity("0..1"))},
-		Multiplicity{},
 		AssociationOptions{},
 	)
 
@@ -132,7 +131,6 @@ func TestComputedAssociationSetAddGuaranteeDescription(t *testing.T) {
 		AssociationDetails{Name: "Is Subdivided Into", Details: ""},
 		AssociationEnd{ClassKey: fromKey, Multiplicity: helper.Must(NewMultiplicity("1"))},
 		AssociationEnd{ClassKey: toKey, Multiplicity: helper.Must(NewMultiplicity("any"))},
-		Multiplicity{},
 		AssociationOptions{},
 	)
 
