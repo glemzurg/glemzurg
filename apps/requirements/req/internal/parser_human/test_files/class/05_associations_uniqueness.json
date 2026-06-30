@@ -1,0 +1,47 @@
+{
+    "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key",
+    "Name": "A Basic Class",
+    "Details": "Here we have markdown details.\n\nAnd even more.",
+    "ActorKey": "actor/actor_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+    "Attributes": [
+        {
+            "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/link_code",
+            "Name": "Link Code",
+            "Details": "",
+            "DataTypeRules": "unconstrained",
+            "Nullable": false,
+            "UmlComment": "",
+            "IndexNums": null,
+            "DataType": {
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/link_code/datatype/self",
+                "CollectionType": "atomic",
+                "Atomic": {
+                    "ConstraintType": "unconstrained"
+                }
+            }
+        },
+        {
+            "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/slot_num",
+            "Name": "Slot Number",
+            "Details": "",
+            "DataTypeRules": "unconstrained",
+            "Nullable": false,
+            "UmlComment": "",
+            "IndexNums": null,
+            "DataType": {
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/slot_num/datatype/self",
+                "CollectionType": "atomic",
+                "Atomic": {
+                    "ConstraintType": "unconstrained"
+                }
+            }
+        }
+    ],
+    "States": {},
+    "Events": {},
+    "Guards": {},
+    "Actions": {},
+    "Queries": {},
+    "Transitions": {}
+}

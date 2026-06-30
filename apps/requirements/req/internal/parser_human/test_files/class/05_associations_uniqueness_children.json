@@ -1,0 +1,23 @@
+[
+    {
+        "Key": "domain/test_domain/subdomain/test_subdomain/cassociation/class/class_key/class/child_key/contains",
+        "Name": "Contains",
+        "Details": "Appears in data dictionary.",
+        "FromClassKey": "domain/test_domain/subdomain/test_subdomain/class/class_key",
+        "FromMultiplicity": {"LowerBound": 1, "HigherBound": 1},
+        "ToClassKey": "domain/test_domain/subdomain/test_subdomain/class/child_key",
+        "ToMultiplicity": {"LowerBound": 0, "HigherBound": 0},
+        "Uniqueness": {
+            "FromAttributeKeys": [
+                "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/link_code",
+                "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/slot_num"
+            ],
+            "ToAttributeKeys": [
+                "domain/test_domain/subdomain/test_subdomain/class/child_key/attribute/child_role",
+                "domain/test_domain/subdomain/test_subdomain/class/child_key/attribute/sort_order"
+            ]
+        },
+        "AssociationClassKey": null,
+        "UmlComment": "very import to users"
+    }
+]
