@@ -178,7 +178,7 @@ func (c *Class) SetTransitions(transitions map[identity.Key]model_state.Transiti
 
 // ValidateWithParent validates the Class, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
-func (c *Class) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
+func (c *Class) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key, allAssociations map[identity.Key]Association) error {
 	if err := c.Validate(ctx); err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func (c *Class) ValidateWithParent(ctx *coreerr.ValidationContext, parent *ident
 	if err := c.validateClassChildren(ctx); err != nil {
 		return err
 	}
-	if err := c.validateActionGuarantees(ctx); err != nil {
+	if err := c.validateActionGuarantees(ctx, allAssociations); err != nil {
 		return err
 	}
 	if err := c.validateTransitions(ctx); err != nil {
@@ -261,11 +261,12 @@ func (c *Class) validateClassChildren(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
-func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext) error {
+func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAssociations map[identity.Key]Association) error {
 	attrSubKeys := make(map[string]bool)
 	for _, attr := range c.Attributes {
 		attrSubKeys[attr.Key.SubKey] = true
 	}
+	assocTLAFields := OutgoingAssociationTLAFieldSet(c.Key, allAssociations)
 	for _, action := range c.Actions {
 		actionCtx := ctx.Child("action", action.Key.String())
 		if err := action.ValidateWithParent(actionCtx, &c.Key); err != nil {
@@ -275,10 +276,14 @@ func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext) error {
 			if guar.Type == model_logic.LogicTypeLet {
 				continue
 			}
-			if guar.Target != "" && !attrSubKeys[guar.Target] {
-				guarCtx := actionCtx.Child("guarantee", fmt.Sprintf("%d", i))
-				return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeInvalidTarget, fmt.Sprintf("action %q guarantee %d: target %q is not a valid attribute on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
+			if guar.Target == "" {
+				continue
 			}
+			if attrSubKeys[guar.Target] || assocTLAFields[guar.Target] {
+				continue
+			}
+			guarCtx := actionCtx.Child("guarantee", fmt.Sprintf("%d", i))
+			return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeInvalidTarget, fmt.Sprintf("action %q guarantee %d: target %q is not a valid attribute or outgoing association on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
 		}
 	}
 	return nil

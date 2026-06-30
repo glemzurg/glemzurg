@@ -54,14 +54,14 @@ func (d *Domain) Validate(ctx *coreerr.ValidationContext) error {
 // ValidateWithParent validates the Domain, its key's parent relationship, and all children.
 // The parent must be nil (domains are root-level entities).
 func (d *Domain) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
-	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, nil, nil, nil, nil)
+	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, ModelCrossRefs{})
 }
 
 // ValidateWithParentAndActors validates the Domain with access to actors for cross-reference validation.
 // The parent must be nil (domains are root-level entities).
 // The actors map is used to validate that class ActorKey references exist.
 func (d *Domain) ValidateWithParentAndActors(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool) error {
-	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, actors, nil, nil, nil)
+	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, ModelCrossRefs{Actors: actors})
 }
 
 // ValidateWithParentAndActorsAndClasses validates the Domain with access to actors and classes for cross-reference validation.
@@ -69,7 +69,7 @@ func (d *Domain) ValidateWithParentAndActors(ctx *coreerr.ValidationContext, par
 // The actors map is used to validate that class ActorKey references exist.
 // The classes map is used to validate that association class references exist.
 // The allGeneralizations and allClasses maps enable cross-domain subclass validation.
-func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool, allGeneralizations map[identity.Key]bool, allClasses map[identity.Key]model_class.Class) error {
+func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, refs ModelCrossRefs) error {
 	// Validate the object itself.
 	if err := d.Validate(ctx); err != nil {
 		return err
@@ -99,7 +99,7 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationCo
 	// Validate all children.
 	for _, subdomain := range d.Subdomains {
 		childCtx := ctx.Child("subdomain", subdomain.Key.String())
-		if err := subdomain.ValidateWithParentAndActorsAndClasses(childCtx, &d.Key, actors, classes, allGeneralizations, allClasses); err != nil {
+		if err := subdomain.ValidateWithParentAndActorsAndClasses(childCtx, &d.Key, refs); err != nil {
 			return err
 		}
 	}
@@ -108,7 +108,7 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationCo
 		if err := classAssoc.ValidateWithParent(assocCtx, &d.Key); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(assocCtx, classes); err != nil {
+		if err := classAssoc.ValidateReferences(assocCtx, refs.Classes); err != nil {
 			return err
 		}
 	}

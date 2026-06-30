@@ -190,4 +190,10 @@ func (suite *EventSuite) TestSystemEventNames() {
 	suite.Equal("«new»", SystemEventDisplayName(EventNameNew))
 	suite.Equal("«delete»", SystemEventDisplayName(EventNameDelete))
 	suite.Equal("Submit", SystemEventDisplayName("Submit"))
+	suite.Equal("«new»", SystemEventTLAName(EventNameNew))
+	suite.Equal("«new»", SystemEventTLAName("«new»"))
+	suite.Equal("«delete»", SystemEventTLAName(EventNameDelete))
+	suite.True(IsSystemEventTLAName(EventNameNew))
+	suite.True(IsSystemEventTLAName("«new»"))
+	suite.False(IsSystemEventTLAName("Submit"))
 }

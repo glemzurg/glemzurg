@@ -54,6 +54,12 @@ type LowerContext struct {
 	// QueryNames maps query names to their identity keys within the current class.
 	QueryNames map[string]identity.Key
 
+	// AssociationNames maps outgoing-association TLA field names to association keys.
+	AssociationNames map[string]identity.Key
+
+	// SystemEventNames maps reserved system event names (_new, _delete) to event keys.
+	SystemEventNames map[string]identity.Key
+
 	// GlobalFunctions maps global function names (with leading underscore) to their identity keys.
 	GlobalFunctions map[string]identity.Key
 
@@ -372,6 +378,11 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 		return &me.AttributeRef{AttributeKey: key}, nil
 	}
 
+	// Outgoing association TLA field names → AssociationRef.
+	if key, ok := ctx.AssociationNames[name]; ok {
+		return &me.AssociationRef{AssociationKey: key}, nil
+	}
+
 	// Check named sets → NamedSetRef.
 	if key, ok := ctx.NamedSets[name]; ok {
 		return &me.NamedSetRef{SetKey: key}, nil
@@ -397,6 +408,7 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 	// Build list of all available names for error message.
 	var available []string
 	available = append(available, mapKeys(ctx.AttributeNames)...)
+	available = append(available, mapKeys(ctx.AssociationNames)...)
 	available = append(available, mapKeys(ctx.NamedSets)...)
 	available = append(available, mapKeys(ctx.ClassNames)...)
 	for k := range ctx.Parameters {
@@ -917,7 +929,7 @@ func lowerSetFilter(e *ast.SetFilter, ctx *LowerContext) (*me.SetFilter, error) 
 // --- Call lowering ---
 
 func lowerFunctionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression, error) {
-	if e.IsGlobalOrBuiltin() {
+	if e.IsGlobalOrBuiltin() || e.IsSystemEvent() {
 		return lowerGlobalOrBuiltinFunctionCall(e, ctx)
 	}
 	return lowerClassActionCall(e, ctx)
@@ -941,11 +953,19 @@ func lowerGlobalOrBuiltinFunctionCall(e *ast.FunctionCall, ctx *LowerContext) (m
 		return &me.BuiltinCall{Module: module, Function: function, Args: args}, nil
 	}
 
-	// Global function call: _FunctionName(args...)
+	// System event constructor: «new»(args...) or _new(args...) (ASCII authoring).
 	name := e.Name.Value
+	if key, ok := ctx.SystemEventNames[name]; ok {
+		return &me.EventCall{EventKey: key, Args: args}, nil
+	}
+
+	// Global function call: _FunctionName(args...)
 	key, ok := ctx.GlobalFunctions[name]
 	if !ok {
-		return nil, unresolvedError("global function", name, mapKeys(ctx.GlobalFunctions))
+		var available []string
+		available = append(available, mapKeys(ctx.SystemEventNames)...)
+		available = append(available, mapKeys(ctx.GlobalFunctions)...)
+		return nil, unresolvedError("global function", name, available)
 	}
 	return &me.GlobalCall{FunctionKey: key, Args: args}, nil
 }

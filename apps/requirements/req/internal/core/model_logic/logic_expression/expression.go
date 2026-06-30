@@ -27,6 +27,7 @@ const (
 	// References.
 	NodeSelfRef         = "self_ref"
 	NodeAttributeRef    = "attribute_ref"
+	NodeAssociationRef  = "association_ref"
 	NodeLocalVar        = "local_var"
 	NodePriorFieldValue = "prior_field_value"
 	NodeNextState       = "next_state"
@@ -66,6 +67,7 @@ const (
 
 	// Calls.
 	NodeActionCall  = "action_call"
+	NodeEventCall   = "event_call"
 	NodeGlobalCall  = "global_call"
 	NodeBuiltinCall = "builtin_call"
 	NodeNamedSetRef = "named_set_ref"

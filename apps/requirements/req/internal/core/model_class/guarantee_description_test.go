@@ -88,3 +88,34 @@ func TestComputedSimpleActionGuaranteeDescription(t *testing.T) {
 		})
 	}
 }
+
+func TestComputedAssociationSetAddGuaranteeDescription(t *testing.T) {
+	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s"))
+	fromKey := helper.Must(identity.NewClassKey(subdomainKey, "container"))
+	toKey := helper.Must(identity.NewClassKey(subdomainKey, "part"))
+	actionKey := helper.Must(identity.NewActionKey(fromKey, "split"))
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
+
+	assoc := NewAssociation(
+		helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, "is_subdivided_into")),
+		AssociationDetails{Name: "Is Subdivided Into", Details: ""},
+		AssociationEnd{ClassKey: fromKey, Multiplicity: helper.Must(NewMultiplicity("1"))},
+		AssociationEnd{ClassKey: toKey, Multiplicity: helper.Must(NewMultiplicity("any"))},
+		Multiplicity{},
+		AssociationOptions{},
+	)
+
+	guarantee := model_logic.Logic{
+		Key:    guaranteeKey,
+		Type:   model_logic.LogicTypeStateChange,
+		Target: "IsSubdividedInto",
+		Spec: logic_spec.ExpressionSpec{
+			Notation:      model_logic.NotationTLAPlus,
+			Specification: `IsSubdividedInto \union {_new(PartId)}`,
+		},
+	}
+
+	desc, ok := ComputedAssociationSetAddGuaranteeDescription(guarantee, map[identity.Key]Association{assoc.Key: assoc})
+	require.True(t, ok)
+	require.Equal(t, "Add to Is Subdivided Into", desc)
+}

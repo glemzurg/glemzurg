@@ -34,6 +34,12 @@ type RaiseContext struct {
 	// ActionScopePaths maps cross-class action identity keys to their
 	// fully scoped path (e.g., "Domain!Subdomain!Class!ActionName").
 	ActionScopePaths map[identity.Key]string
+
+	// AssociationNames maps association keys to TLA field names on self.
+	AssociationNames map[identity.Key]string
+
+	// SystemEventNames maps event keys to canonical TLA spellings («new», «delete»).
+	SystemEventNames map[identity.Key]string
 }
 
 // Raise converts a logic_expression.Expression tree into a TLA+ AST expression.
@@ -82,6 +88,9 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 
 	case *me.AttributeRef:
 		return raiseAttributeRef(e, ctx)
+
+	case *me.AssociationRef:
+		return raiseAssociationRef(e, ctx)
 
 	case *me.LocalVar:
 		return &ast.Identifier{Value: e.Name}, nil
@@ -174,6 +183,9 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 	// --- Calls ---
 	case *me.ActionCall:
 		return raiseActionCall(e, ctx)
+
+	case *me.EventCall:
+		return raiseEventCall(e, ctx)
 
 	case *me.GlobalCall:
 		return raiseGlobalCall(e, ctx)
@@ -365,6 +377,14 @@ func raiseAttributeRef(e *me.AttributeRef, ctx *RaiseContext) (ast.Expression, e
 	name, ok := ctx.AttributeNames[e.AttributeKey]
 	if !ok {
 		return nil, fmt.Errorf("unresolved attribute key: %v", e.AttributeKey)
+	}
+	return &ast.Identifier{Value: name}, nil
+}
+
+func raiseAssociationRef(e *me.AssociationRef, ctx *RaiseContext) (ast.Expression, error) {
+	name, ok := ctx.AssociationNames[e.AssociationKey]
+	if !ok {
+		return nil, fmt.Errorf("unresolved association key: %v", e.AssociationKey)
 	}
 	return &ast.Identifier{Value: name}, nil
 }
@@ -810,6 +830,25 @@ func raiseActionCall(e *me.ActionCall, ctx *RaiseContext) (ast.Expression, error
 	}
 
 	return nil, fmt.Errorf("unresolved action key: %v", e.ActionKey)
+}
+
+func raiseEventCall(e *me.EventCall, ctx *RaiseContext) (ast.Expression, error) {
+	args := make([]ast.Expression, len(e.Args))
+	for i, arg := range e.Args {
+		raised, err := Raise(arg, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("EventCall.Args[%d]: %w", i, err)
+		}
+		args[i] = raised
+	}
+	name, ok := ctx.SystemEventNames[e.EventKey]
+	if !ok {
+		return nil, fmt.Errorf("unresolved event key: %v", e.EventKey)
+	}
+	return &ast.FunctionCall{
+		Name: &ast.Identifier{Value: name},
+		Args: args,
+	}, nil
 }
 
 func raiseGlobalCall(e *me.GlobalCall, ctx *RaiseContext) (ast.Expression, error) {

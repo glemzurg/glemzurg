@@ -8,9 +8,9 @@ A parameter of a query.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.data_type](public.data_type.md) [public.query](public.query.md) | The model this query is part of. |
-| query_key | text |  | false |  | [public.query](public.query.md) | The query this parameter is part of. |
-| parameter_key | text |  | false |  |  | The internal ID, the name but lower case. |
+| model_key | text |  | false | [public.query_parameter_invariant](public.query_parameter_invariant.md) | [public.data_type](public.data_type.md) [public.query](public.query.md) | The model this query is part of. |
+| query_key | text |  | false | [public.query_parameter_invariant](public.query_parameter_invariant.md) | [public.query](public.query.md) | The query this parameter is part of. |
+| parameter_key | text |  | false | [public.query_parameter_invariant](public.query_parameter_invariant.md) |  | The internal ID, the name but lower case. |
 | name | text |  | false |  |  | The unique name of the parameter within the query. |
 | sort_order | integer |  | false |  |  | Parameters are an ordered list. |
 | data_type_rules | text |  | true |  |  | The rules for a well-formed value. |

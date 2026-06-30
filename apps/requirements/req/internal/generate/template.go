@@ -234,11 +234,11 @@ var _funcMap = template.FuncMap{
 		_, subBullets = splitBulletTextIntoMainAndSubBullets(bulletText)
 		return subBullets
 	},
-	"action_guarantee_display_description": func(class model_class.Class, guarantee model_logic.Logic) string {
+	"action_guarantee_display_description": func(class model_class.Class, guarantee model_logic.Logic, associations map[identity.Key]model_class.Association) string {
 		if guarantee.Description != "" {
 			return guarantee.Description
 		}
-		if description, ok := model_class.ComputedSimpleActionGuaranteeDescription(guarantee, class.Attributes); ok {
+		if description, ok := model_class.ComputedActionGuaranteeDescription(guarantee, class.Attributes, associations); ok {
 			return description
 		}
 		return ""

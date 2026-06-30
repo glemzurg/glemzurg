@@ -21,13 +21,15 @@
 | [public.data_type_field](public.data_type_field.md) | 4 | A field of a record data type. | BASE TABLE |
 | [public.class_generalization](public.class_generalization.md) | 9 | A relationship between classes indicating super classes and subclasses. | BASE TABLE |
 | [public.class](public.class.md) | 10 | A set of objects that share the same semantics. | BASE TABLE |
-| [public.attribute](public.attribute.md) | 10 | An attribute of a class. | BASE TABLE |
+| [public.attribute](public.attribute.md) | 11 | An attribute of a class. | BASE TABLE |
 | [public.class_index](public.class_index.md) | 4 | A unique identity for a class, may be multiple attributes together for the identity. | BASE TABLE |
 | [public.class_invariant](public.class_invariant.md) | 3 | An invariant that is forever true objects of a class. | BASE TABLE |
 | [public.attribute_invariant](public.attribute_invariant.md) | 3 | Join table linking attributes to their invariant logic predicates. | BASE TABLE |
-| [public.association](public.association.md) | 12 | A semantic relationship between typed instances. | BASE TABLE |
+| [public.association](public.association.md) | 14 | A semantic relationship between typed instances. | BASE TABLE |
+| [public.association_invariant](public.association_invariant.md) | 4 | Join table linking class associations to their invariant logic predicates. | BASE TABLE |
 | [public.query](public.query.md) | 5 | A business logic query of a class that does not change the state of a class. | BASE TABLE |
 | [public.query_parameter](public.query_parameter.md) | 8 | A parameter of a query. | BASE TABLE |
+| [public.query_parameter_invariant](public.query_parameter_invariant.md) | 4 | Join table linking query parameters to their invariant logic predicates. | BASE TABLE |
 | [public.query_require](public.query_require.md) | 3 | A state requirement that must be true for this query to be run. | BASE TABLE |
 | [public.query_guarantee](public.query_guarantee.md) | 3 | A guarantee of what is returned by this query. | BASE TABLE |
 | [public.state](public.state.md) | 6 | A situation where invariant conditions on a class instance hold. | BASE TABLE |
@@ -36,6 +38,7 @@
 | [public.guard](public.guard.md) | 4 | An extra condition on when the transition can take place. | BASE TABLE |
 | [public.action](public.action.md) | 5 | An action of a class that can be attached to transitions. | BASE TABLE |
 | [public.action_parameter](public.action_parameter.md) | 8 | A parameter of an action. | BASE TABLE |
+| [public.action_parameter_invariant](public.action_parameter_invariant.md) | 4 | Join table linking action parameters to their invariant logic predicates. | BASE TABLE |
 | [public.action_require](public.action_require.md) | 3 | A state requirement that must be true for this action to be run. | BASE TABLE |
 | [public.action_guarantee](public.action_guarantee.md) | 3 | A guarantee of what is returned by this action. | BASE TABLE |
 | [public.action_safety](public.action_safety.md) | 3 | A safety rule check of before and after state that fails if the model is in an incorrect state. | BASE TABLE |

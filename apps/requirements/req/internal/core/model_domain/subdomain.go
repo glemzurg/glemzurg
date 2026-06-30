@@ -57,21 +57,21 @@ func (s *Subdomain) Validate(ctx *coreerr.ValidationContext) error {
 // ValidateWithParent validates the Subdomain, its key's parent relationship, and all children.
 // The parent must be a Domain.
 func (s *Subdomain) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
-	return s.ValidateWithParentAndActorsAndClasses(ctx, parent, nil, nil, nil, nil)
+	return s.ValidateWithParentAndActorsAndClasses(ctx, parent, ModelCrossRefs{})
 }
 
 // ValidateWithParentAndActors validates the Subdomain with access to actors for cross-reference validation.
 // The parent must be a Domain.
 // The actors map is used to validate that class ActorKey references exist.
 func (s *Subdomain) ValidateWithParentAndActors(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool) error {
-	return s.ValidateWithParentAndActorsAndClasses(ctx, parent, actors, nil, nil, nil)
+	return s.ValidateWithParentAndActorsAndClasses(ctx, parent, ModelCrossRefs{Actors: actors})
 }
 
 // ValidateWithParentAndActorsAndClasses validates the Subdomain with access to actors and classes for cross-reference validation.
 // The parent must be a Domain.
 // The actors map is used to validate that class ActorKey references exist.
 // The classes map is used to validate that association class references exist.
-func (s *Subdomain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool, allGeneralizations map[identity.Key]bool, allClasses map[identity.Key]model_class.Class) error {
+func (s *Subdomain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, refs ModelCrossRefs) error {
 	if err := s.Validate(ctx); err != nil {
 		return err
 	}
@@ -81,10 +81,10 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.Validatio
 	if err := s.validateGeneralizations(ctx); err != nil {
 		return err
 	}
-	if err := s.validateClasses(ctx, actors, allGeneralizations); err != nil {
+	if err := s.validateClasses(ctx, refs); err != nil {
 		return err
 	}
-	if err := s.validateClassGeneralizationUsage(ctx, allClasses); err != nil {
+	if err := s.validateClassGeneralizationUsage(ctx, refs.AllClasses); err != nil {
 		return err
 	}
 	if err := s.validateUseCases(ctx); err != nil {
@@ -93,7 +93,7 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.Validatio
 	if err := s.validateUseCaseGeneralizationUsage(ctx); err != nil {
 		return err
 	}
-	if err := s.validateSubdomainAssociations(ctx, classes); err != nil {
+	if err := s.validateSubdomainAssociations(ctx, refs.Classes); err != nil {
 		return err
 	}
 	if err := s.validateUseCaseShares(ctx); err != nil {
@@ -118,21 +118,22 @@ func (s *Subdomain) validateGeneralizations(ctx *coreerr.ValidationContext) erro
 	return nil
 }
 
-func (s *Subdomain) validateClasses(ctx *coreerr.ValidationContext, actors map[identity.Key]bool, allGeneralizations map[identity.Key]bool) error {
+func (s *Subdomain) validateClasses(ctx *coreerr.ValidationContext, refs ModelCrossRefs) error {
 	localGeneralizations := make(map[identity.Key]bool)
 	for genKey := range s.Generalizations {
 		localGeneralizations[genKey] = true
 	}
 	// If no model-wide generalizations provided, fall back to local only.
+	allGeneralizations := refs.AllGeneralizations
 	if allGeneralizations == nil {
 		allGeneralizations = localGeneralizations
 	}
 	for _, class := range s.Classes {
 		classCtx := ctx.Child("class", class.Key.String())
-		if err := class.ValidateWithParent(classCtx, &s.Key); err != nil {
+		if err := class.ValidateWithParent(classCtx, &s.Key, refs.AllAssociations); err != nil {
 			return err
 		}
-		if err := class.ValidateReferences(classCtx, actors, localGeneralizations, allGeneralizations); err != nil {
+		if err := class.ValidateReferences(classCtx, refs.Actors, localGeneralizations, allGeneralizations); err != nil {
 			return err
 		}
 	}

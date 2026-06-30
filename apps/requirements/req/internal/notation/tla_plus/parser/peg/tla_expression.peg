@@ -997,7 +997,7 @@ CaseArrow <- "->" / "→"
 //   - _Module!FunctionName(args...)
 //   - Domain!Subdomain!Class!ActionName(args...)
 // Must come before Identifier to match function calls
-FunctionCall <- scopePath:ScopePath funcName:IdentifierName "(" ws? args:FunctionArgs? ws? ")" {
+FunctionCall <- scopePath:ScopePath funcName:(SystemEventName / IdentifierName) "(" ws? args:FunctionArgs? ws? ")" {
 	var scopeIdents []*ast.Identifier
 	if scopePath != nil {
 		scopeIdents = scopePath.([]*ast.Identifier)
@@ -1055,6 +1055,18 @@ ExistingValue <- "@" {
 // Must not be a reserved keyword (TRUE, FALSE, IF, THEN, ELSE, etc.)
 Identifier <- !ReservedKeyword name:IdentifierName {
 	return &ast.Identifier{Value: name.(string)}, nil
+}
+
+// SystemEventName: reserved system event constructors in ASCII or canonical TLA form.
+// _new and «new» both canonicalize to «new» (analogous to \union → ∪).
+SystemEventName <- "_new" {
+	return "«new»", nil
+} / "«new»" {
+	return "«new»", nil
+} / "_delete" {
+	return "«delete»", nil
+} / "«delete»" {
+	return "«delete»", nil
 }
 
 // IdentifierName: the actual identifier text (letters, digits, underscores)

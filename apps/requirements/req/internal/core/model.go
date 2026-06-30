@@ -201,9 +201,16 @@ func (m *Model) validateDomains(ctx *coreerr.ValidationContext) error {
 	classKeys := m.buildClassKeys()
 	allGeneralizations := m.buildGeneralizationKeys()
 	allClasses := m.buildAllClasses()
+	allAssociations := m.GetClassAssociations()
 	for _, domain := range m.Domains {
 		childCtx := ctx.Child("domain", domain.Key.String())
-		if err := domain.ValidateWithParentAndActorsAndClasses(childCtx, nil, actorKeys, classKeys, allGeneralizations, allClasses); err != nil {
+		if err := domain.ValidateWithParentAndActorsAndClasses(childCtx, nil, model_domain.ModelCrossRefs{
+			Actors:             actorKeys,
+			Classes:            classKeys,
+			AllGeneralizations: allGeneralizations,
+			AllClasses:         allClasses,
+			AllAssociations:    allAssociations,
+		}); err != nil {
 			return err
 		}
 	}

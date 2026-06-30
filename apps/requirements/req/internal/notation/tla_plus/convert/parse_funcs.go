@@ -5,6 +5,7 @@ import (
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
@@ -80,11 +81,13 @@ func raiseContextFromLower(ctx *LowerContext) *RaiseContext {
 		return &RaiseContext{}
 	}
 	rc := &RaiseContext{
-		AttributeNames:  invertMap(ctx.AttributeNames),
-		ActionNames:     invertMap(ctx.ActionNames),
-		QueryNames:      invertMap(ctx.QueryNames),
-		GlobalFunctions: invertMap(ctx.GlobalFunctions),
-		NamedSets:       invertMap(ctx.NamedSets),
+		AttributeNames:   invertMap(ctx.AttributeNames),
+		ActionNames:      invertMap(ctx.ActionNames),
+		QueryNames:       invertMap(ctx.QueryNames),
+		AssociationNames: invertMap(ctx.AssociationNames),
+		SystemEventNames: systemEventRaiseNamesFromLower(ctx.SystemEventNames),
+		GlobalFunctions:  invertMap(ctx.GlobalFunctions),
+		NamedSets:        invertMap(ctx.NamedSets),
 	}
 	// AllActions → ActionScopePaths (scoped names, not simple names).
 	if ctx.AllActions != nil {
@@ -101,6 +104,25 @@ func invertMap(m map[string]identity.Key) map[identity.Key]string {
 	result := make(map[identity.Key]string, len(m))
 	for name, key := range m {
 		result[key] = name
+	}
+	return result
+}
+
+// systemEventRaiseNamesFromLower maps event keys to canonical TLA spellings («new», «delete»).
+// Lower maps may alias both ASCII and guillemet forms to the same key.
+func systemEventRaiseNamesFromLower(m map[string]identity.Key) map[identity.Key]string {
+	if m == nil {
+		return nil
+	}
+	result := make(map[identity.Key]string)
+	for name, key := range m {
+		if !model_state.IsSystemEventTLAName(name) {
+			continue
+		}
+		result[key] = model_state.SystemEventTLAName(name)
+	}
+	if len(result) == 0 {
+		return nil
 	}
 	return result
 }

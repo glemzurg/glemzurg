@@ -8,14 +8,16 @@ A semantic relationship between typed instances.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.model](public.model.md) [public.class](public.class.md) | The model this association is part of. |
-| association_key | text |  | false |  |  | The internal ID. |
+| model_key | text |  | false | [public.association_invariant](public.association_invariant.md) | [public.model](public.model.md) [public.class](public.class.md) | The model this association is part of. |
+| association_key | text |  | false | [public.association_invariant](public.association_invariant.md) |  | The internal ID. |
 | from_class_key | text |  | false |  | [public.class](public.class.md) | The away-from direction of the association, for depicting tacochip. |
 | from_multiplicity_lower | integer |  | false |  |  | The multiplicity of the from end of the relation, lower value, 0 means "any". |
 | from_multiplicity_higher | integer |  | false |  |  | The multiplicity of the from end of the relation, higher value, 0 means "any". |
 | to_class_key | text |  | false |  | [public.class](public.class.md) | The toward direction of the association, for depicting tacochip. |
 | to_multiplicity_lower | integer |  | false |  |  | The multiplicity of the to end of the relation, lower value, 0 means "any". |
 | to_multiplicity_higher | integer |  | false |  |  | The multiplicity of the to end of the relation, higher value, 0 means "any". |
+| uniqueness_lower | integer | 0 | false |  |  | How many links may exist per from/to instance pair, lower value, 0 means "any". |
+| uniqueness_higher | integer | 0 | false |  |  | How many links may exist per from/to instance pair, higher value, 0 means "any". |
 | name | text |  | false |  |  | The relationship name next to the taco chip. |
 | association_class_key | text |  | true |  | [public.class](public.class.md) | If there is a class for this association, what is it. |
 | details | text |  | true |  |  | A summary description. |
@@ -34,6 +36,8 @@ A semantic relationship between typed instances.
 | association_to_class_key_not_null | n | NOT NULL to_class_key |
 | association_to_multiplicity_higher_not_null | n | NOT NULL to_multiplicity_higher |
 | association_to_multiplicity_lower_not_null | n | NOT NULL to_multiplicity_lower |
+| association_uniqueness_higher_not_null | n | NOT NULL uniqueness_higher |
+| association_uniqueness_lower_not_null | n | NOT NULL uniqueness_lower |
 | fk_association_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | fk_association_class | FOREIGN KEY | FOREIGN KEY (model_key, association_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | fk_association_from | FOREIGN KEY | FOREIGN KEY (model_key, from_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |

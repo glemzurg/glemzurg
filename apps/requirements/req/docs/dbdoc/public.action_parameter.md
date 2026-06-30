@@ -8,9 +8,9 @@ A parameter of an action.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.data_type](public.data_type.md) [public.action](public.action.md) | The model this action is part of. |
-| action_key | text |  | false |  | [public.action](public.action.md) | The action this parameter is part of. |
-| parameter_key | text |  | false |  |  | The internal ID, the name but lower case. |
+| model_key | text |  | false | [public.action_parameter_invariant](public.action_parameter_invariant.md) | [public.data_type](public.data_type.md) [public.action](public.action.md) | The model this action is part of. |
+| action_key | text |  | false | [public.action_parameter_invariant](public.action_parameter_invariant.md) | [public.action](public.action.md) | The action this parameter is part of. |
+| parameter_key | text |  | false | [public.action_parameter_invariant](public.action_parameter_invariant.md) |  | The internal ID, the name but lower case. |
 | name | text |  | false |  |  | The unique name of the parameter within the action. |
 | sort_order | integer |  | false |  |  | Parameters are an ordered list. |
 | data_type_rules | text |  | true |  |  | The rules for a well-formed value. |

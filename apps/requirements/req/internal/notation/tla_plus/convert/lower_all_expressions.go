@@ -63,11 +63,13 @@ func LowerAllExpressions(model *core.Model) error {
 		model.NamedSets[nsKey] = ns
 	}
 
+	allAssociations := model.GetClassAssociations()
+
 	// 4. Walk domains → subdomains → classes.
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if err := lowerAllClassExpressions(&class, globalFunctions, namedSets, classNames, allActions); err != nil {
+				if err := lowerAllClassExpressions(&class, globalFunctions, namedSets, classNames, allActions, allAssociations); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -81,22 +83,9 @@ func LowerAllExpressions(model *core.Model) error {
 }
 
 // lowerAllClassExpressions re-creates all ExpressionSpecs in a class with full context.
-func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key) error {
-	// Build class-level context maps.
-	attrNames := BuildAttributeNameMap(class)
-	actionNames := BuildActionNameMap(class)
-	queryNames := BuildQueryNameMap(class)
-
-	classCtx := &LowerContext{
-		ClassKey:        class.Key,
-		AttributeNames:  attrNames,
-		ActionNames:     actionNames,
-		QueryNames:      queryNames,
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		ClassNames:      classNames,
-		AllActions:      allActions,
-	}
+func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key, associations map[identity.Key]model_class.Association) error {
+	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations)
+	classCtx.ClassNames = classNames
 	classPF := NewExpressionParseFunc(classCtx)
 
 	// Class invariants.
@@ -259,11 +248,13 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 		model.NamedSets[nsKey] = ns
 	}
 
+	allAssociations := model.GetClassAssociations()
+
 	// Walk domains → subdomains → classes.
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if classErrs := lowerAllClassExpressionsStrict(&class, globalFunctions, namedSets, classNames, allActions); classErrs != nil {
+				if classErrs := lowerAllClassExpressionsStrict(&class, globalFunctions, namedSets, classNames, allActions, allAssociations); classErrs != nil {
 					errs = append(errs, fmt.Errorf("class %q: %w", cKey.String(), classErrs))
 				}
 				subdomain.Classes[cKey] = class
@@ -279,21 +270,9 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 // lowerAllClassExpressionsStrict collects all expression errors in a class.
 //
 //complexity:cyclo:warn=20,fail=20 Walks all class expression sites.
-func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key) error {
-	attrNames := BuildAttributeNameMap(class)
-	actionNames := BuildActionNameMap(class)
-	queryNames := BuildQueryNameMap(class)
-
-	classCtx := &LowerContext{
-		ClassKey:        class.Key,
-		AttributeNames:  attrNames,
-		ActionNames:     actionNames,
-		QueryNames:      queryNames,
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		ClassNames:      classNames,
-		AllActions:      allActions,
-	}
+func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key, associations map[identity.Key]model_class.Association) error {
+	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations)
+	classCtx.ClassNames = classNames
 	classPF := NewExpressionParseFuncStrict(classCtx)
 
 	var errs []error

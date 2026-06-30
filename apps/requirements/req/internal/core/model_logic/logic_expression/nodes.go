@@ -108,6 +108,14 @@ type AttributeRef struct {
 func (n *AttributeRef) expressionNode()  {}
 func (n *AttributeRef) NodeType() string { return NodeAttributeRef }
 
+// AssociationRef represents an outgoing association field on self, identified by key.
+type AssociationRef struct {
+	AssociationKey identity.Key
+}
+
+func (n *AssociationRef) expressionNode()  {}
+func (n *AssociationRef) NodeType() string { return NodeAssociationRef }
+
 // LocalVar represents a quantifier-bound or parameter-bound variable.
 type LocalVar struct {
 	Name string
@@ -369,6 +377,15 @@ type ActionCall struct {
 
 func (n *ActionCall) expressionNode()  {}
 func (n *ActionCall) NodeType() string { return NodeActionCall }
+
+// EventCall represents a system event constructor such as _new(args...).
+type EventCall struct {
+	EventKey identity.Key
+	Args     []Expression
+}
+
+func (n *EventCall) expressionNode()  {}
+func (n *EventCall) NodeType() string { return NodeEventCall }
 
 // GlobalCall represents a call to a global function, identified by key.
 type GlobalCall struct {

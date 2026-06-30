@@ -136,6 +136,13 @@ func (n *AttributeRef) Validate(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
+func (n *AssociationRef) Validate(ctx *coreerr.ValidationContext) error {
+	if err := n.AssociationKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprAttrkeyInvalid, fmt.Sprintf("AssociationRef.AssociationKey: %s", err.Error()), "AssociationKey")
+	}
+	return nil
+}
+
 func (n *LocalVar) Validate(ctx *coreerr.ValidationContext) error {
 	if n.Name == "" {
 		return coreerr.New(ctx, coreerr.ExprLocalvarNameRequired, "LocalVar.Name: is required", "Name")
@@ -608,6 +615,21 @@ func (n *ActionCall) Validate(ctx *coreerr.ValidationContext) error {
 		}
 		if err := arg.Validate(ctx); err != nil {
 			return coreerr.New(ctx, coreerr.ExprArgInvalid, fmt.Sprintf("ActionCall.Args[%d]: %s", i, err.Error()), fmt.Sprintf("Args[%d]", i))
+		}
+	}
+	return nil
+}
+
+func (n *EventCall) Validate(ctx *coreerr.ValidationContext) error {
+	if err := n.EventKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprActionkeyInvalid, fmt.Sprintf("EventCall.EventKey: %s", err.Error()), "EventKey")
+	}
+	for i, arg := range n.Args {
+		if arg == nil {
+			return coreerr.New(ctx, coreerr.ExprArgRequired, fmt.Sprintf("EventCall.Args[%d]: is required", i), fmt.Sprintf("Args[%d]", i))
+		}
+		if err := arg.Validate(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.ExprArgInvalid, fmt.Sprintf("EventCall.Args[%d]: %s", i, err.Error()), fmt.Sprintf("Args[%d]", i))
 		}
 	}
 	return nil

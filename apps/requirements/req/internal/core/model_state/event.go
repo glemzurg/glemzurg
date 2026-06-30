@@ -13,6 +13,9 @@ import (
 const (
 	EventNameNew    = "_new"
 	EventNameDelete = "_delete"
+
+	EventTLANameNew    = "«new»"
+	EventTLANameDelete = "«delete»"
 )
 
 // IsSystemCreationEvent reports whether name is the reserved creation event _new.
@@ -29,12 +32,31 @@ func IsSystemFinalEvent(name string) bool {
 func SystemEventDisplayName(name string) string {
 	switch name {
 	case EventNameNew:
-		return "«new»"
+		return EventTLANameNew
 	case EventNameDelete:
-		return "«delete»"
+		return EventTLANameDelete
 	default:
 		return name
 	}
+}
+
+// SystemEventTLAName returns the canonical TLA+ spelling for a system event.
+// Accepts both ASCII authoring names (_new, _delete) and guillemet forms («new», «delete»).
+func SystemEventTLAName(name string) string {
+	switch name {
+	case EventNameNew, EventTLANameNew:
+		return EventTLANameNew
+	case EventNameDelete, EventTLANameDelete:
+		return EventTLANameDelete
+	default:
+		return name
+	}
+}
+
+// IsSystemEventTLAName reports whether name is a system event in ASCII or TLA form.
+func IsSystemEventTLAName(name string) bool {
+	return name == EventNameNew || name == EventNameDelete ||
+		name == EventTLANameNew || name == EventTLANameDelete
 }
 
 // Event is what triggers a transition between states.

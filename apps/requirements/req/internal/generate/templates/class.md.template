@@ -180,7 +180,7 @@ Guarantees:
 {{ if ne $action.Guarantees nil -}}
 
 {{ range $action.Guarantees -}}
-{{- $displayDesc := action_guarantee_display_description $.Class . -}}
+{{- $displayDesc := action_guarantee_display_description $.Class . $reqs.ClassAssociations -}}
 {{- $mainBullet := main_bullet $displayDesc }}
 {{- $subBullets := sub_bullets $displayDesc }}
 - {{ $mainBullet }}

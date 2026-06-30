@@ -5,6 +5,7 @@ import (
 	"unicode"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -22,6 +23,47 @@ func ComputedSimpleActionGuaranteeDescription(guarantee model_logic.Logic, attri
 		return "", false
 	}
 	return "Set " + attrName, true
+}
+
+// ComputedAssociationSetAddGuaranteeDescription derives "Add to <association name>"
+// for a state_change guarantee that unions {_new(...)} onto an outgoing association field.
+func ComputedAssociationSetAddGuaranteeDescription(guarantee model_logic.Logic, associations map[identity.Key]Association) (string, bool) {
+	if guarantee.Type != model_logic.LogicTypeStateChange || guarantee.Target == "" {
+		return "", false
+	}
+	spec := strings.TrimSpace(guarantee.Spec.Specification)
+	if !isAssociationSetAddSpecification(spec) {
+		return "", false
+	}
+	for _, assoc := range associations {
+		if AssociationTLAFieldName(assoc.Name) != guarantee.Target {
+			continue
+		}
+		if spec != guarantee.Target && !strings.HasPrefix(spec, guarantee.Target) {
+			return "", false
+		}
+		return "Add to " + assoc.Name, true
+	}
+	return "", false
+}
+
+// ComputedActionGuaranteeDescription returns a human description for a guarantee when
+// the authored TLA matches a known shorthand pattern.
+func ComputedActionGuaranteeDescription(guarantee model_logic.Logic, attributes []Attribute, associations map[identity.Key]Association) (string, bool) {
+	if desc, ok := ComputedSimpleActionGuaranteeDescription(guarantee, attributes); ok {
+		return desc, true
+	}
+	return ComputedAssociationSetAddGuaranteeDescription(guarantee, associations)
+}
+
+func isAssociationSetAddSpecification(specification string) bool {
+	if specification == "" {
+		return false
+	}
+	lower := strings.ToLower(specification)
+	hasUnion := strings.Contains(lower, `\union`) || strings.Contains(specification, "∪")
+	hasNew := strings.Contains(specification, `_new(`) || strings.Contains(specification, model_state.EventTLANameNew+`(`)
+	return hasUnion && hasNew
 }
 
 func attributeDisplayNameForTarget(attributes []Attribute, target string) string {

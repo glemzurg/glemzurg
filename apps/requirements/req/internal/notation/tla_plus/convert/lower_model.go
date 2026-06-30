@@ -61,11 +61,13 @@ func LowerModel(model *core.Model) error {
 		model.NamedSets[nsKey] = ns
 	}
 
+	allAssociations := model.GetClassAssociations()
+
 	// 4. Walk domains → subdomains → classes.
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if err := lowerClass(&class, globalFunctions, namedSets, allActions); err != nil {
+				if err := lowerClass(&class, globalFunctions, namedSets, allActions, allAssociations); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -84,21 +86,9 @@ func lowerClass(
 	globalFunctions map[string]identity.Key,
 	namedSets map[string]identity.Key,
 	allActions map[string]identity.Key,
+	associations map[identity.Key]model_class.Association,
 ) error {
-	// Build class-level context maps.
-	attrNames := BuildAttributeNameMap(class)
-	actionNames := BuildActionNameMap(class)
-	queryNames := BuildQueryNameMap(class)
-
-	classCtx := &LowerContext{
-		ClassKey:        class.Key,
-		AttributeNames:  attrNames,
-		ActionNames:     actionNames,
-		QueryNames:      queryNames,
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		AllActions:      allActions,
-	}
+	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations)
 
 	// Class invariants.
 	for i := range class.Invariants {
@@ -339,6 +329,81 @@ func BuildQueryNameMap(class *model_class.Class) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(class.Queries))
 	for _, query := range class.Queries {
 		m[query.Name] = query.Key
+	}
+	return m
+}
+
+// NewClassLowerContext builds a LowerContext for expressions scoped to one class.
+func NewClassLowerContext(
+	class *model_class.Class,
+	globalFunctions map[string]identity.Key,
+	namedSets map[string]identity.Key,
+	allActions map[string]identity.Key,
+	associations map[identity.Key]model_class.Association,
+) *LowerContext {
+	return &LowerContext{
+		ClassKey:         class.Key,
+		AttributeNames:   BuildAttributeNameMap(class),
+		ActionNames:      BuildActionNameMap(class),
+		QueryNames:       BuildQueryNameMap(class),
+		AssociationNames: BuildOutgoingAssociationFieldNameMap(class.Key, associations),
+		SystemEventNames: BuildSystemEventNameMap(class),
+		GlobalFunctions:  globalFunctions,
+		NamedSets:        namedSets,
+		AllActions:       allActions,
+	}
+}
+
+// BuildOutgoingAssociationFieldNameMap maps TLA field names to association keys for from-class links.
+func BuildOutgoingAssociationFieldNameMap(classKey identity.Key, associations map[identity.Key]model_class.Association) map[string]identity.Key {
+	if len(associations) == 0 {
+		return nil
+	}
+	m := make(map[string]identity.Key)
+	for _, assoc := range associations {
+		if assoc.FromClassKey != classKey {
+			continue
+		}
+		m[model_class.AssociationTLAFieldName(assoc.Name)] = assoc.Key
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
+// BuildSystemEventNameMap maps system event spellings to event keys declared on the class.
+// Both ASCII (_new) and canonical TLA («new») forms resolve to the same key.
+func BuildSystemEventNameMap(class *model_class.Class) map[string]identity.Key {
+	if len(class.Events) == 0 {
+		return nil
+	}
+	m := make(map[string]identity.Key)
+	for _, event := range class.Events {
+		if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
+			m[event.Name] = event.Key
+			m[model_state.SystemEventTLAName(event.Name)] = event.Key
+		}
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
+// BuildSystemEventRaiseNameMap maps event keys to canonical TLA spellings («new», «delete»).
+func BuildSystemEventRaiseNameMap(class *model_class.Class) map[identity.Key]string {
+	if len(class.Events) == 0 {
+		return nil
+	}
+	m := make(map[identity.Key]string)
+	for _, event := range class.Events {
+		if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
+			m[event.Key] = model_state.SystemEventTLAName(event.Name)
+		}
+	}
+	if len(m) == 0 {
+		return nil
 	}
 	return m
 }
