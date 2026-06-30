@@ -22,7 +22,7 @@ func TestValidateDeleteLogicRequiresDeleteEvent(t *testing.T) {
 	)
 	err := logic.Validate(coreerr.NewContext("test", ""))
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "delete_event")
+	require.Contains(t, err.Error(), "destroy_event")
 }
 
 func TestValidateDeleteLogicValid(t *testing.T) {
@@ -35,7 +35,7 @@ func TestValidateDeleteLogicValid(t *testing.T) {
 		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ b \in AppliesSocialCurrencyLogic : TRUE }`},
 		nil,
 	)
-	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: "_delete(b)"})
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: "_destroy(b)"})
 	err := logic.Validate(coreerr.NewContext("test", ""))
 	require.NoError(t, err)
 }
@@ -51,7 +51,7 @@ func TestValidateDeleteLogicRejectsQueryGuaranteeKey(t *testing.T) {
 		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ b \in AssocField : TRUE }`},
 		nil,
 	)
-	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: "_delete(b)"})
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: "_destroy(b)"})
 	err := logic.Validate(coreerr.NewContext("test", ""))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "action guarantees")
@@ -64,7 +64,7 @@ func TestValidateStateChangeRejectsInlinePeerDelete(t *testing.T) {
 		LogicTypeStateChange,
 		"Bad inline delete",
 		"AppliesSocialCurrencyLogic",
-		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ _delete(b) : b \in AppliesSocialCurrencyLogic }`},
+		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ _destroy(b) : b \in AppliesSocialCurrencyLogic }`},
 		nil,
 	)
 	err := logic.Validate(coreerr.NewContext("test", ""))

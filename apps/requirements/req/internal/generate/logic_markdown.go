@@ -44,8 +44,8 @@ func logicMarkdownSpecLines(logic model_logic.Logic) string {
 		lines = append(lines, "    - "+bold)
 	}
 	if logic.Type == model_logic.LogicTypeDelete {
-		if event := strings.TrimSpace(logic.DeleteEventSpec.Specification); event != "" {
-			lines = append(lines, "    - Each removed element sent: "+deleteEventSpecBoldDisplay(logic.DeleteEventSpec))
+		if event := strings.TrimSpace(logic.DestroyEventSpec.Specification); event != "" {
+			lines = append(lines, "    - Each removed element sent: "+destroyEventSpecBoldDisplay(logic.DestroyEventSpec))
 		}
 	}
 	if logic.Target != "" && logic.TargetTypeSpec != nil {
@@ -56,8 +56,8 @@ func logicMarkdownSpecLines(logic model_logic.Logic) string {
 	return strings.Join(lines, "\n")
 }
 
-// deleteEventSpecBoldDisplay renders delete_event using canonical TLA+ system event spellings.
-func deleteEventSpecBoldDisplay(spec logic_spec.ExpressionSpec) string {
+// destroyEventSpecBoldDisplay renders destroy_event using canonical TLA+ system event spellings.
+func destroyEventSpecBoldDisplay(spec logic_spec.ExpressionSpec) string {
 	display := systemEventCallSpecDisplay(spec.Specification)
 	if display == "" {
 		return ""
@@ -69,7 +69,7 @@ func deleteEventSpecBoldDisplay(spec logic_spec.ExpressionSpec) string {
 func systemEventCallSpecDisplay(specification string) string {
 	display := specification
 	display = strings.ReplaceAll(display, model_state.EventNameNew+"(", model_state.EventTLANameNew+"(")
-	display = strings.ReplaceAll(display, model_state.EventNameDelete+"(", model_state.EventTLANameDelete+"(")
+	display = strings.ReplaceAll(display, model_state.EventNameDestroy+"(", model_state.EventTLANameDestroy+"(")
 	return display
 }
 

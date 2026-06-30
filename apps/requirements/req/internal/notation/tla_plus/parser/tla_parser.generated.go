@@ -4499,9 +4499,9 @@ var g = &grammar{
 						run: (*parser).callonSystemEventName6,
 						expr: &litMatcher{
 							pos:        position{line: 1083, col: 5, offset: 32973},
-							val:        "_delete",
+							val:        "_destroy",
 							ignoreCase: false,
-							want:       "\"_delete\"",
+							want:       "\"_destroy\"",
 						},
 					},
 					&actionExpr{
@@ -4509,9 +4509,9 @@ var g = &grammar{
 						run: (*parser).callonSystemEventName8,
 						expr: &litMatcher{
 							pos:        position{line: 1085, col: 5, offset: 33015},
-							val:        "«delete»",
+							val:        "«destroy»",
 							ignoreCase: false,
-							want:       "\"«delete»\"",
+							want:       "\"«destroy»\"",
 						},
 					},
 				},
@@ -6361,7 +6361,7 @@ func (p *parser) callonSystemEventName4() (any, error) {
 }
 
 func (c *current) onSystemEventName6() (any, error) {
-	return "«delete»", nil
+	return "«destroy»", nil
 }
 
 func (p *parser) callonSystemEventName6() (any, error) {
@@ -6371,7 +6371,7 @@ func (p *parser) callonSystemEventName6() (any, error) {
 }
 
 func (c *current) onSystemEventName8() (any, error) {
-	return "«delete»", nil
+	return "«destroy»", nil
 }
 
 func (p *parser) callonSystemEventName8() (any, error) {

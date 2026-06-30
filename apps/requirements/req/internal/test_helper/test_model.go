@@ -762,7 +762,7 @@ func buildKeys() (testKeys, error) {
 	if err != nil {
 		return k, err
 	}
-	k.eventDestroy, err = identity.NewEventKey(k.classOrder, "_delete")
+	k.eventDestroy, err = identity.NewEventKey(k.classOrder, "_destroy")
 	if err != nil {
 		return k, err
 	}
@@ -847,7 +847,7 @@ func buildKeys() (testKeys, error) {
 	if err != nil {
 		return k, err
 	}
-	k.transitionFinal, err = identity.NewTransitionKey(k.classOrder, "complete", "_delete", "", "", "")
+	k.transitionFinal, err = identity.NewTransitionKey(k.classOrder, "complete", "_destroy", "", "", "")
 	if err != nil {
 		return k, err
 	}
@@ -1563,7 +1563,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 	// eventCancel: no parameter names.
 	eventCancel := model_state.NewEvent(k.eventCancel, "Cancel", "Order is cancelled.", nil)
 	eventNew := model_state.NewEvent(k.eventNew, model_state.EventNameNew, "Creates a new order.", nil)
-	eventDestroy := model_state.NewEvent(k.eventDestroy, model_state.EventNameDelete, "Deletes the order.", nil)
+	eventDestroy := model_state.NewEvent(k.eventDestroy, model_state.EventNameDestroy, "Deletes the order.", nil)
 
 	sm.events = map[identity.Key]model_state.Event{
 		k.eventSubmit:  eventSubmit,

@@ -64,9 +64,9 @@ const (
 	LogicOverAssociationKeyInvalid     Code = "LOGIC_OVER_ASSOCIATION_KEY_INVALID"      // OverAssociationKey failed validation.
 	LogicOverAssociationKeyTypeInvalid Code = "LOGIC_OVER_ASSOCIATION_KEY_TYPE_INVALID" // OverAssociationKey is not CLASS_ASSOCIATION.
 	LogicDeleteSelectionRequired       Code = "LOGIC_DELETE_SELECTION_REQUIRED"         // Delete logic requires a non-empty selection specification.
-	LogicDeleteEventRequired           Code = "LOGIC_DELETE_EVENT_REQUIRED"             // Delete logic requires a non-empty delete_event specification.
-	LogicDeleteEventMustBeEmpty        Code = "LOGIC_DELETE_EVENT_MUST_BE_EMPTY"        // Only delete logic may carry delete_event.
-	LogicPeerDeleteForbidden           Code = "LOGIC_PEER_DELETE_FORBIDDEN"             // Peer _delete must use guarantee type delete, not inline in other logic.
+	LogicDestroyEventRequired          Code = "LOGIC_DESTROY_EVENT_REQUIRED"            // Delete logic requires a non-empty destroy_event specification.
+	LogicDestroyEventMustBeEmpty       Code = "LOGIC_DESTROY_EVENT_MUST_BE_EMPTY"       // Only delete logic may carry destroy_event.
+	LogicPeerDestroyForbidden          Code = "LOGIC_PEER_DESTROY_FORBIDDEN"            // Peer _destroy must use guarantee type delete, not inline in other logic.
 	LogicDeleteContextInvalid          Code = "LOGIC_DELETE_CONTEXT_INVALID"            // Delete logic may only appear in action guarantees.
 
 	// ---------------------------------------------------------------
@@ -192,7 +192,7 @@ const (
 	TransitionGuardNotfound       Code = "TRANSITION_GUARD_NOTFOUND"        // GuardKey references non-existent guard.
 	TransitionActionNotfound      Code = "TRANSITION_ACTION_NOTFOUND"       // ActionKey references non-existent action.
 	TransitionInitialEventInvalid Code = "TRANSITION_INITIAL_EVENT_INVALID" // FromStateKey nil but event is not _new.
-	TransitionFinalEventInvalid   Code = "TRANSITION_FINAL_EVENT_INVALID"   // ToStateKey nil but event is not _delete.
+	TransitionFinalEventInvalid   Code = "TRANSITION_FINAL_EVENT_INVALID"   // ToStateKey nil but event is not _destroy.
 
 	// ---------------------------------------------------------------
 	// Class errors.

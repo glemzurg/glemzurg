@@ -36,18 +36,18 @@ func TestAssociationDeleteGuaranteeSelectionTLALower(t *testing.T) {
 		logic_spec.ExpressionSpec{Expression: selectionLowered},
 		nil,
 	)
-	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{
 		Expression: &me.EventCall{
-			EventKey: identity.Key{SubKey: model_state.EventNameDelete},
+			EventKey: identity.Key{SubKey: model_state.EventNameDestroy},
 			Args:     []me.Expression{&me.LocalVar{Name: "b"}},
 		},
 	})
 
-	assocRef, matchedSelection, eventCall, ok := model_class.MatchAssociationDeleteGuarantee(logic)
+	assocRef, matchedSelection, eventCall, ok := model_class.MatchAssociationDestroyGuarantee(logic)
 	require.True(t, ok)
 	require.Equal(t, eventDeleteKey, assocRef.AssociationKey)
 	require.Equal(t, "b", matchedSelection.Variable)
-	require.Equal(t, model_state.EventNameDelete, eventCall.EventKey.SubKey)
+	require.Equal(t, model_state.EventNameDestroy, eventCall.EventKey.SubKey)
 }
 
 func TestAssociationDeleteGuaranteeInlineDifferenceTLALower(t *testing.T) {
@@ -67,17 +67,17 @@ func TestAssociationDeleteGuaranteeInlineDifferenceTLALower(t *testing.T) {
 		logic_spec.ExpressionSpec{Expression: lowered},
 		nil,
 	)
-	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{
 		Expression: &me.EventCall{
-			EventKey: identity.Key{SubKey: model_state.EventNameDelete},
+			EventKey: identity.Key{SubKey: model_state.EventNameDestroy},
 			Args:     []me.Expression{&me.LocalVar{Name: "item"}},
 		},
 	})
 
-	_, matchedSelection, eventCall, ok := model_class.MatchAssociationDeleteGuarantee(logic)
+	_, matchedSelection, eventCall, ok := model_class.MatchAssociationDestroyGuarantee(logic)
 	require.True(t, ok)
-	require.True(t, model_class.DeleteGuaranteeHasInlineStateChange(logic))
+	require.True(t, model_class.DestroyGuaranteeHasInlineStateChange(logic))
 	require.Equal(t, "b", matchedSelection.Variable)
-	require.Equal(t, model_state.EventNameDelete, eventCall.EventKey.SubKey)
+	require.Equal(t, model_state.EventNameDestroy, eventCall.EventKey.SubKey)
 	require.Equal(t, "item", eventCall.Args[0].(*me.LocalVar).Name)
 }

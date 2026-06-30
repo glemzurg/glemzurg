@@ -118,7 +118,7 @@ func (e *ActionExecutor) queueAssociationSetMap(
 	}
 	if model_state.IsSystemFinalEvent(event.Name) {
 		return false, fmt.Errorf(
-			"association set-map guarantee on %q: peer _delete must use guarantee type delete with delete_event",
+			"association set-map guarantee on %q: peer _destroy must use guarantee type delete with destroy_event",
 			target,
 		)
 	}
@@ -344,9 +344,9 @@ func (e *ActionExecutor) fireAssociationClassDelete(
 	work := associationClassDeleteWork{
 		pu: pu, toClass: toClass, assoc: assoc, acClass: acClass, linkInstanceID: link.LinkInstanceID,
 	}
-	deleteEvent, ok := findFinalDeleteEvent(acClass)
+	deleteEvent, ok := findFinalDestroyEvent(acClass)
 	if !ok {
-		work.recordUnavailable(ctx, e, identity.Key{}, model_state.EventNameDelete)
+		work.recordUnavailable(ctx, e, identity.Key{}, model_state.EventNameDestroy)
 		return nil
 	}
 	acInstance := e.bindingsBuilder.State().GetInstance(link.LinkInstanceID)

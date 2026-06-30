@@ -134,7 +134,7 @@ func peerEventRaiseNamesFromLower(m map[string]identity.Key) map[identity.Key]st
 	return result
 }
 
-// systemEventRaiseNamesFromLower maps event keys to canonical TLA spellings («new», «delete»).
+// systemEventRaiseNamesFromLower maps event keys to canonical TLA spellings («new», «destroy»).
 // Lower maps may alias both ASCII and guillemet forms to the same key.
 func systemEventRaiseNamesFromLower(m map[string]identity.Key) map[identity.Key]string {
 	if m == nil {

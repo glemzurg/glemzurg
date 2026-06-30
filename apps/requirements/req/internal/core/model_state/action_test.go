@@ -24,7 +24,7 @@ func newDeleteGuarantee(key identity.Key, description, target string) model_logi
 		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ b \\in " + target + " : TRUE }"},
 		nil,
 	)
-	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "_delete(b)"})
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "_destroy(b)"})
 	return logic
 }
 

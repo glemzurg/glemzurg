@@ -12,7 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
-type deleteGuaranteeWork struct {
+type destroyGuaranteeWork struct {
 	mapTarget *associationSetMapTarget
 	selection *me.SetFilter
 	eventCall *me.EventCall
@@ -20,7 +20,7 @@ type deleteGuaranteeWork struct {
 	linked    []state.InstanceID
 }
 
-func (e *ActionExecutor) tryQueueAssociationDeleteGuarantee(
+func (e *ActionExecutor) tryQueueAssociationDestroyGuarantee(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
 	guar model_logic.Logic,
@@ -29,27 +29,27 @@ func (e *ActionExecutor) tryQueueAssociationDeleteGuarantee(
 	if guar.Type != model_logic.LogicTypeDelete {
 		return false, nil
 	}
-	work, queuePeers, err := e.prepareDeleteGuaranteeWork(ctx, instance, guar, bindings)
+	work, queuePeers, err := e.prepareDestroyGuaranteeWork(ctx, instance, guar, bindings)
 	if err != nil {
 		return false, err
 	}
 	if queuePeers {
-		e.queueDeleteGuaranteePeers(ctx, instance, work, bindings)
+		e.queueDestroyGuaranteePeers(ctx, instance, work, bindings)
 	}
 	return true, nil
 }
 
-func (e *ActionExecutor) prepareDeleteGuaranteeWork(
+func (e *ActionExecutor) prepareDestroyGuaranteeWork(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
 	guar model_logic.Logic,
 	bindings *evaluator.Bindings,
-) (*deleteGuaranteeWork, bool, error) {
-	assocRef, selection, eventCall, ok := model_class.MatchAssociationDeleteGuarantee(guar)
+) (*destroyGuaranteeWork, bool, error) {
+	assocRef, selection, eventCall, ok := model_class.MatchAssociationDestroyGuarantee(guar)
 	if !ok {
 		return nil, false, fmt.Errorf("delete guarantee on %q: expression not in delete guarantee form", guar.Target)
 	}
-	if model_class.DeleteGuaranteeHasInlineStateChange(guar) {
+	if model_class.DestroyGuaranteeHasInlineStateChange(guar) {
 		if handled, err := e.tryApplyAssociationStateChangeGuarantee(
 			ctx, instance, guar.Target, guar.Spec.Expression, bindings,
 		); err != nil {
@@ -58,14 +58,14 @@ func (e *ActionExecutor) prepareDeleteGuaranteeWork(
 			return nil, false, fmt.Errorf("delete guarantee on %q: inline association update did not apply", guar.Target)
 		}
 	}
-	mapTarget, event, eventFound, err := e.resolveDeleteGuaranteeTarget(instance, guar.Target, assocRef, eventCall)
+	mapTarget, event, eventFound, err := e.resolveDestroyGuaranteeTarget(instance, guar.Target, assocRef, eventCall)
 	if err != nil {
 		return nil, false, err
 	}
 	removed := ctx.AssociationRemovedPeers(instance.ID, mapTarget.assocKey)
 	if !eventFound {
 		if len(removed) > 0 {
-			e.recordDeleteGuaranteeUnavailable(ctx, instance, deleteGuaranteeUnavailableWork{
+			e.recordDestroyGuaranteeUnavailable(ctx, instance, destroyGuaranteeUnavailableWork{
 				mapTarget: mapTarget,
 				selection: selection,
 				eventCall: eventCall,
@@ -78,7 +78,7 @@ func (e *ActionExecutor) prepareDeleteGuaranteeWork(
 	if len(removed) == 0 {
 		return nil, false, nil
 	}
-	return &deleteGuaranteeWork{
+	return &destroyGuaranteeWork{
 		mapTarget: mapTarget,
 		selection: selection,
 		eventCall: eventCall,
@@ -87,7 +87,7 @@ func (e *ActionExecutor) prepareDeleteGuaranteeWork(
 	}, true, nil
 }
 
-func (e *ActionExecutor) resolveDeleteGuaranteeTarget(
+func (e *ActionExecutor) resolveDestroyGuaranteeTarget(
 	instance *state.ClassInstance,
 	target string,
 	assocRef *me.AssociationRef,
@@ -123,10 +123,10 @@ func (e *ActionExecutor) resolveDeleteGuaranteeTarget(
 	return &associationSetMapTarget{assocKey: assocKey, assoc: assoc, toClass: toClass}, event, true, nil
 }
 
-func (e *ActionExecutor) queueDeleteGuaranteePeers(
+func (e *ActionExecutor) queueDestroyGuaranteePeers(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
-	work *deleteGuaranteeWork,
+	work *destroyGuaranteeWork,
 	bindings *evaluator.Bindings,
 ) {
 	simState := e.bindingsBuilder.State()
@@ -135,26 +135,26 @@ func (e *ActionExecutor) queueDeleteGuaranteePeers(
 		if peerInstance == nil {
 			continue
 		}
-		e.queueDeleteGuaranteePeer(ctx, instance, work, bindings, peerID, peerInstance)
+		e.queueDestroyGuaranteePeer(ctx, instance, work, bindings, peerID, peerInstance)
 	}
 }
 
-func (e *ActionExecutor) queueDeleteGuaranteePeer(
+func (e *ActionExecutor) queueDestroyGuaranteePeer(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
-	work *deleteGuaranteeWork,
+	work *destroyGuaranteeWork,
 	bindings *evaluator.Bindings,
 	peerID state.InstanceID,
 	peerInstance *state.ClassInstance,
 ) {
-	if !deleteGuaranteeSelectsPeer(work.selection, peerInstance.Attributes, bindings) {
+	if !destroyGuaranteeSelectsPeer(work.selection, peerInstance.Attributes, bindings) {
 		return
 	}
-	ctx.MarkAssociationDeleteCandidate(instance.ID, work.mapTarget.assocKey, peerID)
+	ctx.MarkAssociationDestroyCandidate(instance.ID, work.mapTarget.assocKey, peerID)
 	childBindings := evaluator.NewEnclosedBindings(bindings)
 	childBindings.Set(work.selection.Variable, peerInstance.Attributes, evaluator.NamespaceLocal)
 	params, err := resolvePositionalEventCallParams(
-		deleteEventCallBoundVariable(work.eventCall),
+		destroyEventCallBoundVariable(work.eventCall),
 		work.event.ParameterNames,
 		work.eventCall,
 		childBindings,
@@ -163,10 +163,10 @@ func (e *ActionExecutor) queueDeleteGuaranteePeer(
 		e.recordSetMapParamBindingError(ctx, instance, work.mapTarget, work.event, err)
 		return
 	}
-	e.queueDeletePeerUpdate(ctx, instance, work.mapTarget, work.event, params, peerID)
+	e.queueDestroyPeerUpdate(ctx, instance, work.mapTarget, work.event, params, peerID)
 }
 
-type deleteGuaranteeUnavailableWork struct {
+type destroyGuaranteeUnavailableWork struct {
 	mapTarget *associationSetMapTarget
 	selection *me.SetFilter
 	eventCall *me.EventCall
@@ -174,13 +174,13 @@ type deleteGuaranteeUnavailableWork struct {
 	bindings  *evaluator.Bindings
 }
 
-// recordDeleteGuaranteeUnavailable records PeerEventUnavailable for each removed peer
-// selected for _delete when the peer class cannot accept the delete event. Association
-// links for those peers are retained until _delete succeeds.
-func (e *ActionExecutor) recordDeleteGuaranteeUnavailable(
+// recordDestroyGuaranteeUnavailable records PeerEventUnavailable for each removed peer
+// selected for _destroy when the peer class cannot accept the delete event. Association
+// links for those peers are retained until _destroy succeeds.
+func (e *ActionExecutor) recordDestroyGuaranteeUnavailable(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
-	work deleteGuaranteeUnavailableWork,
+	work destroyGuaranteeUnavailableWork,
 ) {
 	simState := e.bindingsBuilder.State()
 	vctx := peerEventViolationContext{
@@ -192,10 +192,10 @@ func (e *ActionExecutor) recordDeleteGuaranteeUnavailable(
 	recorded := false
 	for _, peerID := range work.removed {
 		peerInstance := simState.GetInstance(peerID)
-		if peerInstance == nil || !deleteGuaranteeSelectsPeer(work.selection, peerInstance.Attributes, work.bindings) {
+		if peerInstance == nil || !destroyGuaranteeSelectsPeer(work.selection, peerInstance.Attributes, work.bindings) {
 			continue
 		}
-		ctx.MarkAssociationDeleteCandidate(instance.ID, work.mapTarget.assocKey, peerID)
+		ctx.MarkAssociationDestroyCandidate(instance.ID, work.mapTarget.assocKey, peerID)
 		e.recordPeerEventUnavailable(ctx, vctx, work.mapTarget.toClass, peerID, work.eventCall.EventKey, eventName)
 		recorded = true
 	}
@@ -204,8 +204,8 @@ func (e *ActionExecutor) recordDeleteGuaranteeUnavailable(
 	}
 }
 
-// deleteEventCallBoundVariable is the first delete_event argument name (ignored for binding).
-func deleteEventCallBoundVariable(eventCall *me.EventCall) string {
+// destroyEventCallBoundVariable is the first destroy_event argument name (ignored for binding).
+func destroyEventCallBoundVariable(eventCall *me.EventCall) string {
 	if len(eventCall.Args) == 0 {
 		return ""
 	}
@@ -215,7 +215,7 @@ func deleteEventCallBoundVariable(eventCall *me.EventCall) string {
 	return ""
 }
 
-func deleteGuaranteeSelectsPeer(
+func destroyGuaranteeSelectsPeer(
 	selection *me.SetFilter,
 	peerRecord *object.Record,
 	bindings *evaluator.Bindings,
@@ -230,7 +230,7 @@ func deleteGuaranteeSelectsPeer(
 	return ok && predBool.Value()
 }
 
-func (e *ActionExecutor) queueDeletePeerUpdate(
+func (e *ActionExecutor) queueDestroyPeerUpdate(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
 	mapTarget *associationSetMapTarget,

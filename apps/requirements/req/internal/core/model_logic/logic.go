@@ -20,7 +20,7 @@ const (
 	LogicTypeSafetyRule  = "safety_rule"  // Boolean check referencing both prior and new state (has primed).
 	LogicTypeValue       = "value"        // Single unnamed value expression (global functions).
 	LogicTypeLet         = "let"          // Local variable definition: target = expression.
-	LogicTypeDelete      = "delete"       // Action guarantee only: association peer removal via selection spec + delete_event.
+	LogicTypeDelete      = "delete"       // Action guarantee only: association peer removal via selection spec + destroy_event.
 )
 
 // validLogicTypes is the set of valid Logic.Type values.
@@ -36,13 +36,13 @@ var validLogicTypes = map[string]bool{
 
 // Logic represents a formal logic specification attached to a model element.
 type Logic struct {
-	Key             identity.Key              // The key is unique in the whole model, and built on the key of the containing object.
-	Type            string                    // One of: assessment, state_change, query, safety_rule, value, let, delete.
-	Description     string                    // Optional human-readable description.
-	Target          string                    // Identifier or attribute to set. Required for state_change, query, let, and delete types.
-	Spec            logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
-	DeleteEventSpec logic_spec.ExpressionSpec // Delete-type only: peer event call (e.g. _delete(b) or _delete(b, Param)).
-	TargetTypeSpec  *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
+	Key              identity.Key              // The key is unique in the whole model, and built on the key of the containing object.
+	Type             string                    // One of: assessment, state_change, query, safety_rule, value, let, delete.
+	Description      string                    // Optional human-readable description.
+	Target           string                    // Identifier or attribute to set. Required for state_change, query, let, and delete types.
+	Spec             logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
+	DestroyEventSpec logic_spec.ExpressionSpec // Delete-type only: peer event call (e.g. _destroy(b) or _destroy(b, Param)).
+	TargetTypeSpec   *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
 	// OverAssociationKey tags a class invariant as constraining an association; facts and docs
 	// render it as an association invariant while evaluation stays on the owning class.
 	OverAssociationKey *identity.Key
@@ -53,9 +53,9 @@ func (l *Logic) SetOverAssociationKey(key *identity.Key) {
 	l.OverAssociationKey = key
 }
 
-// SetDeleteEventSpec sets the peer delete event call specification for delete-type logic.
-func (l *Logic) SetDeleteEventSpec(spec logic_spec.ExpressionSpec) {
-	l.DeleteEventSpec = spec
+// SetDestroyEventSpec sets the peer destroy event call specification for delete-type logic.
+func (l *Logic) SetDestroyEventSpec(spec logic_spec.ExpressionSpec) {
+	l.DestroyEventSpec = spec
 }
 
 // NewLogic creates a new Logic.
@@ -110,8 +110,8 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 		return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q spec: %s", l.Key.String(), err.Error()), "Spec")
 	}
 	if l.Type == LogicTypeDelete {
-		if err := l.DeleteEventSpec.Validate(ctx.Child("delete_event", "")); err != nil {
-			return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q delete_event: %s", l.Key.String(), err.Error()), "DeleteEventSpec")
+		if err := l.DestroyEventSpec.Validate(ctx.Child("destroy_event", "")); err != nil {
+			return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q destroy_event: %s", l.Key.String(), err.Error()), "DestroyEventSpec")
 		}
 	}
 	// Validate TargetTypeSpec if present.

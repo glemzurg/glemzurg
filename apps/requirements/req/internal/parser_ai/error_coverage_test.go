@@ -218,8 +218,8 @@ func allErrorCodes() map[int]string {
 		ErrLogicTargetNotAllowed:       "ErrLogicTargetNotAllowed",
 		ErrLogicTargetNoLeadUnderscore: "ErrLogicTargetNoLeadUnderscore",
 		ErrLogicTypeRequired:           "ErrLogicTypeRequired",
-		ErrLogicDeleteEventRequired:    "ErrLogicDeleteEventRequired",
-		ErrLogicDeleteEventNotAllowed:  "ErrLogicDeleteEventNotAllowed",
+		ErrLogicDestroyEventRequired:   "ErrLogicDestroyEventRequired",
+		ErrLogicDestroyEventNotAllowed: "ErrLogicDestroyEventNotAllowed",
 
 		// Parameter errors (15xxx).
 		ErrParamNameRequired:    "ErrParamNameRequired",

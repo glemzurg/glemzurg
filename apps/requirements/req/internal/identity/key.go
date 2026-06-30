@@ -81,10 +81,10 @@ var validKeyTypes = map[string]bool{
 // identifierPattern is the regex that SubKeys must match for key types that become filenames/directories.
 var identifierPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
-// systemEventSubkeys are reserved state-machine event keys (_new, _delete) allowed despite a leading underscore.
+// systemEventSubkeys are reserved state-machine event keys (_new, _destroy) allowed despite a leading underscore.
 var systemEventSubkeys = map[string]bool{
-	"_new":    true,
-	"_delete": true,
+	"_new":     true,
+	"_destroy": true,
 }
 
 func isValidIdentifierSubKey(keyType, subKey string) bool {

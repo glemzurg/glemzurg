@@ -166,7 +166,7 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 		}
 		if guar.Type == model_logic.LogicTypeDelete {
 			if err := lowerDeleteGuaranteeEvent(guar, guarCtx); err != nil {
-				return fmt.Errorf("guarantee %d delete_event: %w", i, err)
+				return fmt.Errorf("guarantee %d destroy_event: %w", i, err)
 			}
 		}
 	}
@@ -239,15 +239,15 @@ func lowerDeleteGuaranteeEvent(guar *model_logic.Logic, ctx *LowerContext) error
 	if sf, ok := guar.Spec.Expression.(*me.SetFilter); ok {
 		deleteCtx = withLocalVar(ctx, sf.Variable)
 	}
-	if boundVar := deleteEventBoundVariable(guar.DeleteEventSpec.Specification); boundVar != "" {
+	if boundVar := destroyEventBoundVariable(guar.DestroyEventSpec.Specification); boundVar != "" {
 		deleteCtx = withLocalVar(deleteCtx, boundVar)
 	}
-	return lowerLogicSpec(&guar.DeleteEventSpec, deleteCtx)
+	return lowerLogicSpec(&guar.DestroyEventSpec, deleteCtx)
 }
 
-// deleteEventBoundVariable returns the first delete_event call argument name.
+// destroyEventBoundVariable returns the first destroy_event call argument name.
 // That identifier is a bound variable for lowering only; the simulator skips it at runtime.
-func deleteEventBoundVariable(specification string) string {
+func destroyEventBoundVariable(specification string) string {
 	if specification == "" {
 		return ""
 	}
@@ -500,7 +500,7 @@ func BuildSystemEventNameMap(class *model_class.Class) map[string]identity.Key {
 	return m
 }
 
-// BuildSystemEventRaiseNameMap maps event keys to canonical TLA spellings («new», «delete»).
+// BuildSystemEventRaiseNameMap maps event keys to canonical TLA spellings («new», «destroy»).
 func BuildSystemEventRaiseNameMap(class *model_class.Class) map[identity.Key]string {
 	if len(class.Events) == 0 {
 		return nil

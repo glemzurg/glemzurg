@@ -67,7 +67,7 @@ func (e *ActionExecutor) applyAssociationLinkRemovals(ctx *ExecutionContext) {
 	simState := e.bindingsBuilder.State()
 	for key, peerIDs := range ctx.associationRemovedPeerSets() {
 		for _, peerID := range peerIDs {
-			if ctx.AssociationDeleteCandidate(key, peerID) {
+			if ctx.AssociationDestroyCandidate(key, peerID) {
 				continue
 			}
 			simState.RemoveLink(key.AssocKey, key.OwnerInstanceID, peerID)

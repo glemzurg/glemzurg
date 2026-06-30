@@ -608,8 +608,8 @@ func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
 	if logic.OverAssociationKey != nil {
 		result.OverAssociationKey = logic.OverAssociationKey.String()
 	}
-	if strings.TrimSpace(logic.DeleteEventSpec.Specification) != "" {
-		result.DeleteEvent = logic.DeleteEventSpec.Specification
+	if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
+		result.DestroyEvent = logic.DestroyEventSpec.Specification
 	}
 	return result
 }

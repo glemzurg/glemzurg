@@ -45,7 +45,7 @@ func associationSetMapDeleteFixture() *convert.LowerContext {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s"))
 	fromKey := helper.Must(identity.NewClassKey(subdomainKey, "currency_wallet_definition"))
 	toKey := helper.Must(identity.NewClassKey(subdomainKey, "social_currency_behavior"))
-	eventDeleteKey := helper.Must(identity.NewEventKey(toKey, model_state.EventNameDelete))
+	eventDeleteKey := helper.Must(identity.NewEventKey(toKey, model_state.EventNameDestroy))
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, "applies_social"))
 	assoc := model_class.NewAssociation(
 		assocKey,
@@ -62,7 +62,7 @@ func associationSetMapDeleteFixture() *convert.LowerContext {
 	})
 	peerClassModel := model_class.NewClass(toKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Social Currency Behavior"})
 	peerClassModel.SetEvents(map[identity.Key]model_state.Event{
-		eventDeleteKey: model_state.NewEvent(eventDeleteKey, model_state.EventNameDelete, "", nil),
+		eventDeleteKey: model_state.NewEvent(eventDeleteKey, model_state.EventNameDestroy, "", nil),
 	})
 	classes := map[identity.Key]model_class.Class{fromKey: fromClass, toKey: peerClassModel}
 	associations := map[identity.Key]model_class.Association{assocKey: assoc}

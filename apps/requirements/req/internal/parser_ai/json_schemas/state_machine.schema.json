@@ -59,7 +59,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "The display name of the event (e.g., 'Submit', 'Cancel', 'Payment Received'). System creation and finalization events use the reserved names _new and _delete (rendered as «new» and «delete» in diagrams). Must be non-empty. Only letters (A-Z, a-z), digits (0-9), spaces, hyphens, and underscores are allowed.",
+            "description": "The display name of the event (e.g., 'Submit', 'Cancel', 'Payment Received'). System creation and finalization events use the reserved names _new and _destroy (rendered as «new» and «destroy» in diagrams). Must be non-empty. Only letters (A-Z, a-z), digits (0-9), spaces, hyphens, and underscores are allowed.",
             "minLength": 1,
             "pattern": "^[A-Za-z0-9 _-]+$"
           },

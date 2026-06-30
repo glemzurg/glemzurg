@@ -1080,10 +1080,10 @@ SystemEventName <- "_new" {
 	return "«new»", nil
 } / "«new»" {
 	return "«new»", nil
-} / "_delete" {
-	return "«delete»", nil
-} / "«delete»" {
-	return "«delete»", nil
+} / "_destroy" {
+	return "«destroy»", nil
+} / "«destroy»" {
+	return "«destroy»", nil
 }
 
 // IdentifierName: the actual identifier text (letters, digits, underscores)

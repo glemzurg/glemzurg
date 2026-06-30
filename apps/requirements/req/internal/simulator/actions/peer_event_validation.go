@@ -32,7 +32,7 @@ func (e *ActionExecutor) peerEventAvailable(
 	return len(candidates) > 0
 }
 
-func findFinalDeleteEvent(class model_class.Class) (model_state.Event, bool) {
+func findFinalDestroyEvent(class model_class.Class) (model_state.Event, bool) {
 	for _, ev := range class.Events {
 		if !model_state.IsSystemFinalEvent(ev.Name) {
 			continue

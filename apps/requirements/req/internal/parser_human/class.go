@@ -1097,12 +1097,12 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		logic := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
-		if deleteEvent, _ := itemMap["delete_event"].(string); strings.TrimSpace(deleteEvent) != "" {
-			deleteEventSpec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, deleteEvent, nil)
+		if deleteEvent, _ := itemMap["destroy_event"].(string); strings.TrimSpace(deleteEvent) != "" {
+			destroyEventSpec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, deleteEvent, nil)
 			if err != nil {
-				return nil, errors.Wrapf(err, "%s[%d] delete_event", field, i)
+				return nil, errors.Wrapf(err, "%s[%d] destroy_event", field, i)
 			}
-			logic.SetDeleteEventSpec(deleteEventSpec)
+			logic.SetDestroyEventSpec(destroyEventSpec)
 		}
 		if classInvariantOpts != nil {
 			if overAssociationKeyStr, _ := itemMap["over_association_key"].(string); overAssociationKeyStr != "" {

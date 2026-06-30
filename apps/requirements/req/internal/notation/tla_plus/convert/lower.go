@@ -58,7 +58,7 @@ type LowerContext struct {
 	// AssociationNames maps outgoing-association TLA field names to association keys.
 	AssociationNames map[string]identity.Key
 
-	// SystemEventNames maps reserved system event names (_new, _delete) to event keys.
+	// SystemEventNames maps reserved system event names (_new, _destroy) to event keys.
 	SystemEventNames map[string]identity.Key
 
 	// PeerEventNames maps outgoing-association peer class event names to event keys.
@@ -978,7 +978,7 @@ func lowerGlobalOrBuiltinFunctionCall(e *ast.FunctionCall, ctx *LowerContext) (m
 	if key, ok := ctx.SystemEventNames[name]; ok {
 		return &me.EventCall{EventKey: key, Args: args}, nil
 	}
-	// Peer-class system events in association set-map/set-add guarantees (e.g. «delete» on AppliesSocialCurrencyLogic).
+	// Peer-class system events in association set-map/set-add guarantees (e.g. «destroy» on AppliesSocialCurrencyLogic).
 	if model_state.IsSystemEventTLAName(name) {
 		if key, ok := ctx.PeerEventNames[name]; ok {
 			return &me.EventCall{EventKey: key, Args: args}, nil

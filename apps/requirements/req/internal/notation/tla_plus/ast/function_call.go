@@ -84,8 +84,8 @@ func (f *FunctionCall) String() string {
 }
 
 var systemEventASCII = map[string]string{
-	model_state.EventTLANameNew:    model_state.EventNameNew,
-	model_state.EventTLANameDelete: model_state.EventNameDelete,
+	model_state.EventTLANameNew:     model_state.EventNameNew,
+	model_state.EventTLANameDestroy: model_state.EventNameDestroy,
 }
 
 func (f *FunctionCall) ASCII() string {

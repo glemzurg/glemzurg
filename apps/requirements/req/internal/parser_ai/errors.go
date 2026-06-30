@@ -166,8 +166,8 @@ const (
 	ErrLogicTargetNotAllowed       = 14006
 	ErrLogicTargetNoLeadUnderscore = 14007
 	ErrLogicTypeRequired           = 14008
-	ErrLogicDeleteEventRequired    = 14009
-	ErrLogicDeleteEventNotAllowed  = 14010
+	ErrLogicDestroyEventRequired   = 14009
+	ErrLogicDestroyEventNotAllowed = 14010
 
 	// Parameter errors (15xxx).
 	ErrParamNameRequired    = 15001
@@ -248,7 +248,7 @@ const (
 
 	// State machine system-event edge errors (11037+).
 	ErrTreeTransitionInitialEventInvalid = 11037 // Initial transition must use event _new
-	ErrTreeTransitionFinalEventInvalid   = 11038 // Final transition must use event _delete
+	ErrTreeTransitionFinalEventInvalid   = 11038 // Final transition must use event _destroy
 
 	// Use case errors (18xxx).
 	ErrUseCaseNameRequired    = 18001
@@ -310,5 +310,5 @@ const (
 	ErrConvLogicSpecInvalid              = 21116 // Logic specification (TLA+ expression) failed validation
 	ErrConvDomainAssocSameDomains        = 21117 // Domain association references same domain for problem and solution
 	ErrConvTransitionInitialEventInvalid = 21118 // Initial transition event is not _new
-	ErrConvTransitionFinalEventInvalid   = 21119 // Final transition event is not _delete
+	ErrConvTransitionFinalEventInvalid   = 21119 // Final transition event is not _destroy
 )

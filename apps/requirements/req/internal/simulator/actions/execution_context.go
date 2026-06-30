@@ -130,9 +130,9 @@ type ExecutionContext struct {
 	// associationRemovedPeers records peers dropped by association state_change guarantees.
 	associationRemovedPeers map[associationRemovalKey][]state.InstanceID
 
-	// associationDeleteCandidates tracks removed peers targeted for peer _delete. While targeted,
-	// association links stay put; unavailable _delete records PeerEventUnavailable and leaves links.
-	associationDeleteCandidates map[associationRemovalKey]map[state.InstanceID]bool
+	// associationDestroyCandidates tracks removed peers targeted for peer _destroy. While targeted,
+	// association links stay put; unavailable _destroy records PeerEventUnavailable and leaves links.
+	associationDestroyCandidates map[associationRemovalKey]map[state.InstanceID]bool
 }
 
 type associationRemovalKey struct {
@@ -313,28 +313,28 @@ func (ctx *ExecutionContext) AssociationRemovedPeers(
 	return ctx.associationRemovedPeers[key]
 }
 
-// MarkAssociationDeleteCandidate records a removed peer targeted by a delete guarantee.
-func (ctx *ExecutionContext) MarkAssociationDeleteCandidate(
+// MarkAssociationDestroyCandidate records a removed peer targeted by a delete guarantee.
+func (ctx *ExecutionContext) MarkAssociationDestroyCandidate(
 	ownerInstanceID state.InstanceID,
 	assocKey identity.Key,
 	peerID state.InstanceID,
 ) {
 	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
-	if ctx.associationDeleteCandidates == nil {
-		ctx.associationDeleteCandidates = make(map[associationRemovalKey]map[state.InstanceID]bool)
+	if ctx.associationDestroyCandidates == nil {
+		ctx.associationDestroyCandidates = make(map[associationRemovalKey]map[state.InstanceID]bool)
 	}
-	if ctx.associationDeleteCandidates[key] == nil {
-		ctx.associationDeleteCandidates[key] = make(map[state.InstanceID]bool)
+	if ctx.associationDestroyCandidates[key] == nil {
+		ctx.associationDestroyCandidates[key] = make(map[state.InstanceID]bool)
 	}
-	ctx.associationDeleteCandidates[key][peerID] = true
+	ctx.associationDestroyCandidates[key][peerID] = true
 }
 
-// AssociationDeleteCandidate reports whether a removed peer was selected for peer _delete.
-func (ctx *ExecutionContext) AssociationDeleteCandidate(key associationRemovalKey, peerID state.InstanceID) bool {
-	if ctx.associationDeleteCandidates == nil {
+// AssociationDestroyCandidate reports whether a removed peer was selected for peer _destroy.
+func (ctx *ExecutionContext) AssociationDestroyCandidate(key associationRemovalKey, peerID state.InstanceID) bool {
+	if ctx.associationDestroyCandidates == nil {
 		return false
 	}
-	return ctx.associationDeleteCandidates[key][peerID]
+	return ctx.associationDestroyCandidates[key][peerID]
 }
 
 // associationRemovedPeerSets returns all association removal batches from state_change.

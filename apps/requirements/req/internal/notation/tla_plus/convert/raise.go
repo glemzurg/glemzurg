@@ -38,7 +38,7 @@ type RaiseContext struct {
 	// AssociationNames maps association keys to TLA field names on self.
 	AssociationNames map[identity.Key]string
 
-	// SystemEventNames maps event keys to canonical TLA spellings («new», «delete»).
+	// SystemEventNames maps event keys to canonical TLA spellings («new», «destroy»).
 	SystemEventNames map[identity.Key]string
 
 	// PeerEventNames maps peer-class event keys to their declared names.

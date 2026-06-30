@@ -486,10 +486,10 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 	if transition.ToStateKey == nil && !model_state.IsSystemFinalEvent(event.Name) {
 		return NewParseError(
 			ErrTreeTransitionFinalEventInvalid,
-			fmt.Sprintf("transition[%d] reaches final but event_key %q (name %q) is not %q", i, transition.EventKey, event.Name, model_state.EventNameDelete),
+			fmt.Sprintf("transition[%d] reaches final but event_key %q (name %q) is not %q", i, transition.EventKey, event.Name, model_state.EventNameDestroy),
 			smPath,
 		).WithField(fmt.Sprintf("transitions[%d].event_key", i)).
-			WithHint(fmt.Sprintf("declare events.%s and use event_key %q for finalization transitions", model_state.EventNameDelete, model_state.EventNameDelete))
+			WithHint(fmt.Sprintf("declare events.%s and use event_key %q for finalization transitions", model_state.EventNameDestroy, model_state.EventNameDestroy))
 	}
 
 	if transition.GuardKey != nil {

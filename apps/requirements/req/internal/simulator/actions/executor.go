@@ -469,7 +469,7 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 			return err
 		}
 	}
-	// Pass 3: Delete guarantees fire peer _delete for peers removed by state_change.
+	// Pass 3: Delete guarantees fire peer _destroy for peers removed by state_change.
 	for i, guar := range action.Guarantees {
 		if guar.Type != model_logic.LogicTypeDelete {
 			continue
@@ -492,7 +492,7 @@ func (e *ActionExecutor) evaluateSingleActionGuarantee(
 	if guar.Type == model_logic.LogicTypeLet {
 		return nil
 	}
-	if handled, err := e.tryQueueAssociationDeleteGuarantee(ctx, instance, guar, bindings); err != nil {
+	if handled, err := e.tryQueueAssociationDestroyGuarantee(ctx, instance, guar, bindings); err != nil {
 		return err
 	} else if handled {
 		return nil

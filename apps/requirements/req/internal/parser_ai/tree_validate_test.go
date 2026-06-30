@@ -247,7 +247,7 @@ func (suite *TreeValidateSuite) TestTransitionInitialEventInvalid() {
 	suite.Equal("transitions[0].event_key", parseErr.Field)
 }
 
-// TestTransitionFinalEventInvalid verifies error when a final transition does not use _delete.
+// TestTransitionFinalEventInvalid verifies error when a final transition does not use _destroy.
 func (suite *TreeValidateSuite) TestTransitionFinalEventInvalid() {
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]

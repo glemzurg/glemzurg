@@ -6,28 +6,28 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// MatchAssociationDeleteGuarantee recognizes a lowered delete guarantee and its peer
-// delete_event call. Specification may be either:
+// MatchAssociationDestroyGuarantee recognizes a lowered delete guarantee and its peer
+// destroy_event call. Specification may be either:
 //   - a set-filter selection: { v \in AssocField : pred } (requires a separate state_change), or
 //   - an inline association update: AssocField \ { v \in AssocField : pred }.
-func MatchAssociationDeleteGuarantee(logic model_logic.Logic) (*me.AssociationRef, *me.SetFilter, *me.EventCall, bool) {
+func MatchAssociationDestroyGuarantee(logic model_logic.Logic) (*me.AssociationRef, *me.SetFilter, *me.EventCall, bool) {
 	if logic.Type != model_logic.LogicTypeDelete {
 		return nil, nil, nil, false
 	}
-	eventCall, ok := logic.DeleteEventSpec.Expression.(*me.EventCall)
+	eventCall, ok := logic.DestroyEventSpec.Expression.(*me.EventCall)
 	if !ok {
 		return nil, nil, nil, false
 	}
-	selection, assocRef, ok := matchDeleteGuaranteeSelection(logic.Spec.Expression)
+	selection, assocRef, ok := matchDestroyGuaranteeSelection(logic.Spec.Expression)
 	if !ok {
 		return nil, nil, nil, false
 	}
 	return assocRef, selection, eventCall, true
 }
 
-// DeleteGuaranteeHasInlineStateChange reports whether the delete guarantee specification
+// DestroyGuaranteeHasInlineStateChange reports whether the delete guarantee specification
 // lowers to an association set-difference (state_change and delete selection in one guarantee).
-func DeleteGuaranteeHasInlineStateChange(logic model_logic.Logic) bool {
+func DestroyGuaranteeHasInlineStateChange(logic model_logic.Logic) bool {
 	if logic.Type != model_logic.LogicTypeDelete {
 		return false
 	}
@@ -35,14 +35,14 @@ func DeleteGuaranteeHasInlineStateChange(logic model_logic.Logic) bool {
 	return ok && setOp.Op == me.SetDifference
 }
 
-func matchDeleteGuaranteeSelection(expr me.Expression) (*me.SetFilter, *me.AssociationRef, bool) {
-	if selection, assocRef, ok := matchDeleteGuaranteeSelectionFilter(expr); ok {
+func matchDestroyGuaranteeSelection(expr me.Expression) (*me.SetFilter, *me.AssociationRef, bool) {
+	if selection, assocRef, ok := matchDestroyGuaranteeSelectionFilter(expr); ok {
 		return selection, assocRef, true
 	}
-	return matchDeleteGuaranteeDifferenceSelection(expr)
+	return matchDestroyGuaranteeDifferenceSelection(expr)
 }
 
-func matchDeleteGuaranteeSelectionFilter(expr me.Expression) (*me.SetFilter, *me.AssociationRef, bool) {
+func matchDestroyGuaranteeSelectionFilter(expr me.Expression) (*me.SetFilter, *me.AssociationRef, bool) {
 	selection, ok := expr.(*me.SetFilter)
 	if !ok {
 		return nil, nil, false
@@ -54,7 +54,7 @@ func matchDeleteGuaranteeSelectionFilter(expr me.Expression) (*me.SetFilter, *me
 	return selection, assocRef, true
 }
 
-func matchDeleteGuaranteeDifferenceSelection(expr me.Expression) (*me.SetFilter, *me.AssociationRef, bool) {
+func matchDestroyGuaranteeDifferenceSelection(expr me.Expression) (*me.SetFilter, *me.AssociationRef, bool) {
 	setOp, ok := expr.(*me.SetOp)
 	if !ok || setOp.Op != me.SetDifference {
 		return nil, nil, false
@@ -74,9 +74,9 @@ func matchDeleteGuaranteeDifferenceSelection(expr me.Expression) (*me.SetFilter,
 	return selection, assocRef, true
 }
 
-// AssociationDeleteEventKey returns the peer event key from a delete guarantee.
-func AssociationDeleteEventKey(logic model_logic.Logic) (identity.Key, bool) {
-	_, _, eventCall, ok := MatchAssociationDeleteGuarantee(logic)
+// AssociationDestroyEventKey returns the peer event key from a delete guarantee.
+func AssociationDestroyEventKey(logic model_logic.Logic) (identity.Key, bool) {
+	_, _, eventCall, ok := MatchAssociationDestroyGuarantee(logic)
 	if !ok {
 		return identity.Key{}, false
 	}

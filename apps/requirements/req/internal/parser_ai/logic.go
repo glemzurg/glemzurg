@@ -22,7 +22,7 @@ type inputLogic struct {
 	OverAssociationKey string `json:"over_association_key,omitempty"`
 	Notation           string `json:"notation,omitempty"`
 	Specification      string `json:"specification,omitempty"`
-	DeleteEvent        string `json:"delete_event,omitempty"`
+	DestroyEvent       string `json:"destroy_event,omitempty"`
 }
 
 // logicSchema is the compiled JSON schema for logic objects.
@@ -127,19 +127,19 @@ func validateLogic(logic *inputLogic, filename string) error {
 			).WithField("target").WithHint("state_change/query/let/delete types require a non-empty \"target\" field")
 		}
 		if logic.Type == _LOGIC_TYPE_DELETE {
-			if strings.TrimSpace(logic.DeleteEvent) == "" {
+			if strings.TrimSpace(logic.DestroyEvent) == "" {
 				return NewParseError(
-					ErrLogicDeleteEventRequired,
-					"logic of type '"+_LOGIC_TYPE_DELETE+"' requires a non-empty 'delete_event' field",
+					ErrLogicDestroyEventRequired,
+					"logic of type '"+_LOGIC_TYPE_DELETE+"' requires a non-empty 'destroy_event' field",
 					filename,
-				).WithField("delete_event").WithHint("add delete_event with the peer event call, e.g. \"_delete(b)\"")
+				).WithField("destroy_event").WithHint("add destroy_event with the peer event call, e.g. \"_destroy(b)\"")
 			}
-		} else if strings.TrimSpace(logic.DeleteEvent) != "" {
+		} else if strings.TrimSpace(logic.DestroyEvent) != "" {
 			return NewParseError(
-				ErrLogicDeleteEventNotAllowed,
-				"only delete logic may declare delete_event, got type '"+logic.Type+"'",
+				ErrLogicDestroyEventNotAllowed,
+				"only delete logic may declare destroy_event, got type '"+logic.Type+"'",
 				filename,
-			).WithField("delete_event").WithHint("remove delete_event or change type to delete")
+			).WithField("destroy_event").WithHint("remove destroy_event or change type to delete")
 		}
 		if (logic.Type == _LOGIC_TYPE_QUERY || logic.Type == "let") && strings.HasPrefix(logic.Target, "_") {
 			return NewParseError(

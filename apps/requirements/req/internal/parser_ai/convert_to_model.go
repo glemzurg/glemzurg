@@ -1456,12 +1456,12 @@ func convertLogicToModel(input *inputLogic, logicType string, logicKey identity.
 	}
 
 	logic := model_logic.NewLogic(logicKey, logicType, input.Description, input.Target, spec, targetTypeSpec)
-	if strings.TrimSpace(input.DeleteEvent) != "" {
-		deleteEventSpec, err := logic_spec.NewExpressionSpec(input.Notation, input.DeleteEvent, nil)
+	if strings.TrimSpace(input.DestroyEvent) != "" {
+		destroyEventSpec, err := logic_spec.NewExpressionSpec(input.Notation, input.DestroyEvent, nil)
 		if err != nil {
-			return model_logic.Logic{}, fmt.Errorf("failed to create delete_event spec: %w", err)
+			return model_logic.Logic{}, fmt.Errorf("failed to create destroy_event spec: %w", err)
 		}
-		logic.SetDeleteEventSpec(deleteEventSpec)
+		logic.SetDestroyEventSpec(destroyEventSpec)
 	}
 	return logic, nil
 }

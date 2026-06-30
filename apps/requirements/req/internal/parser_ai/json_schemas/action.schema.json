@@ -116,11 +116,11 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation. For 'state_change' and 'let', this must be only the right-hand-side value expression with no primed values; the left-hand side is captured by the 'target' field. For 'delete', this is the set-filter selection over the association (e.g., '{ b \\in AppliesSocialCurrencyLogic : TRUE }'). Peer _delete calls belong in delete_event, not here."
+            "description": "Optional formal specification in the given notation. For 'state_change' and 'let', this must be only the right-hand-side value expression with no primed values; the left-hand side is captured by the 'target' field. For 'delete', this is the set-filter selection over the association (e.g., '{ b \\in AppliesSocialCurrencyLogic : TRUE }'). Peer _destroy calls belong in destroy_event, not here."
           },
-          "delete_event": {
+          "destroy_event": {
             "type": "string",
-            "description": "Required for 'delete' type: peer delete event call (e.g., '_delete(b)'). Must be omitted for 'state_change' and 'let'."
+            "description": "Required for 'delete' type: peer delete event call (e.g., '_destroy(b)'). Must be omitted for 'state_change' and 'let'."
           }
         },
         "required": ["type", "description", "target", "notation"],

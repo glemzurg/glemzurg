@@ -56,17 +56,17 @@ func TestLogicMarkdownSpecLinesBoldsDeleteGuarantee(t *testing.T) {
 	logic := model_logic.NewLogic(
 		identity.Key{},
 		model_logic.LogicTypeDelete,
-		"Peer _delete events for removed peers",
+		"Peer _destroy events for removed peers",
 		"AppliesSocialCurrencyLogic",
 		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: `{ b \in AppliesSocialCurrencyLogic : TRUE }`},
 		nil,
 	)
-	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "_delete(b)"})
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "_destroy(b)"})
 
 	got := logicMarkdownSpecLines(logic)
 	require.Equal(t, strings.Join([]string{
 		"    - **AppliesSocialCurrencyLogic' = { b \\in AppliesSocialCurrencyLogic : TRUE }**",
-		"    - Each removed element sent: **«delete»(b)**",
+		"    - Each removed element sent: **«destroy»(b)**",
 	}, "\n"), got)
 }
 

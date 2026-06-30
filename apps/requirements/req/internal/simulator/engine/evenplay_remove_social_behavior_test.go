@@ -18,12 +18,12 @@ func TestEvenplayRemoveSocialBehaviorDeleteGuaranteeForm(t *testing.T) {
 	require.Len(t, action.Guarantees, 1)
 
 	guar := action.Guarantees[0]
-	_, selection, eventCall, ok := model_class.MatchAssociationDeleteGuarantee(guar)
+	_, selection, eventCall, ok := model_class.MatchAssociationDestroyGuarantee(guar)
 	require.True(t, ok)
-	require.True(t, model_class.DeleteGuaranteeHasInlineStateChange(guar))
+	require.True(t, model_class.DestroyGuaranteeHasInlineStateChange(guar))
 	require.Equal(t, "AppliesSocialCurrencyLogic", guar.Target)
 	require.Equal(t, "b", selection.Variable)
-	require.Equal(t, "_delete", eventCall.EventKey.SubKey)
+	require.Equal(t, "_destroy", eventCall.EventKey.SubKey)
 }
 
 func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDelete(t *testing.T) {
@@ -72,7 +72,7 @@ func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDelete(t *testing.T) {
 	require.NotNil(t, step71, "seed 42 step 71 should remove social behavior from wallet #24")
 	require.Len(t, step71.CascadedSteps, 1)
 	require.Equal(t, StepKindDeletion, step71.CascadedSteps[0].Kind)
-	require.Equal(t, model_state.EventNameDelete, step71.CascadedSteps[0].EventName)
+	require.Equal(t, model_state.EventNameDestroy, step71.CascadedSteps[0].EventName)
 }
 
 func countPeerDeleteTransitions(step *SimulationStep) int {

@@ -44,7 +44,7 @@ func (s *AssociationPeerEffectsSuite) TestInlineDeleteGuaranteeRemovesPlainAssoc
 	s.Require().NoError(err)
 	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
 	s.Require().Len(result.PeerTransitions, 1)
-	s.Equal(model_state.EventNameDelete, result.PeerTransitions[0].EventName)
+	s.Equal(model_state.EventNameDestroy, result.PeerTransitions[0].EventName)
 	s.True(result.PeerTransitions[0].Result.WasDeletion)
 	s.Nil(simState.GetInstance(itemInst.ID))
 	s.Empty(simState.GetLinkedForward(orderInst.ID, fix.assocKey))
@@ -63,7 +63,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesPlainAssociationLin
 	s.Require().NoError(err)
 	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
 	s.Require().Len(result.PeerTransitions, 1)
-	s.Equal(model_state.EventNameDelete, result.PeerTransitions[0].EventName)
+	s.Equal(model_state.EventNameDestroy, result.PeerTransitions[0].EventName)
 	s.Nil(simState.GetInstance(itemInst.ID))
 	s.Empty(simState.GetLinkedForward(orderInst.ID, fix.assocKey))
 }
@@ -200,9 +200,9 @@ func testItemClassWithOptionalDelete(withDelete bool) (model_class.Class, identi
 	transitions := map[identity.Key]model_state.Transition{transCreateKey: transCreate}
 
 	if withDelete {
-		eventDeleteKey := helper.Must(identity.NewEventKey(classKey, model_state.EventNameDelete))
-		transDeleteKey := helper.Must(identity.NewTransitionKey(classKey, "active", model_state.EventNameDelete, "", "", ""))
-		eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDelete, "", nil)
+		eventDeleteKey := helper.Must(identity.NewEventKey(classKey, model_state.EventNameDestroy))
+		transDeleteKey := helper.Must(identity.NewTransitionKey(classKey, "active", model_state.EventNameDestroy, "", "", ""))
+		eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDestroy, "", nil)
 		transDelete := model_state.NewTransition(
 			transDeleteKey, eventDeleteKey,
 			model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil},
@@ -265,12 +265,12 @@ func testJurisdictionClassWithDelete() (model_class.Class, identity.Key) {
 	classKey := mustKey("domain/d/subdomain/s/class/jurisdiction")
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/jurisdiction/state/active")
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")
-	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, model_state.EventNameDelete))
+	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, model_state.EventNameDestroy))
 	transCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/transition/create")
-	transDeleteKey := helper.Must(identity.NewTransitionKey(classKey, "active", model_state.EventNameDelete, "", "", ""))
+	transDeleteKey := helper.Must(identity.NewTransitionKey(classKey, "active", model_state.EventNameDestroy, "", "", ""))
 
 	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
-	eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDelete, "", nil)
+	eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDestroy, "", nil)
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 	transDelete := model_state.NewTransition(transDeleteKey, eventDeleteKey, model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
@@ -288,10 +288,10 @@ func testJurisdictionClassWithDelete() (model_class.Class, identity.Key) {
 
 func testLinkDefClassWithFinalDelete() (model_class.Class, identity.Key) {
 	class, classKey := testLinkDefClass()
-	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, model_state.EventNameDelete))
-	transDeleteKey := helper.Must(identity.NewTransitionKey(classKey, "active", model_state.EventNameDelete, "", "", ""))
+	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, model_state.EventNameDestroy))
+	transDeleteKey := helper.Must(identity.NewTransitionKey(classKey, "active", model_state.EventNameDestroy, "", "", ""))
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/link_def/state/active")
-	eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDelete, "", nil)
+	eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDestroy, "", nil)
 	transDelete := model_state.NewTransition(
 		transDeleteKey, eventDeleteKey,
 		model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil},
@@ -450,9 +450,9 @@ func peerUpdateSetMapActionWithArgOrder(
 }
 
 func peerInlineDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
-	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_inline_delete"))
+	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_inline_destroy"))
 	deleteKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
-	deleteEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameDelete))
+	deleteEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameDestroy))
 
 	selection := &me.SetFilter{
 		Variable:  "b",
@@ -472,7 +472,7 @@ func peerInlineDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.K
 		logic_spec.ExpressionSpec{Expression: inlineExpr},
 		nil,
 	)
-	deleteGuar.DeleteEventSpec.Expression = &me.EventCall{
+	deleteGuar.DestroyEventSpec.Expression = &me.EventCall{
 		EventKey: deleteEventKey,
 		Args:     []me.Expression{&me.LocalVar{Name: "item"}},
 	}
@@ -488,11 +488,11 @@ func peerInlineDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.K
 }
 
 func peerDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
-	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_delete"))
+	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_destroy"))
 	letKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
 	stateKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "1"))
 	deleteKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "2"))
-	deleteEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameDelete))
+	deleteEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameDestroy))
 
 	toDelete := &me.SetFilter{
 		Variable:  "r",
@@ -523,7 +523,7 @@ func peerDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, as
 		logic_spec.ExpressionSpec{Expression: deleteSelection},
 		nil,
 	)
-	deleteGuar.DeleteEventSpec.Expression = &me.EventCall{
+	deleteGuar.DestroyEventSpec.Expression = &me.EventCall{
 		EventKey: deleteEventKey,
 		Args:     []me.Expression{&me.LocalVar{Name: "b"}},
 	}

@@ -89,7 +89,7 @@ func TestComputedSimpleActionGuaranteeDescription(t *testing.T) {
 	}
 }
 
-func TestComputedAssociationDeleteGuaranteeDescription(t *testing.T) {
+func TestComputedAssociationDestroyGuaranteeDescription(t *testing.T) {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s"))
 	fromKey := helper.Must(identity.NewClassKey(subdomainKey, "wallet"))
 	toKey := helper.Must(identity.NewClassKey(subdomainKey, "behavior"))
@@ -115,7 +115,7 @@ func TestComputedAssociationDeleteGuaranteeDescription(t *testing.T) {
 		},
 	}
 
-	desc, ok := ComputedAssociationDeleteGuaranteeDescription(guarantee, map[identity.Key]Association{assoc.Key: assoc})
+	desc, ok := ComputedAssociationDestroyGuaranteeDescription(guarantee, map[identity.Key]Association{assoc.Key: assoc})
 	require.True(t, ok)
 	require.Equal(t, "Set Applies Social Currency Logic", desc)
 }

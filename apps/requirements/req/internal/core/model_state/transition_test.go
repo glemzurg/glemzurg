@@ -240,11 +240,11 @@ func (suite *TransitionSuite) TestValidateSystemEventEdges() {
 	stateActiveKey := helper.Must(identity.NewStateKey(classKey, "active"))
 	eventNewKey := helper.Must(identity.NewEventKey(classKey, "_new"))
 	eventAddKey := helper.Must(identity.NewEventKey(classKey, "add"))
-	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, "_delete"))
+	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, "_destroy"))
 	eventOtherDeleteKey := helper.Must(identity.NewEventKey(classKey, "delete"))
 	transCreateKey := helper.Must(identity.NewTransitionKey(classKey, "", "_new", "", "", "active"))
 	transCreateBadKey := helper.Must(identity.NewTransitionKey(classKey, "", "add", "", "", "active"))
-	transFinalKey := helper.Must(identity.NewTransitionKey(classKey, "active", "_delete", "", "", ""))
+	transFinalKey := helper.Must(identity.NewTransitionKey(classKey, "active", "_destroy", "", "", ""))
 	transFinalBadKey := helper.Must(identity.NewTransitionKey(classKey, "active", "delete", "", "", ""))
 	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
 	fromStateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
@@ -281,7 +281,7 @@ func (suite *TransitionSuite) TestValidateSystemEventEdges() {
 			errstr:    "TRANSITION_INITIAL_EVENT_INVALID",
 		},
 		{
-			testName: "valid final transition with _delete",
+			testName: "valid final transition with _destroy",
 			transition: NewTransition(
 				transFinalKey,
 				eventDeleteKey,
@@ -289,10 +289,10 @@ func (suite *TransitionSuite) TestValidateSystemEventEdges() {
 				TransitionLogicKeys{},
 				"",
 			),
-			eventName: EventNameDelete,
+			eventName: EventNameDestroy,
 		},
 		{
-			testName: "error final transition without _delete",
+			testName: "error final transition without _destroy",
 			transition: NewTransition(
 				transFinalBadKey,
 				eventOtherDeleteKey,

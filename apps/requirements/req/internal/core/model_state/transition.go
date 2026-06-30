@@ -105,7 +105,7 @@ func (t *Transition) Validate(ctx *coreerr.ValidationContext) error {
 }
 
 // ValidateSystemEventEdges rejects non-system events on initial and final pseudo-state edges.
-// Initial transitions (FromStateKey nil) must use _new; final transitions (ToStateKey nil) must use _delete.
+// Initial transitions (FromStateKey nil) must use _new; final transitions (ToStateKey nil) must use _destroy.
 func (t *Transition) ValidateSystemEventEdges(ctx *coreerr.ValidationContext, eventName string) error {
 	if t.FromStateKey == nil && !IsSystemCreationEvent(eventName) {
 		return coreerr.NewWithValues(
@@ -121,10 +121,10 @@ func (t *Transition) ValidateSystemEventEdges(ctx *coreerr.ValidationContext, ev
 		return coreerr.NewWithValues(
 			ctx,
 			coreerr.TransitionFinalEventInvalid,
-			fmt.Sprintf("transition '%s' reaches final but event %q is not %q", t.Key.String(), eventName, EventNameDelete),
+			fmt.Sprintf("transition '%s' reaches final but event %q is not %q", t.Key.String(), eventName, EventNameDestroy),
 			"EventKey",
 			eventName,
-			EventNameDelete,
+			EventNameDestroy,
 		)
 	}
 	return nil

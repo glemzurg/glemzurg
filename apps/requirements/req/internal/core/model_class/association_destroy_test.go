@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMatchAssociationDeleteGuarantee(t *testing.T) {
+func TestMatchAssociationDestroyGuarantee(t *testing.T) {
 	assocKey := helper.Must(identity.NewClassAssociationKey(
 		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")),
 		helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "from")),
@@ -21,7 +21,7 @@ func TestMatchAssociationDeleteGuarantee(t *testing.T) {
 	))
 	eventKey := helper.Must(identity.NewEventKey(
 		helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "to")),
-		"_delete",
+		"_destroy",
 	))
 
 	logic := model_logic.NewLogic(
@@ -38,26 +38,26 @@ func TestMatchAssociationDeleteGuarantee(t *testing.T) {
 		},
 		nil,
 	)
-	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{
 		Expression: &me.EventCall{
 			EventKey: eventKey,
 			Args:     []me.Expression{&me.LocalVar{Name: "b"}},
 		},
 	})
 
-	assocRef, selection, eventCall, ok := model_class.MatchAssociationDeleteGuarantee(logic)
+	assocRef, selection, eventCall, ok := model_class.MatchAssociationDestroyGuarantee(logic)
 	require.True(t, ok)
 	require.Equal(t, assocKey, assocRef.AssociationKey)
 	require.Equal(t, "b", selection.Variable)
 	require.Equal(t, eventKey, eventCall.EventKey)
 
-	eventKeyOut, ok := model_class.AssociationDeleteEventKey(logic)
+	eventKeyOut, ok := model_class.AssociationDestroyEventKey(logic)
 	require.True(t, ok)
 	require.Equal(t, eventKey, eventKeyOut)
-	require.False(t, model_class.DeleteGuaranteeHasInlineStateChange(logic))
+	require.False(t, model_class.DestroyGuaranteeHasInlineStateChange(logic))
 }
 
-func TestMatchAssociationDeleteGuaranteeInlineStateChange(t *testing.T) {
+func TestMatchAssociationDestroyGuaranteeInlineStateChange(t *testing.T) {
 	assocKey := helper.Must(identity.NewClassAssociationKey(
 		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")),
 		helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "from")),
@@ -66,7 +66,7 @@ func TestMatchAssociationDeleteGuaranteeInlineStateChange(t *testing.T) {
 	))
 	eventKey := helper.Must(identity.NewEventKey(
 		helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "to")),
-		"_delete",
+		"_destroy",
 	))
 	selection := &me.SetFilter{
 		Variable:  "b",
@@ -87,16 +87,16 @@ func TestMatchAssociationDeleteGuaranteeInlineStateChange(t *testing.T) {
 		},
 		nil,
 	)
-	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{
 		Expression: &me.EventCall{
 			EventKey: eventKey,
 			Args:     []me.Expression{&me.LocalVar{Name: "item"}},
 		},
 	})
 
-	assocRef, matchedSelection, eventCall, ok := model_class.MatchAssociationDeleteGuarantee(logic)
+	assocRef, matchedSelection, eventCall, ok := model_class.MatchAssociationDestroyGuarantee(logic)
 	require.True(t, ok)
-	require.True(t, model_class.DeleteGuaranteeHasInlineStateChange(logic))
+	require.True(t, model_class.DestroyGuaranteeHasInlineStateChange(logic))
 	require.Equal(t, assocKey, assocRef.AssociationKey)
 	require.Equal(t, "b", matchedSelection.Variable)
 	require.Equal(t, eventKey, eventCall.EventKey)

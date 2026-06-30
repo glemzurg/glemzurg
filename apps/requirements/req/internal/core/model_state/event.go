@@ -9,13 +9,13 @@ import (
 )
 
 // System event names reserved for implicit initial and final pseudo-states.
-// Stored and authored as _new / _delete; rendered as «new» / «delete» in diagrams and docs.
+// Stored and authored as _new / _destroy; rendered as «new» / «destroy» in diagrams and docs.
 const (
-	EventNameNew    = "_new"
-	EventNameDelete = "_delete"
+	EventNameNew     = "_new"
+	EventNameDestroy = "_destroy"
 
-	EventTLANameNew    = "«new»"
-	EventTLANameDelete = "«delete»"
+	EventTLANameNew     = "«new»"
+	EventTLANameDestroy = "«destroy»"
 )
 
 // IsSystemCreationEvent reports whether name is the reserved creation event _new.
@@ -23,9 +23,9 @@ func IsSystemCreationEvent(name string) bool {
 	return name == EventNameNew
 }
 
-// IsSystemFinalEvent reports whether name is the reserved finalization event _delete.
+// IsSystemFinalEvent reports whether name is the reserved finalization event _destroy.
 func IsSystemFinalEvent(name string) bool {
-	return name == EventNameDelete
+	return name == EventNameDestroy
 }
 
 // SystemEventDisplayName returns the UML stereotype label for system events.
@@ -33,21 +33,21 @@ func SystemEventDisplayName(name string) string {
 	switch name {
 	case EventNameNew:
 		return EventTLANameNew
-	case EventNameDelete:
-		return EventTLANameDelete
+	case EventNameDestroy:
+		return EventTLANameDestroy
 	default:
 		return name
 	}
 }
 
 // SystemEventTLAName returns the canonical TLA+ spelling for a system event.
-// Accepts both ASCII authoring names (_new, _delete) and guillemet forms («new», «delete»).
+// Accepts both ASCII authoring names (_new, _destroy) and guillemet forms («new», «destroy»).
 func SystemEventTLAName(name string) string {
 	switch name {
 	case EventNameNew, EventTLANameNew:
 		return EventTLANameNew
-	case EventNameDelete, EventTLANameDelete:
-		return EventTLANameDelete
+	case EventNameDestroy, EventTLANameDestroy:
+		return EventTLANameDestroy
 	default:
 		return name
 	}
@@ -55,8 +55,8 @@ func SystemEventTLAName(name string) string {
 
 // IsSystemEventTLAName reports whether name is a system event in ASCII or TLA form.
 func IsSystemEventTLAName(name string) bool {
-	return name == EventNameNew || name == EventNameDelete ||
-		name == EventTLANameNew || name == EventTLANameDelete
+	return name == EventNameNew || name == EventNameDestroy ||
+		name == EventTLANameNew || name == EventTLANameDestroy
 }
 
 // Event is what triggers a transition between states.

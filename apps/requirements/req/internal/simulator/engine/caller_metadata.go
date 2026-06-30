@@ -140,7 +140,7 @@ func recordAssociationSetMapSenders(class model_class.Class, associations map[id
 				continue
 			}
 			if guar.Type == model_logic.LogicTypeDelete {
-				eventKey, ok := model_class.AssociationDeleteEventKey(guar)
+				eventKey, ok := model_class.AssociationDestroyEventKey(guar)
 				if !ok {
 					continue
 				}

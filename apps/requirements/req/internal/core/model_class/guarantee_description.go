@@ -56,15 +56,15 @@ func ComputedActionGuaranteeDescription(guarantee model_logic.Logic, attributes 
 	if desc, ok := ComputedAssociationSetMapGuaranteeDescription(guarantee, associations); ok {
 		return desc, true
 	}
-	if desc, ok := ComputedAssociationDeleteGuaranteeDescription(guarantee, associations); ok {
+	if desc, ok := ComputedAssociationDestroyGuaranteeDescription(guarantee, associations); ok {
 		return desc, true
 	}
 	return ComputedAssociationSetAddGuaranteeDescription(guarantee, associations)
 }
 
-// ComputedAssociationDeleteGuaranteeDescription derives "Set <association name>"
+// ComputedAssociationDestroyGuaranteeDescription derives "Set <association name>"
 // for a delete guarantee on an outgoing association field, matching attribute-set display.
-func ComputedAssociationDeleteGuaranteeDescription(guarantee model_logic.Logic, associations map[identity.Key]Association) (string, bool) {
+func ComputedAssociationDestroyGuaranteeDescription(guarantee model_logic.Logic, associations map[identity.Key]Association) (string, bool) {
 	if guarantee.Type != model_logic.LogicTypeDelete || guarantee.Target == "" {
 		return "", false
 	}

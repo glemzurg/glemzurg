@@ -605,17 +605,17 @@ func (suite *ClassSuite) TestValidateTransitionSystemEvents() {
 	stateActiveKey := helper.Must(identity.NewStateKey(classKey, "active"))
 	eventNewKey := helper.Must(identity.NewEventKey(classKey, "_new"))
 	eventAddKey := helper.Must(identity.NewEventKey(classKey, "add"))
-	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, "_delete"))
+	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, "_destroy"))
 	eventOtherDeleteKey := helper.Must(identity.NewEventKey(classKey, "delete"))
 	transCreateKey := helper.Must(identity.NewTransitionKey(classKey, "", "_new", "", "", "active"))
 	transCreateBadKey := helper.Must(identity.NewTransitionKey(classKey, "", "add", "", "", "active"))
-	transFinalKey := helper.Must(identity.NewTransitionKey(classKey, "active", "_delete", "", "", ""))
+	transFinalKey := helper.Must(identity.NewTransitionKey(classKey, "active", "_destroy", "", "", ""))
 	transFinalBadKey := helper.Must(identity.NewTransitionKey(classKey, "active", "delete", "", "", ""))
 
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	eventNew := model_state.NewEvent(eventNewKey, model_state.EventNameNew, "", nil)
 	eventAdd := model_state.NewEvent(eventAddKey, "Add", "", nil)
-	eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDelete, "", nil)
+	eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDestroy, "", nil)
 	eventOtherDelete := model_state.NewEvent(eventOtherDeleteKey, "Delete", "", nil)
 
 	tests := []struct {
@@ -669,7 +669,7 @@ func (suite *ClassSuite) TestValidateTransitionSystemEvents() {
 			errstr: "TRANSITION_INITIAL_EVENT_INVALID",
 		},
 		{
-			testName: "valid final transition with _delete",
+			testName: "valid final transition with _destroy",
 			class: Class{
 				Key:  classKey,
 				Name: "Name",
@@ -691,7 +691,7 @@ func (suite *ClassSuite) TestValidateTransitionSystemEvents() {
 			},
 		},
 		{
-			testName: "error final transition without _delete",
+			testName: "error final transition without _destroy",
 			class: Class{
 				Key:  classKey,
 				Name: "Name",
