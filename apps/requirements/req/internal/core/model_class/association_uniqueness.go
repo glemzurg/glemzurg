@@ -15,9 +15,8 @@ type AssociationUniqueness struct {
 	ToAttributeKeys   []identity.Key
 }
 
-// NewAssociationUniquenessConstraint builds a constraint with MaxCount defaulting to 1.
+// NewAssociationUniqueness builds endpoint attribute keys that form the uniqueness tuple.
 func NewAssociationUniqueness(fromAttributeKeys, toAttributeKeys []identity.Key) AssociationUniqueness {
-
 	return AssociationUniqueness{
 		FromAttributeKeys: fromAttributeKeys,
 		ToAttributeKeys:   toAttributeKeys,

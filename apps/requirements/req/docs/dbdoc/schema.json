@@ -2945,20 +2945,6 @@
           "comment": "The multiplicity of the to end of the relation, higher value, 0 means \"any\"."
         },
         {
-          "name": "uniqueness_lower",
-          "type": "integer",
-          "nullable": false,
-          "default": "0",
-          "comment": "How many links may exist per from/to instance pair, lower value, 0 means \"any\"."
-        },
-        {
-          "name": "uniqueness_higher",
-          "type": "integer",
-          "nullable": false,
-          "default": "0",
-          "comment": "How many links may exist per from/to instance pair, higher value, 0 means \"any\"."
-        },
-        {
           "name": "name",
           "type": "text",
           "nullable": false,
@@ -3086,26 +3072,6 @@
           ]
         },
         {
-          "name": "association_uniqueness_higher_not_null",
-          "type": "n",
-          "def": "NOT NULL uniqueness_higher",
-          "table": "public.association",
-          "referenced_table": "",
-          "columns": [
-            "uniqueness_higher"
-          ]
-        },
-        {
-          "name": "association_uniqueness_lower_not_null",
-          "type": "n",
-          "def": "NOT NULL uniqueness_lower",
-          "table": "public.association",
-          "referenced_table": "",
-          "columns": [
-            "uniqueness_lower"
-          ]
-        },
-        {
           "name": "fk_association_model",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE",
@@ -3172,6 +3138,149 @@
           "columns": [
             "model_key",
             "association_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.association_uniqueness_attribute",
+      "type": "BASE TABLE",
+      "comment": "Attributes that form one side of an association uniqueness tuple.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "association_key",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "end_side",
+          "type": "association_end",
+          "nullable": false,
+          "comment": "Whether the attribute belongs to the from or to endpoint class."
+        },
+        {
+          "name": "attribute_sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Order of this attribute within the from or to tuple."
+        },
+        {
+          "name": "attribute_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The endpoint-class attribute that contributes to the uniqueness tuple."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "association_uniqueness_attribute_pkey",
+          "def": "CREATE UNIQUE INDEX association_uniqueness_attribute_pkey ON public.association_uniqueness_attribute USING btree (model_key, association_key, end_side, attribute_sort_order)",
+          "table": "public.association_uniqueness_attribute",
+          "columns": [
+            "model_key",
+            "association_key",
+            "end_side",
+            "attribute_sort_order"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "association_uniqueness_attribute_association_key_not_null",
+          "type": "n",
+          "def": "NOT NULL association_key",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "association_key"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_attribute_key_not_null",
+          "type": "n",
+          "def": "NOT NULL attribute_key",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "attribute_key"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_attribute_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL attribute_sort_order",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "attribute_sort_order"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_end_side_not_null",
+          "type": "n",
+          "def": "NOT NULL end_side",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "end_side"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "fk_assoc_uniq_attr_attribute",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "attribute",
+          "columns": [
+            "model_key",
+            "attribute_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "attribute_key"
+          ]
+        },
+        {
+          "name": "fk_assoc_uniq_attr_association",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, association_key) REFERENCES association(model_key, association_key) ON DELETE CASCADE",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "association",
+          "columns": [
+            "model_key",
+            "association_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "association_key"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, association_key, end_side, attribute_sort_order)",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "association_key",
+            "end_side",
+            "attribute_sort_order"
           ]
         }
       ]
@@ -7343,6 +7452,36 @@
       "def": "FOREIGN KEY (model_key, to_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.association_uniqueness_attribute",
+      "columns": [
+        "model_key",
+        "attribute_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.attribute",
+      "parent_columns": [
+        "model_key",
+        "attribute_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.association_uniqueness_attribute",
+      "columns": [
+        "model_key",
+        "association_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.association",
+      "parent_columns": [
+        "model_key",
+        "association_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, association_key) REFERENCES association(model_key, association_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.association_invariant",
       "columns": [
         "model_key",
@@ -8185,6 +8324,13 @@
       "values": [
         "person",
         "system"
+      ]
+    },
+    {
+      "name": "public.association_end",
+      "values": [
+        "from",
+        "to"
       ]
     },
     {

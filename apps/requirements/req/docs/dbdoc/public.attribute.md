@@ -8,8 +8,8 @@ An attribute of a class.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) | [public.logic](public.logic.md) [public.data_type](public.data_type.md) [public.class](public.class.md) | The model this class attribute is part of. |
-| attribute_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) |  | The internal ID. |
+| model_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) [public.association_uniqueness_attribute](public.association_uniqueness_attribute.md) | [public.logic](public.logic.md) [public.data_type](public.data_type.md) [public.class](public.class.md) | The model this class attribute is part of. |
+| attribute_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) [public.association_uniqueness_attribute](public.association_uniqueness_attribute.md) |  | The internal ID. |
 | class_key | text |  | false |  | [public.class](public.class.md) | The class this attribute is part of. |
 | sort_order | integer |  | false |  |  | Zero-based position of this attribute within its class; preserves source declaration order. |
 | name | text |  | false |  |  | The unique name of the attribute within the class. |
