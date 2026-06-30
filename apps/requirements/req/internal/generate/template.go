@@ -157,11 +157,13 @@ var _funcMap = template.FuncMap{
 		}
 		return activeParseIssues.ClassMarker(classKey)
 	},
-	"expression_spec_display":            expressionSpecDisplay,
-	"expression_spec_bold_display":       expressionSpecBoldDisplay,
-	"expression_spec_bold_indented_line": expressionSpecBoldIndentedLine,
-	"logic_markdown_spec_lines":          logicMarkdownSpecLines,
-	"derivation_policy_markdown_html":    derivationPolicyMarkdownHTML,
+	"expression_spec_display":                   expressionSpecDisplay,
+	"expression_spec_bold_display":              expressionSpecBoldDisplay,
+	"expression_spec_bold_indented_line":        expressionSpecBoldIndentedLine,
+	"logic_markdown_spec_lines":                 logicMarkdownSpecLines,
+	"class_logic_markdown_spec_lines":           logicMarkdownSpecLinesForClass,
+	"derivation_policy_markdown_html":           derivationPolicyMarkdownHTML,
+	"derivation_policy_markdown_html_for_class": derivationPolicyMarkdownHTMLForClass,
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
@@ -447,9 +449,10 @@ var _funcMap = template.FuncMap{
 		})
 		return results
 	},
-	"class_indexes":                 classIndexListings,
-	"class_attribute_table_name":    classAttributeTableName,
-	"attribute_comments_invariants": attributeCommentsInvariants,
+	"class_indexes":                           classIndexListings,
+	"class_attribute_table_name":              classAttributeTableName,
+	"attribute_comments_invariants":           attributeCommentsInvariants,
+	"attribute_comments_invariants_for_class": attributeCommentsInvariantsForClass,
 	"class_outgoing_associations_with_invariants": func(reqs *req_flat.Requirements, classKey identity.Key) []model_class.Association {
 		return reqs.ClassOutgoingAssociationsWithInvariants(classKey)
 	},

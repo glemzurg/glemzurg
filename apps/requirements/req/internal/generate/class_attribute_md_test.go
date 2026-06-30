@@ -46,9 +46,21 @@ func TestAttributeCommentsInvariantsRendersDetailsAndInvariantSpec(t *testing.T)
 		),
 	})
 
-	got := attributeCommentsInvariants(attr)
+	jurisdictionCodeAttr := helper.Must(model_class.NewAttribute(
+		helper.Must(identity.NewAttributeKey(classKey, "jurisdiction_code")),
+		model_class.AttributeDetails{Name: "Jurisdiction Code", Details: ""},
+		"unconstrained",
+		nil,
+		true,
+		model_class.AttributeAnnotations{},
+	))
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
+	class.SetAttributes([]model_class.Attribute{jurisdictionCodeAttr, attr})
+
+	got := attributeCommentsInvariantsForClass(class, attr)
 	require.Contains(t, got, "A social-only jurisdiction only allows social currencies.")
-	require.Contains(t, got, "If no jurisdiction then we must be social.<br>**IF self.jurisdiction_code = NULL THEN self.social_only = TRUE ELSE TRUE**")
+	require.Contains(t, got, "If no jurisdiction then we must be social.<br>**IF self.JurisdictionCode = NULL THEN self.IsSocialOnly = TRUE ELSE TRUE**")
 	require.NotContains(t, got, "- If no jurisdiction")
 	require.Contains(t, got, "<br><br>")
 }
@@ -94,10 +106,22 @@ func TestAttributeCommentsInvariantsSeparatesMultipleInvariants(t *testing.T) {
 		),
 	})
 
-	got := attributeCommentsInvariants(attr)
-	require.Contains(t, got, "Allowed jurisdiction.<br>**IF self.jurisdiction_code = NULL THEN TRUE ELSE self.jurisdiction_code")
+	socialOnlyAttr := helper.Must(model_class.NewAttribute(
+		helper.Must(identity.NewAttributeKey(classKey, "social_only")),
+		model_class.AttributeDetails{Name: "Is Social Only", Details: ""},
+		"enum of TRUE, FALSE",
+		nil,
+		false,
+		model_class.AttributeAnnotations{},
+	))
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
+	class.SetAttributes([]model_class.Attribute{attr, socialOnlyAttr})
+
+	got := attributeCommentsInvariantsForClass(class, attr)
+	require.Contains(t, got, "Allowed jurisdiction.<br>**IF self.JurisdictionCode = NULL THEN TRUE ELSE self.JurisdictionCode")
 	require.Contains(t, got, "_JurisdictionCodes**")
-	require.Contains(t, got, "Null code implies social only.<br>**IF self.jurisdiction_code = NULL THEN self.social_only = TRUE ELSE TRUE**")
+	require.Contains(t, got, "Null code implies social only.<br>**IF self.JurisdictionCode = NULL THEN self.IsSocialOnly = TRUE ELSE TRUE**")
 	require.Contains(t, got, "_JurisdictionCodes**<br><br>Null code")
 	require.NotContains(t, got, "- Allowed")
 }

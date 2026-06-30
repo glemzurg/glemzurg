@@ -13,6 +13,12 @@ func TestAssociationTLAFieldName(t *testing.T) {
 	require.Equal(t, "ConfiguresCustomersFor", AssociationTLAFieldName("Configures Customers For"))
 }
 
+func TestAttributeTLAFieldName(t *testing.T) {
+	require.Equal(t, "Amount", AttributeTLAFieldName("Amount"))
+	require.Equal(t, "JurisdictionCode", AttributeTLAFieldName("Jurisdiction Code"))
+	require.Equal(t, "IsSocialOnly", AttributeTLAFieldName("Is Social Only"))
+}
+
 func TestOutgoingAssociationTLAFieldSet(t *testing.T) {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s"))
 	fromKey := helper.Must(identity.NewClassKey(subdomainKey, "container"))

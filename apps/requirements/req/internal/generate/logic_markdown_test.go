@@ -4,8 +4,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/require"
 )
@@ -36,6 +38,35 @@ func TestLogicMarkdownSpecLinesBoldsStateChangeAssignment(t *testing.T) {
 
 	got := logicMarkdownSpecLines(logic)
 	require.Equal(t, "    - **name' = Name**", got)
+}
+
+func TestLogicMarkdownSpecLinesForClassRewritesSelfFields(t *testing.T) {
+	classKey := helper.Must(identity.NewClassKey(
+		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("finance")), "wallet")),
+		"account_balance_change",
+	))
+	logic := model_logic.NewLogic(
+		identity.Key{},
+		model_logic.LogicTypeAssessment,
+		"Amount cannot be zero.",
+		"",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount /= 0"},
+		nil,
+	)
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Account Balance Change"})
+	class.SetAttributes([]model_class.Attribute{
+		helper.Must(model_class.NewAttribute(
+			helper.Must(identity.NewAttributeKey(classKey, "amount")),
+			model_class.AttributeDetails{Name: "Amount", Details: ""},
+			"",
+			nil,
+			false,
+			model_class.AttributeAnnotations{},
+		)),
+	})
+
+	got := logicMarkdownSpecLinesForClass(class, logic)
+	require.Equal(t, "    - **self.Amount /= 0**", got)
 }
 
 func TestLogicMarkdownSpecLinesBoldsLetBinding(t *testing.T) {

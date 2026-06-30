@@ -47,6 +47,21 @@ func attributeIndexBracketSuffix(indexNums []uint) string {
 	return " [" + strings.Join(labels, ",") + "]"
 }
 
+// attributeCommentsInvariantsForClass renders attribute details and invariants for the attributes table.
+func attributeCommentsInvariantsForClass(class model_class.Class, attr model_class.Attribute) string {
+	var parts []string
+	if details := strings.TrimSpace(attr.Details); details != "" {
+		parts = append(parts, details)
+	}
+	if len(attr.Invariants) > 0 {
+		if len(parts) > 0 {
+			parts = append(parts, "")
+		}
+		parts = append(parts, logicListMarkdownHTMLForClass(class, attr.Invariants)...)
+	}
+	return strings.Join(parts, "<br>")
+}
+
 // attributeCommentsInvariants renders attribute details and invariants for the attributes table.
 func attributeCommentsInvariants(attr model_class.Attribute) string {
 	var parts []string
@@ -62,6 +77,17 @@ func attributeCommentsInvariants(attr model_class.Attribute) string {
 	return strings.Join(parts, "<br>")
 }
 
+func logicListMarkdownHTMLForClass(class model_class.Class, logics []model_logic.Logic) []string {
+	parts := make([]string, 0, len(logics)*3)
+	for i, logic := range logics {
+		if i > 0 {
+			parts = append(parts, "")
+		}
+		parts = append(parts, logicInvariantMarkdownHTMLForClass(class, logic)...)
+	}
+	return parts
+}
+
 func logicListMarkdownHTML(logics []model_logic.Logic) []string {
 	parts := make([]string, 0, len(logics)*3)
 	for i, logic := range logics {
@@ -69,6 +95,22 @@ func logicListMarkdownHTML(logics []model_logic.Logic) []string {
 			parts = append(parts, "")
 		}
 		parts = append(parts, logicInvariantMarkdownHTML(logic)...)
+	}
+	return parts
+}
+
+func logicInvariantMarkdownHTMLForClass(class model_class.Class, logic model_logic.Logic) []string {
+	var parts []string
+	if desc := strings.TrimSpace(logic.Description); desc != "" {
+		parts = append(parts, desc)
+	}
+	if specLine := logicBoldSpecTextForClass(class, logic); specLine != "" {
+		parts = append(parts, specLine)
+	}
+	if logic.Target != "" && logic.TargetTypeSpec != nil {
+		if typeSpec := strings.TrimSpace(logic.TargetTypeSpec.Specification); typeSpec != "" {
+			parts = append(parts, "Type: "+typeSpec)
+		}
 	}
 	return parts
 }
