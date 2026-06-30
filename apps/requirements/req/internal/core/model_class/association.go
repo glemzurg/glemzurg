@@ -101,8 +101,10 @@ func (a *Association) Validate(ctx *coreerr.ValidationContext) error {
 	if err := a.ToMultiplicity.Validate(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.AssocToMultInvalid, fmt.Sprintf("ToMultiplicity: %s", err.Error()), "ToMultiplicity")
 	}
-	if err := a.Validate(ctx); err != nil {
-		return err
+	if a.Uniqueness != nil {
+		if err := a.Uniqueness.Validate(ctx); err != nil {
+			return err
+		}
 	}
 	// Validate AssociationClassKey FK key type and constraints.
 	if a.AssociationClassKey != nil {

@@ -9,76 +9,49 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestAssociationUniquenessConstraintSuite(t *testing.T) {
-	suite.Run(t, new(AssociationUniquenessConstraintSuite))
+func TestAssociationUniquenessSuite(t *testing.T) {
+	suite.Run(t, new(AssociationUniquenessSuite))
 }
 
-type AssociationUniquenessConstraintSuite struct {
+type AssociationUniquenessSuite struct {
 	suite.Suite
 }
 
-func (suite *AssociationUniquenessConstraintSuite) TestValidate() {
+func (suite *AssociationUniquenessSuite) TestValidate() {
 	jurisdictionAttrKey := helper.Must(identity.ParseKey("domain/d/subdomain/s/class/jurisdiction/attribute/jurisdiction_code"))
+	currencyAttrKey := helper.Must(identity.ParseKey("domain/d/subdomain/s/class/currency/attribute/abbr"))
+
 	tests := []struct {
 		name       string
-		constraint AssociationUniquenessConstraint
+		uniqueness AssociationUniqueness
 		errstr     string
 	}{
 		{
-			name: "valid per_from_instance",
-			constraint: NewAssociationUniquenessConstraint(
-				AssociationUniquenessScopePerFromInstance,
-				AssociationUniquenessKey{ToAttributeKeys: []identity.Key{jurisdictionAttrKey}},
-				0,
+			name: "valid to attributes only",
+			uniqueness: NewAssociationUniqueness(
+				nil,
+				[]identity.Key{jurisdictionAttrKey},
 			),
 		},
 		{
-			name: "valid global composite",
-			constraint: NewAssociationUniquenessConstraint(
-				AssociationUniquenessScopeGlobal,
-				AssociationUniquenessKey{
-					FromAttributeKeys: []identity.Key{helper.Must(identity.ParseKey("domain/d/subdomain/s/class/currency/attribute/abbr"))},
-					ToAttributeKeys:   []identity.Key{jurisdictionAttrKey},
-				},
-				2,
+			name: "valid composite",
+			uniqueness: NewAssociationUniqueness(
+				[]identity.Key{currencyAttrKey},
+				[]identity.Key{jurisdictionAttrKey},
 			),
 		},
 		{
-			name: "error invalid scope",
-			constraint: AssociationUniquenessConstraint{
-				Scope:    "per_pair",
-				Key:      AssociationUniquenessKey{ToAttributeKeys: []identity.Key{jurisdictionAttrKey}},
-				MaxCount: 1,
-			},
-			errstr: "scope",
-		},
-		{
-			name: "error empty key",
-			constraint: AssociationUniquenessConstraint{
-				Scope:    AssociationUniquenessScopeGlobal,
-				MaxCount: 1,
-			},
-			errstr: "at least one",
-		},
-		{
-			name: "error max zero",
-			constraint: AssociationUniquenessConstraint{
-				Scope:    AssociationUniquenessScopeGlobal,
-				Key:      AssociationUniquenessKey{ToAttributeKeys: []identity.Key{jurisdictionAttrKey}},
-				MaxCount: 0,
-			},
-			errstr: "max must be at least 1",
+			name:       "error empty keys",
+			uniqueness: AssociationUniqueness{},
+			errstr:     "at least one",
 		},
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
 			ctx := coreerr.NewContext("test", "")
-			err := tc.constraint.Validate(ctx)
+			err := tc.uniqueness.Validate(ctx)
 			if tc.errstr == "" {
 				suite.Require().NoError(err)
-				if tc.constraint.MaxCount == 0 {
-					suite.Equal(uint(1), NewAssociationUniquenessConstraint(tc.constraint.Scope, tc.constraint.Key, 0).MaxCount)
-				}
 			} else {
 				suite.Require().ErrorContains(err, tc.errstr)
 			}
@@ -86,7 +59,7 @@ func (suite *AssociationUniquenessConstraintSuite) TestValidate() {
 	}
 }
 
-func (suite *AssociationUniquenessConstraintSuite) TestValidateAttributeReferences() {
+func (suite *AssociationUniquenessSuite) TestValidateAttributeReferences() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	partnerKey := helper.Must(identity.NewClassKey(subdomainKey, "partner"))
@@ -100,19 +73,11 @@ func (suite *AssociationUniquenessConstraintSuite) TestValidateAttributeReferenc
 		helper.Must(NewAttribute(jurisdictionAttrKey, AttributeDetails{Name: "Jurisdiction Code"}, "unconstrained", nil, true, AttributeAnnotations{})),
 	})
 
-	constraint := NewAssociationUniquenessConstraint(
-		AssociationUniquenessScopePerFromInstance,
-		AssociationUniquenessKey{ToAttributeKeys: []identity.Key{jurisdictionAttrKey}},
-		1,
-	)
+	uniqueness := NewAssociationUniqueness(nil, []identity.Key{jurisdictionAttrKey})
 	ctx := coreerr.NewContext("test", "")
-	suite.Require().NoError(constraint.ValidateAttributeReferences(ctx, partner, jurisdiction))
+	suite.Require().NoError(uniqueness.ValidateAttributeReferences(ctx, partner, jurisdiction))
 
-	bad := NewAssociationUniquenessConstraint(
-		AssociationUniquenessScopePerFromInstance,
-		AssociationUniquenessKey{ToAttributeKeys: []identity.Key{missingAttrKey}},
-		1,
-	)
+	bad := NewAssociationUniqueness(nil, []identity.Key{missingAttrKey})
 	err := bad.ValidateAttributeReferences(ctx, partner, jurisdiction)
 	suite.Require().ErrorContains(err, "missing")
 }

@@ -132,21 +132,15 @@ func (suite *AssociationSuite) TestValidate() {
 			errstr: "AssociationClassKey cannot be the same as ToClassKey",
 		},
 		{
-			testName: "error invalid uniqueness scope",
+			testName: "error empty uniqueness keys",
 			association: Association{
 				Key:          validKey,
 				Name:         "Name",
 				FromClassKey: fromClassKey,
 				ToClassKey:   toClassKey,
-				UniquenessConstraints: []AssociationUniquenessConstraint{{
-					Scope: "invalid",
-					Key: AssociationUniquenessKey{
-						ToAttributeKeys: []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))},
-					},
-					MaxCount: 1,
-				}},
+				Uniqueness:   &AssociationUniqueness{},
 			},
-			errstr: "scope",
+			errstr: "at least one",
 		},
 		{
 			testName: "error AssociationClassKey wrong key type",
@@ -189,25 +183,19 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	constraint := NewAssociationUniquenessConstraint(
-		AssociationUniquenessScopePerFromInstance,
-		AssociationUniquenessKey{
-			ToAttributeKeys: []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))},
-		},
-		1,
-	)
-	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, AssociationOptions{AssociationClassKey: &assocClassKey, UniquenessConstraints: []AssociationUniquenessConstraint{constraint}, UmlComment: "UmlComment"})
+	uniqueness := NewAssociationUniqueness(nil, []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))})
+	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, AssociationOptions{AssociationClassKey: &assocClassKey, Uniqueness: &uniqueness, UmlComment: "UmlComment"})
 	suite.Equal(Association{
-		Key:                   key,
-		Name:                  "Name",
-		Details:               "Details",
-		FromClassKey:          fromClassKey,
-		FromMultiplicity:      multiplicity,
-		ToClassKey:            toClassKey,
-		ToMultiplicity:        multiplicity,
-		UniquenessConstraints: []AssociationUniquenessConstraint{constraint},
-		AssociationClassKey:   &assocClassKey,
-		UmlComment:            "UmlComment",
+		Key:                 key,
+		Name:                "Name",
+		Details:             "Details",
+		FromClassKey:        fromClassKey,
+		FromMultiplicity:    multiplicity,
+		ToClassKey:          toClassKey,
+		ToMultiplicity:      multiplicity,
+		Uniqueness:          &uniqueness,
+		AssociationClassKey: &assocClassKey,
+		UmlComment:          "UmlComment",
 	}, assoc)
 }
 
