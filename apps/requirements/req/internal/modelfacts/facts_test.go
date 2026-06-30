@@ -306,6 +306,89 @@ func TestAssociationFactsForSubdomain_testModel(t *testing.T) {
 	assert.Contains(t, joined, "each customer links to one or more orders")
 	assert.Contains(t, joined, "each product (product has line items) links to one or more line items")
 	assert.Contains(t, joined, "each line item links to exactly one product")
+	assert.Contains(t, joined, "each order–customer pairing has this uniqueness → Customer Code")
+}
+
+func TestFormatAssociationUniquenessDisplay(t *testing.T) {
+	t.Parallel()
+
+	domainKey := helper.Must(identity.NewDomainKey("domain_a"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "sub_a"))
+	orderKey := helper.Must(identity.NewClassKey(subdomainKey, "order"))
+	customerKey := helper.Must(identity.NewClassKey(subdomainKey, "customer"))
+	productKey := helper.Must(identity.NewClassKey(subdomainKey, "product"))
+	shipmentKey := helper.Must(identity.NewClassKey(subdomainKey, "shipment"))
+
+	orderDateKey := helper.Must(identity.NewAttributeKey(orderKey, "order_date"))
+	customerCodeKey := helper.Must(identity.NewAttributeKey(customerKey, "customer_code"))
+	productNameKey := helper.Must(identity.NewAttributeKey(productKey, "name"))
+	trackingKey := helper.Must(identity.NewAttributeKey(shipmentKey, "tracking_id"))
+
+	order := model_class.NewClass(orderKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Order"})
+	order.SetAttributes([]model_class.Attribute{
+		mustAttribute(orderDateKey, "Order Date"),
+	})
+	customer := model_class.NewClass(customerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Customer"})
+	customer.SetAttributes([]model_class.Attribute{
+		mustAttribute(customerCodeKey, "Customer Code"),
+	})
+	product := model_class.NewClass(productKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Product"})
+	product.SetAttributes([]model_class.Attribute{
+		mustAttribute(productNameKey, "Product Name"),
+	})
+	shipment := model_class.NewClass(shipmentKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Shipment"})
+	shipment.SetAttributes([]model_class.Attribute{
+		mustAttribute(trackingKey, "Tracking ID"),
+	})
+
+	cases := []struct {
+		name       string
+		uniqueness model_class.AssociationUniqueness
+		fromClass  model_class.Class
+		toClass    model_class.Class
+		want       string
+	}{
+		{
+			name:       "to only",
+			uniqueness: model_class.NewAssociationUniqueness(nil, []identity.Key{customerCodeKey}),
+			fromClass:  order,
+			toClass:    customer,
+			want:       "→ Customer Code",
+		},
+		{
+			name:       "from only",
+			uniqueness: model_class.NewAssociationUniqueness([]identity.Key{productNameKey}, nil),
+			fromClass:  product,
+			toClass:    model_class.NewClass(helper.Must(identity.NewClassKey(subdomainKey, "shelf")), model_class.ClassLinks{}, model_class.ClassDetails{Name: "Shelf"}),
+			want:       "Product Name →",
+		},
+		{
+			name: "both sides",
+			uniqueness: model_class.NewAssociationUniqueness(
+				[]identity.Key{orderDateKey},
+				[]identity.Key{trackingKey},
+			),
+			fromClass: order,
+			toClass:   shipment,
+			want:      "Order Date → Tracking ID",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := formatAssociationUniquenessDisplay(&tc.uniqueness, tc.fromClass, tc.toClass)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func mustAttribute(key identity.Key, name string) model_class.Attribute {
+	attr, err := model_class.NewAttribute(key, model_class.AttributeDetails{Name: name, Details: ""}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
+	if err != nil {
+		panic(err)
+	}
+	return attr
 }
 
 func TestIndexFactsForSubdomain_testModel(t *testing.T) {

@@ -213,8 +213,10 @@ func FormatAssociationFact(assoc model_class.Association, fromClass, toClass mod
 		b.WriteString(" is a ")
 		b.WriteString(classPhrase(associationClass.Name).lower())
 	}
-	if uniq := associationUniquenessFact(assoc.Uniqueness, fromPhrase, toPhrase); uniq != "" {
-		b.WriteString("; ")
+	if uniq := formatAssociationUniquenessDisplay(assoc.Uniqueness, fromClass, toClass); uniq != "" {
+		b.WriteString("; each ")
+		b.WriteString(pairingPhrase(fromPhrase, toPhrase))
+		b.WriteString(" has this uniqueness ")
 		b.WriteString(uniq)
 	}
 	if details := strings.TrimSpace(assoc.Details); details != "" {
@@ -284,17 +286,6 @@ func FormatIndexFact(className string, attrNames []string) string {
 	return fmt.Sprintf("No %s can share the same %s combination.", classPlural, attrs)
 }
 
-func attributeSubKeysFromKeys(keys []identity.Key) []string {
-	if len(keys) == 0 {
-		return nil
-	}
-	names := make([]string, len(keys))
-	for i, key := range keys {
-		names[i] = key.SubKey
-	}
-	return names
-}
-
 func attributeListPhrase(names []string) string {
 	switch len(names) {
 	case 0:
@@ -308,34 +299,47 @@ func attributeListPhrase(names []string) string {
 	}
 }
 
-func associationUniquenessFact(
+// formatAssociationUniquenessDisplay renders the uniqueness tuple as endpoint attribute
+// names separated by →. Blank sides stay empty when that endpoint lists no attributes.
+func formatAssociationUniquenessDisplay(
 	uniqueness *model_class.AssociationUniqueness,
-	fromPhrase, toPhrase classPhrase,
+	fromClass, toClass model_class.Class,
 ) string {
 	if uniqueness == nil {
 		return ""
 	}
-	fromAttrs := attributeListPhrase(attributeSubKeysFromKeys(uniqueness.FromAttributeKeys))
-	toAttrs := attributeListPhrase(attributeSubKeysFromKeys(uniqueness.ToAttributeKeys))
-	maxPhrase := "at most one"
-
+	fromAttrs := attributeListPhrase(attributeNamesFromClass(fromClass, uniqueness.FromAttributeKeys))
+	toAttrs := attributeListPhrase(attributeNamesFromClass(toClass, uniqueness.ToAttributeKeys))
 	switch {
-	case fromAttrs != "" && toAttrs != "":
-		return fmt.Sprintf("%s link may share the same %s and %s combination", capitalize(maxPhrase), fromAttrs, toAttrs)
-	case toAttrs != "":
-		return fmt.Sprintf("no %s may link to more than one %s with the same %s", fromPhrase.plural(), toPhrase.lower(), toAttrs)
-	case fromAttrs != "":
-		return fmt.Sprintf("no %s may link to more than one %s with the same %s", toPhrase.plural(), fromPhrase.lower(), fromAttrs)
-	default:
+	case fromAttrs == "" && toAttrs == "":
 		return ""
+	case fromAttrs == "":
+		return "→ " + toAttrs
+	case toAttrs == "":
+		return fromAttrs + " →"
+	default:
+		return fromAttrs + " → " + toAttrs
 	}
 }
 
-func capitalize(s string) string {
-	if s == "" {
-		return s
+func attributeNamesFromClass(class model_class.Class, keys []identity.Key) []string {
+	if len(keys) == 0 {
+		return nil
 	}
-	return strings.ToUpper(s[:1]) + s[1:]
+	names := make([]string, 0, len(keys))
+	for _, key := range keys {
+		names = append(names, attributeNameFromClass(class, key))
+	}
+	return names
+}
+
+func attributeNameFromClass(class model_class.Class, attrKey identity.Key) string {
+	for _, attr := range class.Attributes {
+		if attr.Key == attrKey {
+			return attr.Name
+		}
+	}
+	return attrKey.SubKey
 }
 
 func endConstraint(m model_class.Multiplicity, subject, object classPhrase, assocName string) string {
