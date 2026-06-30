@@ -195,7 +195,12 @@ func (e *StepExecutor) executeTransition(
 		return nil, err
 	}
 
-	// 5. Handle creation chains (if creation).
+	// 5. Record association peer effects from the transition action (set-add / set-map).
+	if err := e.appendAssociationPeerCascades(step, result, simState); err != nil {
+		return nil, err
+	}
+
+	// 6. Handle creation chains (if creation).
 	if err := e.handleCreationChain(result, simState, step); err != nil {
 		return nil, err
 	}

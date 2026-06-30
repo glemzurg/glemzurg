@@ -77,14 +77,14 @@ func eventCallArgName(arg me.Expression) (string, bool) {
 
 func (e *ActionExecutor) applyPeerCreations(ctx *ExecutionContext) error {
 	for _, pc := range ctx.GetPeerCreations() {
-		if err := e.applyPeerCreation(pc); err != nil {
+		if err := e.applyPeerCreation(ctx, pc); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (e *ActionExecutor) applyPeerCreation(pc DeferredPeerCreation) error {
+func (e *ActionExecutor) applyPeerCreation(ctx *ExecutionContext, pc DeferredPeerCreation) error {
 	if e.peerCatalog == nil {
 		return fmt.Errorf("peer creation for association %s: catalog not configured", pc.AssocKey.String())
 	}
@@ -101,7 +101,7 @@ func (e *ActionExecutor) applyPeerCreation(pc DeferredPeerCreation) error {
 	}
 	assocKey := pc.AssocKey
 	fromID := pc.FromInstanceID
-	_, err := e.ExecuteTransition(
+	result, err := e.ExecuteTransition(
 		toClass,
 		creationEvent,
 		nil,
@@ -109,5 +109,9 @@ func (e *ActionExecutor) applyPeerCreation(pc DeferredPeerCreation) error {
 		CreationLinkSource{SourceAssocKey: &assocKey, SourceID: &fromID},
 		nil,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, result)
+	return nil
 }

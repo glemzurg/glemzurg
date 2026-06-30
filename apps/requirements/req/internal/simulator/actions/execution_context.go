@@ -111,6 +111,9 @@ type ExecutionContext struct {
 	// peerUpdates fire peer-class events for association set-map guarantees.
 	peerUpdates []DeferredPeerUpdate
 
+	// peerTransitions records peer-class transitions for trace output.
+	peerTransitions []PeerTransitionRecord
+
 	// depth tracks the current call chain depth (for debugging/limits).
 	depth int
 
@@ -197,6 +200,16 @@ func (ctx *ExecutionContext) AddPeerUpdate(pu DeferredPeerUpdate) {
 // GetPeerUpdates returns queued peer updates.
 func (ctx *ExecutionContext) GetPeerUpdates() []DeferredPeerUpdate {
 	return ctx.peerUpdates
+}
+
+// AddPeerTransition records a peer-class transition for cascaded trace output.
+func (ctx *ExecutionContext) AddPeerTransition(rec PeerTransitionRecord) {
+	ctx.peerTransitions = append(ctx.peerTransitions, rec)
+}
+
+// GetPeerTransitions returns recorded peer-class transitions.
+func (ctx *ExecutionContext) GetPeerTransitions() []PeerTransitionRecord {
+	return ctx.peerTransitions
 }
 
 // GetAllSafetyRules returns all queued safety rules.

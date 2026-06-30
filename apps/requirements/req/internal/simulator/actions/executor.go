@@ -28,6 +28,9 @@ type ActionResult struct {
 	// PrimedAssignments contains all state changes grouped by instance ID.
 	PrimedAssignments map[state.InstanceID]map[string]object.Object
 
+	// PeerTransitions records peer-class events fired by association set-add/set-map guarantees.
+	PeerTransitions []PeerTransitionRecord
+
 	// Violations contains any invariant violations detected after state changes.
 	Violations invariants.ViolationErrors
 
@@ -201,6 +204,7 @@ func (e *ActionExecutor) ExecuteAction(
 	return &ActionResult{
 		InstanceID:        instance.ID,
 		PrimedAssignments: ctx.GetAllPrimedAssignments(),
+		PeerTransitions:   ctx.GetPeerTransitions(),
 		Violations:        allViolations,
 		Success:           !allViolations.HasViolations(),
 	}, nil

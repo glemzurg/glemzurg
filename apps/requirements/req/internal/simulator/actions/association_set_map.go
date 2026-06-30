@@ -185,14 +185,14 @@ func fillEventParamsFromBindings(
 
 func (e *ActionExecutor) applyPeerUpdates(ctx *ExecutionContext) error {
 	for _, pu := range ctx.GetPeerUpdates() {
-		if err := e.applyPeerUpdate(pu); err != nil {
+		if err := e.applyPeerUpdate(ctx, pu); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (e *ActionExecutor) applyPeerUpdate(pu DeferredPeerUpdate) error {
+func (e *ActionExecutor) applyPeerUpdate(ctx *ExecutionContext, pu DeferredPeerUpdate) error {
 	if e.peerCatalog == nil {
 		return fmt.Errorf("peer update: catalog not configured")
 	}
@@ -208,7 +208,7 @@ func (e *ActionExecutor) applyPeerUpdate(pu DeferredPeerUpdate) error {
 	if instance == nil {
 		return fmt.Errorf("peer update: instance %d not found", pu.PeerInstanceID)
 	}
-	_, err := e.ExecuteTransition(
+	result, err := e.ExecuteTransition(
 		toClass,
 		event,
 		instance,
@@ -216,5 +216,9 @@ func (e *ActionExecutor) applyPeerUpdate(pu DeferredPeerUpdate) error {
 		CreationLinkSource{SourceAssocKey: nil, SourceID: nil},
 		nil,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	e.recordPeerTransition(ctx, toClass, event, pu.Params, result)
+	return nil
 }

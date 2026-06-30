@@ -201,6 +201,61 @@ func (s *TraceSuite) TestCascadedSteps() {
 	s.Equal(uint64(2), cascaded.InstanceID)
 }
 
+func (s *TraceSuite) TestNestedAssociationPeerCascadesFormatText() {
+	fromKey := mustKey("domain/finance/subdomain/wallet/class/currency_wallet_definition")
+	toKey := mustKey("domain/finance/subdomain/wallet/class/social_currency_behavior")
+	grandKey := mustKey("domain/finance/subdomain/wallet/class/grandchild")
+
+	result := &engine.SimulationResult{
+		StepsTaken:        1,
+		TerminationReason: "max_steps",
+		Steps: []*engine.SimulationStep{
+			{
+				StepNumber: 95,
+				Kind:       engine.StepKindNormal,
+				ClassKey:   fromKey,
+				ClassName:  "Currency Wallet Definition",
+				EventName:  "SetSocialBehavior",
+				InstanceID: 28,
+				FromState:  "Active",
+				ToState:    "Active",
+				CascadedSteps: []*engine.SimulationStep{
+					{
+						Kind:       engine.StepKindNormal,
+						ClassKey:   toKey,
+						ClassName:  "Social Currency Behavior",
+						EventName:  "Update",
+						InstanceID: 12,
+						FromState:  "Active",
+						ToState:    "Active",
+						Parameters: map[string]object.Object{
+							"MinimumBalance": object.NewInteger(81),
+							"TopoffBalance":  object.NewInteger(38),
+						},
+						CascadedSteps: []*engine.SimulationStep{
+							{
+								Kind:       engine.StepKindNormal,
+								ClassKey:   grandKey,
+								ClassName:  "Grandchild",
+								EventName:  "Update",
+								InstanceID: 99,
+								FromState:  "Active",
+								ToState:    "Active",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	text := FromResult(result).FormatText()
+	s.Contains(text, "[95] Currency Wallet Definition#28: Active -> Active (event: SetSocialBehavior)")
+	s.Contains(text, "Social Currency Behavior#12: Active -> Active (event: Update)")
+	s.Contains(text, "params: MinimumBalance=81, TopoffBalance=38")
+	s.Contains(text, "Grandchild#99: Active -> Active (event: Update)")
+}
+
 func (s *TraceSuite) TestStepWithViolations() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 
