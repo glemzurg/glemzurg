@@ -73,23 +73,8 @@ func (a *Action) Validate(ctx *coreerr.ValidationContext) error {
 			reqLetTargets[req.Target] = true
 		}
 	}
-	guarTargets := make(map[string]bool)
-	for i, guar := range a.Guarantees {
-		childCtx := ctx.Child("guarantees", fmt.Sprintf("%d", i))
-		if err := guar.Validate(childCtx); err != nil {
-			return err
-		}
-		if guar.Type != model_logic.LogicTypeStateChange && guar.Type != model_logic.LogicTypeLet {
-			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeTypeInvalid, fmt.Sprintf("guarantee %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, guar.Type), "Guarantees", guar.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeStateChange, model_logic.LogicTypeLet))
-		}
-		// Each guarantee and let must set a unique target.
-		if guarTargets[guar.Target] {
-			if guar.Type == model_logic.LogicTypeLet {
-				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateLet, fmt.Sprintf("guarantee %d: duplicate let target %q", i, guar.Target), "Guarantees", guar.Target, "")
-			}
-			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateTarget, fmt.Sprintf("guarantee %d: duplicate target %q — each attribute can only be set once per action", i, guar.Target), "Guarantees", guar.Target, "")
-		}
-		guarTargets[guar.Target] = true
+	if err := validateActionGuarantees(ctx, a.Guarantees); err != nil {
+		return err
 	}
 	safetyLetTargets := make(map[string]bool)
 	for i, rule := range a.SafetyRules {

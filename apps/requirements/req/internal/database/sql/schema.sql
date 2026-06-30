@@ -20,7 +20,7 @@ COMMENT ON COLUMN model.unfinished_notes IS 'Scratch notes not yet placed in fin
 CREATE TYPE notation AS ENUM ('tla_plus');
 COMMENT ON TYPE notation IS 'The notation used for a logic or type specification.';
 
-CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value', 'let');
+CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value', 'let', 'delete');
 COMMENT ON TYPE logic_type IS 'The kind of logic specification, each has different rules for well-formedness.';
 
 CREATE TABLE logic (
@@ -34,6 +34,7 @@ CREATE TABLE logic (
   specification text DEFAULT NULL,
   target_type_notation notation DEFAULT NULL,
   target_type_specification text DEFAULT NULL,
+  delete_event_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, logic_key),
   CONSTRAINT fk_logic_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
@@ -49,6 +50,7 @@ COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specifica
 COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
 COMMENT ON COLUMN logic.target_type_notation IS 'Optional notation for the declared type of the logic target (e.g., tla_plus).';
 COMMENT ON COLUMN logic.target_type_specification IS 'Optional type specification string for the logic target (e.g., Int, STRING).';
+COMMENT ON COLUMN logic.delete_event_specification IS 'Optional peer delete event call for delete-type logic (e.g., _delete(b)); uses logic.notation for notation.';
 
 --------------------------------------------------------------
 

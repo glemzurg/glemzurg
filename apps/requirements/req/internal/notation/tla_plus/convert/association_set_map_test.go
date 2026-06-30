@@ -14,31 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAssociationSetMapDeleteGuaranteeTLARoundTrip(t *testing.T) {
-	ctx := associationSetMapDeleteFixture()
-	spec := `{_delete(r) : r \in AppliesSocialCurrencyLogic}`
-
-	astExpr, err := parser.ParseExpression(spec)
-	require.NoError(t, err)
-
-	lowered, err := convert.Lower(astExpr, ctx)
-	require.NoError(t, err)
-
-	setMap, ok := lowered.(*me.SetMap)
-	require.True(t, ok)
-	_, eventCall, ok := model_class.MatchAssociationSetMapExpr(setMap)
-	require.True(t, ok)
-	require.Equal(t, model_state.EventNameDelete, eventCall.EventKey.SubKey)
-
-	raised, err := convert.Raise(lowered, raiseContextForAssociationSetMap(ctx))
-	require.NoError(t, err)
-
-	printed := ast.Print(raised)
-	require.Contains(t, printed, "«delete»")
-	require.NotContains(t, printed, "_delete")
-	require.Contains(t, printed, "AppliesSocialCurrencyLogic")
-}
-
 func TestAssociationSetMapGuaranteeTLARoundTrip(t *testing.T) {
 	ctx := associationSetMapFixture()
 	spec := `{Update(r) : r \in AppliesSocialCurrencyLogic}`

@@ -85,14 +85,14 @@
     },
     "guarantees": {
       "type": "array",
-      "description": "Postconditions that will be true after the action executes successfully. Each guarantee sets one attribute via its 'target' field (the lowercase attribute SubKey). The target separates the left-hand side so the specification contains only the right-hand-side value expression with no primed values (e.g., for 'self.log' = Append(self.log, amount)', use target='log' and specification='Append(self.log, amount)'). Each attribute can only be set once per action. Items may also be 'let' bindings that define local variables for use by subsequent items.",
+      "description": "Postconditions that will be true after the action executes successfully. Each guarantee sets one attribute via its 'target' field (the lowercase attribute SubKey), removes association peers via type 'delete', or defines a local 'let' binding. The target separates the left-hand side so the specification contains only the right-hand-side value expression with no primed values (e.g., for 'self.log' = Append(self.log, amount)', use target='log' and specification='Append(self.log, amount)'). Each state_change target can only be set once per action; each delete target can only appear once. Items may also be 'let' bindings that define local variables for use by subsequent items.",
       "items": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "description": "Required. The logic kind. Use 'state_change' for attribute assignments, 'let' for local variable definitions.",
-            "enum": ["state_change", "let"]
+            "description": "Required. The logic kind. Use 'state_change' for attribute assignments, 'delete' for association peer removal, 'let' for local variable definitions.",
+            "enum": ["state_change", "let", "delete"]
           },
           "description": {
             "type": "string",
@@ -101,7 +101,7 @@
           },
           "target": {
             "type": "string",
-            "description": "Required. For 'state_change': the attribute SubKey being set (e.g., 'shipping', 'status'). For 'let': the local variable name.",
+            "description": "Required. For 'state_change': the attribute SubKey being set (e.g., 'shipping', 'status'). For 'delete': the outgoing association TLA field name. For 'let': the local variable name.",
             "minLength": 1,
             "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
           },
@@ -116,7 +116,11 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation. This must be only the right-hand-side value expression with no primed values. The left-hand side is captured by the 'target' field. For example, for 'self.log' = Append(self.log, amount)', use target='log' and specification='Append(self.log, amount)'."
+            "description": "Optional formal specification in the given notation. For 'state_change' and 'let', this must be only the right-hand-side value expression with no primed values; the left-hand side is captured by the 'target' field. For 'delete', this is the set-filter selection over the association (e.g., '{ b \\in AppliesSocialCurrencyLogic : TRUE }'). Peer _delete calls belong in delete_event, not here."
+          },
+          "delete_event": {
+            "type": "string",
+            "description": "Required for 'delete' type: peer delete event call (e.g., '_delete(b)'). Must be omitted for 'state_change' and 'let'."
           }
         },
         "required": ["type", "description", "target", "notation"],

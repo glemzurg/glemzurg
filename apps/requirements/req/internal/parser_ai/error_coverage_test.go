@@ -218,6 +218,8 @@ func allErrorCodes() map[int]string {
 		ErrLogicTargetNotAllowed:       "ErrLogicTargetNotAllowed",
 		ErrLogicTargetNoLeadUnderscore: "ErrLogicTargetNoLeadUnderscore",
 		ErrLogicTypeRequired:           "ErrLogicTypeRequired",
+		ErrLogicDeleteEventRequired:    "ErrLogicDeleteEventRequired",
+		ErrLogicDeleteEventNotAllowed:  "ErrLogicDeleteEventNotAllowed",
 
 		// Parameter errors (15xxx).
 		ErrParamNameRequired:    "ErrParamNameRequired",
@@ -410,6 +412,6 @@ func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
 	// 240 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 244,
+	s.Len(codes, 246,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }

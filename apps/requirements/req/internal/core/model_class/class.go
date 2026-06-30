@@ -279,6 +279,13 @@ func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAsso
 			if guar.Target == "" {
 				continue
 			}
+			if guar.Type == model_logic.LogicTypeDelete {
+				if !assocTLAFields[guar.Target] {
+					guarCtx := actionCtx.Child("guarantee", fmt.Sprintf("%d", i))
+					return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeDeleteTargetInvalid, fmt.Sprintf("action %q guarantee %d: delete target %q must be an outgoing association on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
+				}
+				continue
+			}
 			if attrSubKeys[guar.Target] || assocTLAFields[guar.Target] {
 				continue
 			}

@@ -1061,10 +1061,15 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		target, _ := itemMap["target"].(string)
 		specification, _ := itemMap["specification"].(string)
 
-		// Detect let type override.
+		// Detect explicit logic type override (let or delete in guarantees).
 		itemType := logicType
-		if typeStr, ok := itemMap["type"].(string); ok && typeStr == "let" {
-			itemType = model_logic.LogicTypeLet
+		if typeStr, ok := itemMap["type"].(string); ok {
+			switch typeStr {
+			case "let":
+				itemType = model_logic.LogicTypeLet
+			case "delete":
+				itemType = model_logic.LogicTypeDelete
+			}
 		}
 
 		key, err := newKey(parentKey, strconv.Itoa(i))
@@ -1089,6 +1094,13 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		logic := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
+		if deleteEvent, _ := itemMap["delete_event"].(string); strings.TrimSpace(deleteEvent) != "" {
+			deleteEventSpec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, deleteEvent, nil)
+			if err != nil {
+				return nil, errors.Wrapf(err, "%s[%d] delete_event", field, i)
+			}
+			logic.SetDeleteEventSpec(deleteEventSpec)
+		}
 		if classInvariantOpts != nil {
 			if overAssociationKeyStr, _ := itemMap["over_association_key"].(string); overAssociationKeyStr != "" {
 				overKey, err := model_class.ResolveClassAssociationKeyFromRelative(classInvariantOpts.subdomainKey, classInvariantOpts.ownerClassKey, overAssociationKeyStr)

@@ -7,8 +7,8 @@
   "properties": {
     "type": {
       "type": "string",
-      "description": "Required. The kind of logic specification. Valid values: 'assessment' (boolean check, no primed values), 'state_change' (attribute assignment — the target field holds the attribute being set, the specification holds only the right-hand-side value expression with no primed values), 'query' (named return value — the target field holds the output identifier, the specification holds the value expression with no primed values), 'safety_rule' (boolean constraint that MAY reference primed values like inventory' >= 0 to express constraints over both prior and new state), 'value' (single unnamed value expression), 'let' (local variable definition: target = expression).",
-      "enum": ["assessment", "state_change", "query", "safety_rule", "value", "let"]
+      "description": "Required. The kind of logic specification. Valid values: 'assessment' (boolean check, no primed values), 'state_change' (attribute assignment — the target field holds the attribute being set, the specification holds only the right-hand-side value expression with no primed values), 'query' (named return value — the target field holds the output identifier, the specification holds the value expression with no primed values), 'safety_rule' (boolean constraint that MAY reference primed values like inventory' >= 0 to express constraints over both prior and new state), 'value' (single unnamed value expression), 'let' (local variable definition: target = expression), 'delete' (association peer removal — target is the outgoing association TLA field, specification is the set-filter selection, delete_event is the peer event call such as _delete(b)).",
+      "enum": ["assessment", "state_change", "query", "safety_rule", "value", "let", "delete"]
     },
     "description": {
       "type": "string",
@@ -17,7 +17,7 @@
     },
     "target": {
       "type": "string",
-      "description": "The target identifier for this logic. The target separates the left-hand side from the specification so that the specification contains only the right-hand-side value expression (no primed values). Required for 'state_change' type (the attribute SubKey being set, e.g., 'shipping', 'status' — so 'self.log' = Append(self.log, amount)' becomes target='log', specification='Append(self.log, amount)'). Required for 'query' type (the output identifier name, e.g., 'result'). Required for 'let' type (the local variable name). Must be empty or omitted for 'assessment', 'safety_rule', and 'value' types.",
+      "description": "The target identifier for this logic. The target separates the left-hand side from the specification so that the specification contains only the right-hand-side value expression (no primed values). Required for 'state_change' type (the attribute SubKey being set, e.g., 'shipping', 'status' — so 'self.log' = Append(self.log, amount)' becomes target='log', specification='Append(self.log, amount)'). Required for 'query' type (the output identifier name, e.g., 'result'). Required for 'let' type (the local variable name). Required for 'delete' type (the outgoing association TLA field name). Must be empty or omitted for 'assessment', 'safety_rule', and 'value' types.",
       "minLength": 1,
       "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
     },
@@ -36,7 +36,11 @@
     },
     "specification": {
       "type": "string",
-      "description": "Optional formal specification in the given notation. This is a machine-readable expression that formally defines the logic. For 'state_change' and 'query' types this must be only the right-hand-side value expression (no primed values) because the left-hand side is captured by the 'target' field. For 'safety_rule' type, primed values ARE allowed (e.g., 'inventory' >= 0') to express constraints over both prior and new state. For 'assessment' and 'value' types, no primed values."
+      "description": "Optional formal specification in the given notation. This is a machine-readable expression that formally defines the logic. For 'state_change' and 'query' types this must be only the right-hand-side value expression (no primed values) because the left-hand side is captured by the 'target' field. For 'delete' type, this is the set-filter selection over the association (e.g., '{ b \\in AppliesSocialCurrencyLogic : TRUE }'). Peer _delete calls belong in delete_event, not here. For 'safety_rule' type, primed values ARE allowed (e.g., 'inventory' >= 0') to express constraints over both prior and new state. For 'assessment' and 'value' types, no primed values."
+    },
+    "delete_event": {
+      "type": "string",
+      "description": "Required for 'delete' type: peer delete event call in the given notation (e.g., '_delete(b)'). Must be omitted for all other types. Inline _delete in specification is not allowed on non-delete logic."
     }
   },
   "required": ["type", "description", "notation"],

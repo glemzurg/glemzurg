@@ -15,6 +15,19 @@ func TestActionSuite(t *testing.T) {
 	suite.Run(t, new(ActionSuite))
 }
 
+func newDeleteGuarantee(key identity.Key, description, target string) model_logic.Logic {
+	logic := model_logic.NewLogic(
+		key,
+		model_logic.LogicTypeDelete,
+		description,
+		target,
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ b \\in " + target + " : TRUE }"},
+		nil,
+	)
+	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "_delete(b)"})
+	return logic
+}
+
 type ActionSuite struct {
 	suite.Suite
 }
@@ -187,7 +200,7 @@ func (suite *ActionSuite) TestValidate() {
 					model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Set x to 1.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 				},
 			},
-			errstr: "guarantee 0: logic kind must be 'state_change' or 'let'",
+			errstr: "guarantee 0: logic kind must be 'state_change', 'let', or 'delete'",
 		},
 		{
 			testName: "error safety rule wrong kind",
@@ -270,7 +283,7 @@ func (suite *ActionSuite) TestValidate() {
 			errstr: "duplicate let target \"a\"",
 		},
 		{
-			testName: "error let target collides with state_change target in guarantees",
+			testName: "valid let and state_change may share target name in guarantees",
 			action: Action{
 				Key:  validKey,
 				Name: "Name",
@@ -279,7 +292,29 @@ func (suite *ActionSuite) TestValidate() {
 					model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local x.", "x", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 				},
 			},
-			errstr: "duplicate let target \"x\"",
+		},
+		{
+			testName: "valid state_change and delete on same association target",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Subtract removed peers.", "AssocField", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "AssocField \\ ToDelete"}, nil),
+					newDeleteGuarantee(guarKey, "Remove peers.", "AssocField"),
+				},
+			},
+		},
+		{
+			testName: "error duplicate delete guarantee target",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					newDeleteGuarantee(guarKey, "Remove peers.", "AssocField"),
+					newDeleteGuarantee(guarKey, "Remove peers again.", "AssocField"),
+				},
+			},
+			errstr: "duplicate delete target",
 		},
 		{
 			testName: "error duplicate let target in safety rules",

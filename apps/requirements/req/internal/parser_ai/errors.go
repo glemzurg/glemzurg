@@ -166,6 +166,8 @@ const (
 	ErrLogicTargetNotAllowed       = 14006
 	ErrLogicTargetNoLeadUnderscore = 14007
 	ErrLogicTypeRequired           = 14008
+	ErrLogicDeleteEventRequired    = 14009
+	ErrLogicDeleteEventNotAllowed  = 14010
 
 	// Parameter errors (15xxx).
 	ErrParamNameRequired    = 15001

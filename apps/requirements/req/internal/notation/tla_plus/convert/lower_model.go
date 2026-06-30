@@ -6,6 +6,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -156,8 +158,15 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 		}
 	}
 	for i := range action.Guarantees {
-		if err := lowerLogicSpec(&action.Guarantees[i].Spec, ctx); err != nil {
+		guar := &action.Guarantees[i]
+		guarCtx := lowerContextWithPriorLetGuarantees(ctx, action.Guarantees[:i])
+		if err := lowerLogicSpec(&guar.Spec, guarCtx); err != nil {
 			return fmt.Errorf("guarantee %d: %w", i, err)
+		}
+		if guar.Type == model_logic.LogicTypeDelete {
+			if err := lowerDeleteGuaranteeEvent(guar, guarCtx); err != nil {
+				return fmt.Errorf("guarantee %d delete_event: %w", i, err)
+			}
 		}
 	}
 	for i := range action.SafetyRules {
@@ -212,6 +221,24 @@ func ContextWithParameters(base *LowerContext, params []model_state.Parameter) *
 		child.Parameters[p.Name] = true
 	}
 	return &child
+}
+
+func lowerContextWithPriorLetGuarantees(base *LowerContext, prior []model_logic.Logic) *LowerContext {
+	ctx := base
+	for i := range prior {
+		if prior[i].Type == model_logic.LogicTypeLet && prior[i].Target != "" {
+			ctx = withLocalVar(ctx, prior[i].Target)
+		}
+	}
+	return ctx
+}
+
+func lowerDeleteGuaranteeEvent(guar *model_logic.Logic, ctx *LowerContext) error {
+	deleteCtx := ctx
+	if sf, ok := guar.Spec.Expression.(*me.SetFilter); ok {
+		deleteCtx = withLocalVar(ctx, sf.Variable)
+	}
+	return lowerLogicSpec(&guar.DeleteEventSpec, deleteCtx)
 }
 
 // lowerLogicSpec parses and lowers a single ExpressionSpec if it has a TLA+ specification

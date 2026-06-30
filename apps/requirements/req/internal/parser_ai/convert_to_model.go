@@ -1407,10 +1407,14 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 // resolveLogicType returns the logic type from the input if specified as "let",
 // otherwise returns the default type for the context.
 func resolveLogicType(input *inputLogic, defaultType string) string {
-	if input.Type == model_logic.LogicTypeLet {
+	switch input.Type {
+	case model_logic.LogicTypeLet:
 		return model_logic.LogicTypeLet
+	case model_logic.LogicTypeDelete:
+		return model_logic.LogicTypeDelete
+	default:
+		return defaultType
 	}
-	return defaultType
 }
 
 // convertClassInvariantsToModel converts class invariants, resolving optional over_association_key references.
@@ -1449,6 +1453,13 @@ func convertLogicToModel(input *inputLogic, logicType string, logicKey identity.
 	}
 
 	logic := model_logic.NewLogic(logicKey, logicType, input.Description, input.Target, spec, targetTypeSpec)
+	if strings.TrimSpace(input.DeleteEvent) != "" {
+		deleteEventSpec, err := logic_spec.NewExpressionSpec(input.Notation, input.DeleteEvent, nil)
+		if err != nil {
+			return model_logic.Logic{}, fmt.Errorf("failed to create delete_event spec: %w", err)
+		}
+		logic.SetDeleteEventSpec(deleteEventSpec)
+	}
 	return logic, nil
 }
 

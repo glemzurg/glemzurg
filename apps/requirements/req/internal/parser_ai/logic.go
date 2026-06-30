@@ -11,6 +11,8 @@ import (
 // _LOGIC_TYPE_QUERY is the logic type string for query logic.
 const _LOGIC_TYPE_QUERY = "query"
 
+const _LOGIC_TYPE_DELETE = "delete"
+
 // inputLogic represents a formal logic specification in JSON.
 type inputLogic struct {
 	Type               string `json:"type"`
@@ -20,6 +22,7 @@ type inputLogic struct {
 	OverAssociationKey string `json:"over_association_key,omitempty"`
 	Notation           string `json:"notation,omitempty"`
 	Specification      string `json:"specification,omitempty"`
+	DeleteEvent        string `json:"delete_event,omitempty"`
 }
 
 // logicSchema is the compiled JSON schema for logic objects.
@@ -92,7 +95,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 			ErrLogicTypeRequired,
 			"logic type is required, got ''",
 			filename,
-		).WithField("type").WithHint("add a \"type\" field with one of: assessment, state_change, query, safety_rule, value, let")
+		).WithField("type").WithHint("add a \"type\" field with one of: assessment, state_change, query, safety_rule, value, let, delete")
 	}
 
 	// Description is required (schema enforces this, but we provide a clearer error)
@@ -115,13 +118,28 @@ func validateLogic(logic *inputLogic, filename string) error {
 
 	// Target validation based on logic type (when type is specified).
 	switch logic.Type {
-	case "state_change", _LOGIC_TYPE_QUERY, "let":
+	case "state_change", _LOGIC_TYPE_QUERY, "let", _LOGIC_TYPE_DELETE:
 		if logic.Target == "" {
 			return NewParseError(
 				ErrLogicTargetRequired,
 				"logic of type '"+logic.Type+"' requires a non-empty 'target' field — for state_change this is the attribute SubKey being set, for query this is the output identifier name, for let this is the local variable name",
 				filename,
-			).WithField("target").WithHint("state_change/query/let types require a non-empty \"target\" field")
+			).WithField("target").WithHint("state_change/query/let/delete types require a non-empty \"target\" field")
+		}
+		if logic.Type == _LOGIC_TYPE_DELETE {
+			if strings.TrimSpace(logic.DeleteEvent) == "" {
+				return NewParseError(
+					ErrLogicDeleteEventRequired,
+					"logic of type '"+_LOGIC_TYPE_DELETE+"' requires a non-empty 'delete_event' field",
+					filename,
+				).WithField("delete_event").WithHint("add delete_event with the peer event call, e.g. \"_delete(b)\"")
+			}
+		} else if strings.TrimSpace(logic.DeleteEvent) != "" {
+			return NewParseError(
+				ErrLogicDeleteEventNotAllowed,
+				"only delete logic may declare delete_event, got type '"+logic.Type+"'",
+				filename,
+			).WithField("delete_event").WithHint("remove delete_event or change type to delete")
 		}
 		if (logic.Type == _LOGIC_TYPE_QUERY || logic.Type == "let") && strings.HasPrefix(logic.Target, "_") {
 			return NewParseError(

@@ -459,43 +459,67 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 	if err := evalLetBindings(action.Guarantees, bindings, "action", action.Name, "guarantee"); err != nil {
 		return err
 	}
-	// Pass 2: Evaluate non-let state_change items.
+	// Pass 2: Evaluate non-let guarantees.
 	for i, guar := range action.Guarantees {
-		if guar.Type == model_logic.LogicTypeLet {
-			continue
-		}
-
-		if guar.Target == "" {
-			return fmt.Errorf("action %s guarantee[%d]: target must be set", action.Name, i)
-		}
-		expr := guar.Spec.Expression
-		if expr == nil {
-			return fmt.Errorf("action %s guarantee[%d]: expression not lowered", action.Name, i)
-		}
-		if handled, err := e.tryQueueAssociationAddOrUpdateGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
+		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
 			return err
-		} else if handled {
-			continue
-		}
-		if handled, err := e.tryQueueAssociationSetAddGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
-			return err
-		} else if handled {
-			continue
-		}
-		if handled, err := e.tryQueueAssociationSetMapGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
-			return err
-		} else if handled {
-			continue
-		}
-		rhsValue := evaluator.Eval(expr, bindings)
-		if rhsValue.IsError() {
-			return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", action.Name, i, rhsValue.Error.Inspect())
-		}
-		if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
-			return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
 		}
 	}
 	return nil
+}
+
+func (e *ActionExecutor) evaluateSingleActionGuarantee(
+	ctx *ExecutionContext,
+	actionName string,
+	index int,
+	instance *state.ClassInstance,
+	guar model_logic.Logic,
+	bindings *evaluator.Bindings,
+) error {
+	if guar.Type == model_logic.LogicTypeLet {
+		return nil
+	}
+	if handled, err := e.tryQueueAssociationDeleteGuarantee(ctx, instance, guar, bindings); err != nil {
+		return err
+	} else if handled {
+		return nil
+	}
+	if guar.Target == "" {
+		return fmt.Errorf("action %s guarantee[%d]: target must be set", actionName, index)
+	}
+	expr := guar.Spec.Expression
+	if expr == nil {
+		return fmt.Errorf("action %s guarantee[%d]: expression not lowered", actionName, index)
+	}
+	if handled, err := e.tryQueueAssociationGuaranteeExpr(ctx, instance, guar.Target, expr, bindings); err != nil {
+		return err
+	} else if handled {
+		return nil
+	}
+	rhsValue := evaluator.Eval(expr, bindings)
+	if rhsValue.IsError() {
+		return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", actionName, index, rhsValue.Error.Inspect())
+	}
+	if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
+		return fmt.Errorf("action %s guarantee[%d]: %w", actionName, index, err)
+	}
+	return nil
+}
+
+func (e *ActionExecutor) tryQueueAssociationGuaranteeExpr(
+	ctx *ExecutionContext,
+	instance *state.ClassInstance,
+	target string,
+	expr me.Expression,
+	bindings *evaluator.Bindings,
+) (bool, error) {
+	if handled, err := e.tryQueueAssociationAddOrUpdateGuarantee(ctx, instance, target, expr, bindings); err != nil || handled {
+		return handled, err
+	}
+	if handled, err := e.tryQueueAssociationSetAddGuarantee(ctx, instance, target, expr, bindings); err != nil || handled {
+		return handled, err
+	}
+	return e.tryQueueAssociationSetMapGuarantee(ctx, instance, target, expr, bindings)
 }
 
 // collectActionSafetyRules collects safety rules for deferred evaluation after state changes.
