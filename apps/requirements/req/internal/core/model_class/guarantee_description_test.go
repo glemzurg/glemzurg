@@ -89,6 +89,37 @@ func TestComputedSimpleActionGuaranteeDescription(t *testing.T) {
 	}
 }
 
+func TestComputedAssociationDeleteGuaranteeDescription(t *testing.T) {
+	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s"))
+	fromKey := helper.Must(identity.NewClassKey(subdomainKey, "wallet"))
+	toKey := helper.Must(identity.NewClassKey(subdomainKey, "behavior"))
+	actionKey := helper.Must(identity.NewActionKey(fromKey, "remove"))
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
+
+	assoc := NewAssociation(
+		helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, "applies_social")),
+		AssociationDetails{Name: "Applies Social Currency Logic", Details: ""},
+		AssociationEnd{ClassKey: fromKey, Multiplicity: helper.Must(NewMultiplicity("1"))},
+		AssociationEnd{ClassKey: toKey, Multiplicity: helper.Must(NewMultiplicity("0..1"))},
+		Multiplicity{},
+		AssociationOptions{},
+	)
+
+	guarantee := model_logic.Logic{
+		Key:    guaranteeKey,
+		Type:   model_logic.LogicTypeDelete,
+		Target: "AppliesSocialCurrencyLogic",
+		Spec: logic_spec.ExpressionSpec{
+			Notation:      model_logic.NotationTLAPlus,
+			Specification: `{ b \in AppliesSocialCurrencyLogic : TRUE }`,
+		},
+	}
+
+	desc, ok := ComputedAssociationDeleteGuaranteeDescription(guarantee, map[identity.Key]Association{assoc.Key: assoc})
+	require.True(t, ok)
+	require.Equal(t, "Set Applies Social Currency Logic", desc)
+}
+
 func TestComputedAssociationSetAddGuaranteeDescription(t *testing.T) {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s"))
 	fromKey := helper.Must(identity.NewClassKey(subdomainKey, "container"))

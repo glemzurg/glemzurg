@@ -138,6 +138,12 @@
           "type": "text",
           "nullable": true,
           "comment": "Optional type specification string for the logic target (e.g., Int, STRING)."
+        },
+        {
+          "name": "delete_event_specification",
+          "type": "text",
+          "nullable": true,
+          "comment": "Optional peer delete event call for delete-type logic (e.g., _delete(b)); uses logic.notation for notation."
         }
       ],
       "indexes": [
@@ -8223,6 +8229,7 @@
       "name": "public.logic_type",
       "values": [
         "assessment",
+        "delete",
         "let",
         "query",
         "safety_rule",

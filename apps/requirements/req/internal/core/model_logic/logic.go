@@ -20,7 +20,7 @@ const (
 	LogicTypeSafetyRule  = "safety_rule"  // Boolean check referencing both prior and new state (has primed).
 	LogicTypeValue       = "value"        // Single unnamed value expression (global functions).
 	LogicTypeLet         = "let"          // Local variable definition: target = expression.
-	LogicTypeDelete      = "delete"       // Association peer removal: selection spec + delete_event call.
+	LogicTypeDelete      = "delete"       // Action guarantee only: association peer removal via selection spec + delete_event.
 )
 
 // validLogicTypes is the set of valid Logic.Type values.
@@ -83,6 +83,9 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 	// Type must be a valid value.
 	if !validLogicTypes[l.Type] {
 		return coreerr.NewWithValues(ctx, coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let, delete")
+	}
+	if l.Type == LogicTypeDelete && l.Key.KeyType != identity.KEY_TYPE_ACTION_GUARANTEE {
+		return coreerr.New(ctx, coreerr.LogicDeleteContextInvalid, "delete logic may only appear in action guarantees", "Type")
 	}
 	// Target validation based on logic type.
 	switch l.Type {

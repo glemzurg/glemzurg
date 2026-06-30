@@ -89,6 +89,11 @@ func allCodeConstants() map[string]Code {
 		"LogicTargetTypespecInvalid":         LogicTargetTypespecInvalid,
 		"LogicOverAssociationKeyInvalid":     LogicOverAssociationKeyInvalid,
 		"LogicOverAssociationKeyTypeInvalid": LogicOverAssociationKeyTypeInvalid,
+		"LogicDeleteSelectionRequired":       LogicDeleteSelectionRequired,
+		"LogicDeleteEventRequired":           LogicDeleteEventRequired,
+		"LogicDeleteEventMustBeEmpty":        LogicDeleteEventMustBeEmpty,
+		"LogicPeerDeleteForbidden":           LogicPeerDeleteForbidden,
+		"LogicDeleteContextInvalid":          LogicDeleteContextInvalid,
 
 		// GlobalFunction errors.
 		"GfuncKeyInvalid":       GfuncKeyInvalid,

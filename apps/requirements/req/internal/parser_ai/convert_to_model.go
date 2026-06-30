@@ -1411,7 +1411,10 @@ func resolveLogicType(input *inputLogic, defaultType string) string {
 	case model_logic.LogicTypeLet:
 		return model_logic.LogicTypeLet
 	case model_logic.LogicTypeDelete:
-		return model_logic.LogicTypeDelete
+		if defaultType == model_logic.LogicTypeStateChange {
+			return model_logic.LogicTypeDelete
+		}
+		return defaultType
 	default:
 		return defaultType
 	}

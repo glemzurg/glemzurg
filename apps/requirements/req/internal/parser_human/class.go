@@ -1068,6 +1068,9 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 			case "let":
 				itemType = model_logic.LogicTypeLet
 			case "delete":
+				if logicType != model_logic.LogicTypeStateChange {
+					return nil, errors.Errorf("%s[%d]: type delete is only valid in action guarantees", field, i)
+				}
 				itemType = model_logic.LogicTypeDelete
 			}
 		}

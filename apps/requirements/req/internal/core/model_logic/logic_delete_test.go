@@ -40,6 +40,23 @@ func TestValidateDeleteLogicValid(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestValidateDeleteLogicRejectsQueryGuaranteeKey(t *testing.T) {
+	queryKey := helper.Must(identity.NewQueryKey(helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "c")), "q"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
+	logic := NewLogic(
+		guarKey,
+		LogicTypeDelete,
+		"Remove peers",
+		"AssocField",
+		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ b \in AssocField : TRUE }`},
+		nil,
+	)
+	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: "_delete(b)"})
+	err := logic.Validate(coreerr.NewContext("test", ""))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "action guarantees")
+}
+
 func TestValidateStateChangeRejectsInlinePeerDelete(t *testing.T) {
 	key := helper.Must(identity.NewActionGuaranteeKey(helper.Must(identity.NewActionKey(helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "c")), "a")), "0"))
 	logic := NewLogic(

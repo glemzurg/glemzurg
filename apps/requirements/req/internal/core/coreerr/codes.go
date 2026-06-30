@@ -67,6 +67,7 @@ const (
 	LogicDeleteEventRequired           Code = "LOGIC_DELETE_EVENT_REQUIRED"             // Delete logic requires a non-empty delete_event specification.
 	LogicDeleteEventMustBeEmpty        Code = "LOGIC_DELETE_EVENT_MUST_BE_EMPTY"        // Only delete logic may carry delete_event.
 	LogicPeerDeleteForbidden           Code = "LOGIC_PEER_DELETE_FORBIDDEN"             // Peer _delete must use guarantee type delete, not inline in other logic.
+	LogicDeleteContextInvalid          Code = "LOGIC_DELETE_CONTEXT_INVALID"            // Delete logic may only appear in action guarantees.
 
 	// ---------------------------------------------------------------
 	// GlobalFunction errors.

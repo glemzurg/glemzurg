@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
@@ -49,6 +50,24 @@ func TestLogicMarkdownSpecLinesBoldsLetBinding(t *testing.T) {
 
 	got := logicMarkdownSpecLines(logic)
 	require.Equal(t, "    - **LET total = self.price + self.tax**", got)
+}
+
+func TestLogicMarkdownSpecLinesBoldsDeleteGuarantee(t *testing.T) {
+	logic := model_logic.NewLogic(
+		identity.Key{},
+		model_logic.LogicTypeDelete,
+		"Peer _delete events for removed peers",
+		"AppliesSocialCurrencyLogic",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: `{ b \in AppliesSocialCurrencyLogic : TRUE }`},
+		nil,
+	)
+	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "_delete(b)"})
+
+	got := logicMarkdownSpecLines(logic)
+	require.Equal(t, strings.Join([]string{
+		"    - **AppliesSocialCurrencyLogic' = { b \\in AppliesSocialCurrencyLogic : TRUE }**",
+		"    - Each removed element sent: **«delete»(b)**",
+	}, "\n"), got)
 }
 
 func TestDerivationPolicyMarkdownHTMLBoldsSpec(t *testing.T) {

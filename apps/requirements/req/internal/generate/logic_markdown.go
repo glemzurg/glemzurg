@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 func expressionSpecBoldDisplay(spec logic_spec.ExpressionSpec) string {
@@ -22,7 +23,7 @@ func logicBoldSpecText(logic model_logic.Logic) string {
 			spec = expressionSpecDisplay(logic.Spec)
 		}
 		switch logic.Type {
-		case model_logic.LogicTypeStateChange, model_logic.LogicTypeQuery:
+		case model_logic.LogicTypeStateChange, model_logic.LogicTypeQuery, model_logic.LogicTypeDelete:
 			return "**" + logic.Target + "' = " + spec + "**"
 		case model_logic.LogicTypeLet:
 			return "**LET " + logic.Target + " = " + spec + "**"
@@ -42,12 +43,34 @@ func logicMarkdownSpecLines(logic model_logic.Logic) string {
 	if bold := logicBoldSpecText(logic); bold != "" {
 		lines = append(lines, "    - "+bold)
 	}
+	if logic.Type == model_logic.LogicTypeDelete {
+		if event := strings.TrimSpace(logic.DeleteEventSpec.Specification); event != "" {
+			lines = append(lines, "    - Each removed element sent: "+deleteEventSpecBoldDisplay(logic.DeleteEventSpec))
+		}
+	}
 	if logic.Target != "" && logic.TargetTypeSpec != nil {
 		if typeSpec := strings.TrimSpace(logic.TargetTypeSpec.Specification); typeSpec != "" {
 			lines = append(lines, "    - Type: "+typeSpec)
 		}
 	}
 	return strings.Join(lines, "\n")
+}
+
+// deleteEventSpecBoldDisplay renders delete_event using canonical TLA+ system event spellings.
+func deleteEventSpecBoldDisplay(spec logic_spec.ExpressionSpec) string {
+	display := systemEventCallSpecDisplay(spec.Specification)
+	if display == "" {
+		return ""
+	}
+	displaySpec := logic_spec.ExpressionSpec{Notation: spec.Notation, Specification: display}
+	return expressionSpecBoldDisplay(displaySpec)
+}
+
+func systemEventCallSpecDisplay(specification string) string {
+	display := specification
+	display = strings.ReplaceAll(display, model_state.EventNameNew+"(", model_state.EventTLANameNew+"(")
+	display = strings.ReplaceAll(display, model_state.EventNameDelete+"(", model_state.EventTLANameDelete+"(")
+	return display
 }
 
 func expressionSpecBoldIndentedLine(spec logic_spec.ExpressionSpec) string {

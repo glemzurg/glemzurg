@@ -62,19 +62,17 @@ func ComputedActionGuaranteeDescription(guarantee model_logic.Logic, attributes 
 	return ComputedAssociationSetAddGuaranteeDescription(guarantee, associations)
 }
 
-// ComputedAssociationDeleteGuaranteeDescription derives "Delete from <association name>"
-// for a delete guarantee on an outgoing association field.
+// ComputedAssociationDeleteGuaranteeDescription derives "Set <association name>"
+// for a delete guarantee on an outgoing association field, matching attribute-set display.
 func ComputedAssociationDeleteGuaranteeDescription(guarantee model_logic.Logic, associations map[identity.Key]Association) (string, bool) {
 	if guarantee.Type != model_logic.LogicTypeDelete || guarantee.Target == "" {
 		return "", false
 	}
-	for _, assoc := range associations {
-		if AssociationTLAFieldName(assoc.Name) != guarantee.Target {
-			continue
-		}
-		return "Delete from " + assoc.Name, true
+	assocName := associationDisplayNameForTarget(associations, guarantee.Target)
+	if assocName == "" {
+		return "", false
 	}
-	return "", false
+	return "Set " + assocName, true
 }
 
 // ComputedAssociationSetMapGuaranteeDescription derives "Update <association name>"
@@ -104,6 +102,18 @@ func isAssociationSetAddSpecification(specification string) bool {
 	hasUnion := strings.Contains(lower, `\union`) || strings.Contains(specification, "∪")
 	hasNew := strings.Contains(specification, `_new(`) || strings.Contains(specification, model_state.EventTLANameNew+`(`)
 	return hasUnion && hasNew
+}
+
+func associationDisplayNameForTarget(associations map[identity.Key]Association, target string) string {
+	for _, assoc := range associations {
+		if AssociationTLAFieldName(assoc.Name) != target {
+			continue
+		}
+		if assoc.Name != "" {
+			return assoc.Name
+		}
+	}
+	return ""
 }
 
 func attributeDisplayNameForTarget(attributes []Attribute, target string) string {
