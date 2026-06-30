@@ -204,6 +204,8 @@ func controlFlowExpressionChildren(expr me.Expression) []me.Expression {
 		return []me.Expression{node.Predicate}
 	case *me.SetFilter:
 		return []me.Expression{node.Predicate}
+	case *me.SetMap:
+		return []me.Expression{node.Transform}
 	case *me.Case:
 		children := make([]me.Expression, 0, len(node.Branches)*2+1)
 		for _, branch := range node.Branches {

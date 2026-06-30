@@ -120,7 +120,7 @@ type ActionExecutor struct {
 	dataTypeChecker    *invariants.DataTypeChecker
 	structuralCheckers *invariants.StructuralInvariantCheckers
 	guardEvaluator     *GuardEvaluator
-	acIndex            AssociationClassIndex
+	peerCatalog        PeerCreationCatalog
 	rng                *rand.Rand
 
 	// deferMultiplicityInActionCheck skips implicit multiplicity checks inside
@@ -144,7 +144,7 @@ func NewActionExecutor(
 	runtime InvariantRuntimeCheckers,
 	structuralCheckers *invariants.StructuralInvariantCheckers,
 	guardEvaluator *GuardEvaluator,
-	acIndex AssociationClassIndex,
+	peerCatalog PeerCreationCatalog,
 	rng *rand.Rand,
 ) *ActionExecutor {
 	var classNameMap map[identity.Key]string
@@ -157,7 +157,7 @@ func NewActionExecutor(
 		dataTypeChecker:    runtime.DataType,
 		structuralCheckers: structuralCheckers,
 		guardEvaluator:     guardEvaluator,
-		acIndex:            acIndex,
+		peerCatalog:        peerCatalog,
 		rng:                rng,
 		classNameMap:       classNameMap,
 	}
@@ -189,8 +189,8 @@ func (e *ActionExecutor) ExecuteAction(
 		}, nil
 	}
 
-	// Phase B: Apply ALL primed assignments from the entire chain
-	if err := e.applyPrimedAssignments(ctx); err != nil {
+	// Phase B: Materialize association peer effects, then apply primed assignments.
+	if err := e.finalizeActionStateChanges(ctx); err != nil {
 		return nil, err
 	}
 
@@ -204,6 +204,16 @@ func (e *ActionExecutor) ExecuteAction(
 		Violations:        allViolations,
 		Success:           !allViolations.HasViolations(),
 	}, nil
+}
+
+func (e *ActionExecutor) finalizeActionStateChanges(ctx *ExecutionContext) error {
+	if err := e.applyPeerUpdates(ctx); err != nil {
+		return err
+	}
+	if err := e.applyPeerCreations(ctx); err != nil {
+		return err
+	}
+	return e.applyPrimedAssignments(ctx)
 }
 
 // applyPrimedAssignments applies all primed assignments from the context to simulation state.
@@ -450,6 +460,21 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 		expr := guar.Spec.Expression
 		if expr == nil {
 			return fmt.Errorf("action %s guarantee[%d]: expression not lowered", action.Name, i)
+		}
+		if handled, err := e.tryQueueAssociationAddOrUpdateGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
+			return err
+		} else if handled {
+			continue
+		}
+		if handled, err := e.tryQueueAssociationSetAddGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
+			return err
+		} else if handled {
+			continue
+		}
+		if handled, err := e.tryQueueAssociationSetMapGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
+			return err
+		} else if handled {
+			continue
 		}
 		rhsValue := evaluator.Eval(expr, bindings)
 		if rhsValue.IsError() {
@@ -713,14 +738,14 @@ func (e *ActionExecutor) associationMaterializationForCreation(
 	source CreationLinkSource,
 	targetID *state.InstanceID,
 ) *AssociationMaterialization {
-	if e.acIndex == nil || !e.acIndex.IsAssociationClass(class.Key) {
+	if e.peerCatalog == nil || !e.peerCatalog.IsAssociationClass(class.Key) {
 		return nil
 	}
 	if source.SourceID == nil || targetID == nil {
 		return nil
 	}
 
-	linkInfo := e.acIndex.GetAssociationClassInfo(class.Key)
+	linkInfo := e.peerCatalog.GetAssociationClassInfo(class.Key)
 	if !linkInfo.Found {
 		return nil
 	}
@@ -830,7 +855,7 @@ func (e *ActionExecutor) handleCreation(
 	sourceID *state.InstanceID,
 	targetID *state.InstanceID,
 ) (*state.ClassInstance, error) {
-	if e.acIndex != nil && e.acIndex.IsAssociationClass(class.Key) {
+	if e.peerCatalog != nil && e.peerCatalog.IsAssociationClass(class.Key) {
 		return e.handleAssociationClassCreation(class, sourceID, targetID)
 	}
 
@@ -878,7 +903,7 @@ func (e *ActionExecutor) linkPlainCreationOverAssociation(
 	if sourceAssocKey == nil || sourceID == nil {
 		return nil
 	}
-	if e.acIndex != nil && e.acIndex.IsAssociationClassHost(*sourceAssocKey) {
+	if e.peerCatalog != nil && e.peerCatalog.IsAssociationClassHost(*sourceAssocKey) {
 		return fmt.Errorf(
 			"host association %s requires an association-class instance; cannot link endpoints directly",
 			sourceAssocKey.String(),
@@ -899,11 +924,11 @@ func (e *ActionExecutor) handleAssociationClassCreation(
 			class.Name,
 		)
 	}
-	if e.acIndex == nil {
+	if e.peerCatalog == nil {
 		return nil, fmt.Errorf("association class %s: no association-class index configured", class.Name)
 	}
 
-	linkInfo := e.acIndex.GetAssociationClassInfo(class.Key)
+	linkInfo := e.peerCatalog.GetAssociationClassInfo(class.Key)
 	if !linkInfo.Found {
 		return nil, fmt.Errorf("association class %s: no host association metadata", class.Name)
 	}

@@ -390,6 +390,8 @@ func ContainsAnyPrimedME(expr me.Expression) bool {
 		return ContainsAnyPrimedME(e.Domain) || ContainsAnyPrimedME(e.Predicate)
 	case *me.SetFilter:
 		return ContainsAnyPrimedME(e.Set) || ContainsAnyPrimedME(e.Predicate)
+	case *me.SetMap:
+		return ContainsAnyPrimedME(e.Set) || ContainsAnyPrimedME(e.Transform)
 	case *me.SetRange:
 		return ContainsAnyPrimedME(e.Start) || ContainsAnyPrimedME(e.End)
 

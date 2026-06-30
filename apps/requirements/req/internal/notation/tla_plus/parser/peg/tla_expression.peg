@@ -725,7 +725,7 @@ TupleIndexSuffix <- "[" ws? index:Expression ws? "]" {
 // - ExistingValue before Identifier (@ is a special symbol)
 // - Literal before Identifier (TRUE/FALSE are keywords, not identifiers)
 // - Identifier last (catch-all for names)
-AtomicExpr <- ParenExpr / TupleLiteral / RecordExpr / SetFilter / SetLiteral / IfThenElse / LetExpr / ChooseExpr / CaseExpr / FunctionCall / ExistingValue / Literal / Identifier
+AtomicExpr <- ParenExpr / TupleLiteral / RecordExpr / SetFilter / SetMap / SetLiteral / IfThenElse / LetExpr / ChooseExpr / CaseExpr / FunctionCall / ExistingValue / Literal / Identifier
 
 // Parenthesized expression - creates ParenExpr node to preserve parentheses
 ParenExpr <- "(" ws? expr:Expression ws? ")" {
@@ -736,10 +736,27 @@ ParenExpr <- "(" ws? expr:Expression ws? ")" {
 // Set Literals and Set Filter
 // =============================================================================
 
-// SetFilter: {x ∈ S : P} - set comprehension that filters elements from a set.
-// Must be tried BEFORE SetLiteral because both start with '{'.
-// The disambiguator is the membership operator followed by ':' predicate.
-SetFilter <- "{" ws? membership:SetMembershipExpr ws? ":" ws? predicate:Expression ws? "}" {
+// SetBinding requires var ∈ set so filter and map comprehensions disambiguate on ':'.
+SetBinding <- left:SetComparisonExpr ws? op:SetMembershipOp ws? right:SetComparisonExpr {
+	return &ast.Membership{
+		Operator: op.(string),
+		Left:     left.(ast.Expression),
+		Right:    right.(ast.Expression),
+	}, nil
+}
+
+// SetMap: {f(x) : x ∈ S} - maps an expression over each element of a set.
+// Tried after SetFilter; membership after ':' must include ∈.
+SetMap <- "{" ws? transform:Expression ws? ":" ws? membership:SetBinding ws? "}" {
+	return &ast.SetMap{
+		Transform:  transform.(ast.Expression),
+		Membership: membership.(ast.Expression),
+	}, nil
+}
+
+// SetFilter: {x ∈ S : P} - filters elements from a set.
+// Tried before SetMap; membership before ':' must include ∈.
+SetFilter <- "{" ws? membership:SetBinding ws? ":" ws? predicate:Expression ws? "}" {
 	return &ast.SetFilter{
 		Membership: membership.(ast.Expression),
 		Predicate:  predicate.(ast.Expression),

@@ -213,7 +213,9 @@ func (p *printer) print(expr Expression) string {
 	case *Primed:
 		return p.wrap(e.Base, precPrime, assocPostfix, posOnly) + "'"
 
-	// --- Set filter ---
+	// --- Set map / filter ---
+	case *SetMap:
+		return "{" + p.print(e.Transform) + " : " + p.print(e.Membership) + "}"
 	case *SetFilter:
 		return "{" + p.print(e.Membership) + " : " + p.print(e.Predicate) + "}"
 

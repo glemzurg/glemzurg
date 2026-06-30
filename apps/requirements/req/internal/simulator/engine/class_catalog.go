@@ -453,6 +453,54 @@ func (c *ClassCatalog) GetAssociationsForClass(classKey identity.Key) []Associat
 	return c.classAssocs[classKey]
 }
 
+// OutgoingAssociationByTLAField resolves an outgoing association by its TLA field name on fromClassKey.
+func (c *ClassCatalog) OutgoingAssociationByTLAField(
+	fromClassKey identity.Key,
+	tlaField string,
+) (identity.Key, model_class.Association, bool) {
+	for _, ai := range c.classAssocs[fromClassKey] {
+		if ai.FromClassKey != fromClassKey {
+			continue
+		}
+		if model_class.AssociationTLAFieldName(ai.Association.Name) == tlaField {
+			return ai.Association.Key, ai.Association, true
+		}
+	}
+	return identity.Key{}, model_class.Association{}, false
+}
+
+// PeerClass returns the class for peer creation via association set-add guarantees.
+func (c *ClassCatalog) PeerClass(classKey identity.Key) (model_class.Class, bool) {
+	info := c.classes[classKey]
+	if info == nil {
+		return model_class.Class{}, false
+	}
+	return info.Class, true
+}
+
+// PeerCreationEvent returns the creation event for a peer class.
+func (c *ClassCatalog) PeerCreationEvent(classKey identity.Key) (model_state.Event, bool) {
+	ev, ok := c.GetCreationEvent(classKey)
+	if !ok || ev == nil {
+		return model_state.Event{}, false
+	}
+	return *ev, true
+}
+
+// PeerEvent returns a declared event on a peer class by key.
+func (c *ClassCatalog) PeerEvent(classKey identity.Key, eventKey identity.Key) (model_state.Event, bool) {
+	info := c.classes[classKey]
+	if info == nil {
+		return model_state.Event{}, false
+	}
+	for _, ev := range info.Class.Events {
+		if ev.Key == eventKey {
+			return ev, true
+		}
+	}
+	return model_state.Event{}, false
+}
+
 // ExternalCreationEvents returns creation events eligible for top-level firing.
 // An event is excluded when a simulatable in-scope class sends it (SentBy) or
 // when another class's mandatory outbound association targets this class.

@@ -67,7 +67,7 @@ func LowerModel(model *core.Model) error {
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if err := lowerClass(&class, globalFunctions, namedSets, allActions, allAssociations); err != nil {
+				if err := lowerClass(&class, globalFunctions, namedSets, allActions, allAssociations, subdomain.Classes); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -87,8 +87,9 @@ func lowerClass(
 	namedSets map[string]identity.Key,
 	allActions map[string]identity.Key,
 	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
 ) error {
-	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations)
+	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations, classes)
 
 	// Class invariants.
 	for i := range class.Invariants {
@@ -247,6 +248,12 @@ func BuildGlobalFunctionMap(model *core.Model) map[string]identity.Key {
 	return m
 }
 
+// SubdomainClassMaps holds per-subdomain class and association indexes for lowering.
+type SubdomainClassMaps struct {
+	Associations map[identity.Key]model_class.Association
+	Classes      map[identity.Key]model_class.Class
+}
+
 func BuildNamedSetMap(model *core.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(model.NamedSets))
 	for _, ns := range model.NamedSets {
@@ -340,6 +347,7 @@ func NewClassLowerContext(
 	namedSets map[string]identity.Key,
 	allActions map[string]identity.Key,
 	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
 ) *LowerContext {
 	return &LowerContext{
 		ClassKey:         class.Key,
@@ -348,6 +356,7 @@ func NewClassLowerContext(
 		QueryNames:       BuildQueryNameMap(class),
 		AssociationNames: BuildOutgoingAssociationFieldNameMap(class.Key, associations),
 		SystemEventNames: BuildSystemEventNameMap(class),
+		PeerEventNames:   BuildPeerEventNameMap(class.Key, associations, classes),
 		GlobalFunctions:  globalFunctions,
 		NamedSets:        namedSets,
 		AllActions:       allActions,
@@ -370,6 +379,51 @@ func BuildOutgoingAssociationFieldNameMap(classKey identity.Key, associations ma
 		return nil
 	}
 	return m
+}
+
+// BuildPeerEventNameMap maps peer-class event names reachable via outgoing associations.
+func BuildPeerEventNameMap(
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) map[string]identity.Key {
+	if len(associations) == 0 || len(classes) == 0 {
+		return nil
+	}
+	m := make(map[string]identity.Key)
+	for _, assoc := range associations {
+		if assoc.FromClassKey != fromClassKey {
+			continue
+		}
+		peerClass, ok := classes[assoc.ToClassKey]
+		if !ok {
+			continue
+		}
+		for _, event := range peerClass.Events {
+			m[event.Name] = event.Key
+		}
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
+// BuildPeerEventRaiseNameMap maps peer-class event keys to their declared names.
+func BuildPeerEventRaiseNameMap(
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) map[identity.Key]string {
+	nameMap := BuildPeerEventNameMap(fromClassKey, associations, classes)
+	if len(nameMap) == 0 {
+		return nil
+	}
+	out := make(map[identity.Key]string, len(nameMap))
+	for name, key := range nameMap {
+		out[key] = name
+	}
+	return out
 }
 
 // BuildSystemEventNameMap maps system event spellings to event keys declared on the class.

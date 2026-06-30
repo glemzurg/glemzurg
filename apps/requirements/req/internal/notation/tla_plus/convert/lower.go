@@ -60,6 +60,9 @@ type LowerContext struct {
 	// SystemEventNames maps reserved system event names (_new, _delete) to event keys.
 	SystemEventNames map[string]identity.Key
 
+	// PeerEventNames maps outgoing-association peer class event names to event keys.
+	PeerEventNames map[string]identity.Key
+
 	// GlobalFunctions maps global function names (with leading underscore) to their identity keys.
 	GlobalFunctions map[string]identity.Key
 
@@ -191,6 +194,8 @@ func Lower(expr ast.Expression, ctx *LowerContext) (me.Expression, error) {
 		return lowerQuantifier(e, ctx)
 	case *ast.SetFilter:
 		return lowerSetFilter(e, ctx)
+	case *ast.SetMap:
+		return lowerSetMap(e, ctx)
 
 	// --- Calls ---
 	case *ast.FunctionCall:
@@ -926,6 +931,20 @@ func lowerSetFilter(e *ast.SetFilter, ctx *LowerContext) (*me.SetFilter, error) 
 	return &me.SetFilter{Variable: varName, Set: set, Predicate: predicate}, nil
 }
 
+func lowerSetMap(e *ast.SetMap, ctx *LowerContext) (*me.SetMap, error) {
+	varName, set, err := extractMembershipBinding(e.Membership, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("SetMap: %w", err)
+	}
+
+	childCtx := withLocalVar(ctx, varName)
+	transform, err := Lower(e.Transform, childCtx)
+	if err != nil {
+		return nil, fmt.Errorf("SetMap.Transform: %w", err)
+	}
+	return &me.SetMap{Variable: varName, Set: set, Transform: transform}, nil
+}
+
 // --- Call lowering ---
 
 func lowerFunctionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression, error) {
@@ -992,6 +1011,10 @@ func lowerClassActionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression
 		// Then queries.
 		if key, ok := ctx.QueryNames[name]; ok {
 			return &me.ActionCall{ActionKey: key, Args: args}, nil
+		}
+		// Peer-class events on outgoing associations (e.g. Update in set-map guarantees).
+		if key, ok := ctx.PeerEventNames[name]; ok {
+			return &me.EventCall{EventKey: key, Args: args}, nil
 		}
 		var available []string
 		available = append(available, mapKeys(ctx.ActionNames)...)

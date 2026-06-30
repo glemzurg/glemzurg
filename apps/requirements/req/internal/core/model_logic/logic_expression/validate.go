@@ -587,6 +587,25 @@ func (n *SetFilter) Validate(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
+func (n *SetMap) Validate(ctx *coreerr.ValidationContext) error {
+	if n.Set == nil {
+		return coreerr.New(ctx, coreerr.ExprSetRequired, "SetMap.Set: is required", "Set")
+	}
+	if n.Transform == nil {
+		return coreerr.New(ctx, coreerr.ExprPredicateRequired, "SetMap.Transform: is required", "Transform")
+	}
+	if n.Variable == "" {
+		return coreerr.New(ctx, coreerr.ExprVariableRequired, "SetMap.Variable: is required", "Variable")
+	}
+	if err := n.Set.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprSetInvalid, fmt.Sprintf("SetMap.Set: %s", err.Error()), "Set")
+	}
+	if err := n.Transform.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprPredicateInvalid, fmt.Sprintf("SetMap.Transform: %s", err.Error()), "Transform")
+	}
+	return nil
+}
+
 func (n *SetRange) Validate(ctx *coreerr.ValidationContext) error {
 	if n.Start == nil {
 		return coreerr.New(ctx, coreerr.ExprStartRequired, "SetRange.Start: is required", "Start")

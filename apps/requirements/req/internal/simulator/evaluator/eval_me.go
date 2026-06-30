@@ -1022,6 +1022,37 @@ func filterSetElements(sourceSet *object.Set, variable string, predicate me.Expr
 	return resultElements, nil
 }
 
+func evalMESetMap(n *me.SetMap, bindings *Bindings) *EvalResult {
+	setResult := Eval(n.Set, bindings)
+	if setResult.IsError() {
+		return setResult
+	}
+	sourceSet, ok := CoerceToSet(setResult.Value)
+	if !ok {
+		return NewEvalError("set map requires Set, got %s", setResult.Value.Type())
+	}
+
+	resultElements, errResult := mapSetElements(sourceSet, n.Variable, n.Transform, bindings)
+	if errResult != nil {
+		return errResult
+	}
+	return NewEvalResult(object.NewSetFromElements(resultElements))
+}
+
+func mapSetElements(sourceSet *object.Set, variable string, transform me.Expression, bindings *Bindings) ([]object.Object, *EvalResult) {
+	resultElements := make([]object.Object, 0, len(sourceSet.Elements()))
+	for _, elem := range sourceSet.Elements() {
+		child := NewEnclosedBindings(bindings)
+		child.Set(variable, elem, NamespaceLocal)
+		mapped := Eval(transform, child)
+		if mapped.IsError() {
+			return nil, mapped
+		}
+		resultElements = append(resultElements, mapped.Value)
+	}
+	return resultElements, nil
+}
+
 func evalMESetFilter(n *me.SetFilter, bindings *Bindings) *EvalResult {
 	setResult := Eval(n.Set, bindings)
 	if setResult.IsError() {

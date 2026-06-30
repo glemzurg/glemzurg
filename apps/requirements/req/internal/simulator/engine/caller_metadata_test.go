@@ -6,6 +6,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
@@ -86,6 +88,93 @@ func TestExternalCreationEvents_FiltersSimulatableSender(t *testing.T) {
 
 	ext := catalog.ExternalCreationEvents(itemKey)
 	assert.Empty(t, ext, "creation event sent by simulatable in-scope class is internal")
+}
+
+func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {
+	subdomainKey := mustKey("domain/finance/subdomain/wallet")
+	fromKey := mustKey("domain/finance/subdomain/wallet/class/currency_wallet_definition")
+	toKey := mustKey("domain/finance/subdomain/wallet/class/social_currency_behavior")
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, "applies_social"))
+	actionKey := helper.Must(identity.NewActionKey(fromKey, "set_social"))
+	eventNewTo := helper.Must(identity.NewEventKey(toKey, "_new"))
+
+	fromStateKey := helper.Must(identity.NewStateKey(fromKey, "active"))
+	fromClass := model_class.NewClass(fromKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Currency Wallet Definition"})
+	fromClass.SetStates(map[identity.Key]model_state.State{
+		fromStateKey: model_state.NewState(fromStateKey, "Active", "", ""),
+	})
+	fromClass.SetActions(map[identity.Key]model_state.Action{
+		actionKey: model_state.NewAction(
+			actionKey,
+			model_state.ActionDetails{Name: "SetSocialBehavior", Details: ""},
+			nil,
+			[]model_logic.Logic{
+				model_logic.NewLogic(
+					helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
+					model_logic.LogicTypeStateChange,
+					"",
+					"AppliesSocialCurrencyLogic",
+					logic_spec.ExpressionSpec{
+						Notation:      model_logic.NotationTLAPlus,
+						Specification: `AppliesSocialCurrencyLogic \union {_new(MinimumBalance, TopoffBalance)}`,
+					},
+					nil,
+				),
+			},
+			nil,
+			nil,
+		),
+	})
+
+	toClass, _ := testItemClass()
+	toClassKey := toClass.Key
+	toClass = model_class.NewClass(toKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Social Currency Behavior"})
+	stateActiveKey := helper.Must(identity.NewStateKey(toKey, "active"))
+	transCreateKey := helper.Must(identity.NewTransitionKey(toKey, "", "_new", "", "", "active"))
+	toClass.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: model_state.NewState(stateActiveKey, "Active", "", ""),
+	})
+	toClass.SetEvents(map[identity.Key]model_state.Event{
+		eventNewTo: model_state.NewEvent(eventNewTo, "_new", "", []string{"MinimumBalance", "TopoffBalance"}),
+	})
+	toClass.SetTransitions(map[identity.Key]model_state.Transition{
+		transCreateKey: model_state.NewTransition(
+			transCreateKey,
+			eventNewTo,
+			model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey},
+			model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil},
+			"",
+		),
+	})
+	_ = toClassKey
+
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Applies Social Currency Logic", Details: ""},
+		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))},
+		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: helper.Must(model_class.NewMultiplicity("0..1"))},
+		model_class.Multiplicity{},
+		model_class.AssociationOptions{},
+	)
+
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{fromKey: fromClass, toKey: toClass}
+	subdomain.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
+
+	domainKey := mustKey("domain/finance")
+	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := core.NewModel("evenplay", core.ModelDetails{Name: "Evenplay", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	catalog := NewClassCatalog(&model)
+	PopulateCallerDataFromModel(&model, catalog)
+
+	cd := catalog.CallerData()
+	require.Contains(t, cd.EventSentBy, eventNewTo)
+	assert.Contains(t, cd.EventSentBy[eventNewTo], fromKey)
+	assert.Empty(t, catalog.ExternalCreationEvents(toKey))
 }
 
 func buildPartnerClassForCallerTest(classKey, eventKey identity.Key) model_class.Class {

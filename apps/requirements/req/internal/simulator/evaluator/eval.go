@@ -168,6 +168,8 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 		return evalMEQuantifier(n, bindings)
 	case *me.SetFilter:
 		return evalMESetFilter(n, bindings)
+	case *me.SetMap:
+		return evalMESetMap(n, bindings)
 
 	// === Calls ===
 	case *me.BuiltinCall:

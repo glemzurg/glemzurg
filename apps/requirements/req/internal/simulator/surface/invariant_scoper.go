@@ -173,6 +173,8 @@ func walkIdentifiersControlFlow(expr me.Expression, result map[string]bool) {
 		walkBinaryIR(e.Domain, e.Predicate, result)
 	case *me.SetFilter:
 		walkBinaryIR(e.Set, e.Predicate, result)
+	case *me.SetMap:
+		walkBinaryIR(e.Set, e.Transform, result)
 	case *me.SetRange:
 		walkBinaryIR(e.Start, e.End, result)
 	case *me.IfThenElse:

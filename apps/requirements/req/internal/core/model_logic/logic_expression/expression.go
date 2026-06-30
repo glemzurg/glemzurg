@@ -63,6 +63,7 @@ const (
 	// Quantifiers.
 	NodeQuantifier = "quantifier"
 	NodeSetFilter  = "set_filter"
+	NodeSetMap     = "set_map"
 	NodeSetRange   = "set_range"
 
 	// Calls.

@@ -67,7 +67,7 @@ func CollectUnparsedExpressionIssues(model *core.Model) []ExpressionParseIssue {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for classKey, class := range subdomain.Classes {
-				classIssues := collectClassExpressionIssues(&class, globalFunctions, namedSets, allActions, allAssociations)
+				classIssues := collectClassExpressionIssues(&class, globalFunctions, namedSets, allActions, allAssociations, subdomain.Classes)
 				for i := range classIssues {
 					classIssues[i].ClassKey = classKey
 					issues = append(issues, classIssues[i])
@@ -83,8 +83,9 @@ func collectClassExpressionIssues(
 	class *model_class.Class,
 	globalFunctions, namedSets, allActions map[string]identity.Key,
 	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
 ) []ExpressionParseIssue {
-	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations)
+	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations, classes)
 	classPF := NewExpressionParseFuncStrict(classCtx)
 
 	var issues []ExpressionParseIssue

@@ -32,7 +32,7 @@ func ComputedAssociationSetAddGuaranteeDescription(guarantee model_logic.Logic, 
 		return "", false
 	}
 	spec := strings.TrimSpace(guarantee.Spec.Specification)
-	if !isAssociationSetAddSpecification(spec) {
+	if !IsAssociationSetAddSpecification(spec) {
 		return "", false
 	}
 	for _, assoc := range associations {
@@ -53,7 +53,29 @@ func ComputedActionGuaranteeDescription(guarantee model_logic.Logic, attributes 
 	if desc, ok := ComputedSimpleActionGuaranteeDescription(guarantee, attributes); ok {
 		return desc, true
 	}
+	if desc, ok := ComputedAssociationSetMapGuaranteeDescription(guarantee, associations); ok {
+		return desc, true
+	}
 	return ComputedAssociationSetAddGuaranteeDescription(guarantee, associations)
+}
+
+// ComputedAssociationSetMapGuaranteeDescription derives "Update <association name>"
+// for a state_change guarantee that maps a peer event over an outgoing association field.
+func ComputedAssociationSetMapGuaranteeDescription(guarantee model_logic.Logic, associations map[identity.Key]Association) (string, bool) {
+	if guarantee.Type != model_logic.LogicTypeStateChange || guarantee.Target == "" {
+		return "", false
+	}
+	spec := strings.TrimSpace(guarantee.Spec.Specification)
+	if !IsAssociationSetMapSpecification(spec) && !IsAssociationAddOrUpdateSpecification(spec) {
+		return "", false
+	}
+	for _, assoc := range associations {
+		if AssociationTLAFieldName(assoc.Name) != guarantee.Target {
+			continue
+		}
+		return "Update " + assoc.Name, true
+	}
+	return "", false
 }
 
 func isAssociationSetAddSpecification(specification string) bool {

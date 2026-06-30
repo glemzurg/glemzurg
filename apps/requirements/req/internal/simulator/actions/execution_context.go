@@ -36,6 +36,22 @@ type DeferredPostCondition struct {
 	OriginalExpression string
 }
 
+// DeferredPeerCreation creates a peer instance for an association set-add guarantee.
+type DeferredPeerCreation struct {
+	FromInstanceID state.InstanceID
+	AssocKey       identity.Key
+	ToClassKey     identity.Key
+	Params         map[string]object.Object
+}
+
+// DeferredPeerUpdate fires a peer-class event on an existing association link target.
+type DeferredPeerUpdate struct {
+	PeerInstanceID state.InstanceID
+	ToClassKey     identity.Key
+	EventKey       identity.Key
+	Params         map[string]object.Object
+}
+
 // DeferredSafetyRule holds a safety rule to check after all primed assignments
 // have been applied. Safety rules are boolean assertions that must reference
 // primed variables.
@@ -87,6 +103,13 @@ type ExecutionContext struct {
 
 	// safetyRules holds all safety rules to check after primed values are applied.
 	safetyRules []DeferredSafetyRule
+
+	// peerCreations materialize association set-add guarantees: create the to-class
+	// via its creation transition and link back to the owning instance.
+	peerCreations []DeferredPeerCreation
+
+	// peerUpdates fire peer-class events for association set-map guarantees.
+	peerUpdates []DeferredPeerUpdate
 
 	// depth tracks the current call chain depth (for debugging/limits).
 	depth int
@@ -154,6 +177,26 @@ func (ctx *ExecutionContext) GetAllPostConditions() []DeferredPostCondition {
 // AddSafetyRule queues a safety rule for deferred checking.
 func (ctx *ExecutionContext) AddSafetyRule(sr DeferredSafetyRule) {
 	ctx.safetyRules = append(ctx.safetyRules, sr)
+}
+
+// AddPeerCreation queues a peer instance to create and link for an association set-add guarantee.
+func (ctx *ExecutionContext) AddPeerCreation(pc DeferredPeerCreation) {
+	ctx.peerCreations = append(ctx.peerCreations, pc)
+}
+
+// GetPeerCreations returns queued peer creations.
+func (ctx *ExecutionContext) GetPeerCreations() []DeferredPeerCreation {
+	return ctx.peerCreations
+}
+
+// AddPeerUpdate queues a peer-class event for an association set-map guarantee.
+func (ctx *ExecutionContext) AddPeerUpdate(pu DeferredPeerUpdate) {
+	ctx.peerUpdates = append(ctx.peerUpdates, pu)
+}
+
+// GetPeerUpdates returns queued peer updates.
+func (ctx *ExecutionContext) GetPeerUpdates() []DeferredPeerUpdate {
+	return ctx.peerUpdates
 }
 
 // GetAllSafetyRules returns all queued safety rules.

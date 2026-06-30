@@ -40,6 +40,9 @@ type RaiseContext struct {
 
 	// SystemEventNames maps event keys to canonical TLA spellings («new», «delete»).
 	SystemEventNames map[identity.Key]string
+
+	// PeerEventNames maps peer-class event keys to their declared names.
+	PeerEventNames map[identity.Key]string
 }
 
 // Raise converts a logic_expression.Expression tree into a TLA+ AST expression.
@@ -179,6 +182,9 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 
 	case *me.SetFilter:
 		return raiseSetFilter(e, ctx)
+
+	case *me.SetMap:
+		return raiseSetMap(e, ctx)
 
 	// --- Calls ---
 	case *me.ActionCall:
@@ -781,6 +787,28 @@ func raiseSetFilter(e *me.SetFilter, ctx *RaiseContext) (ast.Expression, error) 
 	}, nil
 }
 
+func raiseSetMap(e *me.SetMap, ctx *RaiseContext) (ast.Expression, error) {
+	set, err := Raise(e.Set, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("SetMap.Set: %w", err)
+	}
+	transform, err := Raise(e.Transform, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("SetMap.Transform: %w", err)
+	}
+
+	membership := &ast.Membership{
+		Operator: "∈",
+		Left:     &ast.Identifier{Value: e.Variable},
+		Right:    set,
+	}
+
+	return &ast.SetMap{
+		Transform:  transform,
+		Membership: membership,
+	}, nil
+}
+
 // --- Call raising ---
 
 func raiseActionCall(e *me.ActionCall, ctx *RaiseContext) (ast.Expression, error) {
@@ -842,6 +870,9 @@ func raiseEventCall(e *me.EventCall, ctx *RaiseContext) (ast.Expression, error) 
 		args[i] = raised
 	}
 	name, ok := ctx.SystemEventNames[e.EventKey]
+	if !ok {
+		name, ok = ctx.PeerEventNames[e.EventKey]
+	}
 	if !ok {
 		return nil, fmt.Errorf("unresolved event key: %v", e.EventKey)
 	}

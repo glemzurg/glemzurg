@@ -358,6 +358,16 @@ type SetFilter struct {
 func (n *SetFilter) expressionNode()  {}
 func (n *SetFilter) NodeType() string { return NodeSetFilter }
 
+// SetMap represents a set map expression: {f(x) : x ∈ S}.
+type SetMap struct {
+	Variable  string
+	Set       Expression
+	Transform Expression
+}
+
+func (n *SetMap) expressionNode()  {}
+func (n *SetMap) NodeType() string { return NodeSetMap }
+
 // SetRange represents a contiguous integer range: start..end.
 type SetRange struct {
 	Start Expression

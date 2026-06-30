@@ -86,6 +86,7 @@ func raiseContextFromLower(ctx *LowerContext) *RaiseContext {
 		QueryNames:       invertMap(ctx.QueryNames),
 		AssociationNames: invertMap(ctx.AssociationNames),
 		SystemEventNames: systemEventRaiseNamesFromLower(ctx.SystemEventNames),
+		PeerEventNames:   invertMap(ctx.PeerEventNames),
 		GlobalFunctions:  invertMap(ctx.GlobalFunctions),
 		NamedSets:        invertMap(ctx.NamedSets),
 	}
