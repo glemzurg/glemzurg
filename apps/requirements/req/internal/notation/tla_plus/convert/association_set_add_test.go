@@ -72,7 +72,6 @@ func associationSetAddFixture() (*convert.LowerContext, model_class.Class) {
 		model_class.AssociationDetails{Name: "Is Subdivided Into", Details: ""},
 		model_class.AssociationEnd{ClassKey: containerKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))},
 		model_class.AssociationEnd{ClassKey: partKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{},
 	)
 

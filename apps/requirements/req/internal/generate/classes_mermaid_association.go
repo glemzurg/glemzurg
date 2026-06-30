@@ -1,25 +1,39 @@
 package generate
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// associationUniquenessMermaidTag returns a diagram tag like "{unique}" or "{3..any}".
-// An empty string means uniqueness is any and should not be shown.
-func associationUniquenessMermaidTag(m model_class.Multiplicity) string {
-	if m.LowerBound == 0 && m.HigherBound == 0 {
+func attributeSubKeysJoined(keys []identity.Key, sep string) string {
+	if len(keys) == 0 {
 		return ""
 	}
-	if m.LowerBound == 1 && m.HigherBound == 1 {
-		return "{unique}"
+	parts := make([]string, len(keys))
+	for i, key := range keys {
+		parts[i] = key.SubKey
 	}
-	s := m.ParsedString()
-	if before, found := strings.CutSuffix(s, "..*"); found {
-		s = before + "..any"
+	return strings.Join(parts, sep)
+}
+
+func associationUniquenessMermaidTag(uniqueness *model_class.AssociationUniqueness) string {
+	if uniqueness == nil {
+		return ""
 	}
-	return "{" + s + "}"
+	var parts []string
+	if fromAttrs := attributeSubKeysJoined(uniqueness.FromAttributeKeys, "+"); fromAttrs != "" {
+		parts = append(parts, fromAttrs)
+	}
+	if toAttrs := attributeSubKeysJoined(uniqueness.ToAttributeKeys, "+"); toAttrs != "" {
+		parts = append(parts, toAttrs)
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("{unique: %s}", strings.Join(parts, ", "))
 }
 
 // classesMermaidAssociationLinkLabel formats the edge label for a direct association arrow.

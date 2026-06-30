@@ -153,7 +153,6 @@ func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {
 		model_class.AssociationDetails{Name: "Applies Social Currency Logic", Details: ""},
 		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))},
 		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: helper.Must(model_class.NewMultiplicity("0..1"))},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{},
 	)
 

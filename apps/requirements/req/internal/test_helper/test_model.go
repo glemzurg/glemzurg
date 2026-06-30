@@ -113,8 +113,9 @@ type testKeys struct {
 	classGen1, classGen2, classGen3 identity.Key
 
 	// Attributes.
-	attrOrderDate, attrTotal, attrStatus identity.Key
-	attrProductName                      identity.Key
+	attrOrderDate, attrTotal, attrStatus   identity.Key
+	attrProductName                        identity.Key
+	attrCustomerCode, attrShipmentTracking identity.Key
 
 	// States.
 	stateNew, stateProcessing, stateComplete identity.Key
@@ -360,7 +361,6 @@ func GetStrictTestModel() core.Model {
 					},
 					model_class.AssociationEnd{ClassKey: classKeys[0], Multiplicity: mult1},
 					model_class.AssociationEnd{ClassKey: classKeys[1], Multiplicity: multMany},
-					model_class.Multiplicity{},
 					model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 				)
 				subdomain.ClassAssociations = map[identity.Key]model_class.Association{
@@ -727,6 +727,14 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.attrProductName, err = identity.NewAttributeKey(k.classProduct, "name")
+	if err != nil {
+		return k, err
+	}
+	k.attrCustomerCode, err = identity.NewAttributeKey(k.classCustomer, "customer_code")
+	if err != nil {
+		return k, err
+	}
+	k.attrShipmentTracking, err = identity.NewAttributeKey(k.classShipment, "tracking_id")
 	if err != nil {
 		return k, err
 	}
@@ -1687,8 +1695,9 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 // =========================================================================
 
 type testAttrs struct {
-	orderDate, total, status model_class.Attribute
-	productName              model_class.Attribute
+	orderDate, total, status       model_class.Attribute
+	productName                    model_class.Attribute
+	customerCode, shipmentTracking model_class.Attribute
 }
 
 func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
@@ -1724,6 +1733,20 @@ func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 
 	a.productName, err = model_class.NewAttribute(k.attrProductName, model_class.AttributeDetails{
 		Name: "Product Name", Details: "Name of the product.",
+	}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
+	if err != nil {
+		return a, err
+	}
+
+	a.customerCode, err = model_class.NewAttribute(k.attrCustomerCode, model_class.AttributeDetails{
+		Name: "Customer Code", Details: "Stable identifier for the customer.",
+	}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
+	if err != nil {
+		return a, err
+	}
+
+	a.shipmentTracking, err = model_class.NewAttribute(k.attrShipmentTracking, model_class.AttributeDetails{
+		Name: "Tracking ID", Details: "Carrier tracking identifier for the shipment.",
 	}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
 	if err != nil {
 		return a, err
@@ -1774,6 +1797,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 
 	// Customer class: linked to actor.
 	classCustomer := model_class.NewClass(k.classCustomer, model_class.ClassLinks{ActorKey: &k.actorPerson, SuperclassOfKey: nil, SubclassOfKey: &k.classGen3}, model_class.ClassDetails{Name: "Customer", Details: "A customer in the system.", UnfinishedNotes: notesClassCustomer, UmlComment: ""})
+	classCustomer.SetAttributes([]model_class.Attribute{a.customerCode})
 	c.all[k.classCustomer] = classCustomer
 
 	// Vehicle: superclass in vehicle_types generalization. Linked to actorVip.
@@ -1803,6 +1827,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 
 	// Shipment (subdomain C / domain B).
 	classShipment := model_class.NewClass(k.classShipment, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shipment", Details: "A shipment of goods.", UnfinishedNotes: notesClassShipment, UmlComment: ""})
+	classShipment.SetAttributes([]model_class.Attribute{a.shipmentTracking})
 	c.all[k.classShipment] = classShipment
 
 	// Route (subdomain C / domain B).
@@ -1837,6 +1862,12 @@ func buildClassGeneralizations(k testKeys) testGeneralizations {
 	g.all[k.classGen3] = gen3
 
 	return g
+}
+
+// ptrAssociationUniqueness returns a heap-allocated uniqueness tuple for AssociationOptions.
+func ptrAssociationUniqueness(fromAttributeKeys, toAttributeKeys []identity.Key) *model_class.AssociationUniqueness {
+	u := model_class.NewAssociationUniqueness(fromAttributeKeys, toAttributeKeys)
+	return &u
 }
 
 // =========================================================================
@@ -1880,21 +1911,25 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 	// Subdomain-level (3).
 	a1 := model_class.NewAssociation(
 		k.subdomainAssoc1, model_class.AssociationDetails{Name: "order contains products", Details: "Order-Product association."},
-		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: &k.classLineItem, UmlComment: "with line item"},
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationOptions{AssociationClassKey: &k.classLineItem, UmlComment: "with line item"},
 	)
 	ta.subdomain[k.subdomainAssoc1] = a1
 	ta.all[k.subdomainAssoc1] = a1
 
 	a2 := model_class.NewAssociation(
 		k.subdomainAssoc2, model_class.AssociationDetails{Name: "order belongs to customer", Details: "Order-Customer association."},
-		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: mult1}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: mult1},
+		model_class.AssociationOptions{
+			Uniqueness: ptrAssociationUniqueness(nil, []identity.Key{k.attrCustomerCode}),
+			UmlComment: "",
+		},
 	)
 	ta.subdomain[k.subdomainAssoc2] = a2
 	ta.all[k.subdomainAssoc2] = a2
 
 	a3 := model_class.NewAssociation(
 		k.subdomainAssoc3, model_class.AssociationDetails{Name: "product has line items", Details: "Product-LineItem association."},
-		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classLineItem, Multiplicity: multMany}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classLineItem, Multiplicity: multMany}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	ta.subdomain[k.subdomainAssoc3] = a3
 	ta.all[k.subdomainAssoc3] = a3
@@ -1902,21 +1937,25 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 	// Domain-level (3).
 	d1 := model_class.NewAssociation(
 		k.domainClassAssoc1, model_class.AssociationDetails{Name: "order ships from warehouse", Details: "Order-Warehouse relationship."},
-		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multOpt}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multOpt}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	ta.domain[k.domainClassAssoc1] = d1
 	ta.all[k.domainClassAssoc1] = d1
 
 	d2 := model_class.NewAssociation(
 		k.domainClassAssoc2, model_class.AssociationDetails{Name: "product stored on shelf", Details: "Product-Shelf relationship."},
-		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classShelf, Multiplicity: mult1}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classShelf, Multiplicity: mult1},
+		model_class.AssociationOptions{
+			Uniqueness: ptrAssociationUniqueness([]identity.Key{k.attrProductName}, nil),
+			UmlComment: "",
+		},
 	)
 	ta.domain[k.domainClassAssoc2] = d2
 	ta.all[k.domainClassAssoc2] = d2
 
 	d3 := model_class.NewAssociation(
 		k.domainClassAssoc3, model_class.AssociationDetails{Name: "customer visits aisle", Details: "Customer-Aisle relationship."},
-		model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classAisle, Multiplicity: multAny}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classAisle, Multiplicity: multAny}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	ta.domain[k.domainClassAssoc3] = d3
 	ta.all[k.domainClassAssoc3] = d3
@@ -1924,21 +1963,28 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 	// Model-level (3).
 	m1 := model_class.NewAssociation(
 		k.modelClassAssoc1, model_class.AssociationDetails{Name: "product from supplier", Details: "Product-Supplier relationship."},
-		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classSupplier, Multiplicity: mult1}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: "cross-domain"},
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classSupplier, Multiplicity: mult1}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: "cross-domain"},
 	)
 	ta.model[k.modelClassAssoc1] = m1
 	ta.all[k.modelClassAssoc1] = m1
 
 	m2 := model_class.NewAssociation(
 		k.modelClassAssoc2, model_class.AssociationDetails{Name: "order has shipment", Details: "Order-Shipment relationship."},
-		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classShipment, Multiplicity: multOpt}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classShipment, Multiplicity: multOpt},
+		model_class.AssociationOptions{
+			Uniqueness: ptrAssociationUniqueness(
+				[]identity.Key{k.attrOrderDate},
+				[]identity.Key{k.attrShipmentTracking},
+			),
+			UmlComment: "",
+		},
 	)
 	ta.model[k.modelClassAssoc2] = m2
 	ta.all[k.modelClassAssoc2] = m2
 
 	m3 := model_class.NewAssociation(
 		k.modelClassAssoc3, model_class.AssociationDetails{Name: "warehouse on route", Details: "Warehouse-Route relationship."},
-		model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classRoute, Multiplicity: multMany}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classRoute, Multiplicity: multMany}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	ta.model[k.modelClassAssoc3] = m3
 	ta.all[k.modelClassAssoc3] = m3

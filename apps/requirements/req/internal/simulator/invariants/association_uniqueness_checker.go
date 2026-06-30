@@ -2,6 +2,7 @@ package invariants
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -10,9 +11,14 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
-// AssociationUniquenessChecker validates per-pair link caps declared on associations.
+type associationUniquenessBinding struct {
+	association model_class.Association
+	uniqueness  model_class.AssociationUniqueness
+}
+
+// AssociationUniquenessChecker validates association uniqueness on link attribute tuples.
 type AssociationUniquenessChecker struct {
-	associations []model_class.Association
+	bindings []associationUniquenessBinding
 }
 
 // NewAssociationUniquenessChecker builds association uniqueness metadata from the model.
@@ -29,7 +35,7 @@ func NewAssociationUniquenessChecker(model *core.Model) *AssociationUniquenessCh
 	}
 
 	for _, assoc := range model.GetClassAssociations() {
-		if assoc.Uniqueness.LowerBound == 0 && assoc.Uniqueness.HigherBound == 0 {
+		if assoc.Uniqueness == nil {
 			continue
 		}
 		if _, ok := classes[assoc.FromClassKey]; !ok {
@@ -38,53 +44,94 @@ func NewAssociationUniquenessChecker(model *core.Model) *AssociationUniquenessCh
 		if _, ok := classes[assoc.ToClassKey]; !ok {
 			continue
 		}
-		checker.associations = append(checker.associations, assoc)
+		checker.bindings = append(checker.bindings, associationUniquenessBinding{
+			association: assoc,
+			uniqueness:  *assoc.Uniqueness,
+		})
 	}
 
 	return checker
 }
 
-// CheckState validates all association uniqueness constraints.
+// CheckState validates all association uniqueness rules.
 func (c *AssociationUniquenessChecker) CheckState(simState *state.SimulationState) ViolationErrors {
 	var violations ViolationErrors
-	for _, assoc := range c.associations {
-		violations = append(violations, c.checkAssociation(simState, assoc)...)
+	for _, binding := range c.bindings {
+		violations = append(violations, c.checkBinding(simState, binding)...)
 	}
 	return violations
 }
 
-func (c *AssociationUniquenessChecker) checkAssociation(
+func (c *AssociationUniquenessChecker) checkBinding(
 	simState *state.SimulationState,
-	assoc model_class.Association,
+	binding associationUniquenessBinding,
 ) ViolationErrors {
-	if assoc.AssociationClassKey != nil {
-		return c.checkAssociationClassPairs(simState, assoc)
+	links := c.collectAssociationLinks(simState, binding.association)
+	if len(links) == 0 {
+		return nil
 	}
-	return c.checkDirectAssociationPairs(simState, assoc)
-}
 
-func (c *AssociationUniquenessChecker) checkAssociationClassPairs(
-	simState *state.SimulationState,
-	assoc model_class.Association,
-) ViolationErrors {
-	seen := make(map[string]bool)
+	partitions := make(map[string][]associationLinkEndpoints)
+	for _, link := range links {
+		partitionKey := associationUniquenessPartitionKey(binding.uniqueness, link)
+		partitions[partitionKey] = append(partitions[partitionKey], link)
+	}
+
 	var violations ViolationErrors
-	for _, link := range simState.AssociationLinks().AllLinks() {
-		if link.HostAssocKey != assoc.Key {
-			continue
+	for _, partitionLinks := range partitions {
+		counts := make(map[string]int)
+		for _, link := range partitionLinks {
+			fromInst := simState.GetInstance(link.fromID)
+			toInst := simState.GetInstance(link.toID)
+			if fromInst == nil || toInst == nil {
+				continue
+			}
+			tupleKey := associationUniquenessTupleKey(fromInst, toInst, binding.uniqueness)
+			counts[tupleKey]++
+			if counts[tupleKey] > 1 {
+				violations = append(violations, NewAssociationUniquenessViolation(AssociationUniquenessViolationParams{
+					AssociationName: binding.association.Name,
+					FromInstanceID:  link.fromID,
+					ToInstanceID:    link.toID,
+					ActualCount:     counts[tupleKey],
+					RequiredMin:     0,
+					RequiredMax:     1,
+					Message: fmt.Sprintf(
+						"association %q exceeds uniqueness constraint",
+						binding.association.Name,
+					),
+				}))
+			}
 		}
-		violations = append(violations, c.violationForPair(simState, assoc, seen, link.FromEndpointID, link.ToEndpointID)...)
 	}
 	return violations
 }
 
-func (c *AssociationUniquenessChecker) checkDirectAssociationPairs(
+type associationLinkEndpoints struct {
+	fromID state.InstanceID
+	toID   state.InstanceID
+}
+
+func (c *AssociationUniquenessChecker) collectAssociationLinks(
 	simState *state.SimulationState,
 	assoc model_class.Association,
-) ViolationErrors {
-	seen := make(map[string]bool)
-	var violations ViolationErrors
+) []associationLinkEndpoints {
+	if assoc.AssociationClassKey != nil {
+		var links []associationLinkEndpoints
+		for _, link := range simState.AssociationLinks().AllLinks() {
+			if link.HostAssocKey != assoc.Key {
+				continue
+			}
+			links = append(links, associationLinkEndpoints{
+				fromID: link.FromEndpointID,
+				toID:   link.ToEndpointID,
+			})
+		}
+		return links
+	}
+
 	assocKey := evaluator.AssociationKey(assoc.Key.String())
+	var links []associationLinkEndpoints
 	for _, inst := range simState.AllInstances() {
 		if inst.ClassKey != assoc.FromClassKey {
 			continue
@@ -93,36 +140,38 @@ func (c *AssociationUniquenessChecker) checkDirectAssociationPairs(
 			if link.AssociationKey != assocKey {
 				continue
 			}
-			violations = append(violations, c.violationForPair(simState, assoc, seen, inst.ID, state.InstanceID(link.ToID))...)
+			links = append(links, associationLinkEndpoints{
+				fromID: inst.ID,
+				toID:   state.InstanceID(link.ToID),
+			})
 		}
 	}
-	return violations
+	return links
 }
 
-func (c *AssociationUniquenessChecker) violationForPair(
-	simState *state.SimulationState,
-	assoc model_class.Association,
-	seen map[string]bool,
-	fromID, toID state.InstanceID,
-) ViolationErrors {
-	pairKey := fmt.Sprintf("%d:%d", fromID, toID)
-	if seen[pairKey] {
-		return nil
+func associationUniquenessPartitionKey(uniqueness model_class.AssociationUniqueness, link associationLinkEndpoints) string {
+	switch {
+	case len(uniqueness.FromAttributeKeys) > 0 && len(uniqueness.ToAttributeKeys) > 0:
+		return "global"
+	case len(uniqueness.ToAttributeKeys) > 0:
+		return fmt.Sprintf("from:%d", link.fromID)
+	case len(uniqueness.FromAttributeKeys) > 0:
+		return fmt.Sprintf("to:%d", link.toID)
+	default:
+		return "global"
 	}
-	seen[pairKey] = true
+}
 
-	count := simState.CountActivePairLinks(assoc, fromID, toID)
-	msg := checkUniquenessUpperBound(count, assoc.Uniqueness)
-	if msg == "" {
-		return nil
+func associationUniquenessTupleKey(
+	fromInst, toInst *state.ClassInstance,
+	uniqueness model_class.AssociationUniqueness,
+) string {
+	parts := make([]string, 0, len(uniqueness.FromAttributeKeys)+len(uniqueness.ToAttributeKeys))
+	for _, attrKey := range uniqueness.FromAttributeKeys {
+		parts = append(parts, indexTupleValueKey(fromInst.GetAttribute(attrKey.SubKey)))
 	}
-	return ViolationErrors{NewAssociationUniquenessViolation(AssociationUniquenessViolationParams{
-		AssociationName: assoc.Name,
-		FromInstanceID:  fromID,
-		ToInstanceID:    toID,
-		ActualCount:     count,
-		RequiredMin:     0,
-		RequiredMax:     assoc.Uniqueness.HigherBound,
-		Message:         msg,
-	})}
+	for _, attrKey := range uniqueness.ToAttributeKeys {
+		parts = append(parts, indexTupleValueKey(toInst.GetAttribute(attrKey.SubKey)))
+	}
+	return strings.Join(parts, "\x00")
 }

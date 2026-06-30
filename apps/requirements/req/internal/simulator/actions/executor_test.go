@@ -1286,7 +1286,7 @@ func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
 	assocKey := multiplicityAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("2..many"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := multiplicityTestModel(orderClass, orderKey, itemClass, itemKey)
 	model.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}

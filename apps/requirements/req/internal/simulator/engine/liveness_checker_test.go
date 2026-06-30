@@ -383,7 +383,7 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -417,7 +417,7 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{

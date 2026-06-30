@@ -173,7 +173,6 @@ func buildPlainAssocPeerFixture(itemHasDelete bool) plainAssocPeerFixture {
 		model_class.AssociationDetails{Name: "OrderItem", Details: ""},
 		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
@@ -244,7 +243,6 @@ func buildAssociationClassPeerEffectModel() associationClassPeerEffectModel {
 		model_class.AssociationDetails{Name: "Configures", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: toMult},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{AssociationClassKey: &linkDefKey, UmlComment: ""},
 	)
 

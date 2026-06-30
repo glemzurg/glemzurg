@@ -30,7 +30,7 @@ func (s *AssociationInvariantCheckerSuite) buildChecker() (*AssociationInvariant
 		assocKey,
 		model_class.AssociationDetails{Name: "Configures", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
-		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	invKey := helper.Must(identity.NewClassAssociationInvariantKey(assocKey, "0"))
 	assoc.SetInvariants([]model_logic.Logic{
@@ -75,7 +75,7 @@ func (s *AssociationInvariantCheckerSuite) TestFailsWhenAssessmentIsFalse() {
 		assocKey,
 		model_class.AssociationDetails{Name: "Configures", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
-		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
+		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	invKey := helper.Must(identity.NewClassAssociationInvariantKey(assocKey, "0"))
 	assoc.SetInvariants([]model_logic.Logic{

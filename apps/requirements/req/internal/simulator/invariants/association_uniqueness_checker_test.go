@@ -21,22 +21,26 @@ func TestAssociationUniquenessCheckerSuite(t *testing.T) {
 	suite.Run(t, new(AssociationUniquenessCheckerSuite))
 }
 
-func (s *AssociationUniquenessCheckerSuite) buildModel(uniqueness string) (*core.Model, identity.Key, identity.Key, identity.Key, identity.Key) {
-	fromClass, fromKey := multiplicityTestOrderClass()
-	toClass, toKey := multiplicityTestItemClass()
+func (s *AssociationUniquenessCheckerSuite) buildModel() (*core.Model, identity.Key, identity.Key, identity.Key, identity.Key) {
+	fromClass, fromKey := associationUniquenessPartnerClass()
+	toClass, toKey := associationUniquenessJurisdictionClass()
 	acClass, acKey := associationUniquenessTestLinkClass()
 
 	assocKey := multiplicityTestAssocKey(fromKey, toKey)
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	uniq := helper.Must(model_class.NewMultiplicity(uniqueness))
+	jurisdictionAttrKey := multiplicityMustKey("domain/d/subdomain/s/class/jurisdiction/attribute/jurisdiction_code")
+	uniqueness := model_class.NewAssociationUniqueness(nil, []identity.Key{jurisdictionAttrKey})
 
 	assoc := model_class.NewAssociation(
 		assocKey,
-		model_class.AssociationDetails{Name: "OrderItem", Details: ""},
+		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
 		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult},
-		uniq, model_class.AssociationOptions{AssociationClassKey: &acKey, UmlComment: ""},
+		model_class.AssociationOptions{
+			AssociationClassKey: &acKey,
+			Uniqueness:          &uniqueness,
+		},
 	)
 
 	model := multiplicityTestModel(
@@ -56,47 +60,62 @@ func (s *AssociationUniquenessCheckerSuite) buildModel(uniqueness string) (*core
 	return model, assocKey, fromKey, toKey, acKey
 }
 
-func (s *AssociationUniquenessCheckerSuite) TestWithinCapNoViolation() {
-	model, assocKey, fromKey, toKey, acKey := s.buildModel("0..1")
+func (s *AssociationUniquenessCheckerSuite) TestDistinctCodesNoViolation() {
+	model, assocKey, fromKey, toKey, acKey := s.buildModel()
 	checker := NewAssociationUniquenessChecker(model)
 
 	simState := state.NewSimulationState()
 	fromInst := simState.CreateInstance(fromKey, object.NewRecord())
-	toInst := simState.CreateInstance(toKey, object.NewRecord())
-	linkInst := simState.CreateInstance(acKey, object.NewRecord())
-	simState.AddAssociationLink(assocKey, fromInst.ID, toInst.ID, linkInst.ID)
-
-	violations := checker.CheckState(simState)
-	s.Empty(violations)
-}
-
-func (s *AssociationUniquenessCheckerSuite) TestNoLinksDoesNotViolate() {
-	model, _, _, _, _ := s.buildModel("1")
-	checker := NewAssociationUniquenessChecker(model)
-
-	simState := state.NewSimulationState()
-	simState.CreateInstance(multiplicityMustKey("domain/d/subdomain/s/class/order"), object.NewRecord())
-	simState.CreateInstance(multiplicityMustKey("domain/d/subdomain/s/class/item"), object.NewRecord())
-
-	violations := checker.CheckState(simState)
-	s.Empty(violations)
-}
-
-func (s *AssociationUniquenessCheckerSuite) TestExceedsCapReportsViolation() {
-	model, assocKey, fromKey, toKey, acKey := s.buildModel("0..1")
-	checker := NewAssociationUniquenessChecker(model)
-
-	simState := state.NewSimulationState()
-	fromInst := simState.CreateInstance(fromKey, object.NewRecord())
-	toInst := simState.CreateInstance(toKey, object.NewRecord())
+	toInst1 := simState.CreateInstance(toKey, object.NewRecordFromFields(map[string]object.Object{
+		"jurisdiction_code": object.NewString("US-NJ"),
+	}))
+	toInst2 := simState.CreateInstance(toKey, object.NewRecordFromFields(map[string]object.Object{
+		"jurisdiction_code": object.NewString("US-PA"),
+	}))
 	link1 := simState.CreateInstance(acKey, object.NewRecord())
 	link2 := simState.CreateInstance(acKey, object.NewRecord())
-	simState.AddAssociationLink(assocKey, fromInst.ID, toInst.ID, link1.ID)
-	simState.AddAssociationLink(assocKey, fromInst.ID, toInst.ID, link2.ID)
+	simState.AddAssociationLink(assocKey, fromInst.ID, toInst1.ID, link1.ID)
+	simState.AddAssociationLink(assocKey, fromInst.ID, toInst2.ID, link2.ID)
+
+	violations := checker.CheckState(simState)
+	s.Empty(violations)
+}
+
+func (s *AssociationUniquenessCheckerSuite) TestDuplicateCodeReportsViolation() {
+	model, assocKey, fromKey, toKey, acKey := s.buildModel()
+	checker := NewAssociationUniquenessChecker(model)
+
+	simState := state.NewSimulationState()
+	fromInst := simState.CreateInstance(fromKey, object.NewRecord())
+	toInst1 := simState.CreateInstance(toKey, object.NewRecordFromFields(map[string]object.Object{
+		"jurisdiction_code": object.NewString("US-NJ"),
+	}))
+	toInst2 := simState.CreateInstance(toKey, object.NewRecordFromFields(map[string]object.Object{
+		"jurisdiction_code": object.NewString("US-NJ"),
+	}))
+	link1 := simState.CreateInstance(acKey, object.NewRecord())
+	link2 := simState.CreateInstance(acKey, object.NewRecord())
+	simState.AddAssociationLink(assocKey, fromInst.ID, toInst1.ID, link1.ID)
+	simState.AddAssociationLink(assocKey, fromInst.ID, toInst2.ID, link2.ID)
 
 	violations := checker.CheckState(simState)
 	s.Require().Len(violations, 1)
 	s.Equal(ViolationTypeAssociationUniqueness, violations[0].Type)
+}
+
+func associationUniquenessPartnerClass() (model_class.Class, identity.Key) {
+	classKey := multiplicityMustKey("domain/d/subdomain/s/class/partner")
+	return model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"}), classKey
+}
+
+func associationUniquenessJurisdictionClass() (model_class.Class, identity.Key) {
+	classKey := multiplicityMustKey("domain/d/subdomain/s/class/jurisdiction")
+	attrKey := multiplicityMustKey("domain/d/subdomain/s/class/jurisdiction/attribute/jurisdiction_code")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
+	class.SetAttributes([]model_class.Attribute{
+		helper.Must(model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "Jurisdiction Code"}, "unconstrained", nil, true, model_class.AttributeAnnotations{})),
+	})
+	return class, classKey
 }
 
 func associationUniquenessTestLinkClass() (model_class.Class, identity.Key) {

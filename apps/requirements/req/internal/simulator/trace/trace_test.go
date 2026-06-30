@@ -355,7 +355,6 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 		model_class.AssociationDetails{Name: "Configures", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: toMult},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{AssociationClassKey: &linkDefKey, UmlComment: ""},
 	)
 

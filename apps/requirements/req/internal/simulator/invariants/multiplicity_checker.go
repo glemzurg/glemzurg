@@ -198,18 +198,3 @@ func checkMultiplicityBounds(count int, lowerBound, upperBound uint) string {
 	}
 	return ""
 }
-
-// checkUniquenessUpperBound validates per-pair link caps. Uniqueness never requires links to exist.
-func checkUniquenessUpperBound(count int, uniqueness model_class.Multiplicity) string {
-	if uniqueness.LowerBound == 0 && uniqueness.HigherBound == 0 {
-		return ""
-	}
-	upper := uniqueness.HigherBound
-	if upper == 0 {
-		return ""
-	}
-	if uint(count) > upper { //nolint:gosec // count is a link count from a small in-memory graph, no overflow risk
-		return fmt.Sprintf("expected at most %d links, got %d", upper, count)
-	}
-	return ""
-}

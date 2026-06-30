@@ -111,7 +111,7 @@ func TestFormatAssociationFact(t *testing.T) {
 			fromMult := helper.Must(model_class.NewMultiplicity(tc.fromMult))
 			toMult := helper.Must(model_class.NewMultiplicity(tc.toMult))
 
-			assoc := model_class.NewAssociation(helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, tc.assocName)), model_class.AssociationDetails{Name: tc.assocName, Details: tc.details}, model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+			assoc := model_class.NewAssociation(helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, tc.assocName)), model_class.AssociationDetails{Name: tc.assocName, Details: tc.details}, model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 			got := FormatAssociationFact(
 				assoc,
@@ -143,7 +143,6 @@ func TestFormatAssociationInvariantFact(t *testing.T) {
 		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	partner := model_class.NewClass(partnerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"})
@@ -184,7 +183,6 @@ func TestFormatAssociationInvariantFactUsesSpecWhenDescriptionMissing(t *testing
 		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	partner := model_class.NewClass(partnerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"})
@@ -224,7 +222,6 @@ func TestAssociationInvariantFactsForSubdomain(t *testing.T) {
 		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	assoc.SetInvariants([]model_logic.Logic{

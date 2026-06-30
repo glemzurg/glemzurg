@@ -6,7 +6,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 	"github.com/stretchr/testify/require"
 )
@@ -56,23 +55,33 @@ func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDestroy(t *testing.T) {
 			step.StepNumber, step.InstanceID)
 	}
 
-	step60 := result.Steps[59]
-	require.Equal(t, "RemoveSocialBehavior", step60.EventName)
-	require.Equal(t, state.InstanceID(33), step60.InstanceID)
-	require.Empty(t, step60.CascadedSteps, "wallet #33 has no linked behaviors before step 60 in seed 42")
-	require.Equal(t, 0, countPeerDestroyTransitions(step60))
-
-	var step71 *SimulationStep
+	var step60 *SimulationStep
 	for _, step := range result.Steps {
-		if step.StepNumber == 71 && step.EventName == "RemoveSocialBehavior" && step.InstanceID == 24 {
-			step71 = step
+		if step.StepNumber == 60 && step.EventName == "RemoveSocialBehavior" {
+			step60 = step
 			break
 		}
 	}
-	require.NotNil(t, step71, "seed 42 step 71 should remove social behavior from wallet #24")
-	require.Len(t, step71.CascadedSteps, 1)
-	require.Equal(t, StepKindDestroy, step71.CascadedSteps[0].Kind)
-	require.Equal(t, model_state.EventNameDestroy, step71.CascadedSteps[0].EventName)
+	require.NotNil(t, step60, "seed 42 should reach step 60 RemoveSocialBehavior")
+	require.Empty(t, step60.CascadedSteps,
+		"wallet #%d has no linked behaviors at step 60 in seed 42", step60.InstanceID)
+	require.Equal(t, 0, countPeerDestroyTransitions(step60))
+
+	var stepWithDestroy *SimulationStep
+	for _, step := range result.Steps {
+		if step.EventName != "RemoveSocialBehavior" {
+			continue
+		}
+		if countPeerDestroyTransitions(step) == 0 {
+			continue
+		}
+		stepWithDestroy = step
+		break
+	}
+	require.NotNil(t, stepWithDestroy, "seed 42 should include a RemoveSocialBehavior step with peer destroys")
+	require.NotEmpty(t, stepWithDestroy.CascadedSteps)
+	require.Equal(t, StepKindDestroy, stepWithDestroy.CascadedSteps[0].Kind)
+	require.Equal(t, model_state.EventNameDestroy, stepWithDestroy.CascadedSteps[0].EventName)
 }
 
 func countPeerDestroyTransitions(step *SimulationStep) int {

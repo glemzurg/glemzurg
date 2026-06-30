@@ -16,25 +16,10 @@ import (
 func TestAssociationUniquenessMermaidTag(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name    string
-		value   string
-		wantTag string
-	}{
-		{name: "any omitted", value: "any", wantTag: ""},
-		{name: "exactly one", value: "1", wantTag: "{unique}"},
-		{name: "zero or one", value: "0..1", wantTag: "{0..1}"},
-		{name: "lower bound only", value: "3", wantTag: "{3}"},
-		{name: "bounded range", value: "2..5", wantTag: "{2..5}"},
-		{name: "lower with any upper", value: "3..many", wantTag: "{3..any}"},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			m := helper.Must(model_class.NewMultiplicity(tc.value))
-			assert.Equal(t, tc.wantTag, associationUniquenessMermaidTag(m))
-		})
-	}
+	toKey := helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "jurisdiction"))
+	jurisdictionAttrKey := helper.Must(identity.NewAttributeKey(toKey, "jurisdiction_code"))
+	uniqueness := model_class.NewAssociationUniqueness(nil, []identity.Key{jurisdictionAttrKey})
+	assert.Equal(t, "{unique: jurisdiction_code}", associationUniquenessMermaidTag(&uniqueness))
 }
 
 func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
@@ -46,16 +31,19 @@ func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
 	toKey := helper.Must(identity.NewClassKey(subdomainKey, "to_class"))
 
 	one := helper.Must(model_class.NewMultiplicity("1"))
-	uniqOne := helper.Must(model_class.NewMultiplicity("1"))
-	uniqBounded := helper.Must(model_class.NewMultiplicity("0..1"))
+	fromAttrKey := helper.Must(identity.NewAttributeKey(fromKey, "abbr"))
+	toAttrKey := helper.Must(identity.NewAttributeKey(toKey, "jurisdiction_code"))
+	uniqueness := model_class.NewAssociationUniqueness(
+		[]identity.Key{fromAttrKey},
+		[]identity.Key{toAttrKey},
+	)
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, "owns"))
 	assoc := model_class.NewAssociation(
 		assocKey,
 		model_class.AssociationDetails{Name: "owns", Details: ""},
 		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: one},
 		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: one},
-		uniqBounded,
-		model_class.AssociationOptions{},
+		model_class.AssociationOptions{Uniqueness: &uniqueness},
 	)
 
 	model := core.Model{
@@ -88,23 +76,7 @@ func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
 
 	fromNode := nodeIDFor("class", fromKey)
 	toNode := nodeIDFor("class", toKey)
-	want := fromNode + ` "1" --> "1" ` + toNode + ` : owns<br/>{0..1}`
-	assert.Contains(t, got, want)
-
-	assocExact := model_class.NewAssociation(
-		assocKey,
-		model_class.AssociationDetails{Name: "owns", Details: ""},
-		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: one},
-		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: one},
-		uniqOne,
-		model_class.AssociationOptions{},
-	)
-	model.Domains[domainKey].Subdomains[subdomainKey].ClassAssociations[assocKey] = assocExact
-
-	writer = newCollectWriter()
-	require.NoError(t, GenerateMdToWriter(model, writer, nil))
-	got = string(writer.md[fromFile])
-	want = fromNode + ` "1" --> "1" ` + toNode + ` : owns<br/>{unique}`
+	want := fromNode + ` "1" --> "1" ` + toNode + ` : owns<br/>{unique: abbr, jurisdiction_code}`
 	assert.Contains(t, got, want)
 }
 
@@ -122,15 +94,18 @@ func TestGenerateClassesMermaidAssociationClassUniqueness(t *testing.T) {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("dx")), "sx"))
 	bKey := helper.Must(identity.NewClassKey(subdomainKey, "b_class"))
 	one := helper.Must(model_class.NewMultiplicity("1"))
-	uniq := helper.Must(model_class.NewMultiplicity("1"))
+	toAttrKey := helper.Must(identity.NewAttributeKey(bKey, "code"))
+	uniqueness := model_class.NewAssociationUniqueness(nil, []identity.Key{toAttrKey})
 	cKey := helper.Must(identity.NewClassKey(subdomainKey, "c_class"))
 	assoc := model_class.NewAssociation(
 		assocKey,
 		model_class.AssociationDetails{Name: "links", Details: "details"},
 		model_class.AssociationEnd{ClassKey: aKey, Multiplicity: one},
 		model_class.AssociationEnd{ClassKey: bKey, Multiplicity: one},
-		uniq,
-		model_class.AssociationOptions{AssociationClassKey: &cKey},
+		model_class.AssociationOptions{
+			AssociationClassKey: &cKey,
+			Uniqueness:          &uniqueness,
+		},
 	)
 	domainKey := helper.Must(identity.NewDomainKey("dx"))
 	model.Domains[domainKey].Subdomains[subdomainKey].ClassAssociations[assocKey] = assoc
@@ -142,7 +117,7 @@ func TestGenerateClassesMermaidAssociationClassUniqueness(t *testing.T) {
 	got := string(writer.md[aFile])
 
 	linkNode := nodeIDFor("assoc", assocKey)
-	wantLinkNode := `class ` + linkNode + `["links<br/>{unique}"]`
+	wantLinkNode := `class ` + linkNode + `["links<br/>{unique: code}"]`
 	assert.Contains(t, got, wantLinkNode)
 	assert.Contains(t, got, `<<association>>`)
 	if idx := strings.Index(got, wantLinkNode); idx >= 0 {
@@ -164,7 +139,6 @@ func TestGenerateClassesMermaidOmitsAnyUniqueness(t *testing.T) {
 	require.NoError(t, GenerateMdToWriter(model, writer, nil))
 	got := string(writer.md[aFile])
 
-	assert.NotContains(t, got, `{unique}`)
-	assert.NotContains(t, got, `{any}`)
+	assert.NotContains(t, got, `{unique:`)
 	assert.Contains(t, got, `["links"]`)
 }

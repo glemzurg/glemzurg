@@ -27,7 +27,6 @@ func TestAssociationInvariantFactsIncludeClassInvariantTaggedOverAssociation(t *
 		model_class.AssociationDetails{Name: "Configures Customers For", Details: ""},
 		model_class.AssociationEnd{ClassKey: partnerKey, Multiplicity: anyMult},
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
-		model_class.Multiplicity{},
 		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 

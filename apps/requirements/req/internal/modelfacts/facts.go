@@ -213,9 +213,9 @@ func FormatAssociationFact(assoc model_class.Association, fromClass, toClass mod
 		b.WriteString(" is a ")
 		b.WriteString(classPhrase(associationClass.Name).lower())
 	}
-	if pairUniq := pairUniquenessConstraint(assoc.Uniqueness, fromPhrase, toPhrase); pairUniq != "" {
+	if uniq := associationUniquenessFact(assoc.Uniqueness, fromPhrase, toPhrase); uniq != "" {
 		b.WriteString("; ")
-		b.WriteString(pairUniq)
+		b.WriteString(uniq)
 	}
 	if details := strings.TrimSpace(assoc.Details); details != "" {
 		b.WriteString(" (")
@@ -284,6 +284,17 @@ func FormatIndexFact(className string, attrNames []string) string {
 	return fmt.Sprintf("No %s can share the same %s combination.", classPlural, attrs)
 }
 
+func attributeSubKeysFromKeys(keys []identity.Key) []string {
+	if len(keys) == 0 {
+		return nil
+	}
+	names := make([]string, len(keys))
+	for i, key := range keys {
+		names[i] = key.SubKey
+	}
+	return names
+}
+
 func attributeListPhrase(names []string) string {
 	switch len(names) {
 	case 0:
@@ -297,23 +308,34 @@ func attributeListPhrase(names []string) string {
 	}
 }
 
-func pairUniquenessConstraint(m model_class.Multiplicity, fromPhrase, toPhrase classPhrase) string {
-	if m.LowerBound == 0 && m.HigherBound == 0 {
+func associationUniquenessFact(
+	uniqueness *model_class.AssociationUniqueness,
+	fromPhrase, toPhrase classPhrase,
+) string {
+	if uniqueness == nil {
 		return ""
 	}
-	pair := pairingPhrase(fromPhrase, toPhrase)
+	fromAttrs := attributeListPhrase(attributeSubKeysFromKeys(uniqueness.FromAttributeKeys))
+	toAttrs := attributeListPhrase(attributeSubKeysFromKeys(uniqueness.ToAttributeKeys))
+	maxPhrase := "at most one"
+
 	switch {
-	case m.LowerBound == 0 && m.HigherBound == 1:
-		return fmt.Sprintf("at most one link between each %s", pair)
-	case m.LowerBound == 1 && m.HigherBound == 1:
-		return fmt.Sprintf("exactly one link between each %s", pair)
-	case m.HigherBound == 0:
-		return fmt.Sprintf("each %s has %d or more links", pair, m.LowerBound)
-	case m.LowerBound == m.HigherBound:
-		return fmt.Sprintf("each %s has exactly %d links", pair, m.LowerBound)
+	case fromAttrs != "" && toAttrs != "":
+		return fmt.Sprintf("%s link may share the same %s and %s combination", capitalize(maxPhrase), fromAttrs, toAttrs)
+	case toAttrs != "":
+		return fmt.Sprintf("no %s may link to more than one %s with the same %s", fromPhrase.plural(), toPhrase.lower(), toAttrs)
+	case fromAttrs != "":
+		return fmt.Sprintf("no %s may link to more than one %s with the same %s", toPhrase.plural(), fromPhrase.lower(), fromAttrs)
 	default:
-		return fmt.Sprintf("each %s has between %d and %d links", pair, m.LowerBound, m.HigherBound)
+		return ""
 	}
+}
+
+func capitalize(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
 func endConstraint(m model_class.Multiplicity, subject, object classPhrase, assocName string) string {
