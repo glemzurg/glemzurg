@@ -7,8 +7,10 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -304,48 +306,121 @@ func TestSetMapUpdateViolationWhenEventParamsOmitted(t *testing.T) {
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	require.NoError(t, err)
 	require.Len(t, result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable), 1)
-	require.Contains(t, result.Violations[0].Message, "missing parameters")
+	require.Contains(t, result.Violations[0].Message, "parameter binding failed")
+}
+
+func TestSetMapUpdateRespectsArgumentOrder(t *testing.T) {
+	fix := buildPlainAssocPeerFixtureWithUpdateAction()
+	suite := new(AssociationPeerEffectsSuite)
+	simState, ae := suite.buildPeerEffectExecutor(fix.model)
+
+	orderInst := suite.createPeerEffectInstance(simState, fix.orderKey, "Open")
+	itemInst := suite.createPeerEffectInstance(simState, fix.itemKey, "Active")
+	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
+
+	action := peerUpdateSetMapActionWithArgOrder(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem", []string{"TopoffBalance", "MinimumBalance"})
+	ownerParams := map[string]object.Object{
+		"MinimumBalance": object.NewInteger(100),
+		"TopoffBalance":  object.NewInteger(200),
+	}
+	result, err := ae.ExecuteAction(action, orderInst, ownerParams)
+	require.NoError(t, err)
+	require.Empty(t, result.Violations)
+	require.Len(t, result.PeerTransitions, 1)
+
+	updated := simState.GetInstance(itemInst.ID)
+	require.Equal(t, "200", updated.GetAttribute("minimum_balance").Inspect())
+	require.Equal(t, "100", updated.GetAttribute("topoff_balance").Inspect())
 }
 
 func buildPlainAssocPeerFixtureWithUpdate() plainAssocPeerFixture {
 	fix := buildPlainAssocPeerFixture(false)
-	itemClass, itemKey := testItemClassWithUpdateEvent()
-	orderClass := fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.orderKey]
+	itemClass, itemKey := testItemClassWithUpdateEvent(false)
 	fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[itemKey] = itemClass
 	fix.itemKey = itemKey
-	_ = orderClass
 	return fix
 }
 
-func testItemClassWithUpdateEvent() (model_class.Class, identity.Key) {
+func buildPlainAssocPeerFixtureWithUpdateAction() plainAssocPeerFixture {
+	fix := buildPlainAssocPeerFixtureWithUpdate()
+	itemClass, _ := testItemClassWithUpdateEvent(true)
+	fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.itemKey] = itemClass
+	return fix
+}
+
+func testItemClassWithUpdateEvent(withUpdateAction bool) (model_class.Class, identity.Key) {
 	classKey := mustKey("domain/d/subdomain/s/class/item")
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/item/state/active")
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/item/event/create")
 	eventUpdateKey := mustKey("domain/d/subdomain/s/class/item/event/update")
 	transCreateKey := mustKey("domain/d/subdomain/s/class/item/transition/create")
 	transUpdateKey := mustKey("domain/d/subdomain/s/class/item/transition/update")
+	attrMinKey := helper.Must(identity.NewAttributeKey(classKey, "minimum_balance"))
+	attrTopKey := helper.Must(identity.NewAttributeKey(classKey, "topoff_balance"))
 
 	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 	eventUpdate := model_state.NewEvent(eventUpdateKey, "Update", "", []string{"MinimumBalance", "TopoffBalance"})
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
-	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{}, "")
-	transUpdate := model_state.NewTransition(transUpdateKey, eventUpdateKey, model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{}, "")
+
+	transitions := map[identity.Key]model_state.Transition{
+		transCreateKey: model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{}, ""),
+	}
+	actions := map[identity.Key]model_state.Action{}
+	if withUpdateAction {
+		actionUpdateKey := helper.Must(identity.NewActionKey(classKey, "update"))
+		guarMinKey := helper.Must(identity.NewActionGuaranteeKey(actionUpdateKey, "0"))
+		guarTopKey := helper.Must(identity.NewActionGuaranteeKey(actionUpdateKey, "1"))
+		guarMin := model_logic.NewLogic(guarMinKey, model_logic.LogicTypeStateChange, "", "minimum_balance", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "MinimumBalance"}, nil)
+		guarMin.Spec.Expression = &me.LocalVar{Name: "MinimumBalance"}
+		guarTop := model_logic.NewLogic(guarTopKey, model_logic.LogicTypeStateChange, "", "topoff_balance", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TopoffBalance"}, nil)
+		guarTop.Spec.Expression = &me.LocalVar{Name: "TopoffBalance"}
+		updateAction := model_state.NewAction(actionUpdateKey, model_state.ActionDetails{Name: "Update", Details: ""}, nil, []model_logic.Logic{guarMin, guarTop}, nil, nil)
+		actions[actionUpdateKey] = updateAction
+		transitions[transUpdateKey] = model_state.NewTransition(
+			transUpdateKey, eventUpdateKey,
+			model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey},
+			model_state.TransitionLogicKeys{ActionKey: &actionUpdateKey}, "",
+		)
+	} else {
+		transitions[transUpdateKey] = model_state.NewTransition(
+			transUpdateKey, eventUpdateKey,
+			model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey},
+			model_state.TransitionLogicKeys{}, "",
+		)
+	}
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Item", Details: ""})
+	class.SetAttributes([]model_class.Attribute{
+		helper.Must(model_class.NewAttribute(attrMinKey, model_class.AttributeDetails{Name: "minimum_balance", Details: ""}, "Nat", nil, false, model_class.AttributeAnnotations{})),
+		helper.Must(model_class.NewAttribute(attrTopKey, model_class.AttributeDetails{Name: "topoff_balance", Details: ""}, "Nat", nil, false, model_class.AttributeAnnotations{})),
+	})
 	class.SetStates(map[identity.Key]model_state.State{stateActiveKey: stateActive})
 	class.SetEvents(map[identity.Key]model_state.Event{eventCreateKey: eventCreate, eventUpdateKey: eventUpdate})
-	class.SetTransitions(map[identity.Key]model_state.Transition{transCreateKey: transCreate, transUpdateKey: transUpdate})
+	class.SetActions(actions)
+	class.SetTransitions(transitions)
 	return class, classKey
 }
 
 func peerUpdateSetMapAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
+	return peerUpdateSetMapActionWithArgOrder(ownerKey, assocKey, peerClassKey, assocTLAField, nil)
+}
+
+func peerUpdateSetMapActionWithArgOrder(
+	ownerKey, assocKey, peerClassKey identity.Key,
+	assocTLAField string,
+	argOrder []string,
+) model_state.Action {
 	updateEventKey := helper.Must(identity.NewEventKey(peerClassKey, "Update"))
+	args := []me.Expression{&me.LocalVar{Name: "r"}}
+	for _, name := range argOrder {
+		args = append(args, &me.LocalVar{Name: name})
+	}
 	expr := &me.SetMap{
 		Variable: "r",
 		Set:      &me.AssociationRef{AssociationKey: assocKey},
 		Transform: &me.EventCall{
 			EventKey: updateEventKey,
-			Args:     []me.Expression{&me.LocalVar{Name: "r"}},
+			Args:     args,
 		},
 	}
 	return peerEffectAction(ownerKey, assocTLAField, expr)
@@ -376,10 +451,25 @@ func peerNewSetAddAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLA
 	return peerEffectAction(ownerKey, assocTLAField, expr)
 }
 
+func peerEffectParamWithNatTypeSpec(actionKey identity.Key, name string) model_state.Parameter {
+	param := helper.Must(model_state.NewParameter(actionKey, name, "Nat", false))
+	natTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil))
+	if param.DataType == nil {
+		param.DataType = &model_data_type.DataType{
+			CollectionType: "atomic",
+			Atomic:         &model_data_type.Atomic{ConstraintType: model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED},
+		}
+	}
+	param.DataType.TypeSpec = &natTypeSpec
+	return param
+}
+
 func peerEffectAction(ownerKey identity.Key, target string, expr me.Expression) model_state.Action {
 	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_effect"))
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
-	logic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "", target, parsedSpec("TRUE"), nil)
+	logic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "", target, logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil)
 	logic.Spec.Expression = expr
-	return model_state.NewAction(actionKey, model_state.ActionDetails{Name: "PeerEffect", Details: ""}, nil, []model_logic.Logic{logic}, nil, nil)
+	minBal := peerEffectParamWithNatTypeSpec(actionKey, "MinimumBalance")
+	topoff := peerEffectParamWithNatTypeSpec(actionKey, "TopoffBalance")
+	return model_state.NewAction(actionKey, model_state.ActionDetails{Name: "PeerEffect", Details: ""}, nil, []model_logic.Logic{logic}, nil, []model_state.Parameter{minBal, topoff})
 }

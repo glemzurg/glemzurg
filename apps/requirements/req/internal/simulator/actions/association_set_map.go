@@ -2,7 +2,6 @@ package actions
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -118,12 +117,9 @@ func (e *ActionExecutor) queueAssociationSetMap(
 		return true, nil
 	}
 
-	params, err := resolveSetMapEventParams(setMap.Variable, eventCall, bindings)
+	params, err := resolvePositionalEventCallParams(setMap.Variable, event.ParameterNames, eventCall, bindings)
 	if err != nil {
-		return false, err
-	}
-	if missing := missingSetMapEventParams(event, params); len(missing) > 0 {
-		e.recordSetMapMissingParams(ctx, instance, mapTarget, event, missing)
+		e.recordSetMapParamBindingError(ctx, instance, mapTarget, event, err)
 		return true, nil
 	}
 
@@ -202,39 +198,16 @@ func (e *ActionExecutor) queueSetMapPeerUpdates(
 	}
 }
 
-func resolveSetMapEventParams(
-	boundVar string,
-	eventCall *me.EventCall,
-	bindings *evaluator.Bindings,
-) (map[string]object.Object, error) {
-	params := make(map[string]object.Object)
-	for i, arg := range eventCall.Args {
-		name, ok := eventCallArgName(arg)
-		if !ok {
-			return nil, fmt.Errorf("association set-map event arg[%d]: expected parameter reference", i)
-		}
-		if name == boundVar {
-			continue
-		}
-		result := evaluator.Eval(arg, bindings)
-		if result.IsError() {
-			return nil, fmt.Errorf("association set-map event arg %q: %s", name, result.Error.Inspect())
-		}
-		params[name] = result.Value
-	}
-	return params, nil
-}
-
-func (e *ActionExecutor) recordSetMapMissingParams(
+func (e *ActionExecutor) recordSetMapParamBindingError(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
 	mapTarget *associationSetMapTarget,
 	event model_state.Event,
-	missing []string,
+	err error,
 ) {
 	msg := fmt.Sprintf(
-		"association %q set-map event %s missing parameters [%s]",
-		mapTarget.assoc.Name, event.Name, strings.Join(missing, ", "),
+		"association %q set-map event %s parameter binding failed: %s",
+		mapTarget.assoc.Name, event.Name, err.Error(),
 	)
 	ctx.AddPeerViolation(invariants.NewPeerEventUnavailableViolation(invariants.PeerEventUnavailableParams{
 		OwnerClassKey:   instance.ClassKey,
@@ -245,17 +218,6 @@ func (e *ActionExecutor) recordSetMapMissingParams(
 		EventName:       event.Name,
 		Message:         msg,
 	}))
-}
-
-func missingSetMapEventParams(event model_state.Event, params map[string]object.Object) []string {
-	var missing []string
-	for _, name := range event.ParameterNames {
-		if _, ok := params[name]; ok {
-			continue
-		}
-		missing = append(missing, name)
-	}
-	return missing
 }
 
 func (e *ActionExecutor) applyPeerUpdates(ctx *ExecutionContext) error {

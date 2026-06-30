@@ -8,7 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -33,9 +32,13 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	if !e.validateSetAddPeerEvents(ctx, instance, assocTarget, eventCall) {
 		return true, nil
 	}
-	params, err := resolveEventCallParams(eventCall, bindings)
+	creationEvent, ok := e.peerCatalog.PeerCreationEvent(assocTarget.assoc.ToClassKey)
+	if !ok {
+		return false, fmt.Errorf("association set-add guarantee on %q: peer class has no creation event", target)
+	}
+	params, err := resolvePositionalEventCallParams("", creationEvent.ParameterNames, eventCall, bindings)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("association set-add guarantee on %q: %w", target, err)
 	}
 	ctx.AddPeerCreation(DeferredPeerCreation{
 		FromInstanceID: instance.ID,
@@ -111,31 +114,6 @@ func (e *ActionExecutor) validateSetAddPeerEvents(
 		return false
 	}
 	return true
-}
-
-func resolveEventCallParams(eventCall *me.EventCall, bindings *evaluator.Bindings) (map[string]object.Object, error) {
-	params := make(map[string]object.Object, len(eventCall.Args))
-	for i, arg := range eventCall.Args {
-		name, ok := eventCallArgName(arg)
-		if !ok {
-			return nil, fmt.Errorf("association set-add _new arg[%d]: expected parameter reference", i)
-		}
-		result := evaluator.Eval(arg, bindings)
-		if result.IsError() {
-			return nil, fmt.Errorf("association set-add _new arg %q: %s", name, result.Error.Inspect())
-		}
-		params[name] = result.Value
-	}
-	return params, nil
-}
-
-func eventCallArgName(arg me.Expression) (string, bool) {
-	switch a := arg.(type) {
-	case *me.LocalVar:
-		return a.Name, true
-	default:
-		return "", false
-	}
 }
 
 func (e *ActionExecutor) applyPeerCreations(ctx *ExecutionContext) error {
