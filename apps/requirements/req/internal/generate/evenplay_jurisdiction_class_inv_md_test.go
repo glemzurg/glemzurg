@@ -28,7 +28,7 @@ func TestEvenplayWalletFactsRendersPartnerJurisdictionUniqueness(t *testing.T) {
 	var configuresFact string
 	for _, fact := range facts.Associations {
 		lower := strings.ToLower(fact)
-		if strings.Contains(lower, "configures customers for") && strings.Contains(fact, "each partner–jurisdiction pairing has this uniqueness → Jurisdiction Code") {
+		if strings.Contains(lower, "configures customers for") && strings.Contains(fact, "each partner–jurisdiction pairing has the uniqueness → Jurisdiction Code") {
 			configuresFact = fact
 			break
 		}

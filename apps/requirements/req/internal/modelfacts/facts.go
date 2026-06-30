@@ -216,7 +216,7 @@ func FormatAssociationFact(assoc model_class.Association, fromClass, toClass mod
 	if uniq := formatAssociationUniquenessDisplay(assoc.Uniqueness, fromClass, toClass); uniq != "" {
 		b.WriteString("; each ")
 		b.WriteString(pairingPhrase(fromPhrase, toPhrase))
-		b.WriteString(" has this uniqueness ")
+		b.WriteString(" has the uniqueness ")
 		b.WriteString(uniq)
 	}
 	if details := strings.TrimSpace(assoc.Details); details != "" {

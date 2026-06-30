@@ -8,37 +8,52 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-func attributeSubKeysJoined(keys []identity.Key, sep string) string {
+func attributeNamesJoined(class model_class.Class, keys []identity.Key, sep string) string {
 	if len(keys) == 0 {
 		return ""
 	}
 	parts := make([]string, len(keys))
 	for i, key := range keys {
-		parts[i] = key.SubKey
+		parts[i] = attributeNameFromClass(class, key)
 	}
 	return strings.Join(parts, sep)
 }
 
-func associationUniquenessMermaidTag(uniqueness *model_class.AssociationUniqueness) string {
+func attributeNameFromClass(class model_class.Class, attrKey identity.Key) string {
+	for _, attr := range class.Attributes {
+		if attr.Key == attrKey {
+			return attr.Name
+		}
+	}
+	return attrKey.SubKey
+}
+
+func associationUniquenessMermaidTag(
+	uniqueness *model_class.AssociationUniqueness,
+	fromClass, toClass model_class.Class,
+) string {
 	if uniqueness == nil {
 		return ""
 	}
-	var parts []string
-	if fromAttrs := attributeSubKeysJoined(uniqueness.FromAttributeKeys, "+"); fromAttrs != "" {
-		parts = append(parts, fromAttrs)
-	}
-	if toAttrs := attributeSubKeysJoined(uniqueness.ToAttributeKeys, "+"); toAttrs != "" {
-		parts = append(parts, toAttrs)
-	}
-	if len(parts) == 0 {
+	fromAttrs := attributeNamesJoined(fromClass, uniqueness.FromAttributeKeys, "+")
+	toAttrs := attributeNamesJoined(toClass, uniqueness.ToAttributeKeys, "+")
+	var tuple string
+	switch {
+	case fromAttrs == "" && toAttrs == "":
 		return ""
+	case fromAttrs == "":
+		tuple = "→ " + toAttrs
+	case toAttrs == "":
+		tuple = fromAttrs + " →"
+	default:
+		tuple = fromAttrs + " → " + toAttrs
 	}
-	return fmt.Sprintf("{unique: %s}", strings.Join(parts, ", "))
+	return fmt.Sprintf("{unique: %s}", tuple)
 }
 
 // classesMermaidAssociationLinkLabel formats the edge label for a direct association arrow.
-func classesMermaidAssociationLinkLabel(assoc model_class.Association) string {
-	tag := associationUniquenessMermaidTag(assoc.Uniqueness)
+func classesMermaidAssociationLinkLabel(assoc model_class.Association, fromClass, toClass model_class.Class) string {
+	tag := associationUniquenessMermaidTag(assoc.Uniqueness, fromClass, toClass)
 	if tag == "" {
 		return assoc.Name
 	}
@@ -47,6 +62,6 @@ func classesMermaidAssociationLinkLabel(assoc model_class.Association) string {
 
 // classesMermaidAssociationNodeTitle formats the dashed association link node title
 // when an association class decomposes the edge.
-func classesMermaidAssociationNodeTitle(assoc model_class.Association) string {
-	return classesMermaidAssociationLinkLabel(assoc)
+func classesMermaidAssociationNodeTitle(assoc model_class.Association, fromClass, toClass model_class.Class) string {
+	return classesMermaidAssociationLinkLabel(assoc, fromClass, toClass)
 }

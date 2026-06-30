@@ -306,7 +306,7 @@ func TestAssociationFactsForSubdomain_testModel(t *testing.T) {
 	assert.Contains(t, joined, "each customer links to one or more orders")
 	assert.Contains(t, joined, "each product (product has line items) links to one or more line items")
 	assert.Contains(t, joined, "each line item links to exactly one product")
-	assert.Contains(t, joined, "each order–customer pairing has this uniqueness → Customer Code")
+	assert.Contains(t, joined, "each order–customer pairing has the uniqueness → Customer Code")
 }
 
 func TestFormatAssociationUniquenessDisplay(t *testing.T) {

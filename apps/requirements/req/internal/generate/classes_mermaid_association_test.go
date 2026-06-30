@@ -18,8 +18,17 @@ func TestAssociationUniquenessMermaidTag(t *testing.T) {
 
 	toKey := helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "jurisdiction"))
 	jurisdictionAttrKey := helper.Must(identity.NewAttributeKey(toKey, "jurisdiction_code"))
+	toClass := model_class.NewClass(toKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Jurisdiction"})
+	toClass.SetAttributes([]model_class.Attribute{
+		mermaidTestAttribute(jurisdictionAttrKey, "Jurisdiction Code"),
+	})
 	uniqueness := model_class.NewAssociationUniqueness(nil, []identity.Key{jurisdictionAttrKey})
-	assert.Equal(t, "{unique: jurisdiction_code}", associationUniquenessMermaidTag(&uniqueness))
+	fromClass := model_class.NewClass(
+		helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "partner")),
+		model_class.ClassLinks{},
+		model_class.ClassDetails{Name: "Partner"},
+	)
+	assert.Equal(t, "{unique: → Jurisdiction Code}", associationUniquenessMermaidTag(&uniqueness, fromClass, toClass))
 }
 
 func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
@@ -58,8 +67,12 @@ func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
 						Key:  subdomainKey,
 						Name: "S X",
 						Classes: map[identity.Key]model_class.Class{
-							fromKey: model_class.NewClass(fromKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "From"}),
-							toKey:   model_class.NewClass(toKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "To"}),
+							fromKey: mermaidTestClassWithAttrs(fromKey, "From", []model_class.Attribute{
+								mermaidTestAttribute(fromAttrKey, "Abbr"),
+							}),
+							toKey: mermaidTestClassWithAttrs(toKey, "To", []model_class.Attribute{
+								mermaidTestAttribute(toAttrKey, "Jurisdiction Code"),
+							}),
 						},
 						ClassAssociations: map[identity.Key]model_class.Association{assocKey: assoc},
 					},
@@ -76,7 +89,7 @@ func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
 
 	fromNode := nodeIDFor("class", fromKey)
 	toNode := nodeIDFor("class", toKey)
-	want := fromNode + ` "1" --> "1" ` + toNode + ` : owns<br/>{unique: abbr, jurisdiction_code}`
+	want := fromNode + ` "1" --> "1" ` + toNode + ` : owns<br/>{unique: Abbr → Jurisdiction Code}`
 	assert.Contains(t, got, want)
 }
 
@@ -96,6 +109,9 @@ func TestGenerateClassesMermaidAssociationClassUniqueness(t *testing.T) {
 	one := helper.Must(model_class.NewMultiplicity("1"))
 	toAttrKey := helper.Must(identity.NewAttributeKey(bKey, "code"))
 	uniqueness := model_class.NewAssociationUniqueness(nil, []identity.Key{toAttrKey})
+	bClass := mermaidTestClassWithAttrs(bKey, "B", []model_class.Attribute{
+		mermaidTestAttribute(toAttrKey, "Code"),
+	})
 	cKey := helper.Must(identity.NewClassKey(subdomainKey, "c_class"))
 	assoc := model_class.NewAssociation(
 		assocKey,
@@ -108,7 +124,10 @@ func TestGenerateClassesMermaidAssociationClassUniqueness(t *testing.T) {
 		},
 	)
 	domainKey := helper.Must(identity.NewDomainKey("dx"))
-	model.Domains[domainKey].Subdomains[subdomainKey].ClassAssociations[assocKey] = assoc
+	subdomain := model.Domains[domainKey].Subdomains[subdomainKey]
+	subdomain.Classes[bKey] = bClass
+	subdomain.ClassAssociations[assocKey] = assoc
+	model.Domains[domainKey].Subdomains[subdomainKey] = subdomain
 
 	writer := newCollectWriter()
 	require.NoError(t, GenerateMdToWriter(model, writer, nil))
@@ -117,7 +136,7 @@ func TestGenerateClassesMermaidAssociationClassUniqueness(t *testing.T) {
 	got := string(writer.md[aFile])
 
 	linkNode := nodeIDFor("assoc", assocKey)
-	wantLinkNode := `class ` + linkNode + `["links<br/>{unique: code}"]`
+	wantLinkNode := `class ` + linkNode + `["links<br/>{unique: → Code}"]`
 	assert.Contains(t, got, wantLinkNode)
 	assert.Contains(t, got, `<<association>>`)
 	if idx := strings.Index(got, wantLinkNode); idx >= 0 {
@@ -141,4 +160,18 @@ func TestGenerateClassesMermaidOmitsAnyUniqueness(t *testing.T) {
 
 	assert.NotContains(t, got, `{unique:`)
 	assert.Contains(t, got, `["links"]`)
+}
+
+func mermaidTestClassWithAttrs(classKey identity.Key, name string, attrs []model_class.Attribute) model_class.Class {
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: name})
+	class.SetAttributes(attrs)
+	return class
+}
+
+func mermaidTestAttribute(key identity.Key, name string) model_class.Attribute {
+	attr, err := model_class.NewAttribute(key, model_class.AttributeDetails{Name: name, Details: ""}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
+	if err != nil {
+		panic(err)
+	}
+	return attr
 }

@@ -165,15 +165,21 @@ var _funcMap = template.FuncMap{
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
-	"render_association_class_mermaid":       renderAssociationClassMermaid,
-	"association_class_key":                  associationClassKeyNode,
-	"classes_mermaid_stereotype_annotation":  classesMermaidStereotypeAnnotation,
-	"classes_mermaid_association_link_label": classesMermaidAssociationLinkLabel,
-	"classes_mermaid_association_node_title": classesMermaidAssociationNodeTitle,
-	"classes_mermaid_attribute_member":       classesMermaidAttributeMember,
-	"classes_mermaid_focal_class_style":      func() string { return classesMermaidFocalClassStyle },
-	"has_mermaid_focal_class":                hasMermaidFocalClass,
-	"mermaid_focal_class_key":                mermaidFocalClassKey,
+	"render_association_class_mermaid":      renderAssociationClassMermaid,
+	"association_class_key":                 associationClassKeyNode,
+	"classes_mermaid_stereotype_annotation": classesMermaidStereotypeAnnotation,
+	"classes_mermaid_association_link_label": func(reqs *req_flat.Requirements, assoc model_class.Association) string {
+		lookup, _ := reqs.ClassLookup()
+		return classesMermaidAssociationLinkLabel(assoc, lookup[assoc.FromClassKey.String()], lookup[assoc.ToClassKey.String()])
+	},
+	"classes_mermaid_association_node_title": func(reqs *req_flat.Requirements, assoc model_class.Association) string {
+		lookup, _ := reqs.ClassLookup()
+		return classesMermaidAssociationNodeTitle(assoc, lookup[assoc.FromClassKey.String()], lookup[assoc.ToClassKey.String()])
+	},
+	"classes_mermaid_attribute_member":  classesMermaidAttributeMember,
+	"classes_mermaid_focal_class_style": func() string { return classesMermaidFocalClassStyle },
+	"has_mermaid_focal_class":           hasMermaidFocalClass,
+	"mermaid_focal_class_key":           mermaidFocalClassKey,
 	"generalization_label": func(reqs *req_flat.Requirements, generalizationKey identity.Key) (value string) {
 		generalizationLookup := reqs.GeneralizationLookup()
 		generalization := generalizationLookup[generalizationKey.String()]
