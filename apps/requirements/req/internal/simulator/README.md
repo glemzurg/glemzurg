@@ -45,4 +45,5 @@ output as a coverage map for what to model or wire next.
 ## CLI
 
 See `cmd/simulate` and `scripts/simulate.sh` for `-include-subdomain`,
-`-include-class`, seeds, and trace output.
+`-include-class`, seeds, and trace output. Clean runs (no violations) print the
+full step trace by default; use `-trace` to force it when violations are present.

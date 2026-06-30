@@ -50,7 +50,7 @@ func parseCLIOptions() cliOptions {
 	stopOnViolation := flag.Bool("stop-on-violation", true, "Stop at first violation")
 	continueOnViolation := flag.Bool("continue-on-violation", false, "Keep simulating after violations (overrides -stop-on-violation)")
 	output := flag.String("output", "text", "Output format: text or json")
-	showTrace := flag.Bool("trace", false, "Include full step trace in output")
+	showTrace := flag.Bool("trace", false, "Include full step trace in output (also shown by default when no violations are found)")
 	quiet := flag.Bool("quiet", false, "Only output violations")
 	rootSource := flag.String("rootsource", "", "Human model root source directory (e.g. data_sandbox/model)")
 	modelName := flag.String("model", "", "Model name when using -rootsource (e.g. evenplay)")
@@ -205,13 +205,22 @@ func buildSurfaceSpec(model *core.Model, includeSubdomainPaths, includeClassName
 	return spec, nil
 }
 
+// shouldShowStepTrace reports whether the full step trace belongs in CLI output.
+// Clean runs always include steps so incremental surface growth is visible without -trace.
+func shouldShowStepTrace(showTrace, quiet bool, hasViolations bool) bool {
+	if quiet {
+		return false
+	}
+	return showTrace || !hasViolations
+}
+
 func outputText(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool, seed int64) {
 	if !quiet {
 		log.Printf("Simulation completed: %d steps, terminated: %s (seed: %d)\n",
 			simTrace.StepsTaken, simTrace.TerminationReason, seed)
 	}
 
-	if showTrace && !quiet {
+	if shouldShowStepTrace(showTrace, quiet, violationReport.HasViolations()) {
 		log.Print(simTrace.FormatText())
 		log.Println()
 	}
@@ -229,7 +238,7 @@ func outputJSON(simTrace *trace.SimulationTrace, violationReport *report.Violati
 		}
 	}
 
-	if showTrace && !quiet {
+	if shouldShowStepTrace(showTrace, quiet, violationReport.HasViolations()) {
 		output["trace"] = simTrace
 	}
 
