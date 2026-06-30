@@ -1,6 +1,8 @@
 package state
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 )
@@ -30,7 +32,34 @@ func NewAssociationLinkTable() *AssociationLinkTable {
 }
 
 // AddLink records a host association materialized by one association-class instance.
-func (t *AssociationLinkTable) AddLink(link AssociationLink) {
+// Returns an error when the host association already links the same endpoint pair.
+func (t *AssociationLinkTable) AddLink(link AssociationLink) error {
+	hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
+	if t.hasEndpointPair(hostKey, link.FromEndpointID, link.ToEndpointID) {
+		return fmt.Errorf(
+			"duplicate host association link between endpoints %d and %d",
+			link.FromEndpointID,
+			link.ToEndpointID,
+		)
+	}
+
+	if t.byHostFrom[hostKey] == nil {
+		t.byHostFrom[hostKey] = make(map[InstanceID][]AssociationLink)
+	}
+	t.byHostFrom[hostKey][link.FromEndpointID] = append(t.byHostFrom[hostKey][link.FromEndpointID], link)
+
+	if t.byHostTo[hostKey] == nil {
+		t.byHostTo[hostKey] = make(map[InstanceID][]AssociationLink)
+	}
+	t.byHostTo[hostKey][link.ToEndpointID] = append(t.byHostTo[hostKey][link.ToEndpointID], link)
+
+	t.byInstance[link.LinkInstanceID] = link
+	return nil
+}
+
+// AppendLinkWithoutValidation records a row without duplicate checking.
+// Invariant tests use this to represent tables that bypass normal insertion rules.
+func (t *AssociationLinkTable) AppendLinkWithoutValidation(link AssociationLink) {
 	hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
 
 	if t.byHostFrom[hostKey] == nil {
@@ -44,6 +73,23 @@ func (t *AssociationLinkTable) AddLink(link AssociationLink) {
 	t.byHostTo[hostKey][link.ToEndpointID] = append(t.byHostTo[hostKey][link.ToEndpointID], link)
 
 	t.byInstance[link.LinkInstanceID] = link
+}
+
+func (t *AssociationLinkTable) hasEndpointPair(
+	hostKey evaluator.AssociationKey,
+	fromID InstanceID,
+	toID InstanceID,
+) bool {
+	byFrom, ok := t.byHostFrom[hostKey]
+	if !ok {
+		return false
+	}
+	for _, link := range byFrom[fromID] {
+		if link.ToEndpointID == toID {
+			return true
+		}
+	}
+	return false
 }
 
 // LinksFromEndpoint returns materialized rows for a from-endpoint under the host association.

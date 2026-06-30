@@ -66,7 +66,7 @@ func (c *AssociationUniquenessChecker) checkBinding(
 	simState *state.SimulationState,
 	binding associationUniquenessBinding,
 ) ViolationErrors {
-	links := c.collectAssociationLinks(simState, binding.association)
+	links := collectAssociationLinks(simState, binding.association)
 	if len(links) == 0 {
 		return nil
 	}
@@ -112,7 +112,7 @@ type associationLinkEndpoints struct {
 	toID   state.InstanceID
 }
 
-func (c *AssociationUniquenessChecker) collectAssociationLinks(
+func collectAssociationLinks(
 	simState *state.SimulationState,
 	assoc model_class.Association,
 ) []associationLinkEndpoints {

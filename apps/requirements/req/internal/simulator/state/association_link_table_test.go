@@ -17,7 +17,7 @@ func TestAssociationLinkTableIndexesByEndpoints(t *testing.T) {
 	}
 
 	table := NewAssociationLinkTable()
-	table.AddLink(link)
+	require.NoError(t, table.AddLink(link))
 
 	fromLinks := table.LinksFromEndpoint(hostKey, 1)
 	require.Len(t, fromLinks, 1)

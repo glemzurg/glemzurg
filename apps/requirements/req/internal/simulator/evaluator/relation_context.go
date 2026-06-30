@@ -202,7 +202,7 @@ func (c *RelationContext) GetRelation(classKey, fieldName string) *RelationInfo 
 func (c *RelationContext) CreateLink(assocKey AssociationKey, from, to *object.Record) {
 	fromID := c.identities.GetOrAssign(from)
 	toID := c.identities.GetOrAssign(to)
-	c.links.AddLink(assocKey, fromID, toID)
+	_ = c.links.AddLink(assocKey, fromID, toID)
 }
 
 // RemoveLink removes a link between two records for the given association.

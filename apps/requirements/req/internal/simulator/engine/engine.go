@@ -161,12 +161,13 @@ func setupState(model *core.Model, catalog *ClassCatalog) (*state.SimulationStat
 
 // simulationCheckers groups all invariant/constraint checkers.
 type simulationCheckers struct {
-	invariantChecker       *invariants.InvariantChecker
-	dataTypeChecker        *invariants.DataTypeChecker
-	indexChecker           *invariants.IndexUniquenessChecker
-	multChecker            *invariants.MultiplicityChecker
-	assocUniquenessChecker *invariants.AssociationUniquenessChecker
-	associationInvChecker  *invariants.AssociationInvariantChecker
+	invariantChecker         *invariants.InvariantChecker
+	dataTypeChecker          *invariants.DataTypeChecker
+	indexChecker             *invariants.IndexUniquenessChecker
+	multChecker              *invariants.MultiplicityChecker
+	assocInstancePairChecker *invariants.AssociationInstancePairChecker
+	assocUniquenessChecker   *invariants.AssociationUniquenessChecker
+	associationInvChecker    *invariants.AssociationInvariantChecker
 }
 
 // setupCheckers creates all invariant and constraint checkers.
@@ -180,6 +181,7 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 
 	indexChecker := invariants.NewIndexUniquenessChecker(model)
 	multChecker := invariants.NewMultiplicityChecker(model)
+	assocInstancePairChecker := invariants.NewAssociationInstancePairChecker(model)
 	assocUniquenessChecker := invariants.NewAssociationUniquenessChecker(model)
 	associationInvChecker, err := invariants.NewAssociationInvariantChecker(model)
 	if err != nil {
@@ -187,12 +189,13 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 	}
 
 	return &simulationCheckers{
-		invariantChecker:       invariantChecker,
-		dataTypeChecker:        dataTypeChecker,
-		indexChecker:           indexChecker,
-		multChecker:            multChecker,
-		assocUniquenessChecker: assocUniquenessChecker,
-		associationInvChecker:  associationInvChecker,
+		invariantChecker:         invariantChecker,
+		dataTypeChecker:          dataTypeChecker,
+		indexChecker:             indexChecker,
+		multChecker:              multChecker,
+		assocInstancePairChecker: assocInstancePairChecker,
+		assocUniquenessChecker:   assocUniquenessChecker,
+		associationInvChecker:    associationInvChecker,
 	}, nil
 }
 
@@ -262,10 +265,11 @@ func buildActionExecutor(
 ) *actions.ActionExecutor {
 	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
 	structuralCheckers := &invariants.StructuralInvariantCheckers{
-		Index:                 checkers.indexChecker,
-		Multiplicity:          checkers.multChecker,
-		AssociationUniqueness: checkers.assocUniquenessChecker,
-		AssociationInvariants: checkers.associationInvChecker,
+		Index:                   checkers.indexChecker,
+		Multiplicity:            checkers.multChecker,
+		AssociationInstancePair: checkers.assocInstancePairChecker,
+		AssociationUniqueness:   checkers.assocUniquenessChecker,
+		AssociationInvariants:   checkers.associationInvChecker,
 	}
 	return actions.NewActionExecutor(
 		bindingsBuilder,

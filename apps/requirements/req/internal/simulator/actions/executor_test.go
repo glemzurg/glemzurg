@@ -1304,7 +1304,7 @@ func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
 	orderAttrs.Set("amount", object.NewInteger(0))
 	order := simState.CreateInstance(orderKey, orderAttrs)
 	item := simState.CreateInstance(itemKey, object.NewRecord())
-	simState.AddLink(assocKey, order.ID, item.ID)
+	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
 
 	event := orderClass.Events[mustKey("domain/d/subdomain/s/class/order/event/close")]
 	instance := simState.GetInstance(order.ID)

@@ -37,7 +37,7 @@ func (s *AssociationPeerEffectsSuite) TestInlineDestroyGuaranteeRemovesPlainAsso
 
 	orderInst := s.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
+	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
 
 	action := peerInlineDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
@@ -56,7 +56,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesPlainAssociationLin
 
 	orderInst := s.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
+	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
 
 	action := peerDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
@@ -74,7 +74,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteViolationWhenPeerLacksDele
 
 	orderInst := s.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
+	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
 
 	action := peerDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
@@ -321,7 +321,7 @@ func TestSetMapUpdateViolationWhenEventParamsOmitted(t *testing.T) {
 
 	orderInst := suite.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := suite.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
+	require.NoError(t, simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
 
 	action := peerUpdateSetMapAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
@@ -337,7 +337,7 @@ func TestSetMapUpdateRespectsArgumentOrder(t *testing.T) {
 
 	orderInst := suite.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := suite.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
+	require.NoError(t, simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
 
 	action := peerUpdateSetMapActionWithArgOrder(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem", []string{"TopoffBalance", "MinimumBalance"})
 	ownerParams := map[string]object.Object{

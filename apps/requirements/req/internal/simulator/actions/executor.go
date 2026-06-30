@@ -367,6 +367,9 @@ func (e *ActionExecutor) checkAssociationStructuralInvariants() invariants.Viola
 	if e.structuralCheckers.Multiplicity != nil {
 		violations = append(violations, e.structuralCheckers.Multiplicity.CheckState(e.bindingsBuilder.State())...)
 	}
+	if e.structuralCheckers.AssociationInstancePair != nil {
+		violations = append(violations, e.structuralCheckers.AssociationInstancePair.CheckState(e.bindingsBuilder.State())...)
+	}
 	if e.structuralCheckers.AssociationUniqueness != nil {
 		violations = append(violations, e.structuralCheckers.AssociationUniqueness.CheckState(e.bindingsBuilder.State())...)
 	}
@@ -962,7 +965,9 @@ func (e *ActionExecutor) linkPlainCreationOverAssociation(
 			sourceAssocKey.String(),
 		)
 	}
-	simState.AddLink(*sourceAssocKey, *sourceID, newInstanceID)
+	if err := simState.AddLink(*sourceAssocKey, *sourceID, newInstanceID); err != nil {
+		return fmt.Errorf("failed to link association %s: %w", sourceAssocKey.String(), err)
+	}
 	return nil
 }
 
@@ -1004,7 +1009,9 @@ func (e *ActionExecutor) handleAssociationClassCreation(
 	}
 
 	instance := simState.CreateInstance(class.Key, newAttrs)
-	simState.AddAssociationLink(linkInfo.HostAssocKey, *sourceID, *targetID, instance.ID)
+	if err := simState.AddAssociationLink(linkInfo.HostAssocKey, *sourceID, *targetID, instance.ID); err != nil {
+		return nil, fmt.Errorf("failed to materialize host association %s: %w", linkInfo.HostAssocKey.String(), err)
+	}
 
 	return instance, nil
 }

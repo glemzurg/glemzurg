@@ -378,7 +378,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	jurisdiction := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	linkInst := simState.CreateInstance(linkDefKey, object.NewRecord())
-	simState.AddAssociationLink(hostAssocKey, partner.ID, jurisdiction.ID, linkInst.ID)
+	s.Require().NoError(simState.AddAssociationLink(hostAssocKey, partner.ID, jurisdiction.ID, linkInst.ID))
 
 	result := &engine.SimulationResult{
 		StepsTaken:        1,

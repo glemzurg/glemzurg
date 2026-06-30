@@ -196,11 +196,12 @@ func (s *SimulationState) InstancesByClass(classKey identity.Key) []*ClassInstan
 }
 
 // AddLink creates a link between two instances for an association.
-func (s *SimulationState) AddLink(assocKey identity.Key, fromID, toID InstanceID) {
+// Returns an error when the association already links the instance pair.
+func (s *SimulationState) AddLink(assocKey identity.Key, fromID, toID InstanceID) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.links.AddLink(
+	return s.links.AddLink(
 		evaluator.AssociationKey(assocKey.String()),
 		evaluator.ObjectID(fromID),
 		evaluator.ObjectID(toID),
@@ -300,16 +301,17 @@ func (s *SimulationState) Links() *evaluator.LinkTable {
 }
 
 // AddAssociationLink materializes one host association row via an association-class instance.
+// Returns an error when the host association already links the endpoint pair.
 func (s *SimulationState) AddAssociationLink(
 	hostAssocKey identity.Key,
 	fromEndpointID InstanceID,
 	toEndpointID InstanceID,
 	linkInstanceID InstanceID,
-) {
+) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.associationLinks.AddLink(AssociationLink{
+	return s.associationLinks.AddLink(AssociationLink{
 		HostAssocKey:   hostAssocKey,
 		FromEndpointID: fromEndpointID,
 		ToEndpointID:   toEndpointID,
@@ -400,11 +402,15 @@ func (s *SimulationState) Clone() *SimulationState {
 		objID := evaluator.ObjectID(instance.ID)
 		links := s.links.GetAllForward(objID)
 		for _, link := range links {
-			clone.links.AddLink(link.AssociationKey, link.FromID, link.ToID)
+			if err := clone.links.AddLink(link.AssociationKey, link.FromID, link.ToID); err != nil {
+				panic(fmt.Sprintf("clone link table: %v", err))
+			}
 		}
 	}
 	for _, link := range s.associationLinks.AllLinks() {
-		clone.associationLinks.AddLink(link)
+		if err := clone.associationLinks.AddLink(link); err != nil {
+			panic(fmt.Sprintf("clone association link table: %v", err))
+		}
 	}
 
 	return clone

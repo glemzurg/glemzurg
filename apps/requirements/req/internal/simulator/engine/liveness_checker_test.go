@@ -394,11 +394,11 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 
 	// Create a state with a link.
 	finalState := makeFinalState()
-	finalState.Links().AddLink(
+	s.Require().NoError(finalState.Links().AddLink(
 		evaluator.AssociationKey(assocKey.String()),
 		evaluator.ObjectID(1),
 		evaluator.ObjectID(2),
-	)
+	))
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},

@@ -65,8 +65,11 @@ const (
 	// ViolationTypeMultiplicity indicates an association multiplicity constraint is not met.
 	ViolationTypeMultiplicity
 
-	// ViolationTypeAssociationUniqueness indicates a per-pair association link cap is not met.
+	// ViolationTypeAssociationUniqueness indicates an association uniqueness tuple is duplicated.
 	ViolationTypeAssociationUniqueness
+
+	// ViolationTypeAssociationDuplicateLink indicates duplicate links between the same instance pair.
+	ViolationTypeAssociationDuplicateLink
 
 	// ViolationTypeSafetyRule indicates an action's safety rule was violated.
 	ViolationTypeSafetyRule
@@ -100,70 +103,44 @@ const (
 	ViolationTypePeerEventUnavailable
 )
 
+var violationTypeNames = map[ViolationType]string{
+	ViolationTypeModelInvariant:               "model_invariant",
+	ViolationTypeClassInvariant:               "class_invariant",
+	ViolationTypeActionRequires:               "action_requires",
+	ViolationTypeActionGuarantee:              "action_guarantee",
+	ViolationTypeQueryGuarantee:               "query_guarantee",
+	ViolationTypeAttributeInvariant:           "attribute_invariant",
+	ViolationTypeParameterInvariant:           "parameter_invariant",
+	ViolationTypeRequiredAttribute:            "required_attribute",
+	ViolationTypeSpanConstraint:               "span_constraint",
+	ViolationTypeEnumConstraint:               "enum_constraint",
+	ViolationTypeCollectionSize:               "collection_size",
+	ViolationTypeUnparsedDataType:             "unparsed_data_type",
+	ViolationTypeMissingAttributeTypeSpec:     "missing_attribute_type_spec",
+	ViolationTypeMissingParameterTypeSpec:     "missing_parameter_type_spec",
+	ViolationTypeIndexUniqueness:              "index_uniqueness",
+	ViolationTypeAssociationInvariant:         "association_invariant",
+	ViolationTypeMultiplicity:                 "multiplicity",
+	ViolationTypeAssociationUniqueness:        "association_uniqueness",
+	ViolationTypeAssociationDuplicateLink:     "association_duplicate_link",
+	ViolationTypeSafetyRule:                   "safety_rule",
+	ViolationTypeLivenessClassNotInstantiated: "liveness_class_not_instantiated",
+	ViolationTypeLivenessAttributeNotWritten:  "liveness_attribute_not_written",
+	ViolationTypeLivenessAssociationNotLinked: "liveness_association_not_linked",
+	ViolationTypeLivenessAttributeNotRead:     "liveness_attribute_not_read",
+	ViolationTypeLivenessEventNotSent:         "liveness_event_not_sent",
+	ViolationTypeLivenessQueryNotRun:          "liveness_query_not_run",
+	ViolationTypeLivenessActionNotExecuted:    "liveness_action_not_executed",
+	ViolationTypeStateMachineIncomplete:       "state_machine_incomplete",
+	ViolationTypePeerEventUnavailable:         "peer_event_unavailable",
+}
+
 // String returns a human-readable name for the violation type.
-//
-//complexity:cyclo:warn=30,fail=30 Simple switch.
 func (v ViolationType) String() string {
-	switch v {
-	case ViolationTypeModelInvariant:
-		return "model_invariant"
-	case ViolationTypeClassInvariant:
-		return "class_invariant"
-	case ViolationTypeActionRequires:
-		return "action_requires"
-	case ViolationTypeActionGuarantee:
-		return "action_guarantee"
-	case ViolationTypeQueryGuarantee:
-		return "query_guarantee"
-	case ViolationTypeAttributeInvariant:
-		return "attribute_invariant"
-	case ViolationTypeParameterInvariant:
-		return "parameter_invariant"
-	case ViolationTypeRequiredAttribute:
-		return "required_attribute"
-	case ViolationTypeSpanConstraint:
-		return "span_constraint"
-	case ViolationTypeEnumConstraint:
-		return "enum_constraint"
-	case ViolationTypeCollectionSize:
-		return "collection_size"
-	case ViolationTypeUnparsedDataType:
-		return "unparsed_data_type"
-	case ViolationTypeMissingAttributeTypeSpec:
-		return "missing_attribute_type_spec"
-	case ViolationTypeMissingParameterTypeSpec:
-		return "missing_parameter_type_spec"
-	case ViolationTypeIndexUniqueness:
-		return "index_uniqueness"
-	case ViolationTypeAssociationInvariant:
-		return "association_invariant"
-	case ViolationTypeMultiplicity:
-		return "multiplicity"
-	case ViolationTypeAssociationUniqueness:
-		return "association_uniqueness"
-	case ViolationTypeSafetyRule:
-		return "safety_rule"
-	case ViolationTypeLivenessClassNotInstantiated:
-		return "liveness_class_not_instantiated"
-	case ViolationTypeLivenessAttributeNotWritten:
-		return "liveness_attribute_not_written"
-	case ViolationTypeLivenessAssociationNotLinked:
-		return "liveness_association_not_linked"
-	case ViolationTypeLivenessAttributeNotRead:
-		return "liveness_attribute_not_read"
-	case ViolationTypeLivenessEventNotSent:
-		return "liveness_event_not_sent"
-	case ViolationTypeLivenessQueryNotRun:
-		return "liveness_query_not_run"
-	case ViolationTypeLivenessActionNotExecuted:
-		return "liveness_action_not_executed"
-	case ViolationTypeStateMachineIncomplete:
-		return "state_machine_incomplete"
-	case ViolationTypePeerEventUnavailable:
-		return "peer_event_unavailable"
-	default:
-		return "unknown"
+	if name, ok := violationTypeNames[v]; ok {
+		return name
 	}
+	return "unknown"
 }
 
 // ViolationError represents a detected invariant violation during simulation.
@@ -608,7 +585,7 @@ type AssociationUniquenessViolationParams struct {
 	Message         string
 }
 
-// NewAssociationUniquenessViolation creates a violation for a per-pair association link cap failure.
+// NewAssociationUniquenessViolation creates a violation for a duplicated association uniqueness tuple.
 func NewAssociationUniquenessViolation(params AssociationUniquenessViolationParams) *ViolationError {
 	return &ViolationError{
 		Type: ViolationTypeAssociationUniqueness,
@@ -618,6 +595,29 @@ func NewAssociationUniquenessViolation(params AssociationUniquenessViolationPara
 			params.FromInstanceID,
 			params.ToInstanceID,
 			params.Message,
+		),
+		InstanceID: params.FromInstanceID,
+	}
+}
+
+// AssociationDuplicateLinkViolationParams holds parameters for a duplicate instance-pair link failure.
+type AssociationDuplicateLinkViolationParams struct {
+	AssociationName string
+	FromInstanceID  state.InstanceID
+	ToInstanceID    state.InstanceID
+	ActualCount     int
+}
+
+// NewAssociationDuplicateLinkViolation creates a violation for duplicate links on one instance pair.
+func NewAssociationDuplicateLinkViolation(params AssociationDuplicateLinkViolationParams) *ViolationError {
+	return &ViolationError{
+		Type: ViolationTypeAssociationDuplicateLink,
+		Message: fmt.Sprintf(
+			"association duplicate link: association %q has %d links between instances %d and %d",
+			params.AssociationName,
+			params.ActualCount,
+			params.FromInstanceID,
+			params.ToInstanceID,
 		),
 		InstanceID: params.FromInstanceID,
 	}

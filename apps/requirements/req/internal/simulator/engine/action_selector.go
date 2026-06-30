@@ -166,12 +166,11 @@ func (s *ActionSelector) collectAssociationClassCreations(
 }
 
 func (s *ActionSelector) pairAllowsAnotherLink(
-	_ model_class.Association,
-	_ *state.SimulationState,
-	_, _ state.InstanceID,
+	hostAssoc model_class.Association,
+	simState *state.SimulationState,
+	fromID, toID state.InstanceID,
 ) bool {
-	// Association uniqueness constraints are enforced by AssociationUniquenessChecker, not here.
-	return true
+	return simState.CountActivePairLinks(hostAssoc, fromID, toID) == 0
 }
 
 // getInstanceStateName extracts the current state name from an instance's _state attribute.
