@@ -1570,7 +1570,32 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 		).WithField("to_class_key")
 	}
 
-	assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, assoc.Name)
+	result, err := buildClassAssociationFromResolvedEndpoints(subdomainKey, fromClassKey, toClassKey, keyStr, assoc, assocFile)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+
+	// Handle association class key if present
+	if assoc.AssociationClassKey != nil && *assoc.AssociationClassKey != "" {
+		for key := range classes {
+			if key.SubKey == *assoc.AssociationClassKey {
+				result.AssociationClassKey = &key
+				break
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func buildClassAssociationFromResolvedEndpoints(
+	parentKey identity.Key,
+	fromClassKey, toClassKey identity.Key,
+	keyStr string,
+	assoc *inputClassAssociation,
+	assocFile string,
+) (model_class.Association, error) {
+	assocKey, err := identity.NewClassAssociationKey(parentKey, fromClassKey, toClassKey, assoc.Name)
 	if err != nil {
 		return model_class.Association{}, convErr(
 			ErrConvAssocKeyConstruction,
@@ -1597,32 +1622,21 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 		).WithField("to_multiplicity")
 	}
 
-	uniqueness, err := parseAssociationUniqueness(assoc, assocFile)
+	uniqueness, err := resolveAssociationUniquenessFromInput(assoc, fromClassKey, toClassKey, assocFile)
 	if err != nil {
 		return model_class.Association{}, err
 	}
 
-	result := model_class.Association{
-		Key:              assocKey,
-		Name:             assoc.Name,
-		Details:          assoc.Details,
-		FromClassKey:     fromClassKey,
-		FromMultiplicity: fromMult,
-		ToClassKey:       toClassKey,
-		ToMultiplicity:   toMult,
-		Uniqueness:       uniqueness,
-		UmlComment:       assoc.UmlComment,
-	}
-
-	// Handle association class key if present
-	if assoc.AssociationClassKey != nil && *assoc.AssociationClassKey != "" {
-		for key := range classes {
-			if key.SubKey == *assoc.AssociationClassKey {
-				result.AssociationClassKey = &key
-				break
-			}
-		}
-	}
+	result := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: assoc.Name, Details: assoc.Details},
+		model_class.AssociationEnd{ClassKey: fromClassKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: toClassKey, Multiplicity: toMult},
+		model_class.AssociationOptions{
+			Uniqueness: uniqueness,
+			UmlComment: assoc.UmlComment,
+		},
+	)
 
 	if err := attachAssociationInvariants(&result, assoc); err != nil {
 		return model_class.Association{}, err
@@ -1703,55 +1717,29 @@ func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssoci
 		).WithField("to_class_key")
 	}
 
-	assocKey, err := identity.NewClassAssociationKey(domainKey, fromClassKey, toClassKey, assoc.Name)
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvAssocKeyConstruction,
-			fmt.Sprintf("failed to create association key for '%s': %s", keyStr, err.Error()),
-			assocFile,
-		).WithField("key")
-	}
+	return buildClassAssociationFromResolvedEndpoints(domainKey, fromClassKey, toClassKey, keyStr, assoc, assocFile)
+}
 
-	fromMult, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.FromMultiplicity))
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse from_multiplicity '%s': %s", assoc.FromMultiplicity, err.Error()),
-			assocFile,
-		).WithField("from_multiplicity")
+func lookupClassKeyInModelDomains(
+	domains map[identity.Key]model_domain.Domain,
+	domainSubKey, subdomainSubKey, classSubKey string,
+) identity.Key {
+	for domKey, domain := range domains {
+		if domKey.SubKey != domainSubKey {
+			continue
+		}
+		for subKey, subdomain := range domain.Subdomains {
+			if subKey.SubKey != subdomainSubKey {
+				continue
+			}
+			for classKey := range subdomain.Classes {
+				if classKey.SubKey == classSubKey {
+					return classKey
+				}
+			}
+		}
 	}
-
-	toMult, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.ToMultiplicity))
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse to_multiplicity '%s': %s", assoc.ToMultiplicity, err.Error()),
-			assocFile,
-		).WithField("to_multiplicity")
-	}
-
-	uniqueness, err := parseAssociationUniqueness(assoc, assocFile)
-	if err != nil {
-		return model_class.Association{}, err
-	}
-
-	result := model_class.Association{
-		Key:              assocKey,
-		Name:             assoc.Name,
-		Details:          assoc.Details,
-		FromClassKey:     fromClassKey,
-		FromMultiplicity: fromMult,
-		ToClassKey:       toClassKey,
-		ToMultiplicity:   toMult,
-		Uniqueness:       uniqueness,
-		UmlComment:       assoc.UmlComment,
-	}
-
-	if err := attachAssociationInvariants(&result, assoc); err != nil {
-		return model_class.Association{}, err
-	}
-
-	return result, nil
+	return identity.Key{}
 }
 
 // convertModelAssociationToModel converts an inputClassAssociation at model level to a model_class.Association.
@@ -1776,34 +1764,8 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 		).WithField("to_class_key")
 	}
 
-	// Find the class keys
-	var fromClassKey, toClassKey identity.Key
-	for domKey, domain := range domains {
-		if domKey.SubKey == fromDomain {
-			for subKey, subdomain := range domain.Subdomains {
-				if subKey.SubKey == fromSubdomain {
-					for classKey := range subdomain.Classes {
-						if classKey.SubKey == fromClass {
-							fromClassKey = classKey
-							break
-						}
-					}
-				}
-			}
-		}
-		if domKey.SubKey == toDomain {
-			for subKey, subdomain := range domain.Subdomains {
-				if subKey.SubKey == toSubdomain {
-					for classKey := range subdomain.Classes {
-						if classKey.SubKey == toClass {
-							toClassKey = classKey
-							break
-						}
-					}
-				}
-			}
-		}
-	}
+	fromClassKey := lookupClassKeyInModelDomains(domains, fromDomain, fromSubdomain, fromClass)
+	toClassKey := lookupClassKeyInModelDomains(domains, toDomain, toSubdomain, toClass)
 
 	if fromClassKey.SubKey == "" {
 		return model_class.Association{}, convErr(
@@ -1820,76 +1782,7 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 		).WithField("to_class_key")
 	}
 
-	// For model-level associations, parent key is empty
-	emptyKey := identity.Key{}
-	assocKey, err := identity.NewClassAssociationKey(emptyKey, fromClassKey, toClassKey, assoc.Name)
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvAssocKeyConstruction,
-			fmt.Sprintf("failed to create association key for '%s': %s", keyStr, err.Error()),
-			assocFile,
-		).WithField("key")
-	}
-
-	fromMult, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.FromMultiplicity))
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse from_multiplicity '%s': %s", assoc.FromMultiplicity, err.Error()),
-			assocFile,
-		).WithField("from_multiplicity")
-	}
-
-	toMult, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.ToMultiplicity))
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse to_multiplicity '%s': %s", assoc.ToMultiplicity, err.Error()),
-			assocFile,
-		).WithField("to_multiplicity")
-	}
-
-	uniqueness, err := parseAssociationUniqueness(assoc, assocFile)
-	if err != nil {
-		return model_class.Association{}, err
-	}
-
-	result := model_class.Association{
-		Key:              assocKey,
-		Name:             assoc.Name,
-		Details:          assoc.Details,
-		FromClassKey:     fromClassKey,
-		FromMultiplicity: fromMult,
-		ToClassKey:       toClassKey,
-		ToMultiplicity:   toMult,
-		Uniqueness:       uniqueness,
-		UmlComment:       assoc.UmlComment,
-	}
-
-	if err := attachAssociationInvariants(&result, assoc); err != nil {
-		return model_class.Association{}, err
-	}
-
-	return result, nil
-}
-
-func parseAssociationUniqueness(assoc *inputClassAssociation, assocFile string) (model_class.Multiplicity, error) {
-	if strings.TrimSpace(assoc.Uniqueness) == "" {
-		return model_class.Multiplicity{}, convErr(
-			ErrConvMultiplicityInvalid,
-			"association uniqueness is required, got ''",
-			assocFile,
-		).WithField("uniqueness")
-	}
-	uniqueness, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.Uniqueness))
-	if err != nil {
-		return model_class.Multiplicity{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse uniqueness '%s': %s", assoc.Uniqueness, err.Error()),
-			assocFile,
-		).WithField("uniqueness")
-	}
-	return uniqueness, nil
+	return buildClassAssociationFromResolvedEndpoints(identity.Key{}, fromClassKey, toClassKey, keyStr, assoc, assocFile)
 }
 
 // normalizeMultiplicity converts user-friendly multiplicity strings to the format expected by model_class.NewMultiplicity.

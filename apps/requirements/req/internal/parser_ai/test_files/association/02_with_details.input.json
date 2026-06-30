@@ -4,6 +4,5 @@
     "from_class_key": "customer.customer",
     "from_multiplicity": "1",
     "to_class_key": "order_management.order",
-    "to_multiplicity": "*",
-    "uniqueness": "any"
+    "to_multiplicity": "*"
 }

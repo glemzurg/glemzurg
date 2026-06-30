@@ -1085,25 +1085,6 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 	return nil
 }
 
-func validateAssociationUniqueness(assoc *inputClassAssociation, assocKey, assocPath string) error {
-	if strings.TrimSpace(assoc.Uniqueness) == "" {
-		return NewParseError(
-			ErrAssocUniquenessRequired,
-			fmt.Sprintf("association '%s' uniqueness is required, got ''", assocKey),
-			assocPath,
-		).WithField("uniqueness").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
-	}
-	if err := validateMultiplicity(assoc.Uniqueness); err != nil {
-		return NewParseError(
-			ErrTreeAssocMultiplicityInvalid,
-			fmt.Sprintf("association '%s' uniqueness '%s' is invalid: %s",
-				assocKey, assoc.Uniqueness, err.Error()),
-			assocPath,
-		).WithField("uniqueness").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
-	}
-	return nil
-}
-
 // parseDomainScopedKey parses a key in subdomain/class format.
 func parseDomainScopedKey(key string) (subdomain, class string, err error) {
 	parts := strings.Split(key, "/")

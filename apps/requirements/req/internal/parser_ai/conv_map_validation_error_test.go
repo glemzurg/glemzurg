@@ -267,6 +267,7 @@ func (s *MapValidationErrorSuite) TestAllCoreCodesInMapHaveMatchingParserCode() 
 		ErrConvDomainAssocSameDomains:        true,
 		ErrConvTransitionInitialEventInvalid: true,
 		ErrConvTransitionFinalEventInvalid:   true,
+		ErrConvAssocUniquenessInvalid:        true,
 	}
 
 	for coreCode, parserCode := range coreToParserCode {

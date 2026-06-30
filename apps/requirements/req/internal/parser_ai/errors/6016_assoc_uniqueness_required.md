@@ -1,35 +1,31 @@
-# Association Uniqueness Required (E6016)
+# Association Uniqueness Invalid (E6016)
 
-The association JSON file has no `uniqueness` field, or the field is empty or whitespace only.
+The association JSON file has an invalid `uniqueness` object.
 
 ## What Went Wrong
 
-Every association must declare how many links may exist between the same from-class and to-class instances. The `uniqueness` field is required and uses the same multiplicity format as `from_multiplicity` and `to_multiplicity`.
+The `uniqueness` mapping must list at least one attribute SubKey on the from class, the to class, or both. An empty `uniqueness` object or a mapping with empty `from_attributes` and `to_attributes` arrays triggers this error.
 
 ## How to Fix
 
-Provide a valid multiplicity value for `uniqueness`. Use `"any"` when there is no per-pair cap:
+Provide a valid uniqueness tuple. List only `to_attributes` when uniqueness is implied per from-class instance:
 
 ```json
 {
-    "name": "Order Contains Items",
-    "from_class_key": "order",
+    "name": "Configures Customers For",
+    "from_class_key": "partner",
     "from_multiplicity": "1",
-    "to_class_key": "line_item",
-    "to_multiplicity": "1..*",
-    "uniqueness": "any"
+    "to_class_key": "jurisdiction",
+    "to_multiplicity": "any",
+    "uniqueness": {
+        "to_attributes": ["jurisdiction_code"]
+    }
 }
 ```
 
-Use `"0..1"` when at most one link may exist between the same two instances:
-
-```json
-    "uniqueness": "0..1"
-```
+List only `from_attributes` when uniqueness is implied per to-class instance. List both sides when the tuple spans endpoint attributes.
 
 ## Related Errors
 
-- **E6007**: from_multiplicity is required
-- **E6008**: to_multiplicity is required
+- **E21120**: model conversion rejected a uniqueness tuple
 - **E6012**: multiplicity format is invalid
-- **E11016**: tree validation reports invalid multiplicity format

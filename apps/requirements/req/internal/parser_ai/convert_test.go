@@ -770,7 +770,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	lineItemClass.SetAttributes(nil)
 
 	// Build association
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Order Lines", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: lineItemKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Order Lines", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: lineItemKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	// Build subdomain
 	subdomain := model_domain.NewSubdomain(subdomainKey, "Default", "", "", "")
@@ -833,8 +833,6 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 								FromMultiplicity: "1",
 								ToClassKey:       "line_item",
 								ToMultiplicity:   "1..*",
-
-								Uniqueness: "any",
 							},
 						},
 					},
@@ -976,8 +974,6 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 								FromMultiplicity: "1",
 								ToClassKey:       "line_item",
 								ToMultiplicity:   "1..*",
-
-								Uniqueness: "any",
 							},
 						},
 					},
@@ -1187,7 +1183,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	subdomain2.Classes = map[identity.Key]model_class.Class{shipmentKey: shipmentClass}
 
 	// Build association
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Order Shipments", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: shipmentKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Order Shipments", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: shipmentKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	// Build domain
 	domain := model_domain.NewDomain(domainKey, "Orders", "", "", false, "")
@@ -1252,8 +1248,6 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 						FromMultiplicity: "1",
 						ToClassKey:       "shipping/shipment",
 						ToMultiplicity:   "*",
-
-						Uniqueness: "any",
 					},
 				},
 			},
@@ -1318,7 +1312,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	}
 
 	// Build association
-	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Order Products", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: productKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.Multiplicity{}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Order Products", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: productKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	// Build model
 	m := core.NewModel("testmodel", core.ModelDetails{Name: "Test Model", Details: ""}, "", nil, nil, nil)
@@ -1385,8 +1379,6 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 				FromMultiplicity: "1",
 				ToClassKey:       "inventory/default/product",
 				ToMultiplicity:   "*",
-
-				Uniqueness: "any",
 			},
 		},
 	}

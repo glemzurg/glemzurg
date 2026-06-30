@@ -66,22 +66,22 @@ func allErrorCodes() map[int]string {
 		ErrClassAttrKeyNameMismatch: "ErrClassAttrKeyNameMismatch",
 
 		// Association errors (6xxx).
-		ErrAssocNameRequired:        "ErrAssocNameRequired",
-		ErrAssocNameEmpty:           "ErrAssocNameEmpty",
-		ErrAssocInvalidJSON:         "ErrAssocInvalidJSON",
-		ErrAssocSchemaViolation:     "ErrAssocSchemaViolation",
-		ErrAssocFromClassRequired:   "ErrAssocFromClassRequired",
-		ErrAssocToClassRequired:     "ErrAssocToClassRequired",
-		ErrAssocFromMultRequired:    "ErrAssocFromMultRequired",
-		ErrAssocToMultRequired:      "ErrAssocToMultRequired",
-		ErrAssocFromClassNotFound:   "ErrAssocFromClassNotFound",
-		ErrAssocToClassNotFound:     "ErrAssocToClassNotFound",
-		ErrAssocClassNotFound:       "ErrAssocClassNotFound",
-		ErrAssocMultiplicityInvalid: "ErrAssocMultiplicityInvalid",
-		ErrAssocFilenameInvalid:     "ErrAssocFilenameInvalid",
-		ErrAssocDuplicateKey:        "ErrAssocDuplicateKey",
-		ErrAssocNameMismatch:        "ErrAssocNameMismatch",
-		ErrAssocUniquenessRequired:  "ErrAssocUniquenessRequired",
+		ErrAssocNameRequired:                "ErrAssocNameRequired",
+		ErrAssocNameEmpty:                   "ErrAssocNameEmpty",
+		ErrAssocInvalidJSON:                 "ErrAssocInvalidJSON",
+		ErrAssocSchemaViolation:             "ErrAssocSchemaViolation",
+		ErrAssocFromClassRequired:           "ErrAssocFromClassRequired",
+		ErrAssocToClassRequired:             "ErrAssocToClassRequired",
+		ErrAssocFromMultRequired:            "ErrAssocFromMultRequired",
+		ErrAssocToMultRequired:              "ErrAssocToMultRequired",
+		ErrAssocFromClassNotFound:           "ErrAssocFromClassNotFound",
+		ErrAssocToClassNotFound:             "ErrAssocToClassNotFound",
+		ErrAssocClassNotFound:               "ErrAssocClassNotFound",
+		ErrAssocMultiplicityInvalid:         "ErrAssocMultiplicityInvalid",
+		ErrAssocFilenameInvalid:             "ErrAssocFilenameInvalid",
+		ErrAssocDuplicateKey:                "ErrAssocDuplicateKey",
+		ErrAssocNameMismatch:                "ErrAssocNameMismatch",
+		ErrAssocUniquenessConstraintInvalid: "ErrAssocUniquenessConstraintInvalid",
 
 		// State machine errors (7xxx).
 		ErrStateMachineInvalidJSON:     "ErrStateMachineInvalidJSON",
@@ -298,6 +298,7 @@ func allErrorCodes() map[int]string {
 		ErrConvDomainAssocSameDomains:        "ErrConvDomainAssocSameDomains",
 		ErrConvTransitionInitialEventInvalid: "ErrConvTransitionInitialEventInvalid",
 		ErrConvTransitionFinalEventInvalid:   "ErrConvTransitionFinalEventInvalid",
+		ErrConvAssocUniquenessInvalid:        "ErrConvAssocUniquenessInvalid",
 
 		// Named set errors (22xxx).
 		ErrNamedSetNameRequired:     "ErrNamedSetNameRequired",
@@ -412,6 +413,6 @@ func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
 	// 240 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 246,
+	s.Len(codes, 247,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }

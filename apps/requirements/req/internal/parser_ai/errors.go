@@ -54,22 +54,22 @@ const (
 	ErrClassAttrKeyNameMismatch = 5013 // Attribute map key does not match keyFromName(name)
 
 	// Association errors (6xxx).
-	ErrAssocNameRequired        = 6001
-	ErrAssocNameEmpty           = 6002
-	ErrAssocInvalidJSON         = 6003
-	ErrAssocSchemaViolation     = 6004
-	ErrAssocFromClassRequired   = 6005
-	ErrAssocToClassRequired     = 6006
-	ErrAssocFromMultRequired    = 6007
-	ErrAssocToMultRequired      = 6008
-	ErrAssocFromClassNotFound   = 6009
-	ErrAssocToClassNotFound     = 6010
-	ErrAssocClassNotFound       = 6011
-	ErrAssocMultiplicityInvalid = 6012
-	ErrAssocFilenameInvalid     = 6013
-	ErrAssocDuplicateKey        = 6014
-	ErrAssocNameMismatch        = 6015
-	ErrAssocUniquenessRequired  = 6016
+	ErrAssocNameRequired                = 6001
+	ErrAssocNameEmpty                   = 6002
+	ErrAssocInvalidJSON                 = 6003
+	ErrAssocSchemaViolation             = 6004
+	ErrAssocFromClassRequired           = 6005
+	ErrAssocToClassRequired             = 6006
+	ErrAssocFromMultRequired            = 6007
+	ErrAssocToMultRequired              = 6008
+	ErrAssocFromClassNotFound           = 6009
+	ErrAssocToClassNotFound             = 6010
+	ErrAssocClassNotFound               = 6011
+	ErrAssocMultiplicityInvalid         = 6012
+	ErrAssocFilenameInvalid             = 6013
+	ErrAssocDuplicateKey                = 6014
+	ErrAssocNameMismatch                = 6015
+	ErrAssocUniquenessConstraintInvalid = 6016
 
 	// State machine errors (7xxx).
 	ErrStateMachineInvalidJSON     = 7001
@@ -311,4 +311,5 @@ const (
 	ErrConvDomainAssocSameDomains        = 21117 // Domain association references same domain for problem and solution
 	ErrConvTransitionInitialEventInvalid = 21118 // Initial transition event is not _new
 	ErrConvTransitionFinalEventInvalid   = 21119 // Final transition event is not _destroy
+	ErrConvAssocUniquenessInvalid        = 21120 // Association uniqueness tuple failed validation during conversion
 )

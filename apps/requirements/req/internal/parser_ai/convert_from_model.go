@@ -710,7 +710,7 @@ func convertAssociationFromModel(assoc *model_class.Association, parentType stri
 		UmlComment:       assoc.UmlComment,
 		Invariants:       convertLogicsFromModel(assoc.Invariants),
 	}
-	result.Uniqueness = assoc.Uniqueness.ParsedString()
+	result.Uniqueness = convertUniquenessFromModel(assoc.Uniqueness)
 
 	// Format class keys based on scope
 	switch parentType {

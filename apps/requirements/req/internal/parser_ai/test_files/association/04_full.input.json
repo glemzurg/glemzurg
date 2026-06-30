@@ -6,6 +6,5 @@
     "to_class_key": "hr.department",
     "to_multiplicity": "1..*",
     "association_class_key": "hr.employment",
-    "uml_comment": "Many-to-many relationship with employment details",
-    "uniqueness": "any"
+    "uml_comment": "Many-to-many relationship with employment details"
 }
