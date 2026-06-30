@@ -11,7 +11,7 @@ import (
 // _LOGIC_TYPE_QUERY is the logic type string for query logic.
 const _LOGIC_TYPE_QUERY = "query"
 
-const _LOGIC_TYPE_DELETE = "delete"
+const _LOGIC_TYPE_DESTROY = "destroy"
 
 // inputLogic represents a formal logic specification in JSON.
 type inputLogic struct {
@@ -95,7 +95,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 			ErrLogicTypeRequired,
 			"logic type is required, got ''",
 			filename,
-		).WithField("type").WithHint("add a \"type\" field with one of: assessment, state_change, query, safety_rule, value, let, delete")
+		).WithField("type").WithHint("add a \"type\" field with one of: assessment, state_change, query, safety_rule, value, let, destroy")
 	}
 
 	// Description is required (schema enforces this, but we provide a clearer error)
@@ -118,28 +118,28 @@ func validateLogic(logic *inputLogic, filename string) error {
 
 	// Target validation based on logic type (when type is specified).
 	switch logic.Type {
-	case "state_change", _LOGIC_TYPE_QUERY, "let", _LOGIC_TYPE_DELETE:
+	case "state_change", _LOGIC_TYPE_QUERY, "let", _LOGIC_TYPE_DESTROY:
 		if logic.Target == "" {
 			return NewParseError(
 				ErrLogicTargetRequired,
 				"logic of type '"+logic.Type+"' requires a non-empty 'target' field — for state_change this is the attribute SubKey being set, for query this is the output identifier name, for let this is the local variable name",
 				filename,
-			).WithField("target").WithHint("state_change/query/let/delete types require a non-empty \"target\" field")
+			).WithField("target").WithHint("state_change/query/let/destroy types require a non-empty \"target\" field")
 		}
-		if logic.Type == _LOGIC_TYPE_DELETE {
+		if logic.Type == _LOGIC_TYPE_DESTROY {
 			if strings.TrimSpace(logic.DestroyEvent) == "" {
 				return NewParseError(
 					ErrLogicDestroyEventRequired,
-					"logic of type '"+_LOGIC_TYPE_DELETE+"' requires a non-empty 'destroy_event' field",
+					"logic of type '"+_LOGIC_TYPE_DESTROY+"' requires a non-empty 'destroy_event' field",
 					filename,
 				).WithField("destroy_event").WithHint("add destroy_event with the peer event call, e.g. \"_destroy(b)\"")
 			}
 		} else if strings.TrimSpace(logic.DestroyEvent) != "" {
 			return NewParseError(
 				ErrLogicDestroyEventNotAllowed,
-				"only delete logic may declare destroy_event, got type '"+logic.Type+"'",
+				"only destroy logic may declare destroy_event, got type '"+logic.Type+"'",
 				filename,
-			).WithField("destroy_event").WithHint("remove destroy_event or change type to delete")
+			).WithField("destroy_event").WithHint("remove destroy_event or change type to destroy")
 		}
 		if (logic.Type == _LOGIC_TYPE_QUERY || logic.Type == "let") && strings.HasPrefix(logic.Target, "_") {
 			return NewParseError(

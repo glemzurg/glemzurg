@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidateDeleteLogicRequiresDeleteEvent(t *testing.T) {
+func TestValidateDestroyLogicRequiresDeleteEvent(t *testing.T) {
 	key := helper.Must(identity.NewActionGuaranteeKey(helper.Must(identity.NewActionKey(helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "c")), "a")), "0"))
 	logic := NewLogic(
 		key,
-		LogicTypeDelete,
+		LogicTypeDestroy,
 		"Remove peers",
 		"AppliesSocialCurrencyLogic",
 		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ b \in AppliesSocialCurrencyLogic : TRUE }`},
@@ -25,11 +25,11 @@ func TestValidateDeleteLogicRequiresDeleteEvent(t *testing.T) {
 	require.Contains(t, err.Error(), "destroy_event")
 }
 
-func TestValidateDeleteLogicValid(t *testing.T) {
+func TestValidateDestroyLogicValid(t *testing.T) {
 	key := helper.Must(identity.NewActionGuaranteeKey(helper.Must(identity.NewActionKey(helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "c")), "a")), "0"))
 	logic := NewLogic(
 		key,
-		LogicTypeDelete,
+		LogicTypeDestroy,
 		"Remove peers",
 		"AppliesSocialCurrencyLogic",
 		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ b \in AppliesSocialCurrencyLogic : TRUE }`},
@@ -40,12 +40,12 @@ func TestValidateDeleteLogicValid(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestValidateDeleteLogicRejectsQueryGuaranteeKey(t *testing.T) {
+func TestValidateDestroyLogicRejectsQueryGuaranteeKey(t *testing.T) {
 	queryKey := helper.Must(identity.NewQueryKey(helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")), "c")), "q"))
 	guarKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
 	logic := NewLogic(
 		guarKey,
-		LogicTypeDelete,
+		LogicTypeDestroy,
 		"Remove peers",
 		"AssocField",
 		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ b \in AssocField : TRUE }`},
@@ -62,12 +62,12 @@ func TestValidateStateChangeRejectsInlinePeerDelete(t *testing.T) {
 	logic := NewLogic(
 		key,
 		LogicTypeStateChange,
-		"Bad inline delete",
+		"Bad inline destroy",
 		"AppliesSocialCurrencyLogic",
 		logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: `{ _destroy(b) : b \in AppliesSocialCurrencyLogic }`},
 		nil,
 	)
 	err := logic.Validate(coreerr.NewContext("test", ""))
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "type delete")
+	require.Contains(t, err.Error(), "type destroy")
 }

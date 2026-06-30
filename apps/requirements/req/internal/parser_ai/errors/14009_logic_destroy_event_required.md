@@ -1,14 +1,14 @@
-# Logic Delete Event Required (E14009)
+# Logic Destroy Event Required (E14009)
 
-A logic specification of type `delete` is missing the required `destroy_event` field.
+A logic specification of type `destroy` is missing the required `destroy_event` field.
 
 ## How to Fix
 
-Add `destroy_event` with the peer delete event call. Keep the set-filter selection in `specification`:
+Add `destroy_event` with the peer destroy event call. Keep the set-filter selection in `specification`:
 
 ```json
 {
-    "type": "delete",
+    "type": "destroy",
     "description": "Peer _destroy events for removed peers",
     "target": "AppliesSocialCurrencyLogic",
     "notation": "tla_plus",

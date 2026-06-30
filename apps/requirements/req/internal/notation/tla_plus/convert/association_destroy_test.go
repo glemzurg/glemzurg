@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAssociationDeleteGuaranteeSelectionTLALower(t *testing.T) {
+func TestAssociationDestroyGuaranteeSelectionTLALower(t *testing.T) {
 	ctx := associationSetMapDeleteFixture()
 	selectionSpec := `{ b \in AppliesSocialCurrencyLogic : TRUE }`
 
@@ -30,7 +30,7 @@ func TestAssociationDeleteGuaranteeSelectionTLALower(t *testing.T) {
 	eventDeleteKey := selection.Set.(*me.AssociationRef).AssociationKey
 	logic := model_logic.NewLogic(
 		identity.Key{},
-		model_logic.LogicTypeDelete,
+		model_logic.LogicTypeDestroy,
 		"Remove peers",
 		"AppliesSocialCurrencyLogic",
 		logic_spec.ExpressionSpec{Expression: selectionLowered},
@@ -50,7 +50,7 @@ func TestAssociationDeleteGuaranteeSelectionTLALower(t *testing.T) {
 	require.Equal(t, model_state.EventNameDestroy, eventCall.EventKey.SubKey)
 }
 
-func TestAssociationDeleteGuaranteeInlineDifferenceTLALower(t *testing.T) {
+func TestAssociationDestroyGuaranteeInlineDifferenceTLALower(t *testing.T) {
 	ctx := associationSetMapDeleteFixture()
 	spec := `AppliesSocialCurrencyLogic \ { b \in AppliesSocialCurrencyLogic : TRUE }`
 
@@ -61,7 +61,7 @@ func TestAssociationDeleteGuaranteeInlineDifferenceTLALower(t *testing.T) {
 
 	logic := model_logic.NewLogic(
 		identity.Key{},
-		model_logic.LogicTypeDelete,
+		model_logic.LogicTypeDestroy,
 		"Remove peers",
 		"AppliesSocialCurrencyLogic",
 		logic_spec.ExpressionSpec{Expression: lowered},

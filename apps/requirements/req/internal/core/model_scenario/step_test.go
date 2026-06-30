@@ -268,11 +268,11 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	err = step.Validate(ctx)
 	suite.Require().NoError(err)
 
-	// Valid delete leaf
+	// Valid destroy leaf
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
-		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		LeafType:      t_strPtr(LEAF_TYPE_DESTROY),
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 	}
@@ -356,36 +356,36 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	err = step.Validate(ctx)
 	suite.Require().ErrorContains(err, "scenario leaf must have a scenario_key")
 
-	// Invalid delete: has to_object_key
+	// Invalid destroy: has to_object_key
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
-		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		LeafType:      t_strPtr(LEAF_TYPE_DESTROY),
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 	}
 	err = step.Validate(ctx)
-	suite.Require().ErrorContains(err, "delete leaf cannot have a to_object_key")
+	suite.Require().ErrorContains(err, "destroy leaf cannot have a to_object_key")
 
-	// Invalid delete: has event_key
+	// Invalid destroy: has event_key
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
-		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		LeafType:      t_strPtr(LEAF_TYPE_DESTROY),
 		FromObjectKey: suite.fromObjKey,
 		EventKey:      suite.eventKey,
 	}
 	err = step.Validate(ctx)
-	suite.Require().ErrorContains(err, "delete leaf cannot have event_key, scenario_key, or query_key")
+	suite.Require().ErrorContains(err, "destroy leaf cannot have event_key, scenario_key, or query_key")
 
-	// Invalid delete: no from_object_key
+	// Invalid destroy: no from_object_key
 	step = Step{
 		Key:      suite.stepKey(0),
 		StepType: STEP_TYPE_LEAF,
-		LeafType: t_strPtr(LEAF_TYPE_DELETE),
+		LeafType: t_strPtr(LEAF_TYPE_DESTROY),
 	}
 	err = step.Validate(ctx)
-	suite.Require().ErrorContains(err, "delete leaf must have a from_object_key")
+	suite.Require().ErrorContains(err, "destroy leaf must have a from_object_key")
 
 	// Invalid query: no from_object_key
 	step = Step{
@@ -509,27 +509,27 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	err = step.Validate(ctx)
 	suite.Require().ErrorContains(err, "scenario leaf cannot have event_key or query_key")
 
-	// Cross-validation: delete leaf with scenario_key
+	// Cross-validation: destroy leaf with scenario_key
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
-		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		LeafType:      t_strPtr(LEAF_TYPE_DESTROY),
 		FromObjectKey: suite.fromObjKey,
 		ScenarioKey:   suite.scenarioRef,
 	}
 	err = step.Validate(ctx)
-	suite.Require().ErrorContains(err, "delete leaf cannot have event_key, scenario_key, or query_key")
+	suite.Require().ErrorContains(err, "destroy leaf cannot have event_key, scenario_key, or query_key")
 
-	// Cross-validation: delete leaf with query_key
+	// Cross-validation: destroy leaf with query_key
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
-		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		LeafType:      t_strPtr(LEAF_TYPE_DESTROY),
 		FromObjectKey: suite.fromObjKey,
 		QueryKey:      suite.queryKey,
 	}
 	err = step.Validate(ctx)
-	suite.Require().ErrorContains(err, "delete leaf cannot have event_key, scenario_key, or query_key")
+	suite.Require().ErrorContains(err, "destroy leaf cannot have event_key, scenario_key, or query_key")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
@@ -597,11 +597,11 @@ func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
 	err = step.Validate(ctx)
 	suite.Require().ErrorContains(err, "ScenarioKey: invalid key type 'domain' for scenario")
 
-	// FromObjectKey with wrong key type on delete leaf.
+	// FromObjectKey with wrong key type on destroy leaf.
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
-		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		LeafType:      t_strPtr(LEAF_TYPE_DESTROY),
 		FromObjectKey: wrongKey,
 	}
 	err = step.Validate(ctx)
@@ -899,7 +899,7 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 							{
 								"key": "%[1]s/sstep/8",
 								"step_type": "leaf",
-								"leaf_type": "delete",
+								"leaf_type": "destroy",
 								"from_object_key": "%[1]s/sobject/from4"
 							}
 						]
@@ -966,7 +966,7 @@ statements:
           statements:
             - key: %[1]s/sstep/8
               step_type: leaf
-              leaf_type: delete
+              leaf_type: destroy
               from_object_key: %[1]s/sobject/from4
 `, scenarioKeyStr)
 

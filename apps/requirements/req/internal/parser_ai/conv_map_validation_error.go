@@ -176,9 +176,9 @@ var coreToParserCode = map[coreerr.Code]int{
 	coreerr.SstepScenarioToRequired:     ErrConvScenarioStepInvalid,
 	coreerr.SstepScenarioKeyRequired:    ErrConvScenarioStepInvalid,
 	coreerr.SstepScenarioEventForbidden: ErrConvScenarioStepInvalid,
-	coreerr.SstepDeleteFromRequired:     ErrConvScenarioStepInvalid,
-	coreerr.SstepDeleteToForbidden:      ErrConvScenarioStepInvalid,
-	coreerr.SstepDeleteKeysForbidden:    ErrConvScenarioStepInvalid,
+	coreerr.SstepDestroyFromRequired:    ErrConvScenarioStepInvalid,
+	coreerr.SstepDestroyToForbidden:     ErrConvScenarioStepInvalid,
+	coreerr.SstepDestroyKeysForbidden:   ErrConvScenarioStepInvalid,
 
 	// Logic spec/expression validation.
 	coreerr.LogicSpecInvalid:           ErrConvLogicSpecInvalid,

@@ -70,8 +70,8 @@
 <text text-anchor="start" x="188.91" y="-419.6" font-family="Arial" font-size="14.00">target_type_specification </text>
 <text text-anchor="start" x="347.67" y="-419.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 <polygon fill="none" stroke="black" points="181.91,-376.6 181.91,-407.4 405.88,-407.4 405.88,-376.6 181.91,-376.6"/>
-<text text-anchor="start" x="188.91" y="-388.8" font-family="Arial" font-size="14.00">delete_event_specification </text>
-<text text-anchor="start" x="357.8" y="-388.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<text text-anchor="start" x="188.91" y="-388.8" font-family="Arial" font-size="14.00">destroy_event_specification </text>
+<text text-anchor="start" x="365.57" y="-388.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.logic&#45;&gt;public.model -->
 <g id="edge1" class="edge">

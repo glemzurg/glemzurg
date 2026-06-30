@@ -184,8 +184,8 @@ func (e *StepExecutor) executeTransition(
 	switch {
 	case result.WasCreation:
 		step.Kind = StepKindCreation
-	case result.WasDeletion:
-		step.Kind = StepKindDeletion
+	case result.WasDestroy:
+		step.Kind = StepKindDestroy
 	default:
 		step.Kind = StepKindNormal
 	}
@@ -282,7 +282,7 @@ func (e *StepExecutor) executeEntryActions(
 	simState *state.SimulationState,
 	step *SimulationStep,
 ) error {
-	if result.WasDeletion || result.ToState == "" {
+	if result.WasDestroy || result.ToState == "" {
 		return nil
 	}
 	toStateKey := stateNameToKey(result.ToState, pending.Class.Class)

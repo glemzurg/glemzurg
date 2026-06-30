@@ -273,7 +273,7 @@ func (suite *LogicSuite) TestAddLetType() {
 func (suite *LogicSuite) TestAddDeleteType() {
 	logicIn := model_logic.Logic{
 		Key:         suite.logicKey,
-		Type:        model_logic.LogicTypeDelete,
+		Type:        model_logic.LogicTypeDestroy,
 		Description: "Remove peers",
 		Target:      "AssocField",
 		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ b \in AssocField : TRUE }`},
@@ -286,7 +286,7 @@ func (suite *LogicSuite) TestAddDeleteType() {
 	suite.Require().NoError(err)
 	suite.Equal(model_logic.Logic{
 		Key:              suite.logicKey,
-		Type:             model_logic.LogicTypeDelete,
+		Type:             model_logic.LogicTypeDestroy,
 		Description:      "Remove peers",
 		Target:           "AssocField",
 		Spec:             logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ b \in AssocField : TRUE }`},

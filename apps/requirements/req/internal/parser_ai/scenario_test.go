@@ -68,7 +68,7 @@ func (suite *ScenarioSuite) TestStepMarshalUnmarshal() {
 	eventType := "event"
 	queryType := "query"
 	scenarioType := "scenario"
-	deleteType := "delete"
+	destroyType := "destroy"
 
 	tests := []struct {
 		name  string
@@ -108,10 +108,10 @@ func (suite *ScenarioSuite) TestStepMarshalUnmarshal() {
 			},
 		},
 		{
-			name: "leaf delete step",
+			name: "leaf destroy step",
 			input: inputStep{
 				StepType:      "leaf",
-				LeafType:      &deleteType,
+				LeafType:      &destroyType,
 				Description:   "Delete order",
 				FromObjectKey: strPtr("order_obj"),
 			},

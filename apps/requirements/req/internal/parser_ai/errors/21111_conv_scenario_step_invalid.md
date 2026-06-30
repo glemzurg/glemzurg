@@ -10,7 +10,7 @@ Scenario steps must follow specific structural rules depending on their type:
 - **Switch** steps must have at least 1 case
 - **Loop** steps must have a condition and at least 1 statement
 - **Case** steps must have a condition
-- **Leaf** steps must have the correct fields for their leaf_type (event, query, scenario, delete)
+- **Leaf** steps must have the correct fields for their leaf_type (event, query, scenario, destroy)
 - A scenario step cannot reference its own scenario
 
 ## How to Fix

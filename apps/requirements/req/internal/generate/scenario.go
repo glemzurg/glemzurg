@@ -181,8 +181,8 @@ func addMermaidLeafStep(ctx stepContext, builder *mermaidSequence, stmt model_sc
 		return addMermaidQueryLeaf(ctx, builder, stmt)
 	case model_scenario.LEAF_TYPE_SCENARIO:
 		return addMermaidScenarioLeaf(ctx, builder, stmt)
-	case model_scenario.LEAF_TYPE_DELETE:
-		return addMermaidDeleteLeaf(ctx, builder, stmt)
+	case model_scenario.LEAF_TYPE_DESTROY:
+		return addMermaidDestroyLeaf(ctx, builder, stmt)
 	default:
 		return errors.Errorf("unsupported leaf type in scenario Mermaid generation: '%s'", *stmt.LeafType)
 	}
@@ -300,13 +300,13 @@ func addMermaidScenarioLeaf(ctx stepContext, builder *mermaidSequence, stmt mode
 	return nil
 }
 
-func addMermaidDeleteLeaf(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
+func addMermaidDestroyLeaf(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
 	fromObject, found := ctx.objectLookup[stmt.FromObjectKey.String()]
 	if !found {
 		return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey.String())
 	}
 
 	participantID := scenarioObjectParticipantID(fromObject.Key)
-	builder.writeMessage(participantID, participantID, "(delete)")
+	builder.writeMessage(participantID, participantID, "(destroy)")
 	return nil
 }

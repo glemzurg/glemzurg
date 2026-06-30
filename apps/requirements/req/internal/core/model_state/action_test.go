@@ -15,10 +15,10 @@ func TestActionSuite(t *testing.T) {
 	suite.Run(t, new(ActionSuite))
 }
 
-func newDeleteGuarantee(key identity.Key, description, target string) model_logic.Logic {
+func newDestroyGuarantee(key identity.Key, description, target string) model_logic.Logic {
 	logic := model_logic.NewLogic(
 		key,
-		model_logic.LogicTypeDelete,
+		model_logic.LogicTypeDestroy,
 		description,
 		target,
 		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ b \\in " + target + " : TRUE }"},
@@ -200,7 +200,7 @@ func (suite *ActionSuite) TestValidate() {
 					model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Set x to 1.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 				},
 			},
-			errstr: "guarantee 0: logic kind must be 'state_change', 'let', or 'delete'",
+			errstr: "guarantee 0: logic kind must be 'state_change', 'let', or 'destroy'",
 		},
 		{
 			testName: "error safety rule wrong kind",
@@ -294,27 +294,27 @@ func (suite *ActionSuite) TestValidate() {
 			},
 		},
 		{
-			testName: "valid state_change and delete on same association target",
+			testName: "valid state_change and destroy on same association target",
 			action: Action{
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
 					model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Subtract removed peers.", "AssocField", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "AssocField \\ ToDelete"}, nil),
-					newDeleteGuarantee(guarKey, "Remove peers.", "AssocField"),
+					newDestroyGuarantee(guarKey, "Remove peers.", "AssocField"),
 				},
 			},
 		},
 		{
-			testName: "error duplicate delete guarantee target",
+			testName: "error duplicate destroy guarantee target",
 			action: Action{
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					newDeleteGuarantee(guarKey, "Remove peers.", "AssocField"),
-					newDeleteGuarantee(guarKey, "Remove peers again.", "AssocField"),
+					newDestroyGuarantee(guarKey, "Remove peers.", "AssocField"),
+					newDestroyGuarantee(guarKey, "Remove peers again.", "AssocField"),
 				},
 			},
-			errstr: "duplicate delete target",
+			errstr: "duplicate destroy target",
 		},
 		{
 			testName: "error duplicate let target in safety rules",

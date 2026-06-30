@@ -164,8 +164,8 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 		if err := lowerLogicSpec(&guar.Spec, guarCtx); err != nil {
 			return fmt.Errorf("guarantee %d: %w", i, err)
 		}
-		if guar.Type == model_logic.LogicTypeDelete {
-			if err := lowerDeleteGuaranteeEvent(guar, guarCtx); err != nil {
+		if guar.Type == model_logic.LogicTypeDestroy {
+			if err := lowerDestroyGuaranteeEvent(guar, guarCtx); err != nil {
 				return fmt.Errorf("guarantee %d destroy_event: %w", i, err)
 			}
 		}
@@ -234,7 +234,7 @@ func lowerContextWithPriorLetGuarantees(base *LowerContext, prior []model_logic.
 	return ctx
 }
 
-func lowerDeleteGuaranteeEvent(guar *model_logic.Logic, ctx *LowerContext) error {
+func lowerDestroyGuaranteeEvent(guar *model_logic.Logic, ctx *LowerContext) error {
 	deleteCtx := ctx
 	if sf, ok := guar.Spec.Expression.(*me.SetFilter); ok {
 		deleteCtx = withLocalVar(ctx, sf.Variable)

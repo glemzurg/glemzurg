@@ -156,7 +156,7 @@ func (h *CreationChainHandler) createMandatoryInstance(
 	}
 
 	// Execute entry actions on the new instance.
-	if !result.WasDeletion && result.ToState != "" {
+	if !result.WasDestroy && result.ToState != "" {
 		toStateKey := stateNameToKey(result.ToState, toClassInfo.Class)
 		if toStateKey != nil {
 			newInstance := simState.GetInstance(result.InstanceID)
@@ -312,7 +312,7 @@ func (h *CreationChainHandler) createPlainEndpointInstance(
 		Violations:       result.Violations,
 	}
 
-	if !result.WasDeletion && result.ToState != "" {
+	if !result.WasDestroy && result.ToState != "" {
 		toStateKey := stateNameToKey(result.ToState, toClassInfo.Class)
 		if toStateKey != nil {
 			newInstance := simState.GetInstance(result.InstanceID)
@@ -389,7 +389,7 @@ func (h *CreationChainHandler) createAssociationClassInstance(
 		Violations:       result.Violations,
 	}
 
-	if !result.WasDeletion && result.ToState != "" {
+	if !result.WasDestroy && result.ToState != "" {
 		toStateKey := stateNameToKey(result.ToState, acClassInfo.Class)
 		if toStateKey != nil {
 			newInstance := simState.GetInstance(result.InstanceID)

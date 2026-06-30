@@ -71,7 +71,7 @@ scenarios:
                     condition: case2
                     statements:
                         - step_type: leaf
-                          leaf_type: delete
+                          leaf_type: destroy
                           from_object_key: book
 
     scenario_b_key:

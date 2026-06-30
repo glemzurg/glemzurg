@@ -85,8 +85,8 @@ type TransitionResult struct {
 	// WasCreation is true if the transition was from the initial state (object creation).
 	WasCreation bool
 
-	// WasDeletion is true if the transition was to the final state (object deletion).
-	WasDeletion bool
+	// WasDestroy is true if the transition was to the final state (object destroy).
+	WasDestroy bool
 
 	// AssociationMaterialization is set when creation materializes a host association via an association class.
 	AssociationMaterialization *AssociationMaterialization
@@ -460,18 +460,18 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 	if err := evalLetBindings(action.Guarantees, bindings, "action", action.Name, "guarantee"); err != nil {
 		return err
 	}
-	// Pass 2: Non-delete guarantees (state_change drives association set updates first).
+	// Pass 2: Non-destroy guarantees (state_change drives association set updates first).
 	for i, guar := range action.Guarantees {
-		if guar.Type == model_logic.LogicTypeDelete {
+		if guar.Type == model_logic.LogicTypeDestroy {
 			continue
 		}
 		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
 			return err
 		}
 	}
-	// Pass 3: Delete guarantees fire peer _destroy for peers removed by state_change.
+	// Pass 3: Destroy guarantees fire peer _destroy for peers removed by state_change.
 	for i, guar := range action.Guarantees {
-		if guar.Type != model_logic.LogicTypeDelete {
+		if guar.Type != model_logic.LogicTypeDestroy {
 			continue
 		}
 		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
@@ -779,7 +779,7 @@ func (e *ActionExecutor) ExecuteTransition(
 		EventKey:                   event.Key,
 		TransitionKey:              chosen.Key,
 		WasCreation:                chosen.FromStateKey == nil,
-		WasDeletion:                chosen.ToStateKey == nil,
+		WasDestroy:                 chosen.ToStateKey == nil,
 		AssociationMaterialization: associationMaterialization,
 		ActionResult:               actionResult,
 		Violations:                 violations,

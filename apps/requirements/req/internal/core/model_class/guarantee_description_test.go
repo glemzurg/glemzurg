@@ -107,7 +107,7 @@ func TestComputedAssociationDestroyGuaranteeDescription(t *testing.T) {
 
 	guarantee := model_logic.Logic{
 		Key:    guaranteeKey,
-		Type:   model_logic.LogicTypeDelete,
+		Type:   model_logic.LogicTypeDestroy,
 		Target: "AppliesSocialCurrencyLogic",
 		Spec: logic_spec.ExpressionSpec{
 			Notation:      model_logic.NotationTLAPlus,

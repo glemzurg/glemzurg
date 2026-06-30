@@ -26,7 +26,7 @@ func TestMatchAssociationDestroyGuarantee(t *testing.T) {
 
 	logic := model_logic.NewLogic(
 		identity.Key{},
-		model_logic.LogicTypeDelete,
+		model_logic.LogicTypeDestroy,
 		"Remove peers",
 		"AssocField",
 		logic_spec.ExpressionSpec{
@@ -75,7 +75,7 @@ func TestMatchAssociationDestroyGuaranteeInlineStateChange(t *testing.T) {
 	}
 	logic := model_logic.NewLogic(
 		identity.Key{},
-		model_logic.LogicTypeDelete,
+		model_logic.LogicTypeDestroy,
 		"Remove peers",
 		"AssocField",
 		logic_spec.ExpressionSpec{

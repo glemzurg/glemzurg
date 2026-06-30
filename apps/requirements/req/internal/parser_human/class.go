@@ -1061,17 +1061,17 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		target, _ := itemMap["target"].(string)
 		specification, _ := itemMap["specification"].(string)
 
-		// Detect explicit logic type override (let or delete in guarantees).
+		// Detect explicit logic type override (let or destroy in guarantees).
 		itemType := logicType
 		if typeStr, ok := itemMap["type"].(string); ok {
 			switch typeStr {
 			case "let":
 				itemType = model_logic.LogicTypeLet
-			case "delete":
+			case "destroy":
 				if logicType != model_logic.LogicTypeStateChange {
-					return nil, errors.Errorf("%s[%d]: type delete is only valid in action guarantees", field, i)
+					return nil, errors.Errorf("%s[%d]: type destroy is only valid in action guarantees", field, i)
 				}
-				itemType = model_logic.LogicTypeDelete
+				itemType = model_logic.LogicTypeDestroy
 			}
 		}
 

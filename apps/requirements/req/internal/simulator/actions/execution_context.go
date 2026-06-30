@@ -313,7 +313,7 @@ func (ctx *ExecutionContext) AssociationRemovedPeers(
 	return ctx.associationRemovedPeers[key]
 }
 
-// MarkAssociationDestroyCandidate records a removed peer targeted by a delete guarantee.
+// MarkAssociationDestroyCandidate records a removed peer targeted by a destroy guarantee.
 func (ctx *ExecutionContext) MarkAssociationDestroyCandidate(
 	ownerInstanceID state.InstanceID,
 	assocKey identity.Key,

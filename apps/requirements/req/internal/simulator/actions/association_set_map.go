@@ -118,7 +118,7 @@ func (e *ActionExecutor) queueAssociationSetMap(
 	}
 	if model_state.IsSystemFinalEvent(event.Name) {
 		return false, fmt.Errorf(
-			"association set-map guarantee on %q: peer _destroy must use guarantee type delete with destroy_event",
+			"association set-map guarantee on %q: peer _destroy must use guarantee type destroy with destroy_event",
 			target,
 		)
 	}
@@ -319,10 +319,10 @@ func (e *ActionExecutor) deleteAssociationClassBeforePeer(
 	if !ok {
 		return nil
 	}
-	return e.fireAssociationClassDelete(ctx, pu, toClass, assoc, link)
+	return e.fireAssociationClassDestroy(ctx, pu, toClass, assoc, link)
 }
 
-type associationClassDeleteWork struct {
+type associationClassDestroyWork struct {
 	pu             DeferredPeerUpdate
 	toClass        model_class.Class
 	assoc          model_class.Association
@@ -330,7 +330,7 @@ type associationClassDeleteWork struct {
 	linkInstanceID state.InstanceID
 }
 
-func (e *ActionExecutor) fireAssociationClassDelete(
+func (e *ActionExecutor) fireAssociationClassDestroy(
 	ctx *ExecutionContext,
 	pu DeferredPeerUpdate,
 	toClass model_class.Class,
@@ -341,7 +341,7 @@ func (e *ActionExecutor) fireAssociationClassDelete(
 	if !ok {
 		return fmt.Errorf("association class %s not found", assoc.AssociationClassKey.String())
 	}
-	work := associationClassDeleteWork{
+	work := associationClassDestroyWork{
 		pu: pu, toClass: toClass, assoc: assoc, acClass: acClass, linkInstanceID: link.LinkInstanceID,
 	}
 	deleteEvent, ok := findFinalDestroyEvent(acClass)
@@ -353,10 +353,10 @@ func (e *ActionExecutor) fireAssociationClassDelete(
 	if acInstance == nil {
 		return nil
 	}
-	return e.executeAssociationClassDelete(ctx, work, deleteEvent, acInstance)
+	return e.executeAssociationClassDestroy(ctx, work, deleteEvent, acInstance)
 }
 
-func (w associationClassDeleteWork) recordUnavailable(
+func (w associationClassDestroyWork) recordUnavailable(
 	ctx *ExecutionContext,
 	e *ActionExecutor,
 	eventKey identity.Key,
@@ -366,9 +366,9 @@ func (w associationClassDeleteWork) recordUnavailable(
 	e.recordPeerEventUnavailable(ctx, vctx, w.acClass, w.linkInstanceID, eventKey, eventName)
 }
 
-func (e *ActionExecutor) executeAssociationClassDelete(
+func (e *ActionExecutor) executeAssociationClassDestroy(
 	ctx *ExecutionContext,
-	work associationClassDeleteWork,
+	work associationClassDestroyWork,
 	deleteEvent model_state.Event,
 	acInstance *state.ClassInstance,
 ) error {
@@ -389,7 +389,7 @@ func (e *ActionExecutor) removeAssociationLinkAfterPeerDelete(
 	pu DeferredPeerUpdate,
 	result *TransitionResult,
 ) {
-	if result != nil && result.WasDeletion {
+	if result != nil && result.WasDestroy {
 		return
 	}
 	assoc, found := e.peerCatalog.AssociationByKey(pu.AssocKey)

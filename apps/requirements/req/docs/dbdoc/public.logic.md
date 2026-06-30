@@ -18,7 +18,7 @@ A bit of business logic.
 | specification | text |  | true |  |  | The unambiguous form of the logic. |
 | target_type_notation | notation |  | true |  |  | Optional notation for the declared type of the logic target (e.g., tla_plus). |
 | target_type_specification | text |  | true |  |  | Optional type specification string for the logic target (e.g., Int, STRING). |
-| destroy_event_specification | text |  | true |  |  | Optional peer destroy event call for delete-type logic (e.g., _destroy(b)); uses logic.notation for notation. |
+| destroy_event_specification | text |  | true |  |  | Optional peer destroy event call for destroy-type logic (e.g., _destroy(b)); uses logic.notation for notation. |
 
 ## Constraints
 

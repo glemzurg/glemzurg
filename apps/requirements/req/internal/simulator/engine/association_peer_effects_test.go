@@ -31,7 +31,7 @@ func TestAssociationPeerEffectsSuite(t *testing.T) {
 	suite.Run(t, new(AssociationPeerEffectsSuite))
 }
 
-func (s *AssociationPeerEffectsSuite) TestInlineDeleteGuaranteeRemovesPlainAssociationLink() {
+func (s *AssociationPeerEffectsSuite) TestInlineDestroyGuaranteeRemovesPlainAssociationLink() {
 	fix := buildPlainAssocPeerFixture(true)
 	simState, ae := s.buildPeerEffectExecutor(fix.model)
 
@@ -39,13 +39,13 @@ func (s *AssociationPeerEffectsSuite) TestInlineDeleteGuaranteeRemovesPlainAssoc
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
 	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
 
-	action := peerInlineDeleteGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
+	action := peerInlineDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
 	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
 	s.Require().Len(result.PeerTransitions, 1)
 	s.Equal(model_state.EventNameDestroy, result.PeerTransitions[0].EventName)
-	s.True(result.PeerTransitions[0].Result.WasDeletion)
+	s.True(result.PeerTransitions[0].Result.WasDestroy)
 	s.Nil(simState.GetInstance(itemInst.ID))
 	s.Empty(simState.GetLinkedForward(orderInst.ID, fix.assocKey))
 }
@@ -58,7 +58,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesPlainAssociationLin
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
 	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
 
-	action := peerDeleteGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
+	action := peerDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
 	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
@@ -76,7 +76,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteViolationWhenPeerLacksDele
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
 	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
 
-	action := peerDeleteGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
+	action := peerDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
 	s.False(result.Success)
@@ -123,7 +123,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow
 	)
 	s.Require().NoError(err)
 
-	action := peerDeleteGuaranteeAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
+	action := peerDestroyGuaranteeAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
 	result, err := ae.ExecuteAction(action, partnerInst, nil)
 	s.Require().NoError(err)
 	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
@@ -449,7 +449,7 @@ func peerUpdateSetMapActionWithArgOrder(
 	return peerEffectAction(ownerKey, assocTLAField, expr)
 }
 
-func peerInlineDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
+func peerInlineDestroyGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
 	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_inline_destroy"))
 	deleteKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
 	deleteEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameDestroy))
@@ -466,7 +466,7 @@ func peerInlineDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.K
 	}
 	deleteGuar := model_logic.NewLogic(
 		deleteKey,
-		model_logic.LogicTypeDelete,
+		model_logic.LogicTypeDestroy,
 		"",
 		assocTLAField,
 		logic_spec.ExpressionSpec{Expression: inlineExpr},
@@ -479,7 +479,7 @@ func peerInlineDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.K
 
 	return model_state.NewAction(
 		actionKey,
-		model_state.ActionDetails{Name: "PeerInlineDelete", Details: ""},
+		model_state.ActionDetails{Name: "PeerInlineDestroy", Details: ""},
 		nil,
 		[]model_logic.Logic{deleteGuar},
 		nil,
@@ -487,7 +487,7 @@ func peerInlineDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.K
 	)
 }
 
-func peerDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
+func peerDestroyGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
 	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_destroy"))
 	letKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
 	stateKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "1"))
@@ -517,7 +517,7 @@ func peerDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, as
 	}
 	deleteGuar := model_logic.NewLogic(
 		deleteKey,
-		model_logic.LogicTypeDelete,
+		model_logic.LogicTypeDestroy,
 		"",
 		assocTLAField,
 		logic_spec.ExpressionSpec{Expression: deleteSelection},

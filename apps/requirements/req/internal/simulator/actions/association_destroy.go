@@ -26,7 +26,7 @@ func (e *ActionExecutor) tryQueueAssociationDestroyGuarantee(
 	guar model_logic.Logic,
 	bindings *evaluator.Bindings,
 ) (bool, error) {
-	if guar.Type != model_logic.LogicTypeDelete {
+	if guar.Type != model_logic.LogicTypeDestroy {
 		return false, nil
 	}
 	work, queuePeers, err := e.prepareDestroyGuaranteeWork(ctx, instance, guar, bindings)
@@ -47,7 +47,7 @@ func (e *ActionExecutor) prepareDestroyGuaranteeWork(
 ) (*destroyGuaranteeWork, bool, error) {
 	assocRef, selection, eventCall, ok := model_class.MatchAssociationDestroyGuarantee(guar)
 	if !ok {
-		return nil, false, fmt.Errorf("delete guarantee on %q: expression not in delete guarantee form", guar.Target)
+		return nil, false, fmt.Errorf("destroy guarantee on %q: expression not in destroy guarantee form", guar.Target)
 	}
 	if model_class.DestroyGuaranteeHasInlineStateChange(guar) {
 		if handled, err := e.tryApplyAssociationStateChangeGuarantee(
@@ -55,7 +55,7 @@ func (e *ActionExecutor) prepareDestroyGuaranteeWork(
 		); err != nil {
 			return nil, false, err
 		} else if !handled {
-			return nil, false, fmt.Errorf("delete guarantee on %q: inline association update did not apply", guar.Target)
+			return nil, false, fmt.Errorf("destroy guarantee on %q: inline association update did not apply", guar.Target)
 		}
 	}
 	mapTarget, event, eventFound, err := e.resolveDestroyGuaranteeTarget(instance, guar.Target, assocRef, eventCall)
@@ -94,25 +94,25 @@ func (e *ActionExecutor) resolveDestroyGuaranteeTarget(
 	eventCall *me.EventCall,
 ) (*associationSetMapTarget, model_state.Event, bool, error) {
 	if e.peerCatalog == nil {
-		return nil, model_state.Event{}, false, fmt.Errorf("delete guarantee on %q: peer catalog not configured", target)
+		return nil, model_state.Event{}, false, fmt.Errorf("destroy guarantee on %q: peer catalog not configured", target)
 	}
 	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByTLAField(instance.ClassKey, target)
 	if !found {
 		return nil, model_state.Event{}, false, fmt.Errorf(
-			"delete guarantee on %q: no outgoing association on class %s",
+			"destroy guarantee on %q: no outgoing association on class %s",
 			target, instance.ClassKey.String(),
 		)
 	}
 	if assocRef.AssociationKey != assocKey {
 		return nil, model_state.Event{}, false, fmt.Errorf(
-			"delete guarantee on %q: expression association %s does not match target",
+			"destroy guarantee on %q: expression association %s does not match target",
 			target, assocRef.AssociationKey.String(),
 		)
 	}
 	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
 	if !ok {
 		return nil, model_state.Event{}, false, fmt.Errorf(
-			"delete guarantee on %q: peer class %s not found",
+			"destroy guarantee on %q: peer class %s not found",
 			target, assoc.ToClassKey.String(),
 		)
 	}
@@ -175,7 +175,7 @@ type destroyGuaranteeUnavailableWork struct {
 }
 
 // recordDestroyGuaranteeUnavailable records PeerEventUnavailable for each removed peer
-// selected for _destroy when the peer class cannot accept the delete event. Association
+// selected for _destroy when the peer class cannot accept the destroy event. Association
 // links for those peers are retained until _destroy succeeds.
 func (e *ActionExecutor) recordDestroyGuaranteeUnavailable(
 	ctx *ExecutionContext,

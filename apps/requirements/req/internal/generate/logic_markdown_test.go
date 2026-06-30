@@ -52,10 +52,10 @@ func TestLogicMarkdownSpecLinesBoldsLetBinding(t *testing.T) {
 	require.Equal(t, "    - **LET total = self.price + self.tax**", got)
 }
 
-func TestLogicMarkdownSpecLinesBoldsDeleteGuarantee(t *testing.T) {
+func TestLogicMarkdownSpecLinesBoldsDestroyGuarantee(t *testing.T) {
 	logic := model_logic.NewLogic(
 		identity.Key{},
-		model_logic.LogicTypeDelete,
+		model_logic.LogicTypeDestroy,
 		"Peer _destroy events for removed peers",
 		"AppliesSocialCurrencyLogic",
 		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: `{ b \in AppliesSocialCurrencyLogic : TRUE }`},

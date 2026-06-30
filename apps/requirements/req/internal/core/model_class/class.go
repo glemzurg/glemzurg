@@ -279,10 +279,10 @@ func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAsso
 			if guar.Target == "" {
 				continue
 			}
-			if guar.Type == model_logic.LogicTypeDelete {
+			if guar.Type == model_logic.LogicTypeDestroy {
 				if !assocTLAFields[guar.Target] {
 					guarCtx := actionCtx.Child("guarantee", fmt.Sprintf("%d", i))
-					return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeDeleteTargetInvalid, fmt.Sprintf("action %q guarantee %d: delete target %q must be an outgoing association on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
+					return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeDestroyTargetInvalid, fmt.Sprintf("action %q guarantee %d: destroy target %q must be an outgoing association on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
 				}
 				continue
 			}

@@ -6,12 +6,12 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// MatchAssociationDestroyGuarantee recognizes a lowered delete guarantee and its peer
+// MatchAssociationDestroyGuarantee recognizes a lowered destroy guarantee and its peer
 // destroy_event call. Specification may be either:
 //   - a set-filter selection: { v \in AssocField : pred } (requires a separate state_change), or
 //   - an inline association update: AssocField \ { v \in AssocField : pred }.
 func MatchAssociationDestroyGuarantee(logic model_logic.Logic) (*me.AssociationRef, *me.SetFilter, *me.EventCall, bool) {
-	if logic.Type != model_logic.LogicTypeDelete {
+	if logic.Type != model_logic.LogicTypeDestroy {
 		return nil, nil, nil, false
 	}
 	eventCall, ok := logic.DestroyEventSpec.Expression.(*me.EventCall)
@@ -25,10 +25,10 @@ func MatchAssociationDestroyGuarantee(logic model_logic.Logic) (*me.AssociationR
 	return assocRef, selection, eventCall, true
 }
 
-// DestroyGuaranteeHasInlineStateChange reports whether the delete guarantee specification
-// lowers to an association set-difference (state_change and delete selection in one guarantee).
+// DestroyGuaranteeHasInlineStateChange reports whether the destroy guarantee specification
+// lowers to an association set-difference (state_change and destroy selection in one guarantee).
 func DestroyGuaranteeHasInlineStateChange(logic model_logic.Logic) bool {
-	if logic.Type != model_logic.LogicTypeDelete {
+	if logic.Type != model_logic.LogicTypeDestroy {
 		return false
 	}
 	setOp, ok := logic.Spec.Expression.(*me.SetOp)
@@ -74,7 +74,7 @@ func matchDestroyGuaranteeDifferenceSelection(expr me.Expression) (*me.SetFilter
 	return selection, assocRef, true
 }
 
-// AssociationDestroyEventKey returns the peer event key from a delete guarantee.
+// AssociationDestroyEventKey returns the peer event key from a destroy guarantee.
 func AssociationDestroyEventKey(logic model_logic.Logic) (identity.Key, bool) {
 	_, _, eventCall, ok := MatchAssociationDestroyGuarantee(logic)
 	if !ok {

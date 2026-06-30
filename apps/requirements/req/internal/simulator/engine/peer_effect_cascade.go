@@ -68,8 +68,8 @@ func simulationStepFromPeerTransition(peer actions.PeerTransitionRecord) *Simula
 	switch {
 	case peer.Result.WasCreation:
 		kind = StepKindCreation
-	case peer.Result.WasDeletion:
-		kind = StepKindDeletion
+	case peer.Result.WasDestroy:
+		kind = StepKindDestroy
 	}
 	return &SimulationStep{
 		Kind:             kind,

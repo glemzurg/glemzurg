@@ -16,8 +16,8 @@ func validateActionGuarantees(ctx *coreerr.ValidationContext, guarantees []model
 		if err := guar.Validate(childCtx); err != nil {
 			return err
 		}
-		if guar.Type != model_logic.LogicTypeStateChange && guar.Type != model_logic.LogicTypeLet && guar.Type != model_logic.LogicTypeDelete {
-			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeTypeInvalid, fmt.Sprintf("guarantee %d: logic kind must be '%s', '%s', or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, model_logic.LogicTypeDelete, guar.Type), "Guarantees", guar.Type, fmt.Sprintf("one of: %s, %s, %s", model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, model_logic.LogicTypeDelete))
+		if guar.Type != model_logic.LogicTypeStateChange && guar.Type != model_logic.LogicTypeLet && guar.Type != model_logic.LogicTypeDestroy {
+			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeTypeInvalid, fmt.Sprintf("guarantee %d: logic kind must be '%s', '%s', or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, model_logic.LogicTypeDestroy, guar.Type), "Guarantees", guar.Type, fmt.Sprintf("one of: %s, %s, %s", model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, model_logic.LogicTypeDestroy))
 		}
 		switch guar.Type {
 		case model_logic.LogicTypeLet:
@@ -25,9 +25,9 @@ func validateActionGuarantees(ctx *coreerr.ValidationContext, guarantees []model
 				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateLet, fmt.Sprintf("guarantee %d: duplicate let target %q", i, guar.Target), "Guarantees", guar.Target, "")
 			}
 			letTargets[guar.Target] = true
-		case model_logic.LogicTypeDelete:
+		case model_logic.LogicTypeDestroy:
 			if deleteTargets[guar.Target] {
-				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateDeleteTarget, fmt.Sprintf("guarantee %d: duplicate delete target %q", i, guar.Target), "Guarantees", guar.Target, "")
+				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateDestroyTarget, fmt.Sprintf("guarantee %d: duplicate destroy target %q", i, guar.Target), "Guarantees", guar.Target, "")
 			}
 			deleteTargets[guar.Target] = true
 		case model_logic.LogicTypeStateChange:

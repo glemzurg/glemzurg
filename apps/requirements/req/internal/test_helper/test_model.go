@@ -1967,7 +1967,7 @@ func buildScenarios(k testKeys) testScenarios {
 	leafEvent := "event"
 	leafQuery := "query"
 	leafScenario := "scenario"
-	leafDelete := "delete"
+	leafDestroy := "destroy"
 
 	steps := model_scenario.Step{
 		Key:      k.stepRoot,
@@ -2020,7 +2020,7 @@ func buildScenarios(k testKeys) testScenarios {
 								QueryKey: &k.queryStatus,
 							},
 							{
-								Key: k.step10, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafDelete,
+								Key: k.step10, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafDestroy,
 								FromObjectKey: &k.objOrder,
 							},
 						},

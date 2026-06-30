@@ -969,7 +969,7 @@ Steps form a tree structure representing the scenario flow. There are two catego
 - `leaf_type: "scenario"` — A reference to another scenario
   - `scenario_key`: Key of the referenced scenario
   - `description`: What the sub-scenario does
-- `leaf_type: "delete"` — Deletion of an object
+- `leaf_type: "destroy"` — Deletion of an object
   - `from_object_key`: Object initiating deletion
   - `to_object_key`: Object being deleted
   - `description`: What is being deleted

@@ -63,9 +63,9 @@ func ComputedActionGuaranteeDescription(guarantee model_logic.Logic, attributes 
 }
 
 // ComputedAssociationDestroyGuaranteeDescription derives "Set <association name>"
-// for a delete guarantee on an outgoing association field, matching attribute-set display.
+// for a destroy guarantee on an outgoing association field, matching attribute-set display.
 func ComputedAssociationDestroyGuaranteeDescription(guarantee model_logic.Logic, associations map[identity.Key]Association) (string, bool) {
-	if guarantee.Type != model_logic.LogicTypeDelete || guarantee.Target == "" {
+	if guarantee.Type != model_logic.LogicTypeDestroy || guarantee.Target == "" {
 		return "", false
 	}
 	assocName := associationDisplayNameForTarget(associations, guarantee.Target)

@@ -269,8 +269,8 @@ func writeStep(b *strings.Builder, step TraceStep, indent string) {
 	switch step.Kind {
 	case "creation":
 		fmt.Fprintf(b, "%s[%d] CREATE %s#%d -> %s", indent, step.StepNumber, step.ClassName, step.InstanceID, step.ToState)
-	case "deletion":
-		fmt.Fprintf(b, "%s[%d] DELETE %s#%d (%s ->)", indent, step.StepNumber, step.ClassName, step.InstanceID, step.FromState)
+	case "destroy":
+		fmt.Fprintf(b, "%s[%d] DESTROY %s#%d (%s ->)", indent, step.StepNumber, step.ClassName, step.InstanceID, step.FromState)
 	default:
 		fmt.Fprintf(b, "%s[%d] %s#%d: %s -> %s", indent, step.StepNumber, step.ClassName, step.InstanceID, step.FromState, step.ToState)
 	}

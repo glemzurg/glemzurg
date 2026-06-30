@@ -48,8 +48,8 @@
 <text text-anchor="start" x="2932.74" y="-370.4" font-family="Arial" font-size="14.00">target_type_specification </text>
 <text text-anchor="start" x="3091.5" y="-370.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 <polygon fill="none" stroke="black" points="2925.74,-327.4 2925.74,-358.2 3149.71,-358.2 3149.71,-327.4 2925.74,-327.4"/>
-<text text-anchor="start" x="2932.74" y="-339.6" font-family="Arial" font-size="14.00">delete_event_specification </text>
-<text text-anchor="start" x="3101.63" y="-339.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<text text-anchor="start" x="2932.74" y="-339.6" font-family="Arial" font-size="14.00">destroy_event_specification </text>
+<text text-anchor="start" x="3109.4" y="-339.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 <polygon fill="none" stroke="black" stroke-width="3" points="2924.24,-325.9 2924.24,-703.3 3151.21,-703.3 3151.21,-325.9 2924.24,-325.9"/>
 </g>
 <!-- public.model -->

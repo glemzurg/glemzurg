@@ -143,7 +143,7 @@
           "name": "destroy_event_specification",
           "type": "text",
           "nullable": true,
-          "comment": "Optional peer destroy event call for delete-type logic (e.g., _destroy(b)); uses logic.notation for notation."
+          "comment": "Optional peer destroy event call for destroy-type logic (e.g., _destroy(b)); uses logic.notation for notation."
         }
       ],
       "indexes": [
@@ -8219,7 +8219,7 @@
     {
       "name": "public.leaf_type",
       "values": [
-        "delete",
+        "destroy",
         "event",
         "query",
         "scenario"
@@ -8229,7 +8229,7 @@
       "name": "public.logic_type",
       "values": [
         "assessment",
-        "delete",
+        "destroy",
         "let",
         "query",
         "safety_rule",

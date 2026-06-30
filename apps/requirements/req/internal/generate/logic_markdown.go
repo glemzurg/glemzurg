@@ -23,7 +23,7 @@ func logicBoldSpecText(logic model_logic.Logic) string {
 			spec = expressionSpecDisplay(logic.Spec)
 		}
 		switch logic.Type {
-		case model_logic.LogicTypeStateChange, model_logic.LogicTypeQuery, model_logic.LogicTypeDelete:
+		case model_logic.LogicTypeStateChange, model_logic.LogicTypeQuery, model_logic.LogicTypeDestroy:
 			return "**" + logic.Target + "' = " + spec + "**"
 		case model_logic.LogicTypeLet:
 			return "**LET " + logic.Target + " = " + spec + "**"
@@ -43,7 +43,7 @@ func logicMarkdownSpecLines(logic model_logic.Logic) string {
 	if bold := logicBoldSpecText(logic); bold != "" {
 		lines = append(lines, "    - "+bold)
 	}
-	if logic.Type == model_logic.LogicTypeDelete {
+	if logic.Type == model_logic.LogicTypeDestroy {
 		if event := strings.TrimSpace(logic.DestroyEventSpec.Specification); event != "" {
 			lines = append(lines, "    - Each removed element sent: "+destroyEventSpecBoldDisplay(logic.DestroyEventSpec))
 		}

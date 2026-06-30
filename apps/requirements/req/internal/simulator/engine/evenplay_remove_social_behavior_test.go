@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEvenplayRemoveSocialBehaviorDeleteGuaranteeForm(t *testing.T) {
+func TestEvenplayRemoveSocialBehaviorDestroyGuaranteeForm(t *testing.T) {
 	model := loadEvenplayWalletModel(t)
 	action, ok := findCurrencyWalletDefinitionAction(model, "RemoveSocialBehavior")
 	require.True(t, ok)
@@ -26,7 +26,7 @@ func TestEvenplayRemoveSocialBehaviorDeleteGuaranteeForm(t *testing.T) {
 	require.Equal(t, "_destroy", eventCall.EventKey.SubKey)
 }
 
-func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDelete(t *testing.T) {
+func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDestroy(t *testing.T) {
 	model := loadEvenplayWalletModel(t)
 	subdomainKeys, err := surface.ResolveSubdomainKeysByPath(model, []string{"finance/wallet"})
 	require.NoError(t, err)
@@ -46,13 +46,13 @@ func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDelete(t *testing.T) {
 		if step.EventName != "RemoveSocialBehavior" {
 			continue
 		}
-		peerDeletes := countPeerDeleteTransitions(step)
-		nestedDeletes := countNestedDeleteCascades(step.CascadedSteps)
-		if peerDeletes == 0 {
+		peerDestroys := countPeerDestroyTransitions(step)
+		nestedDestroys := countNestedDeleteCascades(step.CascadedSteps)
+		if peerDestroys == 0 {
 			continue
 		}
-		require.Equal(t, peerDeletes, nestedDeletes,
-			"step %d wallet#%d: peer delete transitions must appear as nested trace cascades",
+		require.Equal(t, peerDestroys, nestedDestroys,
+			"step %d wallet#%d: peer destroy transitions must appear as nested trace cascades",
 			step.StepNumber, step.InstanceID)
 	}
 
@@ -60,7 +60,7 @@ func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDelete(t *testing.T) {
 	require.Equal(t, "RemoveSocialBehavior", step60.EventName)
 	require.Equal(t, state.InstanceID(33), step60.InstanceID)
 	require.Empty(t, step60.CascadedSteps, "wallet #33 has no linked behaviors before step 60 in seed 42")
-	require.Equal(t, 0, countPeerDeleteTransitions(step60))
+	require.Equal(t, 0, countPeerDestroyTransitions(step60))
 
 	var step71 *SimulationStep
 	for _, step := range result.Steps {
@@ -71,17 +71,17 @@ func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDelete(t *testing.T) {
 	}
 	require.NotNil(t, step71, "seed 42 step 71 should remove social behavior from wallet #24")
 	require.Len(t, step71.CascadedSteps, 1)
-	require.Equal(t, StepKindDeletion, step71.CascadedSteps[0].Kind)
+	require.Equal(t, StepKindDestroy, step71.CascadedSteps[0].Kind)
 	require.Equal(t, model_state.EventNameDestroy, step71.CascadedSteps[0].EventName)
 }
 
-func countPeerDeleteTransitions(step *SimulationStep) int {
+func countPeerDestroyTransitions(step *SimulationStep) int {
 	if step.TransitionResult == nil || step.TransitionResult.ActionResult == nil {
 		return 0
 	}
 	count := 0
 	for _, peer := range step.TransitionResult.ActionResult.PeerTransitions {
-		if peer.Result != nil && peer.Result.WasDeletion {
+		if peer.Result != nil && peer.Result.WasDestroy {
 			count++
 		}
 	}
@@ -91,7 +91,7 @@ func countPeerDeleteTransitions(step *SimulationStep) int {
 func countNestedDeleteCascades(steps []*SimulationStep) int {
 	count := 0
 	for _, step := range steps {
-		if step.Kind == StepKindDeletion {
+		if step.Kind == StepKindDestroy {
 			count++
 		}
 		count += countNestedDeleteCascades(step.CascadedSteps)

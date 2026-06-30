@@ -38,7 +38,7 @@ func TestGenerateScenarioMermaidContents_HappyPath(t *testing.T) {
 	assert.Contains(t, contents, "alt order is valid")
 	assert.Contains(t, contents, "else order is invalid")
 	assert.NotContains(t, contents, `"`)
-	assert.Contains(t, contents, "(delete)")
+	assert.Contains(t, contents, "(destroy)")
 	assert.Contains(t, contents, "Scenario: View Details")
 	assert.Contains(t, contents, "Scenario: Error Path")
 }

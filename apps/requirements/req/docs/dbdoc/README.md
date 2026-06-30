@@ -60,8 +60,8 @@
 | public.bound_limit_type | closed, open, unconstrained |
 | public.collection_type | atomic, ordered, queue, record, stack, unordered |
 | public.constraint_type | enumeration, object, reference, span, unconstrained |
-| public.leaf_type | delete, event, query, scenario |
-| public.logic_type | assessment, delete, let, query, safety_rule, state_change, value |
+| public.leaf_type | destroy, event, query, scenario |
+| public.logic_type | assessment, destroy, let, query, safety_rule, state_change, value |
 | public.notation | tla_plus |
 | public.scenario_object_name_style | id, name, unnamed |
 | public.share_type | extend, include |

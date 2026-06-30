@@ -1,5 +1,5 @@
 {
-    "type": "delete",
+    "type": "destroy",
     "description": "Peer _destroy events for removed peers",
     "target": "AppliesSocialCurrencyLogic",
     "notation": "tla_plus",

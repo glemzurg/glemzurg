@@ -604,7 +604,7 @@ func (s *ActionsSuite) TestExecuteTransitionNormal() {
 	s.Equal("Open", result.FromState)
 	s.Equal("Closed", result.ToState)
 	s.False(result.WasCreation)
-	s.False(result.WasDeletion)
+	s.False(result.WasDestroy)
 
 	// Check action result
 	s.NotNil(result.ActionResult)
@@ -695,7 +695,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 
 	result, err := exec.ExecuteTransition(class, eventObj, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
-	s.True(result.WasDeletion)
+	s.True(result.WasDestroy)
 
 	// Instance should be deleted
 	s.Nil(simState.GetInstance(instance.ID))

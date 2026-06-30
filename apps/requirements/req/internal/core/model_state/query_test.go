@@ -165,12 +165,12 @@ func (suite *QuerySuite) TestValidate() {
 			errstr: "guarantee 0: logic kind must be 'query' or 'let'",
 		},
 		{
-			testName: "error delete guarantee not allowed on query",
+			testName: "error destroy guarantee not allowed on query",
 			query: Query{
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeDelete, "Remove peers.", "AssocField", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: `{ b \in AssocField : TRUE }`}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeDestroy, "Remove peers.", "AssocField", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: `{ b \in AssocField : TRUE }`}, nil),
 				},
 			},
 			errstr: "action guarantees",

@@ -16,8 +16,8 @@ const (
 	StepKindCreation StepKind = iota
 	// StepKindNormal is a normal state transition.
 	StepKindNormal
-	// StepKindDeletion is an instance deleted (to final state).
-	StepKindDeletion
+	// StepKindDestroy is an instance destroyed (to final state).
+	StepKindDestroy
 )
 
 // String returns a human-readable name for the step kind.
@@ -27,8 +27,8 @@ func (k StepKind) String() string {
 		return "creation"
 	case StepKindNormal:
 		return "normal"
-	case StepKindDeletion:
-		return "deletion"
+	case StepKindDestroy:
+		return "destroy"
 	default:
 		return "unknown"
 	}
@@ -39,7 +39,7 @@ type SimulationStep struct {
 	// StepNumber is the ordinal position in the simulation (1-based).
 	StepNumber int
 
-	// Kind is the type of step (creation, normal, deletion).
+	// Kind is the type of step (creation, normal, destroy).
 	Kind StepKind
 
 	// ClassKey is the class being acted upon.
@@ -60,7 +60,7 @@ type SimulationStep struct {
 	// FromState is the state name before the transition (empty for creation).
 	FromState string
 
-	// ToState is the state name after the transition (empty for deletion).
+	// ToState is the state name after the transition (empty for destroy).
 	ToState string
 
 	// Parameters are the event parameters that were passed.

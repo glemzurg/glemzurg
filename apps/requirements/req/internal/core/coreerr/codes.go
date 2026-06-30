@@ -63,11 +63,11 @@ const (
 	LogicTargetTypespecInvalid         Code = "LOGIC_TARGET_TYPESPEC_INVALID"           // Logic TargetTypeSpec failed validation.
 	LogicOverAssociationKeyInvalid     Code = "LOGIC_OVER_ASSOCIATION_KEY_INVALID"      // OverAssociationKey failed validation.
 	LogicOverAssociationKeyTypeInvalid Code = "LOGIC_OVER_ASSOCIATION_KEY_TYPE_INVALID" // OverAssociationKey is not CLASS_ASSOCIATION.
-	LogicDeleteSelectionRequired       Code = "LOGIC_DELETE_SELECTION_REQUIRED"         // Delete logic requires a non-empty selection specification.
-	LogicDestroyEventRequired          Code = "LOGIC_DESTROY_EVENT_REQUIRED"            // Delete logic requires a non-empty destroy_event specification.
-	LogicDestroyEventMustBeEmpty       Code = "LOGIC_DESTROY_EVENT_MUST_BE_EMPTY"       // Only delete logic may carry destroy_event.
-	LogicPeerDestroyForbidden          Code = "LOGIC_PEER_DESTROY_FORBIDDEN"            // Peer _destroy must use guarantee type delete, not inline in other logic.
-	LogicDeleteContextInvalid          Code = "LOGIC_DELETE_CONTEXT_INVALID"            // Delete logic may only appear in action guarantees.
+	LogicDestroySelectionRequired      Code = "LOGIC_DESTROY_SELECTION_REQUIRED"        // Destroy logic requires a non-empty selection specification.
+	LogicDestroyEventRequired          Code = "LOGIC_DESTROY_EVENT_REQUIRED"            // Destroy logic requires a non-empty destroy_event specification.
+	LogicDestroyEventMustBeEmpty       Code = "LOGIC_DESTROY_EVENT_MUST_BE_EMPTY"       // Only destroy logic may carry destroy_event.
+	LogicPeerDestroyForbidden          Code = "LOGIC_PEER_DESTROY_FORBIDDEN"            // Peer _destroy must use guarantee type destroy, not inline in other logic.
+	LogicDestroyContextInvalid         Code = "LOGIC_DESTROY_CONTEXT_INVALID"           // Destroy logic may only appear in action guarantees.
 
 	// ---------------------------------------------------------------
 	// GlobalFunction errors.
@@ -103,19 +103,19 @@ const (
 	// ---------------------------------------------------------------
 	// Action errors.
 
-	ActionKeyInvalid                     Code = "ACTION_KEY_INVALID"                       // Action key failed validation.
-	ActionKeyTypeInvalid                 Code = "ACTION_KEY_TYPE_INVALID"                  // Key is not KEY_TYPE_ACTION.
-	ActionNameRequired                   Code = "ACTION_NAME_REQUIRED"                     // Action Name is empty.
-	ActionNameInvalidChars               Code = "ACTION_NAME_INVALID_CHARS"                // Action Name contains characters outside A-Za-z0-9 space hyphen underscore.
-	ActionRequiresTypeInvalid            Code = "ACTION_REQUIRES_TYPE_INVALID"             // Requires logic type must be assessment or let.
-	ActionRequiresDuplicateLet           Code = "ACTION_REQUIRES_DUPLICATE_LET"            // Duplicate let target in Requires.
-	ActionGuaranteeTypeInvalid           Code = "ACTION_GUARANTEE_TYPE_INVALID"            // Guarantee logic type must be state_change, let, or delete.
-	ActionGuaranteeDuplicateLet          Code = "ACTION_GUARANTEE_DUPLICATE_LET"           // Duplicate let target in Guarantees.
-	ActionGuaranteeDuplicateTarget       Code = "ACTION_GUARANTEE_DUPLICATE_TARGET"        // Duplicate target in Guarantees.
-	ActionGuaranteeDuplicateDeleteTarget Code = "ACTION_GUARANTEE_DUPLICATE_DELETE_TARGET" // Duplicate delete guarantee target.
-	ActionGuaranteeDeleteTargetInvalid   Code = "ACTION_GUARANTEE_DELETE_TARGET_INVALID"   // Delete guarantee target must be an outgoing association.
-	ActionSafetyTypeInvalid              Code = "ACTION_SAFETY_TYPE_INVALID"               // SafetyRule logic type must be safety_rule or let.
-	ActionSafetyDuplicateLet             Code = "ACTION_SAFETY_DUPLICATE_LET"              // Duplicate let target in SafetyRules.
+	ActionKeyInvalid                      Code = "ACTION_KEY_INVALID"                        // Action key failed validation.
+	ActionKeyTypeInvalid                  Code = "ACTION_KEY_TYPE_INVALID"                   // Key is not KEY_TYPE_ACTION.
+	ActionNameRequired                    Code = "ACTION_NAME_REQUIRED"                      // Action Name is empty.
+	ActionNameInvalidChars                Code = "ACTION_NAME_INVALID_CHARS"                 // Action Name contains characters outside A-Za-z0-9 space hyphen underscore.
+	ActionRequiresTypeInvalid             Code = "ACTION_REQUIRES_TYPE_INVALID"              // Requires logic type must be assessment or let.
+	ActionRequiresDuplicateLet            Code = "ACTION_REQUIRES_DUPLICATE_LET"             // Duplicate let target in Requires.
+	ActionGuaranteeTypeInvalid            Code = "ACTION_GUARANTEE_TYPE_INVALID"             // Guarantee logic type must be state_change, let, or destroy.
+	ActionGuaranteeDuplicateLet           Code = "ACTION_GUARANTEE_DUPLICATE_LET"            // Duplicate let target in Guarantees.
+	ActionGuaranteeDuplicateTarget        Code = "ACTION_GUARANTEE_DUPLICATE_TARGET"         // Duplicate target in Guarantees.
+	ActionGuaranteeDuplicateDestroyTarget Code = "ACTION_GUARANTEE_DUPLICATE_DESTROY_TARGET" // Duplicate destroy guarantee target.
+	ActionGuaranteeDestroyTargetInvalid   Code = "ACTION_GUARANTEE_DESTROY_TARGET_INVALID"   // Destroy guarantee target must be an outgoing association.
+	ActionSafetyTypeInvalid               Code = "ACTION_SAFETY_TYPE_INVALID"                // SafetyRule logic type must be safety_rule or let.
+	ActionSafetyDuplicateLet              Code = "ACTION_SAFETY_DUPLICATE_LET"               // Duplicate let target in SafetyRules.
 
 	// ---------------------------------------------------------------
 	// Guard errors.
@@ -197,25 +197,25 @@ const (
 	// ---------------------------------------------------------------
 	// Class errors.
 
-	ClassKeyInvalid                   Code = "CLASS_KEY_INVALID"                     // Class key failed validation.
-	ClassKeyTypeInvalid               Code = "CLASS_KEY_TYPE_INVALID"                // Key is not KEY_TYPE_CLASS.
-	ClassNameRequired                 Code = "CLASS_NAME_REQUIRED"                   // Class Name is empty.
-	ClassActorkeyInvalid              Code = "CLASS_ACTORKEY_INVALID"                // ActorKey failed validation.
-	ClassActorkeyTypeInvalid          Code = "CLASS_ACTORKEY_TYPE_INVALID"           // ActorKey is not KEY_TYPE_ACTOR.
-	ClassSuperkeyInvalid              Code = "CLASS_SUPERKEY_INVALID"                // SuperclassOfKey failed validation.
-	ClassSuperkeyTypeInvalid          Code = "CLASS_SUPERKEY_TYPE_INVALID"           // SuperclassOfKey is not KEY_TYPE_CLASS_GENERALIZATION.
-	ClassSubkeyInvalid                Code = "CLASS_SUBKEY_INVALID"                  // SubclassOfKey failed validation.
-	ClassSubkeyTypeInvalid            Code = "CLASS_SUBKEY_TYPE_INVALID"             // SubclassOfKey is not KEY_TYPE_CLASS_GENERALIZATION.
-	ClassSuperSubSame                 Code = "CLASS_SUPER_SUB_SAME"                  // SuperclassOfKey and SubclassOfKey are the same.
-	ClassActorNotfound                Code = "CLASS_ACTOR_NOTFOUND"                  // ActorKey references non-existent actor.
-	ClassSupergenNotfound             Code = "CLASS_SUPERGEN_NOTFOUND"               // SuperclassOfKey references non-existent generalization.
-	ClassSupergenWrongSubdomain       Code = "CLASS_SUPERGEN_WRONG_SUBDOMAIN"        // SuperclassOfKey generalization not in same subdomain.
-	ClassSubgenNotfound               Code = "CLASS_SUBGEN_NOTFOUND"                 // SubclassOfKey references non-existent generalization.
-	ClassSubgenWrongSubdomain         Code = "CLASS_SUBGEN_WRONG_SUBDOMAIN"          // SubclassOfKey generalization not in same subdomain.
-	ClassInvariantTypeInvalid         Code = "CLASS_INVARIANT_TYPE_INVALID"          // Class invariant has wrong logic type.
-	ClassInvariantDuplicateLet        Code = "CLASS_INVARIANT_DUPLICATE_LET"         // Class invariant has duplicate let target.
-	ClassGuaranteeInvalidTarget       Code = "CLASS_GUARANTEE_INVALID_TARGET"        // Guarantee targets non-existent attribute.
-	ClassGuaranteeDeleteTargetInvalid Code = "CLASS_GUARANTEE_DELETE_TARGET_INVALID" // Delete guarantee target is not an outgoing association.
+	ClassKeyInvalid                    Code = "CLASS_KEY_INVALID"                      // Class key failed validation.
+	ClassKeyTypeInvalid                Code = "CLASS_KEY_TYPE_INVALID"                 // Key is not KEY_TYPE_CLASS.
+	ClassNameRequired                  Code = "CLASS_NAME_REQUIRED"                    // Class Name is empty.
+	ClassActorkeyInvalid               Code = "CLASS_ACTORKEY_INVALID"                 // ActorKey failed validation.
+	ClassActorkeyTypeInvalid           Code = "CLASS_ACTORKEY_TYPE_INVALID"            // ActorKey is not KEY_TYPE_ACTOR.
+	ClassSuperkeyInvalid               Code = "CLASS_SUPERKEY_INVALID"                 // SuperclassOfKey failed validation.
+	ClassSuperkeyTypeInvalid           Code = "CLASS_SUPERKEY_TYPE_INVALID"            // SuperclassOfKey is not KEY_TYPE_CLASS_GENERALIZATION.
+	ClassSubkeyInvalid                 Code = "CLASS_SUBKEY_INVALID"                   // SubclassOfKey failed validation.
+	ClassSubkeyTypeInvalid             Code = "CLASS_SUBKEY_TYPE_INVALID"              // SubclassOfKey is not KEY_TYPE_CLASS_GENERALIZATION.
+	ClassSuperSubSame                  Code = "CLASS_SUPER_SUB_SAME"                   // SuperclassOfKey and SubclassOfKey are the same.
+	ClassActorNotfound                 Code = "CLASS_ACTOR_NOTFOUND"                   // ActorKey references non-existent actor.
+	ClassSupergenNotfound              Code = "CLASS_SUPERGEN_NOTFOUND"                // SuperclassOfKey references non-existent generalization.
+	ClassSupergenWrongSubdomain        Code = "CLASS_SUPERGEN_WRONG_SUBDOMAIN"         // SuperclassOfKey generalization not in same subdomain.
+	ClassSubgenNotfound                Code = "CLASS_SUBGEN_NOTFOUND"                  // SubclassOfKey references non-existent generalization.
+	ClassSubgenWrongSubdomain          Code = "CLASS_SUBGEN_WRONG_SUBDOMAIN"           // SubclassOfKey generalization not in same subdomain.
+	ClassInvariantTypeInvalid          Code = "CLASS_INVARIANT_TYPE_INVALID"           // Class invariant has wrong logic type.
+	ClassInvariantDuplicateLet         Code = "CLASS_INVARIANT_DUPLICATE_LET"          // Class invariant has duplicate let target.
+	ClassGuaranteeInvalidTarget        Code = "CLASS_GUARANTEE_INVALID_TARGET"         // Guarantee targets non-existent attribute.
+	ClassGuaranteeDestroyTargetInvalid Code = "CLASS_GUARANTEE_DESTROY_TARGET_INVALID" // Destroy guarantee target is not an outgoing association.
 
 	// ---------------------------------------------------------------
 	// Attribute errors.
@@ -332,9 +332,9 @@ const (
 	SstepScenarioKeyRequired    Code = "SSTEP_SCENARIO_KEY_REQUIRED"    // Scenario leaf missing ScenarioKey.
 	SstepScenarioEventForbidden Code = "SSTEP_SCENARIO_EVENT_FORBIDDEN" // Scenario leaf has EventKey set.
 	SstepScenarioSelfRef        Code = "SSTEP_SCENARIO_SELF_REF"        // Scenario leaf references its own scenario.
-	SstepDeleteFromRequired     Code = "SSTEP_DELETE_FROM_REQUIRED"     // Delete leaf missing FromObjectKey.
-	SstepDeleteToForbidden      Code = "SSTEP_DELETE_TO_FORBIDDEN"      // Delete leaf has ToObjectKey set.
-	SstepDeleteKeysForbidden    Code = "SSTEP_DELETE_KEYS_FORBIDDEN"    // Delete leaf has EventKey/QueryKey/ScenarioKey set.
+	SstepDestroyFromRequired    Code = "SSTEP_DESTROY_FROM_REQUIRED"    // Delete leaf missing FromObjectKey.
+	SstepDestroyToForbidden     Code = "SSTEP_DESTROY_TO_FORBIDDEN"     // Delete leaf has ToObjectKey set.
+	SstepDestroyKeysForbidden   Code = "SSTEP_DESTROY_KEYS_FORBIDDEN"   // Delete leaf has EventKey/QueryKey/ScenarioKey set.
 	SstepSequenceMinStatements  Code = "SSTEP_SEQUENCE_MIN_STATEMENTS"  // Sequence step needs >=2 statements.
 	SstepSwitchMinCases         Code = "SSTEP_SWITCH_MIN_CASES"         // Switch step needs >=1 case.
 	SstepSwitchCaseType         Code = "SSTEP_SWITCH_CASE_TYPE"         // Switch case must be a STEP_TYPE_CASE.
