@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
@@ -977,12 +978,19 @@ func lowerGlobalOrBuiltinFunctionCall(e *ast.FunctionCall, ctx *LowerContext) (m
 	if key, ok := ctx.SystemEventNames[name]; ok {
 		return &me.EventCall{EventKey: key, Args: args}, nil
 	}
+	// Peer-class system events in association set-map/set-add guarantees (e.g. «delete» on AppliesSocialCurrencyLogic).
+	if model_state.IsSystemEventTLAName(name) {
+		if key, ok := ctx.PeerEventNames[name]; ok {
+			return &me.EventCall{EventKey: key, Args: args}, nil
+		}
+	}
 
 	// Global function call: _FunctionName(args...)
 	key, ok := ctx.GlobalFunctions[name]
 	if !ok {
 		var available []string
 		available = append(available, mapKeys(ctx.SystemEventNames)...)
+		available = append(available, mapKeys(ctx.PeerEventNames)...)
 		available = append(available, mapKeys(ctx.GlobalFunctions)...)
 		return nil, unresolvedError("global function", name, available)
 	}

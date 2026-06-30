@@ -401,6 +401,9 @@ func BuildPeerEventNameMap(
 		}
 		for _, event := range peerClass.Events {
 			m[event.Name] = event.Key
+			if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
+				m[model_state.SystemEventTLAName(event.Name)] = event.Key
+			}
 		}
 	}
 	if len(m) == 0 {

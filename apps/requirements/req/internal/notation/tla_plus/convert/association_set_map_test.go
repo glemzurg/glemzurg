@@ -14,6 +14,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestAssociationSetMapDeleteGuaranteeTLARoundTrip(t *testing.T) {
+	ctx := associationSetMapDeleteFixture()
+	spec := `{_delete(r) : r \in AppliesSocialCurrencyLogic}`
+
+	astExpr, err := parser.ParseExpression(spec)
+	require.NoError(t, err)
+
+	lowered, err := convert.Lower(astExpr, ctx)
+	require.NoError(t, err)
+
+	setMap, ok := lowered.(*me.SetMap)
+	require.True(t, ok)
+	_, eventCall, ok := model_class.MatchAssociationSetMapExpr(setMap)
+	require.True(t, ok)
+	require.Equal(t, model_state.EventNameDelete, eventCall.EventKey.SubKey)
+
+	raised, err := convert.Raise(lowered, raiseContextForAssociationSetMap(ctx))
+	require.NoError(t, err)
+
+	printed := ast.Print(raised)
+	require.Contains(t, printed, "«delete»")
+	require.NotContains(t, printed, "_delete")
+	require.Contains(t, printed, "AppliesSocialCurrencyLogic")
+}
+
 func TestAssociationSetMapGuaranteeTLARoundTrip(t *testing.T) {
 	ctx := associationSetMapFixture()
 	spec := `{Update(r) : r \in AppliesSocialCurrencyLogic}`
@@ -39,6 +64,40 @@ func TestAssociationSetMapGuaranteeTLARoundTrip(t *testing.T) {
 	require.Contains(t, printed, "Update")
 	require.Contains(t, printed, "AppliesSocialCurrencyLogic")
 	require.Contains(t, printed, "∈")
+}
+
+func associationSetMapDeleteFixture() *convert.LowerContext {
+	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s"))
+	fromKey := helper.Must(identity.NewClassKey(subdomainKey, "currency_wallet_definition"))
+	toKey := helper.Must(identity.NewClassKey(subdomainKey, "social_currency_behavior"))
+	eventDeleteKey := helper.Must(identity.NewEventKey(toKey, model_state.EventNameDelete))
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, "applies_social"))
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Applies Social Currency Logic", Details: ""},
+		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))},
+		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: helper.Must(model_class.NewMultiplicity("0..1"))},
+		model_class.Multiplicity{},
+		model_class.AssociationOptions{},
+	)
+	fromClass := model_class.NewClass(fromKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Currency Wallet Definition"})
+	eventNewFromKey := helper.Must(identity.NewEventKey(fromKey, model_state.EventNameNew))
+	fromClass.SetEvents(map[identity.Key]model_state.Event{
+		eventNewFromKey: model_state.NewEvent(eventNewFromKey, model_state.EventNameNew, "", []string{"MinimumBalance", "TopoffBalance"}),
+	})
+	peerClassModel := model_class.NewClass(toKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Social Currency Behavior"})
+	peerClassModel.SetEvents(map[identity.Key]model_state.Event{
+		eventDeleteKey: model_state.NewEvent(eventDeleteKey, model_state.EventNameDelete, "", nil),
+	})
+	classes := map[identity.Key]model_class.Class{fromKey: fromClass, toKey: peerClassModel}
+	associations := map[identity.Key]model_class.Association{assocKey: assoc}
+	return &convert.LowerContext{
+		ClassKey:         fromKey,
+		AssociationNames: convert.BuildOutgoingAssociationFieldNameMap(fromKey, associations),
+		SystemEventNames: convert.BuildSystemEventNameMap(&fromClass),
+		PeerEventNames:   convert.BuildPeerEventNameMap(fromKey, associations, classes),
+		Parameters:       map[string]bool{"MinimumBalance": true, "TopoffBalance": true},
+	}
 }
 
 func associationSetMapFixture() *convert.LowerContext {
@@ -80,8 +139,5 @@ func associationSetMapFixture() *convert.LowerContext {
 }
 
 func raiseContextForAssociationSetMap(ctx *convert.LowerContext) *convert.RaiseContext {
-	return &convert.RaiseContext{
-		AssociationNames: invertKeyStringMap(ctx.AssociationNames),
-		PeerEventNames:   invertKeyStringMap(ctx.PeerEventNames),
-	}
+	return convert.RaiseContextFromLower(ctx)
 }
