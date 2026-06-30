@@ -65,8 +65,6 @@ func (suite *AssociationSuite) TestLoad() {
 				to_class_key,
 				to_multiplicity_lower,
 				to_multiplicity_higher,
-				uniqueness_lower,
-				uniqueness_higher,
 				association_class_key,
 				uml_comment
 			)
@@ -82,8 +80,6 @@ func (suite *AssociationSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key_b',
 				'2',
 				'3',
-				'0',
-				'1',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key_c',
 				'UmlComment'
 			)
@@ -100,7 +96,6 @@ func (suite *AssociationSuite) TestLoad() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classB.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		Uniqueness:          model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	}, association)

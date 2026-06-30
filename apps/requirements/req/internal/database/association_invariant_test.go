@@ -62,7 +62,6 @@ func (suite *AssociationInvariantSuite) TestAddAndQueryAssociationInvariantLinks
 			model_class.AssociationDetails{Name: "Configures Customers For"},
 			model_class.AssociationEnd{ClassKey: partner.Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
 			model_class.AssociationEnd{ClassKey: jurisdiction.Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
-			model_class.Multiplicity{},
 			model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 		),
 	})
