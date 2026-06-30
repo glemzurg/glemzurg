@@ -210,13 +210,7 @@ var _funcMap = template.FuncMap{
 
 		return eventCall
 	},
-	"action_signature": func(action model_state.Action) (signature string) {
-		var paramNames []string
-		for _, param := range action.Parameters {
-			paramNames = append(paramNames, param.Name)
-		}
-		return strings.Join(paramNames, ", ")
-	},
+	"action_signature": actionDisplaySignature,
 	"query_signature": func(query model_state.Query) (signature string) {
 		var paramNames []string
 		for _, param := range query.Parameters {

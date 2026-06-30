@@ -151,7 +151,7 @@ The actions for this class.
 {{- $fromTransitions := action_transitions $reqs .Key -}}
 {{- $fromStateActions := action_state_actions $reqs .Key -}}
 
-### {{ $action.Name }}({{ action_signature $action }})
+### {{ $action.Name }}({{ action_signature $reqs $action }})
 
 {{ $action.Details }}
 

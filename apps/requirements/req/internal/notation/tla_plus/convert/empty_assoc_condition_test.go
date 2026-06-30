@@ -15,7 +15,7 @@ func TestParseEmptyAssociationCondition(t *testing.T) {
 
 func TestLowerAddOrUpdateGuaranteeCondition(t *testing.T) {
 	ctx := associationSetMapFixture()
-	spec := `IF AppliesSocialCurrencyLogic = {} THEN AppliesSocialCurrencyLogic \union {_new(MinimumBalance, TopoffBalance)} ELSE { Update(r) : r \in AppliesSocialCurrencyLogic }`
+	spec := `IF AppliesSocialCurrencyLogic = {} THEN AppliesSocialCurrencyLogic \union {_new(MinimumBalance, TopoffBalance)} ELSE { Update(r, MinimumBalance, TopoffBalance) : r \in AppliesSocialCurrencyLogic }`
 	astExpr, err := parser.ParseExpression(spec)
 	require.NoError(t, err)
 	_, err = convert.Lower(astExpr, ctx)

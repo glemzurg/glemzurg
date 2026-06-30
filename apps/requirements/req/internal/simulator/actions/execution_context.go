@@ -46,10 +46,14 @@ type DeferredPeerCreation struct {
 
 // DeferredPeerUpdate fires a peer-class event on an existing association link target.
 type DeferredPeerUpdate struct {
-	PeerInstanceID state.InstanceID
-	ToClassKey     identity.Key
-	EventKey       identity.Key
-	Params         map[string]object.Object
+	OwnerInstanceID state.InstanceID
+	AssocKey        identity.Key
+	PeerInstanceID  state.InstanceID
+	ToClassKey      identity.Key
+	EventKey        identity.Key
+	EventName       string
+	Params          map[string]object.Object
+	RemovesLink     bool
 }
 
 // DeferredSafetyRule holds a safety rule to check after all primed assignments
@@ -113,6 +117,9 @@ type ExecutionContext struct {
 
 	// peerTransitions records peer-class transitions for trace output.
 	peerTransitions []PeerTransitionRecord
+
+	// peerViolations records association peer events the target class could not accept.
+	peerViolations invariants.ViolationErrors
 
 	// depth tracks the current call chain depth (for debugging/limits).
 	depth int
@@ -210,6 +217,19 @@ func (ctx *ExecutionContext) AddPeerTransition(rec PeerTransitionRecord) {
 // GetPeerTransitions returns recorded peer-class transitions.
 func (ctx *ExecutionContext) GetPeerTransitions() []PeerTransitionRecord {
 	return ctx.peerTransitions
+}
+
+// AddPeerViolation records an association peer event the target class could not accept.
+func (ctx *ExecutionContext) AddPeerViolation(v *invariants.ViolationError) {
+	if v == nil {
+		return
+	}
+	ctx.peerViolations = append(ctx.peerViolations, v)
+}
+
+// GetPeerViolations returns association peer event violations.
+func (ctx *ExecutionContext) GetPeerViolations() invariants.ViolationErrors {
+	return ctx.peerViolations
 }
 
 // GetAllSafetyRules returns all queued safety rules.

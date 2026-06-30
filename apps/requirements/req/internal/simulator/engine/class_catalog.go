@@ -453,6 +453,16 @@ func (c *ClassCatalog) GetAssociationsForClass(classKey identity.Key) []Associat
 	return c.classAssocs[classKey]
 }
 
+// AssociationByKey returns one association definition by key.
+func (c *ClassCatalog) AssociationByKey(assocKey identity.Key) (model_class.Association, bool) {
+	for _, ai := range c.associations {
+		if ai.Association.Key == assocKey {
+			return ai.Association, true
+		}
+	}
+	return model_class.Association{}, false
+}
+
 // OutgoingAssociationByTLAField resolves an outgoing association by its TLA field name on fromClassKey.
 func (c *ClassCatalog) OutgoingAssociationByTLAField(
 	fromClassKey identity.Key,

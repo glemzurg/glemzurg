@@ -7,6 +7,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 const _unfinishedNotesGlyph = "\u26a0" // ⚠ WARNING SIGN — block leader and list-item marker
@@ -30,6 +32,31 @@ func unfinishedNotesMarker(notes string) string {
 		return ""
 	}
 	return ` <span class="unfinished-notes-glyph">` + _unfinishedNotesGlyph + `</span>`
+}
+
+// actionDisplaySignature renders the MD action header parameter list.
+// Non-creation actions prepend implicit self so set-map peer calls align with the header.
+func actionDisplaySignature(reqs *req_flat.Requirements, action model_state.Action) string {
+	var paramNames []string
+	if actionUsesImplicitSelf(reqs, action.Key) {
+		paramNames = append(paramNames, "self")
+	}
+	for _, param := range action.Parameters {
+		paramNames = append(paramNames, param.Name)
+	}
+	return strings.Join(paramNames, ", ")
+}
+
+func actionUsesImplicitSelf(reqs *req_flat.Requirements, actionKey identity.Key) bool {
+	eventLookup := reqs.EventLookup()
+	for _, transition := range reqs.ActionTransitionsLookup()[actionKey.String()] {
+		event, ok := eventLookup[transition.EventKey.String()]
+		if !ok || model_state.IsSystemCreationEvent(event.Name) {
+			continue
+		}
+		return true
+	}
+	return len(reqs.ActionStateActionsLookup()[actionKey.String()]) > 0
 }
 
 // classHasStateMachine reports whether the class declares any states or transitions.

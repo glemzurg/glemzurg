@@ -10,6 +10,7 @@ import (
 // set-add and set-map guarantees.
 type PeerCreationCatalog interface {
 	AssociationClassIndex
+	AssociationByKey(assocKey identity.Key) (model_class.Association, bool)
 	OutgoingAssociationByTLAField(fromClassKey identity.Key, tlaField string) (identity.Key, model_class.Association, bool)
 	PeerClass(classKey identity.Key) (model_class.Class, bool)
 	PeerCreationEvent(classKey identity.Key) (model_state.Event, bool)

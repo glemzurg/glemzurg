@@ -197,9 +197,7 @@ func (e *ActionExecutor) ExecuteAction(
 		return nil, err
 	}
 
-	// Phases C-F: Check all post-conditions and invariants
-	allViolations := e.checkAllInvariants(ctx)
-	allViolations = append(allViolations, paramViolations...)
+	allViolations := e.collectActionViolations(ctx, paramViolations)
 
 	return &ActionResult{
 		InstanceID:        instance.ID,
@@ -208,6 +206,15 @@ func (e *ActionExecutor) ExecuteAction(
 		Violations:        allViolations,
 		Success:           !allViolations.HasViolations(),
 	}, nil
+}
+
+func (e *ActionExecutor) collectActionViolations(
+	ctx *ExecutionContext,
+	paramViolations invariants.ViolationErrors,
+) invariants.ViolationErrors {
+	allViolations := e.checkAllInvariants(ctx)
+	allViolations = append(allViolations, ctx.GetPeerViolations()...)
+	return append(allViolations, paramViolations...)
 }
 
 func (e *ActionExecutor) finalizeActionStateChanges(ctx *ExecutionContext) error {

@@ -94,6 +94,10 @@ const (
 
 	// ViolationTypeStateMachineIncomplete indicates a class state machine lacks the system _new event.
 	ViolationTypeStateMachineIncomplete
+
+	// ViolationTypePeerEventUnavailable indicates an association guarantee sent an event
+	// the peer class cannot accept from its current state.
+	ViolationTypePeerEventUnavailable
 )
 
 // String returns a human-readable name for the violation type.
@@ -155,6 +159,8 @@ func (v ViolationType) String() string {
 		return "liveness_action_not_executed"
 	case ViolationTypeStateMachineIncomplete:
 		return "state_machine_incomplete"
+	case ViolationTypePeerEventUnavailable:
+		return "peer_event_unavailable"
 	default:
 		return "unknown"
 	}
@@ -670,6 +676,34 @@ func NewLivenessActionNotExecutedViolation(classKey identity.Key, className, act
 		Message:           fmt.Sprintf("liveness: action %s on class %s was never executed during simulation", actionName, className),
 		ClassKey:          classKey,
 		ActionOrQueryName: actionName,
+	}
+}
+
+// PeerEventUnavailableParams holds parameters for a peer event unavailable violation.
+type PeerEventUnavailableParams struct {
+	OwnerClassKey   identity.Key
+	OwnerInstanceID state.InstanceID
+	AssociationName string
+	PeerClassKey    identity.Key
+	PeerInstanceID  state.InstanceID
+	EventKey        identity.Key
+	EventName       string
+	Message         string
+}
+
+// NewPeerEventUnavailableViolation creates a violation when an association guarantee
+// sends an event the peer class cannot accept.
+func NewPeerEventUnavailableViolation(params PeerEventUnavailableParams) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypePeerEventUnavailable,
+		Message:           params.Message,
+		InstanceID:        params.OwnerInstanceID,
+		ClassKey:          params.OwnerClassKey,
+		ActionOrQueryKey:  params.EventKey,
+		ActionOrQueryName: params.EventName,
+		AttributeName:     params.AssociationName,
+		ExpectedValue:     params.PeerClassKey.String(),
+		ActualValue:       fmt.Sprintf("%d", params.PeerInstanceID),
 	}
 }
 
