@@ -116,6 +116,12 @@ func (e *ActionExecutor) queueAssociationSetMap(
 		e.recordPeerEventUnavailable(ctx, vctx, mapTarget.toClass, 0, eventCall.EventKey, eventCall.EventKey.SubKey)
 		return true, nil
 	}
+	if model_state.IsSystemFinalEvent(event.Name) {
+		return false, fmt.Errorf(
+			"association set-map guarantee on %q: peer _delete must use guarantee type delete with delete_event",
+			target,
+		)
+	}
 
 	params, err := resolvePositionalEventCallParams(setMap.Variable, event.ParameterNames, eventCall, bindings)
 	if err != nil {

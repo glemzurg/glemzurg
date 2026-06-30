@@ -126,6 +126,18 @@ type ExecutionContext struct {
 
 	// requiresViolations holds precondition failures that block guarantee application.
 	requiresViolations invariants.ViolationErrors
+
+	// associationRemovedPeers records peers dropped by association state_change guarantees.
+	associationRemovedPeers map[associationRemovalKey][]state.InstanceID
+
+	// associationDeleteCandidates tracks removed peers targeted for peer _delete. While targeted,
+	// association links stay put; unavailable _delete records PeerEventUnavailable and leaves links.
+	associationDeleteCandidates map[associationRemovalKey]map[state.InstanceID]bool
+}
+
+type associationRemovalKey struct {
+	OwnerInstanceID state.InstanceID
+	AssocKey        identity.Key
 }
 
 // NewExecutionContext creates a new top-level execution context.
@@ -274,4 +286,61 @@ func (ctx *ExecutionContext) SetRequiresViolations(violations invariants.Violati
 // RequiresViolations returns precondition failures recorded during execution.
 func (ctx *ExecutionContext) RequiresViolations() invariants.ViolationErrors {
 	return ctx.requiresViolations
+}
+
+// SetAssociationRemovedPeers records peers removed from an association by state_change.
+func (ctx *ExecutionContext) SetAssociationRemovedPeers(
+	ownerInstanceID state.InstanceID,
+	assocKey identity.Key,
+	peerIDs []state.InstanceID,
+) {
+	if len(peerIDs) == 0 {
+		return
+	}
+	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
+	if ctx.associationRemovedPeers == nil {
+		ctx.associationRemovedPeers = make(map[associationRemovalKey][]state.InstanceID)
+	}
+	ctx.associationRemovedPeers[key] = append(ctx.associationRemovedPeers[key], peerIDs...)
+}
+
+// AssociationRemovedPeers returns peers recorded as removed for one association.
+func (ctx *ExecutionContext) AssociationRemovedPeers(
+	ownerInstanceID state.InstanceID,
+	assocKey identity.Key,
+) []state.InstanceID {
+	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
+	return ctx.associationRemovedPeers[key]
+}
+
+// MarkAssociationDeleteCandidate records a removed peer targeted by a delete guarantee.
+func (ctx *ExecutionContext) MarkAssociationDeleteCandidate(
+	ownerInstanceID state.InstanceID,
+	assocKey identity.Key,
+	peerID state.InstanceID,
+) {
+	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
+	if ctx.associationDeleteCandidates == nil {
+		ctx.associationDeleteCandidates = make(map[associationRemovalKey]map[state.InstanceID]bool)
+	}
+	if ctx.associationDeleteCandidates[key] == nil {
+		ctx.associationDeleteCandidates[key] = make(map[state.InstanceID]bool)
+	}
+	ctx.associationDeleteCandidates[key][peerID] = true
+}
+
+// AssociationDeleteCandidate reports whether a removed peer was selected for peer _delete.
+func (ctx *ExecutionContext) AssociationDeleteCandidate(key associationRemovalKey, peerID state.InstanceID) bool {
+	if ctx.associationDeleteCandidates == nil {
+		return false
+	}
+	return ctx.associationDeleteCandidates[key][peerID]
+}
+
+// associationRemovedPeerSets returns all association removal batches from state_change.
+func (ctx *ExecutionContext) associationRemovedPeerSets() map[associationRemovalKey][]state.InstanceID {
+	if len(ctx.associationRemovedPeers) == 0 {
+		return nil
+	}
+	return ctx.associationRemovedPeers
 }

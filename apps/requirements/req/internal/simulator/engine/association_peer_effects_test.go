@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"maps"
 	"math/rand"
 	"testing"
@@ -30,6 +31,25 @@ func TestAssociationPeerEffectsSuite(t *testing.T) {
 	suite.Run(t, new(AssociationPeerEffectsSuite))
 }
 
+func (s *AssociationPeerEffectsSuite) TestInlineDeleteGuaranteeRemovesPlainAssociationLink() {
+	fix := buildPlainAssocPeerFixture(true)
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+
+	orderInst := s.createPeerEffectInstance(simState, fix.orderKey, "Open")
+	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
+	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
+
+	action := peerInlineDeleteGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
+	result, err := ae.ExecuteAction(action, orderInst, nil)
+	s.Require().NoError(err)
+	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
+	s.Require().Len(result.PeerTransitions, 1)
+	s.Equal(model_state.EventNameDelete, result.PeerTransitions[0].EventName)
+	s.True(result.PeerTransitions[0].Result.WasDeletion)
+	s.Nil(simState.GetInstance(itemInst.ID))
+	s.Empty(simState.GetLinkedForward(orderInst.ID, fix.assocKey))
+}
+
 func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesPlainAssociationLink() {
 	fix := buildPlainAssocPeerFixture(true)
 	simState, ae := s.buildPeerEffectExecutor(fix.model)
@@ -38,7 +58,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesPlainAssociationLin
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
 	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
 
-	action := peerDeleteSetMapAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
+	action := peerDeleteGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
 	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
@@ -56,10 +76,12 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteViolationWhenPeerLacksDele
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
 	simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID)
 
-	action := peerDeleteSetMapAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
+	action := peerDeleteGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
+	s.False(result.Success)
 	s.Require().Len(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable), 1)
+	s.Equal(fmt.Sprintf("%d", itemInst.ID), result.Violations[0].ActualValue)
 	s.NotNil(simState.GetInstance(itemInst.ID))
 	s.Len(simState.GetLinkedForward(orderInst.ID, fix.assocKey), 1)
 }
@@ -101,7 +123,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow
 	)
 	s.Require().NoError(err)
 
-	action := peerDeleteSetMapAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
+	action := peerDeleteGuaranteeAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
 	result, err := ae.ExecuteAction(action, partnerInst, nil)
 	s.Require().NoError(err)
 	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
@@ -116,6 +138,7 @@ func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model)
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(model)
+	registerCatalogAssociations(catalog, bb)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
 	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, catalog, rng)
@@ -426,17 +449,93 @@ func peerUpdateSetMapActionWithArgOrder(
 	return peerEffectAction(ownerKey, assocTLAField, expr)
 }
 
-func peerDeleteSetMapAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
+func peerInlineDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
+	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_inline_delete"))
+	deleteKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
 	deleteEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameDelete))
-	expr := &me.SetMap{
-		Variable: "r",
-		Set:      &me.AssociationRef{AssociationKey: assocKey},
-		Transform: &me.EventCall{
-			EventKey: deleteEventKey,
-			Args:     []me.Expression{&me.LocalVar{Name: "r"}},
-		},
+
+	selection := &me.SetFilter{
+		Variable:  "b",
+		Set:       &me.AssociationRef{AssociationKey: assocKey},
+		Predicate: &me.BoolLiteral{Value: true},
 	}
-	return peerEffectAction(ownerKey, assocTLAField, expr)
+	inlineExpr := &me.SetOp{
+		Op:    me.SetDifference,
+		Left:  &me.AssociationRef{AssociationKey: assocKey},
+		Right: selection,
+	}
+	deleteGuar := model_logic.NewLogic(
+		deleteKey,
+		model_logic.LogicTypeDelete,
+		"",
+		assocTLAField,
+		logic_spec.ExpressionSpec{Expression: inlineExpr},
+		nil,
+	)
+	deleteGuar.DeleteEventSpec.Expression = &me.EventCall{
+		EventKey: deleteEventKey,
+		Args:     []me.Expression{&me.LocalVar{Name: "item"}},
+	}
+
+	return model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "PeerInlineDelete", Details: ""},
+		nil,
+		[]model_logic.Logic{deleteGuar},
+		nil,
+		nil,
+	)
+}
+
+func peerDeleteGuaranteeAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {
+	actionKey := helper.Must(identity.NewActionKey(ownerKey, "peer_delete"))
+	letKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
+	stateKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "1"))
+	deleteKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "2"))
+	deleteEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameDelete))
+
+	toDelete := &me.SetFilter{
+		Variable:  "r",
+		Set:       &me.AssociationRef{AssociationKey: assocKey},
+		Predicate: &me.BoolLiteral{Value: true},
+	}
+	letGuar := model_logic.NewLogic(letKey, model_logic.LogicTypeLet, "", "ToDelete", logic_spec.ExpressionSpec{}, nil)
+	letGuar.Spec.Expression = toDelete
+
+	stateExpr := &me.SetOp{
+		Op:    me.SetDifference,
+		Left:  &me.AssociationRef{AssociationKey: assocKey},
+		Right: &me.LocalVar{Name: "ToDelete"},
+	}
+	stateGuar := model_logic.NewLogic(stateKey, model_logic.LogicTypeStateChange, "", assocTLAField, logic_spec.ExpressionSpec{}, nil)
+	stateGuar.Spec.Expression = stateExpr
+
+	deleteSelection := &me.SetFilter{
+		Variable:  "b",
+		Set:       &me.AssociationRef{AssociationKey: assocKey},
+		Predicate: &me.BoolLiteral{Value: true},
+	}
+	deleteGuar := model_logic.NewLogic(
+		deleteKey,
+		model_logic.LogicTypeDelete,
+		"",
+		assocTLAField,
+		logic_spec.ExpressionSpec{Expression: deleteSelection},
+		nil,
+	)
+	deleteGuar.DeleteEventSpec.Expression = &me.EventCall{
+		EventKey: deleteEventKey,
+		Args:     []me.Expression{&me.LocalVar{Name: "b"}},
+	}
+
+	return model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "PeerDelete", Details: ""},
+		nil,
+		[]model_logic.Logic{letGuar, stateGuar, deleteGuar},
+		nil,
+		nil,
+	)
 }
 
 func peerNewSetAddAction(ownerKey, assocKey, peerClassKey identity.Key, assocTLAField string) model_state.Action {

@@ -114,6 +114,8 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 		return evalNamedSetRef(n, bindings)
 	case *me.ClassRef:
 		return evalClassRef(n, bindings)
+	case *me.AssociationRef:
+		return evalAssociationRef(n, bindings)
 
 	// === Binary operators ===
 	case *me.BinaryArith:

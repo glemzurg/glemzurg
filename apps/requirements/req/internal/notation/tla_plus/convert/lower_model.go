@@ -11,6 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
 
@@ -238,7 +239,31 @@ func lowerDeleteGuaranteeEvent(guar *model_logic.Logic, ctx *LowerContext) error
 	if sf, ok := guar.Spec.Expression.(*me.SetFilter); ok {
 		deleteCtx = withLocalVar(ctx, sf.Variable)
 	}
+	if boundVar := deleteEventBoundVariable(guar.DeleteEventSpec.Specification); boundVar != "" {
+		deleteCtx = withLocalVar(deleteCtx, boundVar)
+	}
 	return lowerLogicSpec(&guar.DeleteEventSpec, deleteCtx)
+}
+
+// deleteEventBoundVariable returns the first delete_event call argument name.
+// That identifier is a bound variable for lowering only; the simulator skips it at runtime.
+func deleteEventBoundVariable(specification string) string {
+	if specification == "" {
+		return ""
+	}
+	astExpr, err := parser.ParseExpression(specification)
+	if err != nil {
+		return ""
+	}
+	call, ok := astExpr.(*ast.FunctionCall)
+	if !ok || len(call.Args) == 0 {
+		return ""
+	}
+	id, ok := call.Args[0].(*ast.Identifier)
+	if !ok {
+		return ""
+	}
+	return id.Value
 }
 
 // lowerLogicSpec parses and lowers a single ExpressionSpec if it has a TLA+ specification

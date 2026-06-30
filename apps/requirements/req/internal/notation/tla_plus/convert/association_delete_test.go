@@ -49,3 +49,35 @@ func TestAssociationDeleteGuaranteeSelectionTLALower(t *testing.T) {
 	require.Equal(t, "b", matchedSelection.Variable)
 	require.Equal(t, model_state.EventNameDelete, eventCall.EventKey.SubKey)
 }
+
+func TestAssociationDeleteGuaranteeInlineDifferenceTLALower(t *testing.T) {
+	ctx := associationSetMapDeleteFixture()
+	spec := `AppliesSocialCurrencyLogic \ { b \in AppliesSocialCurrencyLogic : TRUE }`
+
+	astExpr, err := parser.ParseExpression(spec)
+	require.NoError(t, err)
+	lowered, err := convert.Lower(astExpr, ctx)
+	require.NoError(t, err)
+
+	logic := model_logic.NewLogic(
+		identity.Key{},
+		model_logic.LogicTypeDelete,
+		"Remove peers",
+		"AppliesSocialCurrencyLogic",
+		logic_spec.ExpressionSpec{Expression: lowered},
+		nil,
+	)
+	logic.SetDeleteEventSpec(logic_spec.ExpressionSpec{
+		Expression: &me.EventCall{
+			EventKey: identity.Key{SubKey: model_state.EventNameDelete},
+			Args:     []me.Expression{&me.LocalVar{Name: "item"}},
+		},
+	})
+
+	_, matchedSelection, eventCall, ok := model_class.MatchAssociationDeleteGuarantee(logic)
+	require.True(t, ok)
+	require.True(t, model_class.DeleteGuaranteeHasInlineStateChange(logic))
+	require.Equal(t, "b", matchedSelection.Variable)
+	require.Equal(t, model_state.EventNameDelete, eventCall.EventKey.SubKey)
+	require.Equal(t, "item", eventCall.Args[0].(*me.LocalVar).Name)
+}

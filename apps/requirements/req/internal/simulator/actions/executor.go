@@ -218,6 +218,7 @@ func (e *ActionExecutor) collectActionViolations(
 }
 
 func (e *ActionExecutor) finalizeActionStateChanges(ctx *ExecutionContext) error {
+	e.applyAssociationLinkRemovals(ctx)
 	if err := e.applyPeerUpdates(ctx); err != nil {
 		return err
 	}
@@ -459,8 +460,20 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 	if err := evalLetBindings(action.Guarantees, bindings, "action", action.Name, "guarantee"); err != nil {
 		return err
 	}
-	// Pass 2: Evaluate non-let guarantees.
+	// Pass 2: Non-delete guarantees (state_change drives association set updates first).
 	for i, guar := range action.Guarantees {
+		if guar.Type == model_logic.LogicTypeDelete {
+			continue
+		}
+		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
+			return err
+		}
+	}
+	// Pass 3: Delete guarantees fire peer _delete for peers removed by state_change.
+	for i, guar := range action.Guarantees {
+		if guar.Type != model_logic.LogicTypeDelete {
+			continue
+		}
 		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
 			return err
 		}
@@ -492,6 +505,11 @@ func (e *ActionExecutor) evaluateSingleActionGuarantee(
 		return fmt.Errorf("action %s guarantee[%d]: expression not lowered", actionName, index)
 	}
 	if handled, err := e.tryQueueAssociationGuaranteeExpr(ctx, instance, guar.Target, expr, bindings); err != nil {
+		return err
+	} else if handled {
+		return nil
+	}
+	if handled, err := e.tryApplyAssociationStateChangeGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
 		return err
 	} else if handled {
 		return nil
