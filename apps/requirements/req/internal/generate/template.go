@@ -138,10 +138,11 @@ var _funcMap = template.FuncMap{
 	"filename": func(objType string, key identity.Key, suffix, ext string) (filename string) {
 		return convertKeyToFilename(objType, key.String(), suffix, ext)
 	},
-	"data_type_rules":             formatDataTypeRules,
-	"data_type_spec_display":      dataTypeSpecDisplay,
-	"parameter_data_type_display": parameterDataTypeDisplay,
-	"first_md_paragraph":          firstMdParagraph,
+	"data_type_rules":                     formatDataTypeRules,
+	"data_type_spec_display":              dataTypeSpecDisplay,
+	"parameter_data_type_display":         parameterDataTypeDisplay,
+	"parameter_simulation_markdown_lines": parameterSimulationMarkdownLines,
+	"first_md_paragraph":                  firstMdParagraph,
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},

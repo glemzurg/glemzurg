@@ -160,6 +160,7 @@ Parameters:
 
 {{ range $action.Parameters -}}
 - *{{ .Name }}.* {{ parameter_data_type_display . }}
+{{ parameter_simulation_markdown_lines $.Class . }}
 {{ end }}
 {{ end -}}
 Requires:

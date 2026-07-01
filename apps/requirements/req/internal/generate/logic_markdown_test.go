@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/require"
@@ -99,6 +100,52 @@ func TestLogicMarkdownSpecLinesBoldsDestroyGuarantee(t *testing.T) {
 		"    - **AppliesSocialCurrencyLogic' = { b \\in AppliesSocialCurrencyLogic : TRUE }**",
 		"    - Each removed element sent: **«destroy»(b)**",
 	}, "\n"), got)
+}
+
+func TestParameterSimulationMarkdownLines(t *testing.T) {
+	classKey := helper.Must(identity.NewClassKey(
+		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("finance")), "wallet")),
+		"transaction",
+	))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "initialize"))
+	paramKey := helper.Must(identity.NewParameterKey(actionKey, "amounts"))
+	reqKey := helper.Must(identity.NewParameterSimulationRequireKey(paramKey, "0"))
+	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey))
+
+	param := helper.Must(model_state.NewParameter(actionKey, "Amounts", "unordered of unconstrained", false))
+	param.SetSimulation(&model_state.ParameterSimulation{
+		Details: "Sample amounts.",
+		Requires: []model_logic.Logic{
+			model_logic.NewLogic(
+				reqKey,
+				model_logic.LogicTypeAssessment,
+				"Need accounts.",
+				"",
+				logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Account /= {}"},
+				nil,
+			),
+		},
+		Specification: func() *model_logic.Logic {
+			logic := model_logic.NewLogic(
+				specKey,
+				model_logic.LogicTypeValue,
+				"",
+				"",
+				logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{}"},
+				nil,
+			)
+			return &logic
+		}(),
+	})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Transaction"})
+
+	got := parameterSimulationMarkdownLines(class, param)
+	require.Contains(t, got, "    - Simulation:")
+	require.Contains(t, got, "Sample amounts.")
+	require.Contains(t, got, "        - Requires:")
+	require.Contains(t, got, "Need accounts.")
+	require.Contains(t, got, "**Account /= {}**")
+	require.Contains(t, got, "        - Specification:\n            - **{}**")
 }
 
 func TestDerivationPolicyMarkdownHTMLBoldsSpec(t *testing.T) {

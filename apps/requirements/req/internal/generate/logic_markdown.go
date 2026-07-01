@@ -135,6 +135,63 @@ func derivationPolicyMarkdownHTMLForClass(class model_class.Class, policy *model
 	return strings.Join(parts, "<br>")
 }
 
+func indentMarkdownBlock(block, indent string) string {
+	if block == "" {
+		return ""
+	}
+	lines := strings.Split(block, "\n")
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		out = append(out, indent+line)
+	}
+	return strings.Join(out, "\n")
+}
+
+func appendClassLogicMarkdownChild(lines *[]string, class model_class.Class, logic model_logic.Logic, parentIndent string) {
+	if specLines := logicMarkdownSpecLinesForClass(class, logic); specLines != "" {
+		*lines = append(*lines, indentMarkdownBlock(specLines, parentIndent))
+	}
+}
+
+// parameterSimulationMarkdownLines renders simulator-only sampling metadata under an action parameter.
+func parameterSimulationMarkdownLines(class model_class.Class, param model_state.Parameter) string {
+	if param.Simulation == nil || !param.Simulation.HasSimulation() {
+		return ""
+	}
+	sim := param.Simulation
+	var lines []string
+	lines = append(lines, "    - Simulation:")
+	if details := strings.TrimSpace(sim.Details); details != "" {
+		lines = append(lines, "        - "+details)
+	}
+	if len(sim.Requires) > 0 {
+		lines = append(lines, "        - Requires:")
+		for _, req := range sim.Requires {
+			reqIndent := "            "
+			if desc := strings.TrimSpace(req.Description); desc != "" {
+				lines = append(lines, reqIndent+"- "+desc)
+				appendClassLogicMarkdownChild(&lines, class, req, reqIndent)
+				continue
+			}
+			appendClassLogicMarkdownChild(&lines, class, req, "        ")
+		}
+	}
+	if sim.Specification != nil {
+		specHeaderIndent := "        "
+		if desc := strings.TrimSpace(sim.Specification.Description); desc != "" {
+			lines = append(lines, specHeaderIndent+"- "+desc)
+			appendClassLogicMarkdownChild(&lines, class, *sim.Specification, specHeaderIndent)
+		} else {
+			lines = append(lines, specHeaderIndent+"- Specification:")
+			appendClassLogicMarkdownChild(&lines, class, *sim.Specification, specHeaderIndent)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 func derivationPolicyMarkdownHTML(policy *model_logic.Logic) string {
 	if policy == nil {
 		return ""
