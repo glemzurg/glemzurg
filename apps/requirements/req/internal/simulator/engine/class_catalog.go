@@ -528,7 +528,7 @@ func (c *ClassCatalog) PeerEvent(classKey identity.Key, eventKey identity.Key) (
 
 // ExternalCreationEvents returns creation events eligible for top-level firing.
 // An event is excluded when a simulatable in-scope class sends it (SentBy) or
-// when another class's mandatory outbound association targets this class.
+// when another class's mandatory direct (non-association-class) outbound association targets this class.
 func (c *ClassCatalog) ExternalCreationEvents(classKey identity.Key) []model_state.Event {
 	info := c.classes[classKey]
 	if info == nil || len(info.CreationEvents) == 0 {
@@ -559,9 +559,15 @@ func (c *ClassCatalog) isMandatoryAssociationCreationTarget(classKey identity.Ke
 			continue
 		}
 		for _, ai := range c.classAssocs[otherKey] {
-			if ai.FromClassKey == otherKey && ai.ToClassKey == classKey && ai.MandatoryTo {
-				return true
+			if ai.FromClassKey != otherKey || ai.ToClassKey != classKey || !ai.MandatoryTo {
+				continue
 			}
+			// Association-class hosts materialize mandatory links via the association class;
+			// to-endpoints remain independently creatable (e.g. Account before Transaction).
+			if ai.Association.AssociationClassKey != nil {
+				continue
+			}
+			return true
 		}
 	}
 	return false

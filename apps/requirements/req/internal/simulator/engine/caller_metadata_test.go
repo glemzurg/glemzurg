@@ -77,6 +77,17 @@ func TestPopulateCallerDataFromModel_UseCaseEventSender(t *testing.T) {
 	assert.Contains(t, cd.EventSentBy[eventKey], adminClassKey)
 }
 
+func TestPopulateCallerData_MandatoryAssociationClassDoesNotSendToEndpointCreation(t *testing.T) {
+	tcm := buildAssociationClassTestModel()
+	catalog := NewClassCatalog(tcm.model)
+	PopulateCallerDataFromModel(tcm.model, catalog)
+
+	jurisdictionCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")
+	cd := catalog.CallerData()
+	assert.NotContains(t, cd.EventSentBy, jurisdictionCreateKey,
+		"mandatory association-class link does not mark to-endpoint creation as SentBy from host")
+}
+
 func TestExternalCreationEvents_FiltersSimulatableSender(t *testing.T) {
 	orderClass, orderKey := testOrderClass()
 	itemClass, itemKey := testItemClass()

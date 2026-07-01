@@ -203,6 +203,19 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 	s.Len(ext, 1)
 }
 
+func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociationClass() {
+	tcm := buildAssociationClassTestModel()
+	catalog := NewClassCatalog(tcm.model)
+
+	// To-endpoint stays externally creatable; mandatory link is via association class.
+	ext := catalog.ExternalCreationEvents(tcm.jurisdictionKey)
+	s.Len(ext, 1)
+	s.Equal("create", ext[0].Name)
+
+	// Association-class rows still require both host endpoints.
+	s.Empty(catalog.ExternalCreationEvents(tcm.linkDefKey))
+}
+
 func (s *ClassCatalogSuite) TestGetActionForEvent() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))

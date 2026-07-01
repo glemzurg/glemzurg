@@ -185,7 +185,7 @@ func associationToClassForSetAddTarget(
 
 func populateMandatoryAssociationSenders(catalog *ClassCatalog) {
 	for _, ai := range catalog.AllAssociations() {
-		if !ai.MandatoryTo {
+		if !ai.MandatoryTo || ai.Association.AssociationClassKey != nil {
 			continue
 		}
 		toInfo := catalog.GetClassInfo(ai.ToClassKey)
