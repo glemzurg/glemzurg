@@ -68,7 +68,7 @@ func TestParameterSimulationDisplayInMarkdown(t *testing.T) {
 	amountsParam, err := model_state.NewParameter(actionKey, "Amounts", "unordered of unconstrained", false)
 	require.NoError(t, err)
 	require.NotNil(t, amountsParam.DataType)
-	typeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "_Set!_Set([account: account, amount: Int])", nil)
+	typeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "[account: account, amount: Int]", nil)
 	require.NoError(t, err)
 	amountsParam.DataType.TypeSpec = &typeSpec
 

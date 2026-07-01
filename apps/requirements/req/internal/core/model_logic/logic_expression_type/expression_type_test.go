@@ -58,13 +58,9 @@ func (s *ExpressionTypeTestSuite) TestValidateCollections() {
 		et       ExpressionType
 		errstr   string
 	}{
-		{testName: "valid set", et: &SetType{ElementType: &IntegerType{}}},
-		{testName: "error set nil element", et: &SetType{}, errstr: "SetType.ElementType: is required"},
 		{testName: "valid sequence", et: &SequenceType{ElementType: &StringType{}}},
 		{testName: "valid sequence unique", et: &SequenceType{ElementType: &StringType{}, Unique: true}},
 		{testName: "error sequence nil element", et: &SequenceType{}, errstr: "SequenceType.ElementType: is required"},
-		{testName: "valid bag", et: &BagType{ElementType: &IntegerType{}}},
-		{testName: "error bag nil element", et: &BagType{}, errstr: "BagType.ElementType: is required"},
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
@@ -136,14 +132,12 @@ func (s *ExpressionTypeTestSuite) TestValidateReferences() {
 }
 
 func (s *ExpressionTypeTestSuite) TestValidateNested() {
-	// Deep nesting: Set of Sequence of Record with Tuple field.
-	et := &SetType{
-		ElementType: &SequenceType{
-			ElementType: &RecordType{
-				Fields: []RecordFieldType{
-					{Name: "coords", Type: &TupleType{ElementTypes: []ExpressionType{&RationalType{}, &RationalType{}}}},
-					{Name: "label", Type: &StringType{}},
-				},
+	// Deep nesting: Sequence of Record with Tuple field.
+	et := &SequenceType{
+		ElementType: &RecordType{
+			Fields: []RecordFieldType{
+				{Name: "coords", Type: &TupleType{ElementTypes: []ExpressionType{&RationalType{}, &RationalType{}}}},
+				{Name: "label", Type: &StringType{}},
 			},
 		},
 	}
@@ -151,12 +145,10 @@ func (s *ExpressionTypeTestSuite) TestValidateNested() {
 	s.Require().NoError(et.Validate(ctx))
 
 	// Nested with error deep inside.
-	etBad := &SetType{
-		ElementType: &SequenceType{
-			ElementType: &RecordType{
-				Fields: []RecordFieldType{
-					{Name: "coords", Type: &TupleType{}}, // Empty TupleType.
-				},
+	etBad := &SequenceType{
+		ElementType: &RecordType{
+			Fields: []RecordFieldType{
+				{Name: "coords", Type: &TupleType{}}, // Empty TupleType.
 			},
 		},
 	}
@@ -171,9 +163,7 @@ func (s *ExpressionTypeTestSuite) TestTypeName() {
 	s.Equal(TypeRational, (&RationalType{}).TypeName())
 	s.Equal(TypeString, (&StringType{}).TypeName())
 	s.Equal(TypeEnum, (&EnumType{Values: []string{"a"}}).TypeName())
-	s.Equal(TypeSet, (&SetType{ElementType: &IntegerType{}}).TypeName())
 	s.Equal(TypeSequence, (&SequenceType{ElementType: &IntegerType{}}).TypeName())
-	s.Equal(TypeBag, (&BagType{ElementType: &IntegerType{}}).TypeName())
 	s.Equal(TypeTuple, (&TupleType{ElementTypes: []ExpressionType{&IntegerType{}}}).TypeName())
 	s.Equal(TypeRecord, (&RecordType{Fields: []RecordFieldType{{Name: "x", Type: &IntegerType{}}}}).TypeName())
 	s.Equal(TypeFunction, (&FunctionType{Return: &IntegerType{}}).TypeName())
@@ -187,6 +177,6 @@ func (s *ExpressionTypeTestSuite) TestValidateExpressionTypeHelper() {
 	// Valid type.
 	s.Require().NoError(ValidateExpressionType(ctx, &BooleanType{}))
 	// Invalid type.
-	err := ValidateExpressionType(ctx, &SetType{})
+	err := ValidateExpressionType(ctx, &SequenceType{})
 	s.Require().Error(err)
 }

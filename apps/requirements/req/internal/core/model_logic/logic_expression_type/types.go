@@ -46,14 +46,6 @@ func (t *EnumType) TypeName() string { return TypeEnum }
 
 // --- Collection types ---
 
-// SetType represents a set of elements of a given type.
-type SetType struct {
-	ElementType ExpressionType // Required.
-}
-
-func (t *SetType) expressionType()  {}
-func (t *SetType) TypeName() string { return TypeSet }
-
 // SequenceType represents an ordered sequence. Unique=true means no duplicates.
 type SequenceType struct {
 	ElementType ExpressionType // Required.
@@ -62,14 +54,6 @@ type SequenceType struct {
 
 func (t *SequenceType) expressionType()  {}
 func (t *SequenceType) TypeName() string { return TypeSequence }
-
-// BagType represents a multiset (bag) of elements of a given type.
-type BagType struct {
-	ElementType ExpressionType // Required.
-}
-
-func (t *BagType) expressionType()  {}
-func (t *BagType) TypeName() string { return TypeBag }
 
 // --- Compound types ---
 

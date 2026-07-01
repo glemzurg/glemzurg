@@ -65,10 +65,10 @@ Do not add invented operators under `_Seq!` or `_Bags!` (for example a hypotheti
 | --- | --- |
 | `_Seq!Seq(T)` | Sequence (duplicates allowed) |
 | `_Seq!SeqUnique(T)` | Sequence with unique elements |
-| `_Set!_Set(T)` | Set |
-| `_Bags!_Bag(T)` | Bag / multiset |
 
 Replace `T` with any valid type expression, including nested forms.
+
+Sets and bags have no standard TLA+ type constructor. Use `data_type_rules` for unordered collections and multisets; in specifications use set literals, `\in`, and real `_Bags!` operators such as `SetToBag` and `BagCardinality` — not invented `_Set!_Set` or `_Bags!_Bag` forms.
 
 ### Records
 
@@ -89,7 +89,7 @@ When raised or printed, tuples may appear as `Int × STRING`.
 ### Nested examples
 
 ```
-_Set!_Set([id: Int, name: STRING])
+_Seq!Seq([id: Int, name: STRING])
 _Seq!Seq(Int \X BOOLEAN)
 ```
 

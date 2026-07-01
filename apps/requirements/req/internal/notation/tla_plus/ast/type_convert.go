@@ -102,8 +102,6 @@ func convertSetLiteral(sl *SetLiteral) (logic_expression_type.ExpressionType, er
 // convertFunctionCall handles built-in module type constructors:
 //   - _Seq!Seq(X)       → SequenceType{ElementType: X, Unique: false}
 //   - _Seq!SeqUnique(X) → SequenceType{ElementType: X, Unique: true}
-//   - _Set!_Set(X)      → SetType{ElementType: X}
-//   - _Bags!_Bag(X)     → BagType{ElementType: X}
 func convertFunctionCall(fc *FunctionCall) (logic_expression_type.ExpressionType, error) {
 	if len(fc.ScopePath) != 1 {
 		return nil, fmt.Errorf("not a valid type expression: %s", fc.String())
@@ -121,28 +119,16 @@ func convertFunctionCall(fc *FunctionCall) (logic_expression_type.ExpressionType
 		return nil, fmt.Errorf("type constructor %s!%s argument: %w", module, name, err)
 	}
 
-	switch module {
-	case ModuleSeq:
-		switch name {
-		case FuncSeq:
-			return &logic_expression_type.SequenceType{ElementType: elemType, Unique: false}, nil
-		case FuncSeqUnique:
-			return &logic_expression_type.SequenceType{ElementType: elemType, Unique: true}, nil
-		default:
-			return nil, fmt.Errorf("unknown _Seq function for type: %s", name)
-		}
-	case ModuleSet:
-		if name == FuncSet {
-			return &logic_expression_type.SetType{ElementType: elemType}, nil
-		}
-		return nil, fmt.Errorf("unknown _Set function for type: %s", name)
-	case ModuleBags:
-		if name == FuncBag {
-			return &logic_expression_type.BagType{ElementType: elemType}, nil
-		}
-		return nil, fmt.Errorf("unknown _Bags function for type: %s", name)
-	default:
+	if module != ModuleSeq {
 		return nil, fmt.Errorf("unknown module for type expression: %s", module)
+	}
+	switch name {
+	case FuncSeq:
+		return &logic_expression_type.SequenceType{ElementType: elemType, Unique: false}, nil
+	case FuncSeqUnique:
+		return &logic_expression_type.SequenceType{ElementType: elemType, Unique: true}, nil
+	default:
+		return nil, fmt.Errorf("unknown _Seq function for type: %s", name)
 	}
 }
 

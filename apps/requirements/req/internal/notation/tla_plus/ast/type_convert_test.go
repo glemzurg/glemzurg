@@ -149,48 +149,24 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 			errstr: "unknown _Seq function for type: BadFunc",
 		},
 
-		// --- Set type ---
+		// --- Rejected invented type constructors ---
 		{
-			testName: "_Set(Int)",
+			testName: "error fake _Set type constructor",
 			expr: &FunctionCall{
 				ScopePath: []*Identifier{{Value: "_Set"}},
 				Name:      &Identifier{Value: "_Set"},
 				Args:      []Expression{&Identifier{Value: "Int"}},
 			},
-			expected: &logic_expression_type.SetType{
-				ElementType: &logic_expression_type.IntegerType{},
-			},
+			errstr: "unknown module for type expression: _Set",
 		},
 		{
-			testName: "error unknown _Set function",
-			expr: &FunctionCall{
-				ScopePath: []*Identifier{{Value: "_Set"}},
-				Name:      &Identifier{Value: "BadFunc"},
-				Args:      []Expression{&Identifier{Value: "Int"}},
-			},
-			errstr: "unknown _Set function for type: BadFunc",
-		},
-
-		// --- Bag type ---
-		{
-			testName: "_Bag(STRING)",
+			testName: "error fake _Bag type constructor",
 			expr: &FunctionCall{
 				ScopePath: []*Identifier{{Value: "_Bags"}},
 				Name:      &Identifier{Value: "_Bag"},
 				Args:      []Expression{&Identifier{Value: "STRING"}},
 			},
-			expected: &logic_expression_type.BagType{
-				ElementType: &logic_expression_type.StringType{},
-			},
-		},
-		{
-			testName: "error unknown _Bags function",
-			expr: &FunctionCall{
-				ScopePath: []*Identifier{{Value: "_Bags"}},
-				Name:      &Identifier{Value: "BadFunc"},
-				Args:      []Expression{&Identifier{Value: "Int"}},
-			},
-			errstr: "unknown _Bags function for type: BadFunc",
+			errstr: "unknown module for type expression: _Bags",
 		},
 
 		// --- Function call errors ---
@@ -326,30 +302,6 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 				Unique: false,
 			},
 		},
-		{
-			testName: "Set of tuples",
-			expr: &FunctionCall{
-				ScopePath: []*Identifier{{Value: "_Set"}},
-				Name:      &Identifier{Value: "_Set"},
-				Args: []Expression{
-					&CartesianProduct{
-						Operands: []Expression{
-							&Identifier{Value: "Int"},
-							&Identifier{Value: "STRING"},
-						},
-					},
-				},
-			},
-			expected: &logic_expression_type.SetType{
-				ElementType: &logic_expression_type.TupleType{
-					ElementTypes: []logic_expression_type.ExpressionType{
-						&logic_expression_type.IntegerType{},
-						&logic_expression_type.StringType{},
-					},
-				},
-			},
-		},
-
 		// --- Invalid AST node types ---
 		{
 			testName: "error nil expression",

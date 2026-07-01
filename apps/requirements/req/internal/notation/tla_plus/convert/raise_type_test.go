@@ -52,12 +52,6 @@ func (s *RaiseTypeTestSuite) TestRaiseTypeEnumType() {
 	s.Equal(`{"a", "b", "c"}`, result)
 }
 
-func (s *RaiseTypeTestSuite) TestRaiseTypeSetType() {
-	result, err := RaiseType(&met.SetType{ElementType: &met.IntegerType{}}, s.ctx)
-	s.Require().NoError(err)
-	s.Equal("_Set!_Set(Int)", result)
-}
-
 func (s *RaiseTypeTestSuite) TestRaiseTypeSequenceType() {
 	result, err := RaiseType(&met.SequenceType{ElementType: &met.StringType{}, Unique: false}, s.ctx)
 	s.Require().NoError(err)
@@ -68,12 +62,6 @@ func (s *RaiseTypeTestSuite) TestRaiseTypeSequenceTypeUnique() {
 	result, err := RaiseType(&met.SequenceType{ElementType: &met.StringType{}, Unique: true}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal("_Seq!SeqUnique(STRING)", result)
-}
-
-func (s *RaiseTypeTestSuite) TestRaiseTypeBagType() {
-	result, err := RaiseType(&met.BagType{ElementType: &met.IntegerType{}}, s.ctx)
-	s.Require().NoError(err)
-	s.Equal("_Bags!_Bag(Int)", result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeTupleType() {
@@ -119,19 +107,6 @@ func (s *RaiseTypeTestSuite) TestRaiseTypeObjectType() {
 func (s *RaiseTypeTestSuite) TestRaiseTypeNilError() {
 	_, err := RaiseType(nil, s.ctx)
 	s.Require().Error(err)
-}
-
-func (s *RaiseTypeTestSuite) TestRaiseTypeNestedSetOfRecords() {
-	result, err := RaiseType(&met.SetType{
-		ElementType: &met.RecordType{
-			Fields: []met.RecordFieldType{
-				{Name: "id", Type: &met.IntegerType{}},
-				{Name: "name", Type: &met.StringType{}},
-			},
-		},
-	}, s.ctx)
-	s.Require().NoError(err)
-	s.Equal("_Set!_Set([id: Int, name: STRING])", result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeSequenceOfTuples() {

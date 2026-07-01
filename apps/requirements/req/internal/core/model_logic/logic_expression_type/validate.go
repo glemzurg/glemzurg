@@ -27,26 +27,6 @@ func (t *EnumType) Validate(ctx *coreerr.ValidationContext) error {
 
 // --- Collection type validation ---
 
-func (t *SetType) Validate(ctx *coreerr.ValidationContext) error {
-	if t.ElementType == nil {
-		return coreerr.New(
-			ctx,
-			coreerr.ExprtypeSetElementRequired,
-			"SetType.ElementType: is required",
-			"ElementType",
-		)
-	}
-	if err := t.ElementType.Validate(ctx); err != nil {
-		return coreerr.New(
-			ctx,
-			coreerr.ExprtypeSetElementInvalid,
-			fmt.Sprintf("SetType.ElementType: %s", err.Error()),
-			"ElementType",
-		)
-	}
-	return nil
-}
-
 func (t *SequenceType) Validate(ctx *coreerr.ValidationContext) error {
 	if t.ElementType == nil {
 		return coreerr.New(
@@ -61,26 +41,6 @@ func (t *SequenceType) Validate(ctx *coreerr.ValidationContext) error {
 			ctx,
 			coreerr.ExprtypeSequenceElementInvalid,
 			fmt.Sprintf("SequenceType.ElementType: %s", err.Error()),
-			"ElementType",
-		)
-	}
-	return nil
-}
-
-func (t *BagType) Validate(ctx *coreerr.ValidationContext) error {
-	if t.ElementType == nil {
-		return coreerr.New(
-			ctx,
-			coreerr.ExprtypeBagElementRequired,
-			"BagType.ElementType: is required",
-			"ElementType",
-		)
-	}
-	if err := t.ElementType.Validate(ctx); err != nil {
-		return coreerr.New(
-			ctx,
-			coreerr.ExprtypeBagElementInvalid,
-			fmt.Sprintf("BagType.ElementType: %s", err.Error()),
 			"ElementType",
 		)
 	}
