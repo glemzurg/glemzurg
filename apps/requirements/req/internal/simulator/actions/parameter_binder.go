@@ -2,6 +2,8 @@ package actions
 
 import (
 	"fmt"
+	"math"
+	"math/big"
 	"math/rand"
 	"strings"
 
@@ -13,6 +15,13 @@ import (
 
 // nullableNullSampleDenom is the denominator for sampling NULL on nullable parameters (1/denom chance).
 const nullableNullSampleDenom = 10
+
+const (
+	spanBoundUnconstrained = "unconstrained"
+	spanBoundOpen          = "open"
+	// spanDefaultHalfWidth scales unconstrained span ends: ±(halfWidth × precision).
+	spanDefaultHalfWidth = 100
+)
 
 // ParameterBinder validates and generates parameter values for actions and queries.
 type ParameterBinder struct{}
@@ -85,8 +94,8 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 	}
 
 	if dataType == nil || dataType.Atomic == nil {
-		// No type info — generate a default integer in [0, 100).
-		return object.NewNatural(rng.Int63n(100))
+		// No type info — generate a default integer in [0, 99].
+		return randomDefaultNumber(rng)
 	}
 
 	atomic := dataType.Atomic
@@ -112,8 +121,12 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 		return randomString(rng)
 
 	default:
-		return object.NewNatural(rng.Int63n(100))
+		return randomDefaultNumber(rng)
 	}
+}
+
+func randomDefaultNumber(rng *rand.Rand) object.Object {
+	return object.NewNatural(rng.Int63n(100))
 }
 
 func randomString(rng *rand.Rand) object.Object {
@@ -126,36 +139,74 @@ func randomString(rng *rand.Rand) object.Object {
 	return object.NewString(b.String())
 }
 
-// randomNumberInSpan generates a random integer within a span's bounds.
+// randomNumberInSpan generates a random Real on a span's precision lattice.
 func randomNumberInSpan(span *model_data_type.AtomicSpan, rng *rand.Rand) object.Object {
+	step := spanPrecision(span)
 	if span == nil {
-		return object.NewNatural(rng.Int63n(100))
+		extent := spanDefaultHalfWidth * step
+		return randomRealOnPrecisionGrid(-extent, extent, step, rng)
 	}
 
-	// Determine effective lower bound
-	lower := int64(0)
-	if span.LowerValue != nil {
-		lower = int64(*span.LowerValue)
-		if span.LowerType == "open" {
-			lower++ // Exclude lower bound
+	lower, upper := spanSamplingInterval(span)
+	if upper <= lower {
+		return object.NewFloat(lower)
+	}
+
+	return randomRealOnPrecisionGrid(lower, upper, step, rng)
+}
+
+func spanPrecision(span *model_data_type.AtomicSpan) float64 {
+	if span == nil || span.Precision <= 0 {
+		return 1
+	}
+	return span.Precision
+}
+
+func randomRealOnPrecisionGrid(lower, upper, step float64, rng *rand.Rand) object.Object {
+	if step <= 0 {
+		return object.NewFloat(lower)
+	}
+
+	lowerSteps := int(math.Round(lower / step))
+	upperSteps := int(math.Round(upper / step))
+	if upperSteps < lowerSteps {
+		return object.NewFloat(lower)
+	}
+
+	stepIndex := lowerSteps + rng.Intn(upperSteps-lowerSteps+1)
+	return object.NewFloat(float64(stepIndex) * step)
+}
+
+func spanSamplingInterval(span *model_data_type.AtomicSpan) (lower, upper float64) {
+	step := spanPrecision(span)
+	defaultExtent := spanDefaultHalfWidth * step
+
+	lower = -defaultExtent
+	if span.LowerType != spanBoundUnconstrained && span.LowerValue != nil {
+		lower, _ = spanValueToRat(span.LowerValue, span.LowerDenominator).Float64()
+		if span.LowerType == spanBoundOpen {
+			lower += step
 		}
 	}
 
-	// Determine effective upper bound
-	upper := lower + 100 // Default range if unconstrained
-	if span.HigherValue != nil {
-		upper = int64(*span.HigherValue)
-		if span.HigherType == "open" {
-			upper-- // Exclude upper bound
+	upper = defaultExtent
+	if span.HigherType != spanBoundUnconstrained && span.HigherValue != nil {
+		upper, _ = spanValueToRat(span.HigherValue, span.HigherDenominator).Float64()
+		if span.HigherType == spanBoundOpen {
+			upper -= step
 		}
 	}
 
-	if upper < lower {
-		return object.NewInteger(lower)
-	}
+	return lower, upper
+}
 
-	// Generate random value in [lower, upper]
-	rangeSize := upper - lower + 1
-	value := lower + rng.Int63n(rangeSize)
-	return object.NewInteger(value)
+func spanValueToRat(value *int, denom *int) *big.Rat {
+	if value == nil {
+		return big.NewRat(0, 1)
+	}
+	denomVal := 1
+	if denom != nil {
+		denomVal = *denom
+	}
+	return big.NewRat(int64(*value), int64(denomVal))
 }

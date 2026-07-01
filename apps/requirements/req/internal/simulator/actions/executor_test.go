@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 
@@ -1025,8 +1026,105 @@ func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 		s.Contains(result, "count")
 		num, ok := result["count"].(*object.Number)
 		s.True(ok)
-		val := num.Rat().Num().Int64()
-		s.True(val >= 10 && val <= 20, "Generated value %d should be in [10,20]", val)
+		s.Equal(object.KindReal, num.Kind())
+		val := num.Float64()
+		s.True(val >= 10 && val <= 20, "Generated value %g should be in [10,20]", val)
+	}
+}
+
+func (s *ActionsSuite) TestSpanSamplingIntervalUnconstrainedScalesWithPrecision() {
+	span := &model_data_type.AtomicSpan{
+		LowerType:  "unconstrained",
+		HigherType: "unconstrained",
+		Precision:  0.1,
+	}
+
+	lower, upper := spanSamplingInterval(span)
+	s.InDelta(-10.0, lower, 1e-9)
+	s.InDelta(10.0, upper, 1e-9)
+
+	span.Precision = 1
+	lower, upper = spanSamplingInterval(span)
+	s.InDelta(-100.0, lower, 1e-9)
+	s.InDelta(100.0, upper, 1e-9)
+}
+
+func (s *ActionsSuite) TestGenerateRandomParametersSpanUnconstrainedPrecisionGrid() {
+	binder := NewParameterBinder()
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
+
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
+	amountParam := helper.Must(model_state.NewParameter(ak, "amount", "span", false))
+	amountParam.DataType = &model_data_type.DataType{
+		Key:            helper.Must(identity.NewDataTypeKey(amountParam.Key, "")),
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "span",
+			Span: &model_data_type.AtomicSpan{
+				LowerType:  "unconstrained",
+				HigherType: "unconstrained",
+				Precision:  0.1,
+			},
+		},
+	}
+
+	paramDefs := []model_state.Parameter{amountParam}
+	seen := make(map[float64]struct{})
+
+	for range 5000 {
+		result := binder.GenerateRandomParameters(paramDefs, rng)
+		num, ok := result["amount"].(*object.Number)
+		s.Require().True(ok)
+		s.Equal(object.KindReal, num.Kind())
+		val := num.Float64()
+		s.GreaterOrEqual(val, -10.0)
+		s.LessOrEqual(val, 10.0)
+		quotient := val / 0.1
+		s.InDelta(math.Round(quotient), quotient, 1e-6, "value %g should align to 0.1 grid", val)
+		seen[val] = struct{}{}
+	}
+
+	s.Len(seen, 201)
+}
+
+func (s *ActionsSuite) TestGenerateRandomParametersSpanFractional() {
+	binder := NewParameterBinder()
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
+
+	lowerValue := 3
+	lowerDenom := 4
+	higherValue := 5
+	higherDenom := 6
+
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
+	lengthParam := helper.Must(model_state.NewParameter(ak, "length", "(3/4 .. 5/6]", false))
+	lengthParam.DataType = &model_data_type.DataType{
+		Key:            helper.Must(identity.NewDataTypeKey(lengthParam.Key, "")),
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "span",
+			Span: &model_data_type.AtomicSpan{
+				LowerType:         "open",
+				LowerValue:        &lowerValue,
+				LowerDenominator:  &lowerDenom,
+				HigherType:        "closed",
+				HigherValue:       &higherValue,
+				HigherDenominator: &higherDenom,
+				Precision:         0.01,
+			},
+		},
+	}
+
+	paramDefs := []model_state.Parameter{lengthParam}
+
+	for range 100 {
+		result := binder.GenerateRandomParameters(paramDefs, rng)
+		num, ok := result["length"].(*object.Number)
+		s.Require().True(ok)
+		s.Equal(object.KindReal, num.Kind())
+		val := num.Float64()
+		s.Greater(val, 0.75, "Generated value %g should be above open lower bound 3/4", val)
+		s.LessOrEqual(val, 5.0/6.0+1e-9, "Generated value %g should be at most closed upper bound 5/6", val)
 	}
 }
 
