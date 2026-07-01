@@ -100,36 +100,19 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 			continue
 		}
 
-		if attrDef.DataType == nil {
-			violations = append(violations, NewUnparsedAttributeDataTypeViolation(
-				instance.ID,
-				instance.ClassKey,
-				attrDef.Name,
-				attrDef.DataTypeRules,
-			))
+		if defViolations := attributeDefinitionViolations(instance.ID, instance.ClassKey, attrDef); len(defViolations) > 0 {
+			violations = append(violations, defViolations...)
 			continue
 		}
 
-		if !attributeHasTypeSpec(attrDef) {
-			violations = append(violations, NewMissingAttributeTypeSpecViolation(
-				instance.ID,
-				instance.ClassKey,
-				attrDef.Name,
-			))
-			continue
-		}
-
-		// Check data type constraints if DataType is parsed
-		if attrDef.DataType != nil {
-			typeViolations := c.checkDataTypeConstraints(
-				instance.ID,
-				instance.ClassKey,
-				attrDef.Name,
-				value,
-				attrDef.DataType,
-			)
-			violations = append(violations, typeViolations...)
-		}
+		typeViolations := c.checkDataTypeConstraints(
+			instance.ID,
+			instance.ClassKey,
+			attrDef.Name,
+			value,
+			attrDef.DataType,
+		)
+		violations = append(violations, typeViolations...)
 	}
 
 	return violations
@@ -250,6 +233,11 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 		// No constraints to check
 		return violations
 
+	case model_data_type.CONSTRAINT_TYPE_DATETIME:
+		if violation := checkDateTimeConstraint(instanceID, classKey, attrName, value); violation != nil {
+			violations = append(violations, violation)
+		}
+
 	case model_data_type.CONSTRAINT_TYPE_SPAN:
 		if atomic.Span != nil {
 			if violation := c.checkSpanConstraint(instanceID, classKey, attrName, value, atomic.Span); violation != nil {
@@ -270,6 +258,32 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 	}
 
 	return violations
+}
+
+// checkDateTimeConstraint validates an integer timestamp against the datetime Nat range.
+func checkDateTimeConstraint(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attrName string,
+	value object.Object,
+) *ViolationError {
+	num, ok := value.(*object.Number)
+	if !ok {
+		return nil
+	}
+
+	rat := num.Rat()
+	if !rat.IsInt() {
+		return NewDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
+	}
+
+	minRat := big.NewRat(model_data_type.DateTimeValueMin, 1)
+	maxRat := big.NewRat(model_data_type.DateTimeValueMax, 1)
+	if rat.Cmp(minRat) < 0 || rat.Cmp(maxRat) > 0 {
+		return NewDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
+	}
+
+	return nil
 }
 
 // checkSpanConstraint validates a numeric value against a span (range) constraint.

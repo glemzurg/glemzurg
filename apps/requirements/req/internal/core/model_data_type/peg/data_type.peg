@@ -123,7 +123,7 @@ Multiplicity <- min:Integer suffix:( "-" maxVal:Integer / "+" )? {
 	return result, nil
 }
 
-AtomicDataType <- atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType) {
+AtomicDataType <- atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / DateTimeType / UnconstrainedType) {
 	return atomic, nil
 }
 
@@ -273,6 +273,15 @@ ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws content:Content? {
 		Atomic: &Atomic{
 			ConstraintType: CONSTRAINT_TYPE_REFERENCE,
 			Reference: &contentStr,
+		},
+	}, nil
+}
+
+DateTimeType <- "datetime" {
+	return &DataType{
+		CollectionType: COLLECTION_TYPE_ATOMIC,
+		Atomic: &Atomic{
+			ConstraintType: CONSTRAINT_TYPE_DATETIME,
 		},
 	}, nil
 }

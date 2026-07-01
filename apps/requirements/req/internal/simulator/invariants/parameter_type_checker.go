@@ -1,6 +1,7 @@
 package invariants
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -25,12 +26,22 @@ func CheckParameterTypeSpecs(
 			))
 			continue
 		}
-		if dataTypeHasTypeSpec(param.DataType) {
+		if !dataTypeHasTypeSpec(param.DataType) {
+			violations = append(violations, NewMissingParameterTypeSpecViolation(
+				sourceKey, sourceName, sourceKind, param.Name, instanceID, classKey,
+			))
 			continue
 		}
-		violations = append(violations, NewMissingParameterTypeSpecViolation(
-			sourceKey, sourceName, sourceKind, param.Name, instanceID, classKey,
-		))
+		if model_data_type.IsAtomicDateTime(param.DataType) && !dateTimeTypeSpecSatisfied(param.DataType) {
+			violations = append(violations, NewDateTimeTypeSpecMismatchParameterViolation(DateTimeTypeSpecMismatchParameterParams{
+				Source:         ViolationSourceIdentity{Key: sourceKey, Name: sourceName},
+				SourceKind:     sourceKind,
+				ParameterName:  param.Name,
+				ActualTypeSpec: typeSpecSpecification(param.DataType),
+				InstanceID:     instanceID,
+				ClassKey:       classKey,
+			}))
+		}
 	}
 	return violations
 }

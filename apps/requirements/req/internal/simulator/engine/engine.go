@@ -375,3 +375,8 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 func (e *SimulationEngine) State() *state.SimulationState {
 	return e.simState
 }
+
+// SurfaceReport returns the scoped classes and surface-eligible actions/queries for this run.
+func (e *SimulationEngine) SurfaceReport() *SurfaceReport {
+	return BuildSurfaceReport(e.catalog)
+}

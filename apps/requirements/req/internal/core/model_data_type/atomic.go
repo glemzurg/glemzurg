@@ -10,14 +10,20 @@ import (
 
 const (
 	CONSTRAINT_TYPE_UNCONSTRAINED = "unconstrained" // Anything.
+	CONSTRAINT_TYPE_DATETIME      = "datetime"      // A timestamp; TLA+ type_spec must be Nat.
 	CONSTRAINT_TYPE_SPAN          = "span"          // A range of allowed values.
 	CONSTRAINT_TYPE_ENUMERATION   = "enumeration"   // A set of allowed values.
 	CONSTRAINT_TYPE_REFERENCE     = "reference"     // A reference to other documentation.
 	CONSTRAINT_TYPE_OBJECT        = "object"        // An object of a class.
+
+	// DateTimeValueMin and DateTimeValueMax bound simulator sampling and runtime checks.
+	DateTimeValueMin int64 = 1
+	DateTimeValueMax int64 = 100_000_000
 )
 
 var _validConstraintTypes = map[string]bool{
 	CONSTRAINT_TYPE_UNCONSTRAINED: true,
+	CONSTRAINT_TYPE_DATETIME:      true,
 	CONSTRAINT_TYPE_SPAN:          true,
 	CONSTRAINT_TYPE_ENUMERATION:   true,
 	CONSTRAINT_TYPE_REFERENCE:     true,
@@ -38,10 +44,10 @@ type Atomic struct {
 func (a Atomic) Validate(ctx *coreerr.ValidationContext) error {
 	// ConstraintType: required and must be a valid value.
 	if a.ConstraintType == "" {
-		return coreerr.NewWithValues(ctx, coreerr.DtypeAtomicConstrainttypeRequired, "ConstraintType is required", "ConstraintType", "", "one of: unconstrained, span, enumeration, reference, object")
+		return coreerr.NewWithValues(ctx, coreerr.DtypeAtomicConstrainttypeRequired, "ConstraintType is required", "ConstraintType", "", "one of: unconstrained, datetime, span, enumeration, reference, object")
 	}
 	if !_validConstraintTypes[a.ConstraintType] {
-		return coreerr.NewWithValues(ctx, coreerr.DtypeAtomicConstrainttypeInvalid, "ConstraintType is not a valid value", "ConstraintType", a.ConstraintType, "one of: unconstrained, span, enumeration, reference, object")
+		return coreerr.NewWithValues(ctx, coreerr.DtypeAtomicConstrainttypeInvalid, "ConstraintType is not a valid value", "ConstraintType", a.ConstraintType, "one of: unconstrained, datetime, span, enumeration, reference, object")
 	}
 
 	if err := a.validateReference(ctx); err != nil {
@@ -142,6 +148,8 @@ func (a Atomic) String() string {
 	switch a.ConstraintType {
 	case CONSTRAINT_TYPE_UNCONSTRAINED:
 		return CONSTRAINT_TYPE_UNCONSTRAINED
+	case CONSTRAINT_TYPE_DATETIME:
+		return CONSTRAINT_TYPE_DATETIME
 	case CONSTRAINT_TYPE_SPAN:
 		return a.spanString()
 	case CONSTRAINT_TYPE_REFERENCE:

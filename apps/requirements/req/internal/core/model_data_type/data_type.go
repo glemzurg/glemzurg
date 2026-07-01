@@ -235,6 +235,22 @@ func IsAtomicUnconstrained(dataType *DataType) bool {
 		dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_UNCONSTRAINED
 }
 
+// IsAtomicDateTime reports whether dataType is a parsed atomic datetime rule.
+func IsAtomicDateTime(dataType *DataType) bool {
+	return dataType != nil &&
+		dataType.CollectionType == COLLECTION_TYPE_ATOMIC &&
+		dataType.Atomic != nil &&
+		dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_DATETIME
+}
+
+// HasNatTypeSpec reports whether dataType carries a TLA+ Nat type_spec.
+func HasNatTypeSpec(dataType *DataType) bool {
+	if dataType == nil || dataType.TypeSpec == nil {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(dataType.TypeSpec.Specification), "Nat")
+}
+
 // ContainsEnumerationConstraint reports whether dataType is a parsed atomic enumeration.
 func ContainsEnumerationConstraint(dataType *DataType) bool {
 	return dataType != nil &&

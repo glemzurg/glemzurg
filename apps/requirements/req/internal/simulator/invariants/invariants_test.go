@@ -422,6 +422,110 @@ func (s *InvariantsSuite) TestCheckParameterTypeSpecs() {
 	s.Empty(violations)
 }
 
+func (s *InvariantsSuite) TestCheckParameterTypeSpecsDateTime() {
+	actionKey := mustKey("domain/d/subdomain/s/class/event/action/record")
+	classKey := mustKey("domain/d/subdomain/s/class/event")
+	natTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil))
+	stringTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil))
+
+	missing := helper.Must(model_state.NewParameter(actionKey, "When", "datetime", false))
+	wrongSpec := helper.Must(model_state.NewParameter(actionKey, "When", "datetime", false))
+	wrongSpec.DataType.TypeSpec = &stringTypeSpec
+	correct := helper.Must(model_state.NewParameter(actionKey, "When", "datetime", false))
+	correct.DataType.TypeSpec = &natTypeSpec
+
+	violations := CheckParameterTypeSpecs(
+		[]model_state.Parameter{missing}, actionKey, "Record", "action", 1, classKey,
+	)
+	s.Require().Len(violations, 1)
+	s.Equal(ViolationTypeMissingParameterTypeSpec, violations[0].Type)
+
+	violations = CheckParameterTypeSpecs(
+		[]model_state.Parameter{wrongSpec}, actionKey, "Record", "action", 1, classKey,
+	)
+	s.Require().Len(violations, 1)
+	s.Equal(ViolationTypeDateTimeTypeSpecMismatch, violations[0].Type)
+	s.Equal("STRING", violations[0].ActualValue)
+
+	violations = CheckParameterTypeSpecs(
+		[]model_state.Parameter{correct}, actionKey, "Record", "action", 1, classKey,
+	)
+	s.Empty(violations)
+}
+
+func (s *InvariantsSuite) TestDataTypeCheckerDateTimeTypeSpecMismatch() {
+	classKey := mustKey("domain/d/subdomain/s/class/event")
+	attrKey := mustKey("domain/d/subdomain/s/class/event/attribute/when")
+	attr := helper.Must(model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "When", Details: ""}, "datetime", nil, false, model_class.AttributeAnnotations{}))
+	stringTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil))
+	attr.DataType.TypeSpec = &stringTypeSpec
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Event"})
+	class.Attributes = []model_class.Attribute{attr}
+
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+	domainKey := mustKey("domain/d")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	checker, setupViolations := NewDataTypeChecker(&model)
+	s.Empty(setupViolations)
+
+	simState := state.NewSimulationState()
+	attrs := object.NewRecord()
+	attrs.Set("when", object.NewNatural(42))
+	instance := simState.CreateInstance(classKey, attrs)
+
+	instanceViolations := checker.CheckInstance(instance)
+	s.Require().Len(instanceViolations, 1)
+	s.Equal(ViolationTypeDateTimeTypeSpecMismatch, instanceViolations[0].Type)
+}
+
+func (s *InvariantsSuite) TestDataTypeCheckerDateTimeConstraint() {
+	classKey := mustKey("domain/d/subdomain/s/class/event")
+	attrKey := mustKey("domain/d/subdomain/s/class/event/attribute/when")
+	attr := helper.Must(model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "When", Details: ""}, "datetime", nil, false, model_class.AttributeAnnotations{}))
+	natTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil))
+	attr.DataType.TypeSpec = &natTypeSpec
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Event"})
+	class.Attributes = []model_class.Attribute{attr}
+
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+	domainKey := mustKey("domain/d")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	checker, setupViolations := NewDataTypeChecker(&model)
+	s.Empty(setupViolations)
+
+	simState := state.NewSimulationState()
+	attrs := object.NewRecord()
+	attrs.Set("when", object.NewNatural(42))
+	instance := simState.CreateInstance(classKey, attrs)
+	s.Empty(checker.CheckInstance(instance))
+
+	attrs.Set("when", object.NewNatural(0))
+	instance = simState.CreateInstance(classKey, attrs)
+	violations := checker.CheckInstance(instance)
+	s.Require().Len(violations, 1)
+	s.Equal(ViolationTypeDateTimeConstraint, violations[0].Type)
+
+	attrs.Set("when", object.NewNatural(model_data_type.DateTimeValueMax+1))
+	instance = simState.CreateInstance(classKey, attrs)
+	violations = checker.CheckInstance(instance)
+	s.Require().Len(violations, 1)
+	s.Equal(ViolationTypeDateTimeConstraint, violations[0].Type)
+}
+
 // Test: DataTypeChecker handles nullable attributes correctly.
 func (s *InvariantsSuite) TestDataTypeCheckerNullableAttribute() {
 	model := createTestModel()

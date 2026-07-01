@@ -92,6 +92,15 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
+		// Atomic datetime.
+		t_rawDtKey("datetime_type").String(): {
+			Key:            t_rawDtKey("datetime_type"),
+			CollectionType: "atomic",
+			Atomic: &model_data_type.Atomic{
+				ConstraintType: "datetime",
+			},
+		},
+
 		// Nested records.
 		t_rawDtKey("root1").String(): {
 			Key:            t_rawDtKey("root1"),
@@ -290,6 +299,14 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
 				ConstraintType: "unconstrained",
+			},
+		},
+
+		t_rawDtKey("datetime_type").String(): {
+			Key:            t_rawDtKey("datetime_type"),
+			CollectionType: "atomic",
+			Atomic: &model_data_type.Atomic{
+				ConstraintType: "datetime",
 			},
 		},
 

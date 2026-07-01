@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -55,6 +56,12 @@ const (
 
 	// ViolationTypeMissingParameterTypeSpec indicates a simulated parameter has no TLA+ type_spec.
 	ViolationTypeMissingParameterTypeSpec
+
+	// ViolationTypeDateTimeTypeSpecMismatch indicates a datetime attribute or parameter has a type_spec other than Nat.
+	ViolationTypeDateTimeTypeSpecMismatch
+
+	// ViolationTypeDateTimeConstraint indicates a datetime value is outside the allowed Nat range.
+	ViolationTypeDateTimeConstraint
 
 	// ViolationTypeIndexUniqueness indicates two instances share the same index tuple.
 	ViolationTypeIndexUniqueness
@@ -118,6 +125,8 @@ var violationTypeNames = map[ViolationType]string{
 	ViolationTypeUnparsedDataType:             "unparsed_data_type",
 	ViolationTypeMissingAttributeTypeSpec:     "missing_attribute_type_spec",
 	ViolationTypeMissingParameterTypeSpec:     "missing_parameter_type_spec",
+	ViolationTypeDateTimeTypeSpecMismatch:     "datetime_type_spec_mismatch",
+	ViolationTypeDateTimeConstraint:           "datetime_constraint",
 	ViolationTypeIndexUniqueness:              "index_uniqueness",
 	ViolationTypeAssociationInvariant:         "association_invariant",
 	ViolationTypeMultiplicity:                 "multiplicity",
@@ -515,6 +524,68 @@ func NewMissingAttributeTypeSpecViolation(
 	}
 }
 
+// NewDateTimeTypeSpecMismatchAttributeViolation reports a datetime attribute whose type_spec is not Nat.
+func NewDateTimeTypeSpecMismatchAttributeViolation(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attributeName string,
+	actualTypeSpec string,
+) *ViolationError {
+	return &ViolationError{
+		Type:          ViolationTypeDateTimeTypeSpecMismatch,
+		Message:       fmt.Sprintf("attribute %s on instance %d of class %s has datetime rules but type_spec %q is not Nat", attributeName, instanceID, classKey.String(), actualTypeSpec),
+		InstanceID:    instanceID,
+		ClassKey:      classKey,
+		AttributeName: attributeName,
+		ActualValue:   actualTypeSpec,
+		ExpectedValue: "Nat",
+	}
+}
+
+// DateTimeTypeSpecMismatchParameterParams holds parameters for a datetime parameter type_spec mismatch.
+type DateTimeTypeSpecMismatchParameterParams struct {
+	Source         ViolationSourceIdentity
+	SourceKind     string
+	ParameterName  string
+	ActualTypeSpec string
+	InstanceID     state.InstanceID
+	ClassKey       identity.Key
+}
+
+// NewDateTimeTypeSpecMismatchParameterViolation reports a datetime parameter whose type_spec is not Nat.
+func NewDateTimeTypeSpecMismatchParameterViolation(params DateTimeTypeSpecMismatchParameterParams) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeDateTimeTypeSpecMismatch,
+		Message:           fmt.Sprintf("parameter %s on %s %s has datetime rules but type_spec %q is not Nat", params.ParameterName, params.SourceKind, params.Source.Name, params.ActualTypeSpec),
+		InstanceID:        params.InstanceID,
+		ClassKey:          params.ClassKey,
+		AttributeName:     params.ParameterName,
+		ActionOrQueryKey:  params.Source.Key,
+		ActionOrQueryName: params.Source.Name,
+		ActualValue:       params.ActualTypeSpec,
+		ExpectedValue:     "Nat",
+	}
+}
+
+// NewDateTimeConstraintViolation creates a violation for a datetime value outside [1, 100000000].
+func NewDateTimeConstraintViolation(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attributeName string,
+	actualValue string,
+) *ViolationError {
+	rangeStr := fmt.Sprintf("[%d, %d]", model_data_type.DateTimeValueMin, model_data_type.DateTimeValueMax)
+	return &ViolationError{
+		Type:          ViolationTypeDateTimeConstraint,
+		Message:       fmt.Sprintf("attribute %s value %s is outside datetime range %s on instance %d of class %s", attributeName, actualValue, rangeStr, instanceID, classKey.String()),
+		InstanceID:    instanceID,
+		ClassKey:      classKey,
+		AttributeName: attributeName,
+		ActualValue:   actualValue,
+		ExpectedValue: rangeStr,
+	}
+}
+
 // NewIndexUniquenessViolation creates a violation for duplicate index tuples.
 func NewIndexUniquenessViolation(
 	instanceID state.InstanceID,
@@ -756,7 +827,7 @@ func (v ViolationErrors) DataTypeViolations() ViolationErrors {
 	for _, violation := range v {
 		//nolint:exhaustive // Only data type violation types are relevant here.
 		switch violation.Type {
-		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness, ViolationTypeUnparsedDataType, ViolationTypeMissingAttributeTypeSpec, ViolationTypeMissingParameterTypeSpec:
+		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness, ViolationTypeUnparsedDataType, ViolationTypeMissingAttributeTypeSpec, ViolationTypeMissingParameterTypeSpec, ViolationTypeDateTimeTypeSpecMismatch, ViolationTypeDateTimeConstraint:
 			result = append(result, violation)
 		default:
 			// Not a data type violation; skip.

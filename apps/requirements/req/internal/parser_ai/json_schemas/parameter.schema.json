@@ -12,7 +12,7 @@
     },
     "data_type_rules": {
       "type": "string",
-      "description": "Optional data type rules describing the expected value type and constraints for the parameter (e.g., 'positive integer', 'non-empty string', 'valid email address'). Helps implementers understand the expected input format."
+      "description": "Optional data type rules describing the expected value type and constraints for the parameter. Parsed atomic kinds include unconstrained, datetime (TLA+ type_spec must be Nat), span, enumeration, reference, and object; collections combine those atoms with ordered, unordered, record, queue, or stack modifiers."
     },
     "type_spec": {
       "type": "string",

@@ -88,20 +88,13 @@ func runSimulation(opts cliOptions) (hasViolations bool, err error) {
 		actualSeed = time.Now().UnixNano()
 	}
 
-	surfaceSpec, err := buildSurfaceSpec(model, opts.includeSubdomainPaths, opts.includeClassNames)
+	eng, err := newSimulationEngine(model, opts, actualSeed)
 	if err != nil {
-		return false, fmt.Errorf("building surface specification: %w", err)
+		return false, err
 	}
 
-	eng, err := engine.NewSimulationEngine(model, engine.SimulationConfig{
-		MaxSteps:        opts.maxSteps,
-		RandomSeed:      actualSeed,
-		StopOnViolation: opts.stopOnViolation,
-		Surface:         surfaceSpec,
-	})
-	if err != nil {
-		return false, fmt.Errorf("creating simulation engine: %w", err)
-	}
+	surfaceReport := eng.SurfaceReport()
+	reportSurfaceBeforeRun(surfaceReport, opts.quiet)
 
 	result, err := eng.Run()
 	if err != nil {
@@ -110,15 +103,51 @@ func runSimulation(opts cliOptions) (hasViolations bool, err error) {
 
 	simTrace := trace.FromResult(result)
 	violationReport := report.FromViolations(result.Violations)
-
-	switch opts.output {
-	case "json":
-		outputJSON(simTrace, violationReport, opts.showTrace, opts.quiet)
-	default:
-		outputText(simTrace, violationReport, opts.showTrace, opts.quiet, actualSeed)
-	}
+	emitSimulationOutput(opts, surfaceReport, simTrace, violationReport, actualSeed)
 
 	return violationReport.HasViolations(), nil
+}
+
+func newSimulationEngine(model *core.Model, opts cliOptions, seed int64) (*engine.SimulationEngine, error) {
+	surfaceSpec, err := buildSurfaceSpec(model, opts.includeSubdomainPaths, opts.includeClassNames)
+	if err != nil {
+		return nil, fmt.Errorf("building surface specification: %w", err)
+	}
+
+	eng, err := engine.NewSimulationEngine(model, engine.SimulationConfig{
+		MaxSteps:        opts.maxSteps,
+		RandomSeed:      seed,
+		StopOnViolation: opts.stopOnViolation,
+		Surface:         surfaceSpec,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating simulation engine: %w", err)
+	}
+
+	return eng, nil
+}
+
+func reportSurfaceBeforeRun(surfaceReport *engine.SurfaceReport, quiet bool) {
+	if quiet {
+		return
+	}
+	log.Print(surfaceReport.FormatText())
+	log.Println()
+}
+
+func emitSimulationOutput(
+	opts cliOptions,
+	surfaceReport *engine.SurfaceReport,
+	simTrace *trace.SimulationTrace,
+	violationReport *report.ViolationReport,
+	seed int64,
+) {
+	switch opts.output {
+	case "json":
+		outputJSON(surfaceReport, simTrace, violationReport, opts.showTrace, opts.quiet)
+	default:
+		outputText(simTrace, violationReport, opts.showTrace, opts.quiet, seed)
+	}
 }
 
 func loadModel(rootSource, modelName string, includeSubdomainPaths, includeClassNames []string) (*core.Model, error) {
@@ -228,8 +257,12 @@ func outputText(simTrace *trace.SimulationTrace, violationReport *report.Violati
 	log.Print(violationReport.FormatText())
 }
 
-func outputJSON(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
+func outputJSON(surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
 	output := make(map[string]any)
+
+	if !quiet {
+		output["surface"] = surfaceReport
+	}
 
 	if !quiet {
 		output["summary"] = map[string]any{

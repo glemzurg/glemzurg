@@ -96,6 +96,18 @@ func (suite *AtomicSuite) TestAdd() {
 	}, atomic)
 }
 
+func (suite *AtomicSuite) TestAddDateTime() {
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
+		ConstraintType: "datetime",
+	})
+	suite.Require().NoError(err)
+
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
+	suite.Require().NoError(err)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
+	suite.Equal(model_data_type.Atomic{ConstraintType: "datetime"}, atomic)
+}
+
 func (suite *AtomicSuite) TestAddNulls() {
 	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "reference",

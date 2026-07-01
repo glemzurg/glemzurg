@@ -117,6 +117,9 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
 		return randomString(rng)
 
+	case model_data_type.CONSTRAINT_TYPE_DATETIME:
+		return randomDateTimeValue(rng)
+
 	case model_data_type.CONSTRAINT_TYPE_REFERENCE, model_data_type.CONSTRAINT_TYPE_OBJECT:
 		return randomString(rng)
 
@@ -127,6 +130,11 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 
 func randomDefaultNumber(rng *rand.Rand) object.Object {
 	return object.NewNatural(rng.Int63n(100))
+}
+
+func randomDateTimeValue(rng *rand.Rand) object.Object {
+	span := model_data_type.DateTimeValueMax - model_data_type.DateTimeValueMin + 1
+	return object.NewNatural(model_data_type.DateTimeValueMin + rng.Int63n(span))
 }
 
 func randomString(rng *rand.Rand) object.Object {

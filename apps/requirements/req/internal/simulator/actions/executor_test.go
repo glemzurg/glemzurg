@@ -2,6 +2,7 @@ package actions
 
 import (
 	"math"
+	"math/big"
 	"math/rand"
 	"testing"
 
@@ -1172,6 +1173,26 @@ func (s *ActionsSuite) TestGenerateRandomParametersNoType() {
 	s.Contains(result, "x")
 	_, ok := result["x"].(*object.Number)
 	s.True(ok, "Should generate a number as default")
+}
+
+func (s *ActionsSuite) TestGenerateRandomParametersDateTime() {
+	binder := NewParameterBinder()
+	rng := rand.New(rand.NewSource(99)) //nolint:gosec // deterministic seed intentional for test reproducibility
+
+	ak := mustKey("domain/d/subdomain/s/class/event/action/record")
+	paramDefs := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(ak, "when", "datetime", false)),
+	}
+
+	for range 50 {
+		result := binder.GenerateRandomParameters(paramDefs, rng)
+		num, ok := result["when"].(*object.Number)
+		s.Require().True(ok)
+		rat := num.Rat()
+		s.True(rat.IsInt())
+		s.GreaterOrEqual(rat.Cmp(big.NewRat(model_data_type.DateTimeValueMin, 1)), 0)
+		s.LessOrEqual(rat.Cmp(big.NewRat(model_data_type.DateTimeValueMax, 1)), 0)
+	}
 }
 
 // ========================================================================

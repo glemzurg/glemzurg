@@ -19,6 +19,19 @@ func TestParseAtomic(t *testing.T) {
 		errorMessage string
 	}{
 
+		// Datetime atomics.
+		{
+			name:  "datetime",
+			input: "datetime",
+			expected: &DataType{
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "datetime",
+				},
+			},
+			errorMessage: "",
+		},
+
 		// Unconstrained atomics.
 		{
 			name:  "unconstrained",
@@ -598,6 +611,13 @@ func TestAtomicString(t *testing.T) {
 				ConstraintType: "unconstrained",
 			},
 			expected: "unconstrained",
+		},
+		{
+			name: "datetime",
+			atomic: Atomic{
+				ConstraintType: "datetime",
+			},
+			expected: "datetime",
 		},
 		{
 			name: "reference",

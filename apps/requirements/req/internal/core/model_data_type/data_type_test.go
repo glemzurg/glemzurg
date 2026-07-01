@@ -834,6 +834,20 @@ func TestBooleanTypeSpecHelpers(t *testing.T) {
 	require.False(t, ok)
 }
 
+func TestDateTimeHelpers(t *testing.T) {
+	key := t_dtKey("created_at")
+	dataType, err := New(key, "datetime", nil)
+	require.NoError(t, err)
+	require.True(t, IsAtomicDateTime(dataType))
+	require.False(t, HasNatTypeSpec(dataType))
+
+	natTypeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil)
+	require.NoError(t, err)
+	dataType.TypeSpec = &natTypeSpec
+	require.True(t, HasNatTypeSpec(dataType))
+	require.False(t, IsAtomicUnconstrained(dataType))
+}
+
 func TestIsAtomicUnconstrained(t *testing.T) {
 	tests := []struct {
 		name     string

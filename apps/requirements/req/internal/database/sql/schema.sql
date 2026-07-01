@@ -270,13 +270,14 @@ COMMENT ON COLUMN data_type.type_spec_specification IS 'Optional precise type sp
 
 --------------------------------------------------------------
 
-CREATE TYPE constraint_type AS ENUM ('span', 'enumeration', 'reference', 'unconstrained', 'object');
+CREATE TYPE constraint_type AS ENUM ('span', 'enumeration', 'reference', 'unconstrained', 'datetime', 'object');
 COMMENT ON TYPE constraint_type IS 'How an attribute constrains its values.
 
 - Span. A lower and upper bound with precision and units.
 - Enumeration. A list of acceptable values.
 - Reference. A citation of documentation outside of the system.
 - Unconstrained.
+- Datetime. A timestamp represented as Nat in TLA+.
 - Object. A reference to a class. This is used in parameters, but not class attributes which use associations.
 ';
 

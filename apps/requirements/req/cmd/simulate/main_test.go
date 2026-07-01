@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/report"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/trace"
 	"github.com/stretchr/testify/require"
@@ -71,6 +72,7 @@ func (s *OutputSuite) TestOutputTextCleanRunIncludesSteps() {
 	outputText(simTrace, violationReport, false, false, 42)
 
 	text := buf.String()
+	s.NotContains(text, "Simulation surface")
 	s.Contains(text, "Simulation completed: 1 steps")
 	s.Contains(text, "[1] Partner#1: active -> active")
 	s.Contains(text, "No violations found.")
@@ -116,6 +118,24 @@ func (s *OutputSuite) TestOutputTextViolationsHideStepsWithoutTrace() {
 	s.Contains(text, "1 violations found")
 }
 
+func (s *OutputSuite) TestOutputJSONIncludesSurface() {
+	surfaceReport := &engine.SurfaceReport{
+		Classes: []engine.SurfaceClassReport{
+			{ClassKey: "domain/finance/subdomain/wallet/class/partner", ClassName: "Partner", Role: "simulatable"},
+		},
+	}
+	simTrace := &trace.SimulationTrace{StepsTaken: 0, TerminationReason: "max_steps"}
+	violationReport := report.FromViolations(nil)
+
+	var buf bytes.Buffer
+	outputJSONTo(&buf, surfaceReport, simTrace, violationReport, false, false)
+
+	var payload map[string]any
+	s.Require().NoError(json.Unmarshal(buf.Bytes(), &payload))
+	_, ok := payload["surface"]
+	s.Require().True(ok)
+}
+
 func (s *OutputSuite) TestOutputJSONCleanRunIncludesTrace() {
 	simTrace := &trace.SimulationTrace{
 		StepsTaken:        2,
@@ -127,7 +147,7 @@ func (s *OutputSuite) TestOutputJSONCleanRunIncludesTrace() {
 	violationReport := report.FromViolations(nil)
 
 	var buf bytes.Buffer
-	outputJSONTo(&buf, simTrace, violationReport, false, false)
+	outputJSONTo(&buf, nil, simTrace, violationReport, false, false)
 
 	var payload map[string]any
 	s.Require().NoError(json.Unmarshal(buf.Bytes(), &payload))
@@ -146,7 +166,7 @@ func (s *OutputSuite) TestOutputJSONViolationsOmitTraceWithoutFlag() {
 	violationReport := &report.ViolationReport{TotalCount: 1, Summary: "1 violations found: 1 other"}
 
 	var buf bytes.Buffer
-	outputJSONTo(&buf, simTrace, violationReport, false, false)
+	outputJSONTo(&buf, nil, simTrace, violationReport, false, false)
 
 	var payload map[string]any
 	s.Require().NoError(json.Unmarshal(buf.Bytes(), &payload))
@@ -154,8 +174,49 @@ func (s *OutputSuite) TestOutputJSONViolationsOmitTraceWithoutFlag() {
 	s.Require().False(ok)
 }
 
-func outputJSONTo(buf *bytes.Buffer, simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
+func (s *OutputSuite) TestOutputJSONQuietOmitsSummaryAndSurface() {
+	simTrace := &trace.SimulationTrace{StepsTaken: 1, TerminationReason: "max_steps"}
+	violationReport := report.FromViolations(nil)
+	surfaceReport := &engine.SurfaceReport{
+		Classes: []engine.SurfaceClassReport{{ClassKey: "k", ClassName: "C", Role: "simulatable"}},
+	}
+
+	var buf bytes.Buffer
+	outputJSONTo(&buf, surfaceReport, simTrace, violationReport, false, true)
+
+	var payload map[string]any
+	s.Require().NoError(json.Unmarshal(buf.Bytes(), &payload))
+	_, hasSummary := payload["summary"]
+	_, hasSurface := payload["surface"]
+	s.False(hasSummary)
+	s.False(hasSurface)
+}
+
+func (s *OutputSuite) TestOutputJSONViolationsIncludeTraceWithFlag() {
+	simTrace := &trace.SimulationTrace{
+		StepsTaken:        1,
+		TerminationReason: "violation",
+		Steps: []trace.TraceStep{
+			{StepNumber: 1, Kind: "creation", ClassName: "Partner", ClassKey: "k", InstanceID: 1, ToState: "active"},
+		},
+	}
+	violationReport := &report.ViolationReport{TotalCount: 1, Summary: "1 violations found: 1 other"}
+
+	var buf bytes.Buffer
+	outputJSONTo(&buf, nil, simTrace, violationReport, true, false)
+
+	var payload map[string]any
+	s.Require().NoError(json.Unmarshal(buf.Bytes(), &payload))
+	_, ok := payload["trace"]
+	s.Require().True(ok)
+}
+
+func outputJSONTo(buf *bytes.Buffer, surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
 	output := make(map[string]any)
+
+	if !quiet && surfaceReport != nil {
+		output["surface"] = surfaceReport
+	}
 
 	if !quiet {
 		output["summary"] = map[string]any{
@@ -180,6 +241,6 @@ func outputJSONTo(buf *bytes.Buffer, simTrace *trace.SimulationTrace, violationR
 
 func TestOutputJSONToProducesValidJSON(t *testing.T) {
 	var buf bytes.Buffer
-	outputJSONTo(&buf, &trace.SimulationTrace{StepsTaken: 0, TerminationReason: "max_steps"}, report.FromViolations(nil), false, false)
+	outputJSONTo(&buf, nil, &trace.SimulationTrace{StepsTaken: 0, TerminationReason: "max_steps"}, report.FromViolations(nil), false, false)
 	require.True(t, strings.HasSuffix(strings.TrimSpace(buf.String()), "}"))
 }
