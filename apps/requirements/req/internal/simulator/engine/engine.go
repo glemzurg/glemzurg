@@ -50,6 +50,9 @@ type SimulationResult struct {
 
 	// Catalog holds scoped class metadata for trace rendering (association-class endpoints).
 	Catalog *ClassCatalog
+
+	// SimulationCoverage records parameter simulation specs that produced values during the run.
+	SimulationCoverage *SimulationCoverageTracker
 }
 
 // SimulationEngine drives the state machine simulation loop.
@@ -68,6 +71,7 @@ type SimulationEngine struct {
 	dataTypeChecker     *invariants.DataTypeChecker
 	livenessChecker     *LivenessChecker
 	stateMachineChecker *StateMachineChecker
+	simulationCoverage  *SimulationCoverageTracker
 }
 
 // NewSimulationEngine creates and wires up all simulation components.
@@ -98,9 +102,15 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
-	stepExecutor, selector, livenessChecker, err := setupExecutors(
-		activeModel, bindingsBuilder, derivedEval, checkers, catalog, rng,
-	)
+	simulationCoverage := NewSimulationCoverageTracker()
+	stepExecutor, selector, livenessChecker, err := setupExecutors(executorSetupDeps{
+		bindingsBuilder:    bindingsBuilder,
+		derivedEval:        derivedEval,
+		checkers:           checkers,
+		catalog:            catalog,
+		rng:                rng,
+		simulationCoverage: simulationCoverage,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +126,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		dataTypeChecker:     checkers.dataTypeChecker,
 		livenessChecker:     livenessChecker,
 		stateMachineChecker: NewStateMachineChecker(catalog),
+		simulationCoverage:  simulationCoverage,
 	}, nil
 }
 
@@ -264,22 +275,26 @@ func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.B
 	}
 }
 
-// setupExecutors creates step executor, action selector, and liveness checker.
-func setupExecutors(
-	_ *core.Model,
-	bindingsBuilder *state.BindingsBuilder,
-	derivedEval *DerivedAttributeEvaluator,
-	checkers *simulationCheckers,
-	catalog *ClassCatalog,
-	rng *rand.Rand,
-) (*StepExecutor, *ActionSelector, *LivenessChecker, error) {
-	actionExecutor := buildActionExecutor(bindingsBuilder, checkers, catalog, rng)
+type executorSetupDeps struct {
+	bindingsBuilder    *state.BindingsBuilder
+	derivedEval        *DerivedAttributeEvaluator
+	checkers           *simulationCheckers
+	catalog            *ClassCatalog
+	rng                *rand.Rand
+	simulationCoverage *SimulationCoverageTracker
+}
 
-	if len(catalog.AllEventBearingClasses()) == 0 {
+// setupExecutors creates step executor, action selector, and liveness checker.
+func setupExecutors(deps executorSetupDeps) (*StepExecutor, *ActionSelector, *LivenessChecker, error) {
+	actionExecutor := buildActionExecutor(deps.bindingsBuilder, deps.checkers, deps.catalog, deps.rng)
+
+	if len(deps.catalog.AllEventBearingClasses()) == 0 {
 		return nil, nil, nil, fmt.Errorf("no event-bearing simulatable classes found in model")
 	}
 
-	stepExecutor, selector, livenessChecker := buildStepExecutor(actionExecutor, bindingsBuilder, derivedEval, catalog, rng)
+	stepExecutor, selector, livenessChecker := buildStepExecutor(
+		actionExecutor, deps.bindingsBuilder, deps.derivedEval, deps.catalog, deps.rng, deps.simulationCoverage,
+	)
 	return stepExecutor, selector, livenessChecker, nil
 }
 
@@ -331,21 +346,24 @@ func buildStepExecutor(
 	derivedEval *DerivedAttributeEvaluator,
 	catalog *ClassCatalog,
 	rng *rand.Rand,
+	simulationCoverage *SimulationCoverageTracker,
 ) (*StepExecutor, *ActionSelector, *LivenessChecker) {
 	paramBinder, paramGen := buildStepParameterGenerator(bindingsBuilder)
 	stateActionExec := NewStateActionExecutor(actionExecutor)
 	chainHandler := NewCreationChainHandler(catalog, actionExecutor, stateActionExec, paramBinder, rng)
 	stepExecutor := NewStepExecutor(StepExecutorDeps{
-		ActionExecutor:  actionExecutor,
-		StateActionExec: stateActionExec,
-		ChainHandler:    chainHandler,
-		ParamGen:        paramGen,
-		Catalog:         catalog,
-		DerivedEval:     derivedEval,
-		RNG:             rng,
+		ActionExecutor:     actionExecutor,
+		StateActionExec:    stateActionExec,
+		ChainHandler:       chainHandler,
+		ParamGen:           paramGen,
+		Catalog:            catalog,
+		DerivedEval:        derivedEval,
+		RNG:                rng,
+		SimulationCoverage: simulationCoverage,
+		BindingsBuilder:    bindingsBuilder,
 	})
 
-	return stepExecutor, NewActionSelector(catalog, derivedEval, rng), NewLivenessChecker(catalog)
+	return stepExecutor, NewActionSelector(catalog, derivedEval, bindingsBuilder, rng), NewLivenessChecker(catalog)
 }
 
 // Run executes the simulation loop and returns the result.
@@ -390,6 +408,7 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 
 	result.FinalState = e.simState
 	result.Catalog = e.catalog
+	result.SimulationCoverage = e.simulationCoverage
 
 	if e.dataTypeChecker != nil {
 		result.Violations = append(result.Violations, e.dataTypeChecker.UnparsedAttributeDefinitionViolations()...)

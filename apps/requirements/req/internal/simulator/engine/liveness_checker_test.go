@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -522,4 +523,86 @@ func (s *LivenessCheckerSuite) TestNilFinalState_NoAssociationPanic() {
 	// Should not panic on nil FinalState.
 	violations := checker.Check(result)
 	s.NotNil(violations) // Will have class/attr violations, but no panic.
+}
+
+func (s *LivenessCheckerSuite) TestParameterSimulationNotUsed_Violation() {
+	class, classKey := livenessClassWithParameterSimulation()
+	model := testModel(classEntry(class, classKey))
+	catalog := NewClassCatalog(model)
+	checker := NewLivenessChecker(catalog)
+
+	result := &SimulationResult{
+		Steps:              []*SimulationStep{},
+		FinalState:         makeFinalState(),
+		SimulationCoverage: NewSimulationCoverageTracker(),
+	}
+
+	violations := checker.Check(result).ByType(invariants.ViolationTypeLivenessParameterSimulationNotUsed)
+	s.Len(violations, 1)
+	s.Contains(violations[0].Message, "Amounts")
+}
+
+func (s *LivenessCheckerSuite) TestParameterSimulationUsed_NoViolation() {
+	class, classKey := livenessClassWithParameterSimulation()
+	paramKey := helper.Must(identity.NewParameterKey(
+		helper.Must(identity.NewActionKey(classKey, "initialize")),
+		"amounts",
+	))
+	model := testModel(classEntry(class, classKey))
+	catalog := NewClassCatalog(model)
+	checker := NewLivenessChecker(catalog)
+
+	coverage := NewSimulationCoverageTracker()
+	coverage.MarkSimulationParamUsed(paramKey)
+
+	result := &SimulationResult{
+		Steps:              []*SimulationStep{},
+		FinalState:         makeFinalState(),
+		SimulationCoverage: coverage,
+	}
+
+	violations := checker.Check(result).ByType(invariants.ViolationTypeLivenessParameterSimulationNotUsed)
+	s.Empty(violations)
+}
+
+func livenessClassWithParameterSimulation() (model_class.Class, identity.Key) {
+	classKey := mustKey("domain/d/subdomain/s/class/transaction")
+	actionKey := mustKey("domain/d/subdomain/s/class/transaction/action/initialize")
+	paramKey := helper.Must(identity.NewParameterKey(actionKey, "amounts"))
+	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey))
+
+	specLogic := model_logic.NewLogic(
+		specKey,
+		model_logic.LogicTypeValue,
+		"",
+		"",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{}"},
+		nil,
+	)
+	param := helper.Must(model_state.NewParameter(actionKey, "Amounts", "unordered of unconstrained", false))
+	param.SetSimulation(&model_state.ParameterSimulation{
+		Specification: &specLogic,
+	})
+
+	action := model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "Initialize", Details: ""},
+		nil,
+		nil,
+		nil,
+		[]model_state.Parameter{param},
+	)
+
+	class := model_class.NewClass(
+		classKey,
+		model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil},
+		model_class.ClassDetails{Name: "Transaction", Details: "", UnfinishedNotes: "", UmlComment: ""},
+	)
+	class.SetActions(map[identity.Key]model_state.Action{actionKey: action})
+	class.SetEvents(map[identity.Key]model_state.Event{})
+	class.SetStates(map[identity.Key]model_state.State{})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{})
+	return class, classKey
 }

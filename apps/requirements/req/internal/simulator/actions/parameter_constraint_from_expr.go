@@ -250,7 +250,7 @@ func tryExtractMembershipConstraint(node *me.Membership, constraints *parameterC
 	}
 
 	if paramName, ok := paramInBooleanSet(node); ok {
-		constraints.enumValues[paramName] = []string{"TRUE", "FALSE"}
+		constraints.enumValues[paramName] = booleanTLAEnumValues
 	}
 }
 

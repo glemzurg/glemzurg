@@ -659,7 +659,7 @@ func implicitReferenceRequires(
 			continue
 		}
 
-		spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "TRUE", pf)
+		spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, tlaLiteralTrue, pf)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"implicit reference require for parameter %q (owner %q): %w",

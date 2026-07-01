@@ -18,6 +18,7 @@ type Parameter struct {
 	Nullable      bool                      // Whether absent (NULL) is a valid value.
 	DataType      *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 	Invariants    []model_logic.Logic       // Invariants that must hold for this parameter's value.
+	Simulation    *ParameterSimulation      // Optional simulator-only sampling metadata (action parameters only).
 }
 
 // NewParameter constructs a Parameter whose identity.Key is parented by the owning
@@ -114,12 +115,23 @@ func (p *Parameter) Validate(ctx *coreerr.ValidationContext) error {
 		}
 	}
 
+	if p.Simulation != nil {
+		if err := p.Simulation.Validate(ctx.Child("simulation", ""), p.Key); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 // SetInvariants sets the invariants for this parameter.
 func (p *Parameter) SetInvariants(invariants []model_logic.Logic) {
 	p.Invariants = invariants
+}
+
+// SetSimulation sets simulator-only sampling metadata for this parameter.
+func (p *Parameter) SetSimulation(simulation *ParameterSimulation) {
+	p.Simulation = simulation
 }
 
 // ValidateWithParent validates the Parameter and verifies its key is parented by

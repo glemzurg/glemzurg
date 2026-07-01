@@ -25,36 +25,42 @@ func NewStepParameterGenerator(binder *actions.ParameterBinder, sampler *actions
 
 // StepExecutorDeps groups construction inputs for StepExecutor.
 type StepExecutorDeps struct {
-	ActionExecutor  *actions.ActionExecutor
-	StateActionExec *StateActionExecutor
-	ChainHandler    *CreationChainHandler
-	ParamGen        *StepParameterGenerator
-	Catalog         *ClassCatalog
-	DerivedEval     *DerivedAttributeEvaluator
-	RNG             *rand.Rand
+	ActionExecutor     *actions.ActionExecutor
+	StateActionExec    *StateActionExecutor
+	ChainHandler       *CreationChainHandler
+	ParamGen           *StepParameterGenerator
+	Catalog            *ClassCatalog
+	DerivedEval        *DerivedAttributeEvaluator
+	RNG                *rand.Rand
+	SimulationCoverage *SimulationCoverageTracker
+	BindingsBuilder    *state.BindingsBuilder
 }
 
 // StepExecutor executes a single simulation step end-to-end.
 type StepExecutor struct {
-	actionExecutor  *actions.ActionExecutor
-	stateActionExec *StateActionExecutor
-	chainHandler    *CreationChainHandler
-	paramGen        *StepParameterGenerator
-	catalog         *ClassCatalog
-	derivedEval     *DerivedAttributeEvaluator
-	rng             *rand.Rand
+	actionExecutor     *actions.ActionExecutor
+	stateActionExec    *StateActionExecutor
+	chainHandler       *CreationChainHandler
+	paramGen           *StepParameterGenerator
+	catalog            *ClassCatalog
+	derivedEval        *DerivedAttributeEvaluator
+	rng                *rand.Rand
+	simulationCoverage *SimulationCoverageTracker
+	bindingsBuilder    *state.BindingsBuilder
 }
 
 // NewStepExecutor creates a new step executor.
 func NewStepExecutor(deps StepExecutorDeps) *StepExecutor {
 	return &StepExecutor{
-		actionExecutor:  deps.ActionExecutor,
-		stateActionExec: deps.StateActionExec,
-		chainHandler:    deps.ChainHandler,
-		paramGen:        deps.ParamGen,
-		catalog:         deps.Catalog,
-		derivedEval:     deps.DerivedEval,
-		rng:             deps.RNG,
+		actionExecutor:     deps.ActionExecutor,
+		stateActionExec:    deps.StateActionExec,
+		chainHandler:       deps.ChainHandler,
+		paramGen:           deps.ParamGen,
+		catalog:            deps.Catalog,
+		derivedEval:        deps.DerivedEval,
+		rng:                deps.RNG,
+		simulationCoverage: deps.SimulationCoverage,
+		bindingsBuilder:    deps.BindingsBuilder,
 	}
 }
 
@@ -290,7 +296,13 @@ func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string
 		}
 	}
 
-	params, err := sampleEventPayload(pending.Event, actionPtr, e.paramGen, e.rng)
+	params, err := sampleSurfaceEventPayload(pending, actionPtr, surfaceEventSamplingDeps{
+		paramGen:           e.paramGen,
+		bindingsBuilder:    e.bindingsBuilder,
+		catalog:            e.catalog,
+		simulationCoverage: e.simulationCoverage,
+		rng:                e.rng,
+	})
 	if err != nil {
 		var unsupported *actions.UnsupportedRequiresSamplingError
 		if errors.As(err, &unsupported) {

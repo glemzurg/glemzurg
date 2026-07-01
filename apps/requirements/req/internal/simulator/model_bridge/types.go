@@ -27,6 +27,10 @@ const (
 	SourceQueryGuarantees
 	// SourceGuardCondition is a guard condition from Guard.Logic.
 	SourceGuardCondition
+	// SourceActionParameterSimulationRequire is a simulator-only parameter sampling precondition.
+	SourceActionParameterSimulationRequire
+	// SourceActionParameterSimulationSpec is a simulator-only parameter value expression.
+	SourceActionParameterSimulationSpec
 )
 
 // String returns a human-readable name for the expression source.
@@ -46,6 +50,10 @@ func (s ExpressionSource) String() string {
 		return "query_guarantees"
 	case SourceGuardCondition:
 		return "guard_condition"
+	case SourceActionParameterSimulationRequire:
+		return "action_parameter_simulation_require"
+	case SourceActionParameterSimulationSpec:
+		return "action_parameter_simulation_spec"
 	default:
 		return _UNKNOWN
 	}

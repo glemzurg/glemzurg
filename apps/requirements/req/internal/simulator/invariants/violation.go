@@ -102,6 +102,9 @@ const (
 	// ViolationTypeLivenessActionNotExecuted indicates an action was never executed during simulation.
 	ViolationTypeLivenessActionNotExecuted
 
+	// ViolationTypeLivenessParameterSimulationNotUsed indicates a parameter simulation specification never produced a value.
+	ViolationTypeLivenessParameterSimulationNotUsed
+
 	// ViolationTypeStateMachineIncomplete indicates a class state machine lacks the system _new event.
 	ViolationTypeStateMachineIncomplete
 
@@ -111,37 +114,38 @@ const (
 )
 
 var violationTypeNames = map[ViolationType]string{
-	ViolationTypeModelInvariant:               "model_invariant",
-	ViolationTypeClassInvariant:               "class_invariant",
-	ViolationTypeActionRequires:               "action_requires",
-	ViolationTypeActionGuarantee:              "action_guarantee",
-	ViolationTypeQueryGuarantee:               "query_guarantee",
-	ViolationTypeAttributeInvariant:           "attribute_invariant",
-	ViolationTypeParameterInvariant:           "parameter_invariant",
-	ViolationTypeRequiredAttribute:            "required_attribute",
-	ViolationTypeSpanConstraint:               "span_constraint",
-	ViolationTypeEnumConstraint:               "enum_constraint",
-	ViolationTypeCollectionSize:               "collection_size",
-	ViolationTypeUnparsedDataType:             "unparsed_data_type",
-	ViolationTypeMissingAttributeTypeSpec:     "missing_attribute_type_spec",
-	ViolationTypeMissingParameterTypeSpec:     "missing_parameter_type_spec",
-	ViolationTypeDateTimeTypeSpecMismatch:     "datetime_type_spec_mismatch",
-	ViolationTypeDateTimeConstraint:           "datetime_constraint",
-	ViolationTypeIndexUniqueness:              "index_uniqueness",
-	ViolationTypeAssociationInvariant:         "association_invariant",
-	ViolationTypeMultiplicity:                 "multiplicity",
-	ViolationTypeAssociationUniqueness:        "association_uniqueness",
-	ViolationTypeAssociationDuplicateLink:     "association_duplicate_link",
-	ViolationTypeSafetyRule:                   "safety_rule",
-	ViolationTypeLivenessClassNotInstantiated: "liveness_class_not_instantiated",
-	ViolationTypeLivenessAttributeNotWritten:  "liveness_attribute_not_written",
-	ViolationTypeLivenessAssociationNotLinked: "liveness_association_not_linked",
-	ViolationTypeLivenessAttributeNotRead:     "liveness_attribute_not_read",
-	ViolationTypeLivenessEventNotSent:         "liveness_event_not_sent",
-	ViolationTypeLivenessQueryNotRun:          "liveness_query_not_run",
-	ViolationTypeLivenessActionNotExecuted:    "liveness_action_not_executed",
-	ViolationTypeStateMachineIncomplete:       "state_machine_incomplete",
-	ViolationTypePeerEventUnavailable:         "peer_event_unavailable",
+	ViolationTypeModelInvariant:                     "model_invariant",
+	ViolationTypeClassInvariant:                     "class_invariant",
+	ViolationTypeActionRequires:                     "action_requires",
+	ViolationTypeActionGuarantee:                    "action_guarantee",
+	ViolationTypeQueryGuarantee:                     "query_guarantee",
+	ViolationTypeAttributeInvariant:                 "attribute_invariant",
+	ViolationTypeParameterInvariant:                 "parameter_invariant",
+	ViolationTypeRequiredAttribute:                  "required_attribute",
+	ViolationTypeSpanConstraint:                     "span_constraint",
+	ViolationTypeEnumConstraint:                     "enum_constraint",
+	ViolationTypeCollectionSize:                     "collection_size",
+	ViolationTypeUnparsedDataType:                   "unparsed_data_type",
+	ViolationTypeMissingAttributeTypeSpec:           "missing_attribute_type_spec",
+	ViolationTypeMissingParameterTypeSpec:           "missing_parameter_type_spec",
+	ViolationTypeDateTimeTypeSpecMismatch:           "datetime_type_spec_mismatch",
+	ViolationTypeDateTimeConstraint:                 "datetime_constraint",
+	ViolationTypeIndexUniqueness:                    "index_uniqueness",
+	ViolationTypeAssociationInvariant:               "association_invariant",
+	ViolationTypeMultiplicity:                       "multiplicity",
+	ViolationTypeAssociationUniqueness:              "association_uniqueness",
+	ViolationTypeAssociationDuplicateLink:           "association_duplicate_link",
+	ViolationTypeSafetyRule:                         "safety_rule",
+	ViolationTypeLivenessClassNotInstantiated:       "liveness_class_not_instantiated",
+	ViolationTypeLivenessAttributeNotWritten:        "liveness_attribute_not_written",
+	ViolationTypeLivenessAssociationNotLinked:       "liveness_association_not_linked",
+	ViolationTypeLivenessAttributeNotRead:           "liveness_attribute_not_read",
+	ViolationTypeLivenessEventNotSent:               "liveness_event_not_sent",
+	ViolationTypeLivenessQueryNotRun:                "liveness_query_not_run",
+	ViolationTypeLivenessActionNotExecuted:          "liveness_action_not_executed",
+	ViolationTypeLivenessParameterSimulationNotUsed: "liveness_parameter_simulation_not_used",
+	ViolationTypeStateMachineIncomplete:             "state_machine_incomplete",
+	ViolationTypePeerEventUnavailable:               "peer_event_unavailable",
 }
 
 // String returns a human-readable name for the violation type.
@@ -760,6 +764,20 @@ func NewLivenessActionNotExecutedViolation(classKey identity.Key, className, act
 	}
 }
 
+// NewLivenessParameterSimulationNotUsedViolation creates a violation when a parameter simulation specification never sampled a value.
+func NewLivenessParameterSimulationNotUsedViolation(
+	classKey identity.Key,
+	className, actionName, parameterName string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeLivenessParameterSimulationNotUsed,
+		Message:           fmt.Sprintf("liveness: parameter %s simulation on action %s of class %s was never used during simulation", parameterName, actionName, className),
+		ClassKey:          classKey,
+		ActionOrQueryName: actionName,
+		AttributeName:     parameterName,
+	}
+}
+
 // PeerEventUnavailableParams holds parameters for a peer event unavailable violation.
 type PeerEventUnavailableParams struct {
 	OwnerClassKey   identity.Key
@@ -858,7 +876,8 @@ func (v ViolationErrors) LivenessViolations() ViolationErrors {
 			ViolationTypeLivenessAttributeNotRead,
 			ViolationTypeLivenessEventNotSent,
 			ViolationTypeLivenessQueryNotRun,
-			ViolationTypeLivenessActionNotExecuted:
+			ViolationTypeLivenessActionNotExecuted,
+			ViolationTypeLivenessParameterSimulationNotUsed:
 			result = append(result, violation)
 		default:
 			// Not a liveness violation; skip.

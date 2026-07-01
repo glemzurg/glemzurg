@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -33,24 +34,31 @@ type PendingAction struct {
 
 // ActionSelector randomly selects the next simulation action.
 type ActionSelector struct {
-	catalog     *ClassCatalog
-	derivedEval *DerivedAttributeEvaluator
-	rng         *rand.Rand
+	catalog         *ClassCatalog
+	derivedEval     *DerivedAttributeEvaluator
+	bindingsBuilder *state.BindingsBuilder
+	rng             *rand.Rand
 }
 
 // NewActionSelector creates a new action selector.
-func NewActionSelector(catalog *ClassCatalog, derivedEval *DerivedAttributeEvaluator, rng *rand.Rand) *ActionSelector {
+func NewActionSelector(
+	catalog *ClassCatalog,
+	derivedEval *DerivedAttributeEvaluator,
+	bindingsBuilder *state.BindingsBuilder,
+	rng *rand.Rand,
+) *ActionSelector {
 	return &ActionSelector{
-		catalog:     catalog,
-		derivedEval: derivedEval,
-		rng:         rng,
+		catalog:         catalog,
+		derivedEval:     derivedEval,
+		bindingsBuilder: bindingsBuilder,
+		rng:             rng,
 	}
 }
 
 // SelectAction picks a random eligible action from all classes and instances.
 // Returns error if no actions are available (deadlock).
 func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*PendingAction, error) {
-	eligible := s.collectEligibleActions(simState)
+	eligible := s.filterBySimulationRequires(s.collectEligibleActions(simState))
 
 	if len(eligible) == 0 {
 		return nil, fmt.Errorf("deadlock: no eligible actions")
@@ -126,6 +134,50 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 	}
 
 	return eligible
+}
+
+func (s *ActionSelector) filterBySimulationRequires(eligible []PendingAction) []PendingAction {
+	if s.bindingsBuilder == nil {
+		return eligible
+	}
+	classNameMap := s.catalog.ClassNameMap()
+	filtered := make([]PendingAction, 0, len(eligible))
+	for _, pending := range eligible {
+		if pending.IsQuery || pending.IsDerivedRead {
+			filtered = append(filtered, pending)
+			continue
+		}
+		action := s.resolveSurfaceAction(pending)
+		if action == nil || !actions.ActionHasParameterSimulation(*action) {
+			filtered = append(filtered, pending)
+			continue
+		}
+		bindings := actions.BuildSimulationBindings(s.bindingsBuilder, classNameMap, pending.Instance)
+		ok, err := actions.ActionSimulationRequiresMet(*action, bindings)
+		if err != nil || !ok {
+			continue
+		}
+		filtered = append(filtered, pending)
+	}
+	return filtered
+}
+
+func (s *ActionSelector) resolveSurfaceAction(pending PendingAction) *model_state.Action {
+	if pending.DoAction != nil {
+		return pending.DoAction
+	}
+	if pending.Event == nil {
+		return nil
+	}
+	instanceState := ""
+	if pending.Instance != nil {
+		instanceState = getInstanceStateName(pending.Instance)
+	}
+	action, found := s.catalog.GetActionForEvent(pending.Class.ClassKey, pending.Event.Key, instanceState)
+	if !found {
+		return nil
+	}
+	return action
 }
 
 func (s *ActionSelector) collectDerivedReadActions(

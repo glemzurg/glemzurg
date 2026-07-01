@@ -667,3 +667,12 @@ func (c *ClassCatalog) hasSimulatableSender(senders []identity.Key) bool {
 	}
 	return false
 }
+
+// ClassNameMap returns class keys mapped to display names for simulation bindings.
+func (c *ClassCatalog) ClassNameMap() map[identity.Key]string {
+	names := make(map[identity.Key]string, len(c.classes))
+	for classKey, info := range c.classes {
+		names[classKey] = info.Class.Name
+	}
+	return names
+}

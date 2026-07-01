@@ -34,6 +34,7 @@ func (lc *LivenessChecker) Check(result *SimulationResult) invariants.ViolationE
 	violations = append(violations, lc.checkQueryCoverage(result)...)
 	violations = append(violations, lc.checkDerivedAttributeReadCoverage(result)...)
 	violations = append(violations, lc.checkActionCoverage(result)...)
+	violations = append(violations, lc.checkParameterSimulationCoverage(result)...)
 	return violations
 }
 
@@ -273,6 +274,35 @@ func (lc *LivenessChecker) checkDerivedAttributeReadCoverage(result *SimulationR
 					classInfo.ClassKey,
 					classInfo.Class.Name,
 					attr.Name,
+				))
+			}
+		}
+	}
+	return violations
+}
+
+func (lc *LivenessChecker) checkParameterSimulationCoverage(result *SimulationResult) invariants.ViolationErrors {
+	used := map[identity.Key]bool{}
+	if result.SimulationCoverage != nil {
+		used = result.SimulationCoverage.UsedSimulationParams
+	}
+
+	var violations invariants.ViolationErrors
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
+		actions := sortedClassActions(classInfo)
+		for _, action := range actions {
+			for _, param := range action.Parameters {
+				if param.Simulation == nil || param.Simulation.Specification == nil {
+					continue
+				}
+				if used[param.Key] {
+					continue
+				}
+				violations = append(violations, invariants.NewLivenessParameterSimulationNotUsedViolation(
+					classInfo.ClassKey,
+					classInfo.Class.Name,
+					action.Name,
+					param.Name,
 				))
 			}
 		}

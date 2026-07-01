@@ -839,6 +839,42 @@ COMMENT ON COLUMN action_parameter_invariant.logic_key IS 'The logic predicate t
 
 --------------------------------------------------------------
 
+CREATE TABLE action_parameter_simulation_require (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, parameter_key, logic_key),
+  CONSTRAINT fk_action_param_sim_req_parameter FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter (model_key, action_key, parameter_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_param_sim_req_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_parameter_simulation_require IS 'Simulator-only sampling preconditions for an action parameter.';
+COMMENT ON COLUMN action_parameter_simulation_require.model_key IS 'The model this join row belongs to.';
+COMMENT ON COLUMN action_parameter_simulation_require.action_key IS 'The action that owns the parameter.';
+COMMENT ON COLUMN action_parameter_simulation_require.parameter_key IS 'The parameter subkey.';
+COMMENT ON COLUMN action_parameter_simulation_require.logic_key IS 'Assessment logic that must hold before the parameter may be sampled.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_parameter_simulation_spec (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, parameter_key),
+  CONSTRAINT fk_action_param_sim_spec_parameter FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter (model_key, action_key, parameter_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_param_sim_spec_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_parameter_simulation_spec IS 'Simulator-only value expression for sampling an action parameter.';
+COMMENT ON COLUMN action_parameter_simulation_spec.model_key IS 'The model this join row belongs to.';
+COMMENT ON COLUMN action_parameter_simulation_spec.action_key IS 'The action that owns the parameter.';
+COMMENT ON COLUMN action_parameter_simulation_spec.parameter_key IS 'The parameter subkey.';
+COMMENT ON COLUMN action_parameter_simulation_spec.logic_key IS 'Value logic that evaluates to the sampled parameter value.';
+
+--------------------------------------------------------------
+
 CREATE TABLE action_require (
   model_key text NOT NULL,
   action_key text NOT NULL,

@@ -51,7 +51,9 @@ const (
 	KEY_TYPE_ATTRIBUTE_INVARIANT  = "ainvariant"
 
 	// Keys with action/query parameter parents.
-	KEY_TYPE_PARAMETER_INVARIANT = "pinvariant"
+	KEY_TYPE_PARAMETER_INVARIANT          = "pinvariant"
+	KEY_TYPE_PARAMETER_SIMULATION_REQUIRE = "psimreq"
+	KEY_TYPE_PARAMETER_SIMULATION_SPEC    = "psimspec"
 
 	// Keys with state parents.
 	KEY_TYPE_STATE_ACTION = "saction"
@@ -519,6 +521,25 @@ func NewParameterInvariantKey(parameterKey Key, subKey string) (key Key, err err
 		}
 	}
 	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_INVARIANT, subKey)
+}
+
+func NewParameterSimulationRequireKey(parameterKey Key, subKey string) (key Key, err error) {
+	if parameterKey.GetKeyType() != KEY_TYPE_PARAMETER {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'psimreq' key", parameterKey.GetKeyType())
+	}
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("parameter simulation require key must be a valid integer")
+		}
+	}
+	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_SIMULATION_REQUIRE, subKey)
+}
+
+func NewParameterSimulationSpecKey(parameterKey Key) (key Key, err error) {
+	if parameterKey.GetKeyType() != KEY_TYPE_PARAMETER {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'psimspec' key", parameterKey.GetKeyType())
+	}
+	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_SIMULATION_SPEC, "spec")
 }
 
 // DATA_TYPE_ROOT_SUBKEY is the sentinel subKey used for the data_type key that sits at

@@ -153,7 +153,10 @@ func relowerActionExpressions(actKey identity.Key, action *model_state.Action, c
 			return fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err)
 		}
 	}
-	return relowerParameterInvariants(actKey.String(), "action", action.Parameters, actPF)
+	if err := relowerParameterInvariants(actKey.String(), "action", action.Parameters, actPF); err != nil {
+		return err
+	}
+	return relowerParameterSimulation(actKey.String(), "action", action.Parameters, classCtx)
 }
 
 func relowerQueryExpressions(qKey identity.Key, query *model_state.Query, classCtx *LowerContext) error {
@@ -180,6 +183,47 @@ func relowerParameterInvariants(ownerKey, ownerKind string, params []model_state
 		}
 	}
 	return nil
+}
+
+func relowerParameterSimulation(ownerKey, ownerKind string, params []model_state.Parameter, classCtx *LowerContext) error {
+	pf := NewExpressionParseFunc(classCtx)
+	for i := range params {
+		if params[i].Simulation == nil {
+			continue
+		}
+		for j := range params[i].Simulation.Requires {
+			if err := relowerSpec(&params[i].Simulation.Requires[j].Spec, pf); err != nil {
+				return fmt.Errorf("%s %q parameter %q simulation require %d: %w", ownerKind, ownerKey, params[i].Name, j, err)
+			}
+		}
+		if params[i].Simulation.Specification != nil {
+			if err := relowerSpec(&params[i].Simulation.Specification.Spec, pf); err != nil {
+				return fmt.Errorf("%s %q parameter %q simulation specification: %w", ownerKind, ownerKey, params[i].Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func relowerParameterSimulationStrict(ownerKey, ownerKind string, params []model_state.Parameter, classCtx *LowerContext) []error {
+	pf := NewExpressionParseFuncStrict(classCtx)
+	var errs []error
+	for i := range params {
+		if params[i].Simulation == nil {
+			continue
+		}
+		for j := range params[i].Simulation.Requires {
+			if err := relowerSpecStrict(&params[i].Simulation.Requires[j].Spec, pf); err != nil {
+				errs = append(errs, fmt.Errorf("%s %q parameter %q simulation require %d: %w", ownerKind, ownerKey, params[i].Name, j, err))
+			}
+		}
+		if params[i].Simulation.Specification != nil {
+			if err := relowerSpecStrict(&params[i].Simulation.Specification.Spec, pf); err != nil {
+				errs = append(errs, fmt.Errorf("%s %q parameter %q simulation specification: %w", ownerKind, ownerKey, params[i].Name, err))
+			}
+		}
+	}
+	return errs
 }
 
 // relowerSpec re-creates an ExpressionSpec using the given parse function.
@@ -346,6 +390,7 @@ func lowerActionExpressionsStrict(class *model_class.Class, classCtx *LowerConte
 				}
 			}
 		}
+		errs = append(errs, relowerParameterSimulationStrict(actKey.String(), "action", action.Parameters, classCtx)...)
 		class.Actions[actKey] = action
 	}
 	return errs

@@ -218,6 +218,16 @@ func collectParameterInvariantLogics(class model_class.Class, allLogics *[]model
 				sortOrders[inv.Key.String()] = i
 			}
 			*allLogics = append(*allLogics, param.Invariants...)
+			if param.Simulation != nil {
+				for i, req := range param.Simulation.Requires {
+					sortOrders[req.Key.String()] = i
+				}
+				*allLogics = append(*allLogics, param.Simulation.Requires...)
+				if param.Simulation.Specification != nil {
+					sortOrders[param.Simulation.Specification.Key.String()] = 0
+					*allLogics = append(*allLogics, *param.Simulation.Specification)
+				}
+			}
 		}
 	}
 	for _, query := range class.Queries {
@@ -583,7 +593,10 @@ func writeStateItemSubRows(tx *sql.Tx, modelKey string,
 	if err := writeEventParameters(tx, modelKey, eventsMap); err != nil {
 		return err
 	}
-	return writeParameterInvariants(tx, modelKey, actionsMap, queriesMap)
+	if err := writeParameterInvariants(tx, modelKey, actionsMap, queriesMap); err != nil {
+		return err
+	}
+	return writeParameterSimulation(tx, modelKey, actionsMap)
 }
 
 // writeParameterInvariants collects and inserts action and query parameter invariant join rows.
@@ -623,6 +636,37 @@ func writeParameterInvariants(tx *sql.Tx, modelKey string,
 		return err
 	}
 	return AddQueryParameterInvariants(tx, modelKey, queryInvariants)
+}
+
+func writeParameterSimulation(tx *sql.Tx, modelKey string, actionsMap map[identity.Key][]model_state.Action) error {
+	simRequires := make(map[identity.Key]map[string][]identity.Key)
+	simSpecs := make(map[identity.Key]map[string]identity.Key)
+	for _, actionList := range actionsMap {
+		for _, action := range actionList {
+			for _, param := range action.Parameters {
+				if param.Simulation == nil {
+					continue
+				}
+				subKey := param.Key.SubKey
+				for _, req := range param.Simulation.Requires {
+					if simRequires[action.Key] == nil {
+						simRequires[action.Key] = make(map[string][]identity.Key)
+					}
+					simRequires[action.Key][subKey] = append(simRequires[action.Key][subKey], req.Key)
+				}
+				if param.Simulation.Specification != nil {
+					if simSpecs[action.Key] == nil {
+						simSpecs[action.Key] = make(map[string]identity.Key)
+					}
+					simSpecs[action.Key][subKey] = param.Simulation.Specification.Key
+				}
+			}
+		}
+	}
+	if err := AddActionParameterSimulationRequires(tx, modelKey, simRequires); err != nil {
+		return err
+	}
+	return AddActionParameterSimulationSpecs(tx, modelKey, simSpecs)
 }
 
 // collectStateItemMaps collects states, guards, actions, events, and queries from all classes.
@@ -955,30 +999,32 @@ func readModelLevelData(tx *sql.Tx, modelKey string, model *core.Model, logicsBy
 
 // readDomainStructure holds all the data queried at the domain level for tree assembly.
 type readDomainStructure struct {
-	domainsSlice              []model_domain.Domain
-	domainAssociationsSlice   []model_domain.Association
-	subdomainsMap             map[identity.Key][]model_domain.Subdomain
-	generalizationsMap        map[identity.Key][]model_class.Generalization
-	useCaseGeneralizationsMap map[identity.Key][]model_use_case.Generalization
-	useCaseSubdomainKeys      map[identity.Key]identity.Key
-	useCasesSlice             []model_use_case.UseCase
-	useCaseActorsMap          map[identity.Key]map[identity.Key]model_use_case.Actor
-	useCaseSharedsMap         map[identity.Key]map[identity.Key]model_use_case.UseCaseShared
-	scenariosMap              map[identity.Key][]model_scenario.Scenario
-	classesMap                map[identity.Key][]model_class.Class
-	classInvariantsMap        map[identity.Key][]identity.Key
-	toAnchoredAssocKeyByLogic map[identity.Key]identity.Key
-	attrInvariantsMap         map[identity.Key][]identity.Key
-	actionParamInvariantsMap  map[identity.Key][]identity.Key
-	queryParamInvariantsMap   map[identity.Key][]identity.Key
-	attributesMap             map[identity.Key][]model_class.Attribute
-	guardsMap                 map[identity.Key][]model_state.Guard
-	actionsMap                map[identity.Key][]model_state.Action
-	statesMap                 map[identity.Key][]model_state.State
-	transitionsMap            map[identity.Key][]model_state.Transition
-	eventsMap                 map[identity.Key][]model_state.Event
-	queriesMap                map[identity.Key][]model_state.Query
-	dataTypes                 map[string]model_data_type.DataType
+	domainsSlice                     []model_domain.Domain
+	domainAssociationsSlice          []model_domain.Association
+	subdomainsMap                    map[identity.Key][]model_domain.Subdomain
+	generalizationsMap               map[identity.Key][]model_class.Generalization
+	useCaseGeneralizationsMap        map[identity.Key][]model_use_case.Generalization
+	useCaseSubdomainKeys             map[identity.Key]identity.Key
+	useCasesSlice                    []model_use_case.UseCase
+	useCaseActorsMap                 map[identity.Key]map[identity.Key]model_use_case.Actor
+	useCaseSharedsMap                map[identity.Key]map[identity.Key]model_use_case.UseCaseShared
+	scenariosMap                     map[identity.Key][]model_scenario.Scenario
+	classesMap                       map[identity.Key][]model_class.Class
+	classInvariantsMap               map[identity.Key][]identity.Key
+	toAnchoredAssocKeyByLogic        map[identity.Key]identity.Key
+	attrInvariantsMap                map[identity.Key][]identity.Key
+	actionParamInvariantsMap         map[identity.Key][]identity.Key
+	actionParamSimulationRequiresMap map[identity.Key][]identity.Key
+	actionParamSimulationSpecsMap    map[identity.Key]identity.Key
+	queryParamInvariantsMap          map[identity.Key][]identity.Key
+	attributesMap                    map[identity.Key][]model_class.Attribute
+	guardsMap                        map[identity.Key][]model_state.Guard
+	actionsMap                       map[identity.Key][]model_state.Action
+	statesMap                        map[identity.Key][]model_state.State
+	transitionsMap                   map[identity.Key][]model_state.Transition
+	eventsMap                        map[identity.Key][]model_state.Event
+	queriesMap                       map[identity.Key][]model_state.Query
+	dataTypes                        map[string]model_data_type.DataType
 }
 
 // readAndAssembleDomains reads all domain-level data and assembles the model tree.
@@ -1122,6 +1168,32 @@ func queryUseCaseData(tx *sql.Tx, modelKey string, ds *readDomainStructure) erro
 	return queryScenarioData(tx, modelKey, ds)
 }
 
+func queryClassParameterLogicLinks(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
+	var err error
+
+	ds.actionParamInvariantsMap, err = QueryActionParameterInvariants(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.actionParamSimulationRequiresMap, err = QueryActionParameterSimulationRequires(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.actionParamSimulationSpecsMap, err = QueryActionParameterSimulationSpecs(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.queryParamInvariantsMap, err = QueryQueryParameterInvariants(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // queryClassStructure queries classes, invariants, and attributes.
 func queryClassStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
 	var err error
@@ -1147,13 +1219,7 @@ func queryClassStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) e
 		return err
 	}
 
-	ds.actionParamInvariantsMap, err = QueryActionParameterInvariants(tx, modelKey)
-	if err != nil {
-		return err
-	}
-
-	ds.queryParamInvariantsMap, err = QueryQueryParameterInvariants(tx, modelKey)
-	if err != nil {
+	if err = queryClassParameterLogicLinks(tx, modelKey, ds); err != nil {
 		return err
 	}
 
@@ -1472,14 +1538,14 @@ func stitchAttributeData(ds *readDomainStructure, logicsByKey map[identity.Key]m
 func stitchParameterData(ds *readDomainStructure, logicsByKey map[identity.Key]model_logic.Logic) {
 	for classKey, queries := range ds.queriesMap {
 		for i := range queries {
-			stitchParameterExtras(&queries[i].Parameters, ds.dataTypes, ds.queryParamInvariantsMap, logicsByKey)
+			stitchParameterExtras(&queries[i].Parameters, ds.dataTypes, ds.queryParamInvariantsMap, nil, nil, logicsByKey)
 		}
 		ds.queriesMap[classKey] = queries
 	}
 
 	for classKey, actions := range ds.actionsMap {
 		for i := range actions {
-			stitchParameterExtras(&actions[i].Parameters, ds.dataTypes, ds.actionParamInvariantsMap, logicsByKey)
+			stitchParameterExtras(&actions[i].Parameters, ds.dataTypes, ds.actionParamInvariantsMap, ds.actionParamSimulationRequiresMap, ds.actionParamSimulationSpecsMap, logicsByKey)
 		}
 		ds.actionsMap[classKey] = actions
 	}
@@ -1489,6 +1555,8 @@ func stitchParameterExtras(
 	params *[]model_state.Parameter,
 	dataTypes map[string]model_data_type.DataType,
 	paramInvariantsMap map[identity.Key][]identity.Key,
+	paramSimulationRequiresMap map[identity.Key][]identity.Key,
+	paramSimulationSpecsMap map[identity.Key]identity.Key,
 	logicsByKey map[identity.Key]model_logic.Logic,
 ) {
 	stitchParameterDataTypes(*params, dataTypes)
@@ -1499,6 +1567,24 @@ func stitchParameterExtras(
 				invariants[k] = logicsByKey[key]
 			}
 			(*params)[j].SetInvariants(invariants)
+		}
+		reqKeys, hasRequires := paramSimulationRequiresMap[param.Key]
+		specKey, hasSpec := paramSimulationSpecsMap[param.Key]
+		if hasRequires || hasSpec {
+			simulation := &model_state.ParameterSimulation{}
+			if hasRequires {
+				requires := make([]model_logic.Logic, len(reqKeys))
+				for k, key := range reqKeys {
+					requires[k] = logicsByKey[key]
+				}
+				simulation.Requires = requires
+			}
+			if hasSpec {
+				if spec, ok := logicsByKey[specKey]; ok {
+					simulation.Specification = &spec
+				}
+			}
+			(*params)[j].SetSimulation(simulation)
 		}
 	}
 }

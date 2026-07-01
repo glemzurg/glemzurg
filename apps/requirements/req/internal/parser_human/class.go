@@ -559,7 +559,68 @@ func parameterFromYamlMap(parentKey identity.Key, paramMap map[string]any) (mode
 	if len(paramInvariants) > 0 {
 		param.SetInvariants(paramInvariants)
 	}
+	if parentKey.KeyType == identity.KEY_TYPE_ACTION {
+		simulation, err := parameterSimulationFromYamlMap(param.Key, paramMap)
+		if err != nil {
+			return model_state.Parameter{}, errors.Wrap(err, "parameter simulation")
+		}
+		if simulation != nil {
+			param.SetSimulation(simulation)
+		}
+	}
 	return param, nil
+}
+
+func parameterSimulationFromYamlMap(paramKey identity.Key, paramMap map[string]any) (*model_state.ParameterSimulation, error) {
+	simulationAny, found := paramMap["simulation"]
+	if !found {
+		return nil, nil //nolint:nilnil // absent simulation is normal
+	}
+	simulationMap, ok := simulationAny.(map[string]any)
+	if !ok {
+		return nil, errors.Errorf("parameter simulation must be a mapping")
+	}
+	details := ""
+	if detailsAny, ok := simulationMap["details"].(string); ok {
+		details = detailsAny
+	}
+	requires, err := logicListFromYamlData(simulationMap, "requires", model_logic.LogicTypeAssessment, paramKey, identity.NewParameterSimulationRequireKey, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "simulation requires")
+	}
+	specification, err := parameterSimulationSpecFromYamlMap(paramKey, simulationMap)
+	if err != nil {
+		return nil, err
+	}
+	if details == "" && len(requires) == 0 && specification == nil {
+		return nil, nil //nolint:nilnil // empty simulation block is treated as absent
+	}
+	return &model_state.ParameterSimulation{
+		Details:       details,
+		Requires:      requires,
+		Specification: specification,
+	}, nil
+}
+
+func parameterSimulationSpecFromYamlMap(paramKey identity.Key, simulationMap map[string]any) (*model_logic.Logic, error) {
+	specAny, found := simulationMap["specification"]
+	if !found {
+		return nil, nil //nolint:nilnil // specification is optional until sampling runs
+	}
+	specification, ok := specAny.(string)
+	if !ok {
+		return nil, errors.Errorf("parameter simulation specification must be a string")
+	}
+	specKey, err := identity.NewParameterSimulationSpecKey(paramKey)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "simulation specification expression spec")
+	}
+	logic := model_logic.NewLogic(specKey, model_logic.LogicTypeValue, "", "", spec, nil)
+	return &logic, nil
 }
 
 // yamlString reads an optional string field from a YAML map. It returns a clear
@@ -1510,9 +1571,25 @@ func generateParameterSequence(builder *YamlBuilder, params []model_state.Parame
 			paramBuilder.AddField("type_spec", param.DataType.TypeSpec.Specification)
 		}
 		generateLogicSequence(paramBuilder, "invariants", param.Invariants)
+		generateParameterSimulation(paramBuilder, param.Simulation)
 		items = append(items, paramBuilder)
 	}
 	builder.AddSequenceOfMappings("parameters", items)
+}
+
+func generateParameterSimulation(builder *YamlBuilder, simulation *model_state.ParameterSimulation) {
+	if simulation == nil || !simulation.HasSimulation() {
+		return
+	}
+	simBuilder := NewYamlBuilder()
+	if simulation.Details != "" {
+		simBuilder.AddField("details", simulation.Details)
+	}
+	generateLogicSequence(simBuilder, "requires", simulation.Requires)
+	if simulation.Specification != nil && simulation.Specification.Spec.Specification != "" {
+		simBuilder.AddField("specification", simulation.Specification.Spec.Specification)
+	}
+	builder.AddMappingField("simulation", simBuilder)
 }
 
 // generateEventParameterNames adds an ordered parameter name list for an event.
