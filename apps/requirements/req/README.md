@@ -3,7 +3,7 @@
 ----------------------------
 
 march (art workshops)
-  - enter the evenplay model
+  - enter a sample model
     - parser errors displayed in markdown
   - steven tockey model review
 

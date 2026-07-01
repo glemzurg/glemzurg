@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
 	"github.com/gomarkdown/markdown"
@@ -15,18 +15,12 @@ import (
 func TestGenerateShowsExpressionParseErrors(t *testing.T) {
 	model := test_helper.GetTestModel()
 
-	var target model_class.Class
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				target = class
-				goto found
-			}
-		}
-	}
-found:
-	if target.Key.KeyType == "" {
-		t.Skip("test model has no classes")
+	domainKey := helper.Must(identity.NewDomainKey("domain_a"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain_a"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "order"))
+	target, ok := model.Domains[domainKey].Subdomains[subdomainKey].Classes[classKey]
+	if !ok {
+		t.Fatalf("expected Order class in fixture model at %s", classKey)
 	}
 
 	invKey, err := identity.NewClassInvariantKey(target.Key, "99")

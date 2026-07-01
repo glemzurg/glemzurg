@@ -123,5 +123,3 @@ func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance
 func (d *DerivedAttributeEvaluator) HasDerivedAttributes() bool {
 	return len(d.byClass) > 0
 }
-
-

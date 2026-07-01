@@ -11,8 +11,8 @@ import (
 )
 
 func TestIsLongLivedStream(t *testing.T) {
-	assert.True(t, IsLongLivedStream("/events/evenplay/model.md"))
-	assert.False(t, IsLongLivedStream("/evenplay/model.md"))
+	assert.True(t, IsLongLivedStream("/events/test_model/model.md"))
+	assert.False(t, IsLongLivedStream("/test_model/model.md"))
 }
 
 func TestMiddlewareSkipsLongLivedStreams(t *testing.T) {
@@ -21,7 +21,7 @@ func TestMiddlewareSkipsLongLivedStreams(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/events/evenplay/model.md", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/events/test_model/model.md", nil)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 

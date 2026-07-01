@@ -26,10 +26,11 @@ var builtins = map[string]BuiltinFn{
 	"_Queue!Dequeue": builtinQueueDequeue,
 
 	// Bags
-	"_Bags!SetToBag": builtinSetToBag,
-	"_Bags!BagToSet": builtinBagToSet,
-	"_Bags!CopiesIn": builtinCopiesIn,
-	"_Bags!BagIn":    builtinBagIn,
+	"_Bags!SetToBag":       builtinSetToBag,
+	"_Bags!BagToSet":       builtinBagToSet,
+	"_Bags!CopiesIn":       builtinCopiesIn,
+	"_Bags!BagIn":          builtinBagIn,
+	"_Bags!BagCardinality": builtinBagCardinality,
 }
 
 // LookupBuiltin returns the builtin function for the given name.
@@ -186,6 +187,22 @@ func builtinCopiesIn(args []object.Object) *EvalResult {
 	}
 	count := bag.CopiesIn(args[0])
 	return NewEvalResult(object.NewNatural(int64(count)))
+}
+
+func builtinBagCardinality(args []object.Object) *EvalResult {
+	if len(args) != 1 {
+		return NewEvalError("_Bags!BagCardinality requires 1 argument, got %d", len(args))
+	}
+	switch v := args[0].(type) {
+	case *object.Bag:
+		return NewEvalResult(object.NewNatural(int64(v.Size())))
+	case *object.Set:
+		return NewEvalResult(object.NewNatural(int64(v.Size())))
+	case *object.AssociationRelation:
+		return NewEvalResult(object.NewNatural(int64(v.Endpoints().Size())))
+	default:
+		return NewEvalError("_Bags!BagCardinality requires Bag or Set, got %s", args[0].Type())
+	}
 }
 
 func builtinBagIn(args []object.Object) *EvalResult {

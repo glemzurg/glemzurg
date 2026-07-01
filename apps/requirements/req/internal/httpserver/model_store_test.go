@@ -11,13 +11,13 @@ func TestModelStoreErrorSlot(t *testing.T) {
 	store := NewModelStore()
 
 	// No error recorded initially.
-	if _, ok := store.GetModelError("evenplay"); ok {
+	if _, ok := store.GetModelError("test_model"); ok {
 		t.Fatal("expected no error initially")
 	}
 
 	// Recording an error makes it retrievable.
-	store.SetModelError("evenplay", errors.New("parse failed: line 8"))
-	msg, ok := store.GetModelError("evenplay")
+	store.SetModelError("test_model", errors.New("parse failed: line 8"))
+	msg, ok := store.GetModelError("test_model")
 	if !ok || msg != "parse failed: line 8" {
 		t.Fatalf("expected recorded error, got ok=%v msg=%q", ok, msg)
 	}

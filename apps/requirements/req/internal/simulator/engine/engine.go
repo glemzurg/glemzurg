@@ -74,20 +74,14 @@ type SimulationEngine struct {
 // The model must have its ExpressionSpec.Expression fields already populated
 // (e.g., via parse functions passed to ExpressionSpec constructors).
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
-	rng := rand.New(rand.NewSource(config.RandomSeed)) //nolint:gosec // simulation uses deterministic seeded RNG
+	rng := newSimulationRNG(config.RandomSeed)
 
-	activeModel, err := resolveActiveModel(model, config)
+	activeModel, err := prepareActiveModel(model, config)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := validateSimulationModel(activeModel); err != nil {
-		return nil, err
-	}
-
-	catalog := NewClassCatalog(activeModel)
-	PopulateCallerDataFromModel(activeModel, catalog)
-	PopulateDerivedAttributeCallersFromModel(activeModel, catalog)
+	catalog := setupClassCatalog(activeModel)
 
 	evalCtx, err := setupExpressionRegistry(activeModel)
 	if err != nil {
@@ -123,6 +117,28 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		livenessChecker:     livenessChecker,
 		stateMachineChecker: NewStateMachineChecker(catalog),
 	}, nil
+}
+
+func newSimulationRNG(seed int64) *rand.Rand {
+	return rand.New(rand.NewSource(seed)) //nolint:gosec // simulation uses deterministic seeded RNG
+}
+
+func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model, error) {
+	activeModel, err := resolveActiveModel(model, config)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateSimulationModel(activeModel); err != nil {
+		return nil, err
+	}
+	return activeModel, nil
+}
+
+func setupClassCatalog(activeModel *core.Model) *ClassCatalog {
+	catalog := NewClassCatalog(activeModel)
+	PopulateCallerDataFromModel(activeModel, catalog)
+	PopulateDerivedAttributeCallersFromModel(activeModel, catalog)
+	return catalog
 }
 
 // resolveActiveModel applies surface area filtering if configured.

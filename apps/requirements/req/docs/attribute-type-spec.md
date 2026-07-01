@@ -56,7 +56,7 @@ Module-qualified TLA+ constructors and operators use the `_Module!Name` form in 
 | Module prefix | Real TLA+ module | Allowed today (simulator) |
 | --- | --- | --- |
 | `_Seq!` | Sequences | `Head`, `Tail`, `Append`, `Len` |
-| `_Bags!` | Bags | `SetToBag`, `BagToSet`, `CopiesIn`, `BagIn` |
+| `_Bags!` | Bags | `SetToBag`, `BagToSet`, `CopiesIn`, `BagIn`, `BagCardinality` |
 | `_Stack!`, `_Queue!` | (req data-type helpers) | Stack/queue ops on tuples — not TLA+ standard modules; used only for data-type sampling |
 
 Do not add invented operators under `_Seq!` or `_Bags!` (for example a hypothetical `_FiniteSets!Sum`). When the standard libraries lack an operator you need, express the computation in plain TLA+ (conditionals, `LET`, `CHOOSE`, quantifiers, recursion) or as a model global function whose body is valid TLA+.

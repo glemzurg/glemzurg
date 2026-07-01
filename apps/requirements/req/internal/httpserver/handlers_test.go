@@ -21,10 +21,10 @@ func requestMD(server *Server, path string) (int, string) {
 
 func TestRenderMDShowsErrorPage(t *testing.T) {
 	store := NewModelStore()
-	store.SetModelError("evenplay", errors.New("failed to parse: line 8"))
+	store.SetModelError("test_model", errors.New("failed to parse: line 8"))
 	server := NewServer(store)
 
-	code, body := requestMD(server, "/evenplay/model.md")
+	code, body := requestMD(server, "/test_model/model.md")
 	if code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", code)
 	}
@@ -39,10 +39,10 @@ func TestRenderMDShowsErrorPage(t *testing.T) {
 // A generation failure invalidates the whole model: every .md page shows the error.
 func TestRenderMDErrorAppliesToEveryPage(t *testing.T) {
 	store := NewModelStore()
-	store.SetModelError("evenplay", errors.New("boom"))
+	store.SetModelError("test_model", errors.New("boom"))
 	server := NewServer(store)
 
-	code, body := requestMD(server, "/evenplay/class-some_class.md")
+	code, body := requestMD(server, "/test_model/class-some_class.md")
 	if code != http.StatusOK {
 		t.Fatalf("expected 200 for non-root page, got %d", code)
 	}

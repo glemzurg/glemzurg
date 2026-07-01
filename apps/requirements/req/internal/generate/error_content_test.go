@@ -38,7 +38,7 @@ func TestErrorMarkdownNilError(t *testing.T) {
 }
 
 func TestErrorPageHTML(t *testing.T) {
-	out := string(ErrorPageHTML("evenplay", "model.md", errors.New("boom")))
+	out := string(ErrorPageHTML("test_model", "model.md", errors.New("boom")))
 
 	if !strings.Contains(out, "ERROR: boom") {
 		t.Errorf("expected the error message, got: %s", out)
@@ -47,13 +47,13 @@ func TestErrorPageHTML(t *testing.T) {
 		t.Errorf("expected red bold styling, got: %s", out)
 	}
 	// Recovery: must keep the model-wide SSE reload script.
-	if !strings.Contains(out, `EventSource("/events/evenplay")`) {
+	if !strings.Contains(out, `EventSource("/events/test_model")`) {
 		t.Errorf("expected SSE reload script, got: %s", out)
 	}
 	if !strings.Contains(out, `pagehide`) {
 		t.Errorf("expected pagehide listener to close EventSource, got: %s", out)
 	}
-	if !strings.Contains(out, `href="/evenplay/style.css"`) {
+	if !strings.Contains(out, `href="/test_model/style.css"`) {
 		t.Errorf("expected stylesheet link, got: %s", out)
 	}
 }

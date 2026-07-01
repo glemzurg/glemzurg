@@ -12,9 +12,9 @@ func TestEventStreamModelKey(t *testing.T) {
 		path string
 		want string
 	}{
-		{name: "model only", path: "evenplay", want: "evenplay"},
-		{name: "legacy per file", path: "evenplay/domain-domain.finance.md", want: "evenplay"},
-		{name: "trailing slash", path: "evenplay/", want: "evenplay"},
+		{name: "model only", path: "test_model", want: "test_model"},
+		{name: "legacy per file", path: "test_model/domain-domain.commerce.md", want: "test_model"},
+		{name: "trailing slash", path: "test_model/", want: "test_model"},
 		{name: "empty", path: "", want: ""},
 		{name: "slashes only", path: "/", want: ""},
 	}

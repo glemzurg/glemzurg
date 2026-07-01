@@ -9,7 +9,7 @@ import (
 )
 
 func TestWriteErrorMarkdown(t *testing.T) {
-	outputPath := filepath.Join(t.TempDir(), "evenplay")
+	outputPath := filepath.Join(t.TempDir(), "sample_model")
 
 	err := writeErrorMarkdown(outputPath, errors.New("parse failed: line 8"))
 	if err != nil {
@@ -35,12 +35,12 @@ func TestProcessConversionFailureWritesErrorMarkdown(t *testing.T) {
 	rootOutput := t.TempDir()
 
 	// Point at a source root that has no such model: parsing fails.
-	err := processConversion(conversionFlags{debug: false, skipDB: true}, conversionPaths{rootSourcePath: t.TempDir(), rootOutputPath: rootOutput}, "evenplay", conversionFormats{inputFormat: InputFormatDataYAML, outputFormat: OutputFormatMD})
+	err := processConversion(conversionFlags{debug: false, skipDB: true}, conversionPaths{rootSourcePath: t.TempDir(), rootOutputPath: rootOutput}, "sample_model", conversionFormats{inputFormat: InputFormatDataYAML, outputFormat: OutputFormatMD})
 	if err == nil {
 		t.Fatal("expected processConversion to fail for a missing model")
 	}
 
-	content, readErr := os.ReadFile(filepath.Join(rootOutput, "evenplay", "model.md"))
+	content, readErr := os.ReadFile(filepath.Join(rootOutput, "sample_model", "model.md"))
 	if readErr != nil {
 		t.Fatalf("expected error model.md to be written: %v", readErr)
 	}
@@ -53,12 +53,12 @@ func TestProcessConversionFailureWritesErrorMarkdown(t *testing.T) {
 func TestProcessConversionFailureNonMarkdownNoErrorFile(t *testing.T) {
 	rootOutput := t.TempDir()
 
-	err := processConversion(conversionFlags{debug: false, skipDB: true}, conversionPaths{rootSourcePath: t.TempDir(), rootOutputPath: rootOutput}, "evenplay", conversionFormats{inputFormat: InputFormatDataYAML, outputFormat: OutputFormatAIJSON})
+	err := processConversion(conversionFlags{debug: false, skipDB: true}, conversionPaths{rootSourcePath: t.TempDir(), rootOutputPath: rootOutput}, "sample_model", conversionFormats{inputFormat: InputFormatDataYAML, outputFormat: OutputFormatAIJSON})
 	if err == nil {
 		t.Fatal("expected processConversion to fail for a missing model")
 	}
 
-	if _, statErr := os.Stat(filepath.Join(rootOutput, "evenplay", "model.md")); statErr == nil {
+	if _, statErr := os.Stat(filepath.Join(rootOutput, "sample_model", "model.md")); statErr == nil {
 		t.Error("did not expect a model.md error file for ai/json output")
 	}
 }

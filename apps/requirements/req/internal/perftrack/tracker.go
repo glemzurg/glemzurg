@@ -21,7 +21,7 @@ type Tracker struct {
 	status int
 }
 
-// New starts tracking an operation identified by name (e.g. "GET /evenplay/model.md").
+// New starts tracking an operation identified by name (e.g. "GET /test_model/model.md").
 func New(name string) *Tracker {
 	return &Tracker{
 		name:  name,

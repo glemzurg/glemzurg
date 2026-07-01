@@ -64,7 +64,7 @@ func TestPopulateCallerDataFromModel_UseCaseEventSender(t *testing.T) {
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("evenplay", core.ModelDetails{Name: "Evenplay", Details: ""}, "", nil, nil, nil)
+	model := core.NewModel("fixture-model", core.ModelDetails{Name: "Fixture Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -164,7 +164,7 @@ func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {
 	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := core.NewModel("evenplay", core.ModelDetails{Name: "Evenplay", Details: ""}, "", nil, nil, nil)
+	model := core.NewModel("fixture-model", core.ModelDetails{Name: "Fixture Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	catalog := NewClassCatalog(&model)
