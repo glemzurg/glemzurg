@@ -3,6 +3,7 @@ package engine
 import (
 	"sort"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
@@ -15,12 +16,13 @@ import (
 // simulation surface. Violations highlight gaps in subdomain logic — classes,
 // associations, events, queries, and actions that the run never exercised.
 type LivenessChecker struct {
-	catalog *ClassCatalog
+	catalog     *ClassCatalog
+	derivedEval *DerivedAttributeEvaluator
 }
 
 // NewLivenessChecker creates a new liveness checker.
-func NewLivenessChecker(catalog *ClassCatalog) *LivenessChecker {
-	return &LivenessChecker{catalog: catalog}
+func NewLivenessChecker(catalog *ClassCatalog, derivedEval *DerivedAttributeEvaluator) *LivenessChecker {
+	return &LivenessChecker{catalog: catalog, derivedEval: derivedEval}
 }
 
 // Check performs all liveness checks against a completed simulation result.
@@ -31,6 +33,7 @@ func (lc *LivenessChecker) Check(result *SimulationResult) invariants.ViolationE
 	violations = append(violations, lc.checkAssociationCoverage(result)...)
 	violations = append(violations, lc.checkEventCoverage(result)...)
 	violations = append(violations, lc.checkQueryCoverage(result)...)
+	violations = append(violations, lc.checkDerivedAttributeReadCoverage(result)...)
 	violations = append(violations, lc.checkActionCoverage(result)...)
 	return violations
 }
@@ -158,9 +161,10 @@ func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) in
 }
 
 type simulationCoverage struct {
-	events  map[identity.Key]bool
-	queries map[identity.Key]bool
-	actions map[identity.Key]bool
+	events       map[identity.Key]bool
+	queries      map[identity.Key]bool
+	derivedAttrs map[identity.Key]bool
+	actions      map[identity.Key]bool
 }
 
 func collectSimulationCoverage(steps []*SimulationStep, catalog *ClassCatalog, out *simulationCoverage) {
@@ -170,6 +174,9 @@ func collectSimulationCoverage(steps []*SimulationStep, catalog *ClassCatalog, o
 		}
 		if step.QueryName != "" {
 			out.queries[step.QueryKey] = true
+		}
+		if step.DerivedAttributeName != "" {
+			out.derivedAttrs[step.DerivedAttributeKey] = true
 		}
 		for _, actionKey := range step.ExecutedActionKeys {
 			out.actions[actionKey] = true
@@ -196,12 +203,17 @@ func recordTransitionActionCoverage(step *SimulationStep, catalog *ClassCatalog,
 	out.actions[*transition.ActionKey] = true
 }
 
-func (lc *LivenessChecker) checkEventCoverage(result *SimulationResult) invariants.ViolationErrors {
-	coverage := &simulationCoverage{
-		events:  make(map[identity.Key]bool),
-		queries: make(map[identity.Key]bool),
-		actions: make(map[identity.Key]bool),
+func newSimulationCoverage() *simulationCoverage {
+	return &simulationCoverage{
+		events:       make(map[identity.Key]bool),
+		queries:      make(map[identity.Key]bool),
+		derivedAttrs: make(map[identity.Key]bool),
+		actions:      make(map[identity.Key]bool),
 	}
+}
+
+func (lc *LivenessChecker) checkEventCoverage(result *SimulationResult) invariants.ViolationErrors {
+	coverage := newSimulationCoverage()
 	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
 
 	var violations invariants.ViolationErrors
@@ -224,11 +236,7 @@ func (lc *LivenessChecker) checkEventCoverage(result *SimulationResult) invarian
 }
 
 func (lc *LivenessChecker) checkQueryCoverage(result *SimulationResult) invariants.ViolationErrors {
-	coverage := &simulationCoverage{
-		events:  make(map[identity.Key]bool),
-		queries: make(map[identity.Key]bool),
-		actions: make(map[identity.Key]bool),
-	}
+	coverage := newSimulationCoverage()
 	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
 
 	var violations invariants.ViolationErrors
@@ -250,12 +258,31 @@ func (lc *LivenessChecker) checkQueryCoverage(result *SimulationResult) invarian
 	return violations
 }
 
-func (lc *LivenessChecker) checkActionCoverage(result *SimulationResult) invariants.ViolationErrors {
-	coverage := &simulationCoverage{
-		events:  make(map[identity.Key]bool),
-		queries: make(map[identity.Key]bool),
-		actions: make(map[identity.Key]bool),
+func (lc *LivenessChecker) checkDerivedAttributeReadCoverage(result *SimulationResult) invariants.ViolationErrors {
+	coverage := newSimulationCoverage()
+	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
+
+	var violations invariants.ViolationErrors
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
+		derivedAttrs := sortedSurfaceReadableDerivedAttributes(lc.catalog, lc.derivedEval, classInfo)
+		if len(derivedAttrs) == 0 {
+			continue
+		}
+		for _, attr := range derivedAttrs {
+			if !coverage.derivedAttrs[attr.Key] {
+				violations = append(violations, invariants.NewLivenessAttributeNotReadViolation(
+					classInfo.ClassKey,
+					classInfo.Class.Name,
+					attr.Name,
+				))
+			}
+		}
 	}
+	return violations
+}
+
+func (lc *LivenessChecker) checkActionCoverage(result *SimulationResult) invariants.ViolationErrors {
+	coverage := newSimulationCoverage()
 	collectSimulationCoverage(result.Steps, lc.catalog, coverage)
 
 	var violations invariants.ViolationErrors
@@ -293,6 +320,25 @@ func sortedClassQueries(classInfo *ClassInfo) []model_state.Query {
 	}
 	sort.Slice(queries, func(i, j int) bool { return queries[i].Name < queries[j].Name })
 	return queries
+}
+
+func sortedSurfaceReadableDerivedAttributes(
+	catalog *ClassCatalog,
+	derivedEval *DerivedAttributeEvaluator,
+	classInfo *ClassInfo,
+) []model_class.Attribute {
+	attrs := catalog.ExternalDerivedAttributes(classInfo.ClassKey)
+	if derivedEval == nil {
+		return nil
+	}
+	var readable []model_class.Attribute
+	for _, attr := range attrs {
+		if derivedEval.IsSurfaceReadable(classInfo.ClassKey, attr.Name) {
+			readable = append(readable, attr)
+		}
+	}
+	sort.Slice(readable, func(i, j int) bool { return readable[i].Name < readable[j].Name })
+	return readable
 }
 
 func sortedClassActions(classInfo *ClassInfo) []model_state.Action {

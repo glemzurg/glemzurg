@@ -1,10 +1,14 @@
 package engine
 
 import (
+	"math/big"
 	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -74,6 +78,66 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportIncludesLivenessOnlyClasses()
 
 	s.Require().Len(report.Classes, 1)
 	s.Equal("liveness_only", report.Classes[0].Role)
+}
+
+func (s *SurfaceReportSuite) TestBuildSurfaceReportListsExternalDerivedAttributes() {
+	accountKey := mustKey("domain/finance/subdomain/wallet/class/account")
+	balanceAttrKey := helper.Must(identity.NewAttributeKey(accountKey, "balance"))
+	balanceDeriv := model_logic.NewLogic(
+		mustKey("invariant/11"),
+		model_logic.LogicTypeValue,
+		"Constant.",
+		"",
+		logic_spec.ExpressionSpec{
+			Notation:      model_logic.NotationTLAPlus,
+			Specification: "0",
+			Expression:    &me.IntLiteral{Value: big.NewInt(0)},
+		},
+		nil,
+	)
+	balanceAttr := helper.Must(model_class.NewAttribute(
+		balanceAttrKey,
+		model_class.AttributeDetails{Name: "balance", Details: ""},
+		"",
+		&balanceDeriv,
+		false,
+		model_class.AttributeAnnotations{},
+	))
+
+	stateKey := helper.Must(identity.NewStateKey(accountKey, "open"))
+	createEventKey := helper.Must(identity.NewEventKey(accountKey, "create"))
+	transKey := helper.Must(identity.NewTransitionKey(accountKey, "", "create", "", "", "open"))
+	accountClass := model_class.NewClass(accountKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Account"})
+	accountClass.SetAttributes([]model_class.Attribute{balanceAttr})
+	accountClass.SetStates(map[identity.Key]model_state.State{
+		stateKey: model_state.NewState(stateKey, "Open", "", ""),
+	})
+	accountClass.SetEvents(map[identity.Key]model_state.Event{
+		createEventKey: model_state.NewEvent(createEventKey, "create", "", nil),
+	})
+	accountClass.SetGuards(map[identity.Key]model_state.Guard{})
+	accountClass.SetActions(map[identity.Key]model_state.Action{})
+	accountClass.SetQueries(map[identity.Key]model_state.Query{})
+	accountClass.SetTransitions(map[identity.Key]model_state.Transition{
+		transKey: model_state.NewTransition(
+			transKey,
+			createEventKey,
+			model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateKey},
+			model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil},
+			"",
+		),
+	})
+
+	model := testModel(classEntry(accountClass, accountKey))
+	catalog := NewClassCatalog(model)
+	PopulateDerivedAttributeCallersFromModel(model, catalog)
+	report := BuildSurfaceReport(catalog)
+
+	entry := findSurfaceClass(report, accountKey.String())
+	s.Require().NotNil(entry)
+	s.Require().Len(entry.DerivedAttributes, 1)
+	s.Equal("balance", entry.DerivedAttributes[0].AttributeName)
+	s.Contains(BuildSurfaceReport(catalog).FormatText(), "derived: balance")
 }
 
 func (s *SurfaceReportSuite) TestFormatTextIncludesClassAndSurfaceEntries() {

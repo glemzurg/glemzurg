@@ -70,7 +70,7 @@ func TestPeerEffectCascade_RecursivePeerTransitions(t *testing.T) {
 
 	catalog := NewClassCatalog(testModel())
 	chainHandler := NewCreationChainHandler(catalog, nil, nil, nil, nil)
-	exec := NewStepExecutor(nil, nil, chainHandler, nil, catalog, nil)
+	exec := NewStepExecutor(StepExecutorDeps{ChainHandler: chainHandler, Catalog: catalog})
 
 	require.NoError(t, exec.appendAssociationPeerCascades(parentStep, parentResult, state.NewSimulationState()))
 

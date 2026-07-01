@@ -23,6 +23,17 @@ func NewStepParameterGenerator(binder *actions.ParameterBinder, sampler *actions
 	return &StepParameterGenerator{Binder: binder, Sampler: sampler}
 }
 
+// StepExecutorDeps groups construction inputs for StepExecutor.
+type StepExecutorDeps struct {
+	ActionExecutor  *actions.ActionExecutor
+	StateActionExec *StateActionExecutor
+	ChainHandler    *CreationChainHandler
+	ParamGen        *StepParameterGenerator
+	Catalog         *ClassCatalog
+	DerivedEval     *DerivedAttributeEvaluator
+	RNG             *rand.Rand
+}
+
 // StepExecutor executes a single simulation step end-to-end.
 type StepExecutor struct {
 	actionExecutor  *actions.ActionExecutor
@@ -30,25 +41,20 @@ type StepExecutor struct {
 	chainHandler    *CreationChainHandler
 	paramGen        *StepParameterGenerator
 	catalog         *ClassCatalog
+	derivedEval     *DerivedAttributeEvaluator
 	rng             *rand.Rand
 }
 
 // NewStepExecutor creates a new step executor.
-func NewStepExecutor(
-	actionExecutor *actions.ActionExecutor,
-	stateActionExec *StateActionExecutor,
-	chainHandler *CreationChainHandler,
-	paramGen *StepParameterGenerator,
-	catalog *ClassCatalog,
-	rng *rand.Rand,
-) *StepExecutor {
+func NewStepExecutor(deps StepExecutorDeps) *StepExecutor {
 	return &StepExecutor{
-		actionExecutor:  actionExecutor,
-		stateActionExec: stateActionExec,
-		chainHandler:    chainHandler,
-		paramGen:        paramGen,
-		catalog:         catalog,
-		rng:             rng,
+		actionExecutor:  deps.ActionExecutor,
+		stateActionExec: deps.StateActionExec,
+		chainHandler:    deps.ChainHandler,
+		paramGen:        deps.ParamGen,
+		catalog:         deps.Catalog,
+		derivedEval:     deps.DerivedEval,
+		rng:             deps.RNG,
 	}
 }
 
@@ -60,6 +66,10 @@ func (e *StepExecutor) Execute(
 ) (*SimulationStep, error) {
 	if pending.IsQuery {
 		return e.executeQuery(pending, stepNumber)
+	}
+
+	if pending.IsDerivedRead {
+		return e.executeDerivedRead(pending, stepNumber)
 	}
 
 	// Handle "do" actions separately — they don't involve state transitions.
@@ -102,6 +112,42 @@ func (e *StepExecutor) executeQuery(
 	step.QueryName = pending.Query.Name
 	step.QueryResult = result
 	step.Violations = append(step.Violations, result.Violations...)
+	return step, nil
+}
+
+// executeDerivedRead evaluates one external derived attribute on an existing instance.
+func (e *StepExecutor) executeDerivedRead(
+	pending *PendingAction,
+	stepNumber int,
+) (*SimulationStep, error) {
+	step := &SimulationStep{
+		StepNumber: stepNumber,
+		Kind:       StepKindNormal,
+		ClassKey:   pending.Class.ClassKey,
+		ClassName:  pending.Class.Class.Name,
+		InstanceID: pending.Instance.ID,
+	}
+
+	if pending.DerivedAttribute == nil {
+		return nil, fmt.Errorf("derived attribute is nil")
+	}
+	if e.derivedEval == nil {
+		return nil, fmt.Errorf("derived attribute %s: evaluator not configured", pending.DerivedAttribute.Name)
+	}
+
+	derived, err := e.derivedEval.ResolveDerived(pending.Instance)
+	if err != nil {
+		return nil, fmt.Errorf("derived attribute %s error: %w", pending.DerivedAttribute.Name, err)
+	}
+
+	value, ok := derived[pending.DerivedAttribute.Name]
+	if !ok || value == nil {
+		return nil, fmt.Errorf("derived attribute %s produced no value", pending.DerivedAttribute.Name)
+	}
+
+	step.DerivedAttributeKey = pending.DerivedAttribute.Key
+	step.DerivedAttributeName = pending.DerivedAttribute.Name
+	step.DerivedReadValue = value
 	return step, nil
 }
 

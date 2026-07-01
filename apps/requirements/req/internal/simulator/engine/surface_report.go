@@ -16,13 +16,14 @@ type SurfaceReport struct {
 
 // SurfaceClassReport is one scoped class and its surface-level simulation entries.
 type SurfaceClassReport struct {
-	ClassKey          string                  `json:"class_key"`
-	ClassName         string                  `json:"class_name"`
-	Role              string                  `json:"role"`
-	CreationEvents    []SurfaceEventReport    `json:"creation_events,omitempty"`
-	States            []SurfaceStateReport    `json:"states,omitempty"`
-	Queries           []SurfaceQueryReport    `json:"queries,omitempty"`
-	AssociationCreate *SurfaceAssocCreateNote `json:"association_create,omitempty"`
+	ClassKey          string                          `json:"class_key"`
+	ClassName         string                          `json:"class_name"`
+	Role              string                          `json:"role"`
+	CreationEvents    []SurfaceEventReport            `json:"creation_events,omitempty"`
+	States            []SurfaceStateReport            `json:"states,omitempty"`
+	Queries           []SurfaceQueryReport            `json:"queries,omitempty"`
+	DerivedAttributes []SurfaceDerivedAttributeReport `json:"derived_attributes,omitempty"`
+	AssociationCreate *SurfaceAssocCreateNote         `json:"association_create,omitempty"`
 }
 
 // SurfaceEventReport is an external creation or state-transition event on the surface.
@@ -41,6 +42,11 @@ type SurfaceStateReport struct {
 // SurfaceQueryReport is an external query on the surface.
 type SurfaceQueryReport struct {
 	QueryName string `json:"query_name"`
+}
+
+// SurfaceDerivedAttributeReport is an external derived attribute on the surface.
+type SurfaceDerivedAttributeReport struct {
+	AttributeName string `json:"attribute_name"`
 }
 
 // SurfaceActionReport is a surface do-action.
@@ -111,11 +117,18 @@ func buildSurfaceClassReport(catalog *ClassCatalog, classInfo *ClassInfo) Surfac
 		}
 	}
 
-	for _, query := range catalog.ExternalQueries(classInfo.ClassKey) {
-		entry.Queries = append(entry.Queries, SurfaceQueryReport{QueryName: query.Name})
-	}
+	appendSurfaceReadEntries(catalog, classInfo.ClassKey, &entry)
 
 	return entry
+}
+
+func appendSurfaceReadEntries(catalog *ClassCatalog, classKey identity.Key, entry *SurfaceClassReport) {
+	for _, query := range catalog.ExternalQueries(classKey) {
+		entry.Queries = append(entry.Queries, SurfaceQueryReport{QueryName: query.Name})
+	}
+	for _, attr := range catalog.ExternalDerivedAttributes(classKey) {
+		entry.DerivedAttributes = append(entry.DerivedAttributes, SurfaceDerivedAttributeReport{AttributeName: attr.Name})
+	}
 }
 
 func surfaceClassRole(catalog *ClassCatalog, classInfo *ClassInfo) string {
@@ -210,6 +223,10 @@ func (r *SurfaceReport) FormatText() string {
 
 		for _, query := range classEntry.Queries {
 			fmt.Fprintf(&b, "    query: %s\n", query.QueryName)
+		}
+
+		for _, attr := range classEntry.DerivedAttributes {
+			fmt.Fprintf(&b, "    derived: %s\n", attr.AttributeName)
 		}
 	}
 

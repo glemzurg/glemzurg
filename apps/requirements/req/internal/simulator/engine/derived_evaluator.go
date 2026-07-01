@@ -122,3 +122,15 @@ func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance
 func (d *DerivedAttributeEvaluator) HasDerivedAttributes() bool {
 	return len(d.byClass) > 0
 }
+
+// IsSurfaceReadable reports whether the simulator can evaluate this derived attribute
+// as a top-level read step with the current evaluator bindings.
+func (d *DerivedAttributeEvaluator) IsSurfaceReadable(classKey identity.Key, attrName string) bool {
+	for _, info := range d.byClass[classKey] {
+		if info.attrName != attrName {
+			continue
+		}
+		return !model_bridge.ContainsGlobalCall(info.expression)
+	}
+	return false
+}

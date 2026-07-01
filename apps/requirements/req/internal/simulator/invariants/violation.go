@@ -90,7 +90,7 @@ const (
 	// ViolationTypeLivenessAssociationNotLinked indicates an association never had a link created during simulation.
 	ViolationTypeLivenessAssociationNotLinked
 
-	// ViolationTypeLivenessAttributeNotRead indicates a class attribute was never read during simulation (reserved for future use).
+	// ViolationTypeLivenessAttributeNotRead indicates an external derived attribute was never read during simulation.
 	ViolationTypeLivenessAttributeNotRead
 
 	// ViolationTypeLivenessEventNotSent indicates an event was never fired during simulation.
@@ -727,6 +727,16 @@ func NewLivenessEventNotSentViolation(classKey identity.Key, className, eventNam
 		Type:     ViolationTypeLivenessEventNotSent,
 		Message:  fmt.Sprintf("liveness: event %s on class %s was never sent during simulation", eventName, className),
 		ClassKey: classKey,
+	}
+}
+
+// NewLivenessAttributeNotReadViolation creates a violation for an external derived attribute that was never read.
+func NewLivenessAttributeNotReadViolation(classKey identity.Key, className, attributeName string) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeLivenessAttributeNotRead,
+		Message:           fmt.Sprintf("liveness: derived attribute %s on class %s was never read during simulation", attributeName, className),
+		ClassKey:          classKey,
+		ActionOrQueryName: attributeName,
 	}
 }
 

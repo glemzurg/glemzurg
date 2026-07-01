@@ -81,6 +81,15 @@ type SimulationStep struct {
 	// QueryName is the human-readable query name (for query steps).
 	QueryName string
 
+	// DerivedAttributeKey is the derived attribute read (for derived-read steps).
+	DerivedAttributeKey identity.Key
+
+	// DerivedAttributeName is the human-readable derived attribute name.
+	DerivedAttributeName string
+
+	// DerivedReadValue is the computed value from a derived attribute read step.
+	DerivedReadValue object.Object
+
 	// ExecutedActionKeys records actions run during this step (transition, do, entry, exit).
 	ExecutedActionKeys []identity.Key
 

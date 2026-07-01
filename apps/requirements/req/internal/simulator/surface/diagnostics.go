@@ -31,6 +31,8 @@ type CallerData struct {
 	ActionCalledBy map[identity.Key][]identity.Key
 	// QueryCalledBy maps query keys to class keys that call them.
 	QueryCalledBy map[identity.Key][]identity.Key
+	// AttributeCalledBy maps derived attribute keys to class keys that reference them in logic.
+	AttributeCalledBy map[identity.Key][]identity.Key
 }
 
 // Diagnose analyzes a resolved surface and produces diagnostic messages
@@ -214,6 +216,16 @@ func diagnoseUnknownClassRefs(model *core.Model, cd *CallerData) []Diagnostic {
 				diagnostics = append(diagnostics, Diagnostic{
 					Level:   diagnosticLevelWarning,
 					Message: fmt.Sprintf("CalledBy references unknown class: query %s references %s", queryKey.String(), callerKey.String()),
+				})
+			}
+		}
+	}
+	for attributeKey, callers := range cd.AttributeCalledBy {
+		for _, callerKey := range callers {
+			if _, found := findClassInModel(callerKey, model); !found {
+				diagnostics = append(diagnostics, Diagnostic{
+					Level:   diagnosticLevelWarning,
+					Message: fmt.Sprintf("CalledBy references unknown class: derived attribute %s references %s", attributeKey.String(), callerKey.String()),
 				})
 			}
 		}

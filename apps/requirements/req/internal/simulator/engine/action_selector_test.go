@@ -28,7 +28,7 @@ func (s *ActionSelectorSuite) TestCreationEligibleWhenNoInstancesExist() {
 
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, rng)
+	selector := NewActionSelector(catalog, nil, rng)
 
 	simState := state.NewSimulationState()
 
@@ -45,7 +45,7 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, rng)
+	selector := NewActionSelector(catalog, nil, rng)
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -104,7 +104,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, rng)
+	selector := NewActionSelector(catalog, nil, rng)
 
 	// No creation transitions and no instances → deadlock.
 	simState := state.NewSimulationState()
@@ -154,7 +154,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleOnExistingInstances() {
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, rng)
+	selector := NewActionSelector(catalog, nil, rng)
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()

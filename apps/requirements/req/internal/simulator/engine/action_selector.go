@@ -14,14 +14,16 @@ import (
 
 // PendingAction describes a single eligible simulation action.
 type PendingAction struct {
-	Class      *ClassInfo
-	Event      *model_state.Event   // Non-nil for event-triggered transitions.
-	Query      *model_state.Query   // Non-nil for query invocations.
-	DoAction   *model_state.Action  // Non-nil for "do" state actions.
-	Instance   *state.ClassInstance // nil for creation.
-	IsCreation bool
-	IsQuery    bool
-	IsDo       bool // True when this is a "do" state action.
+	Class            *ClassInfo
+	Event            *model_state.Event     // Non-nil for event-triggered transitions.
+	Query            *model_state.Query     // Non-nil for query invocations.
+	DerivedAttribute *model_class.Attribute // Non-nil for derived attribute reads.
+	DoAction         *model_state.Action    // Non-nil for "do" state actions.
+	Instance         *state.ClassInstance   // nil for creation.
+	IsCreation       bool
+	IsQuery          bool
+	IsDerivedRead    bool // True when this reads an external derived attribute.
+	IsDo             bool // True when this is a "do" state action.
 
 	// Association-class Add binds both host-association endpoints.
 	SourceAssocKey   *identity.Key
@@ -31,15 +33,17 @@ type PendingAction struct {
 
 // ActionSelector randomly selects the next simulation action.
 type ActionSelector struct {
-	catalog *ClassCatalog
-	rng     *rand.Rand
+	catalog     *ClassCatalog
+	derivedEval *DerivedAttributeEvaluator
+	rng         *rand.Rand
 }
 
 // NewActionSelector creates a new action selector.
-func NewActionSelector(catalog *ClassCatalog, rng *rand.Rand) *ActionSelector {
+func NewActionSelector(catalog *ClassCatalog, derivedEval *DerivedAttributeEvaluator, rng *rand.Rand) *ActionSelector {
 	return &ActionSelector{
-		catalog: catalog,
-		rng:     rng,
+		catalog:     catalog,
+		derivedEval: derivedEval,
+		rng:         rng,
 	}
 }
 
@@ -116,9 +120,32 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 					IsDo:     true,
 				})
 			}
+
+			eligible = append(eligible, s.collectDerivedReadActions(classInfo, instance)...)
 		}
 	}
 
+	return eligible
+}
+
+func (s *ActionSelector) collectDerivedReadActions(
+	classInfo *ClassInfo,
+	instance *state.ClassInstance,
+) []PendingAction {
+	externalDerived := s.catalog.ExternalDerivedAttributes(classInfo.ClassKey)
+	var eligible []PendingAction
+	for i := range externalDerived {
+		attr := externalDerived[i]
+		if s.derivedEval != nil && !s.derivedEval.IsSurfaceReadable(classInfo.ClassKey, attr.Name) {
+			continue
+		}
+		eligible = append(eligible, PendingAction{
+			Class:            classInfo,
+			DerivedAttribute: &externalDerived[i],
+			Instance:         instance,
+			IsDerivedRead:    true,
+		})
+	}
 	return eligible
 }
 

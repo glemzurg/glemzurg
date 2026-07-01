@@ -49,19 +49,21 @@ type ClassCatalog struct {
 	associationClasses map[identity.Key]*AssociationClassInfo
 
 	// Simulator-local SentBy/CalledBy data.
-	eventSentBy    map[identity.Key][]identity.Key // event key → sender class keys
-	actionCalledBy map[identity.Key][]identity.Key // action key → caller class keys
-	queryCalledBy  map[identity.Key][]identity.Key // query key → caller class keys
+	eventSentBy       map[identity.Key][]identity.Key // event key → sender class keys
+	actionCalledBy    map[identity.Key][]identity.Key // action key → caller class keys
+	queryCalledBy     map[identity.Key][]identity.Key // query key → caller class keys
+	attributeCalledBy map[identity.Key][]identity.Key // derived attribute key → caller class keys
 }
 
 // NewClassCatalog builds a class catalog from the model.
 func NewClassCatalog(model *core.Model) *ClassCatalog {
 	catalog := &ClassCatalog{
-		classes:        make(map[identity.Key]*ClassInfo),
-		classAssocs:    make(map[identity.Key][]AssociationInfo),
-		eventSentBy:    make(map[identity.Key][]identity.Key),
-		actionCalledBy: make(map[identity.Key][]identity.Key),
-		queryCalledBy:  make(map[identity.Key][]identity.Key),
+		classes:           make(map[identity.Key]*ClassInfo),
+		classAssocs:       make(map[identity.Key][]AssociationInfo),
+		eventSentBy:       make(map[identity.Key][]identity.Key),
+		actionCalledBy:    make(map[identity.Key][]identity.Key),
+		queryCalledBy:     make(map[identity.Key][]identity.Key),
+		attributeCalledBy: make(map[identity.Key][]identity.Key),
 	}
 
 	// Walk all in-scope classes; stateless classes are liveness-only metadata.
@@ -313,13 +315,26 @@ func (c *ClassCatalog) addQueryCaller(queryKey, callerClassKey identity.Key) {
 	c.queryCalledBy[queryKey] = append(c.queryCalledBy[queryKey], callerClassKey)
 }
 
+// SetAttributeCalledBy records which classes reference a derived attribute.
+func (c *ClassCatalog) SetAttributeCalledBy(attributeKey identity.Key, callerClassKeys []identity.Key) {
+	c.attributeCalledBy[attributeKey] = callerClassKeys
+}
+
+func (c *ClassCatalog) addAttributeCaller(attributeKey, callerClassKey identity.Key) {
+	if slices.Contains(c.attributeCalledBy[attributeKey], callerClassKey) {
+		return
+	}
+	c.attributeCalledBy[attributeKey] = append(c.attributeCalledBy[attributeKey], callerClassKey)
+}
+
 // CallerData exports the SentBy/CalledBy metadata as a surface.CallerData
 // for use with surface.Diagnose.
 func (c *ClassCatalog) CallerData() *surface.CallerData {
 	return &surface.CallerData{
-		EventSentBy:    c.eventSentBy,
-		ActionCalledBy: c.actionCalledBy,
-		QueryCalledBy:  c.queryCalledBy,
+		EventSentBy:       c.eventSentBy,
+		ActionCalledBy:    c.actionCalledBy,
+		QueryCalledBy:     c.queryCalledBy,
+		AttributeCalledBy: c.attributeCalledBy,
 	}
 }
 
@@ -612,6 +627,36 @@ func (c *ClassCatalog) isEventExternal(event model_state.Event) bool {
 
 func (c *ClassCatalog) isQueryExternal(query model_state.Query) bool {
 	return !c.hasSimulatableSender(c.queryCalledBy[query.Key])
+}
+
+// ExternalDerivedAttributes returns derived attributes eligible for top-level reads.
+// A derived attribute is internal when a simulatable in-scope class references it in logic.
+func (c *ClassCatalog) ExternalDerivedAttributes(classKey identity.Key) []model_class.Attribute {
+	info := c.classes[classKey]
+	if info == nil {
+		return nil
+	}
+
+	var external []model_class.Attribute
+	for _, attr := range info.Class.Attributes {
+		if attr.DerivationPolicy == nil {
+			continue
+		}
+		if attr.DerivationPolicy.Spec.Expression == nil && attr.DerivationPolicy.Spec.Specification == "" {
+			continue
+		}
+		if c.isDerivedAttributeExternal(attr) {
+			external = append(external, attr)
+		}
+	}
+	sort.Slice(external, func(i, j int) bool {
+		return external[i].Key.String() < external[j].Key.String()
+	})
+	return external
+}
+
+func (c *ClassCatalog) isDerivedAttributeExternal(attr model_class.Attribute) bool {
+	return !c.hasSimulatableSender(c.attributeCalledBy[attr.Key])
 }
 
 func (c *ClassCatalog) hasSimulatableSender(senders []identity.Key) bool {

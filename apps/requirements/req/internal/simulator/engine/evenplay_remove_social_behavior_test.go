@@ -55,17 +55,20 @@ func TestEvenplayRemoveSocialBehaviorTraceShowsNestedDestroy(t *testing.T) {
 			step.StepNumber, step.InstanceID)
 	}
 
-	var step60 *SimulationStep
+	var stepWithoutPeerDestroy *SimulationStep
 	for _, step := range result.Steps {
-		if step.StepNumber == 60 && step.EventName == "RemoveSocialBehavior" {
-			step60 = step
-			break
+		if step.EventName != "RemoveSocialBehavior" {
+			continue
 		}
+		if countPeerDestroyTransitions(step) != 0 {
+			continue
+		}
+		stepWithoutPeerDestroy = step
+		break
 	}
-	require.NotNil(t, step60, "seed 42 should reach step 60 RemoveSocialBehavior")
-	require.Empty(t, step60.CascadedSteps,
-		"wallet #%d has no linked behaviors at step 60 in seed 42", step60.InstanceID)
-	require.Equal(t, 0, countPeerDestroyTransitions(step60))
+	require.NotNil(t, stepWithoutPeerDestroy, "seed 42 should include RemoveSocialBehavior without peer destroys")
+	require.Empty(t, stepWithoutPeerDestroy.CascadedSteps,
+		"wallet #%d has no linked behaviors for no-op RemoveSocialBehavior in seed 42", stepWithoutPeerDestroy.InstanceID)
 
 	var stepWithDestroy *SimulationStep
 	for _, step := range result.Steps {

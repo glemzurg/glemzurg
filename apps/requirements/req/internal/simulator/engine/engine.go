@@ -87,8 +87,9 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 
 	catalog := NewClassCatalog(activeModel)
 	PopulateCallerDataFromModel(activeModel, catalog)
+	PopulateDerivedAttributeCallersFromModel(activeModel, catalog)
 
-	simState, bindingsBuilder, err := setupState(activeModel, catalog)
+	simState, bindingsBuilder, derivedEval, err := setupState(activeModel, catalog)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	}
 
 	stepExecutor, selector, livenessChecker, err := setupExecutors(
-		activeModel, bindingsBuilder, checkers, catalog, rng,
+		activeModel, bindingsBuilder, derivedEval, checkers, catalog, rng,
 	)
 	if err != nil {
 		return nil, err
@@ -137,7 +138,7 @@ func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model
 
 // setupState creates simulation state and bindings builder, registers associations,
 // and sets up derived attribute evaluation.
-func setupState(model *core.Model, catalog *ClassCatalog) (*state.SimulationState, *state.BindingsBuilder, error) {
+func setupState(model *core.Model, catalog *ClassCatalog) (*state.SimulationState, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
 	simState := state.NewSimulationState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
@@ -146,17 +147,17 @@ func setupState(model *core.Model, catalog *ClassCatalog) (*state.SimulationStat
 	// Set up derived attribute evaluation (on-demand computation).
 	derivedEval, err := NewDerivedAttributeEvaluator(model, simState, bindingsBuilder.RelationContext())
 	if err != nil {
-		return nil, nil, fmt.Errorf("derived attribute setup: %w", err)
+		return nil, nil, nil, fmt.Errorf("derived attribute setup: %w", err)
 	}
 	if derivedEval.HasDerivedAttributes() {
 		bindingsBuilder.SetDerivedResolver(derivedEval)
 	}
 
 	if err := bindingsBuilder.RegisterNamedSets(model); err != nil {
-		return nil, nil, fmt.Errorf("named set setup: %w", err)
+		return nil, nil, nil, fmt.Errorf("named set setup: %w", err)
 	}
 
-	return simState, bindingsBuilder, nil
+	return simState, bindingsBuilder, derivedEval, nil
 }
 
 // simulationCheckers groups all invariant/constraint checkers.
@@ -242,6 +243,7 @@ func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.B
 func setupExecutors(
 	_ *core.Model,
 	bindingsBuilder *state.BindingsBuilder,
+	derivedEval *DerivedAttributeEvaluator,
 	checkers *simulationCheckers,
 	catalog *ClassCatalog,
 	rng *rand.Rand,
@@ -252,7 +254,7 @@ func setupExecutors(
 		return nil, nil, nil, fmt.Errorf("no event-bearing simulatable classes found in model")
 	}
 
-	stepExecutor, selector, livenessChecker := buildStepExecutor(actionExecutor, bindingsBuilder, catalog, rng)
+	stepExecutor, selector, livenessChecker := buildStepExecutor(actionExecutor, bindingsBuilder, derivedEval, catalog, rng)
 	return stepExecutor, selector, livenessChecker, nil
 }
 
@@ -301,17 +303,24 @@ func buildStepParameterGenerator(bindingsBuilder *state.BindingsBuilder) (*actio
 func buildStepExecutor(
 	actionExecutor *actions.ActionExecutor,
 	bindingsBuilder *state.BindingsBuilder,
+	derivedEval *DerivedAttributeEvaluator,
 	catalog *ClassCatalog,
 	rng *rand.Rand,
 ) (*StepExecutor, *ActionSelector, *LivenessChecker) {
 	paramBinder, paramGen := buildStepParameterGenerator(bindingsBuilder)
 	stateActionExec := NewStateActionExecutor(actionExecutor)
 	chainHandler := NewCreationChainHandler(catalog, actionExecutor, stateActionExec, paramBinder, rng)
-	stepExecutor := NewStepExecutor(
-		actionExecutor, stateActionExec, chainHandler, paramGen, catalog, rng,
-	)
+	stepExecutor := NewStepExecutor(StepExecutorDeps{
+		ActionExecutor:  actionExecutor,
+		StateActionExec: stateActionExec,
+		ChainHandler:    chainHandler,
+		ParamGen:        paramGen,
+		Catalog:         catalog,
+		DerivedEval:     derivedEval,
+		RNG:             rng,
+	})
 
-	return stepExecutor, NewActionSelector(catalog, rng), NewLivenessChecker(catalog)
+	return stepExecutor, NewActionSelector(catalog, derivedEval, rng), NewLivenessChecker(catalog, derivedEval)
 }
 
 // Run executes the simulation loop and returns the result.
