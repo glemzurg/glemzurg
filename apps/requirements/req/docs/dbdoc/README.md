@@ -14,7 +14,7 @@
 | [public.domain_association](public.domain_association.md) | 5 | A semantic relationship between two domains. | BASE TABLE |
 | [public.actor_generalization](public.actor_generalization.md) | 8 | A relationship between actors indicating super classes and subclasses. | BASE TABLE |
 | [public.actor](public.actor.md) | 9 | A role that a person or system can take who uses the system. Actors are outside of subdomains. | BASE TABLE |
-| [public.data_type](public.data_type.md) | 8 | A data type for use in a class attribute or action parameter. | BASE TABLE |
+| [public.data_type](public.data_type.md) | 9 | A data type for use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic](public.data_type_atomic.md) | 6 | An atomic type that backs a data type for eventual use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | 4 | A value of an attribute that is an enum. | BASE TABLE |
 | [public.data_type_atomic_span](public.data_type_atomic_span.md) | 10 | The definition of a span for an atomic data type. | BASE TABLE |
@@ -40,6 +40,8 @@
 | [public.action](public.action.md) | 5 | An action of a class that can be attached to transitions. | BASE TABLE |
 | [public.action_parameter](public.action_parameter.md) | 8 | A parameter of an action. | BASE TABLE |
 | [public.action_parameter_invariant](public.action_parameter_invariant.md) | 4 | Join table linking action parameters to their invariant logic predicates. | BASE TABLE |
+| [public.action_parameter_simulation_require](public.action_parameter_simulation_require.md) | 4 | Simulator-only sampling preconditions for an action parameter. | BASE TABLE |
+| [public.action_parameter_simulation_spec](public.action_parameter_simulation_spec.md) | 4 | Simulator-only value expression for sampling an action parameter. | BASE TABLE |
 | [public.action_require](public.action_require.md) | 3 | A state requirement that must be true for this action to be run. | BASE TABLE |
 | [public.action_guarantee](public.action_guarantee.md) | 3 | A guarantee of what is returned by this action. | BASE TABLE |
 | [public.action_safety](public.action_safety.md) | 3 | A safety rule check of before and after state that fails if the model is in an incorrect state. | BASE TABLE |
@@ -61,7 +63,7 @@
 | public.association_end | from, to |
 | public.bound_limit_type | closed, open, unconstrained |
 | public.collection_type | atomic, ordered, queue, record, stack, unordered |
-| public.constraint_type | enumeration, object, reference, span, unconstrained |
+| public.constraint_type | datetime, enumeration, object, reference, span, unconstrained |
 | public.leaf_type | destroy, event, query, scenario |
 | public.logic_type | assessment, destroy, let, query, safety_rule, state_change, value |
 | public.notation | tla_plus |

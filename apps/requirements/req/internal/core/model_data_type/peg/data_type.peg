@@ -51,9 +51,9 @@ FieldName <- [a-zA-Z_][a-zA-Z0-9_]* {
 	return string(c.text), nil
 }
 
-CollectionDataType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws? collectionType:CollectionTypeKeyword ws "of" ws atomic:AtomicDataType {
+CollectionDataType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws? collectionType:CollectionTypeKeyword ws "of" ws element:DataType {
 	collectionTypeStr := collectionType.(string)
-	atomicDt := atomic.(*DataType)
+	elementDt := element.(*DataType)
 
 	// Set collection properties.
 	// CollectionUnique is always set for collections (true or false).
@@ -75,32 +75,18 @@ CollectionDataType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws?
 		}
 	}
 
-	// Build name
-	name := ""
-	if *unique {
-		name += "unique "
+	result := &DataType{
+		CollectionType:   collectionTypeStr,
+		CollectionUnique: unique,
+		CollectionMin:    min,
+		CollectionMax:    max,
 	}
-	if min != nil || max != nil {
-		if min != nil {
-			name += strconv.Itoa(*min)
-		} else {
-			name += "0"
-		}
-		if max != nil {
-			name += "-" + strconv.Itoa(*max)
-		} else {
-			name += "+"
-		}
-		name += " "
+	if elementDt.CollectionType == COLLECTION_TYPE_ATOMIC {
+		result.Atomic = elementDt.Atomic
+	} else {
+		result.ElementDataType = elementDt
 	}
-
-	return &DataType{
-		CollectionType:    collectionTypeStr,
-		CollectionUnique:  unique,
-		CollectionMin:     min,
-		CollectionMax:     max,
-		Atomic:            atomicDt.Atomic,
-	}, nil
+	return result, nil
 }
 
 CollectionTypeKeyword <- ( "stack" / "unordered" / "ordered" / "queue" ) {
@@ -295,7 +281,8 @@ UnconstrainedType <- "unconstrained" {
 	}, nil
 }
 
-Content <- [a-zA-Z0-9 -_.,#@!*=+]+ {
+// Dash is last so the class is literal characters only; a mid-class dash would range '9'..'_' and swallow ';', ':', brackets, etc.
+Content <- [a-zA-Z0-9_.,#@!*=+ -]+ {
 	return string(c.text), nil
 } 
 

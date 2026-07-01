@@ -12,7 +12,7 @@
     },
     "data_type_rules": {
       "type": "string",
-      "description": "Optional data type rules describing the expected value type and constraints for the parameter. Parsed atomic kinds include unconstrained, datetime (TLA+ type_spec must be Nat), span, enumeration, reference, and object; collections combine those atoms with ordered, unordered, record, queue, or stack modifiers."
+      "description": "Optional data type rules describing the expected value type and constraints for the parameter. Parsed atomic kinds include unconstrained, datetime (TLA+ type_spec must be Nat), span, enumeration, reference, and object. Collections use ordered, unordered, queue, or stack with an element type that may be atomic, a record ({ field: type ; ... }), or a nested collection (e.g. unordered of unordered of unconstrained or unordered of { account: object of account ; amount: [unconstrained..unconstrained] at 1 penny })."
     },
     "type_spec": {
       "type": "string",

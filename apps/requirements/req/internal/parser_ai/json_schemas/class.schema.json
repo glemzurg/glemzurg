@@ -41,7 +41,7 @@
           },
           "data_type_rules": {
             "type": "string",
-            "description": "Rules defining the data type and constraints of the attribute. Parsed atomic kinds include unconstrained, datetime (TLA+ type_spec must be Nat), span, enumeration, reference, and object; collections combine those atoms with ordered, unordered, record, queue, or stack modifiers. Free-text descriptions are also accepted when they do not parse as a formal rule."
+            "description": "Rules defining the data type and constraints of the attribute. Parsed atomic kinds include unconstrained, datetime (TLA+ type_spec must be Nat), span, enumeration, reference, and object. Collections use ordered, unordered, queue, or stack with an element type that may be atomic, a record ({ field: type ; ... }), or a nested collection. Free-text descriptions are also accepted when they do not parse as a formal rule."
           },
           "details": {
             "type": "string",

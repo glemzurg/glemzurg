@@ -1353,6 +1353,12 @@
           "comment": "If a collection and there is a maximum number of items, the maximum."
         },
         {
+          "name": "element_data_type_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "When a collection element is a record or nested collection, the child data_type row key; NULL when the element is atomic on this row."
+        },
+        {
           "name": "type_spec_notation",
           "type": "notation",
           "nullable": true,
@@ -1447,6 +1453,21 @@
           "table": "public.data_type",
           "referenced_table": "",
           "columns": [
+            "model_key",
+            "data_type_key"
+          ]
+        },
+        {
+          "name": "fk_data_type_element",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, element_data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
+          "table": "public.data_type",
+          "referenced_table": "data_type",
+          "columns": [
+            "model_key",
+            "element_data_type_key"
+          ],
+          "referenced_columns": [
             "model_key",
             "data_type_key"
           ]
@@ -4965,6 +4986,266 @@
       ]
     },
     {
+      "name": "public.action_parameter_simulation_require",
+      "type": "BASE TABLE",
+      "comment": "Simulator-only sampling preconditions for an action parameter.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this join row belongs to."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action that owns the parameter."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The parameter subkey."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "Assessment logic that must hold before the parameter may be sampled."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_parameter_simulation_require_pkey",
+          "def": "CREATE UNIQUE INDEX action_parameter_simulation_require_pkey ON public.action_parameter_simulation_require USING btree (model_key, action_key, parameter_key, logic_key)",
+          "table": "public.action_parameter_simulation_require",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_parameter_simulation_require_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_require_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_require_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_require_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_sim_req_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_sim_req_parameter",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "action_parameter",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_require_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, parameter_key, logic_key)",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_parameter_simulation_spec",
+      "type": "BASE TABLE",
+      "comment": "Simulator-only value expression for sampling an action parameter.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this join row belongs to."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action that owns the parameter."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The parameter subkey."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "Value logic that evaluates to the sampled parameter value."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_parameter_simulation_spec_pkey",
+          "def": "CREATE UNIQUE INDEX action_parameter_simulation_spec_pkey ON public.action_parameter_simulation_spec USING btree (model_key, action_key, parameter_key)",
+          "table": "public.action_parameter_simulation_spec",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_parameter_simulation_spec_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_spec_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_spec_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_spec_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_sim_spec_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_sim_spec_parameter",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "action_parameter",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_spec_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, parameter_key)",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        }
+      ]
+    },
+    {
       "name": "public.action_require",
       "type": "BASE TABLE",
       "comment": "A state requirement that must be true for this action to be run.",
@@ -7083,6 +7364,21 @@
       "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.data_type",
+      "columns": [
+        "model_key",
+        "element_data_type_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.data_type",
+      "parent_columns": [
+        "model_key",
+        "data_type_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, element_data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.data_type_atomic",
       "columns": [
         "model_key",
@@ -7801,6 +8097,70 @@
       "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.action_parameter_simulation_require",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_simulation_require",
+      "columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action_parameter",
+      "parent_columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_simulation_spec",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_simulation_spec",
+      "columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "cardinality": "zero_or_one",
+      "parent_table": "public.action_parameter",
+      "parent_columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.action_require",
       "columns": [
         "model_key",
@@ -8355,6 +8715,7 @@
     {
       "name": "public.constraint_type",
       "values": [
+        "datetime",
         "enumeration",
         "object",
         "reference",

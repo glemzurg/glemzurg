@@ -8,12 +8,13 @@ A data type for use in a class attribute or action parameter.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) [public.attribute](public.attribute.md) [public.query_parameter](public.query_parameter.md) [public.action_parameter](public.action_parameter.md) | [public.model](public.model.md) | The model this data type is part of. |
-| data_type_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) [public.attribute](public.attribute.md) [public.query_parameter](public.query_parameter.md) [public.action_parameter](public.action_parameter.md) |  | The internal ID. |
+| model_key | text |  | false | [public.data_type](public.data_type.md) [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) [public.attribute](public.attribute.md) [public.query_parameter](public.query_parameter.md) [public.action_parameter](public.action_parameter.md) | [public.model](public.model.md) [public.data_type](public.data_type.md) | The model this data type is part of. |
+| data_type_key | text |  | false | [public.data_type](public.data_type.md) [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) [public.attribute](public.attribute.md) [public.query_parameter](public.query_parameter.md) [public.action_parameter](public.action_parameter.md) |  | The internal ID. |
 | collection_type | collection_type |  | false |  |  | Whether a collection or atomic value, and if a collection what kind. |
 | collection_unique | boolean |  | true |  |  | If a collection, is this collection unique. |
 | collection_min | bigint |  | true |  |  | If a collection and there is a minimum number of items, the minimum. Always set if maximum set. |
 | collection_max | bigint |  | true |  |  | If a collection and there is a maximum number of items, the maximum. |
+| element_data_type_key | text |  | true |  | [public.data_type](public.data_type.md) | When a collection element is a record or nested collection, the child data_type row key; NULL when the element is atomic on this row. |
 | type_spec_notation | notation |  | true |  |  | Optional notation for a precise type specification (e.g., tla_plus). |
 | type_spec_specification | text |  | true |  |  | Optional precise type specification string (e.g., Seq(Int), SUBSET STRING). |
 
@@ -28,6 +29,7 @@ A data type for use in a class attribute or action parameter.
 | data_type_model_key_not_null | n | NOT NULL model_key |
 | fk_data_type_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | data_type_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key) |
+| fk_data_type_element | FOREIGN KEY | FOREIGN KEY (model_key, element_data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 
 ## Indexes
 

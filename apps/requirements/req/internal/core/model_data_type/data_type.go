@@ -21,6 +21,9 @@ const (
 	COLLECTION_TYPE_RECORD    = "record"    // A data type composed of fields of other data types..
 	COLLECTION_TYPE_STACK     = "stack"     // A first in, last out stack.
 	COLLECTION_TYPE_UNORDERED = "unordered" // An unordered collection.
+
+	// CollectionElementSubKey is the nested key segment for a collection's element type.
+	CollectionElementSubKey = "element"
 )
 
 var _validCollectionTypes = map[string]bool{
@@ -48,7 +51,9 @@ type DataType struct {
 	CollectionMax    *int
 	Atomic           *Atomic
 	RecordFields     []Field
-	TypeSpec         *logic_spec.TypeSpec // Optional precise type specification.
+	// ElementDataType holds the element type when a collection's element is a record or nested collection.
+	ElementDataType *DataType
+	TypeSpec        *logic_spec.TypeSpec // Optional precise type specification.
 }
 
 // New creates a new DataType by parsing the input text. The key must be a valid
@@ -127,6 +132,16 @@ func assignNestedKeys(d *DataType) error {
 			return err
 		}
 	}
+	if d.ElementDataType != nil {
+		childKey, err := identity.NewDataTypeKey(d.Key, CollectionElementSubKey)
+		if err != nil {
+			return pkgerrors.Wrap(err, "collection element")
+		}
+		d.ElementDataType.Key = childKey
+		if err := assignNestedKeys(d.ElementDataType); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -194,13 +209,26 @@ func (d DataType) validateRecordFields(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
-func (d DataType) validateCollectionFields(ctx *coreerr.ValidationContext) error {
-	isCollection := d.CollectionType == COLLECTION_TYPE_STACK ||
-		d.CollectionType == COLLECTION_TYPE_UNORDERED ||
-		d.CollectionType == COLLECTION_TYPE_ORDERED ||
-		d.CollectionType == COLLECTION_TYPE_QUEUE
+func isCollectionType(collectionType string) bool {
+	return collectionType == COLLECTION_TYPE_STACK ||
+		collectionType == COLLECTION_TYPE_UNORDERED ||
+		collectionType == COLLECTION_TYPE_ORDERED ||
+		collectionType == COLLECTION_TYPE_QUEUE
+}
 
-	if isCollection {
+func (d DataType) validateCollectionFields(ctx *coreerr.ValidationContext) error {
+	if isCollectionType(d.CollectionType) {
+		hasAtomicElement := d.Atomic != nil
+		hasCompositeElement := d.ElementDataType != nil
+		if hasAtomicElement == hasCompositeElement {
+			return coreerr.New(ctx, coreerr.DtypeElementRequired, "collection element is required and must be either atomic or composite", "Atomic")
+		}
+		if hasCompositeElement {
+			elementCtx := ctx.Child("element", "")
+			if err := d.ElementDataType.Validate(elementCtx); err != nil {
+				return err
+			}
+		}
 		if d.CollectionUnique == nil {
 			return coreerr.New(ctx, coreerr.DtypeColluniqRequired, "collection unique is required for collection types", "CollectionUnique")
 		}
@@ -313,8 +341,10 @@ func ContainsReferenceConstraint(dataType *DataType) bool {
 		}
 		return false
 	case COLLECTION_TYPE_STACK, COLLECTION_TYPE_UNORDERED, COLLECTION_TYPE_ORDERED, COLLECTION_TYPE_QUEUE:
-		return dataType.Atomic != nil &&
-			dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_REFERENCE
+		if dataType.Atomic != nil {
+			return dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_REFERENCE
+		}
+		return ContainsReferenceConstraint(dataType.ElementDataType)
 	default:
 		return false
 	}
@@ -362,7 +392,9 @@ func (d DataType) String() string {
 		}
 
 		name += collectionType + " of "
-		if d.Atomic != nil {
+		if d.ElementDataType != nil {
+			name += d.ElementDataType.String()
+		} else if d.Atomic != nil {
 			name += d.Atomic.String()
 		}
 		return name
@@ -388,6 +420,16 @@ func (d DataType) UnpackNested() []DataType {
 			nested := child.UnpackNested()
 			result = append(result, nested...)
 		}
+	}
+	if d.ElementDataType != nil {
+		child := d.ElementDataType
+		childKey, err := identity.NewDataTypeKey(d.Key, CollectionElementSubKey)
+		if err != nil {
+			panic(pkgerrors.Wrap(err, "UnpackNested: failed to build nested key for collection element"))
+		}
+		child.Key = childKey
+		nested := child.UnpackNested()
+		result = append(result, nested...)
 	}
 	result = append(result, d)
 	return result
@@ -479,10 +521,11 @@ func ReconstructNestedDataTypes(flatDataTypes []DataType) []DataType {
 
 	isChild := make(map[string]bool)
 
-	for _, dt := range flatDataTypes {
+	for i := range flatDataTypes {
+		dt := &flatDataTypes[i]
 		if dt.CollectionType == COLLECTION_TYPE_RECORD {
-			for i := range dt.RecordFields {
-				field := &dt.RecordFields[i]
+			for j := range dt.RecordFields {
+				field := &dt.RecordFields[j]
 				if field.FieldDataType != nil && field.FieldDataType.Key.KeyType != "" {
 					childKeyStr := field.FieldDataType.Key.String()
 					if nested, ok := dtMap[childKeyStr]; ok {
@@ -490,6 +533,13 @@ func ReconstructNestedDataTypes(flatDataTypes []DataType) []DataType {
 						isChild[childKeyStr] = true
 					}
 				}
+			}
+		}
+		if isCollectionType(dt.CollectionType) && dt.ElementDataType != nil && dt.ElementDataType.Key.KeyType != "" {
+			childKeyStr := dt.ElementDataType.Key.String()
+			if nested, ok := dtMap[childKeyStr]; ok {
+				dt.ElementDataType = nested
+				isChild[childKeyStr] = true
 			}
 		}
 	}

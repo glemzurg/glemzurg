@@ -186,6 +186,29 @@ func (suite *DataTypeSuite) TestValidate() {
 			},
 			errstr: "collection max must be at least collection min",
 		},
+		{
+			name: "collection missing element",
+			dt: DataType{
+				Key:              t_dtKey("k"),
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+			},
+			errstr: "collection element is required and must be either atomic or composite",
+		},
+		{
+			name: "collection both atomic and composite element",
+			dt: DataType{
+				Key:              t_dtKey("k"),
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				Atomic:           atomic,
+				ElementDataType: &DataType{
+					CollectionType: "atomic",
+					Atomic:         atomic,
+				},
+			},
+			errstr: "collection element is required and must be either atomic or composite",
+		},
 
 		// Non-collections must not have collection fields.
 		{
@@ -496,6 +519,63 @@ func TestParseCollections(t *testing.T) {
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+
+		// Composite collection elements (records and nested collections).
+		{
+			name:  "unordered of record element",
+			input: "unordered of { account: object of account ; amount: [unconstrained..unconstrained] at 1 penny }",
+			expected: &DataType{
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				ElementDataType: &DataType{
+					CollectionType: "record",
+					RecordFields: []Field{
+						{
+							Name: "account",
+							FieldDataType: &DataType{
+								CollectionType: "atomic",
+								Atomic: &Atomic{
+									ConstraintType: "object",
+									ObjectClassKey: t_StrPtr("account"),
+								},
+							},
+						},
+						{
+							Name: "amount",
+							FieldDataType: &DataType{
+								CollectionType: "atomic",
+								Atomic: &Atomic{
+									ConstraintType: "span",
+									Span: &AtomicSpan{
+										LowerType:  "unconstrained",
+										HigherType: "unconstrained",
+										Units:      "penny",
+										Precision:  1.0,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "unordered of nested unordered",
+			input: "unordered of unordered of unconstrained",
+			expected: &DataType{
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				ElementDataType: &DataType{
+					CollectionType:   "unordered",
+					CollectionUnique: &falseValue,
+					Atomic: &Atomic{
+						ConstraintType: "unconstrained",
 					},
 				},
 			},
@@ -1042,6 +1122,74 @@ func TestDataTypeString(t *testing.T) {
 	}
 }
 
+func TestParseObjectTypeContentBoundary(t *testing.T) {
+	dtAny, err := Parse("", []byte("object of account"), Entrypoint("ObjectType"))
+	require.NoError(t, err)
+	dt := dtAny.(*DataType)
+	require.Equal(t, "account", *dt.Atomic.ObjectClassKey)
+
+	dtAny, err = Parse("", []byte("object of account ; amount: [unconstrained..unconstrained] at 1 penny"), Entrypoint("AtomicDataType"))
+	require.NoError(t, err)
+	dt = dtAny.(*DataType)
+	require.Equal(t, "account", *dt.Atomic.ObjectClassKey)
+}
+
+func TestParseRecordWithObjectAndSpanFields(t *testing.T) {
+	input := `{ account: object of account ; amount: [unconstrained..unconstrained] at 1 penny }`
+	dataTypeAny, err := Parse("", []byte(normalizeWhitespace(input)), Entrypoint("RecordDataType"))
+	require.NoError(t, err)
+	dataType := dataTypeAny.(*DataType)
+	require.Len(t, dataType.RecordFields, 2, dataType.String())
+	assert.Equal(t, "account", dataType.RecordFields[0].Name)
+	require.NotNil(t, dataType.RecordFields[0].FieldDataType.Atomic)
+	assert.Equal(t, CONSTRAINT_TYPE_OBJECT, dataType.RecordFields[0].FieldDataType.Atomic.ConstraintType)
+	assert.Equal(t, "amount", dataType.RecordFields[1].Name)
+	assert.Equal(t, "span", dataType.RecordFields[1].FieldDataType.Atomic.ConstraintType)
+}
+
+func TestNewCollectionElementTypes(t *testing.T) {
+	key := t_dtKey("amounts")
+
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "unordered of record element",
+			input: "unordered of { account: object of account ; amount: [unconstrained..unconstrained] at 1 penny }",
+		},
+		{
+			name:  "unordered of nested unordered",
+			input: "unordered of unordered of unconstrained",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := New(key, tc.input, nil)
+			require.NoError(t, err)
+			require.NotNil(t, result)
+			require.NotNil(t, result.ElementDataType)
+			require.Nil(t, result.Atomic)
+			if tc.name == "unordered of record element" {
+				require.Len(t, result.ElementDataType.RecordFields, 2)
+			}
+
+			elementKey := t_nestedDtKey(key, CollectionElementSubKey)
+			assert.Equal(t, elementKey, result.ElementDataType.Key)
+
+			flat := result.UnpackNested()
+			require.GreaterOrEqual(t, len(flat), 2)
+			assert.Equal(t, key, flat[len(flat)-1].Key)
+
+			reconstructed := ReconstructNestedDataTypes(flat)
+			require.Len(t, reconstructed, 1)
+			assert.Equal(t, result.CollectionType, reconstructed[0].CollectionType)
+			require.NotNil(t, reconstructed[0].ElementDataType)
+		})
+	}
+}
+
 func (suite *DataTypeSuite) TestUnpackNested() {
 	// Create a grandchild DataType
 	grandchild := DataType{
@@ -1091,6 +1239,35 @@ func (suite *DataTypeSuite) TestUnpackNested() {
 
 	suite.Equal(rootKey, result[2].Key)
 	suite.Equal("record", result[2].CollectionType)
+}
+
+func (suite *DataTypeSuite) TestUnpackNestedCollectionElement() {
+	falseValue := false
+	element := DataType{
+		CollectionType:   "unordered",
+		CollectionUnique: &falseValue,
+		Atomic:           &Atomic{ConstraintType: "unconstrained"},
+	}
+	root := DataType{
+		Key:              t_dtKey("root"),
+		CollectionType:   "unordered",
+		CollectionUnique: &falseValue,
+		ElementDataType:  &element,
+	}
+
+	result := root.UnpackNested()
+
+	suite.Len(result, 2)
+
+	rootKey := t_dtKey("root")
+	elementKey := t_nestedDtKey(rootKey, CollectionElementSubKey)
+
+	suite.Equal(elementKey, result[0].Key)
+	suite.Equal("unordered", result[0].CollectionType)
+	suite.NotNil(result[0].Atomic)
+
+	suite.Equal(rootKey, result[1].Key)
+	suite.Equal("unordered", result[1].CollectionType)
 }
 
 func (suite *DataTypeSuite) TestSortDataTypesByKeyLengthDesc() {

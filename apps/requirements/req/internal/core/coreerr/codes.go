@@ -511,6 +511,7 @@ const (
 	DtypeCollminTooSmall        Code = "DTYPE_COLLMIN_TOO_SMALL"       // DataType CollectionMin must be >= 1.
 	DtypeCollmaxTooSmall        Code = "DTYPE_COLLMAX_TOO_SMALL"       // DataType CollectionMax must be >= 1.
 	DtypeCollmaxLessThanMin     Code = "DTYPE_COLLMAX_LESS_THAN_MIN"   // DataType CollectionMax must be >= CollectionMin.
+	DtypeElementRequired        Code = "DTYPE_ELEMENT_REQUIRED"        // DataType collection must have exactly one atomic or composite element.
 
 	// ---------------------------------------------------------------
 	// Atomic errors — atomic data type validation.

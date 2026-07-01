@@ -252,10 +252,12 @@ CREATE TABLE data_type (
   collection_unique boolean DEFAULT NULL,
   collection_min bigint CHECK (collection_min > 0) DEFAULT NULL,
   collection_max bigint CHECK (collection_max > 0) DEFAULT NULL,
+  element_data_type_key text DEFAULT NULL,
   type_spec_notation notation DEFAULT NULL,
   type_spec_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, data_type_key),
-  CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
+  CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
+  CONSTRAINT fk_data_type_element FOREIGN KEY (model_key, element_data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE data_type IS 'A data type for use in a class attribute or action parameter.';
@@ -265,6 +267,7 @@ COMMENT ON COLUMN data_type.collection_type IS 'Whether a collection or atomic v
 COMMENT ON COLUMN data_type.collection_unique IS 'If a collection, is this collection unique.';
 COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum. Always set if maximum set.';
 COMMENT ON COLUMN data_type.collection_max IS 'If a collection and there is a maximum number of items, the maximum.';
+COMMENT ON COLUMN data_type.element_data_type_key IS 'When a collection element is a record or nested collection, the child data_type row key; NULL when the element is atomic on this row.';
 COMMENT ON COLUMN data_type.type_spec_notation IS 'Optional notation for a precise type specification (e.g., tla_plus).';
 COMMENT ON COLUMN data_type.type_spec_specification IS 'Optional precise type specification string (e.g., Seq(Int), SUBSET STRING).';
 

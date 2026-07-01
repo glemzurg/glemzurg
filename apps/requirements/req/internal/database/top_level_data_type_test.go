@@ -247,6 +247,57 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 				ConstraintType: "unconstrained",
 			},
 		},
+
+		// Unordered collection of record elements.
+		t_rawDtKey("amounts_collection_type").String(): {
+			Key:              t_rawDtKey("amounts_collection_type"),
+			CollectionType:   "unordered",
+			CollectionUnique: boolPtr(false),
+			ElementDataType: &model_data_type.DataType{
+				CollectionType: "record",
+				RecordFields: []model_data_type.Field{
+					{
+						Name: "account",
+						FieldDataType: &model_data_type.DataType{
+							CollectionType: "atomic",
+							Atomic: &model_data_type.Atomic{
+								ConstraintType: "object",
+								ObjectClassKey: strPtr("account"),
+							},
+						},
+					},
+					{
+						Name: "amount",
+						FieldDataType: &model_data_type.DataType{
+							CollectionType: "atomic",
+							Atomic: &model_data_type.Atomic{
+								ConstraintType: "span",
+								Span: &model_data_type.AtomicSpan{
+									LowerType:  "unconstrained",
+									HigherType: "unconstrained",
+									Units:      "penny",
+									Precision:  1.0,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
+		// Nested collection element.
+		t_rawDtKey("nested_collection_type").String(): {
+			Key:              t_rawDtKey("nested_collection_type"),
+			CollectionType:   "unordered",
+			CollectionUnique: boolPtr(false),
+			ElementDataType: &model_data_type.DataType{
+				CollectionType:   "unordered",
+				CollectionUnique: boolPtr(false),
+				Atomic: &model_data_type.Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+		},
 	})
 	suite.Require().NoError(err)
 
@@ -450,6 +501,59 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			CollectionMin:  intPtr(3),
 			Atomic: &model_data_type.Atomic{
 				ConstraintType: "unconstrained",
+			},
+		},
+
+		t_rawDtKey("amounts_collection_type").String(): {
+			Key:              t_rawDtKey("amounts_collection_type"),
+			CollectionType:   "unordered",
+			CollectionUnique: boolPtr(false),
+			ElementDataType: &model_data_type.DataType{
+				Key:            helper.Must(identity.NewDataTypeKey(t_rawDtKey("amounts_collection_type"), model_data_type.CollectionElementSubKey)),
+				CollectionType: "record",
+				RecordFields: []model_data_type.Field{
+					{
+						Name: "account",
+						FieldDataType: &model_data_type.DataType{
+							Key:            helper.Must(identity.NewDataTypeKey(helper.Must(identity.NewDataTypeKey(t_rawDtKey("amounts_collection_type"), model_data_type.CollectionElementSubKey)), "account")),
+							CollectionType: "atomic",
+							Atomic: &model_data_type.Atomic{
+								ConstraintType: "object",
+								ObjectClassKey: strPtr("account"),
+							},
+						},
+					},
+					{
+						Name: "amount",
+						FieldDataType: &model_data_type.DataType{
+							Key:            helper.Must(identity.NewDataTypeKey(helper.Must(identity.NewDataTypeKey(t_rawDtKey("amounts_collection_type"), model_data_type.CollectionElementSubKey)), "amount")),
+							CollectionType: "atomic",
+							Atomic: &model_data_type.Atomic{
+								ConstraintType: "span",
+								Span: &model_data_type.AtomicSpan{
+									LowerType:  "unconstrained",
+									HigherType: "unconstrained",
+									Units:      "penny",
+									Precision:  1.0,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
+		t_rawDtKey("nested_collection_type").String(): {
+			Key:              t_rawDtKey("nested_collection_type"),
+			CollectionType:   "unordered",
+			CollectionUnique: boolPtr(false),
+			ElementDataType: &model_data_type.DataType{
+				Key:              helper.Must(identity.NewDataTypeKey(t_rawDtKey("nested_collection_type"), model_data_type.CollectionElementSubKey)),
+				CollectionType:   "unordered",
+				CollectionUnique: boolPtr(false),
+				Atomic: &model_data_type.Atomic{
+					ConstraintType: "unconstrained",
+				},
 			},
 		},
 	}, loaded)
