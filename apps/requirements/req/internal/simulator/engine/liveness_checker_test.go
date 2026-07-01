@@ -142,7 +142,7 @@ func (s *LivenessCheckerSuite) TestAllClassesInstantiated_NoViolations() {
 	orderClass, orderKey := livenessOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{makeCreationStep(orderKey, "Order", 1)},
@@ -159,7 +159,7 @@ func (s *LivenessCheckerSuite) TestClassNotInstantiated_Violation() {
 	itemClass, itemKey := livenessItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// Only Order is created, not Item.
 	result := &SimulationResult{
@@ -178,7 +178,7 @@ func (s *LivenessCheckerSuite) TestCascadedCreationStepsCounted() {
 	itemClass, itemKey := livenessItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// Item is created as a cascaded step from Order's creation.
 	result := &SimulationResult{
@@ -236,7 +236,7 @@ func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
 	orderClass, orderKey := livenessOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	result := &SimulationResult{
 		Steps: []*SimulationStep{
@@ -254,7 +254,7 @@ func (s *LivenessCheckerSuite) TestAttributeWrittenBySubKey_MatchesDisplayName()
 	jurisdictionClass, jurisdictionKey := livenessJurisdictionClass()
 	model := testModel(classEntry(jurisdictionClass, jurisdictionKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// Primed assignments use the attribute subKey, not the display name.
 	result := &SimulationResult{
@@ -273,7 +273,7 @@ func (s *LivenessCheckerSuite) TestAttributeNotWritten_Violation() {
 	orderClass, orderKey := livenessOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// No steps at all — amount was never written.
 	result := &SimulationResult{
@@ -319,7 +319,7 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// No writes — but the only attribute is derived, so no violation.
 	result := &SimulationResult{
@@ -336,7 +336,7 @@ func (s *LivenessCheckerSuite) TestDoActionWritesCounted() {
 	orderClass, orderKey := livenessOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// Write happens via a "do" action.
 	result := &SimulationResult{
@@ -355,7 +355,7 @@ func (s *LivenessCheckerSuite) TestCascadedStepWritesCounted() {
 	orderClass, orderKey := livenessOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// Write happens in a cascaded step.
 	result := &SimulationResult{
@@ -390,7 +390,7 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 		assocKey: assoc,
 	}
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// Create a state with a link.
 	finalState := makeFinalState()
@@ -424,7 +424,7 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 		assocKey: assoc,
 	}
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// No links in final state.
 	result := &SimulationResult{
@@ -452,7 +452,7 @@ func (s *LivenessCheckerSuite) TestStatelessClass_InstantiationViolation() {
 
 	model := testModel(classEntry(statelessClass, statelessKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
@@ -470,7 +470,7 @@ func (s *LivenessCheckerSuite) TestMultipleViolationsCombined() {
 	itemClass, itemKey := livenessItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	// No steps at all — both classes not instantiated, attributes not written.
 	result := &SimulationResult{
@@ -495,7 +495,7 @@ func (s *LivenessCheckerSuite) TestEventNotSent_Violation() {
 	orderClass, orderKey := livenessOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
@@ -512,7 +512,7 @@ func (s *LivenessCheckerSuite) TestNilFinalState_NoAssociationPanic() {
 	orderClass, orderKey := livenessOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 	catalog := NewClassCatalog(model)
-	checker := NewLivenessChecker(catalog, nil)
+	checker := NewLivenessChecker(catalog)
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},

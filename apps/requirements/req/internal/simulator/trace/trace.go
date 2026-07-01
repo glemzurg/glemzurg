@@ -42,6 +42,9 @@ type TraceStep struct { //nolint:revive // public API name
 	ClassName                  string                           `json:"class_name"`
 	ClassKey                   string                           `json:"class_key"`
 	EventName                  string                           `json:"event_name,omitempty"`
+	QueryName                  string                           `json:"query_name,omitempty"`
+	DerivedAttributeName       string                           `json:"derived_attribute_name,omitempty"`
+	DerivedReadValue           string                           `json:"derived_read_value,omitempty"`
 	InstanceID                 uint64                           `json:"instance_id"`
 	FromState                  string                           `json:"from_state,omitempty"`
 	ToState                    string                           `json:"to_state,omitempty"`
@@ -126,14 +129,25 @@ func (t *SimulationTrace) FormatJSON() ([]byte, error) {
 // convertStep transforms a SimulationStep into a TraceStep.
 func convertStep(step *engine.SimulationStep) TraceStep {
 	ts := TraceStep{
-		StepNumber: step.StepNumber,
-		Kind:       step.Kind.String(),
-		ClassName:  step.ClassName,
-		ClassKey:   step.ClassKey.String(),
-		EventName:  step.EventName,
-		InstanceID: uint64(step.InstanceID),
-		FromState:  step.FromState,
-		ToState:    step.ToState,
+		StepNumber:           step.StepNumber,
+		Kind:                 step.Kind.String(),
+		ClassName:            step.ClassName,
+		ClassKey:             step.ClassKey.String(),
+		EventName:            step.EventName,
+		QueryName:            step.QueryName,
+		DerivedAttributeName: step.DerivedAttributeName,
+		InstanceID:           uint64(step.InstanceID),
+		FromState:            step.FromState,
+		ToState:              step.ToState,
+	}
+	if step.DerivedReadValue != nil {
+		ts.DerivedReadValue = step.DerivedReadValue.Inspect()
+	}
+	if step.QueryName != "" {
+		ts.Kind = "query"
+	}
+	if step.DerivedAttributeName != "" {
+		ts.Kind = "derived"
 	}
 
 	// Convert parameters.
@@ -271,6 +285,10 @@ func writeStep(b *strings.Builder, step TraceStep, indent string) {
 		fmt.Fprintf(b, "%s[%d] CREATE %s#%d -> %s", indent, step.StepNumber, step.ClassName, step.InstanceID, step.ToState)
 	case "destroy":
 		fmt.Fprintf(b, "%s[%d] DESTROY %s#%d (%s ->)", indent, step.StepNumber, step.ClassName, step.InstanceID, step.FromState)
+	case "query":
+		fmt.Fprintf(b, "%s[%d] QUERY %s#%d: %s", indent, step.StepNumber, step.ClassName, step.InstanceID, step.QueryName)
+	case "derived":
+		fmt.Fprintf(b, "%s[%d] DERIVED %s#%d: %s = %s", indent, step.StepNumber, step.ClassName, step.InstanceID, step.DerivedAttributeName, step.DerivedReadValue)
 	default:
 		fmt.Fprintf(b, "%s[%d] %s#%d: %s -> %s", indent, step.StepNumber, step.ClassName, step.InstanceID, step.FromState, step.ToState)
 	}

@@ -16,13 +16,12 @@ import (
 // simulation surface. Violations highlight gaps in subdomain logic — classes,
 // associations, events, queries, and actions that the run never exercised.
 type LivenessChecker struct {
-	catalog     *ClassCatalog
-	derivedEval *DerivedAttributeEvaluator
+	catalog *ClassCatalog
 }
 
 // NewLivenessChecker creates a new liveness checker.
-func NewLivenessChecker(catalog *ClassCatalog, derivedEval *DerivedAttributeEvaluator) *LivenessChecker {
-	return &LivenessChecker{catalog: catalog, derivedEval: derivedEval}
+func NewLivenessChecker(catalog *ClassCatalog) *LivenessChecker {
+	return &LivenessChecker{catalog: catalog}
 }
 
 // Check performs all liveness checks against a completed simulation result.
@@ -264,7 +263,7 @@ func (lc *LivenessChecker) checkDerivedAttributeReadCoverage(result *SimulationR
 
 	var violations invariants.ViolationErrors
 	for _, classInfo := range lc.catalog.AllScopedClasses() {
-		derivedAttrs := sortedSurfaceReadableDerivedAttributes(lc.catalog, lc.derivedEval, classInfo)
+		derivedAttrs := sortedExternalDerivedAttributes(lc.catalog, classInfo)
 		if len(derivedAttrs) == 0 {
 			continue
 		}
@@ -322,23 +321,10 @@ func sortedClassQueries(classInfo *ClassInfo) []model_state.Query {
 	return queries
 }
 
-func sortedSurfaceReadableDerivedAttributes(
-	catalog *ClassCatalog,
-	derivedEval *DerivedAttributeEvaluator,
-	classInfo *ClassInfo,
-) []model_class.Attribute {
+func sortedExternalDerivedAttributes(catalog *ClassCatalog, classInfo *ClassInfo) []model_class.Attribute {
 	attrs := catalog.ExternalDerivedAttributes(classInfo.ClassKey)
-	if derivedEval == nil {
-		return nil
-	}
-	var readable []model_class.Attribute
-	for _, attr := range attrs {
-		if derivedEval.IsSurfaceReadable(classInfo.ClassKey, attr.Name) {
-			readable = append(readable, attr)
-		}
-	}
-	sort.Slice(readable, func(i, j int) bool { return readable[i].Name < readable[j].Name })
-	return readable
+	sort.Slice(attrs, func(i, j int) bool { return attrs[i].Name < attrs[j].Name })
+	return attrs
 }
 
 func sortedClassActions(classInfo *ClassInfo) []model_state.Action {

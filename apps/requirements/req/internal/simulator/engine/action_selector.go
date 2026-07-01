@@ -135,10 +135,6 @@ func (s *ActionSelector) collectDerivedReadActions(
 	externalDerived := s.catalog.ExternalDerivedAttributes(classInfo.ClassKey)
 	var eligible []PendingAction
 	for i := range externalDerived {
-		attr := externalDerived[i]
-		if s.derivedEval != nil && !s.derivedEval.IsSurfaceReadable(classInfo.ClassKey, attr.Name) {
-			continue
-		}
 		eligible = append(eligible, PendingAction{
 			Class:            classInfo,
 			DerivedAttribute: &externalDerived[i],

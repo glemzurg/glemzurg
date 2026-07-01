@@ -89,7 +89,12 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	PopulateCallerDataFromModel(activeModel, catalog)
 	PopulateDerivedAttributeCallersFromModel(activeModel, catalog)
 
-	simState, bindingsBuilder, derivedEval, err := setupState(activeModel, catalog)
+	evalCtx, err := setupExpressionRegistry(activeModel)
+	if err != nil {
+		return nil, fmt.Errorf("expression registry setup: %w", err)
+	}
+
+	simState, bindingsBuilder, derivedEval, err := setupState(activeModel, catalog, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -138,14 +143,18 @@ func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model
 
 // setupState creates simulation state and bindings builder, registers associations,
 // and sets up derived attribute evaluation.
-func setupState(model *core.Model, catalog *ClassCatalog) (*state.SimulationState, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
+func setupState(
+	model *core.Model,
+	catalog *ClassCatalog,
+	evalCtx *evaluator.EvalContext,
+) (*state.SimulationState, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
 	simState := state.NewSimulationState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
 	registerCatalogAssociations(catalog, bindingsBuilder)
 
 	// Set up derived attribute evaluation (on-demand computation).
-	derivedEval, err := NewDerivedAttributeEvaluator(model, simState, bindingsBuilder.RelationContext())
+	derivedEval, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, evalCtx)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("derived attribute setup: %w", err)
 	}
@@ -320,7 +329,7 @@ func buildStepExecutor(
 		RNG:             rng,
 	})
 
-	return stepExecutor, NewActionSelector(catalog, derivedEval, rng), NewLivenessChecker(catalog, derivedEval)
+	return stepExecutor, NewActionSelector(catalog, derivedEval, rng), NewLivenessChecker(catalog)
 }
 
 // Run executes the simulation loop and returns the result.

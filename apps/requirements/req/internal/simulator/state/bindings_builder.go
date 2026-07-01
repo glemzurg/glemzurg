@@ -101,6 +101,16 @@ func (b *BindingsBuilder) SetDerivedResolver(resolver DerivedAttributeResolver) 
 	b.derivedResolver = resolver
 }
 
+// BuildForInstanceBase creates bindings for an instance without resolving derived attributes.
+// Use this when evaluating a DerivationPolicy to avoid recursive derived resolution.
+func (b *BindingsBuilder) BuildForInstanceBase(instance *ClassInstance) *evaluator.Bindings {
+	bindings := evaluator.NewBindings()
+	bindings.SetRelationContext(b.buildRelationContext())
+	child := bindings.WithSelfAndClass(instance.Attributes, instance.ClassKey.String())
+	b.applyNamedSets(child)
+	return child
+}
+
 // BuildForInstance creates bindings with "self" set to the given instance.
 // This is suitable for evaluating action requires/guarantees.
 // If a DerivedAttributeResolver is set, derived attributes are computed on-demand

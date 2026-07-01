@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -68,10 +67,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
-	relationCtx := evaluator.NewRelationContext()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
 	s.Require().NoError(err)
 	s.NotNil(dae)
 
@@ -110,10 +109,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
-	relationCtx := evaluator.NewRelationContext()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
 	s.Require().NoError(err)
 	s.NotNil(dae)
 	// Empty specification is silently skipped — no derived attributes.
@@ -142,10 +141,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
-	relationCtx := evaluator.NewRelationContext()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
 	s.Require().Error(err)
 	s.Nil(dae)
 	s.Contains(err.Error(), "must not contain primed variables")
@@ -174,10 +173,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
-	relationCtx := evaluator.NewRelationContext()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
 	s.Require().NoError(err)
 
 	// Create an instance with price=5.
