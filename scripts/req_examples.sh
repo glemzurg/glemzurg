@@ -74,8 +74,8 @@ echo -e "\nUPDATE INSTALL\n"
 # Create the output path if it doesn't exist, or clear it.
 mkdir -p $OUTPUT_PATH
 [ $? -ne 0 ] && exit 1
-#rm -fr $OUTPUT_PATH/*
-#[ $? -ne 0 ] && exit 1
+rm -fr "$OUTPUT_PATH/$MODEL/*"
+[ $? -ne 0 ] && exit 1
 
 # Clear any dot path for debug files.
 rm -fr $OUTPUT_PATH/*/dot

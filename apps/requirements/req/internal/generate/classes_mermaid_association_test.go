@@ -27,7 +27,7 @@ func TestAssociationUniquenessMermaidTag(t *testing.T) {
 		model_class.ClassLinks{},
 		model_class.ClassDetails{Name: "Partner"},
 	)
-	assert.Equal(t, "{unique: → Jurisdiction Code}", associationUniquenessMermaidTag(&uniqueness, fromClass, toClass))
+	assert.Equal(t, "{unique → Jurisdiction Code}", associationUniquenessMermaidTag(&uniqueness, fromClass, toClass))
 }
 
 func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
@@ -88,7 +88,7 @@ func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
 
 	fromNode := nodeIDFor("class", fromKey)
 	toNode := nodeIDFor("class", toKey)
-	want := fromNode + ` "1" --> "1" ` + toNode + ` : owns<br/>{unique: Abbr → Jurisdiction Code}`
+	want := fromNode + ` "1" --> "1" ` + toNode + ` : owns<br/>{unique Abbr → Jurisdiction Code}`
 	assert.Contains(t, got, want)
 }
 
@@ -135,10 +135,68 @@ func TestGenerateClassesMermaidAssociationClassUniqueness(t *testing.T) {
 	got := string(writer.md[aFile])
 
 	linkNode := nodeIDFor("assoc", assocKey)
-	wantLinkNode := `class ` + linkNode + `["links<br/>{unique: → Code}"]`
+	wantLinkNode := `class ` + linkNode + `["links<br/>{unique → Code}"]`
 	wantLinkStereotype := `<<association>> ` + linkNode
 	assert.Contains(t, got, wantLinkNode)
 	assert.Contains(t, got, wantLinkStereotype)
+}
+
+func TestGenerateClassesMermaidLeaderboardUniquenessLabel(t *testing.T) {
+	t.Parallel()
+
+	domainKey := helper.Must(identity.NewDomainKey("platform"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "leaderboards"))
+	leaderboardKey := helper.Must(identity.NewClassKey(subdomainKey, "leaderboard"))
+	rowKey := helper.Must(identity.NewClassKey(subdomainKey, "leaderboard_row"))
+	rankKey := helper.Must(identity.NewAttributeKey(rowKey, "rank"))
+	tieBreakKey := helper.Must(identity.NewAttributeKey(rowKey, "tie_break_rank"))
+	one := helper.Must(model_class.NewMultiplicity("1"))
+	any := helper.Must(model_class.NewMultiplicity("any"))
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, leaderboardKey, rowKey, "is_composed_of"))
+	uniqueness := model_class.NewAssociationUniqueness(nil, []identity.Key{rankKey, tieBreakKey})
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Is Composed Of", Details: ""},
+		model_class.AssociationEnd{ClassKey: leaderboardKey, Multiplicity: one},
+		model_class.AssociationEnd{ClassKey: rowKey, Multiplicity: any},
+		model_class.AssociationOptions{Uniqueness: &uniqueness},
+	)
+
+	rowClass := mermaidTestClassWithAttrs(rowKey, "Leaderboard Row", []model_class.Attribute{
+		mermaidTestAttribute(rankKey, "Rank"),
+		mermaidTestAttribute(tieBreakKey, "Tie Break Rank"),
+	})
+	model := core.Model{
+		Key: "leaderboards",
+		Domains: map[identity.Key]model_domain.Domain{
+			domainKey: {
+				Key: domainKey,
+				Subdomains: map[identity.Key]model_domain.Subdomain{
+					subdomainKey: {
+						Key: subdomainKey,
+						Classes: map[identity.Key]model_class.Class{
+							leaderboardKey: mermaidTestClassWithAttrs(leaderboardKey, "Leaderboard", nil),
+							rowKey:         rowClass,
+						},
+						ClassAssociations: map[identity.Key]model_class.Association{assocKey: assoc},
+					},
+				},
+			},
+		},
+	}
+
+	writer := newCollectWriter()
+	require.NoError(t, GenerateMdToWriter(model, writer, nil))
+
+	leaderboardFile := convertKeyToFilename("class", leaderboardKey.String(), "", ".md")
+	got := string(writer.md[leaderboardFile])
+
+	fromNode := nodeIDFor("class", leaderboardKey)
+	toNode := nodeIDFor("class", rowKey)
+	want := fromNode + ` "1" --> "*" ` + toNode + ` : Is Composed Of<br/>{unique → Rank, Tie Break Rank}`
+	assert.Contains(t, got, want)
+	assert.NotContains(t, got, `{unique:`)
+	assert.NotContains(t, got, `unique:`)
 }
 
 func TestGenerateClassesMermaidOmitsAnyUniqueness(t *testing.T) {
