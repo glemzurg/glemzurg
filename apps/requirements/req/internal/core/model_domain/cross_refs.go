@@ -9,6 +9,7 @@ import (
 type ModelCrossRefs struct {
 	Actors             map[identity.Key]bool
 	Classes            map[identity.Key]bool
+	Events             map[identity.Key]bool
 	AllGeneralizations map[identity.Key]bool
 	AllClasses         map[identity.Key]model_class.Class
 	AllAssociations    map[identity.Key]model_class.Association

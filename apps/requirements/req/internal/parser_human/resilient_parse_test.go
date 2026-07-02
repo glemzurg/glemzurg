@@ -110,10 +110,24 @@ func TestParseIsolatesMalformedMultiplicity(t *testing.T) {
 	}
 
 	// Find a class file with a quoted multiplicity and unquote it.
+	// Skip classes whose placeholders break model validation (scenario events or generalizations).
+	unsafeCorruptTargets := []string{
+		"order.class",
+		"product.class",
+		"customer_class.class",
+		"line_item.class",
+		"vehicle.class",
+		"car.class",
+	}
 	var corrupted string
 	_ = filepath.WalkDir(tempDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() || corrupted != "" || !strings.HasSuffix(path, ".class") {
 			return nil
+		}
+		for _, target := range unsafeCorruptTargets {
+			if strings.HasSuffix(path, target) {
+				return nil
+			}
 		}
 		body, readErr := os.ReadFile(path) //nolint:gosec // test fixture walk over temp dir
 		if readErr != nil {
@@ -128,7 +142,7 @@ func TestParseIsolatesMalformedMultiplicity(t *testing.T) {
 		return nil
 	})
 	if corrupted == "" {
-		t.Skip("test model has no class with from_multiplicity: \"1\"")
+		t.Skip("test model has no corruptible class with from_multiplicity: \"1\" outside the unsafe set")
 	}
 
 	parsed, failures, err := Parse(tempDir)

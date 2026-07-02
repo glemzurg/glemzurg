@@ -199,6 +199,7 @@ func (m *Model) validateDomains(ctx *coreerr.ValidationContext) error {
 		actorKeys[actorKey] = true
 	}
 	classKeys := m.buildClassKeys()
+	eventKeys := m.buildEventKeys()
 	allGeneralizations := m.buildGeneralizationKeys()
 	allClasses := m.buildAllClasses()
 	allAssociations := m.GetClassAssociations()
@@ -207,6 +208,7 @@ func (m *Model) validateDomains(ctx *coreerr.ValidationContext) error {
 		if err := domain.ValidateWithParentAndActorsAndClasses(childCtx, nil, model_domain.ModelCrossRefs{
 			Actors:             actorKeys,
 			Classes:            classKeys,
+			Events:             eventKeys,
 			AllGeneralizations: allGeneralizations,
 			AllClasses:         allClasses,
 			AllAssociations:    allAssociations,
@@ -227,6 +229,20 @@ func (m *Model) buildClassKeys() map[identity.Key]bool {
 		}
 	}
 	return classKeys
+}
+
+func (m *Model) buildEventKeys() map[identity.Key]bool {
+	eventKeys := make(map[identity.Key]bool)
+	for _, domain := range m.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				for eventKey := range class.Events {
+					eventKeys[eventKey] = true
+				}
+			}
+		}
+	}
+	return eventKeys
 }
 
 func (m *Model) buildGeneralizationKeys() map[identity.Key]bool {

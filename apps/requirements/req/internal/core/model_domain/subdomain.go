@@ -87,7 +87,7 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.Validatio
 	if err := s.validateClassGeneralizationUsage(ctx, refs.AllClasses); err != nil {
 		return err
 	}
-	if err := s.validateUseCases(ctx); err != nil {
+	if err := s.validateUseCases(ctx, refs); err != nil {
 		return err
 	}
 	if err := s.validateUseCaseGeneralizationUsage(ctx); err != nil {
@@ -173,7 +173,7 @@ func (s *Subdomain) validateClassGeneralizationUsage(ctx *coreerr.ValidationCont
 	return nil
 }
 
-func (s *Subdomain) validateUseCases(ctx *coreerr.ValidationContext) error {
+func (s *Subdomain) validateUseCases(ctx *coreerr.ValidationContext, refs ModelCrossRefs) error {
 	subdomainClassKeys := make(map[identity.Key]bool)
 	actorClassKeys := make(map[identity.Key]bool)
 	for classKey, class := range s.Classes {
@@ -188,7 +188,7 @@ func (s *Subdomain) validateUseCases(ctx *coreerr.ValidationContext) error {
 	}
 	for _, useCase := range s.UseCases {
 		ucCtx := ctx.Child("useCase", useCase.Key.String())
-		if err := useCase.ValidateWithParentAndClasses(ucCtx, &s.Key, subdomainClassKeys, actorClassKeys); err != nil {
+		if err := useCase.ValidateWithParentAndClasses(ucCtx, &s.Key, subdomainClassKeys, actorClassKeys, refs.Events); err != nil {
 			return err
 		}
 		if err := useCase.ValidateReferences(ucCtx, useCaseGeneralizationKeys); err != nil {

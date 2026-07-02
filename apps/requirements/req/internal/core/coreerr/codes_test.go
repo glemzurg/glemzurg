@@ -300,6 +300,7 @@ func allCodeConstants() map[string]Code {
 		"SstepTokeyTypeInvalid":       SstepTokeyTypeInvalid,
 		"SstepEventkeyInvalid":        SstepEventkeyInvalid,
 		"SstepEventkeyTypeInvalid":    SstepEventkeyTypeInvalid,
+		"SstepEventNotfound":          SstepEventNotfound,
 		"SstepQuerykeyInvalid":        SstepQuerykeyInvalid,
 		"SstepQuerykeyTypeInvalid":    SstepQuerykeyTypeInvalid,
 		"SstepScenariokeyInvalid":     SstepScenariokeyInvalid,
