@@ -76,10 +76,9 @@ func TestGenerateUseCaseMdContents_EmbedsMermaidSequence(t *testing.T) {
 	}
 	require.NotEmpty(t, placeOrderKey)
 
-	contents, err := generateUseCaseMdContents(reqs, useCases[placeOrderKey])
+	contents, err := generateUseCaseMdContents(reqs, newCollectWriter(), useCases[placeOrderKey])
 	require.NoError(t, err)
 
 	assert.Contains(t, contents, "```mermaid")
 	assert.Contains(t, contents, "sequenceDiagram")
-	assert.NotContains(t, contents, ".scenario.", "use case markdown should not link external scenario SVG files")
 }

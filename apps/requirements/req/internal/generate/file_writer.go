@@ -18,6 +18,11 @@ func NewFileWriter(outputPath string) *FileWriter {
 	return &FileWriter{outputPath: outputPath}
 }
 
+// DiagramMode returns DiagramLinkedSVG so file output links to rendered SVGs.
+func (fw *FileWriter) DiagramMode() DiagramOutputMode {
+	return DiagramLinkedSVG
+}
+
 // WriteMarkdown writes markdown content to a file.
 func (fw *FileWriter) WriteMarkdown(filename string, content []byte) error {
 	return fw.writeFile(filename, content)

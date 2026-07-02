@@ -12,13 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 )
 
-// ContentWriter is an interface for writing generated content.
-type ContentWriter interface {
-	WriteMarkdown(filename string, content []byte) error
-	WriteSVG(filename string, content []byte) error
-	WriteCSS(content []byte) error
-}
-
 // GenerateMdToWriter generates markdown documentation to a ContentWriter.
 //
 // classErrors maps a class key string to a parse-error message. A class listed
@@ -131,7 +124,11 @@ func generateModelFilesToWriter(reqs *req_flat.Requirements, writer ContentWrite
 	})
 
 	// Generate domains Mermaid diagram.
-	domainsDiagram, err := generateDomainsMermaidContents(reqs, domains, associations)
+	domainsDiagramSource, err := generateDomainsMermaidContents(reqs, domains, associations)
+	if err != nil {
+		return err
+	}
+	domainsDiagram, err := embedDiagram(writer, domainsDiagramSource, "model-domains.svg", "Domains")
 	if err != nil {
 		return err
 	}
@@ -177,7 +174,7 @@ func generateDomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWrit
 	domainLookup, _ := reqs.DomainLookup()
 
 	for _, domain := range domainLookup {
-		diagrams, err := buildDomainDiagrams(reqs, domain)
+		diagrams, err := buildDomainDiagrams(reqs, writer, domain)
 		if err != nil {
 			return err
 		}
@@ -204,12 +201,22 @@ func generateDomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWrit
 	return nil
 }
 
-// buildDomainDiagrams generates the Mermaid diagrams needed for a domain page.
-func buildDomainDiagrams(reqs *req_flat.Requirements, domain model_domain.Domain) (domainDiagrams, error) {
+// buildDomainDiagrams generates diagram embed markdown for a domain page.
+func buildDomainDiagrams(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain) (domainDiagrams, error) {
+	domainKey := domain.Key.String()
 	hasMultipleSubdomains := len(domain.Subdomains) > 1
 
 	if hasMultipleSubdomains {
-		subdomainsDiagram, err := generateSubdomainsMermaidContents(reqs, domain)
+		subdomainsSource, err := generateSubdomainsMermaidContents(reqs, domain)
+		if err != nil {
+			return domainDiagrams{}, err
+		}
+		subdomainsDiagram, err := embedDiagram(
+			writer,
+			subdomainsSource,
+			convertKeyToFilename("domain", domainKey, "subdomains", ".svg"),
+			"Subdomains",
+		)
 		if err != nil {
 			return domainDiagrams{}, err
 		}
@@ -217,12 +224,30 @@ func buildDomainDiagrams(reqs *req_flat.Requirements, domain model_domain.Domain
 	}
 
 	// Single subdomain: generate classes and use cases diagrams.
-	classesDiagram, err := buildClassesDiagram(reqs, gatherDomainClasses(domain))
+	classesSource, err := buildClassesDiagram(reqs, gatherDomainClasses(domain))
+	if err != nil {
+		return domainDiagrams{}, err
+	}
+	classesDiagram, err := embedDiagram(
+		writer,
+		classesSource,
+		convertKeyToFilename("domain", domainKey, "classes", ".svg"),
+		"Classes",
+	)
 	if err != nil {
 		return domainDiagrams{}, err
 	}
 
-	useCasesDiagram, err := buildUseCasesDiagram(reqs, domain)
+	useCasesSource, err := buildUseCasesDiagram(reqs, domain)
+	if err != nil {
+		return domainDiagrams{}, err
+	}
+	useCasesDiagram, err := embedDiagram(
+		writer,
+		useCasesSource,
+		convertKeyToFilename("domain", domainKey, "use_cases", ".svg"),
+		"Use cases",
+	)
 	if err != nil {
 		return domainDiagrams{}, err
 	}
@@ -300,19 +325,38 @@ func generateSingleSubdomainFiles(reqs *req_flat.Requirements, writer ContentWri
 	for _, class := range subdomain.Classes {
 		subdomainClasses = append(subdomainClasses, class)
 	}
-	classesDiagram, err := buildClassesDiagram(reqs, subdomainClasses)
+	subdomainKey := subdomain.Key.String()
+	classesSource, err := buildClassesDiagram(reqs, subdomainClasses)
+	if err != nil {
+		return err
+	}
+	classesDiagram, err := embedDiagram(
+		writer,
+		classesSource,
+		convertKeyToFilename("subdomain", subdomainKey, "classes", ".svg"),
+		"Classes",
+	)
 	if err != nil {
 		return err
 	}
 
 	// Generate use cases diagram for subdomain.
-	useCasesDiagram, err := buildSubdomainUseCasesDiagram(reqs, domain, subdomain)
+	useCasesSource, err := buildSubdomainUseCasesDiagram(reqs, domain, subdomain)
+	if err != nil {
+		return err
+	}
+	useCasesDiagram, err := embedDiagram(
+		writer,
+		useCasesSource,
+		convertKeyToFilename("subdomain", subdomainKey, "use_cases", ".svg"),
+		"Use cases",
+	)
 	if err != nil {
 		return err
 	}
 
 	// Generate subdomain markdown page with embedded diagrams.
-	subdomainFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "", ".md")
+	subdomainFilename := convertKeyToFilename("subdomain", subdomainKey, "", ".md")
 	mdContents, err := generateSubdomainMdContents(reqs, reqs.Model, domain, subdomain, classesDiagram, useCasesDiagram)
 	if err != nil {
 		return err
@@ -369,6 +413,47 @@ func generateClassFilesToWriter(reqs *req_flat.Requirements, writer ContentWrite
 	return nil
 }
 
+func buildClassDiagramEmbeds(
+	reqs *req_flat.Requirements,
+	writer ContentWriter,
+	class model_class.Class,
+) (classesDiagram, stateDiagram string, err error) {
+	classKey := class.Key.String()
+	generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
+	classesSource, err := generateClassesMermaidContents(reqs, generalizations, classes, associations, &class.Key)
+	if err != nil {
+		return "", "", err
+	}
+	classesDiagram, err = embedDiagram(
+		writer,
+		classesSource,
+		convertKeyToFilename("class", classKey, "relations", ".svg"),
+		"Relations",
+	)
+	if err != nil {
+		return "", "", err
+	}
+
+	if len(class.States) == 0 {
+		return classesDiagram, "", nil
+	}
+
+	stateSource, err := generateClassStateMermaidContents(reqs, class)
+	if err != nil {
+		return "", "", err
+	}
+	stateDiagram, err = embedDiagram(
+		writer,
+		stateSource,
+		convertKeyToFilename("class", classKey, "state", ".svg"),
+		"State machine",
+	)
+	if err != nil {
+		return "", "", err
+	}
+	return classesDiagram, stateDiagram, nil
+}
+
 func writeClassMarkdownPage(
 	reqs *req_flat.Requirements,
 	writer ContentWriter,
@@ -380,18 +465,9 @@ func writeClassMarkdownPage(
 		return writer.WriteMarkdown(classFilename, ClassErrorMarkdown(class.Name, msg))
 	}
 
-	generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
-	classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations, &class.Key)
+	classesDiagram, stateDiagram, err := buildClassDiagramEmbeds(reqs, writer, class)
 	if err != nil {
 		return err
-	}
-
-	stateDiagram := ""
-	if len(class.States) > 0 {
-		stateDiagram, err = generateClassStateMermaidContents(reqs, class)
-		if err != nil {
-			return err
-		}
 	}
 
 	classMdContents, err := generateClassMdContents(reqs, class, classesDiagram, stateDiagram)
@@ -412,7 +488,7 @@ func generateUseCaseFilesToWriter(reqs *req_flat.Requirements, writer ContentWri
 
 	for _, useCase := range useCaseLookup {
 		modelFilename := convertKeyToFilename("use_case", useCase.Key.String(), "", ".md")
-		mdContents, err := generateUseCaseMdContents(reqs, useCase)
+		mdContents, err := generateUseCaseMdContents(reqs, writer, useCase)
 		if err != nil {
 			return err
 		}

@@ -14,6 +14,7 @@ type discardWriter struct{}
 func (d discardWriter) WriteMarkdown(_ string, _ []byte) error { return nil }
 func (d discardWriter) WriteSVG(_ string, _ []byte) error      { return nil }
 func (d discardWriter) WriteCSS(_ []byte) error                { return nil }
+func (d discardWriter) DiagramMode() DiagramOutputMode         { return DiagramInlineMermaid }
 
 // TestGenerateTemplates exercises all templates with the test model to catch
 // runtime errors (missing fields, type mismatches) without writing files.
