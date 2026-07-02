@@ -6,20 +6,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestClassesMermaidStereotypeAnnotation(t *testing.T) {
+func TestClassesMermaidStereotypeLine(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		want string
+		name   string
+		nodeID string
+		want   string
 	}{
-		{name: "actor", want: "<<actor>>"},
-		{name: "association", want: "<<association>>"},
+		{name: "actor", nodeID: "class_example", want: "<<actor>> class_example\n"},
+		{name: "association", nodeID: "assoc_example", want: "<<association>> assoc_example\n"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, tc.want, classesMermaidStereotypeAnnotation(tc.name))
+			assert.Equal(t, tc.want, classesMermaidStereotypeLine(tc.name, tc.nodeID))
 		})
 	}
 }

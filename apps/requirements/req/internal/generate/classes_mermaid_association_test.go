@@ -1,7 +1,6 @@
 package generate
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -137,15 +136,9 @@ func TestGenerateClassesMermaidAssociationClassUniqueness(t *testing.T) {
 
 	linkNode := nodeIDFor("assoc", assocKey)
 	wantLinkNode := `class ` + linkNode + `["links<br/>{unique: → Code}"]`
+	wantLinkStereotype := `<<association>> ` + linkNode
 	assert.Contains(t, got, wantLinkNode)
-	assert.Contains(t, got, `<<association>>`)
-	if idx := strings.Index(got, wantLinkNode); idx >= 0 {
-		block := got[idx:]
-		if end := strings.Index(block, "\n    }"); end >= 0 {
-			block = block[:end]
-		}
-		assert.Contains(t, block, `<<association>>`, "stereotype should stay in class body after title")
-	}
+	assert.Contains(t, got, wantLinkStereotype)
 }
 
 func TestGenerateClassesMermaidOmitsAnyUniqueness(t *testing.T) {

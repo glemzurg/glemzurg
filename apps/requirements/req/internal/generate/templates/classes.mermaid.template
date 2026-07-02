@@ -15,22 +15,22 @@ classDiagram
 {{ range .Classes -}}
 {{- $class := class_lookup $reqs .Key -}}
     class {{ nodeid "class" .Key }}["{{ .Name }}"] {
-{{ if ne .ActorKey nil }}
-        {{ classes_mermaid_stereotype_annotation "actor" }}
-{{ end -}}
 {{- range .Attributes }}
         {{ classes_mermaid_attribute_member . }}
 {{- end }}
     }
+{{ if ne .ActorKey nil -}}
+{{ classes_mermaid_stereotype_line "actor" (nodeid "class" .Key) -}}
+{{ end -}}
+{{ classes_mermaid_class_note . -}}
 {{ end -}}
 {{ if has_mermaid_focal_class .FocalClassKey -}}
 style {{ nodeid "class" (mermaid_focal_class_key .FocalClassKey) }} {{ classes_mermaid_focal_class_style }}
 {{ end -}}
 {{ range .Associations -}}
 {{ if render_association_class_mermaid . -}}
-    class {{ nodeid "assoc" .Key }}["{{ classes_mermaid_association_node_title $reqs . }}"] {
-        {{ classes_mermaid_stereotype_annotation "association" }}
-    }
+    class {{ nodeid "assoc" .Key }}["{{ classes_mermaid_association_node_title $reqs . }}"]
+{{ classes_mermaid_stereotype_line "association" (nodeid "assoc" .Key) -}}
 {{ end -}}
 {{ end -}}
 {{ range .Associations -}}

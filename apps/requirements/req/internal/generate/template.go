@@ -168,9 +168,9 @@ var _funcMap = template.FuncMap{
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
-	"render_association_class_mermaid":      renderAssociationClassMermaid,
-	"association_class_key":                 associationClassKeyNode,
-	"classes_mermaid_stereotype_annotation": classesMermaidStereotypeAnnotation,
+	"render_association_class_mermaid": renderAssociationClassMermaid,
+	"association_class_key":            associationClassKeyNode,
+	"classes_mermaid_stereotype_line":  classesMermaidStereotypeLine,
 	"classes_mermaid_association_link_label": func(reqs *req_flat.Requirements, assoc model_class.Association) string {
 		lookup, _ := reqs.ClassLookup()
 		return classesMermaidAssociationLinkLabel(assoc, lookup[assoc.FromClassKey.String()], lookup[assoc.ToClassKey.String()])
@@ -179,7 +179,10 @@ var _funcMap = template.FuncMap{
 		lookup, _ := reqs.ClassLookup()
 		return classesMermaidAssociationNodeTitle(assoc, lookup[assoc.FromClassKey.String()], lookup[assoc.ToClassKey.String()])
 	},
-	"classes_mermaid_attribute_member":  classesMermaidAttributeMember,
+	"classes_mermaid_attribute_member": classesMermaidAttributeMember,
+	"classes_mermaid_class_note": func(class model_class.Class) string {
+		return classesMermaidNoteLine(mermaidNodeID("class", class.Key), class.UmlComment)
+	},
 	"classes_mermaid_focal_class_style": func() string { return classesMermaidFocalClassStyle },
 	"has_mermaid_focal_class":           hasMermaidFocalClass,
 	"mermaid_focal_class_key":           mermaidFocalClassKey,
