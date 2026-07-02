@@ -130,12 +130,15 @@ func TestGenerateClassesMermaidRendersClassUmlComments(t *testing.T) {
 	classNode := nodeIDFor("class", partnerKey)
 	acNode := nodeIDFor("class", walletDefKey)
 
+	hasCustomersLinkNode := nodeIDFor("assoc", hasCustomersKey)
+	configuresLinkNode := nodeIDFor("assoc", configuresKey)
+
 	assert.Contains(t, body, `note for `+classNode+` "can fly<br>can swim<br>can dive<br>can help in debugging"`)
 	assert.Contains(t, body, `note for `+acNode+` "Association class comment."`)
+	assert.Contains(t, body, `note for `+hasCustomersLinkNode+` "very import to users"`)
+	assert.Contains(t, body, `note for `+configuresLinkNode+` "middle link comment"`)
 	assert.NotContains(t, body, "end note")
-	assert.NotContains(t, body, "very import to users")
-	assert.NotContains(t, body, "middle link comment")
 
 	noteCount := strings.Count(body, "note for ")
-	assert.Equal(t, 2, noteCount, "class and association-class boxes only")
+	assert.Equal(t, 4, noteCount, "partner class, association class, and both association link nodes")
 }

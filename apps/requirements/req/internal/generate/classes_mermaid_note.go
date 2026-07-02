@@ -2,9 +2,19 @@ package generate
 
 import (
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 )
 
 const classesMermaidNoteLineBreak = "<br>"
+
+// classesMermaidAssociationLinkNote formats a note on a dashed association link node.
+func classesMermaidAssociationLinkNote(assoc model_class.Association) string {
+	if !renderAssociationLinkNodeMermaid(assoc) {
+		return ""
+	}
+	return classesMermaidNoteLine(mermaidNodeID("assoc", assoc.Key), assoc.UmlComment)
+}
 
 // classesMermaidNoteLine formats a single-line Mermaid class-diagram note.
 func classesMermaidNoteLine(target, comment string) string {
