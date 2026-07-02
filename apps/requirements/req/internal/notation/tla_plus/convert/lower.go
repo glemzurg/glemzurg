@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
@@ -54,11 +55,23 @@ type LowerContext struct {
 	// QueryNames maps query names to their identity keys within the current class.
 	QueryNames map[string]identity.Key
 
+	// AssociationNames maps outgoing-association TLA field names to association keys.
+	AssociationNames map[string]identity.Key
+
+	// SystemEventNames maps reserved system event names (_new, _destroy) to event keys.
+	SystemEventNames map[string]identity.Key
+
+	// PeerEventNames maps outgoing-association peer class event names to event keys.
+	PeerEventNames map[string]identity.Key
+
 	// GlobalFunctions maps global function names (with leading underscore) to their identity keys.
 	GlobalFunctions map[string]identity.Key
 
 	// NamedSets maps named set names to their identity keys.
 	NamedSets map[string]identity.Key
+
+	// ClassNames maps class display names to their identity keys for quantifier domains.
+	ClassNames map[string]identity.Key
 
 	// AllActions maps fully scoped action names (Domain!Subdomain!Class!Action) to identity keys
 	// for cross-class action calls.
@@ -170,6 +183,10 @@ func Lower(expr ast.Expression, ctx *LowerContext) (me.Expression, error) {
 	// --- Control flow ---
 	case *ast.IfThenElse:
 		return lowerIfThenElse(e, ctx)
+	case *ast.LetExpr:
+		return lowerLetExpr(e, ctx)
+	case *ast.ChooseExpr:
+		return lowerChooseExpr(e, ctx)
 	case *ast.CaseExpr:
 		return lowerCaseExpr(e, ctx)
 
@@ -178,6 +195,8 @@ func Lower(expr ast.Expression, ctx *LowerContext) (me.Expression, error) {
 		return lowerQuantifier(e, ctx)
 	case *ast.SetFilter:
 		return lowerSetFilter(e, ctx)
+	case *ast.SetMap:
+		return lowerSetMap(e, ctx)
 
 	// --- Calls ---
 	case *ast.FunctionCall:
@@ -346,7 +365,7 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 	name := e.Value
 
 	// "self" → SelfRef.
-	if name == "self" {
+	if name == ast.IdentifierSelf {
 		return &me.SelfRef{}, nil
 	}
 
@@ -365,9 +384,24 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 		return &me.AttributeRef{AttributeKey: key}, nil
 	}
 
+	// Outgoing association TLA field names → AssociationRef.
+	if key, ok := ctx.AssociationNames[name]; ok {
+		return &me.AssociationRef{AssociationKey: key}, nil
+	}
+
 	// Check named sets → NamedSetRef.
 	if key, ok := ctx.NamedSets[name]; ok {
 		return &me.NamedSetRef{SetKey: key}, nil
+	}
+
+	// Check class display names → ClassRef.
+	if key, ok := ctx.ClassNames[name]; ok {
+		return &me.ClassRef{ClassKey: key, Name: name}, nil
+	}
+
+	// NULL is the model's absent-value sentinel; the simulator represents it as {}.
+	if name == "NULL" {
+		return &me.SetLiteral{Elements: []me.Expression{}}, nil
 	}
 
 	// Check well-known set constant names (Nat, Int, Real, BOOLEAN).
@@ -380,7 +414,9 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 	// Build list of all available names for error message.
 	var available []string
 	available = append(available, mapKeys(ctx.AttributeNames)...)
+	available = append(available, mapKeys(ctx.AssociationNames)...)
 	available = append(available, mapKeys(ctx.NamedSets)...)
+	available = append(available, mapKeys(ctx.ClassNames)...)
 	for k := range ctx.Parameters {
 		available = append(available, k)
 	}
@@ -435,10 +471,10 @@ func lowerPrimed(e *ast.Primed, ctx *LowerContext) (*me.NextState, error) {
 // The parser produces Identifier nodes for these since they are not reserved
 // keywords in the PEG grammar, so lowerIdentifier must recognize them.
 var setConstantIdentifiers = map[string]me.SetConstantKind{
-	"Nat":     me.SetConstantNat,
-	"Int":     me.SetConstantInt,
-	"Real":    me.SetConstantReal,
-	"BOOLEAN": me.SetConstantBoolean,
+	ast.SetConstantNat:     me.SetConstantNat,
+	ast.SetConstantInt:     me.SetConstantInt,
+	ast.SetConstantReal:    me.SetConstantReal,
+	ast.SetConstantBoolean: me.SetConstantBoolean,
 }
 
 var arithOpMap = map[string]me.ArithOp{
@@ -777,6 +813,32 @@ func lowerIfThenElse(e *ast.IfThenElse, ctx *LowerContext) (*me.IfThenElse, erro
 	return &me.IfThenElse{Condition: cond, Then: then, Else: elseExpr}, nil
 }
 
+func lowerLetExpr(e *ast.LetExpr, ctx *LowerContext) (*me.LetExpr, error) {
+	value, err := Lower(e.Value, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("LetExpr.Value: %w", err)
+	}
+	childCtx := withLocalVar(ctx, e.Variable)
+	body, err := Lower(e.Body, childCtx)
+	if err != nil {
+		return nil, fmt.Errorf("LetExpr.Body: %w", err)
+	}
+	return &me.LetExpr{Variable: e.Variable, Value: value, Body: body}, nil
+}
+
+func lowerChooseExpr(e *ast.ChooseExpr, ctx *LowerContext) (*me.Choose, error) {
+	varName, set, err := extractMembershipBinding(e.Membership, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("ChooseExpr: %w", err)
+	}
+	childCtx := withLocalVar(ctx, varName)
+	predicate, err := Lower(e.Predicate, childCtx)
+	if err != nil {
+		return nil, fmt.Errorf("ChooseExpr.Predicate: %w", err)
+	}
+	return &me.Choose{Variable: varName, Set: set, Predicate: predicate}, nil
+}
+
 func lowerCaseExpr(e *ast.CaseExpr, ctx *LowerContext) (*me.Case, error) {
 	branches := make([]me.CaseBranch, len(e.Branches))
 	for i, branch := range e.Branches {
@@ -870,10 +932,24 @@ func lowerSetFilter(e *ast.SetFilter, ctx *LowerContext) (*me.SetFilter, error) 
 	return &me.SetFilter{Variable: varName, Set: set, Predicate: predicate}, nil
 }
 
+func lowerSetMap(e *ast.SetMap, ctx *LowerContext) (*me.SetMap, error) {
+	varName, set, err := extractMembershipBinding(e.Membership, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("SetMap: %w", err)
+	}
+
+	childCtx := withLocalVar(ctx, varName)
+	transform, err := Lower(e.Transform, childCtx)
+	if err != nil {
+		return nil, fmt.Errorf("SetMap.Transform: %w", err)
+	}
+	return &me.SetMap{Variable: varName, Set: set, Transform: transform}, nil
+}
+
 // --- Call lowering ---
 
 func lowerFunctionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression, error) {
-	if e.IsGlobalOrBuiltin() {
+	if e.IsGlobalOrBuiltin() || e.IsSystemEvent() {
 		return lowerGlobalOrBuiltinFunctionCall(e, ctx)
 	}
 	return lowerClassActionCall(e, ctx)
@@ -897,11 +973,26 @@ func lowerGlobalOrBuiltinFunctionCall(e *ast.FunctionCall, ctx *LowerContext) (m
 		return &me.BuiltinCall{Module: module, Function: function, Args: args}, nil
 	}
 
-	// Global function call: _FunctionName(args...)
+	// System event constructor: «new»(args...) or _new(args...) (ASCII authoring).
 	name := e.Name.Value
+	if key, ok := ctx.SystemEventNames[name]; ok {
+		return &me.EventCall{EventKey: key, Args: args}, nil
+	}
+	// Peer-class system events in association set-map/set-add guarantees (e.g. «destroy» on AppliesSocialCurrencyLogic).
+	if model_state.IsSystemEventTLAName(name) {
+		if key, ok := ctx.PeerEventNames[name]; ok {
+			return &me.EventCall{EventKey: key, Args: args}, nil
+		}
+	}
+
+	// Global function call: _FunctionName(args...)
 	key, ok := ctx.GlobalFunctions[name]
 	if !ok {
-		return nil, unresolvedError("global function", name, mapKeys(ctx.GlobalFunctions))
+		var available []string
+		available = append(available, mapKeys(ctx.SystemEventNames)...)
+		available = append(available, mapKeys(ctx.PeerEventNames)...)
+		available = append(available, mapKeys(ctx.GlobalFunctions)...)
+		return nil, unresolvedError("global function", name, available)
 	}
 	return &me.GlobalCall{FunctionKey: key, Args: args}, nil
 }
@@ -928,6 +1019,10 @@ func lowerClassActionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression
 		// Then queries.
 		if key, ok := ctx.QueryNames[name]; ok {
 			return &me.ActionCall{ActionKey: key, Args: args}, nil
+		}
+		// Peer-class events on outgoing associations (e.g. Update in set-map guarantees).
+		if key, ok := ctx.PeerEventNames[name]; ok {
+			return &me.EventCall{EventKey: key, Args: args}, nil
 		}
 		var available []string
 		available = append(available, mapKeys(ctx.ActionNames)...)

@@ -17,7 +17,7 @@ type FieldSuite struct {
 
 func (suite *FieldSuite) TestValidate() {
 	validDataType := &DataType{
-		Key:            "key",
+		Key:            t_dtKey("k"),
 		CollectionType: "atomic",
 		Atomic:         &Atomic{ConstraintType: "unconstrained"},
 	}

@@ -26,7 +26,7 @@ func derivationPolicyKey(attr model_class.Attribute) *string {
 // Returns nil if no data type is set.
 func dataTypeKey(attr model_class.Attribute) *string {
 	if attr.DataType != nil {
-		s := attr.DataType.Key
+		s := attr.DataType.Key.String()
 		return &s
 	}
 	return nil
@@ -36,12 +36,14 @@ func dataTypeKey(attr model_class.Attribute) *string {
 func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_class.Attribute) (err error) {
 	var classKeyStr string
 	var attributeKeyStr string
+	var sortOrder int
 	var dataTypeKeyStr sql.NullString
 	var derivationPolicyKeyStr sql.NullString
 
 	if err = scanner.Scan(
 		&classKeyStr,
 		&attributeKeyStr,
+		&sortOrder,
 		&attribute.Name,
 		&attribute.Details,
 		&attribute.DataTypeRules,
@@ -97,6 +99,7 @@ func LoadAttribute(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key) (c
 		`SELECT
 			class_key             ,
 			attribute_key         ,
+			sort_order            ,
 			name                  ,
 			details               ,
 			data_type_rules       ,
@@ -209,6 +212,7 @@ func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Ke
 		`SELECT
 			class_key             ,
 			attribute_key         ,
+			sort_order            ,
 			name                  ,
 			details               ,
 			data_type_rules       ,
@@ -220,7 +224,7 @@ func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Ke
 			attribute
 		WHERE
 			model_key = $1
-		ORDER BY class_key, attribute_key`,
+		ORDER BY class_key, sort_order, attribute_key`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -242,17 +246,17 @@ func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][
 
 	// Build the bulk insert query.
 	var qb strings.Builder
-	qb.WriteString(`INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, data_type_key, derivation_policy_key, nullable, uml_comment) VALUES `)
-	args := make([]any, 0, count*10)
+	qb.WriteString(`INSERT INTO attribute (model_key, class_key, attribute_key, sort_order, name, details, data_type_rules, data_type_key, derivation_policy_key, nullable, uml_comment) VALUES `)
+	args := make([]any, 0, count*11)
 	i := 0
 	for classKey, attrList := range attributes {
-		for _, attr := range attrList {
+		for sortOrder, attr := range attrList {
 			if i > 0 {
 				qb.WriteString(", ")
 			}
-			base := i * 10
-			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
-			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, dataTypeKey(attr), derivationPolicyKey(attr), attr.Nullable, attr.UmlComment)
+			base := i * 11
+			fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11)
+			args = append(args, modelKey, classKey.String(), attr.Key.String(), sortOrder, attr.Name, attr.Details, attr.DataTypeRules, dataTypeKey(attr), derivationPolicyKey(attr), attr.Nullable, attr.UmlComment)
 			i++
 		}
 	}

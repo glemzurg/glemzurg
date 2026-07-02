@@ -15,10 +15,10 @@ mkdir -p "$BIN_DIR"
 cd "$PROJECT_ROOT/apps/requirements/req"
 
 echo "Building req..."
-go build -o "$BIN_DIR/req" "./cmd/req"
+go build -buildvcs=false -o "$BIN_DIR/req" "./cmd/req"
 
 echo "Building req_check..."
-go build -o "$BIN_DIR/req_check" "./cmd/req_check"
+go build -buildvcs=false -o "$BIN_DIR/req_check" "./cmd/req_check"
 
 echo ""
 echo "Binaries built successfully:"

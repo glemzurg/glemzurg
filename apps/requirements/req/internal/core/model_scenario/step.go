@@ -21,14 +21,14 @@ const (
 	LEAF_TYPE_EVENT    = "event"
 	LEAF_TYPE_QUERY    = "query"
 	LEAF_TYPE_SCENARIO = "scenario"
-	LEAF_TYPE_DELETE   = "delete"
+	LEAF_TYPE_DESTROY  = "destroy"
 )
 
 // Step represents a step in the scenario steps tree.
 type Step struct { //nolint:recvcheck
 	Key           identity.Key  `json:"key" yaml:"key"`
 	StepType      string        `json:"step_type" yaml:"step_type"`
-	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"` // Only for leaf steps: event, query, scenario, delete.
+	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"` // Only for leaf steps: event, query, scenario, destroy.
 	Statements    []Step        `json:"statements,omitempty" yaml:"statements,omitempty"`
 	Condition     string        `json:"condition,omitempty" yaml:"condition,omitempty"`             // Used by loop and case steps.
 	Description   string        `json:"description,omitempty" yaml:"description,omitempty"`         // Leaf description.
@@ -102,15 +102,15 @@ func (s *Step) Validate(ctx *coreerr.ValidationContext) error {
 			return coreerr.New(ctx, coreerr.SstepLeafTypeRequired, "leaf must have a leaf_type", "LeafType")
 		}
 		switch *s.LeafType {
-		case LEAF_TYPE_DELETE:
+		case LEAF_TYPE_DESTROY:
 			if s.FromObjectKey == nil {
-				return coreerr.New(ctx, coreerr.SstepDeleteFromRequired, "delete leaf must have a from_object_key", "FromObjectKey")
+				return coreerr.New(ctx, coreerr.SstepDestroyFromRequired, "destroy leaf must have a from_object_key", "FromObjectKey")
 			}
 			if s.ToObjectKey != nil {
-				return coreerr.New(ctx, coreerr.SstepDeleteToForbidden, "delete leaf cannot have a to_object_key", "ToObjectKey")
+				return coreerr.New(ctx, coreerr.SstepDestroyToForbidden, "destroy leaf cannot have a to_object_key", "ToObjectKey")
 			}
 			if s.EventKey != nil || s.ScenarioKey != nil || s.QueryKey != nil {
-				return coreerr.New(ctx, coreerr.SstepDeleteKeysForbidden, "delete leaf cannot have event_key, scenario_key, or query_key", "EventKey/ScenarioKey/QueryKey")
+				return coreerr.New(ctx, coreerr.SstepDestroyKeysForbidden, "destroy leaf cannot have event_key, scenario_key, or query_key", "EventKey/ScenarioKey/QueryKey")
 			}
 		case LEAF_TYPE_EVENT:
 			if s.FromObjectKey == nil {
@@ -152,7 +152,7 @@ func (s *Step) Validate(ctx *coreerr.ValidationContext) error {
 				return coreerr.New(ctx, coreerr.SstepScenarioEventForbidden, "scenario leaf cannot have event_key or query_key", "EventKey/QueryKey")
 			}
 		default:
-			return coreerr.NewWithValues(ctx, coreerr.SstepLeafTypeUnknown, fmt.Sprintf("unknown leaf type '%s'", *s.LeafType), "LeafType", *s.LeafType, "one of: event, query, scenario, delete")
+			return coreerr.NewWithValues(ctx, coreerr.SstepLeafTypeUnknown, fmt.Sprintf("unknown leaf type '%s'", *s.LeafType), "LeafType", *s.LeafType, "one of: event, query, scenario, destroy")
 		}
 		// Validate key types of all non-nil reference keys.
 		if s.FromObjectKey != nil {

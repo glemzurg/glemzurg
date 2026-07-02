@@ -7,6 +7,7 @@ import (
 	"maps"
 	"sync"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -26,8 +27,11 @@ type SimulationState struct {
 	// instances maps instance IDs to class instances
 	instances map[InstanceID]*ClassInstance
 
-	// links tracks association relationships between instances
+	// links tracks binary association relationships between instances.
 	links *evaluator.LinkTable
+
+	// associationLinks tracks host associations materialized by association-class instances.
+	associationLinks *AssociationLinkTable
 
 	// stateMachineStates maps instance IDs to their current state machine state
 	// The value is the identity.Key of the current state
@@ -46,6 +50,7 @@ func NewSimulationState() *SimulationState {
 	return &SimulationState{
 		instances:          make(map[InstanceID]*ClassInstance),
 		links:              evaluator.NewLinkTable(),
+		associationLinks:   NewAssociationLinkTable(),
 		stateMachineStates: make(map[InstanceID]identity.Key),
 		nextID:             1, // Start at 1 so 0 can indicate "no instance"
 		identityRegistry:   evaluator.NewIdentityRegistry(),
@@ -127,6 +132,7 @@ func (s *SimulationState) DeleteInstance(id InstanceID) error {
 
 	// Remove all links involving this instance
 	s.removeAllLinks(id)
+	s.associationLinks.RemoveInstance(id)
 
 	// Remove from state machine states
 	delete(s.stateMachineStates, id)
@@ -190,11 +196,12 @@ func (s *SimulationState) InstancesByClass(classKey identity.Key) []*ClassInstan
 }
 
 // AddLink creates a link between two instances for an association.
-func (s *SimulationState) AddLink(assocKey identity.Key, fromID, toID InstanceID) {
+// Returns an error when the association already links the instance pair.
+func (s *SimulationState) AddLink(assocKey identity.Key, fromID, toID InstanceID) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.links.AddLink(
+	return s.links.AddLink(
 		evaluator.AssociationKey(assocKey.String()),
 		evaluator.ObjectID(fromID),
 		evaluator.ObjectID(toID),
@@ -250,6 +257,36 @@ func (s *SimulationState) GetLinkedReverse(toID InstanceID, assocKey identity.Ke
 	return ids
 }
 
+// CountActivePairLinks counts links for one association between a from/to instance pair.
+// Only instances still present in simulation state count; Final transitions remove rows entirely.
+func (s *SimulationState) CountActivePairLinks(
+	assoc model_class.Association,
+	fromID, toID InstanceID,
+) int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if assoc.AssociationClassKey != nil {
+		links := s.associationLinks.LinksFromEndpoint(assoc.Key, fromID)
+		count := 0
+		for _, link := range links {
+			if link.ToEndpointID != toID {
+				continue
+			}
+			if s.instances[link.LinkInstanceID] != nil {
+				count++
+			}
+		}
+		return count
+	}
+
+	return s.links.CountPairLinks(
+		evaluator.AssociationKey(assoc.Key.String()),
+		evaluator.ObjectID(fromID),
+		evaluator.ObjectID(toID),
+	)
+}
+
 // LinkCount returns the total number of links.
 func (s *SimulationState) LinkCount() int {
 	s.mu.RLock()
@@ -261,6 +298,51 @@ func (s *SimulationState) LinkCount() int {
 // Use with caution - this exposes internal state.
 func (s *SimulationState) Links() *evaluator.LinkTable {
 	return s.links
+}
+
+// AddAssociationLink materializes one host association row via an association-class instance.
+// Returns an error when the host association already links the endpoint pair.
+func (s *SimulationState) AddAssociationLink(
+	hostAssocKey identity.Key,
+	fromEndpointID InstanceID,
+	toEndpointID InstanceID,
+	linkInstanceID InstanceID,
+) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.associationLinks.AddLink(AssociationLink{
+		HostAssocKey:   hostAssocKey,
+		FromEndpointID: fromEndpointID,
+		ToEndpointID:   toEndpointID,
+		LinkInstanceID: linkInstanceID,
+	})
+}
+
+// AssociationLinksFromEndpoint returns materialized host rows from a from-endpoint.
+func (s *SimulationState) AssociationLinksFromEndpoint(hostAssocKey identity.Key, fromID InstanceID) []AssociationLink {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.associationLinks.LinksFromEndpoint(hostAssocKey, fromID)
+}
+
+// AssociationLinksToEndpoint returns materialized host rows to a to-endpoint.
+func (s *SimulationState) AssociationLinksToEndpoint(hostAssocKey identity.Key, toID InstanceID) []AssociationLink {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.associationLinks.LinksToEndpoint(hostAssocKey, toID)
+}
+
+// AssociationLinkByInstance returns the host row for an association-class instance.
+func (s *SimulationState) AssociationLinkByInstance(linkInstanceID InstanceID) (AssociationLink, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.associationLinks.LinkByInstance(linkInstanceID)
+}
+
+// AssociationLinks returns the underlying association link table.
+func (s *SimulationState) AssociationLinks() *AssociationLinkTable {
+	return s.associationLinks
 }
 
 // SetStateMachineState sets the current state machine state for an instance.
@@ -320,7 +402,14 @@ func (s *SimulationState) Clone() *SimulationState {
 		objID := evaluator.ObjectID(instance.ID)
 		links := s.links.GetAllForward(objID)
 		for _, link := range links {
-			clone.links.AddLink(link.AssociationKey, link.FromID, link.ToID)
+			if err := clone.links.AddLink(link.AssociationKey, link.FromID, link.ToID); err != nil {
+				panic(fmt.Sprintf("clone link table: %v", err))
+			}
+		}
+	}
+	for _, link := range s.associationLinks.AllLinks() {
+		if err := clone.associationLinks.AddLink(link); err != nil {
+			panic(fmt.Sprintf("clone association link table: %v", err))
 		}
 	}
 

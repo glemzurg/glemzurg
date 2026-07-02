@@ -26,28 +26,22 @@ func raiseTypeToAST(et met.ExpressionType, ctx *RaiseContext) (ast.Expression, e
 
 	switch t := et.(type) {
 	case *met.BooleanType:
-		return &ast.Identifier{Value: "BOOLEAN"}, nil
+		return &ast.Identifier{Value: ast.SetConstantBoolean}, nil
 
 	case *met.IntegerType:
-		return &ast.Identifier{Value: "Int"}, nil
+		return &ast.Identifier{Value: ast.SetConstantInt}, nil
 
 	case *met.RationalType:
-		return &ast.Identifier{Value: "Real"}, nil
+		return &ast.Identifier{Value: ast.SetConstantReal}, nil
 
 	case *met.StringType:
-		return &ast.Identifier{Value: "STRING"}, nil
+		return &ast.Identifier{Value: ast.IdentifierString}, nil
 
 	case *met.EnumType:
 		return raiseEnumType(t)
 
-	case *met.SetType:
-		return raiseSetType(t, ctx)
-
 	case *met.SequenceType:
 		return raiseSequenceType(t, ctx)
-
-	case *met.BagType:
-		return raiseBagType(t, ctx)
 
 	case *met.TupleType:
 		return raiseTupleType(t, ctx)
@@ -70,42 +64,18 @@ func raiseEnumType(t *met.EnumType) (ast.Expression, error) {
 	return &ast.SetLiteralEnum{Values: t.Values}, nil
 }
 
-func raiseSetType(t *met.SetType, ctx *RaiseContext) (ast.Expression, error) {
-	elemAST, err := raiseTypeToAST(t.ElementType, ctx)
-	if err != nil {
-		return nil, fmt.Errorf("SetType.ElementType: %w", err)
-	}
-	return &ast.FunctionCall{
-		ScopePath: []*ast.Identifier{{Value: "_Set"}},
-		Name:      &ast.Identifier{Value: "_Set"},
-		Args:      []ast.Expression{elemAST},
-	}, nil
-}
-
 func raiseSequenceType(t *met.SequenceType, ctx *RaiseContext) (ast.Expression, error) {
 	elemAST, err := raiseTypeToAST(t.ElementType, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("SequenceType.ElementType: %w", err)
 	}
-	funcName := "Seq"
+	funcName := ast.FuncSeq
 	if t.Unique {
-		funcName = "SeqUnique"
+		funcName = ast.FuncSeqUnique
 	}
 	return &ast.FunctionCall{
-		ScopePath: []*ast.Identifier{{Value: "_Seq"}},
+		ScopePath: []*ast.Identifier{{Value: ast.ModuleSeq}},
 		Name:      &ast.Identifier{Value: funcName},
-		Args:      []ast.Expression{elemAST},
-	}, nil
-}
-
-func raiseBagType(t *met.BagType, ctx *RaiseContext) (ast.Expression, error) {
-	elemAST, err := raiseTypeToAST(t.ElementType, ctx)
-	if err != nil {
-		return nil, fmt.Errorf("BagType.ElementType: %w", err)
-	}
-	return &ast.FunctionCall{
-		ScopePath: []*ast.Identifier{{Value: "_Bags"}},
-		Name:      &ast.Identifier{Value: "_Bag"},
 		Args:      []ast.Expression{elemAST},
 	}, nil
 }

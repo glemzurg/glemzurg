@@ -35,6 +35,16 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 			subKey:   "",
 			errstr:   "sub key is required",
 		},
+		{
+			testName: "error space in subkey",
+			subKey:   "has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			subKey:   "has-hyphen",
+			errstr:   "must match pattern",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
@@ -170,6 +180,16 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 			subKey:   "",
 			errstr:   "sub key is required",
 		},
+		{
+			testName: "error space in subkey",
+			subKey:   "has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			subKey:   "has-hyphen",
+			errstr:   "must match pattern",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
@@ -255,6 +275,16 @@ func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
 			testName: "error blank",
 			subKey:   "",
 			errstr:   "sub key is required",
+		},
+		{
+			testName: "error space in subkey",
+			subKey:   "_has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			subKey:   "_has-hyphen",
+			errstr:   "must match pattern",
 		},
 	}
 	for _, tt := range tests {
@@ -1386,6 +1416,18 @@ func (suite *KeyTypeSuite) TestNewActionKey() {
 			subKey:   "",
 			errstr:   "sub key is required",
 		},
+		{
+			testName: "error space in subkey",
+			classKey: classKey,
+			subKey:   "has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			classKey: classKey,
+			subKey:   "has-hyphen",
+			errstr:   "must match pattern",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
@@ -1577,6 +1619,18 @@ func (suite *KeyTypeSuite) TestNewAttributeKey() {
 			classKey: classKey,
 			subKey:   "",
 			errstr:   "sub key is required",
+		},
+		{
+			testName: "error space in subkey",
+			classKey: classKey,
+			subKey:   "has space",
+			errstr:   "must match pattern",
+		},
+		{
+			testName: "error hyphen in subkey",
+			classKey: classKey,
+			subKey:   "has-hyphen",
+			errstr:   "must match pattern",
 		},
 	}
 	for _, tt := range tests {
@@ -2024,4 +2078,323 @@ func (suite *KeyTypeSuite) TestNewTransitionKey() {
 			}
 		})
 	}
+}
+
+func (suite *KeyTypeSuite) TestNewParameterKey() {
+	domainKey, err := NewDomainKey("domain1")
+	suite.Require().NoError(err)
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	suite.Require().NoError(err)
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	suite.Require().NoError(err)
+
+	actionKey, err := NewActionKey(classKey, "action1")
+	suite.Require().NoError(err)
+	queryKey, err := NewQueryKey(classKey, "query1")
+	suite.Require().NoError(err)
+	eventKey, err := NewEventKey(classKey, "event1")
+	suite.Require().NoError(err)
+
+	tests := []struct {
+		testName  string
+		parentKey Key
+		subKey    string
+		expected  Key
+		errstr    string
+	}{
+		{
+			testName:  "ok action parent",
+			parentKey: actionKey,
+			subKey:    "amount",
+			expected:  helper.Must(newKey(actionKey.String(), KEY_TYPE_PARAMETER, "amount")),
+		},
+		{
+			testName:  "ok query parent",
+			parentKey: queryKey,
+			subKey:    "filter",
+			expected:  helper.Must(newKey(queryKey.String(), KEY_TYPE_PARAMETER, "filter")),
+		},
+		{
+			testName:  "error event parent",
+			parentKey: eventKey,
+			subKey:    "payload",
+			errstr:    "parent key cannot be of type 'event' for 'parameter' key",
+		},
+		{
+			testName:  "error wrong parent type (class)",
+			parentKey: classKey,
+			subKey:    "amount",
+			errstr:    "parent key cannot be of type 'class' for 'parameter' key",
+		},
+		{
+			testName:  "error wrong parent type (actor)",
+			parentKey: helper.Must(NewActorKey("actor1")),
+			subKey:    "amount",
+			errstr:    "parent key cannot be of type 'actor' for 'parameter' key",
+		},
+		{
+			testName:  "error empty parent",
+			parentKey: Key{},
+			subKey:    "amount",
+			errstr:    "parent key cannot be of type '' for 'parameter' key",
+		},
+		{
+			testName:  "error blank subKey",
+			parentKey: actionKey,
+			subKey:    "",
+			errstr:    "sub key is required",
+		},
+		{
+			testName:  "error subKey with space",
+			parentKey: actionKey,
+			subKey:    "has space",
+			errstr:    "must match pattern",
+		},
+	}
+	for _, tt := range tests {
+		_ = suite.Run(tt.testName, func() {
+			key, err := NewParameterKey(tt.parentKey, tt.subKey)
+			if tt.errstr == "" {
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
+			} else {
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
+			}
+		})
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewParameterInvariantKey() {
+	domainKey, err := NewDomainKey("domain1")
+	suite.Require().NoError(err)
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	suite.Require().NoError(err)
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	suite.Require().NoError(err)
+	actionKey, err := NewActionKey(classKey, "action1")
+	suite.Require().NoError(err)
+	paramKey, err := NewParameterKey(actionKey, "amount")
+	suite.Require().NoError(err)
+
+	tests := []struct {
+		testName     string
+		parameterKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		{
+			testName:     "ok",
+			parameterKey: paramKey,
+			subKey:       "0",
+			expected:     helper.Must(newKey(paramKey.String(), KEY_TYPE_PARAMETER_INVARIANT, "0")),
+		},
+		{
+			testName:     "error empty parent",
+			parameterKey: Key{},
+			subKey:       "0",
+			errstr:       "parent key cannot be of type '' for 'pinvariant' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			parameterKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "0",
+			errstr:       "parent key cannot be of type 'actor' for 'pinvariant' key",
+		},
+		{
+			testName:     "error not integer subKey",
+			parameterKey: paramKey,
+			subKey:       "not_int",
+			errstr:       "parameter invariant key must be a valid integer",
+		},
+		{
+			testName:     "error blank subKey",
+			parameterKey: paramKey,
+			subKey:       "",
+			errstr:       "sub key is required",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.Run(tt.testName, func() {
+			key, err := NewParameterInvariantKey(tt.parameterKey, tt.subKey)
+			if tt.errstr == "" {
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
+			} else {
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+// TestParameterKey_ValidateParent verifies the multi-parent parent check used
+// downstream by validateRequiredParentOneOf for parameters.
+func (suite *KeyTypeSuite) TestParameterKey_ValidateParent() {
+	domainKey := helper.Must(NewDomainKey("domain1"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))
+	actionKey := helper.Must(NewActionKey(classKey, "action1"))
+	queryKey := helper.Must(NewQueryKey(classKey, "query1"))
+	eventKey := helper.Must(NewEventKey(classKey, "event1"))
+
+	paramKey := helper.Must(NewParameterKey(actionKey, "amount"))
+
+	// Correct parent (the action that produced the key).
+	suite.Require().NoError(paramKey.ValidateParent(&actionKey))
+
+	// Wrong allowed-type parent: a different action's key string.
+	otherAction := helper.Must(NewActionKey(classKey, "other"))
+	suite.Require().ErrorContains(paramKey.ValidateParent(&otherAction), "does not match expected parent")
+
+	// Right type, wrong key value: query and event of the same class.
+	suite.Require().ErrorContains(paramKey.ValidateParent(&queryKey), "does not match expected parent")
+	suite.Require().ErrorContains(paramKey.ValidateParent(&eventKey), "does not match expected parent")
+
+	// Disallowed parent type entirely (class).
+	suite.Require().ErrorContains(paramKey.ValidateParent(&classKey), "requires parent of type")
+
+	// Nil parent.
+	suite.Require().ErrorContains(paramKey.ValidateParent(nil), "requires a parent")
+}
+
+func (suite *KeyTypeSuite) TestNewDataTypeKey() {
+	domainKey := helper.Must(NewDomainKey("domain1"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))
+	attrKey := helper.Must(NewAttributeKey(classKey, "amount"))
+	actionKey := helper.Must(NewActionKey(classKey, "action1"))
+	paramKey := helper.Must(NewParameterKey(actionKey, "amount"))
+
+	rootAttrDT := helper.Must(NewDataTypeKey(attrKey, ""))
+	rootParamDT := helper.Must(NewDataTypeKey(paramKey, ""))
+
+	tests := []struct {
+		testName  string
+		parentKey Key
+		subKey    string
+		expected  Key
+		errstr    string
+	}{
+		{
+			testName:  "ok root under attribute (empty subKey defaults to sentinel)",
+			parentKey: attrKey,
+			subKey:    "",
+			expected:  helper.Must(newKey(attrKey.String(), KEY_TYPE_DATA_TYPE, DATA_TYPE_ROOT_SUBKEY)),
+		},
+		{
+			testName:  "ok root under attribute (explicit sentinel)",
+			parentKey: attrKey,
+			subKey:    DATA_TYPE_ROOT_SUBKEY,
+			expected:  helper.Must(newKey(attrKey.String(), KEY_TYPE_DATA_TYPE, DATA_TYPE_ROOT_SUBKEY)),
+		},
+		{
+			testName:  "ok root under parameter",
+			parentKey: paramKey,
+			subKey:    "",
+			expected:  helper.Must(newKey(paramKey.String(), KEY_TYPE_DATA_TYPE, DATA_TYPE_ROOT_SUBKEY)),
+		},
+		{
+			testName:  "ok nested under datatype (field name)",
+			parentKey: rootAttrDT,
+			subKey:    "x",
+			expected:  helper.Must(newKey(rootAttrDT.String(), KEY_TYPE_DATA_TYPE, "x")),
+		},
+		{
+			testName:  "ok nested under datatype on parameter",
+			parentKey: rootParamDT,
+			subKey:    "y",
+			expected:  helper.Must(newKey(rootParamDT.String(), KEY_TYPE_DATA_TYPE, "y")),
+		},
+		{
+			testName:  "error root under attribute with non-sentinel subKey",
+			parentKey: attrKey,
+			subKey:    "x",
+			errstr:    "requires subKey 'self'",
+		},
+		{
+			testName:  "error nested with empty subKey",
+			parentKey: rootAttrDT,
+			subKey:    "",
+			errstr:    "requires a non-empty subKey",
+		},
+		{
+			testName:  "error nested with reserved sentinel subKey",
+			parentKey: rootAttrDT,
+			subKey:    DATA_TYPE_ROOT_SUBKEY,
+			errstr:    "reserved root sentinel",
+		},
+		{
+			testName:  "error wrong parent type (class)",
+			parentKey: classKey,
+			subKey:    "",
+			errstr:    "parent key cannot be of type 'class' for 'datatype' key",
+		},
+		{
+			testName:  "error wrong parent type (action)",
+			parentKey: actionKey,
+			subKey:    "",
+			errstr:    "parent key cannot be of type 'action' for 'datatype' key",
+		},
+		{
+			testName:  "error empty parent",
+			parentKey: Key{},
+			subKey:    "",
+			errstr:    "parent key cannot be of type '' for 'datatype' key",
+		},
+		{
+			testName:  "error nested field name with space",
+			parentKey: rootAttrDT,
+			subKey:    "has space",
+			errstr:    "must match pattern",
+		},
+	}
+	for _, tt := range tests {
+		_ = suite.Run(tt.testName, func() {
+			key, err := NewDataTypeKey(tt.parentKey, tt.subKey)
+			if tt.errstr == "" {
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
+			} else {
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
+			}
+		})
+	}
+}
+
+// TestDataTypeKey_NestedThreeDeep verifies arbitrary-depth record nesting:
+// attribute -> datatype(self) -> datatype(x) -> datatype(y) -> datatype(z)
+// At each level the data type's parent is the previous data type's full key.
+func (suite *KeyTypeSuite) TestDataTypeKey_NestedThreeDeep() {
+	domainKey := helper.Must(NewDomainKey("domain1"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))
+	attrKey := helper.Must(NewAttributeKey(classKey, "outer"))
+
+	level0 := helper.Must(NewDataTypeKey(attrKey, ""))
+	level1 := helper.Must(NewDataTypeKey(level0, "x"))
+	level2 := helper.Must(NewDataTypeKey(level1, "y"))
+	level3 := helper.Must(NewDataTypeKey(level2, "z"))
+
+	suite.Equal("domain/domain1/subdomain/subdomain1/class/class1/attribute/outer/datatype/self", level0.String())
+	suite.Equal("domain/domain1/subdomain/subdomain1/class/class1/attribute/outer/datatype/self/datatype/x", level1.String())
+	suite.Equal("domain/domain1/subdomain/subdomain1/class/class1/attribute/outer/datatype/self/datatype/x/datatype/y", level2.String())
+	suite.Equal("domain/domain1/subdomain/subdomain1/class/class1/attribute/outer/datatype/self/datatype/x/datatype/y/datatype/z", level3.String())
+
+	// Parent validation should succeed at each level when given the correct parent.
+	suite.Require().NoError(level1.ValidateParent(&level0))
+	suite.Require().NoError(level2.ValidateParent(&level1))
+	suite.Require().NoError(level3.ValidateParent(&level2))
+
+	// Round-trip through ParseKey preserves the structure.
+	parsed, err := ParseKey(level3.String())
+	suite.Require().NoError(err)
+	suite.Equal(level3.String(), parsed.String())
+	suite.Equal(KEY_TYPE_DATA_TYPE, parsed.KeyType)
+	suite.Equal("z", parsed.SubKey)
 }

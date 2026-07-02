@@ -1,6 +1,10 @@
 package state
 
 import (
+	"fmt"
+	"maps"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -24,6 +28,9 @@ type BindingsBuilder struct {
 
 	// derivedResolver computes derived attribute values on-demand (optional)
 	derivedResolver DerivedAttributeResolver
+
+	// namedSetValues holds pre-evaluated model named sets keyed by nset SubKey.
+	namedSetValues map[string]object.Object
 }
 
 // NewBindingsBuilder creates a new bindings builder for the given simulation state.
@@ -43,17 +50,65 @@ func NewBindingsBuilderWithRelations(state *SimulationState, relationCtx *evalua
 	}
 }
 
+// NamedSetValues returns pre-evaluated named set values keyed by set SubKey.
+func (b *BindingsBuilder) NamedSetValues() map[string]object.Object {
+	if len(b.namedSetValues) == 0 {
+		return nil
+	}
+	copyMap := make(map[string]object.Object, len(b.namedSetValues))
+	maps.Copy(copyMap, b.namedSetValues)
+	return copyMap
+}
+
+// RegisterNamedSets evaluates and caches model-level named sets for expression lookup.
+func (b *BindingsBuilder) RegisterNamedSets(model *core.Model) error {
+	b.namedSetValues = make(map[string]object.Object)
+	if len(model.NamedSets) == 0 {
+		return nil
+	}
+
+	evalBindings := evaluator.NewBindings()
+	for _, ns := range model.NamedSets {
+		if ns.Spec.Expression == nil {
+			return fmt.Errorf("named set %q has no lowered expression", ns.Name)
+		}
+		result := evaluator.Eval(ns.Spec.Expression, evalBindings)
+		if result.IsError() {
+			return fmt.Errorf("named set %q: %s", ns.Name, result.Error.Inspect())
+		}
+		b.namedSetValues[ns.Key.SubKey] = result.Value
+	}
+	return nil
+}
+
+func (b *BindingsBuilder) applyNamedSets(bindings *evaluator.Bindings) {
+	for name, value := range b.namedSetValues {
+		bindings.Set(name, value, evaluator.NamespaceGlobal)
+	}
+}
+
 // BuildGlobal creates a root bindings context with global state variables.
 // This is suitable for evaluating model-level invariants.
 func (b *BindingsBuilder) BuildGlobal() *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
 	bindings.SetRelationContext(b.buildRelationContext())
+	b.applyNamedSets(bindings)
 	return bindings
 }
 
 // SetDerivedResolver sets the resolver used to compute derived attribute values.
 func (b *BindingsBuilder) SetDerivedResolver(resolver DerivedAttributeResolver) {
 	b.derivedResolver = resolver
+}
+
+// BuildForInstanceBase creates bindings for an instance without resolving derived attributes.
+// Use this when evaluating a DerivationPolicy to avoid recursive derived resolution.
+func (b *BindingsBuilder) BuildForInstanceBase(instance *ClassInstance) *evaluator.Bindings {
+	bindings := evaluator.NewBindings()
+	bindings.SetRelationContext(b.buildRelationContext())
+	child := bindings.WithSelfAndClass(instance.Attributes, instance.ClassKey.String())
+	b.applyNamedSets(child)
+	return child
 }
 
 // BuildForInstance creates bindings with "self" set to the given instance.
@@ -67,7 +122,9 @@ func (b *BindingsBuilder) BuildForInstance(instance *ClassInstance) *evaluator.B
 	attrs := b.resolveAttributes(instance)
 
 	// Create a child scope with self set
-	return bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+	child := bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+	b.applyNamedSets(child)
+	return child
 }
 
 // BuildForInstanceWithVariables creates bindings with "self" and additional variables.
@@ -84,6 +141,7 @@ func (b *BindingsBuilder) BuildForInstanceWithVariables(
 		bindings.Set(name, value, evaluator.NamespaceLocal)
 	}
 
+	b.applyNamedSets(bindings)
 	return bindings
 }
 
@@ -111,6 +169,7 @@ func (b *BindingsBuilder) BuildWithClassInstances(classNameMap map[identity.Key]
 		bindings.Set(className, classSet, evaluator.NamespaceGlobal)
 	}
 
+	b.applyNamedSets(bindings)
 	return bindings
 }
 
@@ -126,6 +185,19 @@ func (b *BindingsBuilder) BuildWithClassInstancesForInstance(
 
 	// Create a child scope with self set
 	return bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+}
+
+// BuildWithClassInstancesForInstanceWithVariables combines class instance sets, self, and parameters.
+func (b *BindingsBuilder) BuildWithClassInstancesForInstanceWithVariables(
+	classNameMap map[identity.Key]string,
+	instance *ClassInstance,
+	variables map[string]object.Object,
+) *evaluator.Bindings {
+	bindings := b.BuildWithClassInstancesForInstance(classNameMap, instance)
+	for name, value := range variables {
+		bindings.Set(name, value, evaluator.NamespaceLocal)
+	}
+	return bindings
 }
 
 // resolveAttributes returns the instance's attributes with derived values injected.
@@ -154,9 +226,8 @@ func (b *BindingsBuilder) buildRelationContext() *evaluator.RelationContext {
 		b.relationCtx = evaluator.NewRelationContext()
 	}
 
-	// Sync the link table from simulation state
-	// The relation context's link table is separate - we need to sync it
 	b.syncLinks()
+	b.syncAssociationLinks()
 
 	return b.relationCtx
 }
@@ -183,6 +254,45 @@ func (b *BindingsBuilder) syncLinks() {
 			}
 		}
 	}
+}
+
+func (b *BindingsBuilder) syncAssociationLinks() {
+	b.relationCtx.ClearAssociationClassRows()
+
+	for _, link := range b.state.AssociationLinks().AllLinks() {
+		fromInstance := b.state.GetInstance(link.FromEndpointID)
+		linkInstance := b.state.GetInstance(link.LinkInstanceID)
+		toInstance := b.state.GetInstance(link.ToEndpointID)
+		if fromInstance == nil || linkInstance == nil || toInstance == nil {
+			continue
+		}
+
+		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
+		b.relationCtx.CreateLink(hostKey, fromInstance.Attributes, toInstance.Attributes)
+		b.relationCtx.AddAssociationClassRow(
+			hostKey,
+			fromInstance.Attributes,
+			toInstance.Attributes,
+			linkInstance.Attributes,
+		)
+	}
+}
+
+// AddAssociationClassHost registers a host association materialized by association-class instances.
+func (b *BindingsBuilder) AddAssociationClassHost(
+	assocKey identity.Key,
+	name string,
+	endpoints evaluator.AssociationHostEndpoints,
+	linkClassName string,
+	mults evaluator.AssociationHostMultiplicities,
+) {
+	b.relationCtx.AddAssociationClassHost(
+		evaluator.AssociationKey(assocKey.String()),
+		name,
+		endpoints,
+		linkClassName,
+		mults,
+	)
 }
 
 // State returns the underlying simulation state.

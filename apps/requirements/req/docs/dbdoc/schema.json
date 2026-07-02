@@ -23,6 +23,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         }
       ],
       "indexes": [
@@ -132,6 +138,12 @@
           "type": "text",
           "nullable": true,
           "comment": "Optional type specification string for the logic target (e.g., Int, STRING)."
+        },
+        {
+          "name": "destroy_event_specification",
+          "type": "text",
+          "nullable": true,
+          "comment": "Optional peer destroy event call for destroy-type logic (e.g., _destroy(b)); uses logic.notation for notation."
         }
       ],
       "indexes": [
@@ -642,6 +654,12 @@
           "comment": "A summary description."
         },
         {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
+        },
+        {
           "name": "realized",
           "type": "boolean",
           "nullable": false,
@@ -765,6 +783,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         },
         {
           "name": "uml_comment",
@@ -1039,6 +1063,12 @@
           "comment": "A summary description."
         },
         {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
+        },
+        {
           "name": "uml_comment",
           "type": "text",
           "nullable": true,
@@ -1141,6 +1171,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         },
         {
           "name": "actor_type",
@@ -1317,6 +1353,12 @@
           "comment": "If a collection and there is a maximum number of items, the maximum."
         },
         {
+          "name": "element_data_type_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "When a collection element is a record or nested collection, the child data_type row key; NULL when the element is atomic on this row."
+        },
+        {
           "name": "type_spec_notation",
           "type": "notation",
           "nullable": true,
@@ -1411,6 +1453,21 @@
           "table": "public.data_type",
           "referenced_table": "",
           "columns": [
+            "model_key",
+            "data_type_key"
+          ]
+        },
+        {
+          "name": "fk_data_type_element",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, element_data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
+          "table": "public.data_type",
+          "referenced_table": "data_type",
+          "columns": [
+            "model_key",
+            "element_data_type_key"
+          ],
+          "referenced_columns": [
             "model_key",
             "data_type_key"
           ]
@@ -1993,6 +2050,12 @@
           "comment": "A summary description."
         },
         {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
+        },
+        {
           "name": "uml_comment",
           "type": "text",
           "nullable": true,
@@ -2144,6 +2207,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         },
         {
           "name": "uml_comment",
@@ -2314,6 +2383,12 @@
           "comment": "The class this attribute is part of."
         },
         {
+          "name": "sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Zero-based position of this attribute within its class; preserves source declaration order."
+        },
+        {
           "name": "name",
           "type": "text",
           "nullable": false,
@@ -2416,6 +2491,16 @@
           "referenced_table": "",
           "columns": [
             "nullable"
+          ]
+        },
+        {
+          "name": "attribute_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL sort_order",
+          "table": "public.attribute",
+          "referenced_table": "",
+          "columns": [
+            "sort_order"
           ]
         },
         {
@@ -3079,6 +3164,277 @@
       ]
     },
     {
+      "name": "public.association_uniqueness_attribute",
+      "type": "BASE TABLE",
+      "comment": "Attributes that form one side of an association uniqueness tuple.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "association_key",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "end_side",
+          "type": "association_end",
+          "nullable": false,
+          "comment": "Whether the attribute belongs to the from or to endpoint class."
+        },
+        {
+          "name": "attribute_sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Order of this attribute within the from or to tuple."
+        },
+        {
+          "name": "attribute_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The endpoint-class attribute that contributes to the uniqueness tuple."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "association_uniqueness_attribute_pkey",
+          "def": "CREATE UNIQUE INDEX association_uniqueness_attribute_pkey ON public.association_uniqueness_attribute USING btree (model_key, association_key, end_side, attribute_sort_order)",
+          "table": "public.association_uniqueness_attribute",
+          "columns": [
+            "model_key",
+            "association_key",
+            "end_side",
+            "attribute_sort_order"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "association_uniqueness_attribute_association_key_not_null",
+          "type": "n",
+          "def": "NOT NULL association_key",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "association_key"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_attribute_key_not_null",
+          "type": "n",
+          "def": "NOT NULL attribute_key",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "attribute_key"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_attribute_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL attribute_sort_order",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "attribute_sort_order"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_end_side_not_null",
+          "type": "n",
+          "def": "NOT NULL end_side",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "end_side"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "fk_assoc_uniq_attr_attribute",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "attribute",
+          "columns": [
+            "model_key",
+            "attribute_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "attribute_key"
+          ]
+        },
+        {
+          "name": "fk_assoc_uniq_attr_association",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, association_key) REFERENCES association(model_key, association_key) ON DELETE CASCADE",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "association",
+          "columns": [
+            "model_key",
+            "association_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "association_key"
+          ]
+        },
+        {
+          "name": "association_uniqueness_attribute_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, association_key, end_side, attribute_sort_order)",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "association_key",
+            "end_side",
+            "attribute_sort_order"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.association_invariant",
+      "type": "BASE TABLE",
+      "comment": "Join table linking class associations to their invariant logic predicates.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this association invariant belongs to."
+        },
+        {
+          "name": "association_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The association this invariant constrains."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic predicate that must hold for the association link set."
+        },
+        {
+          "name": "to_class_anchor",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "True when the invariant is anchored on the association to-class rather than the default from-class."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "association_invariant_pkey",
+          "def": "CREATE UNIQUE INDEX association_invariant_pkey ON public.association_invariant USING btree (model_key, association_key, logic_key)",
+          "table": "public.association_invariant",
+          "columns": [
+            "model_key",
+            "association_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "association_invariant_association_key_not_null",
+          "type": "n",
+          "def": "NOT NULL association_key",
+          "table": "public.association_invariant",
+          "referenced_table": "",
+          "columns": [
+            "association_key"
+          ]
+        },
+        {
+          "name": "association_invariant_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.association_invariant",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "association_invariant_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.association_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "association_invariant_to_class_anchor_not_null",
+          "type": "n",
+          "def": "NOT NULL to_class_anchor",
+          "table": "public.association_invariant",
+          "referenced_table": "",
+          "columns": [
+            "to_class_anchor"
+          ]
+        },
+        {
+          "name": "fk_assoc_invariant_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.association_invariant",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_assoc_invariant_association",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, association_key) REFERENCES association(model_key, association_key) ON DELETE CASCADE",
+          "table": "public.association_invariant",
+          "referenced_table": "association",
+          "columns": [
+            "model_key",
+            "association_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "association_key"
+          ]
+        },
+        {
+          "name": "association_invariant_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, association_key, logic_key)",
+          "table": "public.association_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "association_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
       "name": "public.query",
       "type": "BASE TABLE",
       "comment": "A business logic query of a class that does not change the state of a class.",
@@ -3240,6 +3596,13 @@
           "type": "text",
           "nullable": true,
           "comment": "If the rules are parsable, the data type they parse into."
+        },
+        {
+          "name": "nullable",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether absent (NULL) is a valid value for this parameter."
         }
       ],
       "indexes": [
@@ -3273,6 +3636,16 @@
           "referenced_table": "",
           "columns": [
             "name"
+          ]
+        },
+        {
+          "name": "query_parameter_nullable_not_null",
+          "type": "n",
+          "def": "NOT NULL nullable",
+          "table": "public.query_parameter",
+          "referenced_table": "",
+          "columns": [
+            "nullable"
           ]
         },
         {
@@ -3345,6 +3718,137 @@
             "model_key",
             "query_key",
             "parameter_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.query_parameter_invariant",
+      "type": "BASE TABLE",
+      "comment": "Join table linking query parameters to their invariant logic predicates.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this query parameter invariant belongs to."
+        },
+        {
+          "name": "query_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The query this parameter invariant is part of."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The parameter this invariant constrains."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic predicate that must hold for the parameter value."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "query_parameter_invariant_pkey",
+          "def": "CREATE UNIQUE INDEX query_parameter_invariant_pkey ON public.query_parameter_invariant USING btree (model_key, query_key, parameter_key, logic_key)",
+          "table": "public.query_parameter_invariant",
+          "columns": [
+            "model_key",
+            "query_key",
+            "parameter_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "query_parameter_invariant_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.query_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "query_parameter_invariant_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.query_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "query_parameter_invariant_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.query_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "query_parameter_invariant_query_key_not_null",
+          "type": "n",
+          "def": "NOT NULL query_key",
+          "table": "public.query_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "query_key"
+          ]
+        },
+        {
+          "name": "fk_query_param_invariant_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.query_parameter_invariant",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_query_param_invariant_parameter",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, query_key, parameter_key) REFERENCES query_parameter(model_key, query_key, parameter_key) ON DELETE CASCADE",
+          "table": "public.query_parameter_invariant",
+          "referenced_table": "query_parameter",
+          "columns": [
+            "model_key",
+            "query_key",
+            "parameter_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "query_key",
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "query_parameter_invariant_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, query_key, parameter_key, logic_key)",
+          "table": "public.query_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "query_key",
+            "parameter_key",
+            "logic_key"
           ]
         }
       ]
@@ -3812,7 +4316,7 @@
     {
       "name": "public.event_parameter",
       "type": "BASE TABLE",
-      "comment": "A parameter of an event.",
+      "comment": "An ordered parameter name carried by an event payload.",
       "columns": [
         {
           "name": "model_key",
@@ -3824,7 +4328,7 @@
           "name": "event_key",
           "type": "text",
           "nullable": false,
-          "comment": "The event this parameter is part of."
+          "comment": "The event this parameter name is part of."
         },
         {
           "name": "parameter_key",
@@ -3842,19 +4346,7 @@
           "name": "sort_order",
           "type": "integer",
           "nullable": false,
-          "comment": "Parameters are an ordered list."
-        },
-        {
-          "name": "data_type_rules",
-          "type": "text",
-          "nullable": true,
-          "comment": "The rules for a well-formed value."
-        },
-        {
-          "name": "data_type_key",
-          "type": "text",
-          "nullable": true,
-          "comment": "If the rules are parsable, the data type they parse into."
+          "comment": "Parameter names are an ordered list."
         }
       ],
       "indexes": [
@@ -3918,21 +4410,6 @@
           "referenced_table": "",
           "columns": [
             "sort_order"
-          ]
-        },
-        {
-          "name": "fk_event_parameter_data_type",
-          "type": "FOREIGN KEY",
-          "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
-          "table": "public.event_parameter",
-          "referenced_table": "data_type",
-          "columns": [
-            "model_key",
-            "data_type_key"
-          ],
-          "referenced_columns": [
-            "model_key",
-            "data_type_key"
           ]
         },
         {
@@ -4251,6 +4728,13 @@
           "type": "text",
           "nullable": true,
           "comment": "If the rules are parsable, the data type they parse into."
+        },
+        {
+          "name": "nullable",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether absent (NULL) is a valid value for this parameter."
         }
       ],
       "indexes": [
@@ -4294,6 +4778,16 @@
           "referenced_table": "",
           "columns": [
             "name"
+          ]
+        },
+        {
+          "name": "action_parameter_nullable_not_null",
+          "type": "n",
+          "def": "NOT NULL nullable",
+          "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "nullable"
           ]
         },
         {
@@ -4351,6 +4845,397 @@
           "type": "PRIMARY KEY",
           "def": "PRIMARY KEY (model_key, action_key, parameter_key)",
           "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_parameter_invariant",
+      "type": "BASE TABLE",
+      "comment": "Join table linking action parameters to their invariant logic predicates.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this action parameter invariant belongs to."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action this parameter invariant is part of."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The parameter this invariant constrains."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic predicate that must hold for the parameter value."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_parameter_invariant_pkey",
+          "def": "CREATE UNIQUE INDEX action_parameter_invariant_pkey ON public.action_parameter_invariant USING btree (model_key, action_key, parameter_key, logic_key)",
+          "table": "public.action_parameter_invariant",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_parameter_invariant_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_parameter_invariant_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.action_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "action_parameter_invariant_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "action_parameter_invariant_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.action_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_invariant_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_invariant",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_invariant_parameter",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_invariant",
+          "referenced_table": "action_parameter",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "action_parameter_invariant_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, parameter_key, logic_key)",
+          "table": "public.action_parameter_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_parameter_simulation_require",
+      "type": "BASE TABLE",
+      "comment": "Simulator-only sampling preconditions for an action parameter.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this join row belongs to."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action that owns the parameter."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The parameter subkey."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "Assessment logic that must hold before the parameter may be sampled."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_parameter_simulation_require_pkey",
+          "def": "CREATE UNIQUE INDEX action_parameter_simulation_require_pkey ON public.action_parameter_simulation_require USING btree (model_key, action_key, parameter_key, logic_key)",
+          "table": "public.action_parameter_simulation_require",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_parameter_simulation_require_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_require_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_require_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_require_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_sim_req_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_sim_req_parameter",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "action_parameter",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_require_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, parameter_key, logic_key)",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_parameter_simulation_spec",
+      "type": "BASE TABLE",
+      "comment": "Simulator-only value expression for sampling an action parameter.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this join row belongs to."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action that owns the parameter."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The parameter subkey."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "Value logic that evaluates to the sampled parameter value."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_parameter_simulation_spec_pkey",
+          "def": "CREATE UNIQUE INDEX action_parameter_simulation_spec_pkey ON public.action_parameter_simulation_spec USING btree (model_key, action_key, parameter_key)",
+          "table": "public.action_parameter_simulation_spec",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_parameter_simulation_spec_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_spec_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_spec_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_spec_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_sim_spec_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_action_param_sim_spec_parameter",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "action_parameter",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "action_parameter_simulation_spec_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, parameter_key)",
+          "table": "public.action_parameter_simulation_spec",
           "referenced_table": "",
           "columns": [
             "model_key",
@@ -5081,6 +5966,12 @@
           "comment": "A summary description."
         },
         {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
+        },
+        {
           "name": "uml_comment",
           "type": "text",
           "nullable": true,
@@ -5208,6 +6099,12 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
+        },
+        {
+          "name": "unfinished_notes",
+          "type": "text",
+          "nullable": true,
+          "comment": "Scratch notes not yet placed in final requirement locations."
         },
         {
           "name": "level",
@@ -6467,6 +7364,21 @@
       "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.data_type",
+      "columns": [
+        "model_key",
+        "element_data_type_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.data_type",
+      "parent_columns": [
+        "model_key",
+        "data_type_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, element_data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.data_type_atomic",
       "columns": [
         "model_key",
@@ -6836,6 +7748,66 @@
       "def": "FOREIGN KEY (model_key, to_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.association_uniqueness_attribute",
+      "columns": [
+        "model_key",
+        "attribute_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.attribute",
+      "parent_columns": [
+        "model_key",
+        "attribute_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.association_uniqueness_attribute",
+      "columns": [
+        "model_key",
+        "association_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.association",
+      "parent_columns": [
+        "model_key",
+        "association_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, association_key) REFERENCES association(model_key, association_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.association_invariant",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.association_invariant",
+      "columns": [
+        "model_key",
+        "association_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.association",
+      "parent_columns": [
+        "model_key",
+        "association_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, association_key) REFERENCES association(model_key, association_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.query",
       "columns": [
         "model_key",
@@ -6879,6 +7851,38 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.query_parameter_invariant",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.query_parameter_invariant",
+      "columns": [
+        "model_key",
+        "query_key",
+        "parameter_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.query_parameter",
+      "parent_columns": [
+        "model_key",
+        "query_key",
+        "parameter_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, query_key, parameter_key) REFERENCES query_parameter(model_key, query_key, parameter_key) ON DELETE CASCADE"
     },
     {
       "table": "public.query_require",
@@ -6974,21 +7978,6 @@
       "table": "public.event_parameter",
       "columns": [
         "model_key",
-        "data_type_key"
-      ],
-      "cardinality": "zero_or_more",
-      "parent_table": "public.data_type",
-      "parent_columns": [
-        "model_key",
-        "data_type_key"
-      ],
-      "parent_cardinality": "exactly_one",
-      "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
-    },
-    {
-      "table": "public.event_parameter",
-      "columns": [
-        "model_key",
         "event_key"
       ],
       "cardinality": "zero_or_more",
@@ -7074,6 +8063,102 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_invariant",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_invariant",
+      "columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action_parameter",
+      "parent_columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_simulation_require",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_simulation_require",
+      "columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action_parameter",
+      "parent_columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_simulation_spec",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter_simulation_spec",
+      "columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "cardinality": "zero_or_one",
+      "parent_table": "public.action_parameter",
+      "parent_columns": [
+        "model_key",
+        "action_key",
+        "parameter_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE"
     },
     {
       "table": "public.action_require",
@@ -7602,6 +8687,13 @@
       ]
     },
     {
+      "name": "public.association_end",
+      "values": [
+        "from",
+        "to"
+      ]
+    },
+    {
       "name": "public.bound_limit_type",
       "values": [
         "closed",
@@ -7623,6 +8715,7 @@
     {
       "name": "public.constraint_type",
       "values": [
+        "datetime",
         "enumeration",
         "object",
         "reference",
@@ -7633,7 +8726,7 @@
     {
       "name": "public.leaf_type",
       "values": [
-        "delete",
+        "destroy",
         "event",
         "query",
         "scenario"
@@ -7643,6 +8736,7 @@
       "name": "public.logic_type",
       "values": [
         "assessment",
+        "destroy",
         "let",
         "query",
         "safety_rule",
@@ -7700,7 +8794,7 @@
   ],
   "driver": {
     "name": "postgres",
-    "database_version": "PostgreSQL 18.1 (Ubuntu 18.1-1.pgdg24.04+2) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0, 64-bit",
+    "database_version": "PostgreSQL 18.3 (Ubuntu 18.3-1.pgdg24.04+1) on aarch64-unknown-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
     "meta": {
       "current_schema": "public",
       "search_paths": [

@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -18,11 +19,13 @@ func LowerAllExpressions(model *core.Model) error {
 	globalFunctions := BuildGlobalFunctionMap(model)
 	namedSets := BuildNamedSetMap(model)
 	allActions := BuildAllActionsMap(model)
+	classNames := BuildClassNameMap(model)
 
 	// 1. Lower model-level invariants (no class context).
 	modelCtx := &LowerContext{
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
+		ClassNames:      classNames,
 		AllActions:      allActions,
 	}
 	modelPF := NewExpressionParseFunc(modelCtx)
@@ -41,6 +44,7 @@ func LowerAllExpressions(model *core.Model) error {
 		gfCtx := &LowerContext{
 			GlobalFunctions: globalFunctions,
 			NamedSets:       namedSets,
+			ClassNames:      classNames,
 			AllActions:      allActions,
 			Parameters:      params,
 		}
@@ -59,11 +63,14 @@ func LowerAllExpressions(model *core.Model) error {
 		model.NamedSets[nsKey] = ns
 	}
 
+	allAssociations := model.GetClassAssociations()
+
 	// 4. Walk domains → subdomains → classes.
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if err := lowerAllClassExpressions(&class, globalFunctions, namedSets, allActions); err != nil {
+				subdomainMaps := SubdomainClassMaps{Associations: allAssociations, Classes: subdomain.Classes}
+				if err := lowerAllClassExpressions(&class, globalFunctions, namedSets, classNames, allActions, subdomainMaps); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -77,21 +84,9 @@ func LowerAllExpressions(model *core.Model) error {
 }
 
 // lowerAllClassExpressions re-creates all ExpressionSpecs in a class with full context.
-func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSets, allActions map[string]identity.Key) error {
-	// Build class-level context maps.
-	attrNames := BuildAttributeNameMap(class)
-	actionNames := BuildActionNameMap(class)
-	queryNames := BuildQueryNameMap(class)
-
-	classCtx := &LowerContext{
-		ClassKey:        class.Key,
-		AttributeNames:  attrNames,
-		ActionNames:     actionNames,
-		QueryNames:      queryNames,
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		AllActions:      allActions,
-	}
+func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key, subdomainMaps SubdomainClassMaps) error {
+	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, subdomainMaps.Associations, subdomainMaps.Classes)
+	classCtx.ClassNames = classNames
 	classPF := NewExpressionParseFunc(classCtx)
 
 	// Class invariants.
@@ -102,18 +97,18 @@ func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSe
 	}
 
 	// Attributes: derivation policy and invariants.
-	for aKey, attr := range class.Attributes {
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
 		if attr.DerivationPolicy != nil {
 			if err := relowerSpec(&attr.DerivationPolicy.Spec, classPF); err != nil {
-				return fmt.Errorf("attribute %q derivation: %w", aKey.String(), err)
+				return fmt.Errorf("attribute %q derivation: %w", attr.Key.String(), err)
 			}
 		}
-		for i := range attr.Invariants {
-			if err := relowerSpec(&attr.Invariants[i].Spec, classPF); err != nil {
-				return fmt.Errorf("attribute %q invariant %d: %w", aKey.String(), i, err)
+		for j := range attr.Invariants {
+			if err := relowerSpec(&attr.Invariants[j].Spec, classPF); err != nil {
+				return fmt.Errorf("attribute %q invariant %d: %w", attr.Key.String(), j, err)
 			}
 		}
-		class.Attributes[aKey] = attr
 	}
 
 	// Guards.
@@ -124,48 +119,111 @@ func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSe
 		class.Guards[gKey] = guard
 	}
 
-	// Actions.
 	for actKey, action := range class.Actions {
-		actCtx := ContextWithParameters(classCtx, action.Parameters)
-		actPF := NewExpressionParseFunc(actCtx)
-
-		for i := range action.Requires {
-			if err := relowerSpec(&action.Requires[i].Spec, actPF); err != nil {
-				return fmt.Errorf("action %q require %d: %w", actKey.String(), i, err)
-			}
-		}
-		for i := range action.Guarantees {
-			if err := relowerSpec(&action.Guarantees[i].Spec, actPF); err != nil {
-				return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
-			}
-		}
-		for i := range action.SafetyRules {
-			if err := relowerSpec(&action.SafetyRules[i].Spec, actPF); err != nil {
-				return fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err)
-			}
+		if err := relowerActionExpressions(actKey, &action, classCtx); err != nil {
+			return err
 		}
 		class.Actions[actKey] = action
 	}
 
-	// Queries.
 	for qKey, query := range class.Queries {
-		qCtx := ContextWithParameters(classCtx, query.Parameters)
-		qPF := NewExpressionParseFunc(qCtx)
-
-		for i := range query.Requires {
-			if err := relowerSpec(&query.Requires[i].Spec, qPF); err != nil {
-				return fmt.Errorf("query %q require %d: %w", qKey.String(), i, err)
-			}
-		}
-		for i := range query.Guarantees {
-			if err := relowerSpec(&query.Guarantees[i].Spec, qPF); err != nil {
-				return fmt.Errorf("query %q guarantee %d: %w", qKey.String(), i, err)
-			}
+		if err := relowerQueryExpressions(qKey, &query, classCtx); err != nil {
+			return err
 		}
 		class.Queries[qKey] = query
 	}
 
 	return nil
+}
+
+func relowerActionExpressions(actKey identity.Key, action *model_state.Action, classCtx *LowerContext) error {
+	actPF := NewExpressionParseFunc(ContextWithParameters(classCtx, action.Parameters))
+	for i := range action.Requires {
+		if err := relowerSpec(&action.Requires[i].Spec, actPF); err != nil {
+			return fmt.Errorf("action %q require %d: %w", actKey.String(), i, err)
+		}
+	}
+	for i := range action.Guarantees {
+		if err := relowerSpec(&action.Guarantees[i].Spec, actPF); err != nil {
+			return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
+		}
+	}
+	for i := range action.SafetyRules {
+		if err := relowerSpec(&action.SafetyRules[i].Spec, actPF); err != nil {
+			return fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err)
+		}
+	}
+	if err := relowerParameterInvariants(actKey.String(), "action", action.Parameters, actPF); err != nil {
+		return err
+	}
+	return relowerParameterSimulation(actKey.String(), "action", action.Parameters, classCtx)
+}
+
+func relowerQueryExpressions(qKey identity.Key, query *model_state.Query, classCtx *LowerContext) error {
+	qPF := NewExpressionParseFunc(ContextWithParameters(classCtx, query.Parameters))
+	for i := range query.Requires {
+		if err := relowerSpec(&query.Requires[i].Spec, qPF); err != nil {
+			return fmt.Errorf("query %q require %d: %w", qKey.String(), i, err)
+		}
+	}
+	for i := range query.Guarantees {
+		if err := relowerSpec(&query.Guarantees[i].Spec, qPF); err != nil {
+			return fmt.Errorf("query %q guarantee %d: %w", qKey.String(), i, err)
+		}
+	}
+	return relowerParameterInvariants(qKey.String(), "query", query.Parameters, qPF)
+}
+
+func relowerParameterInvariants(ownerKey, ownerKind string, params []model_state.Parameter, pf logic_spec.ExpressionParseFunc) error {
+	for i := range params {
+		for j := range params[i].Invariants {
+			if err := relowerSpec(&params[i].Invariants[j].Spec, pf); err != nil {
+				return fmt.Errorf("%s %q parameter %q invariant %d: %w", ownerKind, ownerKey, params[i].Name, j, err)
+			}
+		}
+	}
+	return nil
+}
+
+func relowerParameterSimulation(ownerKey, ownerKind string, params []model_state.Parameter, classCtx *LowerContext) error {
+	pf := NewExpressionParseFunc(classCtx)
+	for i := range params {
+		if params[i].Simulation == nil {
+			continue
+		}
+		for j := range params[i].Simulation.Requires {
+			if err := relowerSpec(&params[i].Simulation.Requires[j].Spec, pf); err != nil {
+				return fmt.Errorf("%s %q parameter %q simulation require %d: %w", ownerKind, ownerKey, params[i].Name, j, err)
+			}
+		}
+		if params[i].Simulation.Specification != nil {
+			if err := relowerSpec(&params[i].Simulation.Specification.Spec, pf); err != nil {
+				return fmt.Errorf("%s %q parameter %q simulation specification: %w", ownerKind, ownerKey, params[i].Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func relowerParameterSimulationStrict(ownerKey, ownerKind string, params []model_state.Parameter, classCtx *LowerContext) []error {
+	pf := NewExpressionParseFuncStrict(classCtx)
+	var errs []error
+	for i := range params {
+		if params[i].Simulation == nil {
+			continue
+		}
+		for j := range params[i].Simulation.Requires {
+			if err := relowerSpecStrict(&params[i].Simulation.Requires[j].Spec, pf); err != nil {
+				errs = append(errs, fmt.Errorf("%s %q parameter %q simulation require %d: %w", ownerKind, ownerKey, params[i].Name, j, err))
+			}
+		}
+		if params[i].Simulation.Specification != nil {
+			if err := relowerSpecStrict(&params[i].Simulation.Specification.Spec, pf); err != nil {
+				errs = append(errs, fmt.Errorf("%s %q parameter %q simulation specification: %w", ownerKind, ownerKey, params[i].Name, err))
+			}
+		}
+	}
+	return errs
 }
 
 // relowerSpec re-creates an ExpressionSpec using the given parse function.
@@ -189,6 +247,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 	globalFunctions := BuildGlobalFunctionMap(model)
 	namedSets := BuildNamedSetMap(model)
 	allActions := BuildAllActionsMap(model)
+	classNames := BuildClassNameMap(model)
 
 	var errs []error
 
@@ -196,6 +255,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 	modelCtx := &LowerContext{
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
+		ClassNames:      classNames,
 		AllActions:      allActions,
 	}
 	modelPF := NewExpressionParseFuncStrict(modelCtx)
@@ -214,6 +274,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 		gfCtx := &LowerContext{
 			GlobalFunctions: globalFunctions,
 			NamedSets:       namedSets,
+			ClassNames:      classNames,
 			AllActions:      allActions,
 			Parameters:      params,
 		}
@@ -232,11 +293,14 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 		model.NamedSets[nsKey] = ns
 	}
 
+	allAssociations := model.GetClassAssociations()
+
 	// Walk domains → subdomains → classes.
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if classErrs := lowerAllClassExpressionsStrict(&class, globalFunctions, namedSets, allActions); classErrs != nil {
+				subdomainMaps := SubdomainClassMaps{Associations: allAssociations, Classes: subdomain.Classes}
+				if classErrs := lowerAllClassExpressionsStrict(&class, globalFunctions, namedSets, classNames, allActions, subdomainMaps); classErrs != nil {
 					errs = append(errs, fmt.Errorf("class %q: %w", cKey.String(), classErrs))
 				}
 				subdomain.Classes[cKey] = class
@@ -252,20 +316,9 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 // lowerAllClassExpressionsStrict collects all expression errors in a class.
 //
 //complexity:cyclo:warn=20,fail=20 Walks all class expression sites.
-func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, namedSets, allActions map[string]identity.Key) error {
-	attrNames := BuildAttributeNameMap(class)
-	actionNames := BuildActionNameMap(class)
-	queryNames := BuildQueryNameMap(class)
-
-	classCtx := &LowerContext{
-		ClassKey:        class.Key,
-		AttributeNames:  attrNames,
-		ActionNames:     actionNames,
-		QueryNames:      queryNames,
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		AllActions:      allActions,
-	}
+func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key, subdomainMaps SubdomainClassMaps) error {
+	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, subdomainMaps.Associations, subdomainMaps.Classes)
+	classCtx.ClassNames = classNames
 	classPF := NewExpressionParseFuncStrict(classCtx)
 
 	var errs []error
@@ -278,18 +331,18 @@ func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, n
 	}
 
 	// Attributes: derivation policy and invariants.
-	for aKey, attr := range class.Attributes {
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
 		if attr.DerivationPolicy != nil {
 			if err := relowerSpecStrict(&attr.DerivationPolicy.Spec, classPF); err != nil {
-				errs = append(errs, fmt.Errorf("attribute %q derivation: %w", aKey.String(), err))
+				errs = append(errs, fmt.Errorf("attribute %q derivation: %w", attr.Key.String(), err))
 			}
 		}
-		for i := range attr.Invariants {
-			if err := relowerSpecStrict(&attr.Invariants[i].Spec, classPF); err != nil {
-				errs = append(errs, fmt.Errorf("attribute %q invariant %d: %w", aKey.String(), i, err))
+		for j := range attr.Invariants {
+			if err := relowerSpecStrict(&attr.Invariants[j].Spec, classPF); err != nil {
+				errs = append(errs, fmt.Errorf("attribute %q invariant %d: %w", attr.Key.String(), j, err))
 			}
 		}
-		class.Attributes[aKey] = attr
 	}
 
 	// Guards.
@@ -330,6 +383,14 @@ func lowerActionExpressionsStrict(class *model_class.Class, classCtx *LowerConte
 				errs = append(errs, fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err))
 			}
 		}
+		for i := range action.Parameters {
+			for j := range action.Parameters[i].Invariants {
+				if err := relowerSpecStrict(&action.Parameters[i].Invariants[j].Spec, actPF); err != nil {
+					errs = append(errs, fmt.Errorf("action %q parameter %q invariant %d: %w", actKey.String(), action.Parameters[i].Name, j, err))
+				}
+			}
+		}
+		errs = append(errs, relowerParameterSimulationStrict(actKey.String(), "action", action.Parameters, classCtx)...)
 		class.Actions[actKey] = action
 	}
 	return errs
@@ -349,6 +410,13 @@ func lowerQueryExpressionsStrict(class *model_class.Class, classCtx *LowerContex
 		for i := range query.Guarantees {
 			if err := relowerSpecStrict(&query.Guarantees[i].Spec, qPF); err != nil {
 				errs = append(errs, fmt.Errorf("query %q guarantee %d: %w", qKey.String(), i, err))
+			}
+		}
+		for i := range query.Parameters {
+			for j := range query.Parameters[i].Invariants {
+				if err := relowerSpecStrict(&query.Parameters[i].Invariants[j].Spec, qPF); err != nil {
+					errs = append(errs, fmt.Errorf("query %q parameter %q invariant %d: %w", qKey.String(), query.Parameters[i].Name, j, err))
+				}
 			}
 		}
 		class.Queries[qKey] = query

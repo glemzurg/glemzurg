@@ -18,10 +18,9 @@ import (
 
 func spanAttrDef(name string, lower, upper int) *model_class.Attribute {
 	dataTypeRules := fmt.Sprintf("[%d, %d]", lower, upper)
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false,
-		model_class.AttributeAnnotations{IndexNums: []uint{1}}))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), model_class.AttributeDetails{Name: name, Details: ""}, dataTypeRules, nil, false, model_class.AttributeAnnotations{IndexNums: []uint{1}}))
 	attr.DataType = &model_data_type.DataType{
-		Key:            attr.Key.String(),
+		Key:            helper.Must(identity.NewDataTypeKey(attr.Key, "")),
 		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
 			ConstraintType: "span",
@@ -38,14 +37,13 @@ func spanAttrDef(name string, lower, upper int) *model_class.Attribute {
 
 func enumAttrDef(name string, values []string) *model_class.Attribute {
 	dataTypeRules := "{" + strings.Join(values, ", ") + "}"
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false,
-		model_class.AttributeAnnotations{IndexNums: []uint{1}}))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), model_class.AttributeDetails{Name: name, Details: ""}, dataTypeRules, nil, false, model_class.AttributeAnnotations{IndexNums: []uint{1}}))
 	enums := make([]model_data_type.AtomicEnum, len(values))
 	for i, v := range values {
 		enums[i] = model_data_type.AtomicEnum{Value: v, SortOrder: i}
 	}
 	attr.DataType = &model_data_type.DataType{
-		Key:            attr.Key.String(),
+		Key:            helper.Must(identity.NewDataTypeKey(attr.Key, "")),
 		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
 			ConstraintType: "enumeration",
@@ -63,6 +61,33 @@ func makeIndexInfo(classKey identity.Key, indexes []invariants.IndexDefinition) 
 }
 
 // --- Tests ---
+
+func (s *ActionsSuite) TestGenerateIndexSafeValuesUsesAttributeFieldKeyNotDisplayName() {
+	classKey := mustKey("domain/d/subdomain/s/class/currency")
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
+
+	abbrAttr := helper.Must(model_class.NewAttribute(
+		mustKey("domain/d/subdomain/s/class/currency/attribute/abbr"),
+		model_class.AttributeDetails{Name: "Abbr", Details: ""},
+		"unconstrained",
+		nil,
+		false,
+		model_class.AttributeAnnotations{IndexNums: []uint{0}},
+	))
+	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
+		{
+			IndexNum:  0,
+			AttrNames: []string{"abbr"},
+			AttrDefs:  []*model_class.Attribute{&abbrAttr},
+		},
+	})
+
+	attrs := object.NewRecord()
+	err := generateIndexSafeValues(attrs, indexInfo, nil, rng)
+	s.Require().NoError(err)
+	s.NotNil(attrs.Get("abbr"))
+	s.Nil(attrs.Get("Abbr"))
+}
 
 func (s *ActionsSuite) TestGenerateIndexSafeValuesNoIndexes() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")

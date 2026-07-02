@@ -10,8 +10,9 @@ import (
 
 // inputModel represents the model.json file.
 type inputModel struct {
-	Name    string `json:"name"`
-	Details string `json:"details,omitempty"`
+	Name            string `json:"name"`
+	Details         string `json:"details,omitempty"`
+	UnfinishedNotes string `json:"unfinished_notes,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Invariants           []inputLogic                         `json:"-"`

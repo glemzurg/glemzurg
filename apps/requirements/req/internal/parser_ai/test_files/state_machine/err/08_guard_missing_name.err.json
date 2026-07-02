@@ -1,7 +1,10 @@
 {
     "guards": {
         "is_valid": {
-            "logic": {"description": "Checks validity"}
+            "logic": {
+                "type": "assessment",
+                "description": "Checks validity"
+            }
         }
     }
 }

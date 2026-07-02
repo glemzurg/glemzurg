@@ -42,7 +42,7 @@ func FuzzParseClass(f *testing.F) {
 	f.Add([]byte(`null`))
 	f.Add([]byte(``))
 	f.Add([]byte(`not json`))
-	f.Add([]byte(`{"name": "Order", "attributes": {"id": {"name": "ID"}}}`))
+	f.Add([]byte(`{"name": "Order", "attributes": [{"key": "id", "name": "ID"}]}`))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		_, _ = parseClass(data, "fuzz_class.json")

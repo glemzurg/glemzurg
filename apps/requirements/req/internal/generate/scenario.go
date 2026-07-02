@@ -1,13 +1,14 @@
 package generate
 
 import (
+	"sort"
 	"strings"
 
-	svgsequence "github.com/aorith/svg-sequence"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/pkg/errors"
 )
 
@@ -19,35 +20,42 @@ type stepContext struct {
 	classLookup    map[string]model_class.Class
 }
 
-func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_scenario.Scenario) (contents string, err error) {
+// mermaidSequence accumulates indented Mermaid sequenceDiagram body lines.
+type mermaidSequence struct {
+	lines  []string
+	indent int
+}
+
+func generateScenarioMermaidContents(reqs *req_flat.Requirements, scenario model_scenario.Scenario) (contents string, err error) {
 	ctx := newStepContext(reqs)
+	builder := &mermaidSequence{}
 
-	s := svgsequence.NewSequence()
-
-	// Add the actors in order.
-	actors, err := buildActorList(ctx, scenario)
+	participantIDs, err := writeParticipants(ctx, builder, scenario)
 	if err != nil {
 		return "", err
 	}
-	s.AddActors(actors...)
-
-	// Add the steps.
-	if scenario.Steps == nil || len(scenario.Steps.Statements) == 0 {
-		// No steps, so just add an informative placard.
-		s.AddStep(svgsequence.Step{Source: actors[0], Target: actors[0], Text: "No operations defined"})
-	} else {
-		err = addSteps(ctx, s, scenario.Steps.Statements)
-		if err != nil {
-			return "", err
-		}
+	if len(participantIDs) == 0 {
+		builder.writeLine("Note over no_actors: No actors defined")
+		return strings.Join(builder.lines, "\n"), nil
 	}
 
-	contents, err = s.Generate()
+	if scenario.Steps == nil || len(scenario.Steps.Statements) == 0 {
+		builder.writeMessage(participantIDs[0], participantIDs[0], "No operations defined")
+	} else if err = addMermaidSteps(ctx, builder, scenario.Steps.Statements); err != nil {
+		return "", err
+	}
 
-	return contents, err
+	return strings.Join(builder.lines, "\n"), nil
 }
 
-// newStepContext builds a stepContext from flattened requirements lookups.
+func (m *mermaidSequence) writeLine(line string) {
+	m.lines = append(m.lines, strings.Repeat("    ", m.indent)+line)
+}
+
+func (m *mermaidSequence) writeMessage(fromID, toID, text string) {
+	m.writeLine(fromID + "->>" + toID + ": " + mermaidSequenceText(text))
+}
+
 func newStepContext(reqs *req_flat.Requirements) stepContext {
 	classLookup, _ := reqs.ClassLookup()
 	return stepContext{
@@ -58,14 +66,14 @@ func newStepContext(reqs *req_flat.Requirements) stepContext {
 	}
 }
 
-// buildActorList constructs the ordered list of actor display names for a scenario.
-func buildActorList(ctx stepContext, scenario model_scenario.Scenario) ([]string, error) {
+func writeParticipants(ctx stepContext, builder *mermaidSequence, scenario model_scenario.Scenario) ([]string, error) {
 	if len(scenario.Objects) == 0 {
-		return []string{"No actors defined"}, nil
+		builder.writeLine("participant no_actors as No actors defined")
+		return nil, nil
 	}
 
-	var actors []string
-	for _, obj := range scenario.Objects {
+	var participantIDs []string
+	for _, obj := range scenarioObjectsInOrder(scenario) {
 		object, found := ctx.objectLookup[obj.Key.String()]
 		if !found {
 			return nil, errors.Errorf("unknown object key: '%s'", obj.Key.String())
@@ -74,94 +82,154 @@ func buildActorList(ctx stepContext, scenario model_scenario.Scenario) ([]string
 		if !found {
 			return nil, errors.Errorf("unknown class key: '%s'", object.ClassKey.String())
 		}
-		actors = append(actors, object.GetName(class))
+
+		participantID := scenarioObjectParticipantID(object.Key)
+		participantIDs = append(participantIDs, participantID)
+		builder.writeLine("participant " + participantID + " as " + mermaidParticipantAlias(object.GetName(class)))
 	}
-	return actors, nil
+	return participantIDs, nil
 }
 
-func addSteps(ctx stepContext, s *svgsequence.Sequence, statements []model_scenario.Step) error {
+func scenarioObjectParticipantID(objectKey identity.Key) string {
+	return mermaidNodeID("sobject", objectKey)
+}
+
+// scenarioObjectsInOrder returns scenario objects sorted by ObjectNumber (YAML objects array order).
+func scenarioObjectsInOrder(scenario model_scenario.Scenario) []model_scenario.Object {
+	objects := make([]model_scenario.Object, 0, len(scenario.Objects))
+	for _, obj := range scenario.Objects {
+		objects = append(objects, obj)
+	}
+	sort.Slice(objects, func(i, j int) bool {
+		return objects[i].ObjectNumber < objects[j].ObjectNumber
+	})
+	return objects
+}
+
+func mermaidNodeID(prefix string, key identity.Key) string {
+	keyStr := key.String()
+	keyStr = strings.ReplaceAll(keyStr, "/", "_")
+	keyStr = strings.ReplaceAll(keyStr, "-", "_")
+	keyStr = strings.ReplaceAll(keyStr, ".", "_")
+	return prefix + "_" + keyStr
+}
+
+// mermaidSequenceText escapes characters that break sequenceDiagram message syntax.
+// Colons are safe in message text because only the first colon after the arrow is structural.
+func mermaidSequenceText(text string) string {
+	return mermaidEscapeSequenceLine(text)
+}
+
+// mermaidParticipantAlias renders object labels without quotes; colons become line breaks.
+func mermaidParticipantAlias(text string) string {
+	if colon := strings.Index(text, ":"); colon >= 0 {
+		text = text[:colon] + "<br/>" + text[colon+1:]
+	}
+	return mermaidEscapeSequenceLine(text)
+}
+
+func mermaidCondition(condition string) string {
+	return mermaidEscapeSequenceLine(condition)
+}
+
+func mermaidEscapeSequenceLine(text string) string {
+	text = strings.ReplaceAll(text, "#", "#35;")
+	text = strings.ReplaceAll(text, ";", "#59;")
+	text = strings.ReplaceAll(text, "\n", "<br/>")
+	return text
+}
+
+func addMermaidSteps(ctx stepContext, builder *mermaidSequence, statements []model_scenario.Step) error {
 	for _, stmt := range statements {
 		switch stmt.StepType {
 		case model_scenario.STEP_TYPE_LEAF:
-			if err := addLeafStep(ctx, s, stmt); err != nil {
+			if err := addMermaidLeafStep(ctx, builder, stmt); err != nil {
 				return err
 			}
 
 		case model_scenario.STEP_TYPE_SEQUENCE:
-			if err := addSteps(ctx, s, stmt.Statements); err != nil {
+			if err := addMermaidSteps(ctx, builder, stmt.Statements); err != nil {
 				return err
 			}
 
 		case model_scenario.STEP_TYPE_SWITCH:
-			if err := addSwitchStep(ctx, s, stmt); err != nil {
+			if err := addMermaidSwitchStep(ctx, builder, stmt); err != nil {
 				return err
 			}
 
 		case model_scenario.STEP_TYPE_LOOP:
-			if err := addLoopStep(ctx, s, stmt); err != nil {
+			if err := addMermaidLoopStep(ctx, builder, stmt); err != nil {
 				return err
 			}
 
 		default:
-			return errors.Errorf("unsupported step type in scenario SVG generation: '%s'", stmt.StepType)
+			return errors.Errorf("unsupported step type in scenario Mermaid generation: '%s'", stmt.StepType)
 		}
 	}
 	return nil
 }
 
-// addLeafStep dispatches a leaf step to the appropriate handler based on its leaf type.
-func addLeafStep(ctx stepContext, s *svgsequence.Sequence, stmt model_scenario.Step) error {
+func addMermaidLeafStep(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
 	if stmt.LeafType == nil {
 		return errors.Errorf("leaf step missing leaf_type: '%+v'", stmt)
 	}
 
 	switch *stmt.LeafType {
 	case model_scenario.LEAF_TYPE_EVENT:
-		return addEventLeaf(ctx, s, stmt)
+		return addMermaidEventLeaf(ctx, builder, stmt)
 	case model_scenario.LEAF_TYPE_QUERY:
-		return addQueryLeaf(ctx, s, stmt)
+		return addMermaidQueryLeaf(ctx, builder, stmt)
 	case model_scenario.LEAF_TYPE_SCENARIO:
-		return addScenarioLeaf(ctx, s, stmt)
-	case model_scenario.LEAF_TYPE_DELETE:
-		return addDeleteLeaf(ctx, s, stmt)
+		return addMermaidScenarioLeaf(ctx, builder, stmt)
+	case model_scenario.LEAF_TYPE_DESTROY:
+		return addMermaidDestroyLeaf(ctx, builder, stmt)
 	default:
-		return errors.Errorf("unsupported leaf type in scenario SVG generation: '%s'", *stmt.LeafType)
+		return errors.Errorf("unsupported leaf type in scenario Mermaid generation: '%s'", *stmt.LeafType)
 	}
 }
 
-// addSwitchStep handles STEP_TYPE_SWITCH by opening sections for each case.
-func addSwitchStep(ctx stepContext, s *svgsequence.Sequence, stmt model_scenario.Step) error {
-	sectionLabel := "(Opt)"
-	if len(stmt.Statements) > 1 {
-		sectionLabel = "(Alt)"
+func addMermaidSwitchStep(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
+	if len(stmt.Statements) == 0 {
+		return nil
+	}
+	if len(stmt.Statements) == 1 {
+		return writeMermaidBlock(ctx, builder, "opt", stmt.Statements[0].Condition, stmt.Statements[0].Statements)
 	}
 
-	for _, c := range stmt.Statements {
-		s.OpenSection(sectionLabel+" ["+c.Condition+"]", "")
-
-		if err := addSteps(ctx, s, c.Statements); err != nil {
-			return err
-		}
-
-		s.CloseSection()
-	}
-	return nil
-}
-
-// addLoopStep handles STEP_TYPE_LOOP by opening a loop section.
-func addLoopStep(ctx stepContext, s *svgsequence.Sequence, stmt model_scenario.Step) error {
-	s.OpenSection("(Loop) ["+stmt.Condition+"]", "")
-
-	if err := addSteps(ctx, s, stmt.Statements); err != nil {
+	builder.writeLine("alt " + mermaidCondition(stmt.Statements[0].Condition))
+	builder.indent++
+	if err := addMermaidSteps(ctx, builder, stmt.Statements[0].Statements); err != nil {
 		return err
 	}
-
-	s.CloseSection()
+	for i := 1; i < len(stmt.Statements); i++ {
+		builder.indent--
+		builder.writeLine("else " + mermaidCondition(stmt.Statements[i].Condition))
+		builder.indent++
+		if err := addMermaidSteps(ctx, builder, stmt.Statements[i].Statements); err != nil {
+			return err
+		}
+	}
+	builder.indent--
+	builder.writeLine("end")
 	return nil
 }
 
-// resolveFromToObjects resolves the from and to objects and their classes for a step.
-func resolveFromToObjects(ctx stepContext, stmt model_scenario.Step) (fromName, toName string, err error) {
+func addMermaidLoopStep(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
+	return writeMermaidBlock(ctx, builder, "loop", stmt.Condition, stmt.Statements)
+}
+
+func writeMermaidBlock(ctx stepContext, builder *mermaidSequence, keyword, condition string, statements []model_scenario.Step) error {
+	builder.writeLine(keyword + " " + mermaidCondition(condition))
+	builder.indent++
+	if err := addMermaidSteps(ctx, builder, statements); err != nil {
+		return err
+	}
+	builder.indent--
+	builder.writeLine("end")
+	return nil
+}
+
+func resolveFromToParticipantIDs(ctx stepContext, stmt model_scenario.Step) (fromID, toID string, err error) {
 	fromObject, found := ctx.objectLookup[stmt.FromObjectKey.String()]
 	if !found {
 		return "", "", errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey.String())
@@ -171,36 +239,19 @@ func resolveFromToObjects(ctx stepContext, stmt model_scenario.Step) (fromName, 
 		return "", "", errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey.String())
 	}
 
-	fromClass, found := ctx.classLookup[fromObject.ClassKey.String()]
-	if !found {
-		return "", "", errors.Errorf("unknown from class key: '%s'", fromObject.ClassKey.String())
-	}
-	toClass, found := ctx.classLookup[toObject.ClassKey.String()]
-	if !found {
-		return "", "", errors.Errorf("unknown to class key: '%s'", toObject.ClassKey.String())
-	}
-
-	return fromObject.GetName(fromClass), toObject.GetName(toClass), nil
+	return scenarioObjectParticipantID(fromObject.Key), scenarioObjectParticipantID(toObject.Key), nil
 }
 
-// addEventLeaf handles a LEAF_TYPE_EVENT step.
-func addEventLeaf(ctx stepContext, s *svgsequence.Sequence, stmt model_scenario.Step) error {
-	fromName, toName, err := resolveFromToObjects(ctx, stmt)
+func addMermaidEventLeaf(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
+	fromID, toID, err := resolveFromToParticipantIDs(ctx, stmt)
 	if err != nil {
 		return err
 	}
 
-	text := buildEventText(ctx, stmt)
-
-	s.AddStep(svgsequence.Step{
-		Source: fromName,
-		Target: toName,
-		Text:   text,
-	})
+	builder.writeMessage(fromID, toID, buildEventText(ctx, stmt))
 	return nil
 }
 
-// buildEventText constructs the display text for an event leaf step.
 func buildEventText(ctx stepContext, stmt model_scenario.Step) string {
 	var textBuilder strings.Builder
 	textBuilder.WriteString(stmt.Description)
@@ -208,14 +259,14 @@ func buildEventText(ctx stepContext, stmt model_scenario.Step) string {
 	if stmt.EventKey != nil {
 		event, found := ctx.eventLookup[stmt.EventKey.String()]
 		if found {
-			textBuilder.WriteString(event.Name)
-			if len(event.Parameters) > 0 {
+			textBuilder.WriteString(model_state.SystemEventDisplayName(event.Name))
+			if len(event.ParameterNames) > 0 {
 				textBuilder.WriteString("(")
-				for i, param := range event.Parameters {
+				for i, name := range event.ParameterNames {
 					if i > 0 {
 						textBuilder.WriteString(", ")
 					}
-					textBuilder.WriteString(param.Name)
+					textBuilder.WriteString(name)
 				}
 				textBuilder.WriteString(")")
 			}
@@ -225,24 +276,18 @@ func buildEventText(ctx stepContext, stmt model_scenario.Step) string {
 	return textBuilder.String()
 }
 
-// addQueryLeaf handles a LEAF_TYPE_QUERY step.
-func addQueryLeaf(ctx stepContext, s *svgsequence.Sequence, stmt model_scenario.Step) error {
-	fromName, toName, err := resolveFromToObjects(ctx, stmt)
+func addMermaidQueryLeaf(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
+	fromID, toID, err := resolveFromToParticipantIDs(ctx, stmt)
 	if err != nil {
 		return err
 	}
 
-	s.AddStep(svgsequence.Step{
-		Source: fromName,
-		Target: toName,
-		Text:   stmt.Description,
-	})
+	builder.writeMessage(fromID, toID, stmt.Description)
 	return nil
 }
 
-// addScenarioLeaf handles a LEAF_TYPE_SCENARIO step.
-func addScenarioLeaf(ctx stepContext, s *svgsequence.Sequence, stmt model_scenario.Step) error {
-	fromName, toName, err := resolveFromToObjects(ctx, stmt)
+func addMermaidScenarioLeaf(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
+	fromID, toID, err := resolveFromToParticipantIDs(ctx, stmt)
 	if err != nil {
 		return err
 	}
@@ -251,30 +296,17 @@ func addScenarioLeaf(ctx stepContext, s *svgsequence.Sequence, stmt model_scenar
 	if !found {
 		return errors.Errorf("unknown called scenario key: '%s'", stmt.ScenarioKey.String())
 	}
-	s.AddStep(svgsequence.Step{
-		Source: fromName,
-		Target: toName,
-		Text:   "Scenario: " + calledScenario.Name,
-	})
+	builder.writeMessage(fromID, toID, "Scenario: "+calledScenario.Name)
 	return nil
 }
 
-// addDeleteLeaf handles a LEAF_TYPE_DELETE step.
-func addDeleteLeaf(ctx stepContext, s *svgsequence.Sequence, stmt model_scenario.Step) error {
+func addMermaidDestroyLeaf(ctx stepContext, builder *mermaidSequence, stmt model_scenario.Step) error {
 	fromObject, found := ctx.objectLookup[stmt.FromObjectKey.String()]
 	if !found {
 		return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey.String())
 	}
 
-	fromClass, found := ctx.classLookup[fromObject.ClassKey.String()]
-	if !found {
-		return errors.Errorf("unknown from class key: '%s'", fromObject.ClassKey.String())
-	}
-
-	s.AddStep(svgsequence.Step{
-		Source: fromObject.GetName(fromClass),
-		Target: fromObject.GetName(fromClass),
-		Text:   "(delete)",
-	})
+	participantID := scenarioObjectParticipantID(fromObject.Key)
+	builder.writeMessage(participantID, participantID, "(destroy)")
 	return nil
 }

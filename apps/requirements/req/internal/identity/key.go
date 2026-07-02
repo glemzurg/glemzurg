@@ -3,6 +3,8 @@ package identity
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
@@ -10,6 +12,8 @@ import (
 )
 
 // Key uniquely identifies an entity in the model.
+//
+//nolint:recvcheck // value receivers implement fmt.Stringer and encoding; pointer receivers implement validation and unmarshaling.
 type Key struct {
 	ParentKey string `validate:"-"` // The parent entity's key.
 	KeyType   string // The type of the key, e.g., "class", "association".
@@ -61,14 +65,58 @@ var validKeyTypes = map[string]bool{
 	KEY_TYPE_SUBDOMAIN: true,
 	KEY_TYPE_USE_CASE:  true, KEY_TYPE_USE_CASE_GENERALIZATION: true,
 	KEY_TYPE_CLASS: true, KEY_TYPE_CLASS_GENERALIZATION: true,
-	KEY_TYPE_CLASS_ASSOCIATION: true,
-	KEY_TYPE_ATTRIBUTE:         true, KEY_TYPE_ATTRIBUTE_DERIVATION: true, KEY_TYPE_ATTRIBUTE_INVARIANT: true,
+	KEY_TYPE_CLASS_ASSOCIATION: true, KEY_TYPE_CLASS_ASSOCIATION_INVARIANT: true,
+	KEY_TYPE_ATTRIBUTE: true, KEY_TYPE_ATTRIBUTE_DERIVATION: true, KEY_TYPE_ATTRIBUTE_INVARIANT: true,
+	KEY_TYPE_PARAMETER_INVARIANT: true, KEY_TYPE_PARAMETER_SIMULATION_REQUIRE: true, KEY_TYPE_PARAMETER_SIMULATION_SPEC: true,
 	KEY_TYPE_STATE: true, KEY_TYPE_EVENT: true, KEY_TYPE_GUARD: true,
 	KEY_TYPE_ACTION: true, KEY_TYPE_QUERY: true, KEY_TYPE_TRANSITION: true,
 	KEY_TYPE_CLASS_INVARIANT: true, KEY_TYPE_STATE_ACTION: true,
 	KEY_TYPE_ACTION_REQUIRE: true, KEY_TYPE_ACTION_GUARANTEE: true, KEY_TYPE_ACTION_SAFETY: true,
 	KEY_TYPE_QUERY_REQUIRE: true, KEY_TYPE_QUERY_GUARANTEE: true,
 	KEY_TYPE_SCENARIO: true, KEY_TYPE_SCENARIO_OBJECT: true, KEY_TYPE_SCENARIO_STEP: true,
+	KEY_TYPE_PARAMETER: true,
+	KEY_TYPE_DATA_TYPE: true,
+}
+
+// identifierPattern is the regex that SubKeys must match for key types that become filenames/directories.
+var identifierPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+
+// systemEventSubkeys are reserved state-machine event keys (_new, _destroy) allowed despite a leading underscore.
+var systemEventSubkeys = map[string]bool{
+	"_new":     true,
+	"_destroy": true,
+}
+
+func isValidIdentifierSubKey(keyType, subKey string) bool {
+	if keyType == KEY_TYPE_EVENT && systemEventSubkeys[subKey] {
+		return true
+	}
+	return identifierPattern.MatchString(subKey)
+}
+
+// identifierSubKeyTypes lists key types whose SubKey must be a valid identifier (matches identifierPattern).
+// Key types NOT in this set have special SubKey formats (integers, composites, class paths).
+var identifierSubKeyTypes = map[string]bool{
+	KEY_TYPE_ACTOR:                   true,
+	KEY_TYPE_ACTOR_GENERALIZATION:    true,
+	KEY_TYPE_NAMED_SET:               true,
+	KEY_TYPE_DOMAIN:                  true,
+	KEY_TYPE_GLOBAL_FUNCTION:         true,
+	KEY_TYPE_SUBDOMAIN:               true,
+	KEY_TYPE_CLASS:                   true,
+	KEY_TYPE_CLASS_GENERALIZATION:    true,
+	KEY_TYPE_USE_CASE:                true,
+	KEY_TYPE_USE_CASE_GENERALIZATION: true,
+	KEY_TYPE_ATTRIBUTE:               true,
+	KEY_TYPE_STATE:                   true,
+	KEY_TYPE_EVENT:                   true,
+	KEY_TYPE_GUARD:                   true,
+	KEY_TYPE_ACTION:                  true,
+	KEY_TYPE_QUERY:                   true,
+	KEY_TYPE_SCENARIO:                true,
+	KEY_TYPE_SCENARIO_OBJECT:         true,
+	KEY_TYPE_PARAMETER:               true,
+	KEY_TYPE_DATA_TYPE:               true, // subKey is either "self" (root) or a field-name identifier.
 }
 
 // Validate validates the Key struct.
@@ -87,6 +135,15 @@ func (k *Key) ValidateWithContext(ctx *coreerr.ValidationContext) error {
 	}
 	if k.SubKey == "" {
 		return coreerr.NewWithValues(ctx, coreerr.KeySubkeyRequired, "sub key is required", "SubKey", "", "non-empty sub key")
+	}
+
+	// Validate SubKey format for key types that require identifier SubKeys.
+	if identifierSubKeyTypes[k.KeyType] {
+		if !isValidIdentifierSubKey(k.KeyType, k.SubKey) {
+			return coreerr.NewWithValues(ctx, coreerr.KeySubkeyInvalidFormat,
+				fmt.Sprintf("sub key '%s' must match pattern [a-z][a-z0-9_]* for key type '%s'", k.SubKey, k.KeyType),
+				"SubKey", k.SubKey, "a value matching ^[a-z][a-z0-9_]*$")
+		}
 	}
 
 	// Custom ParentKey validation (context-dependent on KeyType).
@@ -112,7 +169,9 @@ func (k *Key) ValidateWithContext(ctx *coreerr.ValidationContext) error {
 }
 
 // String returns the string representation of the key.
-func (k *Key) String() string {
+// Value receiver so it can be called on non-addressable values (e.g., function return values
+// like NewDataTypeKey(...).String()) and also satisfies fmt.Stringer for both Key and *Key.
+func (k Key) String() string {
 	var result string
 	if k.ParentKey != "" {
 		result = k.ParentKey + "/" + k.KeyType + "/" + k.SubKey
@@ -203,11 +262,23 @@ func (k *Key) ValidateParentWithContext(ctx *coreerr.ValidationContext, parent *
 	case KEY_TYPE_QUERY_REQUIRE, KEY_TYPE_QUERY_GUARANTEE:
 		return k.validateRequiredParent(ctx, parent, KEY_TYPE_QUERY)
 
+	case KEY_TYPE_PARAMETER:
+		return k.validateRequiredParentOneOf(ctx, parent, KEY_TYPE_ACTION, KEY_TYPE_QUERY, KEY_TYPE_EVENT)
+
+	case KEY_TYPE_DATA_TYPE:
+		return k.validateRequiredParentOneOf(ctx, parent, KEY_TYPE_ATTRIBUTE, KEY_TYPE_PARAMETER, KEY_TYPE_DATA_TYPE)
+
 	case KEY_TYPE_ATTRIBUTE_DERIVATION, KEY_TYPE_ATTRIBUTE_INVARIANT:
 		return k.validateRequiredParent(ctx, parent, KEY_TYPE_ATTRIBUTE)
 
+	case KEY_TYPE_PARAMETER_INVARIANT, KEY_TYPE_PARAMETER_SIMULATION_REQUIRE, KEY_TYPE_PARAMETER_SIMULATION_SPEC:
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_PARAMETER)
+
 	case KEY_TYPE_CLASS_ASSOCIATION:
 		return k.validateClassAssociationParent(ctx, parent)
+
+	case KEY_TYPE_CLASS_ASSOCIATION_INVARIANT:
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_CLASS_ASSOCIATION)
 
 	default:
 		return coreerr.NewWithValues(ctx, coreerr.KeyTypeUnknown,
@@ -227,6 +298,29 @@ func (k *Key) validateRootParent(ctx *coreerr.ValidationContext, parent *Key) er
 		return coreerr.NewWithValues(ctx, coreerr.KeyRootHasParentkey,
 			fmt.Sprintf("key type '%s' should have empty parentKey, but got '%s'", k.KeyType, k.ParentKey),
 			"ParentKey", k.ParentKey, "blank")
+	}
+	return nil
+}
+
+// validateRequiredParentOneOf validates that a key has a parent whose KeyType is one of the
+// allowed types, with matching key value. Used for key types that accept multiple parent shapes
+// (e.g., parameter, which can hang off an action, query, or event).
+func (k *Key) validateRequiredParentOneOf(ctx *coreerr.ValidationContext, parent *Key, allowed ...string) error {
+	expected := strings.Join(allowed, " | ")
+	if parent == nil {
+		return coreerr.NewWithValues(ctx, coreerr.KeyNoParent,
+			fmt.Sprintf("key type '%s' requires a parent of type '%s'", k.KeyType, expected),
+			"Parent", "", expected)
+	}
+	if !slices.Contains(allowed, parent.KeyType) {
+		return coreerr.NewWithValues(ctx, coreerr.KeyWrongParentType,
+			fmt.Sprintf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, expected, parent.KeyType),
+			"Parent", parent.KeyType, expected)
+	}
+	if k.ParentKey != parent.String() {
+		return coreerr.NewWithValues(ctx, coreerr.KeyParentkeyMismatch,
+			fmt.Sprintf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String()),
+			"ParentKey", k.ParentKey, parent.String())
 	}
 	return nil
 }

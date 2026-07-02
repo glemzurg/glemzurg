@@ -71,7 +71,7 @@ golangci-lint run ./...
 
 # Complexity linter.
 echo -e "\nCOMPLEXITY\n"
-go-complexity-lint -exclude="*.generated.go,test_model.go" -nestdepth.warn=6 -nestdepth.fail=6 -cyclo.warn=14 -cyclo.fail=14 -params.warn=7 -params.fail=7 -fanout.warn=9 -fanout.fail=9 ./...
+go-complexity-lint -warnings=none -exclude="*.generated.go,test_model.go" ./...
 [ $? -ne 0 ] && exit 42
 
 # ================================================
@@ -91,7 +91,7 @@ go test ./internal/database/... -dbtests
 # ================================================
 
 # Build and install any executables.
-echo -e "\nINSTALL\n" ; go install ./...
+echo -e "\nINSTALL\n" ; go install -buildvcs=false ./...
 [ $? -ne 0 ] && exit 60
 
 # Indicate the command.

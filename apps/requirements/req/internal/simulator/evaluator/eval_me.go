@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"sort"
 	"strings"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -26,7 +27,7 @@ func evalBoolLiteral(n *me.BoolLiteral) *EvalResult {
 }
 
 func evalMEStringLiteral(n *me.StringLiteral) *EvalResult {
-	return NewEvalResult(object.NewString(n.Value))
+	return NewEvalResult(object.NormalizeSimulatorValue(object.NewString(n.Value)))
 }
 
 func evalMETupleLiteral(n *me.TupleLiteral, bindings *Bindings) *EvalResult {
@@ -141,7 +142,8 @@ func evalAttributeRef(n *me.AttributeRef, bindings *Bindings) *EvalResult {
 	attrName := n.AttributeKey.SubKey
 	value := self.Get(attrName)
 	if value == nil {
-		return NewEvalError("attribute not found: %s", attrName)
+		// Nullable or unset attributes behave as NULL (empty set) in TLA+ specs.
+		return NewEvalResult(EMPTY_SET)
 	}
 	return NewEvalResult(value)
 }
@@ -231,7 +233,7 @@ func resolveRootValue(current me.Expression, bindings *Bindings) (object.Object,
 		}
 		value := self.Get(attrName)
 		if value == nil {
-			return nil, NewEvalError("attribute not found: %s", attrName)
+			return EMPTY_SET, nil
 		}
 		return value, nil
 	case *me.SelfRef:
@@ -302,6 +304,14 @@ func evalNamedSetRef(n *me.NamedSetRef, bindings *Bindings) *EvalResult {
 	return NewEvalResult(value)
 }
 
+func evalClassRef(n *me.ClassRef, bindings *Bindings) *EvalResult {
+	value, found := bindings.GetValue(n.Name)
+	if !found {
+		return NewEvalError("class instance set not found: %s", n.Name)
+	}
+	return NewEvalResult(value)
+}
+
 // ============================================================
 // Binary operand helpers
 // ============================================================
@@ -341,11 +351,11 @@ func evalBinarySetOperands(left, right me.Expression, bindings *Bindings) (*obje
 		return nil, nil, rightResult
 	}
 
-	leftSet, ok := leftResult.Value.(*object.Set)
+	leftSet, ok := CoerceToSet(leftResult.Value)
 	if !ok {
 		return nil, nil, NewEvalError("left operand must be Set, got %s", leftResult.Value.Type())
 	}
-	rightSet, ok := rightResult.Value.(*object.Set)
+	rightSet, ok := CoerceToSet(rightResult.Value)
 	if !ok {
 		return nil, nil, NewEvalError("right operand must be Set, got %s", rightResult.Value.Type())
 	}
@@ -610,7 +620,7 @@ func evalMEMembership(n *me.Membership, bindings *Bindings) *EvalResult {
 		return setResult
 	}
 
-	set, ok := setResult.Value.(*object.Set)
+	set, ok := CoerceToSet(setResult.Value)
 	if !ok {
 		return NewEvalError("membership test requires Set, got %s", setResult.Value.Type())
 	}
@@ -673,6 +683,10 @@ func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 	baseResult := Eval(n.Base, bindings)
 	if baseResult.IsError() {
 		return baseResult
+	}
+
+	if assocRel, ok := baseResult.Value.(*object.AssociationRelation); ok {
+		return evalAssociationRelationFieldAccess(assocRel, n.Field, bindings)
 	}
 
 	record, ok := baseResult.Value.(*object.Record)
@@ -796,7 +810,7 @@ func evalMEStringConcat(n *me.StringConcat, bindings *Bindings) *EvalResult {
 		}
 		builder.WriteString(str.Value())
 	}
-	return NewEvalResult(object.NewString(builder.String()))
+	return NewEvalResult(object.NormalizeSimulatorValue(object.NewString(builder.String())))
 }
 
 func evalMETupleConcat(n *me.TupleConcat, bindings *Bindings) *EvalResult {
@@ -842,6 +856,59 @@ func evalMEIfThenElse(n *me.IfThenElse, bindings *Bindings) *EvalResult {
 	return Eval(n.Else, bindings)
 }
 
+func evalMELetExpr(n *me.LetExpr, bindings *Bindings) *EvalResult {
+	valueResult := Eval(n.Value, bindings)
+	if valueResult.IsError() {
+		return valueResult
+	}
+	childBindings := NewEnclosedBindings(bindings)
+	childBindings.Set(n.Variable, valueResult.Value, NamespaceLocal)
+	return Eval(n.Body, childBindings)
+}
+
+func evalMEChoose(n *me.Choose, bindings *Bindings) *EvalResult {
+	setResult := Eval(n.Set, bindings)
+	if setResult.IsError() {
+		return setResult
+	}
+	sourceSet, ok := CoerceToSet(setResult.Value)
+	if !ok {
+		return NewEvalError("CHOOSE domain must be Set, got %s", setResult.Value.Type())
+	}
+
+	candidates, errResult := filterSetElements(sourceSet, n.Variable, n.Predicate, bindings)
+	if errResult != nil {
+		return errResult
+	}
+	if len(candidates) == 0 {
+		return NewEvalError("CHOOSE: no element of set satisfied predicate")
+	}
+
+	sort.Slice(candidates, func(i, j int) bool {
+		return compareObjectsForChoose(candidates[i], candidates[j]) < 0
+	})
+	return NewEvalResult(candidates[0])
+}
+
+// compareObjectsForChoose orders candidates the way TLC does for CHOOSE with a
+// tautological predicate: numerics by value, everything else by Inspect text.
+func compareObjectsForChoose(left, right object.Object) int {
+	leftNum, leftIsNum := left.(*object.Number)
+	rightNum, rightIsNum := right.(*object.Number)
+	if leftIsNum && rightIsNum {
+		return leftNum.Cmp(rightNum)
+	}
+	leftText := left.Inspect()
+	rightText := right.Inspect()
+	if leftText < rightText {
+		return -1
+	}
+	if leftText > rightText {
+		return 1
+	}
+	return 0
+}
+
 func evalMECase(n *me.Case, bindings *Bindings) *EvalResult {
 	for _, branch := range n.Branches {
 		condResult := Eval(branch.Condition, bindings)
@@ -867,57 +934,71 @@ func evalMECase(n *me.Case, bindings *Bindings) *EvalResult {
 // ============================================================
 
 func evalMEQuantifier(n *me.Quantifier, bindings *Bindings) *EvalResult {
-	setResult := Eval(n.Domain, bindings)
-	if setResult.IsError() {
-		return setResult
+	set, errResult := quantifierDomainSet(n.Domain, bindings)
+	if errResult != nil {
+		return errResult
 	}
-	set, ok := setResult.Value.(*object.Set)
-	if !ok {
-		return NewEvalError("quantifier requires Set, got %s", setResult.Value.Type())
-	}
-
-	elements := set.Elements()
 
 	switch n.Kind {
 	case me.QuantifierForall:
-		for _, elem := range elements {
-			childBindings := NewEnclosedBindings(bindings)
-			childBindings.Set(n.Variable, elem, NamespaceLocal)
-			predResult := Eval(n.Predicate, childBindings)
-			if predResult.IsError() {
-				return predResult
-			}
-			predBool, ok := predResult.Value.(*object.Boolean)
-			if !ok {
-				return NewEvalError("predicate must return Boolean, got %s", predResult.Value.Type())
-			}
-			if !predBool.Value() {
-				return NewEvalResult(FALSE)
-			}
-		}
-		return NewEvalResult(TRUE)
-
+		return evalForallQuantifier(set.Elements(), n.Variable, n.Predicate, bindings)
 	case me.QuantifierExists:
-		for _, elem := range elements {
-			childBindings := NewEnclosedBindings(bindings)
-			childBindings.Set(n.Variable, elem, NamespaceLocal)
-			predResult := Eval(n.Predicate, childBindings)
-			if predResult.IsError() {
-				return predResult
-			}
-			predBool, ok := predResult.Value.(*object.Boolean)
-			if !ok {
-				return NewEvalError("predicate must return Boolean, got %s", predResult.Value.Type())
-			}
-			if predBool.Value() {
-				return NewEvalResult(TRUE)
-			}
-		}
-		return NewEvalResult(FALSE)
-
+		return evalExistsQuantifier(set.Elements(), n.Variable, n.Predicate, bindings)
 	default:
 		return NewEvalError("unknown quantifier: %s", n.Kind)
 	}
+}
+
+func quantifierDomainSet(domain me.Expression, bindings *Bindings) (*object.Set, *EvalResult) {
+	setResult := Eval(domain, bindings)
+	if setResult.IsError() {
+		return nil, setResult
+	}
+	set, ok := CoerceToSet(setResult.Value)
+	if !ok {
+		return nil, NewEvalError("quantifier requires Set, got %s", setResult.Value.Type())
+	}
+	return set, nil
+}
+
+func evalForallQuantifier(elements []object.Object, variable string, predicate me.Expression, bindings *Bindings) *EvalResult {
+	for _, elem := range elements {
+		predBool, errResult := evalQuantifierPredicate(elem, variable, predicate, bindings)
+		if errResult != nil {
+			return errResult
+		}
+		if !predBool {
+			return NewEvalResult(FALSE)
+		}
+	}
+	return NewEvalResult(TRUE)
+}
+
+func evalExistsQuantifier(elements []object.Object, variable string, predicate me.Expression, bindings *Bindings) *EvalResult {
+	for _, elem := range elements {
+		predBool, errResult := evalQuantifierPredicate(elem, variable, predicate, bindings)
+		if errResult != nil {
+			return errResult
+		}
+		if predBool {
+			return NewEvalResult(TRUE)
+		}
+	}
+	return NewEvalResult(FALSE)
+}
+
+func evalQuantifierPredicate(elem object.Object, variable string, predicate me.Expression, bindings *Bindings) (bool, *EvalResult) {
+	childBindings := NewEnclosedBindings(bindings)
+	childBindings.Set(variable, elem, NamespaceLocal)
+	predResult := Eval(predicate, childBindings)
+	if predResult.IsError() {
+		return false, predResult
+	}
+	predBool, ok := predResult.Value.(*object.Boolean)
+	if !ok {
+		return false, NewEvalError("predicate must return Boolean, got %s", predResult.Value.Type())
+	}
+	return predBool.Value(), nil
 }
 
 // filterSetElements filters a set's elements by a predicate, returning matching elements.
@@ -941,12 +1022,43 @@ func filterSetElements(sourceSet *object.Set, variable string, predicate me.Expr
 	return resultElements, nil
 }
 
+func evalMESetMap(n *me.SetMap, bindings *Bindings) *EvalResult {
+	setResult := Eval(n.Set, bindings)
+	if setResult.IsError() {
+		return setResult
+	}
+	sourceSet, ok := CoerceToSet(setResult.Value)
+	if !ok {
+		return NewEvalError("set map requires Set, got %s", setResult.Value.Type())
+	}
+
+	resultElements, errResult := mapSetElements(sourceSet, n.Variable, n.Transform, bindings)
+	if errResult != nil {
+		return errResult
+	}
+	return NewEvalResult(object.NewSetFromElements(resultElements))
+}
+
+func mapSetElements(sourceSet *object.Set, variable string, transform me.Expression, bindings *Bindings) ([]object.Object, *EvalResult) {
+	resultElements := make([]object.Object, 0, len(sourceSet.Elements()))
+	for _, elem := range sourceSet.Elements() {
+		child := NewEnclosedBindings(bindings)
+		child.Set(variable, elem, NamespaceLocal)
+		mapped := Eval(transform, child)
+		if mapped.IsError() {
+			return nil, mapped
+		}
+		resultElements = append(resultElements, mapped.Value)
+	}
+	return resultElements, nil
+}
+
 func evalMESetFilter(n *me.SetFilter, bindings *Bindings) *EvalResult {
 	setResult := Eval(n.Set, bindings)
 	if setResult.IsError() {
 		return setResult
 	}
-	sourceSet, ok := setResult.Value.(*object.Set)
+	sourceSet, ok := CoerceToSet(setResult.Value)
 	if !ok {
 		return NewEvalError("set filter requires Set, got %s", setResult.Value.Type())
 	}
@@ -1037,13 +1149,20 @@ func evalRegistryCall(body me.Expression, params []string, args []object.Object,
 	return Eval(body, childBindings)
 }
 
+// ObjectsEqual compares two simulator objects for structural equality.
+func ObjectsEqual(left, right object.Object) bool {
+	return objectsEqual(left, right)
+}
+
 // objectsEqual compares two objects for structural equality.
 func objectsEqual(left, right object.Object) bool {
 	if left.Type() != right.Type() {
 		return false
 	}
+	return equalSameTypeObjects(left, right)
+}
 
-	// The type switch guarantees the type, so the assertion cannot fail.
+func equalSameTypeObjects(left, right object.Object) bool {
 	switch l := left.(type) {
 	case *object.Number:
 		return l.Equals(right.(*object.Number))
@@ -1053,6 +1172,8 @@ func objectsEqual(left, right object.Object) bool {
 		return l.Value() == right.(*object.Boolean).Value()
 	case *object.Set:
 		return l.Equals(right.(*object.Set))
+	case *object.AssociationRelation:
+		return l.Equals(right.(*object.AssociationRelation))
 	case *object.Tuple:
 		return l.Equals(right.(*object.Tuple))
 	case *object.Record:

@@ -10,6 +10,7 @@ const (
 
 	KeyTypeInvalid          Code = "KEY_TYPE_INVALID"            // KeyType is not in the allowed set.
 	KeySubkeyRequired       Code = "KEY_SUBKEY_REQUIRED"         // SubKey is empty.
+	KeySubkeyInvalidFormat  Code = "KEY_SUBKEY_INVALID_FORMAT"   // SubKey doesn't match identifier pattern.
 	KeyParentkeyMustBeBlank Code = "KEY_PARENTKEY_MUST_BE_BLANK" // Root-level key type has a non-blank ParentKey.
 	KeyParentkeyRequired    Code = "KEY_PARENTKEY_REQUIRED"      // Non-root key type has a blank ParentKey.
 	KeyRootHasParent        Code = "KEY_ROOT_HAS_PARENT"         // Root-level key type was given a parent.
@@ -51,15 +52,22 @@ const (
 	// ---------------------------------------------------------------
 	// Logic errors.
 
-	LogicKeyInvalid            Code = "LOGIC_KEY_INVALID"             // Logic key failed validation.
-	LogicTypeRequired          Code = "LOGIC_TYPE_REQUIRED"           // Logic Type is empty.
-	LogicTypeInvalid           Code = "LOGIC_TYPE_INVALID"            // Logic Type is not a valid value.
-	LogicDescRequired          Code = "LOGIC_DESC_REQUIRED"           // Logic Description is empty.
-	LogicTargetRequired        Code = "LOGIC_TARGET_REQUIRED"         // Logic Type requires a non-empty Target.
-	LogicTargetMustBeEmpty     Code = "LOGIC_TARGET_MUST_BE_EMPTY"    // Logic Type requires an empty Target.
-	LogicTargetNoUnderscore    Code = "LOGIC_TARGET_NO_UNDERSCORE"    // Query/let Target cannot start with underscore.
-	LogicSpecInvalid           Code = "LOGIC_SPEC_INVALID"            // Logic Spec failed validation.
-	LogicTargetTypespecInvalid Code = "LOGIC_TARGET_TYPESPEC_INVALID" // Logic TargetTypeSpec failed validation.
+	LogicKeyInvalid                    Code = "LOGIC_KEY_INVALID"                       // Logic key failed validation.
+	LogicTypeRequired                  Code = "LOGIC_TYPE_REQUIRED"                     // Logic Type is empty.
+	LogicTypeInvalid                   Code = "LOGIC_TYPE_INVALID"                      // Logic Type is not a valid value.
+	LogicDescRequired                  Code = "LOGIC_DESC_REQUIRED"                     // Logic Description is empty.
+	LogicTargetRequired                Code = "LOGIC_TARGET_REQUIRED"                   // Logic Type requires a non-empty Target.
+	LogicTargetMustBeEmpty             Code = "LOGIC_TARGET_MUST_BE_EMPTY"              // Logic Type requires an empty Target.
+	LogicTargetNoUnderscore            Code = "LOGIC_TARGET_NO_UNDERSCORE"              // Query/let Target cannot start with underscore.
+	LogicSpecInvalid                   Code = "LOGIC_SPEC_INVALID"                      // Logic Spec failed validation.
+	LogicTargetTypespecInvalid         Code = "LOGIC_TARGET_TYPESPEC_INVALID"           // Logic TargetTypeSpec failed validation.
+	LogicOverAssociationKeyInvalid     Code = "LOGIC_OVER_ASSOCIATION_KEY_INVALID"      // OverAssociationKey failed validation.
+	LogicOverAssociationKeyTypeInvalid Code = "LOGIC_OVER_ASSOCIATION_KEY_TYPE_INVALID" // OverAssociationKey is not CLASS_ASSOCIATION.
+	LogicDestroySelectionRequired      Code = "LOGIC_DESTROY_SELECTION_REQUIRED"        // Destroy logic requires a non-empty selection specification.
+	LogicDestroyEventRequired          Code = "LOGIC_DESTROY_EVENT_REQUIRED"            // Destroy logic requires a non-empty destroy_event specification.
+	LogicDestroyEventMustBeEmpty       Code = "LOGIC_DESTROY_EVENT_MUST_BE_EMPTY"       // Only destroy logic may carry destroy_event.
+	LogicPeerDestroyForbidden          Code = "LOGIC_PEER_DESTROY_FORBIDDEN"            // Peer _destroy must use guarantee type destroy, not inline in other logic.
+	LogicDestroyContextInvalid         Code = "LOGIC_DESTROY_CONTEXT_INVALID"           // Destroy logic may only appear in action guarantees.
 
 	// ---------------------------------------------------------------
 	// GlobalFunction errors.
@@ -84,22 +92,32 @@ const (
 	// ---------------------------------------------------------------
 	// Parameter errors.
 
-	ParamNameRequired      Code = "PARAM_NAME_REQUIRED"      // Parameter Name is empty.
-	ParamDatatypesRequired Code = "PARAM_DATATYPES_REQUIRED" // Parameter DataTypes is empty.
+	ParamKeyInvalid                   Code = "PARAM_KEY_INVALID"                     // Parameter key failed validation.
+	ParamKeyTypeInvalid               Code = "PARAM_KEY_TYPE_INVALID"                // Parameter key is not KEY_TYPE_PARAMETER.
+	ParamNameRequired                 Code = "PARAM_NAME_REQUIRED"                   // Parameter Name is empty.
+	ParamDatatypesRequired            Code = "PARAM_DATATYPES_REQUIRED"              // Parameter DataTypes is empty.
+	ParamDatatypeKeyMismatch          Code = "PARAM_DATATYPE_KEY_MISMATCH"           // Parameter DataType.Key does not match Parameter.Name.
+	ParamInvariantTypeInvalid         Code = "PARAM_INVARIANT_TYPE_INVALID"          // Parameter invariant has wrong logic type.
+	ParamInvariantDuplicateLet        Code = "PARAM_INVARIANT_DUPLICATE_LET"         // Parameter invariant has duplicate let target.
+	ParamSimulationRequireTypeInvalid Code = "PARAM_SIMULATION_REQUIRE_TYPE_INVALID" // Parameter simulation require has wrong logic type.
+	ParamSimulationSpecTypeInvalid    Code = "PARAM_SIMULATION_SPEC_TYPE_INVALID"    // Parameter simulation specification has wrong logic type.
 
 	// ---------------------------------------------------------------
 	// Action errors.
 
-	ActionKeyInvalid               Code = "ACTION_KEY_INVALID"                // Action key failed validation.
-	ActionKeyTypeInvalid           Code = "ACTION_KEY_TYPE_INVALID"           // Key is not KEY_TYPE_ACTION.
-	ActionNameRequired             Code = "ACTION_NAME_REQUIRED"              // Action Name is empty.
-	ActionRequiresTypeInvalid      Code = "ACTION_REQUIRES_TYPE_INVALID"      // Requires logic type must be assessment or let.
-	ActionRequiresDuplicateLet     Code = "ACTION_REQUIRES_DUPLICATE_LET"     // Duplicate let target in Requires.
-	ActionGuaranteeTypeInvalid     Code = "ACTION_GUARANTEE_TYPE_INVALID"     // Guarantee logic type must be state_change or let.
-	ActionGuaranteeDuplicateLet    Code = "ACTION_GUARANTEE_DUPLICATE_LET"    // Duplicate let target in Guarantees.
-	ActionGuaranteeDuplicateTarget Code = "ACTION_GUARANTEE_DUPLICATE_TARGET" // Duplicate target in Guarantees.
-	ActionSafetyTypeInvalid        Code = "ACTION_SAFETY_TYPE_INVALID"        // SafetyRule logic type must be safety_rule or let.
-	ActionSafetyDuplicateLet       Code = "ACTION_SAFETY_DUPLICATE_LET"       // Duplicate let target in SafetyRules.
+	ActionKeyInvalid                      Code = "ACTION_KEY_INVALID"                        // Action key failed validation.
+	ActionKeyTypeInvalid                  Code = "ACTION_KEY_TYPE_INVALID"                   // Key is not KEY_TYPE_ACTION.
+	ActionNameRequired                    Code = "ACTION_NAME_REQUIRED"                      // Action Name is empty.
+	ActionNameInvalidChars                Code = "ACTION_NAME_INVALID_CHARS"                 // Action Name contains characters outside A-Za-z0-9 space hyphen underscore.
+	ActionRequiresTypeInvalid             Code = "ACTION_REQUIRES_TYPE_INVALID"              // Requires logic type must be assessment or let.
+	ActionRequiresDuplicateLet            Code = "ACTION_REQUIRES_DUPLICATE_LET"             // Duplicate let target in Requires.
+	ActionGuaranteeTypeInvalid            Code = "ACTION_GUARANTEE_TYPE_INVALID"             // Guarantee logic type must be state_change, let, or destroy.
+	ActionGuaranteeDuplicateLet           Code = "ACTION_GUARANTEE_DUPLICATE_LET"            // Duplicate let target in Guarantees.
+	ActionGuaranteeDuplicateTarget        Code = "ACTION_GUARANTEE_DUPLICATE_TARGET"         // Duplicate target in Guarantees.
+	ActionGuaranteeDuplicateDestroyTarget Code = "ACTION_GUARANTEE_DUPLICATE_DESTROY_TARGET" // Duplicate destroy guarantee target.
+	ActionGuaranteeDestroyTargetInvalid   Code = "ACTION_GUARANTEE_DESTROY_TARGET_INVALID"   // Destroy guarantee target must be an outgoing association.
+	ActionSafetyTypeInvalid               Code = "ACTION_SAFETY_TYPE_INVALID"                // SafetyRule logic type must be safety_rule or let.
+	ActionSafetyDuplicateLet              Code = "ACTION_SAFETY_DUPLICATE_LET"               // Duplicate let target in SafetyRules.
 
 	// ---------------------------------------------------------------
 	// Guard errors.
@@ -107,6 +125,7 @@ const (
 	GuardKeyInvalid       Code = "GUARD_KEY_INVALID"        // Guard key failed validation.
 	GuardKeyTypeInvalid   Code = "GUARD_KEY_TYPE_INVALID"   // Key is not KEY_TYPE_GUARD.
 	GuardNameRequired     Code = "GUARD_NAME_REQUIRED"      // Guard Name is empty.
+	GuardNameInvalidChars Code = "GUARD_NAME_INVALID_CHARS" // Guard Name contains characters outside A-Za-z0-9 space hyphen underscore.
 	GuardLogicInvalid     Code = "GUARD_LOGIC_INVALID"      // Guard Logic failed validation.
 	GuardLogicKeyMismatch Code = "GUARD_LOGIC_KEY_MISMATCH" // Logic key doesn't match guard key.
 	GuardLogicTypeInvalid Code = "GUARD_LOGIC_TYPE_INVALID" // Logic type must be 'assessment'.
@@ -114,9 +133,12 @@ const (
 	// ---------------------------------------------------------------
 	// Event errors.
 
-	EventKeyInvalid     Code = "EVENT_KEY_INVALID"      // Event key failed validation.
-	EventKeyTypeInvalid Code = "EVENT_KEY_TYPE_INVALID" // Key is not KEY_TYPE_EVENT.
-	EventNameRequired   Code = "EVENT_NAME_REQUIRED"    // Event Name is empty.
+	EventKeyInvalid             Code = "EVENT_KEY_INVALID"              // Event key failed validation.
+	EventKeyTypeInvalid         Code = "EVENT_KEY_TYPE_INVALID"         // Key is not KEY_TYPE_EVENT.
+	EventNameRequired           Code = "EVENT_NAME_REQUIRED"            // Event Name is empty.
+	EventNameInvalidChars       Code = "EVENT_NAME_INVALID_CHARS"       // Event Name contains characters outside A-Za-z0-9 space hyphen underscore.
+	EventParameterNameRequired  Code = "EVENT_PARAMETER_NAME_REQUIRED"  // An entry in ParameterNames is empty.
+	EventParameterNameDuplicate Code = "EVENT_PARAMETER_NAME_DUPLICATE" // ParameterNames contains duplicate names (after normalization).
 
 	// ---------------------------------------------------------------
 	// Query errors.
@@ -124,6 +146,7 @@ const (
 	QueryKeyInvalid               Code = "QUERY_KEY_INVALID"                // Query key failed validation.
 	QueryKeyTypeInvalid           Code = "QUERY_KEY_TYPE_INVALID"           // Key is not KEY_TYPE_QUERY.
 	QueryNameRequired             Code = "QUERY_NAME_REQUIRED"              // Query Name is empty.
+	QueryNameInvalidChars         Code = "QUERY_NAME_INVALID_CHARS"         // Query Name contains characters outside A-Za-z0-9 space hyphen underscore.
 	QueryRequiresTypeInvalid      Code = "QUERY_REQUIRES_TYPE_INVALID"      // Requires logic type must be assessment or let.
 	QueryRequiresDuplicateLet     Code = "QUERY_REQUIRES_DUPLICATE_LET"     // Duplicate let target in Requires.
 	QueryGuaranteeTypeInvalid     Code = "QUERY_GUARANTEE_TYPE_INVALID"     // Guarantee logic type must be query or let.
@@ -133,9 +156,10 @@ const (
 	// ---------------------------------------------------------------
 	// State errors.
 
-	StateKeyInvalid     Code = "STATE_KEY_INVALID"      // State key failed validation.
-	StateKeyTypeInvalid Code = "STATE_KEY_TYPE_INVALID" // Key is not KEY_TYPE_STATE.
-	StateNameRequired   Code = "STATE_NAME_REQUIRED"    // State Name is empty.
+	StateKeyInvalid       Code = "STATE_KEY_INVALID"        // State key failed validation.
+	StateKeyTypeInvalid   Code = "STATE_KEY_TYPE_INVALID"   // Key is not KEY_TYPE_STATE.
+	StateNameRequired     Code = "STATE_NAME_REQUIRED"      // State Name is empty.
+	StateNameInvalidChars Code = "STATE_NAME_INVALID_CHARS" // State Name contains characters outside A-Za-z0-9 space hyphen underscore.
 
 	// ---------------------------------------------------------------
 	// StateAction errors (action references within states).
@@ -151,52 +175,56 @@ const (
 	// ---------------------------------------------------------------
 	// Transition errors.
 
-	TransitionKeyInvalid          Code = "TRANSITION_KEY_INVALID"          // Transition key failed validation.
-	TransitionKeyTypeInvalid      Code = "TRANSITION_KEY_TYPE_INVALID"     // Key is not KEY_TYPE_TRANSITION.
-	TransitionNoState             Code = "TRANSITION_NO_STATE"             // Neither FromStateKey nor ToStateKey set.
-	TransitionFromstatekeyInvalid Code = "TRANSITION_FROMSTATEKEY_INVALID" // FromStateKey failed validation.
-	TransitionFromstatekeyType    Code = "TRANSITION_FROMSTATEKEY_TYPE"    // FromStateKey is not KEY_TYPE_STATE.
-	TransitionTostatekeyInvalid   Code = "TRANSITION_TOSTATEKEY_INVALID"   // ToStateKey failed validation.
-	TransitionTostatekeyType      Code = "TRANSITION_TOSTATEKEY_TYPE"      // ToStateKey is not KEY_TYPE_STATE.
-	TransitionEventkeyInvalid     Code = "TRANSITION_EVENTKEY_INVALID"     // EventKey failed validation.
-	TransitionEventkeyType        Code = "TRANSITION_EVENTKEY_TYPE"        // EventKey is not KEY_TYPE_EVENT.
-	TransitionGuardkeyInvalid     Code = "TRANSITION_GUARDKEY_INVALID"     // GuardKey failed validation.
-	TransitionGuardkeyType        Code = "TRANSITION_GUARDKEY_TYPE"        // GuardKey is not KEY_TYPE_GUARD.
-	TransitionActionkeyInvalid    Code = "TRANSITION_ACTIONKEY_INVALID"    // ActionKey failed validation.
-	TransitionActionkeyType       Code = "TRANSITION_ACTIONKEY_TYPE"       // ActionKey is not KEY_TYPE_ACTION.
-	TransitionFromstateNotfound   Code = "TRANSITION_FROMSTATE_NOTFOUND"   // FromStateKey references non-existent state.
-	TransitionTostateNotfound     Code = "TRANSITION_TOSTATE_NOTFOUND"     // ToStateKey references non-existent state.
-	TransitionEventNotfound       Code = "TRANSITION_EVENT_NOTFOUND"       // EventKey references non-existent event.
-	TransitionGuardNotfound       Code = "TRANSITION_GUARD_NOTFOUND"       // GuardKey references non-existent guard.
-	TransitionActionNotfound      Code = "TRANSITION_ACTION_NOTFOUND"      // ActionKey references non-existent action.
+	TransitionKeyInvalid          Code = "TRANSITION_KEY_INVALID"           // Transition key failed validation.
+	TransitionKeyTypeInvalid      Code = "TRANSITION_KEY_TYPE_INVALID"      // Key is not KEY_TYPE_TRANSITION.
+	TransitionNoState             Code = "TRANSITION_NO_STATE"              // Neither FromStateKey nor ToStateKey set.
+	TransitionFromstatekeyInvalid Code = "TRANSITION_FROMSTATEKEY_INVALID"  // FromStateKey failed validation.
+	TransitionFromstatekeyType    Code = "TRANSITION_FROMSTATEKEY_TYPE"     // FromStateKey is not KEY_TYPE_STATE.
+	TransitionTostatekeyInvalid   Code = "TRANSITION_TOSTATEKEY_INVALID"    // ToStateKey failed validation.
+	TransitionTostatekeyType      Code = "TRANSITION_TOSTATEKEY_TYPE"       // ToStateKey is not KEY_TYPE_STATE.
+	TransitionEventkeyInvalid     Code = "TRANSITION_EVENTKEY_INVALID"      // EventKey failed validation.
+	TransitionEventkeyType        Code = "TRANSITION_EVENTKEY_TYPE"         // EventKey is not KEY_TYPE_EVENT.
+	TransitionGuardkeyInvalid     Code = "TRANSITION_GUARDKEY_INVALID"      // GuardKey failed validation.
+	TransitionGuardkeyType        Code = "TRANSITION_GUARDKEY_TYPE"         // GuardKey is not KEY_TYPE_GUARD.
+	TransitionActionkeyInvalid    Code = "TRANSITION_ACTIONKEY_INVALID"     // ActionKey failed validation.
+	TransitionActionkeyType       Code = "TRANSITION_ACTIONKEY_TYPE"        // ActionKey is not KEY_TYPE_ACTION.
+	TransitionFromstateNotfound   Code = "TRANSITION_FROMSTATE_NOTFOUND"    // FromStateKey references non-existent state.
+	TransitionTostateNotfound     Code = "TRANSITION_TOSTATE_NOTFOUND"      // ToStateKey references non-existent state.
+	TransitionEventNotfound       Code = "TRANSITION_EVENT_NOTFOUND"        // EventKey references non-existent event.
+	TransitionGuardNotfound       Code = "TRANSITION_GUARD_NOTFOUND"        // GuardKey references non-existent guard.
+	TransitionActionNotfound      Code = "TRANSITION_ACTION_NOTFOUND"       // ActionKey references non-existent action.
+	TransitionInitialEventInvalid Code = "TRANSITION_INITIAL_EVENT_INVALID" // FromStateKey nil but event is not _new.
+	TransitionFinalEventInvalid   Code = "TRANSITION_FINAL_EVENT_INVALID"   // ToStateKey nil but event is not _destroy.
 
 	// ---------------------------------------------------------------
 	// Class errors.
 
-	ClassKeyInvalid             Code = "CLASS_KEY_INVALID"              // Class key failed validation.
-	ClassKeyTypeInvalid         Code = "CLASS_KEY_TYPE_INVALID"         // Key is not KEY_TYPE_CLASS.
-	ClassNameRequired           Code = "CLASS_NAME_REQUIRED"            // Class Name is empty.
-	ClassActorkeyInvalid        Code = "CLASS_ACTORKEY_INVALID"         // ActorKey failed validation.
-	ClassActorkeyTypeInvalid    Code = "CLASS_ACTORKEY_TYPE_INVALID"    // ActorKey is not KEY_TYPE_ACTOR.
-	ClassSuperkeyInvalid        Code = "CLASS_SUPERKEY_INVALID"         // SuperclassOfKey failed validation.
-	ClassSuperkeyTypeInvalid    Code = "CLASS_SUPERKEY_TYPE_INVALID"    // SuperclassOfKey is not KEY_TYPE_CLASS_GENERALIZATION.
-	ClassSubkeyInvalid          Code = "CLASS_SUBKEY_INVALID"           // SubclassOfKey failed validation.
-	ClassSubkeyTypeInvalid      Code = "CLASS_SUBKEY_TYPE_INVALID"      // SubclassOfKey is not KEY_TYPE_CLASS_GENERALIZATION.
-	ClassSuperSubSame           Code = "CLASS_SUPER_SUB_SAME"           // SuperclassOfKey and SubclassOfKey are the same.
-	ClassActorNotfound          Code = "CLASS_ACTOR_NOTFOUND"           // ActorKey references non-existent actor.
-	ClassSupergenNotfound       Code = "CLASS_SUPERGEN_NOTFOUND"        // SuperclassOfKey references non-existent generalization.
-	ClassSupergenWrongSubdomain Code = "CLASS_SUPERGEN_WRONG_SUBDOMAIN" // SuperclassOfKey generalization not in same subdomain.
-	ClassSubgenNotfound         Code = "CLASS_SUBGEN_NOTFOUND"          // SubclassOfKey references non-existent generalization.
-	ClassSubgenWrongSubdomain   Code = "CLASS_SUBGEN_WRONG_SUBDOMAIN"   // SubclassOfKey generalization not in same subdomain.
-	ClassInvariantTypeInvalid   Code = "CLASS_INVARIANT_TYPE_INVALID"   // Class invariant has wrong logic type.
-	ClassInvariantDuplicateLet  Code = "CLASS_INVARIANT_DUPLICATE_LET"  // Class invariant has duplicate let target.
-	ClassGuaranteeInvalidTarget Code = "CLASS_GUARANTEE_INVALID_TARGET" // Guarantee targets non-existent attribute.
+	ClassKeyInvalid                    Code = "CLASS_KEY_INVALID"                      // Class key failed validation.
+	ClassKeyTypeInvalid                Code = "CLASS_KEY_TYPE_INVALID"                 // Key is not KEY_TYPE_CLASS.
+	ClassNameRequired                  Code = "CLASS_NAME_REQUIRED"                    // Class Name is empty.
+	ClassActorkeyInvalid               Code = "CLASS_ACTORKEY_INVALID"                 // ActorKey failed validation.
+	ClassActorkeyTypeInvalid           Code = "CLASS_ACTORKEY_TYPE_INVALID"            // ActorKey is not KEY_TYPE_ACTOR.
+	ClassSuperkeyInvalid               Code = "CLASS_SUPERKEY_INVALID"                 // SuperclassOfKey failed validation.
+	ClassSuperkeyTypeInvalid           Code = "CLASS_SUPERKEY_TYPE_INVALID"            // SuperclassOfKey is not KEY_TYPE_CLASS_GENERALIZATION.
+	ClassSubkeyInvalid                 Code = "CLASS_SUBKEY_INVALID"                   // SubclassOfKey failed validation.
+	ClassSubkeyTypeInvalid             Code = "CLASS_SUBKEY_TYPE_INVALID"              // SubclassOfKey is not KEY_TYPE_CLASS_GENERALIZATION.
+	ClassSuperSubSame                  Code = "CLASS_SUPER_SUB_SAME"                   // SuperclassOfKey and SubclassOfKey are the same.
+	ClassActorNotfound                 Code = "CLASS_ACTOR_NOTFOUND"                   // ActorKey references non-existent actor.
+	ClassSupergenNotfound              Code = "CLASS_SUPERGEN_NOTFOUND"                // SuperclassOfKey references non-existent generalization.
+	ClassSupergenWrongSubdomain        Code = "CLASS_SUPERGEN_WRONG_SUBDOMAIN"         // SuperclassOfKey generalization not in same subdomain.
+	ClassSubgenNotfound                Code = "CLASS_SUBGEN_NOTFOUND"                  // SubclassOfKey references non-existent generalization.
+	ClassSubgenWrongSubdomain          Code = "CLASS_SUBGEN_WRONG_SUBDOMAIN"           // SubclassOfKey generalization not in same subdomain.
+	ClassInvariantTypeInvalid          Code = "CLASS_INVARIANT_TYPE_INVALID"           // Class invariant has wrong logic type.
+	ClassInvariantDuplicateLet         Code = "CLASS_INVARIANT_DUPLICATE_LET"          // Class invariant has duplicate let target.
+	ClassGuaranteeInvalidTarget        Code = "CLASS_GUARANTEE_INVALID_TARGET"         // Guarantee targets non-existent attribute.
+	ClassGuaranteeDestroyTargetInvalid Code = "CLASS_GUARANTEE_DESTROY_TARGET_INVALID" // Destroy guarantee target is not an outgoing association.
 
 	// ---------------------------------------------------------------
 	// Attribute errors.
 
 	AttrKeyInvalid            Code = "ATTR_KEY_INVALID"             // Attribute key failed validation.
 	AttrKeyTypeInvalid        Code = "ATTR_KEY_TYPE_INVALID"        // Key is not KEY_TYPE_ATTRIBUTE.
+	AttrDuplicateKey          Code = "ATTR_DUPLICATE_KEY"           // Class lists the same attribute key more than once.
 	AttrNameRequired          Code = "ATTR_NAME_REQUIRED"           // Attribute Name is empty.
 	AttrDerivationTypeInvalid Code = "ATTR_DERIVATION_TYPE_INVALID" // DerivationPolicy logic type is invalid.
 	AttrInvariantTypeInvalid  Code = "ATTR_INVARIANT_TYPE_INVALID"  // Attribute invariant has wrong logic type.
@@ -205,22 +233,30 @@ const (
 	// ---------------------------------------------------------------
 	// Association errors.
 
-	AssocKeyInvalid         Code = "ASSOC_KEY_INVALID"          // Association key failed validation.
-	AssocKeyTypeInvalid     Code = "ASSOC_KEY_TYPE_INVALID"     // Key is not KEY_TYPE_CLASS_ASSOCIATION.
-	AssocNameRequired       Code = "ASSOC_NAME_REQUIRED"        // Association Name is empty.
-	AssocFromkeyInvalid     Code = "ASSOC_FROMKEY_INVALID"      // FromClassKey failed validation.
-	AssocFromkeyTypeInvalid Code = "ASSOC_FROMKEY_TYPE_INVALID" // FromClassKey is not KEY_TYPE_CLASS.
-	AssocTokeyInvalid       Code = "ASSOC_TOKEY_INVALID"        // ToClassKey failed validation.
-	AssocTokeyTypeInvalid   Code = "ASSOC_TOKEY_TYPE_INVALID"   // ToClassKey is not KEY_TYPE_CLASS.
-	AssocFromMultInvalid    Code = "ASSOC_FROM_MULT_INVALID"    // FromMultiplicity failed validation.
-	AssocToMultInvalid      Code = "ASSOC_TO_MULT_INVALID"      // ToMultiplicity failed validation.
-	AssocAssocclassInvalid  Code = "ASSOC_ASSOCCLASS_INVALID"   // AssociationClassKey failed validation.
-	AssocAssocclassType     Code = "ASSOC_ASSOCCLASS_TYPE"      // AssociationClassKey is not KEY_TYPE_CLASS.
-	AssocAssocclassSameFrom Code = "ASSOC_ASSOCCLASS_SAME_FROM" // AssociationClassKey same as FromClassKey.
-	AssocAssocclassSameTo   Code = "ASSOC_ASSOCCLASS_SAME_TO"   // AssociationClassKey same as ToClassKey.
-	AssocFromNotfound       Code = "ASSOC_FROM_NOTFOUND"        // FromClassKey references non-existent class.
-	AssocToNotfound         Code = "ASSOC_TO_NOTFOUND"          // ToClassKey references non-existent class.
-	AssocAssocclassNotfound Code = "ASSOC_ASSOCCLASS_NOTFOUND"  // AssociationClassKey references non-existent class.
+	AssocKeyInvalid                 Code = "ASSOC_KEY_INVALID"                   // Association key failed validation.
+	AssocKeyTypeInvalid             Code = "ASSOC_KEY_TYPE_INVALID"              // Key is not KEY_TYPE_CLASS_ASSOCIATION.
+	AssocNameRequired               Code = "ASSOC_NAME_REQUIRED"                 // Association Name is empty.
+	AssocFromkeyInvalid             Code = "ASSOC_FROMKEY_INVALID"               // FromClassKey failed validation.
+	AssocFromkeyTypeInvalid         Code = "ASSOC_FROMKEY_TYPE_INVALID"          // FromClassKey is not KEY_TYPE_CLASS.
+	AssocTokeyInvalid               Code = "ASSOC_TOKEY_INVALID"                 // ToClassKey failed validation.
+	AssocTokeyTypeInvalid           Code = "ASSOC_TOKEY_TYPE_INVALID"            // ToClassKey is not KEY_TYPE_CLASS.
+	AssocFromMultInvalid            Code = "ASSOC_FROM_MULT_INVALID"             // FromMultiplicity failed validation.
+	AssocToMultInvalid              Code = "ASSOC_TO_MULT_INVALID"               // ToMultiplicity failed validation.
+	AssocUniquenessScopeInvalid     Code = "ASSOC_UNIQUENESS_SCOPE_INVALID"      // Uniqueness constraint scope is not valid.
+	AssocUniquenessKeyRequired      Code = "ASSOC_UNIQUENESS_KEY_REQUIRED"       // Uniqueness constraint needs at least one attribute key.
+	AssocUniquenessMaxInvalid       Code = "ASSOC_UNIQUENESS_MAX_INVALID"        // Uniqueness constraint max must be at least 1.
+	AssocUniquenessDuplicate        Code = "ASSOC_UNIQUENESS_DUPLICATE"          // Duplicate uniqueness constraint on association.
+	AssocUniquenessFromAttrNotfound Code = "ASSOC_UNIQUENESS_FROM_ATTR_NOTFOUND" // from_attributes SubKey not on from class.
+	AssocUniquenessToAttrNotfound   Code = "ASSOC_UNIQUENESS_TO_ATTR_NOTFOUND"   // to_attributes SubKey not on to class.
+	AssocAssocclassInvalid          Code = "ASSOC_ASSOCCLASS_INVALID"            // AssociationClassKey failed validation.
+	AssocAssocclassType             Code = "ASSOC_ASSOCCLASS_TYPE"               // AssociationClassKey is not KEY_TYPE_CLASS.
+	AssocAssocclassSameFrom         Code = "ASSOC_ASSOCCLASS_SAME_FROM"          // AssociationClassKey same as FromClassKey.
+	AssocAssocclassSameTo           Code = "ASSOC_ASSOCCLASS_SAME_TO"            // AssociationClassKey same as ToClassKey.
+	AssocFromNotfound               Code = "ASSOC_FROM_NOTFOUND"                 // FromClassKey references non-existent class.
+	AssocToNotfound                 Code = "ASSOC_TO_NOTFOUND"                   // ToClassKey references non-existent class.
+	AssocAssocclassNotfound         Code = "ASSOC_ASSOCCLASS_NOTFOUND"           // AssociationClassKey references non-existent class.
+	AssocInvariantTypeInvalid       Code = "ASSOC_INVARIANT_TYPE_INVALID"        // Association invariant has wrong logic type.
+	AssocInvariantDuplicateLet      Code = "ASSOC_INVARIANT_DUPLICATE_LET"       // Association invariant has duplicate let target.
 
 	// ---------------------------------------------------------------
 	// ClassGeneralization errors.
@@ -303,9 +339,9 @@ const (
 	SstepScenarioKeyRequired    Code = "SSTEP_SCENARIO_KEY_REQUIRED"    // Scenario leaf missing ScenarioKey.
 	SstepScenarioEventForbidden Code = "SSTEP_SCENARIO_EVENT_FORBIDDEN" // Scenario leaf has EventKey set.
 	SstepScenarioSelfRef        Code = "SSTEP_SCENARIO_SELF_REF"        // Scenario leaf references its own scenario.
-	SstepDeleteFromRequired     Code = "SSTEP_DELETE_FROM_REQUIRED"     // Delete leaf missing FromObjectKey.
-	SstepDeleteToForbidden      Code = "SSTEP_DELETE_TO_FORBIDDEN"      // Delete leaf has ToObjectKey set.
-	SstepDeleteKeysForbidden    Code = "SSTEP_DELETE_KEYS_FORBIDDEN"    // Delete leaf has EventKey/QueryKey/ScenarioKey set.
+	SstepDestroyFromRequired    Code = "SSTEP_DESTROY_FROM_REQUIRED"    // Delete leaf missing FromObjectKey.
+	SstepDestroyToForbidden     Code = "SSTEP_DESTROY_TO_FORBIDDEN"     // Delete leaf has ToObjectKey set.
+	SstepDestroyKeysForbidden   Code = "SSTEP_DESTROY_KEYS_FORBIDDEN"   // Delete leaf has EventKey/QueryKey/ScenarioKey set.
 	SstepSequenceMinStatements  Code = "SSTEP_SEQUENCE_MIN_STATEMENTS"  // Sequence step needs >=2 statements.
 	SstepSwitchMinCases         Code = "SSTEP_SWITCH_MIN_CASES"         // Switch step needs >=1 case.
 	SstepSwitchCaseType         Code = "SSTEP_SWITCH_CASE_TYPE"         // Switch case must be a STEP_TYPE_CASE.
@@ -457,6 +493,8 @@ const (
 	ExprModuleRequired        Code = "EXPR_MODULE_REQUIRED"         // BuiltinCall Module is empty.
 	ExprFunctionRequired      Code = "EXPR_FUNCTION_REQUIRED"       // BuiltinCall Function is empty.
 	ExprSetkeyInvalid         Code = "EXPR_SETKEY_INVALID"          // NamedSetRef SetKey failed validation.
+	ExprClasskeyInvalid       Code = "EXPR_CLASSKEY_INVALID"        // ClassRef ClassKey failed validation.
+	ExprClassNameRequired     Code = "EXPR_CLASS_NAME_REQUIRED"     // ClassRef Name is empty.
 
 	// ---------------------------------------------------------------
 	// DataType errors — data type validation.
@@ -473,6 +511,7 @@ const (
 	DtypeCollminTooSmall        Code = "DTYPE_COLLMIN_TOO_SMALL"       // DataType CollectionMin must be >= 1.
 	DtypeCollmaxTooSmall        Code = "DTYPE_COLLMAX_TOO_SMALL"       // DataType CollectionMax must be >= 1.
 	DtypeCollmaxLessThanMin     Code = "DTYPE_COLLMAX_LESS_THAN_MIN"   // DataType CollectionMax must be >= CollectionMin.
+	DtypeElementRequired        Code = "DTYPE_ELEMENT_REQUIRED"        // DataType collection must have exactly one atomic or composite element.
 
 	// ---------------------------------------------------------------
 	// Atomic errors — atomic data type validation.
@@ -511,7 +550,8 @@ const (
 	// ---------------------------------------------------------------
 	// AtomicEnum errors — atomic enum validation.
 
-	DtypeEnumValueRequired Code = "DTYPE_ENUM_VALUE_REQUIRED" // AtomicEnum Value is empty.
+	DtypeEnumValueRequired  Code = "DTYPE_ENUM_VALUE_REQUIRED"  // AtomicEnum Value is empty.
+	DtypeEnumValueDuplicate Code = "DTYPE_ENUM_VALUE_DUPLICATE" // AtomicEnum Value appears more than once in the same enumeration.
 
 	// ---------------------------------------------------------------
 	// Field errors — record field validation.

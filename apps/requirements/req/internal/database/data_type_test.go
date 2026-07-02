@@ -8,6 +8,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -36,7 +38,7 @@ func (suite *DataTypeSuite) SetupTest() {
 
 func (suite *DataTypeSuite) TestLoad() {
 	// Nothing in database yet.
-	dataType, err := LoadDataType(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	dataType, err := LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(dataType)
 
@@ -53,19 +55,19 @@ func (suite *DataTypeSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'key',
+				$1,
 				'atomic',
 				true,
 				5,
 				10
 			)
-	`)
+	`, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 
-	dataType, err = LoadDataType(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	dataType, err = LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 	suite.Equal(model_data_type.DataType{
-		Key:              "key", // Test case-insensitive.
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
 		CollectionMin:    t_IntPtr(5),
@@ -74,8 +76,8 @@ func (suite *DataTypeSuite) TestLoad() {
 }
 
 func (suite *DataTypeSuite) TestAdd() {
-	err := AddDataType(suite.db, strings.ToUpper(suite.model.Key), model_data_type.DataType{
-		Key:              "KeY", // Test case-insensitive.
+	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "record",
 		CollectionUnique: t_BoolPtr(true),
 		CollectionMin:    t_IntPtr(5),
@@ -83,10 +85,10 @@ func (suite *DataTypeSuite) TestAdd() {
 	})
 	suite.Require().NoError(err)
 
-	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	dataType, err := LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 	suite.Equal(model_data_type.DataType{
-		Key:              "key",
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "record",
 		CollectionUnique: t_BoolPtr(true),
 		CollectionMin:    t_IntPtr(5),
@@ -95,8 +97,8 @@ func (suite *DataTypeSuite) TestAdd() {
 }
 
 func (suite *DataTypeSuite) TestAddNulls() {
-	err := AddDataType(suite.db, strings.ToUpper(suite.model.Key), model_data_type.DataType{
-		Key:              "KeY", // Test case-insensitive.
+	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "unordered",
 		CollectionUnique: nil,
 		CollectionMin:    nil,
@@ -104,10 +106,10 @@ func (suite *DataTypeSuite) TestAddNulls() {
 	})
 	suite.Require().NoError(err)
 
-	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	dataType, err := LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 	suite.Equal(model_data_type.DataType{
-		Key:              "key",
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "unordered",
 		CollectionUnique: nil,
 		CollectionMin:    nil,
@@ -117,7 +119,7 @@ func (suite *DataTypeSuite) TestAddNulls() {
 
 func (suite *DataTypeSuite) TestUpdate() {
 	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
-		Key:              "key",
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
 		CollectionMin:    t_IntPtr(5),
@@ -125,8 +127,8 @@ func (suite *DataTypeSuite) TestUpdate() {
 	})
 	suite.Require().NoError(err)
 
-	err = UpdateDataType(suite.db, strings.ToUpper(suite.model.Key), model_data_type.DataType{
-		Key:              "kEy", // Test case-insensitive.
+	err = UpdateDataType(suite.db, suite.model.Key, model_data_type.DataType{
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "stack",
 		CollectionUnique: t_BoolPtr(false),
 		CollectionMin:    t_IntPtr(15),
@@ -134,10 +136,10 @@ func (suite *DataTypeSuite) TestUpdate() {
 	})
 	suite.Require().NoError(err)
 
-	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	dataType, err := LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 	suite.Equal(model_data_type.DataType{
-		Key:              "key",
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "stack",
 		CollectionUnique: t_BoolPtr(false),
 		CollectionMin:    t_IntPtr(15),
@@ -147,7 +149,7 @@ func (suite *DataTypeSuite) TestUpdate() {
 
 func (suite *DataTypeSuite) TestUpdateNulls() {
 	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
-		Key:              "key",
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
 		CollectionMin:    t_IntPtr(5),
@@ -155,8 +157,8 @@ func (suite *DataTypeSuite) TestUpdateNulls() {
 	})
 	suite.Require().NoError(err)
 
-	err = UpdateDataType(suite.db, strings.ToUpper(suite.model.Key), model_data_type.DataType{
-		Key:              "kEy", // Test case-insensitive.
+	err = UpdateDataType(suite.db, suite.model.Key, model_data_type.DataType{
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "queue",
 		CollectionUnique: nil,
 		CollectionMin:    nil,
@@ -164,10 +166,10 @@ func (suite *DataTypeSuite) TestUpdateNulls() {
 	})
 	suite.Require().NoError(err)
 
-	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	dataType, err := LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 	suite.Equal(model_data_type.DataType{
-		Key:              "key",
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "queue",
 		CollectionUnique: nil,
 		CollectionMin:    nil,
@@ -177,7 +179,7 @@ func (suite *DataTypeSuite) TestUpdateNulls() {
 
 func (suite *DataTypeSuite) TestDelete() {
 	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
-		Key:              "key",
+		Key:              t_rawDtKey("key"),
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
 		CollectionMin:    t_IntPtr(5),
@@ -185,10 +187,10 @@ func (suite *DataTypeSuite) TestDelete() {
 	})
 	suite.Require().NoError(err)
 
-	err = DeleteDataType(suite.db, strings.ToUpper(suite.model.Key), "KeY") // Test case-insensitive.
+	err = DeleteDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 
-	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	dataType, err := LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(dataType)
 }
@@ -196,7 +198,7 @@ func (suite *DataTypeSuite) TestDelete() {
 func (suite *DataTypeSuite) TestQuery() {
 	// Add some data types.
 	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
-		Key:              "key2",
+		Key:              t_rawDtKey("key2"),
 		CollectionType:   "record",
 		CollectionUnique: t_BoolPtr(false),
 		CollectionMin:    t_IntPtr(15),
@@ -205,7 +207,7 @@ func (suite *DataTypeSuite) TestQuery() {
 	suite.Require().NoError(err)
 
 	err = AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
-		Key:              "key1",
+		Key:              t_rawDtKey("key1"),
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
 		CollectionMin:    t_IntPtr(5),
@@ -213,18 +215,18 @@ func (suite *DataTypeSuite) TestQuery() {
 	})
 	suite.Require().NoError(err)
 
-	dataTypes, err := QueryDataTypes(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	dataTypes, err := QueryDataTypes(suite.db, suite.model.Key)
 	suite.Require().NoError(err)
 	suite.Equal([]model_data_type.DataType{
 		{
-			Key:              "key1",
+			Key:              t_rawDtKey("key1"),
 			CollectionType:   "atomic",
 			CollectionUnique: t_BoolPtr(true),
 			CollectionMin:    t_IntPtr(5),
 			CollectionMax:    t_IntPtr(10),
 		},
 		{
-			Key:              "key2",
+			Key:              t_rawDtKey("key2"),
 			CollectionType:   "record",
 			CollectionUnique: t_BoolPtr(false),
 			CollectionMin:    t_IntPtr(15),
@@ -234,16 +236,16 @@ func (suite *DataTypeSuite) TestQuery() {
 }
 
 func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
-	err := BulkInsertDataTypes(suite.db, strings.ToUpper(suite.model.Key), []model_data_type.DataType{
+	err := BulkInsertDataTypes(suite.db, suite.model.Key, []model_data_type.DataType{
 		{
-			Key:              "key1",
+			Key:              t_rawDtKey("key1"),
 			CollectionType:   "atomic",
 			CollectionUnique: t_BoolPtr(true),
 			CollectionMin:    t_IntPtr(5),
 			CollectionMax:    t_IntPtr(10),
 		},
 		{
-			Key:              "key2",
+			Key:              t_rawDtKey("key2"),
 			CollectionType:   "record",
 			CollectionUnique: t_BoolPtr(false),
 			CollectionMin:    t_IntPtr(15),
@@ -256,14 +258,14 @@ func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
 	suite.Require().NoError(err)
 	suite.Equal([]model_data_type.DataType{
 		{
-			Key:              "key1",
+			Key:              t_rawDtKey("key1"),
 			CollectionType:   "atomic",
 			CollectionUnique: t_BoolPtr(true),
 			CollectionMin:    t_IntPtr(5),
 			CollectionMax:    t_IntPtr(10),
 		},
 		{
-			Key:              "key2",
+			Key:              t_rawDtKey("key2"),
 			CollectionType:   "record",
 			CollectionUnique: t_BoolPtr(false),
 			CollectionMin:    t_IntPtr(15),
@@ -275,16 +277,16 @@ func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
 func (suite *DataTypeSuite) TestAddWithTypeSpec() {
 	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
 	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
-		Key:            "key",
+		Key:            t_rawDtKey("key"),
 		CollectionType: "atomic",
 		TypeSpec:       &ts,
 	})
 	suite.Require().NoError(err)
 
-	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	dataType, err := LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 	suite.Equal(model_data_type.DataType{
-		Key:            "key",
+		Key:            t_rawDtKey("key"),
 		CollectionType: "atomic",
 		TypeSpec:       &logic_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"},
 	}, dataType)
@@ -293,7 +295,7 @@ func (suite *DataTypeSuite) TestAddWithTypeSpec() {
 func (suite *DataTypeSuite) TestUpdateTypeSpec() {
 	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
 	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
-		Key:            "key",
+		Key:            t_rawDtKey("key"),
 		CollectionType: "atomic",
 		TypeSpec:       &ts,
 	})
@@ -301,16 +303,16 @@ func (suite *DataTypeSuite) TestUpdateTypeSpec() {
 
 	// Update to remove TypeSpec.
 	err = UpdateDataType(suite.db, suite.model.Key, model_data_type.DataType{
-		Key:            "key",
+		Key:            t_rawDtKey("key"),
 		CollectionType: "record",
 		TypeSpec:       nil,
 	})
 	suite.Require().NoError(err)
 
-	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	dataType, err := LoadDataType(suite.db, suite.model.Key, t_rawDtKey("key").String())
 	suite.Require().NoError(err)
 	suite.Equal(model_data_type.DataType{
-		Key:            "key",
+		Key:            t_rawDtKey("key"),
 		CollectionType: "record",
 		TypeSpec:       nil,
 	}, dataType)
@@ -320,23 +322,76 @@ func (suite *DataTypeSuite) TestUpdateTypeSpec() {
 // Test objects for other tests.
 //==================================================
 
+// t_AddDataType inserts a DataType with the given dataTypeKey string and returns the
+// loaded DataType. The DB column stores the canonical .String() of an identity.Key;
+// the dataTypeKey passed here is normalized into a synthetic KEY_TYPE_DATA_TYPE key
+// (via t_rawDtKey) so the typed-key invariant holds end-to-end.
 func t_AddDataType(t *testing.T, dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_data_type.DataType) {
+	typedKey := t_rawDtKey(dataTypeKey)
 	err := AddDataType(dbOrTx, modelKey, model_data_type.DataType{
-		Key:            dataTypeKey,
+		Key:            typedKey,
 		CollectionType: "atomic",
 	})
 	require.NoError(t, err)
 
-	dataType, err = LoadDataType(dbOrTx, modelKey, dataTypeKey)
+	dataType, err = LoadDataType(dbOrTx, modelKey, typedKey.String())
 	require.NoError(t, err)
 
 	return dataType
 }
 
+// t_AddDataTypeForAttribute inserts a DataType keyed under the given real attribute key
+// and returns the loaded DataType. Use this from tests whose setup already has a typed
+// attribute key (i.e., the FK relationship matters).
+func t_AddDataTypeForAttribute(t *testing.T, dbOrTx DbOrTx, modelKey string, attrKey identity.Key) (dataType model_data_type.DataType) {
+	typedKey := helper.Must(identity.NewDataTypeKey(attrKey, ""))
+	err := AddDataType(dbOrTx, modelKey, model_data_type.DataType{
+		Key:            typedKey,
+		CollectionType: "atomic",
+	})
+	require.NoError(t, err)
+
+	dataType, err = LoadDataType(dbOrTx, modelKey, typedKey.String())
+	require.NoError(t, err)
+
+	return dataType
+}
+
+// t_rawDtKey turns a raw test-placeholder string into a valid KEY_TYPE_DATA_TYPE
+// identity.Key by scoping it under a synthetic attribute parent. Different input
+// strings produce different keys, so test independence is preserved.
+func t_rawDtKey(s string) identity.Key {
+	name := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(s), "-", "_"))
+	if name == "" {
+		name = "x"
+	}
+	domainKey, err := identity.NewDomainKey("dbtest")
+	if err != nil {
+		panic(err)
+	}
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, "dbtest")
+	if err != nil {
+		panic(err)
+	}
+	classKey, err := identity.NewClassKey(subdomainKey, "dbtest")
+	if err != nil {
+		panic(err)
+	}
+	attrKey, err := identity.NewAttributeKey(classKey, name)
+	if err != nil {
+		panic(err)
+	}
+	k, err := identity.NewDataTypeKey(attrKey, "")
+	if err != nil {
+		panic(err)
+	}
+	return k
+}
+
 func (suite *DataTypeSuite) TestVerifyTestObjects() {
 	dataType := t_AddDataType(suite.T(), suite.db, suite.model.Key, "data_type_key")
 	suite.Equal(model_data_type.DataType{
-		Key:            "data_type_key",
+		Key:            t_rawDtKey("data_type_key"),
 		CollectionType: "atomic",
 	}, dataType)
 }

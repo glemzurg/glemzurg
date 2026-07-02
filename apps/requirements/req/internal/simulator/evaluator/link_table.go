@@ -1,5 +1,7 @@
 package evaluator
 
+import "fmt"
+
 // AssociationKey is the string form of identity.Key for an association.
 // Example: "domain/DomainA/subdomain/SubB/cassociation/class/BookOrder/class/BookOrderLine/lines"
 // This provides globally unique identification for associations.
@@ -31,18 +33,25 @@ func NewLinkTable() *LinkTable {
 
 // AddLink creates a link between two objects for an association.
 // The link is indexed in both directions for efficient lookup.
-func (t *LinkTable) AddLink(assocKey AssociationKey, fromID, toID ObjectID) {
+// Returns an error when the same association already links the instance pair.
+func (t *LinkTable) AddLink(assocKey AssociationKey, fromID, toID ObjectID) error {
+	if t.hasLink(assocKey, fromID, toID) {
+		return fmt.Errorf(
+			"duplicate link for association %s between instances %d and %d",
+			assocKey,
+			fromID,
+			toID,
+		)
+	}
+
 	link := Link{
 		AssociationKey: assocKey,
 		FromID:         fromID,
 		ToID:           toID,
 	}
-
-	// Check for duplicate before adding
-	if !t.hasLink(assocKey, fromID, toID) {
-		t.byFrom[fromID] = append(t.byFrom[fromID], link)
-		t.byTo[toID] = append(t.byTo[toID], link)
-	}
+	t.byFrom[fromID] = append(t.byFrom[fromID], link)
+	t.byTo[toID] = append(t.byTo[toID], link)
+	return nil
 }
 
 // RemoveLink removes a link between two objects.
@@ -116,6 +125,29 @@ func (t *LinkTable) GetAllForward(fromID ObjectID) []Link {
 // GetAllReverse returns all links to a given object (any association).
 func (t *LinkTable) GetAllReverse(toID ObjectID) []Link {
 	return t.byTo[toID]
+}
+
+// AppendLinkWithoutValidation records a link without duplicate checking.
+// Invariant tests use this to represent link tables that bypass normal insertion rules.
+func (t *LinkTable) AppendLinkWithoutValidation(assocKey AssociationKey, fromID, toID ObjectID) {
+	link := Link{
+		AssociationKey: assocKey,
+		FromID:         fromID,
+		ToID:           toID,
+	}
+	t.byFrom[fromID] = append(t.byFrom[fromID], link)
+	t.byTo[toID] = append(t.byTo[toID], link)
+}
+
+// CountPairLinks returns how many links exist for one association between a from/to pair.
+func (t *LinkTable) CountPairLinks(assocKey AssociationKey, fromID, toID ObjectID) int {
+	count := 0
+	for _, link := range t.byFrom[fromID] {
+		if link.AssociationKey == assocKey && link.ToID == toID {
+			count++
+		}
+	}
+	return count
 }
 
 // hasLink checks if a specific link already exists.

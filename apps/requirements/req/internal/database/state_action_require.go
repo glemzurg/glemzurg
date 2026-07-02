@@ -152,7 +152,7 @@ func AddActionRequires(dbOrTx DbOrTx, modelKey string, requires map[identity.Key
 				qb.WriteString(", ")
 			}
 			base := i * 3
-			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d)", base+1, base+2, base+3))
+			fmt.Fprintf(&qb, "($%d, $%d, $%d)", base+1, base+2, base+3)
 			args = append(args, modelKey, actionKey.String(), logicKey.String())
 			i++
 		}

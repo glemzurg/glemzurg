@@ -131,7 +131,7 @@ func tryEnumValues(
 	existingKeys map[string]bool,
 ) bool {
 	for _, enumVal := range attrDef.DataType.Atomic.Enums {
-		attrs.Set(attrName, object.NewString(enumVal.Value))
+		attrs.Set(attrName, valueForEnumerationLiteral(attrDef.DataType, enumVal.Value))
 		if isUniqueTuple(attrs, indexDef, existingKeys) {
 			return true
 		}

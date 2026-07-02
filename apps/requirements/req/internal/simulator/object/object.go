@@ -11,14 +11,15 @@ import (
 type ObjectType string //nolint:revive // public API name
 
 const (
-	TypeNumber  ObjectType = "Number"
-	TypeBoolean ObjectType = "Boolean"
-	TypeString  ObjectType = "String"
-	TypeSet     ObjectType = "Set"
-	TypeBag     ObjectType = "Bag"
-	TypeTuple   ObjectType = "Tuple"
-	TypeRecord  ObjectType = "Record"
-	TypeError   ObjectType = "Error"
+	TypeNumber              ObjectType = "Number"
+	TypeBoolean             ObjectType = "Boolean"
+	TypeString              ObjectType = "String"
+	TypeSet                 ObjectType = "Set"
+	TypeBag                 ObjectType = "Bag"
+	TypeTuple               ObjectType = "Tuple"
+	TypeRecord              ObjectType = "Record"
+	TypeAssociationRelation ObjectType = "AssociationRelation"
+	TypeError               ObjectType = "Error"
 )
 
 // Object is a runtime value in the simulator.

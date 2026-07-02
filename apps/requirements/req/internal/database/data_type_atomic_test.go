@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -39,7 +38,7 @@ func (suite *AtomicSuite) SetupTest() {
 
 func (suite *AtomicSuite) TestLoad() {
 	// Nothing in database yet.
-	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(parentDataTypeKey)
 	suite.Empty(atomic)
@@ -57,18 +56,18 @@ func (suite *AtomicSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'data_type_key',
+				$1,
 				'reference',
 				'Reference',
 				true,
 				'ObjectClassKey'
 			)
-	`)
+	`, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, atomic, err = LoadAtomic(suite.db, strings.ToUpper(suite.model.Key), "data_Type_Key") // Test case-insensitive.
+	parentDataTypeKey, atomic, err = LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
@@ -78,7 +77,7 @@ func (suite *AtomicSuite) TestLoad() {
 }
 
 func (suite *AtomicSuite) TestAdd() {
-	err := AddAtomic(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Atomic{
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
 		EnumOrdered:    t_BoolPtr(true),
@@ -86,9 +85,9 @@ func (suite *AtomicSuite) TestAdd() {
 	})
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
@@ -97,8 +96,20 @@ func (suite *AtomicSuite) TestAdd() {
 	}, atomic)
 }
 
+func (suite *AtomicSuite) TestAddDateTime() {
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
+		ConstraintType: "datetime",
+	})
+	suite.Require().NoError(err)
+
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
+	suite.Require().NoError(err)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
+	suite.Equal(model_data_type.Atomic{ConstraintType: "datetime"}, atomic)
+}
+
 func (suite *AtomicSuite) TestAddNulls() {
-	err := AddAtomic(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Atomic{
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      nil,
 		EnumOrdered:    nil,
@@ -106,9 +117,9 @@ func (suite *AtomicSuite) TestAddNulls() {
 	})
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      nil,
@@ -118,7 +129,7 @@ func (suite *AtomicSuite) TestAddNulls() {
 }
 
 func (suite *AtomicSuite) TestUpdate() {
-	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Atomic{
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
 		EnumOrdered:    t_BoolPtr(true),
@@ -126,7 +137,7 @@ func (suite *AtomicSuite) TestUpdate() {
 	})
 	suite.Require().NoError(err)
 
-	err = UpdateAtomic(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Atomic{
+	err = UpdateAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "object",
 		Reference:      t_StrPtr("ReferenceX"),
 		EnumOrdered:    t_BoolPtr(false),
@@ -134,9 +145,9 @@ func (suite *AtomicSuite) TestUpdate() {
 	})
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.Atomic{
 		ConstraintType: "object",
 		Reference:      t_StrPtr("ReferenceX"),
@@ -146,7 +157,7 @@ func (suite *AtomicSuite) TestUpdate() {
 }
 
 func (suite *AtomicSuite) TestUpdateNulls() {
-	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Atomic{
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
 		EnumOrdered:    t_BoolPtr(true),
@@ -154,7 +165,7 @@ func (suite *AtomicSuite) TestUpdateNulls() {
 	})
 	suite.Require().NoError(err)
 
-	err = UpdateAtomic(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Atomic{
+	err = UpdateAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "object",
 		Reference:      nil,
 		EnumOrdered:    nil,
@@ -162,9 +173,9 @@ func (suite *AtomicSuite) TestUpdateNulls() {
 	})
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
-	suite.Equal("data_type_key", parentDataTypeKey)
+	suite.Equal(suite.dataType.Key.String(), parentDataTypeKey)
 	suite.Equal(model_data_type.Atomic{
 		ConstraintType: "object",
 		Reference:      nil,
@@ -174,7 +185,7 @@ func (suite *AtomicSuite) TestUpdateNulls() {
 }
 
 func (suite *AtomicSuite) TestRemove() {
-	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Atomic{
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
 		EnumOrdered:    t_BoolPtr(true),
@@ -182,17 +193,17 @@ func (suite *AtomicSuite) TestRemove() {
 	})
 	suite.Require().NoError(err)
 
-	err = RemoveAtomic(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key)) // Test case-insensitive.
+	err = RemoveAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().NoError(err)
 
-	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key.String())
 	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(parentDataTypeKey)
 	suite.Empty(atomic)
 }
 
 func (suite *AtomicSuite) TestQuery() {
-	err := AddAtomic(suite.db, suite.model.Key, suite.dataTypeB.Key, model_data_type.Atomic{
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataTypeB.Key.String(), model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("ReferenceX"),
 		EnumOrdered:    t_BoolPtr(false),
@@ -200,7 +211,7 @@ func (suite *AtomicSuite) TestQuery() {
 	})
 
 	suite.Require().NoError(err)
-	err = AddAtomic(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Atomic{
+	err = AddAtomic(suite.db, suite.model.Key, suite.dataType.Key.String(), model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
 		EnumOrdered:    t_BoolPtr(true),
@@ -208,16 +219,16 @@ func (suite *AtomicSuite) TestQuery() {
 	})
 	suite.Require().NoError(err)
 
-	atomics, err := QueryAtomics(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	atomics, err := QueryAtomics(suite.db, suite.model.Key)
 	suite.Require().NoError(err)
 	suite.Equal(map[string]model_data_type.Atomic{
-		"data_type_key": model_data_type.Atomic{
+		suite.dataType.Key.String(): {
 			ConstraintType: "reference",
 			Reference:      t_StrPtr("Reference"),
 			EnumOrdered:    t_BoolPtr(true),
 			ObjectClassKey: t_StrPtr("ObjectClassKey"),
 		},
-		"data_type_key_b": model_data_type.Atomic{
+		suite.dataTypeB.Key.String(): {
 			ConstraintType: "reference",
 			Reference:      t_StrPtr("ReferenceX"),
 			EnumOrdered:    t_BoolPtr(false),
@@ -227,14 +238,14 @@ func (suite *AtomicSuite) TestQuery() {
 }
 
 func (suite *AtomicSuite) TestBulkInsertAtomics() {
-	err := BulkInsertAtomics(suite.db, strings.ToUpper(suite.model.Key), map[string]model_data_type.Atomic{
-		"data_type_key": model_data_type.Atomic{
+	err := BulkInsertAtomics(suite.db, suite.model.Key, map[string]model_data_type.Atomic{
+		suite.dataType.Key.String(): {
 			ConstraintType: "reference",
 			Reference:      t_StrPtr("Reference"),
 			EnumOrdered:    t_BoolPtr(true),
 			ObjectClassKey: t_StrPtr("ObjectClassKey"),
 		},
-		"data_type_key_b": model_data_type.Atomic{
+		suite.dataTypeB.Key.String(): {
 			ConstraintType: "reference",
 			Reference:      t_StrPtr("ReferenceX"),
 			EnumOrdered:    t_BoolPtr(false),
@@ -246,13 +257,13 @@ func (suite *AtomicSuite) TestBulkInsertAtomics() {
 	atomics, err := QueryAtomics(suite.db, suite.model.Key)
 	suite.Require().NoError(err)
 	suite.Equal(map[string]model_data_type.Atomic{
-		"data_type_key": model_data_type.Atomic{
+		suite.dataType.Key.String(): {
 			ConstraintType: "reference",
 			Reference:      t_StrPtr("Reference"),
 			EnumOrdered:    t_BoolPtr(true),
 			ObjectClassKey: t_StrPtr("ObjectClassKey"),
 		},
-		"data_type_key_b": model_data_type.Atomic{
+		suite.dataTypeB.Key.String(): {
 			ConstraintType: "reference",
 			Reference:      t_StrPtr("ReferenceX"),
 			EnumOrdered:    t_BoolPtr(false),
@@ -282,7 +293,7 @@ func t_AddAtomic(t *testing.T, dbOrTx DbOrTx, modelKey, dataTypeKey string, cons
 }
 
 func (suite *AtomicSuite) TestVerifyTestObjects() {
-	atomic := t_AddAtomic(suite.T(), suite.db, suite.model.Key, suite.dataType.Key, "reference", t_StrPtr("some_ref"), t_BoolPtr(true))
+	atomic := t_AddAtomic(suite.T(), suite.db, suite.model.Key, suite.dataType.Key.String(), "reference", t_StrPtr("some_ref"), t_BoolPtr(true))
 	suite.Equal(model_data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("some_ref"),

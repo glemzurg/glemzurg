@@ -62,7 +62,7 @@ func scopeObjectKeyField(data map[string]any, field string, scenarioKey identity
 	if !ok {
 		return nil
 	}
-	fullKey, err := identity.NewScenarioObjectKey(scenarioKey, valStr)
+	fullKey, err := identity.NewScenarioObjectKey(scenarioKey, identity.NormalizeSubKey(valStr))
 	if err != nil {
 		return err
 	}

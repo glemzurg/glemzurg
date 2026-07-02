@@ -6,36 +6,92 @@
 
 # {{ if .Domain.Realized }}«realized» {{ end }}{{ .Domain.Name }}
 
-{{ .Domain.Details }}
-
+{{ .Domain.Details }}{{ unfinished_notes_block .Domain.UnfinishedNotes }}
 {{ if gt (len .Domain.Subdomains) 1 }}
 ## Subdomains
 
 The subdomains of this domain.
 
-![er]({{ filename "domain" .Domain.Key "subdomains" ".svg" }})
+```mermaid
+{{ .SubdomainsDiagram }}
+```
 
 {{ range .Subdomains -}}
-- **[{{ .Name }}]({{ filename "subdomain" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+- **[{{ .Name }}]({{ filename "subdomain" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
 
 {{ else }}
-## Use Cases
+{{ range .Subdomains -}}
+{{ if or .Details .UnfinishedNotes -}}
+## {{ .Name }}
 
-![er]({{ filename "domain" .Domain.Key "use-cases" ".svg" }})
+{{ .Details }}{{ unfinished_notes_block .UnfinishedNotes }}
+{{ end -}}
+[Model facts]({{ filename "subdomain" .Key "facts" ".md" }})
 
-{{ range $domainUseCases -}}
-- **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
-
 ## Classes
 
 The classes of this domain.
 
-![er]({{ filename "domain" .Domain.Key "classes" ".svg" }})
-
+{{ if ne .ClassesDiagram "" }}
+```mermaid
+{{ .ClassesDiagram }}
+```
+{{ end }}
 {{ range $domainClasses -}}
-- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
-{{ end }}
+- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}){{ parse_error_marker .Key }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
 
+{{ range .Subdomains -}}
+{{ if ne .Generalizations nil -}}
+### Generalizations
+
+The class generalizations of this subdomain.
+
+{{ range .Generalizations -}}
+{{- $super := generalization_superclass $reqs .Key -}}
+{{- $subs := generalization_subclasses $reqs .Key -}}
+- **{{ .Name }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ .Details }}
+    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}
+{{ end }}
+
+## Use Cases
+
+{{ if ne .UseCasesDiagram "" }}
+```mermaid
+{{ .UseCasesDiagram }}
+```
+{{ end }}
+{{ range $domainUseCases -}}
+- **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
+{{ end }}
+
+{{ range .Subdomains -}}
+{{ if ne .UseCaseGeneralizations nil -}}
+### Generalizations
+
+The use case generalizations of this subdomain.
+
+{{ range .UseCaseGeneralizations -}}
+{{- $super := use_case_generalization_superclass $reqs .Key -}}
+{{- $subs := use_case_generalization_subclasses $reqs .Key -}}
+- **{{ .Name }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ .Details }}
+    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "use_case" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "use_case" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}
+{{ if ne .UseCaseShares nil -}}
+### Use Case Relationships
+
+{{ range $seaKey, $mudShares := .UseCaseShares -}}
+{{- $seaUC := use_case_lookup $reqs $seaKey -}}
+{{ range $mudKey, $share := $mudShares -}}
+{{- $mudUC := use_case_lookup $reqs $mudKey -}}
+- [{{ $seaUC.Name }}]({{ filename "use_case" $seaKey "" ".md" }}){{ unfinished_notes_marker $seaUC.UnfinishedNotes }} «{{ $share.ShareType }}» [{{ $mudUC.Name }}]({{ filename "use_case" $mudKey "" ".md" }}){{ unfinished_notes_marker $mudUC.UnfinishedNotes }}
+{{ end -}}
+{{ end }}
+{{- end }}
+{{ end }}
+{{ end }}

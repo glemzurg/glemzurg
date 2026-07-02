@@ -6,9 +6,12 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
 
@@ -61,11 +64,13 @@ func LowerModel(model *core.Model) error {
 		model.NamedSets[nsKey] = ns
 	}
 
+	allAssociations := model.GetClassAssociations()
+
 	// 4. Walk domains → subdomains → classes.
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if err := lowerClass(&class, globalFunctions, namedSets, allActions); err != nil {
+				if err := lowerClass(&class, globalFunctions, namedSets, allActions, allAssociations, subdomain.Classes); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -84,21 +89,10 @@ func lowerClass(
 	globalFunctions map[string]identity.Key,
 	namedSets map[string]identity.Key,
 	allActions map[string]identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
 ) error {
-	// Build class-level context maps.
-	attrNames := BuildAttributeNameMap(class)
-	actionNames := BuildActionNameMap(class)
-	queryNames := BuildQueryNameMap(class)
-
-	classCtx := &LowerContext{
-		ClassKey:        class.Key,
-		AttributeNames:  attrNames,
-		ActionNames:     actionNames,
-		QueryNames:      queryNames,
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		AllActions:      allActions,
-	}
+	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations, classes)
 
 	// Class invariants.
 	for i := range class.Invariants {
@@ -108,11 +102,10 @@ func lowerClass(
 	}
 
 	// Attributes: derivation policy and invariants.
-	for aKey, attr := range class.Attributes {
-		if err := lowerAttribute(&attr, classCtx); err != nil {
-			return fmt.Errorf("attribute %q: %w", aKey.String(), err)
+	for i := range class.Attributes {
+		if err := lowerAttribute(&class.Attributes[i], classCtx); err != nil {
+			return fmt.Errorf("attribute %q: %w", class.Attributes[i].Key.String(), err)
 		}
-		class.Attributes[aKey] = attr
 	}
 
 	// Guards.
@@ -166,13 +159,27 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 		}
 	}
 	for i := range action.Guarantees {
-		if err := lowerLogicSpec(&action.Guarantees[i].Spec, ctx); err != nil {
+		guar := &action.Guarantees[i]
+		guarCtx := lowerContextWithPriorLetGuarantees(ctx, action.Guarantees[:i])
+		if err := lowerLogicSpec(&guar.Spec, guarCtx); err != nil {
 			return fmt.Errorf("guarantee %d: %w", i, err)
+		}
+		if guar.Type == model_logic.LogicTypeDestroy {
+			if err := lowerDestroyGuaranteeEvent(guar, guarCtx); err != nil {
+				return fmt.Errorf("guarantee %d destroy_event: %w", i, err)
+			}
 		}
 	}
 	for i := range action.SafetyRules {
 		if err := lowerLogicSpec(&action.SafetyRules[i].Spec, ctx); err != nil {
 			return fmt.Errorf("safety rule %d: %w", i, err)
+		}
+	}
+	for i := range action.Parameters {
+		for j := range action.Parameters[i].Invariants {
+			if err := lowerLogicSpec(&action.Parameters[i].Invariants[j].Spec, ctx); err != nil {
+				return fmt.Errorf("parameter %q invariant %d: %w", action.Parameters[i].Name, j, err)
+			}
 		}
 	}
 	return nil
@@ -189,6 +196,13 @@ func lowerQuery(query *model_state.Query, baseCtx *LowerContext) error {
 	for i := range query.Guarantees {
 		if err := lowerLogicSpec(&query.Guarantees[i].Spec, ctx); err != nil {
 			return fmt.Errorf("guarantee %d: %w", i, err)
+		}
+	}
+	for i := range query.Parameters {
+		for j := range query.Parameters[i].Invariants {
+			if err := lowerLogicSpec(&query.Parameters[i].Invariants[j].Spec, ctx); err != nil {
+				return fmt.Errorf("parameter %q invariant %d: %w", query.Parameters[i].Name, j, err)
+			}
 		}
 	}
 	return nil
@@ -208,6 +222,48 @@ func ContextWithParameters(base *LowerContext, params []model_state.Parameter) *
 		child.Parameters[p.Name] = true
 	}
 	return &child
+}
+
+func lowerContextWithPriorLetGuarantees(base *LowerContext, prior []model_logic.Logic) *LowerContext {
+	ctx := base
+	for i := range prior {
+		if prior[i].Type == model_logic.LogicTypeLet && prior[i].Target != "" {
+			ctx = withLocalVar(ctx, prior[i].Target)
+		}
+	}
+	return ctx
+}
+
+func lowerDestroyGuaranteeEvent(guar *model_logic.Logic, ctx *LowerContext) error {
+	deleteCtx := ctx
+	if sf, ok := guar.Spec.Expression.(*me.SetFilter); ok {
+		deleteCtx = withLocalVar(ctx, sf.Variable)
+	}
+	if boundVar := destroyEventBoundVariable(guar.DestroyEventSpec.Specification); boundVar != "" {
+		deleteCtx = withLocalVar(deleteCtx, boundVar)
+	}
+	return lowerLogicSpec(&guar.DestroyEventSpec, deleteCtx)
+}
+
+// destroyEventBoundVariable returns the first destroy_event call argument name.
+// That identifier is a bound variable for lowering only; the simulator skips it at runtime.
+func destroyEventBoundVariable(specification string) string {
+	if specification == "" {
+		return ""
+	}
+	astExpr, err := parser.ParseExpression(specification)
+	if err != nil {
+		return ""
+	}
+	call, ok := astExpr.(*ast.FunctionCall)
+	if !ok || len(call.Args) == 0 {
+		return ""
+	}
+	id, ok := call.Args[0].(*ast.Identifier)
+	if !ok {
+		return ""
+	}
+	return id.Value
 }
 
 // lowerLogicSpec parses and lowers a single ExpressionSpec if it has a TLA+ specification
@@ -244,10 +300,42 @@ func BuildGlobalFunctionMap(model *core.Model) map[string]identity.Key {
 	return m
 }
 
+// SubdomainClassMaps holds per-subdomain class and association indexes for lowering.
+type SubdomainClassMaps struct {
+	Associations map[identity.Key]model_class.Association
+	Classes      map[identity.Key]model_class.Class
+}
+
 func BuildNamedSetMap(model *core.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(model.NamedSets))
 	for _, ns := range model.NamedSets {
 		m[ns.Name] = ns.Key
+	}
+	return m
+}
+
+// BuildClassNameMap maps class display names to identity keys across the whole model.
+func BuildClassNameMap(model *core.Model) map[string]identity.Key {
+	m := make(map[string]identity.Key)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				m[class.Name] = class.Key
+			}
+		}
+	}
+	return m
+}
+
+// BuildClassKeyToNameMap maps class identity keys to display names across the whole model.
+func BuildClassKeyToNameMap(model *core.Model) map[identity.Key]string {
+	m := make(map[identity.Key]string)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				m[class.Key] = class.Name
+			}
+		}
 	}
 	return m
 }
@@ -300,6 +388,131 @@ func BuildQueryNameMap(class *model_class.Class) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(class.Queries))
 	for _, query := range class.Queries {
 		m[query.Name] = query.Key
+	}
+	return m
+}
+
+// NewClassLowerContext builds a LowerContext for expressions scoped to one class.
+func NewClassLowerContext(
+	class *model_class.Class,
+	globalFunctions map[string]identity.Key,
+	namedSets map[string]identity.Key,
+	allActions map[string]identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) *LowerContext {
+	return &LowerContext{
+		ClassKey:         class.Key,
+		AttributeNames:   BuildAttributeNameMap(class),
+		ActionNames:      BuildActionNameMap(class),
+		QueryNames:       BuildQueryNameMap(class),
+		AssociationNames: BuildOutgoingAssociationFieldNameMap(class.Key, associations),
+		SystemEventNames: BuildSystemEventNameMap(class),
+		PeerEventNames:   BuildPeerEventNameMap(class.Key, associations, classes),
+		GlobalFunctions:  globalFunctions,
+		NamedSets:        namedSets,
+		AllActions:       allActions,
+	}
+}
+
+// BuildOutgoingAssociationFieldNameMap maps TLA field names to association keys for from-class links.
+func BuildOutgoingAssociationFieldNameMap(classKey identity.Key, associations map[identity.Key]model_class.Association) map[string]identity.Key {
+	if len(associations) == 0 {
+		return nil
+	}
+	m := make(map[string]identity.Key)
+	for _, assoc := range associations {
+		if assoc.FromClassKey != classKey {
+			continue
+		}
+		m[model_class.AssociationTLAFieldName(assoc.Name)] = assoc.Key
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
+// BuildPeerEventNameMap maps peer-class event names reachable via outgoing associations.
+func BuildPeerEventNameMap(
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) map[string]identity.Key {
+	if len(associations) == 0 || len(classes) == 0 {
+		return nil
+	}
+	m := make(map[string]identity.Key)
+	for _, assoc := range associations {
+		if assoc.FromClassKey != fromClassKey {
+			continue
+		}
+		peerClass, ok := classes[assoc.ToClassKey]
+		if !ok {
+			continue
+		}
+		for _, event := range peerClass.Events {
+			m[event.Name] = event.Key
+			if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
+				m[model_state.SystemEventTLAName(event.Name)] = event.Key
+			}
+		}
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
+// BuildPeerEventRaiseNameMap maps peer-class event keys to their declared names.
+func BuildPeerEventRaiseNameMap(
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) map[identity.Key]string {
+	nameMap := BuildPeerEventNameMap(fromClassKey, associations, classes)
+	if len(nameMap) == 0 {
+		return nil
+	}
+	out := make(map[identity.Key]string, len(nameMap))
+	for name, key := range nameMap {
+		out[key] = name
+	}
+	return out
+}
+
+// BuildSystemEventNameMap maps system event spellings to event keys declared on the class.
+// Both ASCII (_new) and canonical TLA («new») forms resolve to the same key.
+func BuildSystemEventNameMap(class *model_class.Class) map[string]identity.Key {
+	if len(class.Events) == 0 {
+		return nil
+	}
+	m := make(map[string]identity.Key)
+	for _, event := range class.Events {
+		if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
+			m[event.Name] = event.Key
+			m[model_state.SystemEventTLAName(event.Name)] = event.Key
+		}
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
+// BuildSystemEventRaiseNameMap maps event keys to canonical TLA spellings («new», «destroy»).
+func BuildSystemEventRaiseNameMap(class *model_class.Class) map[identity.Key]string {
+	if len(class.Events) == 0 {
+		return nil
+	}
+	m := make(map[identity.Key]string)
+	for _, event := range class.Events {
+		if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
+			m[event.Key] = model_state.SystemEventTLAName(event.Name)
+		}
+	}
+	if len(m) == 0 {
+		return nil
 	}
 	return m
 }

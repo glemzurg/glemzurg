@@ -4,6 +4,11 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -15,8 +20,39 @@ type ParameterSuite struct {
 	suite.Suite
 }
 
+// testActionKey returns a deterministic action key used as the parent of test parameters.
+func testActionKey() identity.Key {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	return helper.Must(identity.NewActionKey(classKey, "action1"))
+}
+
+// testEventKey returns a deterministic event key (different KEY_TYPE) for parent-mismatch cases.
+func testEventKey() identity.Key {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	return helper.Must(identity.NewEventKey(classKey, "event1"))
+}
+
+func testParamKey(name string) identity.Key {
+	return helper.Must(identity.NewParameterKey(testActionKey(), name))
+}
+
 // TestValidate tests all validation rules for Parameter.
 func (suite *ParameterSuite) TestValidate() {
+	validKey := testParamKey("amount")
+	otherParamKey := helper.Must(identity.NewParameterKey(testActionKey(), "other"))
+	validDtKey := helper.Must(identity.NewDataTypeKey(validKey, ""))
+	mismatchedDtKey := helper.Must(identity.NewDataTypeKey(otherParamKey, ""))
+
+	invKey1 := helper.Must(identity.NewParameterInvariantKey(validKey, "0"))
+	invKey2 := helper.Must(identity.NewParameterInvariantKey(validKey, "1"))
+	validInvariant := model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	validInvariant2 := model_logic.NewLogic(invKey2, model_logic.LogicTypeAssessment, "Must be less than 100.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongKindInvariant := model_logic.NewLogic(invKey1, model_logic.LogicTypeStateChange, "Should fail.", "target", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+
 	tests := []struct {
 		testName string
 		param    Parameter
@@ -25,13 +61,32 @@ func (suite *ParameterSuite) TestValidate() {
 		{
 			testName: "valid parameter",
 			param: Parameter{
+				Key:           validKey,
 				Name:          "amount",
 				DataTypeRules: "Nat",
 			},
 		},
 		{
+			testName: "error missing key",
+			param: Parameter{
+				Name:          "amount",
+				DataTypeRules: "Nat",
+			},
+			errstr: "Key",
+		},
+		{
+			testName: "error wrong key type",
+			param: Parameter{
+				Key:           testActionKey(), // not KEY_TYPE_PARAMETER
+				Name:          "amount",
+				DataTypeRules: "Nat",
+			},
+			errstr: "invalid key type",
+		},
+		{
 			testName: "error blank name",
 			param: Parameter{
+				Key:           validKey,
 				Name:          "",
 				DataTypeRules: "Nat",
 			},
@@ -40,10 +95,128 @@ func (suite *ParameterSuite) TestValidate() {
 		{
 			testName: "error blank data type rules",
 			param: Parameter{
+				Key:           validKey,
 				Name:          "amount",
 				DataTypeRules: "",
 			},
 			errstr: "DataTypeRules",
+		},
+		{
+			testName: "valid parameter with data type key parented by the parameter key",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				DataType: &model_data_type.DataType{
+					Key:            validDtKey,
+					CollectionType: model_data_type.COLLECTION_TYPE_ATOMIC,
+				},
+			},
+		},
+		{
+			testName: "error data type key parent is not the parameter key",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				DataType: &model_data_type.DataType{
+					Key:            mismatchedDtKey,
+					CollectionType: model_data_type.COLLECTION_TYPE_ATOMIC,
+				},
+			},
+			errstr: "DataType.Key",
+		},
+		{
+			testName: "error data type key has wrong KeyType",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				DataType: &model_data_type.DataType{
+					Key:            otherParamKey, // KEY_TYPE_PARAMETER, not KEY_TYPE_DATA_TYPE
+					CollectionType: model_data_type.COLLECTION_TYPE_ATOMIC,
+				},
+			},
+			errstr: "DataType.Key",
+		},
+		{
+			testName: "valid with nil invariants",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants:    nil,
+			},
+		},
+		{
+			testName: "valid with single invariant",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants:    []model_logic.Logic{validInvariant},
+			},
+		},
+		{
+			testName: "valid with multiple invariants",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants:    []model_logic.Logic{validInvariant, validInvariant2},
+			},
+		},
+		{
+			testName: "error invariant wrong logic type",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants:    []model_logic.Logic{wrongKindInvariant},
+			},
+			errstr: "logic kind must be 'assessment' or 'let'",
+		},
+		{
+			testName: "error invariant invalid logic missing key",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants: []model_logic.Logic{
+					{
+						Key:         identity.Key{},
+						Type:        model_logic.LogicTypeAssessment,
+						Description: "Missing key.",
+						Spec:        logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
+					},
+				},
+			},
+			errstr: "parameter invariant 0",
+		},
+		{
+			testName: "valid with let in invariants",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants: []model_logic.Logic{
+					model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local total.", "total", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
+					validInvariant,
+				},
+			},
+		},
+		{
+			testName: "error duplicate let target in parameter invariants",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "amount",
+				DataTypeRules: "Nat",
+				Invariants: []model_logic.Logic{
+					model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local a.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
+					model_logic.NewLogic(invKey2, model_logic.LogicTypeLet, "Local a again.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
+				},
+			},
+			errstr: "duplicate let target \"a\"",
 		},
 	}
 	for _, tt := range tests {
@@ -59,31 +232,81 @@ func (suite *ParameterSuite) TestValidate() {
 	}
 }
 
-// TestNew tests that NewParameter maps parameters correctly.
+// TestNew tests that NewParameter maps parameters correctly and sets the identity.Key.
 func (suite *ParameterSuite) TestNew() {
-	// Test parameters are mapped correctly.
-	param, err := NewParameter("amount", "Nat")
+	actionKey := testActionKey()
+	param, err := NewParameter(actionKey, "amount", "unconstrained", false)
 	suite.Require().NoError(err)
 	suite.Equal("amount", param.Name)
-	suite.Equal("Nat", param.DataTypeRules)
+	suite.Equal("unconstrained", param.DataTypeRules)
+	suite.False(param.Nullable)
+	suite.Equal(identity.KEY_TYPE_PARAMETER, param.Key.KeyType)
+	suite.Equal("amount", param.Key.SubKey)
+	suite.Equal(actionKey.String(), param.Key.ParentKey)
 }
 
-// TestValidateWithParent tests that ValidateWithParent calls Validate.
+func (suite *ParameterSuite) TestNewStoresNullable() {
+	actionKey := testActionKey()
+	param, err := NewParameter(actionKey, "country_code", "unconstrained", true)
+	suite.Require().NoError(err)
+	suite.True(param.Nullable)
+}
+
+// TestNewRejectsBadParent: NewParameter requires its parent to be action or query.
+func (suite *ParameterSuite) TestNewRejectsBadParent() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+
+	_, err := NewParameter(classKey, "amount", "unconstrained", false)
+	suite.Require().Error(err)
+	suite.ErrorContains(err, "parent key cannot be of type 'class' for 'parameter' key")
+}
+
+// TestNewSetsDataTypeKey verifies that NewParameter sets the parsed DataType.Key to
+// the canonical identity.Key string parented by the Parameter's own identity.Key.
+func (suite *ParameterSuite) TestNewSetsDataTypeKey() {
+	actionKey := testActionKey()
+	param, err := NewParameter(actionKey, "amount", "unconstrained", false)
+	suite.Require().NoError(err)
+	suite.Require().NotNil(param.DataType, "NewParameter should parse DataTypeRules into a DataType")
+
+	expectedKey := helper.Must(identity.NewDataTypeKey(param.Key, ""))
+	suite.Equal(expectedKey, param.DataType.Key, "DataType.Key must be the typed identity.Key parented by Parameter.Key")
+
+	ctx := coreerr.NewContext("test", "")
+	suite.Require().NoError(param.Validate(ctx))
+}
+
+// TestValidateWithParent tests that ValidateWithParent checks both the base validation
+// and the parent relationship of the key.
 func (suite *ParameterSuite) TestValidateWithParent() {
 	ctx := coreerr.NewContext("test", "")
-	// Test that Validate is called.
-	param := Parameter{
-		Name:          "",
-		DataTypeRules: "Nat",
-	}
-	err := param.ValidateWithParent(ctx)
-	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
-
-	// Test valid case.
-	param = Parameter{
-		Name:          "amount",
-		DataTypeRules: "Nat",
-	}
-	err = param.ValidateWithParent(ctx)
+	actionKey := testActionKey()
+	param, err := NewParameter(actionKey, "amount", "unconstrained", false)
 	suite.Require().NoError(err)
+
+	// Correct parent.
+	suite.Require().NoError(param.ValidateWithParent(ctx, &actionKey))
+
+	// Wrong parent.
+	eventKey := testEventKey()
+	suite.Require().ErrorContains(param.ValidateWithParent(ctx, &eventKey), "does not match expected parent")
+
+	// Underlying Validate failure still surfaces.
+	badParam := Parameter{Name: "amount", DataTypeRules: "Nat"} // missing key
+	suite.Require().ErrorContains(badParam.ValidateWithParent(ctx, &actionKey), "Key")
+
+	// Valid with invariants.
+	invKey := helper.Must(identity.NewParameterInvariantKey(param.Key, "0"))
+	validInvariant := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	param.SetInvariants([]model_logic.Logic{validInvariant})
+	suite.Require().NoError(param.ValidateWithParent(ctx, &actionKey))
+
+	// Invariant with wrong parent key.
+	otherParamKey := helper.Must(identity.NewParameterKey(actionKey, "other"))
+	wrongInvKey := helper.Must(identity.NewParameterInvariantKey(otherParamKey, "0"))
+	wrongParentInvariant := model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Wrong parent.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	param.SetInvariants([]model_logic.Logic{wrongParentInvariant})
+	suite.Require().ErrorContains(param.ValidateWithParent(ctx, &actionKey), "parameter invariant 0")
 }

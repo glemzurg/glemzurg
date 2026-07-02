@@ -7,8 +7,9 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "The display name of the action (e.g., 'Send Confirmation Email', 'Reserve Inventory', 'Calculate Total'). This is the human-readable name shown in state diagrams and documentation. Use verb phrases that describe what the action does. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
-      "minLength": 1
+      "description": "The display name of the action (e.g., 'Send Confirmation Email', 'Reserve Inventory', 'Calculate Total'). This is the human-readable name shown in state diagrams and documentation. Use verb phrases that describe what the action does. Must be non-empty. Only letters (A-Z, a-z), digits (0-9), spaces, hyphens, and underscores are allowed. If validation fails: remove any characters that are not in this set.",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9 _-]+$"
     },
     "details": {
       "type": "string",
@@ -16,18 +17,26 @@
     },
     "parameters": {
       "type": "array",
-      "description": "Parameters for the action. Each parameter has a name and optional data type rules.",
+      "description": "Parameters for the action. Each entry matches parameter.schema.json (name, data_type_rules, type_spec, nullable). Parameter invariants are not listed here; they are separate logic files at actions/{action_key}/parameters/{normalized_param_name}/invariants/NNN.invariant.json relative to the class directory, where normalized_param_name is the parameter name lowercased with spaces replaced by underscores. Each invariant file validates against logic.schema.json with type 'assessment' or 'let'.",
       "items": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "description": "The name of the parameter.",
+            "description": "The name of the parameter. Also determines the parameters/ subdirectory name after normalization (see parameter.schema.json).",
             "minLength": 1
           },
           "data_type_rules": {
             "type": "string",
             "description": "Data type rules for the parameter value."
+          },
+          "type_spec": {
+            "type": "string",
+            "description": "Optional TLA+ type specification for the parameter (e.g., 'Nat', 'STRING')."
+          },
+          "nullable": {
+            "type": "boolean",
+            "description": "Whether absent (NULL) is a valid value for this parameter. Defaults to false when omitted."
           }
         },
         "required": ["name"],
@@ -42,7 +51,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "description": "Optional logic kind discriminator. Use 'let' for local variable definitions.",
+            "description": "Required. The logic kind. Use 'assessment' for boolean preconditions, 'let' for local variable definitions.",
             "enum": ["assessment", "let"]
           },
           "description": {
@@ -70,20 +79,20 @@
             "description": "Optional formal specification in the given notation. Must not contain primed values (primes are only allowed in safety_rules)."
           }
         },
-        "required": ["description", "notation"],
+        "required": ["type", "description", "notation"],
         "additionalProperties": false
       }
     },
     "guarantees": {
       "type": "array",
-      "description": "Postconditions that will be true after the action executes successfully. Each guarantee sets one attribute via its 'target' field (the lowercase attribute SubKey). The target separates the left-hand side so the specification contains only the right-hand-side value expression with no primed values (e.g., for 'self.log' = Append(self.log, amount)', use target='log' and specification='Append(self.log, amount)'). Each attribute can only be set once per action. Items may also be 'let' bindings that define local variables for use by subsequent items.",
+      "description": "Postconditions that will be true after the action executes successfully. Each guarantee sets one attribute via its 'target' field (the lowercase attribute SubKey), removes association peers via type 'destroy', or defines a local 'let' binding. The target separates the left-hand side so the specification contains only the right-hand-side value expression with no primed values (e.g., for 'self.log' = Append(self.log, amount)', use target='log' and specification='Append(self.log, amount)'). Each state_change target can only be set once per action; each destroy target can only appear once. Items may also be 'let' bindings that define local variables for use by subsequent items.",
       "items": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "description": "Optional logic kind discriminator. Use 'let' for local variable definitions.",
-            "enum": ["state_change", "let"]
+            "description": "Required. The logic kind. Use 'state_change' for attribute assignments, 'destroy' for association peer removal, 'let' for local variable definitions.",
+            "enum": ["state_change", "let", "destroy"]
           },
           "description": {
             "type": "string",
@@ -92,7 +101,7 @@
           },
           "target": {
             "type": "string",
-            "description": "Required. For 'state_change': the attribute SubKey being set (e.g., 'shipping', 'status'). For 'let': the local variable name.",
+            "description": "Required. For 'state_change': the attribute SubKey being set (e.g., 'shipping', 'status'). For 'destroy': the outgoing association TLA field name. For 'let': the local variable name.",
             "minLength": 1,
             "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
           },
@@ -107,10 +116,14 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation. This must be only the right-hand-side value expression with no primed values. The left-hand side is captured by the 'target' field. For example, for 'self.log' = Append(self.log, amount)', use target='log' and specification='Append(self.log, amount)'."
+            "description": "Optional formal specification in the given notation. For 'state_change' and 'let', this must be only the right-hand-side value expression with no primed values; the left-hand side is captured by the 'target' field. For 'destroy', this is the set-filter selection over the association (e.g., '{ b \\in AppliesSocialCurrencyLogic : TRUE }'). Peer _destroy calls belong in destroy_event, not here."
+          },
+          "destroy_event": {
+            "type": "string",
+            "description": "Required for 'destroy' type: peer destroy event call (e.g., '_destroy(b)'). Must be omitted for 'state_change' and 'let'."
           }
         },
-        "required": ["description", "target", "notation"],
+        "required": ["type", "description", "target", "notation"],
         "additionalProperties": false
       }
     },
@@ -122,7 +135,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "description": "Optional logic kind discriminator. Use 'let' for local variable definitions.",
+            "description": "Required. The logic kind. Use 'safety_rule' for boolean constraints over state, 'let' for local variable definitions.",
             "enum": ["safety_rule", "let"]
           },
           "description": {
@@ -150,7 +163,7 @@
             "description": "Optional formal specification in the given notation. Safety rule specifications MUST contain primed values (e.g., 'inventory' >= 0') to express constraints over both prior and new state."
           }
         },
-        "required": ["description", "notation"],
+        "required": ["type", "description", "notation"],
         "additionalProperties": false
       }
     }

@@ -1,0 +1,11 @@
+{
+    "name": "Partner Configures Jurisdiction",
+    "from_class_key": "partner",
+    "from_multiplicity": "any",
+    "to_class_key": "jurisdiction",
+    "to_multiplicity": "any",
+    "uniqueness": {
+        "from_attributes": ["partner_code"],
+        "to_attributes": ["jurisdiction_code"]
+    }
+}

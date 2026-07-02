@@ -23,6 +23,7 @@ actions:
               rules: Nat
             - name: Label
               rules: unconstrained
+              type_spec: STRING
         requires:
             - details: The amount must be positive.
               specification: "amount > 0"

@@ -3,6 +3,7 @@ package model_data_type
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,6 +18,19 @@ func TestParseAtomic(t *testing.T) {
 		expected     *DataType
 		errorMessage string
 	}{
+
+		// Datetime atomics.
+		{
+			name:  "datetime",
+			input: "datetime",
+			expected: &DataType{
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "datetime",
+				},
+			},
+			errorMessage: "",
+		},
 
 		// Unconstrained atomics.
 		{
@@ -534,6 +548,54 @@ func TestParseAtomic(t *testing.T) {
 	}
 }
 
+func TestAtomicValidateDuplicateEnum(t *testing.T) {
+	falseValue := false
+
+	tests := []struct {
+		name         string
+		atomic       Atomic
+		errorMessage string
+	}{
+		{
+			name: "unique values",
+			atomic: Atomic{
+				ConstraintType: CONSTRAINT_TYPE_ENUMERATION,
+				EnumOrdered:    &falseValue,
+				Enums: []AtomicEnum{
+					{Value: "a"},
+					{Value: "b"},
+					{Value: "c"},
+				},
+			},
+		},
+		{
+			name: "duplicate value",
+			atomic: Atomic{
+				ConstraintType: CONSTRAINT_TYPE_ENUMERATION,
+				EnumOrdered:    &falseValue,
+				Enums: []AtomicEnum{
+					{Value: "free_play"},
+					{Value: "purchased"},
+					{Value: "purchased"},
+				},
+			},
+			errorMessage: `duplicate enum value "purchased"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := coreerr.NewContext("test", "")
+			err := tt.atomic.Validate(ctx)
+			if tt.errorMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tt.errorMessage)
+			}
+		})
+	}
+}
+
 func TestAtomicString(t *testing.T) {
 	trueValue := true
 	falseValue := false
@@ -549,6 +611,13 @@ func TestAtomicString(t *testing.T) {
 				ConstraintType: "unconstrained",
 			},
 			expected: "unconstrained",
+		},
+		{
+			name: "datetime",
+			atomic: Atomic{
+				ConstraintType: "datetime",
+			},
+			expected: "datetime",
 		},
 		{
 			name: "reference",

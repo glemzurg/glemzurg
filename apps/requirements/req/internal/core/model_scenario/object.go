@@ -25,12 +25,18 @@ type Object struct {
 	UmlComment   string
 }
 
-func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, classKey identity.Key, multi bool, umlComment string) Object {
+// ObjectDiagramName holds the diagram name and style for a scenario object.
+type ObjectDiagramName struct {
+	Name      string
+	NameStyle string
+}
+
+func NewObject(key identity.Key, objectNumber uint, diagramName ObjectDiagramName, classKey identity.Key, multi bool, umlComment string) Object {
 	return Object{
 		Key:          key,
 		ObjectNumber: objectNumber,
-		Name:         name,
-		NameStyle:    nameStyle,
+		Name:         diagramName.Name,
+		NameStyle:    diagramName.NameStyle,
 		ClassKey:     classKey,
 		Multi:        multi,
 		UmlComment:   umlComment,

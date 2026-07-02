@@ -29,16 +29,6 @@ func scanAtomic(scanner Scanner, dataTypeKeyPtr *string, atomic *model_data_type
 
 // LoadAtomic loads an atomic from the database.
 func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomic model_data_type.Atomic, err error) {
-	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return "", model_data_type.Atomic{}, err
-	}
-	dataTypeKey, err = preenKey(dataTypeKey)
-	if err != nil {
-		return "", model_data_type.Atomic{}, err
-	}
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -72,14 +62,6 @@ func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr 
 // AddAtomic adds an atomic to the database.
 func AddAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data_type.Atomic) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	dataTypeKey, err = preenKey(dataTypeKey)
-	if err != nil {
-		return err
-	}
 
 	// Add the data.
 	err = dbExec(dbOrTx, `
@@ -117,14 +99,6 @@ func AddAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data_ty
 // UpdateAtomic updates an atomic in the database.
 func UpdateAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data_type.Atomic) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	dataTypeKey, err = preenKey(dataTypeKey)
-	if err != nil {
-		return err
-	}
 
 	// Update the data.
 	err = dbExec(dbOrTx, `
@@ -155,14 +129,6 @@ func UpdateAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data
 // RemoveAtomic deletes an atomic from the database.
 func RemoveAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	dataTypeKey, err = preenKey(dataTypeKey)
-	if err != nil {
-		return err
-	}
 
 	// Delete the data.
 	err = dbExec(dbOrTx, `
@@ -184,10 +150,6 @@ func RemoveAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 // QueryAtomics loads all atomics from the database.
 func QueryAtomics(dbOrTx DbOrTx, modelKey string) (atomics map[string]model_data_type.Atomic, err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
 
 	// Query the database.
 	err = dbQuery(
@@ -230,20 +192,12 @@ func BulkInsertAtomics(dbOrTx DbOrTx, modelKey string, atomics map[string]model_
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
 
 	// Prepare the args
 	args := make([]any, 0, len(atomics)*6)
 	valueStrings := make([]string, 0, len(atomics))
 	i := 0
 	for dataTypeKey, atomic := range atomics {
-		dataTypeKey, err = preenKey(dataTypeKey)
-		if err != nil {
-			return err
-		}
 		args = append(args, modelKey, dataTypeKey, atomic.ConstraintType, atomic.Reference, atomic.EnumOrdered, atomic.ObjectClassKey)
 		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
 		i++

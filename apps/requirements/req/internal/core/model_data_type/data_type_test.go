@@ -4,6 +4,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -25,46 +28,47 @@ func (suite *DataTypeSuite) TestValidate() {
 		ConstraintType: "unknown",
 	}
 
+	validKey := t_dtKey("k")
 	tests := []struct {
-		key            string
+		key            identity.Key
 		collectionType string
 		atomic         *Atomic
 		errstr         string
 	}{
 		// OK.
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "atomic",
 			atomic:         atomic,
 		},
 
 		// Error states.
 		{
-			key:            "",
+			key:            identity.Key{}, // zero-value: unallocated
 			collectionType: "atomic",
 			atomic:         atomic,
 			errstr:         `Key`,
 		},
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "",
 			atomic:         atomic,
 			errstr:         `CollectionType`,
 		},
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "unknown",
 			atomic:         atomic,
 			errstr:         `CollectionType`,
 		},
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "atomic",
 			atomic:         nil,
 			errstr:         `atomic is required for atomic collection type`,
 		},
 		{
-			key:            "Key",
+			key:            validKey,
 			collectionType: "atomic",
 			atomic:         atomicInvalid,
 			errstr:         `ConstraintType`,
@@ -100,7 +104,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "valid collection no multiplicity",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "stack",
 				CollectionUnique: &falseValue,
 				Atomic:           atomic,
@@ -109,7 +113,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "valid collection with min and max",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "ordered",
 				CollectionUnique: &trueValue,
 				CollectionMin:    intPtr(2),
@@ -120,7 +124,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "valid collection with min only",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "unordered",
 				CollectionUnique: &falseValue,
 				CollectionMin:    intPtr(3),
@@ -130,7 +134,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "valid collection with max only",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "queue",
 				CollectionUnique: &falseValue,
 				CollectionMax:    intPtr(7),
@@ -142,7 +146,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "collection missing CollectionUnique",
 			dt: DataType{
-				Key:            "Key",
+				Key:            t_dtKey("k"),
 				CollectionType: "stack",
 				Atomic:         atomic,
 			},
@@ -151,7 +155,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "collection CollectionMin less than 1",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "stack",
 				CollectionUnique: &falseValue,
 				CollectionMin:    intPtr(0),
@@ -162,7 +166,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "collection CollectionMax less than 1",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "stack",
 				CollectionUnique: &falseValue,
 				CollectionMax:    intPtr(0),
@@ -173,7 +177,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "collection max less than min",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "stack",
 				CollectionUnique: &falseValue,
 				CollectionMin:    intPtr(5),
@@ -182,12 +186,35 @@ func (suite *DataTypeSuite) TestValidate() {
 			},
 			errstr: "collection max must be at least collection min",
 		},
+		{
+			name: "collection missing element",
+			dt: DataType{
+				Key:              t_dtKey("k"),
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+			},
+			errstr: "collection element is required and must be either atomic or composite",
+		},
+		{
+			name: "collection both atomic and composite element",
+			dt: DataType{
+				Key:              t_dtKey("k"),
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				Atomic:           atomic,
+				ElementDataType: &DataType{
+					CollectionType: "atomic",
+					Atomic:         atomic,
+				},
+			},
+			errstr: "collection element is required and must be either atomic or composite",
+		},
 
 		// Non-collections must not have collection fields.
 		{
 			name: "atomic with CollectionUnique",
 			dt: DataType{
-				Key:              "Key",
+				Key:              t_dtKey("k"),
 				CollectionType:   "atomic",
 				CollectionUnique: &falseValue,
 				Atomic:           atomic,
@@ -197,7 +224,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "atomic with CollectionMin",
 			dt: DataType{
-				Key:            "Key",
+				Key:            t_dtKey("k"),
 				CollectionType: "atomic",
 				CollectionMin:  intPtr(1),
 				Atomic:         atomic,
@@ -207,11 +234,11 @@ func (suite *DataTypeSuite) TestValidate() {
 		{
 			name: "record with CollectionMax",
 			dt: DataType{
-				Key:            "Key",
+				Key:            t_dtKey("k"),
 				CollectionType: "record",
 				CollectionMax:  intPtr(1),
 				RecordFields: []Field{
-					{Name: "f", FieldDataType: &DataType{Key: "f", CollectionType: "atomic", Atomic: atomic}},
+					{Name: "f", FieldDataType: &DataType{Key: t_dtKey("f"), CollectionType: "atomic", Atomic: atomic}},
 				},
 			},
 			errstr: "collection max must be nil for non-collection types",
@@ -230,7 +257,7 @@ func (suite *DataTypeSuite) TestValidate() {
 }
 
 func TestNewBlank(t *testing.T) {
-	key := "key"
+	key := t_dtKey("k")
 
 	tests := []struct {
 		name         string
@@ -279,7 +306,7 @@ func TestNewBlank(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	key := "key"
+	key := t_dtKey("k")
 
 	tests := []struct {
 		name         string
@@ -492,6 +519,63 @@ func TestParseCollections(t *testing.T) {
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+
+		// Composite collection elements (records and nested collections).
+		{
+			name:  "unordered of record element",
+			input: "unordered of { account: object of account ; amount: [unconstrained..unconstrained] at 1 penny }",
+			expected: &DataType{
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				ElementDataType: &DataType{
+					CollectionType: "record",
+					RecordFields: []Field{
+						{
+							Name: "account",
+							FieldDataType: &DataType{
+								CollectionType: "atomic",
+								Atomic: &Atomic{
+									ConstraintType: "object",
+									ObjectClassKey: t_StrPtr("account"),
+								},
+							},
+						},
+						{
+							Name: "amount",
+							FieldDataType: &DataType{
+								CollectionType: "atomic",
+								Atomic: &Atomic{
+									ConstraintType: "span",
+									Span: &AtomicSpan{
+										LowerType:  "unconstrained",
+										HigherType: "unconstrained",
+										Units:      "penny",
+										Precision:  1.0,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "unordered of nested unordered",
+			input: "unordered of unordered of unconstrained",
+			expected: &DataType{
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				ElementDataType: &DataType{
+					CollectionType:   "unordered",
+					CollectionUnique: &falseValue,
+					Atomic: &Atomic{
+						ConstraintType: "unconstrained",
 					},
 				},
 			},
@@ -793,17 +877,103 @@ func TestParseRecords(t *testing.T) {
 
 func TestNewUnparsable(t *testing.T) {
 	// If we cannot parse the text, no error but instead just a nil result.
-	result, err := New("key", "this cannot be parsed so it is just an unparsable blob", nil)
+	result, err := New(t_dtKey("k"), "this cannot be parsed so it is just an unparsable blob", nil)
 	var targetType *CannotParseError
 	require.ErrorAs(t, err, &targetType)
 	require.ErrorContains(t, err, "failed to parse")
 	assert.Nil(t, result)
 }
 
+func TestEnumerationHelpers(t *testing.T) {
+	key := t_dtKey("enum_attr")
+	dataType, err := New(key, "enum of SOCIAL, REAL", nil)
+	require.NoError(t, err)
+	require.True(t, ContainsEnumerationConstraint(dataType))
+	require.Equal(t, []string{"SOCIAL", "REAL"}, EnumerationValues(dataType))
+	require.False(t, ContainsEnumerationConstraint(nil))
+}
+
+func TestBooleanTypeSpecHelpers(t *testing.T) {
+	key := t_dtKey("bool_enum_attr")
+	dataType, err := New(key, "enum of TRUE, FALSE", nil)
+	require.NoError(t, err)
+	require.False(t, HasBooleanTypeSpec(dataType))
+
+	boolTypeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "BOOLEAN", nil)
+	require.NoError(t, err)
+	dataType.TypeSpec = &boolTypeSpec
+	require.True(t, HasBooleanTypeSpec(dataType))
+
+	value, ok := BooleanFromEnumerationLiteral("TRUE")
+	require.True(t, ok)
+	require.True(t, value)
+	value, ok = BooleanFromEnumerationLiteral("false")
+	require.True(t, ok)
+	require.False(t, value)
+	_, ok = BooleanFromEnumerationLiteral("maybe")
+	require.False(t, ok)
+}
+
+func TestDateTimeHelpers(t *testing.T) {
+	key := t_dtKey("created_at")
+	dataType, err := New(key, "datetime", nil)
+	require.NoError(t, err)
+	require.True(t, IsAtomicDateTime(dataType))
+	require.False(t, HasNatTypeSpec(dataType))
+
+	natTypeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil)
+	require.NoError(t, err)
+	dataType.TypeSpec = &natTypeSpec
+	require.True(t, HasNatTypeSpec(dataType))
+	require.False(t, IsAtomicUnconstrained(dataType))
+}
+
+func TestIsAtomicUnconstrained(t *testing.T) {
+	tests := []struct {
+		name     string
+		dataType *DataType
+		want     bool
+	}{
+		{
+			name: "atomic unconstrained",
+			dataType: &DataType{
+				CollectionType: COLLECTION_TYPE_ATOMIC,
+				Atomic:         &Atomic{ConstraintType: CONSTRAINT_TYPE_UNCONSTRAINED},
+			},
+			want: true,
+		},
+		{
+			name: "atomic span",
+			dataType: &DataType{
+				CollectionType: COLLECTION_TYPE_ATOMIC,
+				Atomic:         &Atomic{ConstraintType: CONSTRAINT_TYPE_SPAN},
+			},
+			want: false,
+		},
+		{
+			name:     "nil",
+			dataType: nil,
+			want:     false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, IsAtomicUnconstrained(tc.dataType))
+		})
+	}
+}
+
 func TestNewInvalid(t *testing.T) {
 	// Key is required.
-	result, err := New("", "", nil)
+	result, err := New(identity.Key{}, "", nil)
 	require.ErrorContains(t, err, "Key")
+	assert.Nil(t, result)
+}
+
+func TestNewDuplicateEnumValue(t *testing.T) {
+	key := t_dtKey("dup_enum")
+	result, err := New(key, "enum of free_play, purchased, bonus, purchased", nil)
+	require.ErrorContains(t, err, `duplicate enum value "purchased"`)
 	assert.Nil(t, result)
 }
 
@@ -952,6 +1122,74 @@ func TestDataTypeString(t *testing.T) {
 	}
 }
 
+func TestParseObjectTypeContentBoundary(t *testing.T) {
+	dtAny, err := Parse("", []byte("object of account"), Entrypoint("ObjectType"))
+	require.NoError(t, err)
+	dt := dtAny.(*DataType)
+	require.Equal(t, "account", *dt.Atomic.ObjectClassKey)
+
+	dtAny, err = Parse("", []byte("object of account ; amount: [unconstrained..unconstrained] at 1 penny"), Entrypoint("AtomicDataType"))
+	require.NoError(t, err)
+	dt = dtAny.(*DataType)
+	require.Equal(t, "account", *dt.Atomic.ObjectClassKey)
+}
+
+func TestParseRecordWithObjectAndSpanFields(t *testing.T) {
+	input := `{ account: object of account ; amount: [unconstrained..unconstrained] at 1 penny }`
+	dataTypeAny, err := Parse("", []byte(normalizeWhitespace(input)), Entrypoint("RecordDataType"))
+	require.NoError(t, err)
+	dataType := dataTypeAny.(*DataType)
+	require.Len(t, dataType.RecordFields, 2, dataType.String())
+	assert.Equal(t, "account", dataType.RecordFields[0].Name)
+	require.NotNil(t, dataType.RecordFields[0].FieldDataType.Atomic)
+	assert.Equal(t, CONSTRAINT_TYPE_OBJECT, dataType.RecordFields[0].FieldDataType.Atomic.ConstraintType)
+	assert.Equal(t, "amount", dataType.RecordFields[1].Name)
+	assert.Equal(t, "span", dataType.RecordFields[1].FieldDataType.Atomic.ConstraintType)
+}
+
+func TestNewCollectionElementTypes(t *testing.T) {
+	key := t_dtKey("amounts")
+
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "unordered of record element",
+			input: "unordered of { account: object of account ; amount: [unconstrained..unconstrained] at 1 penny }",
+		},
+		{
+			name:  "unordered of nested unordered",
+			input: "unordered of unordered of unconstrained",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := New(key, tc.input, nil)
+			require.NoError(t, err)
+			require.NotNil(t, result)
+			require.NotNil(t, result.ElementDataType)
+			require.Nil(t, result.Atomic)
+			if tc.name == "unordered of record element" {
+				require.Len(t, result.ElementDataType.RecordFields, 2)
+			}
+
+			elementKey := t_nestedDtKey(key, CollectionElementSubKey)
+			assert.Equal(t, elementKey, result.ElementDataType.Key)
+
+			flat := result.UnpackNested()
+			require.GreaterOrEqual(t, len(flat), 2)
+			assert.Equal(t, key, flat[len(flat)-1].Key)
+
+			reconstructed := ReconstructNestedDataTypes(flat)
+			require.Len(t, reconstructed, 1)
+			assert.Equal(t, result.CollectionType, reconstructed[0].CollectionType)
+			require.NotNil(t, reconstructed[0].ElementDataType)
+		})
+	}
+}
+
 func (suite *DataTypeSuite) TestUnpackNested() {
 	// Create a grandchild DataType
 	grandchild := DataType{
@@ -972,7 +1210,7 @@ func (suite *DataTypeSuite) TestUnpackNested() {
 
 	// Create the root DataType with the child as a field
 	root := DataType{
-		Key:            "root",
+		Key:            t_dtKey("root"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
@@ -985,46 +1223,79 @@ func (suite *DataTypeSuite) TestUnpackNested() {
 	// Flatten the nested structure.
 	result := root.UnpackNested()
 
-	// Verify the result
+	// Verify the result.
 	suite.Len(result, 3)
 
-	// Deepest first: grandchild, child, root
-	suite.Equal("root/child/grandchild", result[0].Key)
+	rootKey := t_dtKey("root")
+	childKey := t_nestedDtKey(rootKey, "child")
+	grandchildKey := t_nestedDtKey(childKey, "grandchild")
+
+	// Deepest first: grandchild, child, root.
+	suite.Equal(grandchildKey, result[0].Key)
 	suite.Equal("atomic", result[0].CollectionType)
 
-	suite.Equal("root/child", result[1].Key)
+	suite.Equal(childKey, result[1].Key)
 	suite.Equal("record", result[1].CollectionType)
 
-	suite.Equal("root", result[2].Key)
+	suite.Equal(rootKey, result[2].Key)
 	suite.Equal("record", result[2].CollectionType)
+}
+
+func (suite *DataTypeSuite) TestUnpackNestedCollectionElement() {
+	falseValue := false
+	element := DataType{
+		CollectionType:   "unordered",
+		CollectionUnique: &falseValue,
+		Atomic:           &Atomic{ConstraintType: "unconstrained"},
+	}
+	root := DataType{
+		Key:              t_dtKey("root"),
+		CollectionType:   "unordered",
+		CollectionUnique: &falseValue,
+		ElementDataType:  &element,
+	}
+
+	result := root.UnpackNested()
+
+	suite.Len(result, 2)
+
+	rootKey := t_dtKey("root")
+	elementKey := t_nestedDtKey(rootKey, CollectionElementSubKey)
+
+	suite.Equal(elementKey, result[0].Key)
+	suite.Equal("unordered", result[0].CollectionType)
+	suite.NotNil(result[0].Atomic)
+
+	suite.Equal(rootKey, result[1].Key)
+	suite.Equal("unordered", result[1].CollectionType)
 }
 
 func (suite *DataTypeSuite) TestSortDataTypesByKeyLengthDesc() {
 	dataTypes := []DataType{
-		{Key: "a"},
-		{Key: "bb"},
-		{Key: "ccc"},
-		{Key: "dddd"},
+		{Key: t_dtKey("a")},
+		{Key: t_dtKey("bb")},
+		{Key: t_dtKey("ccc")},
+		{Key: t_dtKey("dddd")},
 	}
 
 	SortDataTypesByKeyLengthDesc(dataTypes)
 
-	suite.Equal("dddd", dataTypes[0].Key)
-	suite.Equal("ccc", dataTypes[1].Key)
-	suite.Equal("bb", dataTypes[2].Key)
-	suite.Equal("a", dataTypes[3].Key)
+	suite.Equal(t_dtKey("dddd"), dataTypes[0].Key)
+	suite.Equal(t_dtKey("ccc"), dataTypes[1].Key)
+	suite.Equal(t_dtKey("bb"), dataTypes[2].Key)
+	suite.Equal(t_dtKey("a"), dataTypes[3].Key)
 }
 
 func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	// Create test DataTypes
 	atomic := DataType{
-		Key:            "atomic_key",
+		Key:            t_dtKey("atomic_key"),
 		CollectionType: "atomic",
 		Atomic:         &Atomic{ConstraintType: "unconstrained"},
 	}
 
 	atomicSpan := DataType{
-		Key:            "atomic_span_key",
+		Key:            t_dtKey("atomic_span_key"),
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "span",
@@ -1036,7 +1307,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	}
 
 	atomicEnum := DataType{
-		Key:            "atomic_enum_key",
+		Key:            t_dtKey("atomic_enum_key"),
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "enumeration",
@@ -1048,12 +1319,12 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	}
 
 	record := DataType{
-		Key:            "record_key",
+		Key:            t_dtKey("record_key"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
 				Name:          "name",
-				FieldDataType: &DataType{Key: "field_type"},
+				FieldDataType: &DataType{Key: t_dtKey("field_type")},
 			},
 		},
 	}
@@ -1062,25 +1333,30 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 
 	fieldMap, atomicMap, atomicSpanMap, atomicEnumMap := ExtractDatabaseObjects(dataTypes)
 
+	recordKeyStr := t_dtKey("record_key").String()
+	atomicKeyStr := t_dtKey("atomic_key").String()
+	atomicSpanKeyStr := t_dtKey("atomic_span_key").String()
+	atomicEnumKeyStr := t_dtKey("atomic_enum_key").String()
+
 	suite.Equal(map[string][]Field{
-		"record_key": {
+		recordKeyStr: {
 			{
 				Name:          "name",
-				FieldDataType: &DataType{Key: "field_type"},
+				FieldDataType: &DataType{Key: t_dtKey("field_type")},
 			},
 		},
 	}, fieldMap)
 
 	suite.Equal(map[string]Atomic{
-		"atomic_key": {ConstraintType: "unconstrained"},
-		"atomic_span_key": Atomic{
+		atomicKeyStr: {ConstraintType: "unconstrained"},
+		atomicSpanKeyStr: Atomic{
 			ConstraintType: "span",
 			Span: &AtomicSpan{
 				LowerType:  "unconstrained",
 				HigherType: "unconstrained",
 			},
 		},
-		"atomic_enum_key": Atomic{
+		atomicEnumKeyStr: Atomic{
 			ConstraintType: "enumeration",
 			Enums: []AtomicEnum{
 				{Value: "ValueA"},
@@ -1090,11 +1366,11 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	}, atomicMap)
 
 	suite.Equal(map[string]AtomicSpan{
-		"atomic_span_key": {LowerType: "unconstrained", HigherType: "unconstrained"},
+		atomicSpanKeyStr: {LowerType: "unconstrained", HigherType: "unconstrained"},
 	}, atomicSpanMap)
 
 	suite.Equal(map[string][]AtomicEnum{
-		"atomic_enum_key": {
+		atomicEnumKeyStr: {
 			{Value: "ValueA"},
 			{Value: "ValueB"},
 		},
@@ -1104,32 +1380,37 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	// Create base DataTypes (only Key and CollectionType)
 	baseDataTypes := []DataType{
-		{Key: "atomic_key", CollectionType: "atomic"},
-		{Key: "atomic_span_key", CollectionType: "atomic"},
-		{Key: "atomic_enum_key", CollectionType: "atomic"},
-		{Key: "record_key", CollectionType: "record"},
+		{Key: t_dtKey("atomic_key"), CollectionType: "atomic"},
+		{Key: t_dtKey("atomic_span_key"), CollectionType: "atomic"},
+		{Key: t_dtKey("atomic_enum_key"), CollectionType: "atomic"},
+		{Key: t_dtKey("record_key"), CollectionType: "record"},
 	}
 
-	// Create the maps with the same data as TestExtractDatabaseObjects
+	// Create the maps with the same data as TestExtractDatabaseObjects.
+	// Map keys are the .String() form of identity.Key (same as what ExtractDatabaseObjects produces).
+	recordKeyStr := t_dtKey("record_key").String()
+	atomicKeyStr := t_dtKey("atomic_key").String()
+	atomicSpanKeyStr := t_dtKey("atomic_span_key").String()
+	atomicEnumKeyStr := t_dtKey("atomic_enum_key").String()
 	fieldMap := map[string][]Field{
-		"record_key": {
+		recordKeyStr: {
 			{
 				Name:          "name",
-				FieldDataType: &DataType{Key: "field_type"},
+				FieldDataType: &DataType{Key: t_dtKey("field_type")},
 			},
 		},
 	}
 
 	atomicMap := map[string]Atomic{
-		"atomic_key": {ConstraintType: "unconstrained"},
-		"atomic_span_key": Atomic{
+		atomicKeyStr: {ConstraintType: "unconstrained"},
+		atomicSpanKeyStr: Atomic{
 			ConstraintType: "span",
 			Span: &AtomicSpan{
 				LowerType:  "unconstrained",
 				HigherType: "unconstrained",
 			},
 		},
-		"atomic_enum_key": Atomic{
+		atomicEnumKeyStr: Atomic{
 			ConstraintType: "enumeration",
 			Enums: []AtomicEnum{
 				{Value: "ValueA"},
@@ -1139,11 +1420,11 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	}
 
 	atomicSpanMap := map[string]AtomicSpan{
-		"atomic_span_key": {LowerType: "unconstrained", HigherType: "unconstrained"},
+		atomicSpanKeyStr: {LowerType: "unconstrained", HigherType: "unconstrained"},
 	}
 
 	atomicEnumMap := map[string][]AtomicEnum{
-		"atomic_enum_key": {
+		atomicEnumKeyStr: {
 			{Value: "ValueA"},
 			{Value: "ValueB"},
 		},
@@ -1155,7 +1436,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	// Verify the result is sorted by key length descending and components are attached
 	suite.Equal([]DataType{
 		{
-			Key:            "atomic_enum_key",
+			Key:            t_dtKey("atomic_enum_key"),
 			CollectionType: "atomic",
 			Atomic: &Atomic{
 				ConstraintType: "enumeration",
@@ -1163,7 +1444,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 			},
 		},
 		{
-			Key:            "atomic_span_key",
+			Key:            t_dtKey("atomic_span_key"),
 			CollectionType: "atomic",
 			Atomic: &Atomic{
 				ConstraintType: "span",
@@ -1171,17 +1452,17 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 			},
 		},
 		{
-			Key:            "atomic_key",
+			Key:            t_dtKey("atomic_key"),
 			CollectionType: "atomic",
 			Atomic:         &Atomic{ConstraintType: "unconstrained"},
 		},
 		{
-			Key:            "record_key",
+			Key:            t_dtKey("record_key"),
 			CollectionType: "record",
 			RecordFields: []Field{
 				{
 					Name:          "name",
-					FieldDataType: &DataType{Key: "field_type"},
+					FieldDataType: &DataType{Key: t_dtKey("field_type")},
 				},
 			},
 		},
@@ -1191,13 +1472,13 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 	// Create a three-deep nested structure
 	grandchild := DataType{
-		Key:            "grandchild",
+		Key:            t_dtKey("grandchild"),
 		CollectionType: "atomic",
 		Atomic:         &Atomic{ConstraintType: "unconstrained"},
 	}
 
 	child := DataType{
-		Key:            "child",
+		Key:            t_dtKey("child"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
@@ -1208,7 +1489,7 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 	}
 
 	root := DataType{
-		Key:            "root1",
+		Key:            t_dtKey("root1"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
@@ -1222,13 +1503,13 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 
 	// Create a three-deep nested structure
 	grandchild2 := DataType{
-		Key:            "grandchild2",
+		Key:            t_dtKey("grandchild2"),
 		CollectionType: "atomic",
 		Atomic:         &Atomic{ConstraintType: "unconstrained"},
 	}
 
 	child2 := DataType{
-		Key:            "child2",
+		Key:            t_dtKey("child2"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
@@ -1239,7 +1520,7 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 	}
 
 	root2 := DataType{
-		Key:            "root2",
+		Key:            t_dtKey("root2"),
 		CollectionType: "record",
 		RecordFields: []Field{
 			{

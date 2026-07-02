@@ -40,7 +40,7 @@ cd $SCRIPT_PATH
 
 # For easy iteration, rebuild the command line tool.
 echo -e "\nUPDATE INSTALL\n"
-(cd $SCRIPT_PATH/../apps/requirements/req && go install ./...)
+(cd $SCRIPT_PATH/../apps/requirements/req && go install -buildvcs=false ./...)
 [ $? -ne 0 ] && exit 1
 
 # ================================================

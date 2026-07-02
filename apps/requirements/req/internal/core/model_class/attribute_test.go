@@ -210,8 +210,7 @@ func (suite *AttributeSuite) TestNew() {
 	derivationPolicy := &derivationPolicyVal
 
 	// Test parameters are mapped correctly.
-	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", derivationPolicy, true,
-		AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
+	attr, err := NewAttribute(key, AttributeDetails{Name: "Name", Details: "Details"}, "DataTypeRules", derivationPolicy, true, AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
 	suite.Require().NoError(err)
 	suite.Equal(Attribute{
 		Key:              key,
@@ -225,8 +224,7 @@ func (suite *AttributeSuite) TestNew() {
 	}, attr)
 
 	// Test with nil DerivationPolicy (non-derived attribute).
-	attrNoDeriv, err := NewAttribute(key, "Name", "Details", "DataTypeRules", nil, true,
-		AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
+	attrNoDeriv, err := NewAttribute(key, AttributeDetails{Name: "Name", Details: "Details"}, "DataTypeRules", nil, true, AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
 	suite.Require().NoError(err)
 	suite.Nil(attrNoDeriv.DerivationPolicy)
 
@@ -235,9 +233,9 @@ func (suite *AttributeSuite) TestNew() {
 	derivParsedKey := helper.Must(identity.NewAttributeDerivationKey(attrParsedKey, "deriv_parsed"))
 	derivParsedPolicyVal := model_logic.NewLogic(derivParsedKey, model_logic.LogicTypeValue, "Computed from other fields.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	derivParsedPolicy := &derivParsedPolicyVal
-	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivParsedPolicy, true,
-		AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
+	attrParsed, err := NewAttribute(attrParsedKey, AttributeDetails{Name: "NameParsed", Details: "Details"}, "unconstrained", derivParsedPolicy, true, AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
 	suite.Require().NoError(err)
+	expectedDtKey := helper.Must(identity.NewDataTypeKey(attrParsedKey, ""))
 	suite.Equal(Attribute{
 		Key:              attrParsedKey,
 		Name:             "NameParsed",
@@ -248,13 +246,18 @@ func (suite *AttributeSuite) TestNew() {
 		UmlComment:       "UmlComment",
 		IndexNums:        []uint{1, 2},
 		DataType: &model_data_type.DataType{
-			Key:            attrParsedKey.String(),
+			Key:            expectedDtKey,
 			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
 				ConstraintType: "unconstrained",
 			},
 		},
 	}, attrParsed)
+
+	// Duplicate enum values in rules fail at construction, like other datatype validation errors.
+	dupKey := helper.Must(identity.NewAttributeKey(classKey, "attr_dup_enum"))
+	_, err = NewAttribute(dupKey, AttributeDetails{Name: "Name", Details: "Details"}, "enum of a, b, a", nil, false, AttributeAnnotations{})
+	suite.Require().ErrorContains(err, `duplicate enum value "a"`)
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

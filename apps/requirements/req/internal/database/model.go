@@ -12,6 +12,7 @@ func scanModel(scanner Scanner, model *core.Model) (err error) {
 		&model.Key,
 		&model.Name,
 		&model.Details,
+		&model.UnfinishedNotes,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -24,12 +25,6 @@ func scanModel(scanner Scanner, model *core.Model) (err error) {
 
 // LoadModel loads a model from the database.
 func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
-	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return core.Model{}, err
-	}
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -40,9 +35,10 @@ func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
 			return nil
 		},
 		`SELECT
-			model_key   ,
-			name        ,
-			details
+			model_key        ,
+			name             ,
+			details          ,
+			unfinished_notes
 		FROM
 			model
 		WHERE
@@ -58,28 +54,28 @@ func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
 // AddModel adds a model to the database.
 func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err := preenKey(model.Key)
-	if err != nil {
-		return err
-	}
+	modelKey := model.Key
 
 	// Add the data.
 	err = dbExec(dbOrTx, `
 		INSERT INTO model
 			(
-				model_key ,
-				name      ,
-				details
+				model_key        ,
+				name             ,
+				details          ,
+				unfinished_notes
 			)
 		VALUES
 			(
 				$1,
 				$2,
-				$3
+				$3,
+				$4
 			)`,
 		modelKey,
 		model.Name,
-		model.Details)
+		model.Details,
+		model.UnfinishedNotes)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -90,23 +86,22 @@ func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
 // UpdateModel updates a model in the database.
 func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err := preenKey(model.Key)
-	if err != nil {
-		return err
-	}
+	modelKey := model.Key
 
 	// Update the data.
 	err = dbExec(dbOrTx, `
 		UPDATE
 			model
 		SET
-			name    = $2 ,
-			details = $3
+			name             = $2 ,
+			details          = $3 ,
+			unfinished_notes = $4
 		WHERE
 			model_key = $1`,
 		modelKey,
 		model.Name,
-		model.Details)
+		model.Details,
+		model.UnfinishedNotes)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -117,10 +112,6 @@ func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
 // RemoveModel deletes a model from the database.
 func RemoveModel(dbOrTx DbOrTx, modelKey string) (err error) {
 	// Keys should be preened so they collide correctly.
-	modelKey, err = preenKey(modelKey)
-	if err != nil {
-		return err
-	}
 
 	// Delete the data.
 	err = dbExec(dbOrTx, `
@@ -150,9 +141,10 @@ func QueryModels(dbOrTx DbOrTx) (models []core.Model, err error) {
 			return nil
 		},
 		`SELECT
-			model_key   ,
-			name        ,
-			details
+			model_key        ,
+			name             ,
+			details          ,
+			unfinished_notes
 		FROM
 			model
 		ORDER BY model_key`)

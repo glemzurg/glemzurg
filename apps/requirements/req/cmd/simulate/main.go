@@ -3,80 +3,244 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/loader"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/report"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/trace"
 )
 
+type cliOptions struct {
+	maxSteps              int
+	seed                  int64
+	stopOnViolation       bool
+	output                string
+	showTrace             bool
+	quiet                 bool
+	rootSource            string
+	modelName             string
+	includeSubdomainPaths []string
+	includeClassNames     []string
+}
+
 func main() {
+	opts := parseCLIOptions()
+	hasViolations, err := runSimulation(opts)
+	if err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+	if hasViolations {
+		os.Exit(1)
+	}
+}
+
+func parseCLIOptions() cliOptions {
 	maxSteps := flag.Int("max-steps", 100, "Maximum simulation steps")
 	seed := flag.Int64("seed", 0, "Random seed (0 = current time)")
-	stopOnViolation := flag.Bool("stop-on-violation", false, "Stop at first violation")
+	stopOnViolation := flag.Bool("stop-on-violation", true, "Stop at first violation")
+	continueOnViolation := flag.Bool("continue-on-violation", false, "Keep simulating after violations (overrides -stop-on-violation)")
 	output := flag.String("output", "text", "Output format: text or json")
-	showTrace := flag.Bool("trace", false, "Include full step trace in output")
+	showTrace := flag.Bool("trace", false, "Include full step trace in output (also shown by default when no violations are found)")
 	quiet := flag.Bool("quiet", false, "Only output violations")
+	rootSource := flag.String("rootsource", "", "Human model root source directory (e.g. data_sandbox/model)")
+	modelName := flag.String("model", "", "Model name when using -rootsource (e.g. my_model)")
+	includeSubdomains := flag.String("include-subdomain", "", "Comma-separated subdomains to simulate: subdomain or domain/subdomain")
+	includeClasses := flag.String("include-class", "", "Comma-separated classes to simulate: name, subdomain/class, or domain/subdomain/class")
 	flag.Parse()
 
-	if flag.NArg() < 1 {
-		log.Printf("Usage: simulate [flags] <model-path>\n\nFlags:")
-		flag.PrintDefaults()
-		os.Exit(2)
+	stop := *stopOnViolation
+	if *continueOnViolation {
+		stop = false
 	}
-	modelPath := flag.Arg(0)
 
-	// Determine seed.
-	actualSeed := *seed
+	return cliOptions{
+		maxSteps:              *maxSteps,
+		seed:                  *seed,
+		stopOnViolation:       stop,
+		output:                *output,
+		showTrace:             *showTrace,
+		quiet:                 *quiet,
+		rootSource:            *rootSource,
+		modelName:             *modelName,
+		includeSubdomainPaths: parseCommaSeparatedFlag(*includeSubdomains),
+		includeClassNames:     parseCommaSeparatedFlag(*includeClasses),
+	}
+}
+
+func runSimulation(opts cliOptions) (hasViolations bool, err error) {
+	model, err := loadModel(opts.rootSource, opts.modelName, opts.includeSubdomainPaths, opts.includeClassNames)
+	if err != nil {
+		return false, fmt.Errorf("loading model: %w", err)
+	}
+
+	actualSeed := opts.seed
 	if actualSeed == 0 {
 		actualSeed = time.Now().UnixNano()
 	}
 
-	// Load model.
-	model, err := loader.LoadModel(modelPath)
+	eng, err := newSimulationEngine(model, opts, actualSeed)
 	if err != nil {
-		log.Printf("Error loading model: %v", err)
-		os.Exit(1)
+		return false, err
 	}
 
-	// Configure and run simulation.
-	config := engine.SimulationConfig{
-		MaxSteps:        *maxSteps,
-		RandomSeed:      actualSeed,
-		StopOnViolation: *stopOnViolation,
-	}
-
-	eng, err := engine.NewSimulationEngine(model, config)
-	if err != nil {
-		log.Printf("Error creating simulation engine: %v", err)
-		os.Exit(1)
-	}
+	surfaceReport := eng.SurfaceReport()
+	reportSurfaceBeforeRun(surfaceReport, opts.quiet)
 
 	result, err := eng.Run()
 	if err != nil {
-		log.Printf("Simulation error: %v", err)
-		os.Exit(1)
+		return false, fmt.Errorf("simulation error: %w", err)
 	}
 
-	// Build reports.
 	simTrace := trace.FromResult(result)
 	violationReport := report.FromViolations(result.Violations)
+	emitSimulationOutput(opts, surfaceReport, simTrace, violationReport, actualSeed)
 
-	// Output.
-	switch *output {
+	return violationReport.HasViolations(), nil
+}
+
+func newSimulationEngine(model *core.Model, opts cliOptions, seed int64) (*engine.SimulationEngine, error) {
+	surfaceSpec, err := buildSurfaceSpec(model, opts.includeSubdomainPaths, opts.includeClassNames)
+	if err != nil {
+		return nil, fmt.Errorf("building surface specification: %w", err)
+	}
+
+	eng, err := engine.NewSimulationEngine(model, engine.SimulationConfig{
+		MaxSteps:        opts.maxSteps,
+		RandomSeed:      seed,
+		StopOnViolation: opts.stopOnViolation,
+		Surface:         surfaceSpec,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating simulation engine: %w", err)
+	}
+
+	return eng, nil
+}
+
+func reportSurfaceBeforeRun(surfaceReport *engine.SurfaceReport, quiet bool) {
+	if quiet {
+		return
+	}
+	log.Print(surfaceReport.FormatText())
+	log.Println()
+}
+
+func emitSimulationOutput(
+	opts cliOptions,
+	surfaceReport *engine.SurfaceReport,
+	simTrace *trace.SimulationTrace,
+	violationReport *report.ViolationReport,
+	seed int64,
+) {
+	switch opts.output {
 	case "json":
-		outputJSON(simTrace, violationReport, *showTrace, *quiet)
+		outputJSON(surfaceReport, simTrace, violationReport, opts.showTrace, opts.quiet)
 	default:
-		outputText(simTrace, violationReport, *showTrace, *quiet, actualSeed)
+		outputText(simTrace, violationReport, opts.showTrace, opts.quiet, seed)
+	}
+}
+
+func loadModel(rootSource, modelName string, includeSubdomainPaths, includeClassNames []string) (*core.Model, error) {
+	if rootSource == "" {
+		return nil, fmt.Errorf("-rootsource and -model are required")
+	}
+	if modelName == "" {
+		return nil, fmt.Errorf("model name is required with -rootsource")
 	}
 
-	// Exit code.
-	if violationReport.HasViolations() {
-		os.Exit(1)
+	modelPath := filepath.Join(rootSource, modelName)
+	parsed, failures, err := parser_human.Parse(modelPath)
+	if err != nil {
+		return nil, err
 	}
+	if len(failures) > 0 {
+		return nil, fmt.Errorf("model has %d parse failure(s); fix before simulating", len(failures))
+	}
+
+	active := &parsed
+	if hasSurfaceScope(includeSubdomainPaths, includeClassNames) {
+		surfaceSpec, specErr := buildSurfaceSpec(active, includeSubdomainPaths, includeClassNames)
+		if specErr != nil {
+			return nil, specErr
+		}
+		active, err = applySurfaceFilter(active, surfaceSpec)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err := convert.LowerModel(active); err != nil {
+		return nil, err
+	}
+	return active, nil
+}
+
+func applySurfaceFilter(model *core.Model, surfaceSpec *surface.SurfaceSpecification) (*core.Model, error) {
+	resolved, err := surface.Resolve(surfaceSpec, model)
+	if err != nil {
+		return nil, err
+	}
+	return surface.BuildFilteredModel(model, resolved)
+}
+
+func parseCommaSeparatedFlag(flagValue string) []string {
+	if strings.TrimSpace(flagValue) == "" {
+		return nil
+	}
+	values := strings.Split(flagValue, ",")
+	var trimmed []string
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value != "" {
+			trimmed = append(trimmed, value)
+		}
+	}
+	return trimmed
+}
+
+func hasSurfaceScope(includeSubdomainPaths, includeClassNames []string) bool {
+	return len(includeSubdomainPaths) > 0 || len(includeClassNames) > 0
+}
+
+func buildSurfaceSpec(model *core.Model, includeSubdomainPaths, includeClassNames []string) (*surface.SurfaceSpecification, error) {
+	if !hasSurfaceScope(includeSubdomainPaths, includeClassNames) {
+		return &surface.SurfaceSpecification{}, nil
+	}
+
+	spec := &surface.SurfaceSpecification{}
+	if len(includeSubdomainPaths) > 0 {
+		keys, err := surface.ResolveSubdomainKeysByPath(model, includeSubdomainPaths)
+		if err != nil {
+			return nil, err
+		}
+		spec.IncludeSubdomains = keys
+	}
+	if len(includeClassNames) > 0 {
+		keys, err := surface.ResolveClassKeysByName(model, includeClassNames)
+		if err != nil {
+			return nil, err
+		}
+		spec.IncludeClasses = keys
+	}
+	return spec, nil
+}
+
+// shouldShowStepTrace reports whether the full step trace belongs in CLI output.
+// Clean runs always include steps so incremental surface growth is visible without -trace.
+func shouldShowStepTrace(showTrace, quiet bool, hasViolations bool) bool {
+	if quiet {
+		return false
+	}
+	return showTrace || !hasViolations
 }
 
 func outputText(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool, seed int64) {
@@ -85,7 +249,7 @@ func outputText(simTrace *trace.SimulationTrace, violationReport *report.Violati
 			simTrace.StepsTaken, simTrace.TerminationReason, seed)
 	}
 
-	if showTrace && !quiet {
+	if shouldShowStepTrace(showTrace, quiet, violationReport.HasViolations()) {
 		log.Print(simTrace.FormatText())
 		log.Println()
 	}
@@ -93,8 +257,12 @@ func outputText(simTrace *trace.SimulationTrace, violationReport *report.Violati
 	log.Print(violationReport.FormatText())
 }
 
-func outputJSON(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
+func outputJSON(surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
 	output := make(map[string]any)
+
+	if !quiet {
+		output["surface"] = surfaceReport
+	}
 
 	if !quiet {
 		output["summary"] = map[string]any{
@@ -103,7 +271,7 @@ func outputJSON(simTrace *trace.SimulationTrace, violationReport *report.Violati
 		}
 	}
 
-	if showTrace && !quiet {
+	if shouldShowStepTrace(showTrace, quiet, violationReport.HasViolations()) {
 		output["trace"] = simTrace
 	}
 

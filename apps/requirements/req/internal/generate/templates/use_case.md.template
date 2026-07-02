@@ -12,8 +12,7 @@
 
 # {{ .UseCase.Name }}
 
-{{ .UseCase.Details }}
-
+{{ .UseCase.Details }}{{ unfinished_notes_block .UseCase.UnfinishedNotes }}
 {{ if .UseCase.ReadOnly -}}
 *Read-only use case*
 
@@ -25,15 +24,15 @@
 {{- $gen := use_case_generalization_lookup $reqs .UseCase.SuperclassOfKey -}}
 {{- $super := use_case_generalization_superclass $reqs $gen.Key -}}
 {{- $subs := use_case_generalization_subclasses $reqs $gen.Key -}}
-- **{{ $gen.Name }}.** {{ $gen.Details }}
-    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.UseCase.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "use_case" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.UseCase.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "use_case" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+- **{{ $gen.Name }}{{ unfinished_notes_marker $gen.UnfinishedNotes }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.UseCase.Key }}{{ $super.Name }}{{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}[{{ $super.Name }}]({{ filename "use_case" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.UseCase.Key }}{{ $sub.Name }}{{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ else }}[{{ $sub.Name }}]({{ filename "use_case" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ end }}{{ else }}???{{ end }}
 {{ end -}}
 {{ if ne .UseCase.SubclassOfKey nil -}}
 {{- $gen := use_case_generalization_lookup $reqs .UseCase.SubclassOfKey -}}
 {{- $super := use_case_generalization_superclass $reqs $gen.Key -}}
 {{- $subs := use_case_generalization_subclasses $reqs $gen.Key -}}
-- **{{ $gen.Name }}.** {{ $gen.Details }}
-    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.UseCase.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "use_case" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.UseCase.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "use_case" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+- **{{ $gen.Name }}{{ unfinished_notes_marker $gen.UnfinishedNotes }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.UseCase.Key }}{{ $super.Name }}{{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}[{{ $super.Name }}]({{ filename "use_case" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.UseCase.Key }}{{ $sub.Name }}{{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ else }}[{{ $sub.Name }}]({{ filename "use_case" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ end }}{{ else }}???{{ end }}
 {{ end }}
 {{- end }}
 
@@ -44,12 +43,12 @@
 
 {{ if ne $includes nil -}}
 {{ range $includes -}}
-- «{{ .ShareType }}» [{{ .UseCase.Name }}]({{ filename "use_case" .UseCase.Key "" ".md" }})
+- «{{ .ShareType }}» [{{ .UseCase.Name }}]({{ filename "use_case" .UseCase.Key "" ".md" }}){{ unfinished_notes_marker .UseCase.UnfinishedNotes }}
 {{ end }}
 {{ end -}}
 {{ if ne $extendedBy nil -}}
 {{ range $extendedBy -}}
-- «{{ .ShareType }}» by [{{ .UseCase.Name }}]({{ filename "use_case" .UseCase.Key "" ".md" }})
+- «{{ .ShareType }}» by [{{ .UseCase.Name }}]({{ filename "use_case" .UseCase.Key "" ".md" }}){{ unfinished_notes_marker .UseCase.UnfinishedNotes }}
 {{ end }}
 {{ end -}}
 {{ end -}}
@@ -66,7 +65,10 @@ Flows of interest.
 
 {{ $scenario.Details }}
 
-![er]({{ filename "scenario" $scenario.Key "" ".svg" }})
+```mermaid
+sequenceDiagram
+{{ scenario_mermaid $reqs $scenario.Key }}
+```
 
 {{ end -}}
 {{- else -}}

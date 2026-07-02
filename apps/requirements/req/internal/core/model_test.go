@@ -231,8 +231,7 @@ func (suite *ModelSuite) TestNew() {
 		{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "First invariant.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "inv1"}},
 	}
 
-	model := NewModel("  MODEL1  ", "Name", "Details",
-		invariants, globalFuncs, nil)
+	model := NewModel("  MODEL1  ", ModelDetails{Name: "Name", Details: "Details"}, "", invariants, globalFuncs, nil)
 	suite.Equal(Model{
 		Key:             "model1",
 		Name:            "Name",
@@ -243,7 +242,7 @@ func (suite *ModelSuite) TestNew() {
 
 	// Test with nil optional fields (Invariants and GlobalFunctions are optional).
 
-	model = NewModel("  MODEL1  ", "Name", "Details", nil, nil, nil)
+	model = NewModel("  MODEL1  ", ModelDetails{Name: "Name", Details: "Details"}, "", nil, nil, nil)
 	suite.Equal(Model{
 		Key:     "model1",
 		Name:    "Name",

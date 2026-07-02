@@ -27,7 +27,7 @@ func (e *StateActionExecutor) ExecuteExitActions(
 	class model_class.Class,
 	fromStateKey identity.Key,
 	instance *state.ClassInstance,
-) (invariants.ViolationErrors, error) {
+) ([]identity.Key, invariants.ViolationErrors, error) {
 	return e.executeStateActions(class, fromStateKey, instance, "exit")
 }
 
@@ -36,7 +36,7 @@ func (e *StateActionExecutor) ExecuteEntryActions(
 	class model_class.Class,
 	toStateKey identity.Key,
 	instance *state.ClassInstance,
-) (invariants.ViolationErrors, error) {
+) ([]identity.Key, invariants.ViolationErrors, error) {
 	return e.executeStateActions(class, toStateKey, instance, "entry")
 }
 
@@ -45,12 +45,13 @@ func (e *StateActionExecutor) executeStateActions(
 	stateKey identity.Key,
 	instance *state.ClassInstance,
 	when string,
-) (invariants.ViolationErrors, error) {
+) ([]identity.Key, invariants.ViolationErrors, error) {
 	s, ok := class.States[stateKey]
 	if !ok {
-		return nil, fmt.Errorf("state %s not found in class %s", stateKey.String(), class.Name)
+		return nil, nil, fmt.Errorf("state %s not found in class %s", stateKey.String(), class.Name)
 	}
 
+	var executed []identity.Key
 	var allViolations invariants.ViolationErrors
 
 	for _, sa := range s.Actions {
@@ -60,16 +61,17 @@ func (e *StateActionExecutor) executeStateActions(
 
 		action, ok := class.Actions[sa.ActionKey]
 		if !ok {
-			return nil, fmt.Errorf("state action references non-existent action %s in class %s", sa.ActionKey.String(), class.Name)
+			return executed, nil, fmt.Errorf("state action references non-existent action %s in class %s", sa.ActionKey.String(), class.Name)
 		}
 
 		result, err := e.actionExecutor.ExecuteAction(action, instance, nil)
 		if err != nil {
-			return allViolations, fmt.Errorf("state %s action %s error: %w", when, action.Name, err)
+			return executed, allViolations, fmt.Errorf("state %s action %s error: %w", when, action.Name, err)
 		}
 
+		executed = append(executed, action.Key)
 		allViolations = append(allViolations, result.Violations...)
 	}
 
-	return allViolations, nil
+	return executed, allViolations, nil
 }

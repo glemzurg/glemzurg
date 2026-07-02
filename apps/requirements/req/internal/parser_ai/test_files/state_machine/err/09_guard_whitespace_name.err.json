@@ -2,7 +2,11 @@
     "guards": {
         "is_valid": {
             "name": "   ",
-            "logic": {"description": "Checks validity", "notation": "tla_plus"}
+            "logic": {
+                "type": "assessment",
+                "description": "Checks validity",
+                "notation": "tla_plus"
+            }
         }
     }
 }

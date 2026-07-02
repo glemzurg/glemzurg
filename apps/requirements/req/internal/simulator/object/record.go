@@ -24,7 +24,7 @@ func NewRecord() *Record {
 func NewRecordFromFields(fields map[string]Object) *Record {
 	r := NewRecord()
 	for name, val := range fields {
-		r.fields[name] = val.Clone()
+		r.fields[name] = NormalizeSimulatorValue(val).Clone()
 	}
 	return r
 }
@@ -73,7 +73,7 @@ func (r *Record) Get(name string) Object {
 
 // Set sets the value of a field.
 func (r *Record) Set(name string, value Object) {
-	r.fields[name] = value.Clone()
+	r.fields[name] = NormalizeSimulatorValue(value).Clone()
 }
 
 // Has returns true if the field exists.

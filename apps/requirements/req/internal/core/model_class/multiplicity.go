@@ -100,7 +100,7 @@ func parseMultiplicity(multiplicity string) (lowerBound, higherBound uint, err e
 	lowerPart := multiplicityParts[0]
 	higherPart := multiplicityParts[1]
 
-	if lowerPart == "many" || lowerPart == "any" {
+	if lowerPart == "many" || lowerPart == MULTIPLICITY_ANY {
 		lowerBound = 0 // Zeros are "any".
 	} else {
 		lowerUint64, err := strconv.ParseUint(lowerPart, 10, 64)

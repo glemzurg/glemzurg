@@ -206,7 +206,7 @@ func AddObjects(dbOrTx DbOrTx, modelKey string, objects map[identity.Key][]model
 				queryBuilder.WriteString(", ")
 			}
 			base := i * 9
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
 			args = append(args, modelKey, obj.Key.String(), scenarioKey.String(), obj.ObjectNumber, obj.Name, obj.NameStyle, obj.ClassKey.String(), obj.Multi, obj.UmlComment)
 			i++
 		}

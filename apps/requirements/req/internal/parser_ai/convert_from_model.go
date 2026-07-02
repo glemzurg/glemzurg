@@ -2,6 +2,9 @@ package parser_ai
 
 import (
 	"fmt"
+	"maps"
+	"sort"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
@@ -29,6 +32,7 @@ func ConvertFromModel(model *core.Model) (*inputModel, error) { //nolint:revive 
 	result := &inputModel{
 		Name:                 model.Name,
 		Details:              model.Details,
+		UnfinishedNotes:      model.UnfinishedNotes,
 		Invariants:           convertLogicsFromModel(model.Invariants),
 		Actors:               make(map[string]*inputActor),
 		ActorGeneralizations: make(map[string]*inputActorGeneralization),
@@ -70,29 +74,43 @@ func convertTopLevelCollectionsFromModel(model *core.Model, result *inputModel) 
 	}
 }
 
+// buildAllModelClasses collects all classes from all subdomains across all domains.
+func buildAllModelClasses(model *core.Model) map[identity.Key]model_class.Class {
+	allClasses := make(map[identity.Key]model_class.Class)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			maps.Copy(allClasses, subdomain.Classes)
+		}
+	}
+	return allClasses
+}
+
 // convertDomainsAndAssociationsFromModel converts domains, domain associations, and class associations from model to input.
 func convertDomainsAndAssociationsFromModel(model *core.Model, result *inputModel) {
+	allClasses := buildAllModelClasses(model)
 	for key, domain := range model.Domains {
-		converted := convertDomainFromModel(&domain)
+		converted := convertDomainFromModel(&domain, allClasses)
 		result.Domains[key.SubKey] = converted
 	}
 	for key, assoc := range model.DomainAssociations {
 		converted := convertDomainAssocFromModel(&assoc)
 		result.DomainAssociations[key.SubKey+"."+key.SubKey2] = converted
 	}
-	for key, assoc := range model.ClassAssociations {
+	for _, assoc := range model.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, "")
-		result.ClassAssociations[key.SubKey3] = converted
+		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		result.ClassAssociations[mapKey] = converted
 	}
 }
 
 // convertActorFromModel converts a model_actor.Actor to an inputActor.
 func convertActorFromModel(actor *model_actor.Actor) *inputActor {
 	result := &inputActor{
-		Name:       actor.Name,
-		Type:       actor.Type,
-		Details:    actor.Details,
-		UMLComment: actor.UmlComment,
+		Name:            actor.Name,
+		Type:            actor.Type,
+		Details:         actor.Details,
+		UnfinishedNotes: actor.UnfinishedNotes,
+		UMLComment:      actor.UmlComment,
 	}
 	return result
 }
@@ -100,12 +118,13 @@ func convertActorFromModel(actor *model_actor.Actor) *inputActor {
 // convertActorGeneralizationFromModel converts a model_actor.Generalization to an inputActorGeneralization.
 func convertActorGeneralizationFromModel(gen *model_actor.Generalization, actors map[identity.Key]model_actor.Actor) *inputActorGeneralization {
 	result := &inputActorGeneralization{
-		Name:         gen.Name,
-		Details:      gen.Details,
-		IsComplete:   gen.IsComplete,
-		IsStatic:     gen.IsStatic,
-		UMLComment:   gen.UmlComment,
-		SubclassKeys: []string{},
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UMLComment:      gen.UmlComment,
+		SubclassKeys:    []string{},
 	}
 
 	// Find superclass and subclasses by examining actor references
@@ -117,6 +136,7 @@ func convertActorGeneralizationFromModel(gen *model_actor.Generalization, actors
 			result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
 		}
 	}
+	sort.Strings(result.SubclassKeys)
 
 	return result
 }
@@ -140,10 +160,11 @@ func convertDomainAssocFromModel(assoc *model_domain.Association) *inputDomainAs
 }
 
 // convertDomainFromModel converts a model_domain.Domain to an inputDomain.
-func convertDomainFromModel(domain *model_domain.Domain) *inputDomain {
+func convertDomainFromModel(domain *model_domain.Domain, allClasses map[identity.Key]model_class.Class) *inputDomain {
 	result := &inputDomain{
 		Name:              domain.Name,
 		Details:           domain.Details,
+		UnfinishedNotes:   domain.UnfinishedNotes,
 		Realized:          domain.Realized,
 		UMLComment:        domain.UmlComment,
 		Subdomains:        make(map[string]*inputSubdomain),
@@ -152,24 +173,26 @@ func convertDomainFromModel(domain *model_domain.Domain) *inputDomain {
 
 	// Convert subdomains
 	for key, subdomain := range domain.Subdomains {
-		converted := convertSubdomainFromModel(&subdomain)
+		converted := convertSubdomainFromModel(&subdomain, allClasses)
 		result.Subdomains[key.SubKey] = converted
 	}
 
 	// Convert domain-level class associations
-	for key, assoc := range domain.ClassAssociations {
+	for _, assoc := range domain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_DOMAIN)
-		result.ClassAssociations[key.SubKey3] = converted
+		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		result.ClassAssociations[mapKey] = converted
 	}
 
 	return result
 }
 
 // convertSubdomainFromModel converts a model_domain.Subdomain to an inputSubdomain.
-func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomain {
+func convertSubdomainFromModel(subdomain *model_domain.Subdomain, allClasses map[identity.Key]model_class.Class) *inputSubdomain {
 	result := &inputSubdomain{
 		Name:                   subdomain.Name,
 		Details:                subdomain.Details,
+		UnfinishedNotes:        subdomain.UnfinishedNotes,
 		UMLComment:             subdomain.UmlComment,
 		Classes:                make(map[string]*inputClass),
 		ClassGeneralizations:   make(map[string]*inputClassGeneralization),
@@ -187,7 +210,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomai
 
 	// Convert generalizations
 	for key, gen := range subdomain.Generalizations {
-		converted := convertClassGeneralizationFromModel(&gen, subdomain.Classes)
+		converted := convertClassGeneralizationFromModel(&gen, subdomain.Classes, allClasses)
 		result.ClassGeneralizations[key.SubKey] = converted
 	}
 
@@ -216,9 +239,10 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomai
 	}
 
 	// Convert subdomain-level class associations
-	for key, assoc := range subdomain.ClassAssociations {
+	for _, assoc := range subdomain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_SUBDOMAIN)
-		result.ClassAssociations[key.SubKey3] = converted
+		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		result.ClassAssociations[mapKey] = converted
 	}
 
 	return result
@@ -227,13 +251,14 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomai
 // convertUseCaseFromModel converts a model_use_case.UseCase to an inputUseCase.
 func convertUseCaseFromModel(uc *model_use_case.UseCase) *inputUseCase {
 	result := &inputUseCase{
-		Name:       uc.Name,
-		Details:    uc.Details,
-		Level:      uc.Level,
-		ReadOnly:   uc.ReadOnly,
-		UMLComment: uc.UmlComment,
-		Actors:     make(map[string]*inputUseCaseActor),
-		Scenarios:  make(map[string]*inputScenario),
+		Name:            uc.Name,
+		Details:         uc.Details,
+		UnfinishedNotes: uc.UnfinishedNotes,
+		Level:           uc.Level,
+		ReadOnly:        uc.ReadOnly,
+		UMLComment:      uc.UmlComment,
+		Actors:          make(map[string]*inputUseCaseActor),
+		Scenarios:       make(map[string]*inputScenario),
 	}
 
 	// Convert actors (keyed by class key)
@@ -326,12 +351,13 @@ func convertStepFromModel(step *model_scenario.Step) inputStep {
 // convertUseCaseGeneralizationFromModel converts a model_use_case.Generalization to an inputUseCaseGeneralization.
 func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, useCases map[identity.Key]model_use_case.UseCase) *inputUseCaseGeneralization {
 	result := &inputUseCaseGeneralization{
-		Name:         gen.Name,
-		Details:      gen.Details,
-		IsComplete:   gen.IsComplete,
-		IsStatic:     gen.IsStatic,
-		UMLComment:   gen.UmlComment,
-		SubclassKeys: []string{},
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UMLComment:      gen.UmlComment,
+		SubclassKeys:    []string{},
 	}
 
 	// Find superclass and subclasses by examining use case references
@@ -343,6 +369,7 @@ func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, u
 			result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
 		}
 	}
+	sort.Strings(result.SubclassKeys)
 
 	return result
 }
@@ -350,13 +377,14 @@ func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, u
 // convertClassFromModel converts a model_class.Class to an inputClass.
 func convertClassFromModel(class *model_class.Class) *inputClass {
 	result := &inputClass{
-		Name:       class.Name,
-		Details:    class.Details,
-		UMLComment: class.UmlComment,
-		Attributes: make(map[string]*inputAttribute),
-		Indexes:    [][]string{},
-		Actions:    make(map[string]*inputAction),
-		Queries:    make(map[string]*inputQuery),
+		Name:            class.Name,
+		Details:         class.Details,
+		UnfinishedNotes: class.UnfinishedNotes,
+		UMLComment:      class.UmlComment,
+		Attributes:      nil,
+		Indexes:         [][]string{},
+		Actions:         make(map[string]*inputAction),
+		Queries:         make(map[string]*inputQuery),
 	}
 
 	// Set actor key if present
@@ -364,20 +392,21 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 		result.ActorKey = class.ActorKey.SubKey
 	}
 
-	// Convert attributes
-	for key, attr := range class.Attributes {
-		converted := convertAttributeFromModel(&attr)
-		result.Attributes[key.SubKey] = converted
+	// Convert attributes in core slice order.
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
+		result.Attributes = append(result.Attributes, *convertAttributeFromModel(attr))
 	}
 
 	// Build indexes from attribute IndexNums
 	indexMap := make(map[uint][]string)
-	for key, attr := range class.Attributes {
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
 		for _, indexNum := range attr.IndexNums {
-			indexMap[indexNum] = append(indexMap[indexNum], key.SubKey)
+			indexMap[indexNum] = append(indexMap[indexNum], attr.Key.SubKey)
 		}
 	}
-	// Convert map to slice
+	// Convert map to slice; preserve attribute order within each index from core slice walk.
 	for i := range uint(len(indexMap)) {
 		if attrs, ok := indexMap[i]; ok {
 			result.Indexes = append(result.Indexes, attrs)
@@ -395,13 +424,13 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 	// Convert actions
 	for key, action := range class.Actions {
 		converted := convertActionFromModel(&action)
-		result.Actions[key.SubKey] = converted
+		result.Actions[keyFromName(key.SubKey)] = converted
 	}
 
 	// Convert queries
 	for key, query := range class.Queries {
 		converted := convertQueryFromModel(&query)
-		result.Queries[key.SubKey] = converted
+		result.Queries[keyFromName(key.SubKey)] = converted
 	}
 
 	return result
@@ -410,6 +439,7 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 // convertAttributeFromModel converts a model_class.Attribute to an inputAttribute.
 func convertAttributeFromModel(attr *model_class.Attribute) *inputAttribute {
 	result := &inputAttribute{
+		Key:           attr.Key.SubKey,
 		Name:          attr.Name,
 		DataTypeRules: attr.DataTypeRules,
 		Details:       attr.Details,
@@ -419,6 +449,9 @@ func convertAttributeFromModel(attr *model_class.Attribute) *inputAttribute {
 	if attr.DerivationPolicy != nil {
 		dp := convertLogicFromModel(attr.DerivationPolicy)
 		result.DerivationPolicy = &dp
+	}
+	if attr.DataType != nil && attr.DataType.TypeSpec != nil && attr.DataType.TypeSpec.Specification != "" {
+		result.TypeSpec = attr.DataType.TypeSpec.Specification
 	}
 	result.Invariants = convertLogicsFromModel(attr.Invariants)
 	return result
@@ -436,23 +469,24 @@ func convertStateMachineFromModel(class *model_class.Class) *inputStateMachine {
 	// Convert states
 	for key, state := range class.States {
 		converted := convertStateFromModel(&state)
-		sm.States[key.SubKey] = converted
+		sm.States[keyFromName(key.SubKey)] = converted
 	}
 
 	// Convert events
 	for key, event := range class.Events {
 		converted := convertEventFromModel(&event)
-		sm.Events[key.SubKey] = converted
+		sm.Events[keyFromName(key.SubKey)] = converted
 	}
 
 	// Convert guards
 	for key, guard := range class.Guards {
 		converted := convertGuardFromModel(&guard)
-		sm.Guards[key.SubKey] = converted
+		sm.Guards[keyFromName(key.SubKey)] = converted
 	}
 
-	// Convert transitions
-	for _, transition := range class.Transitions {
+	// Convert transitions in stable key order; map iteration is nondeterministic in Go.
+	for _, key := range sortedIdentityKeys(class.Transitions) {
+		transition := class.Transitions[key]
 		converted := convertTransitionFromModel(&transition)
 		sm.Transitions = append(sm.Transitions, converted)
 	}
@@ -472,7 +506,7 @@ func convertStateFromModel(state *model_state.State) *inputState {
 	// Convert state actions
 	for _, stateAction := range state.Actions {
 		converted := inputStateAction{
-			ActionKey: stateAction.ActionKey.SubKey,
+			ActionKey: keyFromName(stateAction.ActionKey.SubKey),
 			When:      stateAction.When,
 		}
 		result.Actions = append(result.Actions, converted)
@@ -486,16 +520,7 @@ func convertEventFromModel(event *model_state.Event) *inputEvent {
 	result := &inputEvent{
 		Name:       event.Name,
 		Details:    event.Details,
-		Parameters: []inputParameter{},
-	}
-
-	// Convert event parameters
-	for _, param := range event.Parameters {
-		converted := inputParameter{
-			Name:          param.Name,
-			DataTypeRules: param.DataTypeRules,
-		}
-		result.Parameters = append(result.Parameters, converted)
+		Parameters: event.ParameterNames,
 	}
 
 	return result
@@ -512,37 +537,31 @@ func convertGuardFromModel(guard *model_state.Guard) *inputGuard {
 // convertTransitionFromModel converts a model_state.Transition to an inputTransition.
 func convertTransitionFromModel(transition *model_state.Transition) inputTransition {
 	result := inputTransition{
-		EventKey:   transition.EventKey.SubKey,
+		EventKey:   keyFromName(transition.EventKey.SubKey),
 		UMLComment: transition.UmlComment,
 	}
 
 	// Handle from state (nil for initial transitions)
 	if transition.FromStateKey != nil {
-		fromKey := transition.FromStateKey.SubKey
-		// Check if it's "initial" (meaning no from state)
-		if fromKey != "initial" {
-			result.FromStateKey = &fromKey
-		}
+		fromKey := keyFromName(transition.FromStateKey.SubKey)
+		result.FromStateKey = &fromKey
 	}
 
 	// Handle to state (nil for final transitions)
 	if transition.ToStateKey != nil {
-		toKey := transition.ToStateKey.SubKey
-		// Check if it's "final" (meaning no to state)
-		if toKey != "final" {
-			result.ToStateKey = &toKey
-		}
+		toKey := keyFromName(transition.ToStateKey.SubKey)
+		result.ToStateKey = &toKey
 	}
 
 	// Handle guard key
 	if transition.GuardKey != nil {
-		guardKey := transition.GuardKey.SubKey
+		guardKey := keyFromName(transition.GuardKey.SubKey)
 		result.GuardKey = &guardKey
 	}
 
 	// Handle action key
 	if transition.ActionKey != nil {
-		actionKey := transition.ActionKey.SubKey
+		actionKey := keyFromName(transition.ActionKey.SubKey)
 		result.ActionKey = &actionKey
 	}
 
@@ -586,6 +605,12 @@ func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
 	if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
 		result.TargetTypeSpec = logic.TargetTypeSpec.Specification
 	}
+	if logic.OverAssociationKey != nil {
+		result.OverAssociationKey = logic.OverAssociationKey.String()
+	}
+	if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
+		result.DestroyEvent = logic.DestroyEventSpec.Specification
+	}
 	return result
 }
 
@@ -622,37 +647,54 @@ func convertParametersFromModel(params []model_state.Parameter) []inputParameter
 	}
 	result := make([]inputParameter, len(params))
 	for i, param := range params {
-		result[i] = inputParameter{
+		ip := inputParameter{
 			Name:          param.Name,
 			DataTypeRules: param.DataTypeRules,
+			Nullable:      param.Nullable,
 		}
+		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
+			ip.TypeSpec = param.DataType.TypeSpec.Specification
+		}
+		ip.Invariants = convertLogicsFromModel(param.Invariants)
+		result[i] = ip
 	}
 	return result
 }
 
 // convertClassGeneralizationFromModel converts a model_class.Generalization to an inputClassGeneralization.
-// It needs the classes map to find which classes reference this class generalization.
-func convertClassGeneralizationFromModel(gen *model_class.Generalization, classes map[identity.Key]model_class.Class) *inputClassGeneralization {
+// It needs the local classes map for the superclass and allClasses for subclasses (which may be cross-domain).
+func convertClassGeneralizationFromModel(gen *model_class.Generalization, localClasses map[identity.Key]model_class.Class, allClasses map[identity.Key]model_class.Class) *inputClassGeneralization {
 	result := &inputClassGeneralization{
-		Name:         gen.Name,
-		Details:      gen.Details,
-		IsComplete:   gen.IsComplete,
-		IsStatic:     gen.IsStatic,
-		UMLComment:   gen.UmlComment,
-		SubclassKeys: []string{},
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UMLComment:      gen.UmlComment,
+		SubclassKeys:    []string{},
 	}
 
-	// Find superclass and subclasses by examining class references
-	for key, class := range classes {
-		if class.SuperclassOfKey != nil && class.SuperclassOfKey.SubKey == gen.Key.SubKey {
-			// This class is the superclass of this generalization
+	// Find superclass from local subdomain classes.
+	for key, class := range localClasses {
+		if class.SuperclassOfKey != nil && *class.SuperclassOfKey == gen.Key {
 			result.SuperclassKey = key.SubKey
 		}
-		if class.SubclassOfKey != nil && class.SubclassOfKey.SubKey == gen.Key.SubKey {
-			// This class is a subclass of this generalization
-			result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
+	}
+
+	// Find subclasses from all model classes (may be cross-domain).
+	genSubdomainKey := gen.Key.ParentKey
+	for key, class := range allClasses {
+		if class.SubclassOfKey != nil && *class.SubclassOfKey == gen.Key {
+			// Use SubKey for local classes, full key path for cross-subdomain classes.
+			classSubdomainKey := key.ParentKey
+			if classSubdomainKey == genSubdomainKey {
+				result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
+			} else {
+				result.SubclassKeys = append(result.SubclassKeys, key.String())
+			}
 		}
 	}
+	sort.Strings(result.SubclassKeys)
 
 	return result
 }
@@ -666,7 +708,9 @@ func convertAssociationFromModel(assoc *model_class.Association, parentType stri
 		FromMultiplicity: assoc.FromMultiplicity.String(),
 		ToMultiplicity:   assoc.ToMultiplicity.String(),
 		UmlComment:       assoc.UmlComment,
+		Invariants:       convertLogicsFromModel(assoc.Invariants),
 	}
+	result.Uniqueness = convertUniquenessFromModel(assoc.Uniqueness)
 
 	// Format class keys based on scope
 	switch parentType {

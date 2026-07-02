@@ -5,9 +5,11 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
@@ -45,6 +47,12 @@ type SimulationResult struct {
 
 	// FinalState is the simulation state when the run ended.
 	FinalState *state.SimulationState
+
+	// Catalog holds scoped class metadata for trace rendering (association-class endpoints).
+	Catalog *ClassCatalog
+
+	// SimulationCoverage records parameter simulation specs that produced values during the run.
+	SimulationCoverage *SimulationCoverageTracker
 }
 
 // SimulationEngine drives the state machine simulation loop.
@@ -56,24 +64,35 @@ type SimulationEngine struct {
 	bindingsBuilder *state.BindingsBuilder
 
 	// Components
-	stepExecutor     *StepExecutor
-	selector         *ActionSelector
-	invariantChecker *invariants.InvariantChecker
-	livenessChecker  *LivenessChecker
+	catalog             *ClassCatalog
+	stepExecutor        *StepExecutor
+	selector            *ActionSelector
+	invariantChecker    *invariants.InvariantChecker
+	dataTypeChecker     *invariants.DataTypeChecker
+	livenessChecker     *LivenessChecker
+	stateMachineChecker *StateMachineChecker
+	simulationCoverage  *SimulationCoverageTracker
 }
 
 // NewSimulationEngine creates and wires up all simulation components.
 // The model must have its ExpressionSpec.Expression fields already populated
 // (e.g., via parse functions passed to ExpressionSpec constructors).
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
-	rng := rand.New(rand.NewSource(config.RandomSeed)) //nolint:gosec // simulation uses deterministic seeded RNG
+	rng := newSimulationRNG(config.RandomSeed)
 
-	activeModel, err := resolveActiveModel(model, config)
+	activeModel, err := prepareActiveModel(model, config)
 	if err != nil {
 		return nil, err
 	}
 
-	simState, bindingsBuilder, err := setupState(activeModel)
+	catalog := setupClassCatalog(activeModel)
+
+	evalCtx, err := setupExpressionRegistry(activeModel)
+	if err != nil {
+		return nil, fmt.Errorf("expression registry setup: %w", err)
+	}
+
+	simState, bindingsBuilder, derivedEval, err := setupState(activeModel, catalog, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -83,22 +102,54 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
-	stepExecutor, selector, livenessChecker, err := setupExecutors(
-		activeModel, simState, bindingsBuilder, checkers, rng,
-	)
+	simulationCoverage := NewSimulationCoverageTracker()
+	stepExecutor, selector, livenessChecker, err := setupExecutors(executorSetupDeps{
+		bindingsBuilder:    bindingsBuilder,
+		derivedEval:        derivedEval,
+		checkers:           checkers,
+		catalog:            catalog,
+		rng:                rng,
+		simulationCoverage: simulationCoverage,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &SimulationEngine{
-		config:           config,
-		simState:         simState,
-		bindingsBuilder:  bindingsBuilder,
-		stepExecutor:     stepExecutor,
-		selector:         selector,
-		invariantChecker: checkers.invariantChecker,
-		livenessChecker:  livenessChecker,
+		config:              config,
+		simState:            simState,
+		bindingsBuilder:     bindingsBuilder,
+		catalog:             catalog,
+		stepExecutor:        stepExecutor,
+		selector:            selector,
+		invariantChecker:    checkers.invariantChecker,
+		dataTypeChecker:     checkers.dataTypeChecker,
+		livenessChecker:     livenessChecker,
+		stateMachineChecker: NewStateMachineChecker(catalog),
+		simulationCoverage:  simulationCoverage,
 	}, nil
+}
+
+func newSimulationRNG(seed int64) *rand.Rand {
+	return rand.New(rand.NewSource(seed)) //nolint:gosec // simulation uses deterministic seeded RNG
+}
+
+func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model, error) {
+	activeModel, err := resolveActiveModel(model, config)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateSimulationModel(activeModel); err != nil {
+		return nil, err
+	}
+	return activeModel, nil
+}
+
+func setupClassCatalog(activeModel *core.Model) *ClassCatalog {
+	catalog := NewClassCatalog(activeModel)
+	PopulateCallerDataFromModel(activeModel, catalog)
+	PopulateDerivedAttributeCallersFromModel(activeModel, catalog)
+	return catalog
 }
 
 // resolveActiveModel applies surface area filtering if configured.
@@ -119,45 +170,41 @@ func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model
 
 // setupState creates simulation state and bindings builder, registers associations,
 // and sets up derived attribute evaluation.
-func setupState(model *core.Model) (*state.SimulationState, *state.BindingsBuilder, error) {
+func setupState(
+	model *core.Model,
+	catalog *ClassCatalog,
+	evalCtx *evaluator.EvalContext,
+) (*state.SimulationState, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
 	simState := state.NewSimulationState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
-	// Register all associations with bindings builder so the evaluator can traverse them.
-	for _, assoc := range model.GetClassAssociations() {
-		bindingsBuilder.AddAssociation(
-			assoc.Key,
-			assoc.Name,
-			assoc.FromClassKey,
-			assoc.ToClassKey,
-			evaluator.Multiplicity{
-				LowerBound:  assoc.FromMultiplicity.LowerBound,
-				HigherBound: assoc.FromMultiplicity.HigherBound,
-			},
-			evaluator.Multiplicity{
-				LowerBound:  assoc.ToMultiplicity.LowerBound,
-				HigherBound: assoc.ToMultiplicity.HigherBound,
-			},
-		)
-	}
+	registerCatalogAssociations(catalog, bindingsBuilder)
 
 	// Set up derived attribute evaluation (on-demand computation).
-	derivedEval, err := NewDerivedAttributeEvaluator(model, simState, bindingsBuilder.RelationContext())
+	derivedEval, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, evalCtx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("derived attribute setup: %w", err)
+		return nil, nil, nil, fmt.Errorf("derived attribute setup: %w", err)
 	}
 	if derivedEval.HasDerivedAttributes() {
 		bindingsBuilder.SetDerivedResolver(derivedEval)
 	}
 
-	return simState, bindingsBuilder, nil
+	if err := bindingsBuilder.RegisterNamedSets(model); err != nil {
+		return nil, nil, nil, fmt.Errorf("named set setup: %w", err)
+	}
+
+	return simState, bindingsBuilder, derivedEval, nil
 }
 
 // simulationCheckers groups all invariant/constraint checkers.
 type simulationCheckers struct {
-	invariantChecker *invariants.InvariantChecker
-	dataTypeChecker  *invariants.DataTypeChecker
-	indexChecker     *invariants.IndexUniquenessChecker
+	invariantChecker         *invariants.InvariantChecker
+	dataTypeChecker          *invariants.DataTypeChecker
+	indexChecker             *invariants.IndexUniquenessChecker
+	multChecker              *invariants.MultiplicityChecker
+	assocInstancePairChecker *invariants.AssociationInstancePairChecker
+	assocUniquenessChecker   *invariants.AssociationUniquenessChecker
+	associationInvChecker    *invariants.AssociationInvariantChecker
 }
 
 // setupCheckers creates all invariant and constraint checkers.
@@ -167,58 +214,156 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 		return nil, fmt.Errorf("invariant checker setup: %w", err)
 	}
 
-	dataTypeChecker, dtWarnings := invariants.NewDataTypeChecker(model)
-	_ = dtWarnings // Warnings about unparsed data types are informational.
+	dataTypeChecker, _ := invariants.NewDataTypeChecker(model)
 
 	indexChecker := invariants.NewIndexUniquenessChecker(model)
+	multChecker := invariants.NewMultiplicityChecker(model)
+	assocInstancePairChecker := invariants.NewAssociationInstancePairChecker(model)
+	assocUniquenessChecker := invariants.NewAssociationUniquenessChecker(model)
+	associationInvChecker, err := invariants.NewAssociationInvariantChecker(model)
+	if err != nil {
+		return nil, fmt.Errorf("association invariant checker setup: %w", err)
+	}
 
 	return &simulationCheckers{
-		invariantChecker: invariantChecker,
-		dataTypeChecker:  dataTypeChecker,
-		indexChecker:     indexChecker,
+		invariantChecker:         invariantChecker,
+		dataTypeChecker:          dataTypeChecker,
+		indexChecker:             indexChecker,
+		multChecker:              multChecker,
+		assocInstancePairChecker: assocInstancePairChecker,
+		assocUniquenessChecker:   assocUniquenessChecker,
+		associationInvChecker:    associationInvChecker,
 	}, nil
 }
 
-// setupExecutors creates step executor, action selector, and liveness checker.
-func setupExecutors(
-	model *core.Model,
-	_ *state.SimulationState,
-	bindingsBuilder *state.BindingsBuilder,
-	checkers *simulationCheckers,
-	rng *rand.Rand,
-) (*StepExecutor, *ActionSelector, *LivenessChecker, error) {
-	actionExecutor := buildActionExecutor(bindingsBuilder, checkers, rng)
+func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.BindingsBuilder) {
+	for _, ai := range catalog.AllAssociations() {
+		assoc := ai.Association
+		fromMult := evaluator.Multiplicity{
+			LowerBound:  assoc.FromMultiplicity.LowerBound,
+			HigherBound: assoc.FromMultiplicity.HigherBound,
+		}
+		toMult := evaluator.Multiplicity{
+			LowerBound:  assoc.ToMultiplicity.LowerBound,
+			HigherBound: assoc.ToMultiplicity.HigherBound,
+		}
+		if assoc.AssociationClassKey != nil {
+			linkClassName := ""
+			if linkInfo := catalog.GetClassInfo(*assoc.AssociationClassKey); linkInfo != nil {
+				linkClassName = linkInfo.Class.Name
+			}
+			bindingsBuilder.AddAssociationClassHost(
+				assoc.Key,
+				assoc.Name,
+				evaluator.AssociationHostEndpoints{
+					FromClassKey: assoc.FromClassKey.String(),
+					ToClassKey:   assoc.ToClassKey.String(),
+				},
+				linkClassName,
+				evaluator.AssociationHostMultiplicities{From: fromMult, To: toMult},
+			)
+			continue
+		}
+		bindingsBuilder.AddAssociation(
+			assoc.Key,
+			assoc.Name,
+			assoc.FromClassKey,
+			assoc.ToClassKey,
+			fromMult,
+			toMult,
+		)
+	}
+}
 
-	catalog := NewClassCatalog(model)
-	if len(catalog.AllSimulatableClasses()) == 0 {
-		return nil, nil, nil, fmt.Errorf("no simulatable classes found in model (classes must have states)")
+type executorSetupDeps struct {
+	bindingsBuilder    *state.BindingsBuilder
+	derivedEval        *DerivedAttributeEvaluator
+	checkers           *simulationCheckers
+	catalog            *ClassCatalog
+	rng                *rand.Rand
+	simulationCoverage *SimulationCoverageTracker
+}
+
+// setupExecutors creates step executor, action selector, and liveness checker.
+func setupExecutors(deps executorSetupDeps) (*StepExecutor, *ActionSelector, *LivenessChecker, error) {
+	actionExecutor := buildActionExecutor(deps.bindingsBuilder, deps.checkers, deps.catalog, deps.rng)
+
+	if len(deps.catalog.AllEventBearingClasses()) == 0 {
+		return nil, nil, nil, fmt.Errorf("no event-bearing simulatable classes found in model")
 	}
 
-	stepExecutor, selector, livenessChecker := buildStepExecutor(actionExecutor, catalog, rng)
+	stepExecutor, selector, livenessChecker := buildStepExecutor(
+		actionExecutor, deps.bindingsBuilder, deps.derivedEval, deps.catalog, deps.rng, deps.simulationCoverage,
+	)
 	return stepExecutor, selector, livenessChecker, nil
 }
 
 // buildActionExecutor creates the action executor with its dependencies.
-func buildActionExecutor(bindingsBuilder *state.BindingsBuilder, checkers *simulationCheckers, rng *rand.Rand) *actions.ActionExecutor {
+func buildActionExecutor(
+	bindingsBuilder *state.BindingsBuilder,
+	checkers *simulationCheckers,
+	catalog *ClassCatalog,
+	rng *rand.Rand,
+) *actions.ActionExecutor {
 	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
+	structuralCheckers := &invariants.StructuralInvariantCheckers{
+		Index:                   checkers.indexChecker,
+		Multiplicity:            checkers.multChecker,
+		AssociationInstancePair: checkers.assocInstancePairChecker,
+		AssociationUniqueness:   checkers.assocUniquenessChecker,
+		AssociationInvariants:   checkers.associationInvChecker,
+	}
 	return actions.NewActionExecutor(
-		bindingsBuilder, checkers.invariantChecker, checkers.dataTypeChecker,
-		checkers.indexChecker, guardEvaluator, rng,
+		bindingsBuilder,
+		actions.InvariantRuntimeCheckers{Checker: checkers.invariantChecker, DataType: checkers.dataTypeChecker},
+		structuralCheckers,
+		guardEvaluator, catalog, rng,
 	)
 }
 
-// buildStepExecutor creates the step executor, action selector, and liveness checker.
-func buildStepExecutor(actionExecutor *actions.ActionExecutor, catalog *ClassCatalog, rng *rand.Rand) (*StepExecutor, *ActionSelector, *LivenessChecker) {
+// buildStepParameterGenerator creates surface and nested parameter generators from model named sets.
+func buildStepParameterGenerator(bindingsBuilder *state.BindingsBuilder) (*actions.ParameterBinder, *StepParameterGenerator) {
 	paramBinder := actions.NewParameterBinder()
+	paramSampler := actions.NewParameterSampler(paramBinder, bindingsBuilder.NamedSetValues())
+	paramSampler.SetPeerFieldDistinctLookup(func(classKey identity.Key, fieldSubKey string) []object.Object {
+		var values []object.Object
+		excludeID := paramSampler.PeerFieldDistinctExcludeInstanceID()
+		for _, inst := range bindingsBuilder.State().InstancesByClass(classKey) {
+			if excludeID != 0 && inst.ID == excludeID {
+				continue
+			}
+			values = append(values, inst.GetAttribute(fieldSubKey))
+		}
+		return values
+	})
+	return paramBinder, NewStepParameterGenerator(paramBinder, paramSampler)
+}
+
+// buildStepExecutor creates the step executor, action selector, and liveness checker.
+func buildStepExecutor(
+	actionExecutor *actions.ActionExecutor,
+	bindingsBuilder *state.BindingsBuilder,
+	derivedEval *DerivedAttributeEvaluator,
+	catalog *ClassCatalog,
+	rng *rand.Rand,
+	simulationCoverage *SimulationCoverageTracker,
+) (*StepExecutor, *ActionSelector, *LivenessChecker) {
+	paramBinder, paramGen := buildStepParameterGenerator(bindingsBuilder)
 	stateActionExec := NewStateActionExecutor(actionExecutor)
 	chainHandler := NewCreationChainHandler(catalog, actionExecutor, stateActionExec, paramBinder, rng)
-	multChecker := NewMultiplicityChecker(catalog)
+	stepExecutor := NewStepExecutor(StepExecutorDeps{
+		ActionExecutor:     actionExecutor,
+		StateActionExec:    stateActionExec,
+		ChainHandler:       chainHandler,
+		ParamGen:           paramGen,
+		Catalog:            catalog,
+		DerivedEval:        derivedEval,
+		RNG:                rng,
+		SimulationCoverage: simulationCoverage,
+		BindingsBuilder:    bindingsBuilder,
+	})
 
-	stepExecutor := NewStepExecutor(
-		actionExecutor, stateActionExec, chainHandler, multChecker, paramBinder, catalog, rng,
-	)
-
-	return stepExecutor, NewActionSelector(catalog, rng), NewLivenessChecker(catalog)
+	return stepExecutor, NewActionSelector(catalog, derivedEval, bindingsBuilder, rng), NewLivenessChecker(catalog)
 }
 
 // Run executes the simulation loop and returns the result.
@@ -239,9 +384,13 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 			return nil, fmt.Errorf("step %d execution error: %w", step+1, err)
 		}
 
-		// Run model-level invariant check after each step.
+		// Run model-, class-, and attribute-level invariant checks after each step.
 		modelViolations := e.invariantChecker.CheckModelInvariants(e.simState, e.bindingsBuilder)
 		stepResult.Violations = append(stepResult.Violations, modelViolations...)
+		classViolations := e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)
+		stepResult.Violations = append(stepResult.Violations, classViolations...)
+		attrViolations := e.invariantChecker.CheckAttributeInvariants(e.simState, e.bindingsBuilder)
+		stepResult.Violations = append(stepResult.Violations, attrViolations...)
 
 		result.Steps = append(result.Steps, stepResult)
 		result.StepsTaken++
@@ -258,6 +407,15 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	}
 
 	result.FinalState = e.simState
+	result.Catalog = e.catalog
+	result.SimulationCoverage = e.simulationCoverage
+
+	if e.dataTypeChecker != nil {
+		result.Violations = append(result.Violations, e.dataTypeChecker.UnparsedAttributeDefinitionViolations()...)
+	}
+
+	// Run post-simulation model checks.
+	result.Violations = append(result.Violations, e.stateMachineChecker.Check()...)
 
 	// Run liveness checks after simulation completes.
 	livenessViolations := e.livenessChecker.Check(result)
@@ -269,4 +427,9 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 // State returns the current simulation state (useful for testing).
 func (e *SimulationEngine) State() *state.SimulationState {
 	return e.simState
+}
+
+// SurfaceReport returns the scoped classes and surface-eligible actions/queries for this run.
+func (e *SimulationEngine) SurfaceReport() *SurfaceReport {
+	return BuildSurfaceReport(e.catalog)
 }

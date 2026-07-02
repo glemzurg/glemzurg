@@ -152,7 +152,7 @@ func AddQueryGuarantees(dbOrTx DbOrTx, modelKey string, guarantees map[identity.
 				queryBuilder.WriteString(", ")
 			}
 			base := i * 3
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d)", base+1, base+2, base+3))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d)", base+1, base+2, base+3)
 			args = append(args, modelKey, queryKey.String(), logicKey.String())
 			i++
 		}

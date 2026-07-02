@@ -2,6 +2,7 @@ package logic_expression
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
@@ -131,6 +132,13 @@ func (n *SelfRef) Validate(_ *coreerr.ValidationContext) error { return nil }
 func (n *AttributeRef) Validate(ctx *coreerr.ValidationContext) error {
 	if err := n.AttributeKey.ValidateWithContext(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.ExprAttrkeyInvalid, fmt.Sprintf("AttributeRef.AttributeKey: %s", err.Error()), "AttributeKey")
+	}
+	return nil
+}
+
+func (n *AssociationRef) Validate(ctx *coreerr.ValidationContext) error {
+	if err := n.AssociationKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprAttrkeyInvalid, fmt.Sprintf("AssociationRef.AssociationKey: %s", err.Error()), "AssociationKey")
 	}
 	return nil
 }
@@ -495,6 +503,44 @@ func (n *Case) Validate(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
+func (n *LetExpr) Validate(ctx *coreerr.ValidationContext) error {
+	if n.Variable == "" {
+		return coreerr.New(ctx, coreerr.ExprVariableRequired, "LetExpr.Variable: is required", "Variable")
+	}
+	if n.Value == nil {
+		return coreerr.New(ctx, coreerr.ExprExprRequired, "LetExpr.Value: is required", "Value")
+	}
+	if err := n.Value.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprOperandInvalid, fmt.Sprintf("LetExpr.Value: %s", err.Error()), "Value")
+	}
+	if n.Body == nil {
+		return coreerr.New(ctx, coreerr.ExprExprRequired, "LetExpr.Body: is required", "Body")
+	}
+	if err := n.Body.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprOperandInvalid, fmt.Sprintf("LetExpr.Body: %s", err.Error()), "Body")
+	}
+	return nil
+}
+
+func (n *Choose) Validate(ctx *coreerr.ValidationContext) error {
+	if n.Set == nil {
+		return coreerr.New(ctx, coreerr.ExprSetRequired, "Choose.Set: is required", "Set")
+	}
+	if n.Predicate == nil {
+		return coreerr.New(ctx, coreerr.ExprPredicateRequired, "Choose.Predicate: is required", "Predicate")
+	}
+	if n.Variable == "" {
+		return coreerr.New(ctx, coreerr.ExprVariableRequired, "Choose.Variable: is required", "Variable")
+	}
+	if err := n.Set.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprSetInvalid, fmt.Sprintf("Choose.Set: %s", err.Error()), "Set")
+	}
+	if err := n.Predicate.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprPredicateInvalid, fmt.Sprintf("Choose.Predicate: %s", err.Error()), "Predicate")
+	}
+	return nil
+}
+
 // --- Quantifier validation ---
 
 func (n *Quantifier) Validate(ctx *coreerr.ValidationContext) error {
@@ -541,6 +587,25 @@ func (n *SetFilter) Validate(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
+func (n *SetMap) Validate(ctx *coreerr.ValidationContext) error {
+	if n.Set == nil {
+		return coreerr.New(ctx, coreerr.ExprSetRequired, "SetMap.Set: is required", "Set")
+	}
+	if n.Transform == nil {
+		return coreerr.New(ctx, coreerr.ExprPredicateRequired, "SetMap.Transform: is required", "Transform")
+	}
+	if n.Variable == "" {
+		return coreerr.New(ctx, coreerr.ExprVariableRequired, "SetMap.Variable: is required", "Variable")
+	}
+	if err := n.Set.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprSetInvalid, fmt.Sprintf("SetMap.Set: %s", err.Error()), "Set")
+	}
+	if err := n.Transform.Validate(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprPredicateInvalid, fmt.Sprintf("SetMap.Transform: %s", err.Error()), "Transform")
+	}
+	return nil
+}
+
 func (n *SetRange) Validate(ctx *coreerr.ValidationContext) error {
 	if n.Start == nil {
 		return coreerr.New(ctx, coreerr.ExprStartRequired, "SetRange.Start: is required", "Start")
@@ -569,6 +634,21 @@ func (n *ActionCall) Validate(ctx *coreerr.ValidationContext) error {
 		}
 		if err := arg.Validate(ctx); err != nil {
 			return coreerr.New(ctx, coreerr.ExprArgInvalid, fmt.Sprintf("ActionCall.Args[%d]: %s", i, err.Error()), fmt.Sprintf("Args[%d]", i))
+		}
+	}
+	return nil
+}
+
+func (n *EventCall) Validate(ctx *coreerr.ValidationContext) error {
+	if err := n.EventKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprActionkeyInvalid, fmt.Sprintf("EventCall.EventKey: %s", err.Error()), "EventKey")
+	}
+	for i, arg := range n.Args {
+		if arg == nil {
+			return coreerr.New(ctx, coreerr.ExprArgRequired, fmt.Sprintf("EventCall.Args[%d]: is required", i), fmt.Sprintf("Args[%d]", i))
+		}
+		if err := arg.Validate(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.ExprArgInvalid, fmt.Sprintf("EventCall.Args[%d]: %s", i, err.Error()), fmt.Sprintf("Args[%d]", i))
 		}
 	}
 	return nil
@@ -612,6 +692,16 @@ func (n *BuiltinCall) Validate(ctx *coreerr.ValidationContext) error {
 func (n *NamedSetRef) Validate(ctx *coreerr.ValidationContext) error {
 	if err := n.SetKey.ValidateWithContext(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.ExprSetkeyInvalid, fmt.Sprintf("NamedSetRef.SetKey: %s", err.Error()), "SetKey")
+	}
+	return nil
+}
+
+func (n *ClassRef) Validate(ctx *coreerr.ValidationContext) error {
+	if err := n.ClassKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.ExprClasskeyInvalid, fmt.Sprintf("ClassRef.ClassKey: %s", err.Error()), "ClassKey")
+	}
+	if strings.TrimSpace(n.Name) == "" {
+		return coreerr.New(ctx, coreerr.ExprClassNameRequired, "ClassRef.Name: is required", "Name")
 	}
 	return nil
 }

@@ -33,6 +33,9 @@ const (
 	// Keys with model, domain, subdomain parents.
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
 
+	// Keys with class association parents.
+	KEY_TYPE_CLASS_ASSOCIATION_INVARIANT = "cassocinvariant"
+
 	// Keys with class parents.
 	KEY_TYPE_ATTRIBUTE       = "attribute"
 	KEY_TYPE_STATE           = "state"
@@ -47,6 +50,11 @@ const (
 	KEY_TYPE_ATTRIBUTE_DERIVATION = "aderive"
 	KEY_TYPE_ATTRIBUTE_INVARIANT  = "ainvariant"
 
+	// Keys with action/query parameter parents.
+	KEY_TYPE_PARAMETER_INVARIANT          = "pinvariant"
+	KEY_TYPE_PARAMETER_SIMULATION_REQUIRE = "psimreq"
+	KEY_TYPE_PARAMETER_SIMULATION_SPEC    = "psimspec"
+
 	// Keys with state parents.
 	KEY_TYPE_STATE_ACTION = "saction"
 
@@ -58,6 +66,14 @@ const (
 	// Keys with queries as parents.
 	KEY_TYPE_QUERY_REQUIRE   = "qrequire"
 	KEY_TYPE_QUERY_GUARANTEE = "qguarantee"
+
+	// Keys with action, query, or event parents.
+	KEY_TYPE_PARAMETER = "parameter"
+
+	// Keys with attribute, parameter, or data_type parents.
+	// SubKey is empty at the root of an owner (the data type that owns the attribute/parameter)
+	// and is the record-field name at nested levels (when the parent is itself a data_type).
+	KEY_TYPE_DATA_TYPE = "datatype"
 
 	// Keys with use case parents.
 	KEY_TYPE_SCENARIO = "scenario"
@@ -259,6 +275,18 @@ func NewClassInvariantKey(classKey Key, subKey string) (key Key, err error) {
 	return newKey(classKey.String(), KEY_TYPE_CLASS_INVARIANT, subKey)
 }
 
+func NewClassAssociationInvariantKey(associationKey Key, subKey string) (key Key, err error) {
+	if associationKey.GetKeyType() != KEY_TYPE_CLASS_ASSOCIATION {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'cassocinvariant' key", associationKey.GetKeyType())
+	}
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("class association invariant key must be a valid integer")
+		}
+	}
+	return newKey(associationKey.String(), KEY_TYPE_CLASS_ASSOCIATION_INVARIANT, subKey)
+}
+
 func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string) (key Key, err error) {
 	// Both must be classes.
 	if fromClassKey.GetKeyType() != KEY_TYPE_CLASS {
@@ -386,6 +414,7 @@ func distillName(name string) string {
 	name = strings.TrimSpace(name)
 	name = strings.ToLower(name)
 	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.ReplaceAll(name, "-", "_")
 	name = strings.ReplaceAll(name, "/", "~")
 	return name
 }
@@ -469,4 +498,83 @@ func NewQueryGuaranteeKey(queryKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'qguarantee' key", queryKey.GetKeyType())
 	}
 	return newKey(queryKey.String(), KEY_TYPE_QUERY_GUARANTEE, subKey)
+}
+
+// NewParameterKey creates a parameter key. The parent must be an action or query.
+func NewParameterKey(parentKey Key, subKey string) (key Key, err error) {
+	switch parentKey.GetKeyType() {
+	case KEY_TYPE_ACTION, KEY_TYPE_QUERY:
+		// OK.
+	default:
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'parameter' key", parentKey.GetKeyType())
+	}
+	return newKey(parentKey.String(), KEY_TYPE_PARAMETER, subKey)
+}
+
+func NewParameterInvariantKey(parameterKey Key, subKey string) (key Key, err error) {
+	if parameterKey.GetKeyType() != KEY_TYPE_PARAMETER {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'pinvariant' key", parameterKey.GetKeyType())
+	}
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("parameter invariant key must be a valid integer")
+		}
+	}
+	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_INVARIANT, subKey)
+}
+
+func NewParameterSimulationRequireKey(parameterKey Key, subKey string) (key Key, err error) {
+	if parameterKey.GetKeyType() != KEY_TYPE_PARAMETER {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'psimreq' key", parameterKey.GetKeyType())
+	}
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("parameter simulation require key must be a valid integer")
+		}
+	}
+	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_SIMULATION_REQUIRE, subKey)
+}
+
+func NewParameterSimulationSpecKey(parameterKey Key) (key Key, err error) {
+	if parameterKey.GetKeyType() != KEY_TYPE_PARAMETER {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'psimspec' key", parameterKey.GetKeyType())
+	}
+	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_SIMULATION_SPEC, "spec")
+}
+
+// DATA_TYPE_ROOT_SUBKEY is the sentinel subKey used for the data_type key that sits at
+// the root of an owner (attribute or parameter). The owner's key already disambiguates,
+// so the data_type key needs a stable, identifier-shaped subKey here. Nested record-field
+// data_types use the field name instead.
+const DATA_TYPE_ROOT_SUBKEY = "self"
+
+// NewDataTypeKey creates a data_type key.
+//
+// Allowed parents:
+//   - KEY_TYPE_ATTRIBUTE  — the attribute owns this data type (root of the chain).
+//     subKey must be DATA_TYPE_ROOT_SUBKEY.
+//   - KEY_TYPE_PARAMETER  — the parameter owns this data type (root of the chain).
+//     subKey must be DATA_TYPE_ROOT_SUBKEY.
+//   - KEY_TYPE_DATA_TYPE  — this data type is a nested record-field child;
+//     subKey is the field name. Chained recursively for arbitrary record nesting depth.
+func NewDataTypeKey(parentKey Key, subKey string) (key Key, err error) {
+	switch parentKey.GetKeyType() {
+	case KEY_TYPE_ATTRIBUTE, KEY_TYPE_PARAMETER:
+		if strings.TrimSpace(subKey) == "" {
+			subKey = DATA_TYPE_ROOT_SUBKEY
+		}
+		if subKey != DATA_TYPE_ROOT_SUBKEY {
+			return Key{}, errors.Errorf("root 'datatype' key under '%s' parent requires subKey '%s', got '%s'", parentKey.GetKeyType(), DATA_TYPE_ROOT_SUBKEY, subKey)
+		}
+	case KEY_TYPE_DATA_TYPE:
+		if strings.TrimSpace(subKey) == "" {
+			return Key{}, errors.Errorf("nested 'datatype' key requires a non-empty subKey (the field name)")
+		}
+		if subKey == DATA_TYPE_ROOT_SUBKEY {
+			return Key{}, errors.Errorf("nested 'datatype' key subKey cannot be the reserved root sentinel '%s'", DATA_TYPE_ROOT_SUBKEY)
+		}
+	default:
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'datatype' key", parentKey.GetKeyType())
+	}
+	return newKey(parentKey.String(), KEY_TYPE_DATA_TYPE, subKey)
 }

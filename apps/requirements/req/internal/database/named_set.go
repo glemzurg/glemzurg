@@ -165,7 +165,7 @@ func AddNamedSets(dbOrTx DbOrTx, modelKey string, nss []model_logic.NamedSet) (e
 			qb.WriteString(", ")
 		}
 		base := i * 8
-		qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8))
+		fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
 
 		var tsNotation *string
 		var tsSpecification *string

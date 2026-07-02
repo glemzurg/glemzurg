@@ -55,7 +55,7 @@ func (s *TypeSpec) Validate(ctx *coreerr.ValidationContext) error {
 	if s.Notation == "" {
 		return coreerr.NewWithValues(ctx, coreerr.TypespecNotationRequired, "Notation is required", "Notation", "", "one of: tla_plus")
 	}
-	if s.Notation != "tla_plus" {
+	if s.Notation != NotationTLAPlus {
 		return coreerr.NewWithValues(ctx, coreerr.TypespecNotationInvalid, fmt.Sprintf("Notation '%s' is not valid", s.Notation), "Notation", s.Notation, "one of: tla_plus")
 	}
 	if s.ExpressionType != nil {

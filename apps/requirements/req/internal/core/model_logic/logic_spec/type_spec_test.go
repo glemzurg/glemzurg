@@ -69,7 +69,7 @@ func (s *TypeSpecTestSuite) TestValidate() {
 			testName: "error invalid expression type",
 			spec: TypeSpec{
 				Notation:       "tla_plus",
-				ExpressionType: &logic_expression_type.SetType{}, // Missing ElementType.
+				ExpressionType: &logic_expression_type.SequenceType{}, // Missing ElementType.
 			},
 			errstr: "TypeSpec.ExpressionType",
 		},

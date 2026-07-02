@@ -20,11 +20,17 @@ type Action struct {
 	SafetyRules []model_logic.Logic // Boolean assertions that must reference primed variables.
 }
 
-func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) Action {
+// ActionDetails holds human-authored name and description for an action.
+type ActionDetails struct {
+	Name    string
+	Details string
+}
+
+func NewAction(key identity.Key, details ActionDetails, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) Action {
 	return Action{
 		Key:         key,
-		Name:        name,
-		Details:     details,
+		Name:        details.Name,
+		Details:     details.Details,
 		Requires:    requires,
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,
@@ -47,6 +53,9 @@ func (a *Action) Validate(ctx *coreerr.ValidationContext) error {
 	if a.Name == "" {
 		return coreerr.New(ctx, coreerr.ActionNameRequired, "Name is required", "Name")
 	}
+	if badChar := coreerr.ValidateNameChars(a.Name); badChar != "" {
+		return coreerr.NewWithValues(ctx, coreerr.ActionNameInvalidChars, fmt.Sprintf("Name contains invalid character %q", badChar), "Name", a.Name, "A-Za-z0-9 space hyphen underscore")
+	}
 
 	reqLetTargets := make(map[string]bool)
 	for i, req := range a.Requires {
@@ -64,23 +73,8 @@ func (a *Action) Validate(ctx *coreerr.ValidationContext) error {
 			reqLetTargets[req.Target] = true
 		}
 	}
-	guarTargets := make(map[string]bool)
-	for i, guar := range a.Guarantees {
-		childCtx := ctx.Child("guarantees", fmt.Sprintf("%d", i))
-		if err := guar.Validate(childCtx); err != nil {
-			return err
-		}
-		if guar.Type != model_logic.LogicTypeStateChange && guar.Type != model_logic.LogicTypeLet {
-			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeTypeInvalid, fmt.Sprintf("guarantee %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, guar.Type), "Guarantees", guar.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeStateChange, model_logic.LogicTypeLet))
-		}
-		// Each guarantee and let must set a unique target.
-		if guarTargets[guar.Target] {
-			if guar.Type == model_logic.LogicTypeLet {
-				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateLet, fmt.Sprintf("guarantee %d: duplicate let target %q", i, guar.Target), "Guarantees", guar.Target, "")
-			}
-			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateTarget, fmt.Sprintf("guarantee %d: duplicate target %q — each attribute can only be set once per action", i, guar.Target), "Guarantees", guar.Target, "")
-		}
-		guarTargets[guar.Target] = true
+	if err := validateActionGuarantees(ctx, a.Guarantees); err != nil {
+		return err
 	}
 	safetyLetTargets := make(map[string]bool)
 	for i, rule := range a.SafetyRules {
@@ -135,7 +129,7 @@ func (a *Action) ValidateWithParent(ctx *coreerr.ValidationContext, parent *iden
 	// Validate all children.
 	for i := range a.Parameters {
 		childCtx := ctx.Child("parameter", fmt.Sprintf("%d", i))
-		if err := a.Parameters[i].ValidateWithParent(childCtx); err != nil {
+		if err := a.Parameters[i].ValidateWithParent(childCtx, &a.Key); err != nil {
 			return err
 		}
 	}

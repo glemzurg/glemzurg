@@ -25,9 +25,9 @@ type inputState struct {
 
 // inputEvent represents an event in a state machine.
 type inputEvent struct {
-	Name       string           `json:"name"`
-	Details    string           `json:"details,omitempty"`
-	Parameters []inputParameter `json:"parameters,omitempty"`
+	Name       string   `json:"name"`
+	Details    string   `json:"details,omitempty"`
+	Parameters []string `json:"parameters,omitempty"`
 }
 
 // inputGuard represents a guard condition in a state machine.
@@ -181,7 +181,7 @@ func validateSMStateActions(stateKey string, state *inputState, filename string)
 				filename,
 			).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i)).WithHint("\"when\" must be one of: entry, exit, do")
 		}
-		if action.When != "entry" && action.When != "exit" && action.When != "do" {
+		if action.When != stateActionWhenEntry && action.When != stateActionWhenExit && action.When != stateActionWhenDo {
 			return NewParseError(
 				ErrStateActionWhenInvalid,
 				fmt.Sprintf("state '%s' action[%d] when must be 'entry', 'exit', or 'do', got '%s'", stateKey, i, action.When),
@@ -209,20 +209,20 @@ func validateSMEvents(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField("events." + eventKey + ".name").WithHint("each event must have a non-empty \"name\" field")
 		}
-		for i, param := range event.Parameters {
-			if param.Name == "" {
+		for i, paramName := range event.Parameters {
+			if paramName == "" {
 				return NewParseError(
 					ErrEventParamNameRequired,
-					fmt.Sprintf("event '%s' parameter[%d] name is required", eventKey, i),
+					fmt.Sprintf("event '%s' parameter[%d] is required", eventKey, i),
 					filename,
-				).WithField(fmt.Sprintf("events.%s.parameters[%d].name", eventKey, i)).WithHint("each event parameter must have a non-empty \"name\" field")
+				).WithField(fmt.Sprintf("events.%s.parameters[%d]", eventKey, i)).WithHint("each event parameter must be a non-empty string name")
 			}
-			if strings.TrimSpace(param.Name) == "" {
+			if strings.TrimSpace(paramName) == "" {
 				return NewParseError(
 					ErrEventParamNameRequired,
-					fmt.Sprintf("event '%s' parameter[%d] name cannot be whitespace only, got '%s'", eventKey, i, param.Name),
+					fmt.Sprintf("event '%s' parameter[%d] cannot be whitespace only, got '%s'", eventKey, i, paramName),
 					filename,
-				).WithField(fmt.Sprintf("events.%s.parameters[%d].name", eventKey, i)).WithHint("each event parameter must have a non-empty \"name\" field")
+				).WithField(fmt.Sprintf("events.%s.parameters[%d]", eventKey, i)).WithHint("each event parameter must be a non-empty string name")
 			}
 		}
 	}

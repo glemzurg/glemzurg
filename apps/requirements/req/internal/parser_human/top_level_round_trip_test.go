@@ -29,7 +29,7 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	suite.Require().NoError(err, "writing model should succeed")
 
 	// Read from the temporary folder.
-	output, err := Parse(tempDir)
+	output, _, err := Parse(tempDir)
 	suite.Require().NoError(err, "parsing model should succeed")
 
 	// The parsed model's Key will be the tempDir path, not our original key.

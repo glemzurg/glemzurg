@@ -28,6 +28,9 @@ type ActionResult struct {
 	// PrimedAssignments contains all state changes grouped by instance ID.
 	PrimedAssignments map[state.InstanceID]map[string]object.Object
 
+	// PeerTransitions records peer-class events fired by association set-add/set-map guarantees.
+	PeerTransitions []PeerTransitionRecord
+
 	// Violations contains any invariant violations detected after state changes.
 	Violations invariants.ViolationErrors
 
@@ -50,6 +53,18 @@ type QueryResult struct {
 	Success bool
 }
 
+// AssociationMaterialization records a host association row created via an association class.
+type AssociationMaterialization struct {
+	HostAssociationName string
+	HostAssociationKey  identity.Key
+	FromClassName       string
+	FromClassKey        identity.Key
+	ToClassName         string
+	ToClassKey          identity.Key
+	FromInstanceID      state.InstanceID
+	ToInstanceID        state.InstanceID
+}
+
 // TransitionResult holds the result of executing a state machine transition.
 type TransitionResult struct {
 	// InstanceID is the instance that transitioned.
@@ -70,8 +85,11 @@ type TransitionResult struct {
 	// WasCreation is true if the transition was from the initial state (object creation).
 	WasCreation bool
 
-	// WasDeletion is true if the transition was to the final state (object deletion).
-	WasDeletion bool
+	// WasDestroy is true if the transition was to the final state (object destroy).
+	WasDestroy bool
+
+	// AssociationMaterialization is set when creation materializes a host association via an association class.
+	AssociationMaterialization *AssociationMaterialization
 
 	// ActionResult is the result of the action executed during the transition (if any).
 	ActionResult *ActionResult
@@ -80,32 +98,71 @@ type TransitionResult struct {
 	Violations invariants.ViolationErrors
 }
 
+// AssociationClassIndex resolves association-class metadata for creation linking.
+type AssociationClassIndex interface {
+	GetAssociationClassInfo(classKey identity.Key) AssociationClassLinkInfo
+	IsAssociationClass(classKey identity.Key) bool
+	IsAssociationClassHost(assocKey identity.Key) bool
+}
+
+// AssociationClassLinkInfo holds host-association and endpoint metadata for one AC row.
+type AssociationClassLinkInfo struct {
+	Found               bool
+	HostAssocKey        identity.Key
+	HostAssociationName string
+	FromClassKey        identity.Key
+	FromClassName       string
+	ToClassKey          identity.Key
+	ToClassName         string
+}
+
 // ActionExecutor executes actions, queries, and transitions against simulation state.
 type ActionExecutor struct {
-	bindingsBuilder  *state.BindingsBuilder
-	invariantChecker *invariants.InvariantChecker
-	dataTypeChecker  *invariants.DataTypeChecker
-	indexChecker     *invariants.IndexUniquenessChecker
-	guardEvaluator   *GuardEvaluator
-	rng              *rand.Rand
+	bindingsBuilder    *state.BindingsBuilder
+	invariantChecker   *invariants.InvariantChecker
+	dataTypeChecker    *invariants.DataTypeChecker
+	structuralCheckers *invariants.StructuralInvariantCheckers
+	guardEvaluator     *GuardEvaluator
+	peerCatalog        PeerCreationCatalog
+	rng                *rand.Rand
+
+	// deferMultiplicityInActionCheck skips implicit multiplicity checks inside
+	// checkAllInvariants while a transition is mid-flight; ExecuteTransition
+	// runs them after links and _state are fully applied.
+	deferMultiplicityInActionCheck bool
+
+	// classNameMap binds class display names to instance sets for action requires.
+	classNameMap map[identity.Key]string
+}
+
+// InvariantRuntimeCheckers pairs the primary invariant and data-type checkers used during action execution.
+type InvariantRuntimeCheckers struct {
+	Checker  *invariants.InvariantChecker
+	DataType *invariants.DataTypeChecker
 }
 
 // NewActionExecutor creates a new action executor.
 func NewActionExecutor(
 	bindingsBuilder *state.BindingsBuilder,
-	invariantChecker *invariants.InvariantChecker,
-	dataTypeChecker *invariants.DataTypeChecker,
-	indexChecker *invariants.IndexUniquenessChecker,
+	runtime InvariantRuntimeCheckers,
+	structuralCheckers *invariants.StructuralInvariantCheckers,
 	guardEvaluator *GuardEvaluator,
+	peerCatalog PeerCreationCatalog,
 	rng *rand.Rand,
 ) *ActionExecutor {
+	var classNameMap map[identity.Key]string
+	if runtime.Checker != nil {
+		classNameMap = runtime.Checker.ClassNameMap()
+	}
 	return &ActionExecutor{
-		bindingsBuilder:  bindingsBuilder,
-		invariantChecker: invariantChecker,
-		dataTypeChecker:  dataTypeChecker,
-		indexChecker:     indexChecker,
-		guardEvaluator:   guardEvaluator,
-		rng:              rng,
+		bindingsBuilder:    bindingsBuilder,
+		invariantChecker:   runtime.Checker,
+		dataTypeChecker:    runtime.DataType,
+		structuralCheckers: structuralCheckers,
+		guardEvaluator:     guardEvaluator,
+		peerCatalog:        peerCatalog,
+		rng:                rng,
+		classNameMap:       classNameMap,
 	}
 }
 
@@ -118,33 +175,70 @@ func (e *ActionExecutor) ExecuteAction(
 	parameters map[string]object.Object,
 ) (*ActionResult, error) {
 	ctx := NewExecutionContext()
+	paramViolations := invariants.CheckParameterTypeSpecs(
+		action.Parameters, action.Key, action.Name, "action", instance.ID, instance.ClassKey,
+	)
 
 	// Phase A: Execute the action chain (collecting primed values and post-conditions)
 	if err := e.executeActionInContext(ctx, action, instance, parameters); err != nil {
 		return nil, err
 	}
 
-	// Phase B: Apply ALL primed assignments from the entire chain
-	if err := e.applyPrimedAssignments(ctx); err != nil {
+	if ctx.RequiresViolations().HasViolations() {
+		return &ActionResult{
+			InstanceID: instance.ID,
+			Violations: append(ctx.RequiresViolations(), paramViolations...),
+			Success:    false,
+		}, nil
+	}
+
+	// Phase B: Materialize association peer effects, then apply primed assignments.
+	if err := e.finalizeActionStateChanges(ctx); err != nil {
 		return nil, err
 	}
 
-	// Phases C-F: Check all post-conditions and invariants
-	allViolations := e.checkAllInvariants(ctx)
+	allViolations := e.collectActionViolations(ctx, paramViolations)
 
 	return &ActionResult{
 		InstanceID:        instance.ID,
 		PrimedAssignments: ctx.GetAllPrimedAssignments(),
+		PeerTransitions:   ctx.GetPeerTransitions(),
 		Violations:        allViolations,
 		Success:           !allViolations.HasViolations(),
 	}, nil
+}
+
+func (e *ActionExecutor) collectActionViolations(
+	ctx *ExecutionContext,
+	paramViolations invariants.ViolationErrors,
+) invariants.ViolationErrors {
+	allViolations := e.checkAllInvariants(ctx)
+	allViolations = append(allViolations, ctx.GetPeerViolations()...)
+	return append(allViolations, paramViolations...)
+}
+
+func (e *ActionExecutor) finalizeActionStateChanges(ctx *ExecutionContext) error {
+	e.applyAssociationLinkRemovals(ctx)
+	if err := e.applyPeerUpdates(ctx); err != nil {
+		return err
+	}
+	if err := e.applyPeerCreations(ctx); err != nil {
+		return err
+	}
+	return e.applyPrimedAssignments(ctx)
 }
 
 // applyPrimedAssignments applies all primed assignments from the context to simulation state.
 func (e *ActionExecutor) applyPrimedAssignments(ctx *ExecutionContext) error {
 	simState := e.bindingsBuilder.State()
 	for instanceID, primedFields := range ctx.GetAllPrimedAssignments() {
+		instance := simState.GetInstance(instanceID)
 		for fieldName, value := range primedFields {
+			if instance != nil && e.dataTypeChecker != nil {
+				if attr := e.dataTypeChecker.AttributeDef(instance.ClassKey, fieldName); attr != nil {
+					value = CoerceValueForDataType(attr.DataType, value)
+				}
+			}
 			if err := simState.UpdateInstanceField(instanceID, fieldName, value); err != nil {
 				return fmt.Errorf("failed to apply primed assignment %s on instance %d: %w", fieldName, instanceID, err)
 			}
@@ -162,6 +256,9 @@ func (e *ActionExecutor) checkAllInvariants(ctx *ExecutionContext) invariants.Vi
 	allViolations = append(allViolations, e.checkDataTypeConstraints(ctx)...)
 	allViolations = append(allViolations, e.checkModelInvariants()...)
 	allViolations = append(allViolations, e.checkIndexUniqueness()...)
+	if !e.deferMultiplicityInActionCheck {
+		allViolations = append(allViolations, e.checkAssociationStructuralInvariants()...)
+	}
 
 	return allViolations
 }
@@ -255,10 +352,46 @@ func (e *ActionExecutor) checkModelInvariants() invariants.ViolationErrors {
 
 // checkIndexUniqueness checks index uniqueness constraints.
 func (e *ActionExecutor) checkIndexUniqueness() invariants.ViolationErrors {
-	if e.indexChecker == nil {
+	if e.structuralCheckers == nil || e.structuralCheckers.Index == nil {
 		return nil
 	}
-	return e.indexChecker.CheckState(e.bindingsBuilder.State())
+	return e.structuralCheckers.Index.CheckState(e.bindingsBuilder.State())
+}
+
+// checkAssociationStructuralInvariants checks association multiplicities and association invariants.
+func (e *ActionExecutor) checkAssociationStructuralInvariants() invariants.ViolationErrors {
+	if e.structuralCheckers == nil {
+		return nil
+	}
+	var violations invariants.ViolationErrors
+	if e.structuralCheckers.Multiplicity != nil {
+		violations = append(violations, e.structuralCheckers.Multiplicity.CheckState(e.bindingsBuilder.State())...)
+	}
+	if e.structuralCheckers.AssociationInstancePair != nil {
+		violations = append(violations, e.structuralCheckers.AssociationInstancePair.CheckState(e.bindingsBuilder.State())...)
+	}
+	if e.structuralCheckers.AssociationUniqueness != nil {
+		violations = append(violations, e.structuralCheckers.AssociationUniqueness.CheckState(e.bindingsBuilder.State())...)
+	}
+	if e.structuralCheckers.AssociationInvariants != nil {
+		violations = append(violations, e.structuralCheckers.AssociationInvariants.CheckState(
+			e.bindingsBuilder.State(),
+			e.bindingsBuilder,
+		)...)
+	}
+	return violations
+}
+
+func (e *ActionExecutor) buildRequiresBindings(
+	instance *state.ClassInstance,
+	parameters map[string]object.Object,
+) *evaluator.Bindings {
+	if len(e.classNameMap) == 0 {
+		return e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
+	}
+	return e.bindingsBuilder.BuildWithClassInstancesForInstanceWithVariables(
+		e.classNameMap, instance, parameters,
+	)
 }
 
 // executeActionInContext runs a single action within an existing context.
@@ -274,10 +407,22 @@ func (e *ActionExecutor) executeActionInContext(
 	}
 	defer ctx.DecrementDepth()
 
-	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
+	if !ctx.ClaimInstanceForAction(instance.ID, action.Key) {
+		return fmt.Errorf(
+			"re-entrant mutation on instance %d in action %s: instance already mutated by another action in the chain",
+			instance.ID, action.Name,
+		)
+	}
 
-	if err := e.evaluateActionRequires(action, bindings); err != nil {
+	bindings := e.buildRequiresBindings(instance, parameters)
+
+	reqViolations, err := e.evaluateActionRequires(action, instance.ID, bindings)
+	if err != nil {
 		return err
+	}
+	if reqViolations.HasViolations() {
+		ctx.SetRequiresViolations(reqViolations)
+		return nil
 	}
 
 	if err := e.evaluateActionGuarantees(ctx, action, instance, bindings); err != nil {
@@ -290,35 +435,21 @@ func (e *ActionExecutor) executeActionInContext(
 // evaluateActionRequires evaluates the preconditions (Requires) for an action.
 func (e *ActionExecutor) evaluateActionRequires(
 	action model_state.Action,
+	instanceID state.InstanceID,
 	bindings *evaluator.Bindings,
-) error {
-	// Pass 1: Evaluate all let bindings in requires (in order).
-	if err := evalLetBindings(action.Requires, bindings, "action", action.Name, "requires"); err != nil {
-		return err
+) (invariants.ViolationErrors, error) {
+	owner := ParameterOwnerFromAction(action)
+	reqFailures, err := owner.AssessRequires(action.Parameters, bindings)
+	if err != nil {
+		return nil, err
 	}
-	// Pass 2: Evaluate non-let assessment items.
-	for i, req := range action.Requires {
-		if req.Type == model_logic.LogicTypeLet {
-			continue
-		}
-		expr := req.Spec.Expression
-		if expr == nil {
-			return fmt.Errorf("action %s requires[%d]: expression not lowered", action.Name, i)
-		}
-
-		if model_bridge.ContainsAnyPrimedME(expr) {
-			return fmt.Errorf("action %s requires[%d]: Requires must not contain primed variables", action.Name, i)
-		}
-
-		result := evaluator.Eval(expr, bindings)
-		if result.IsError() {
-			return fmt.Errorf("action %s requires[%d] evaluation error: %s", action.Name, i, result.Error.Inspect())
-		}
-		if !isTrueBoolean(result.Value) {
-			return fmt.Errorf("action %s precondition failed: requires[%d] = %s", action.Name, i, req.Spec.Specification)
-		}
+	invFailures, err := owner.AssessParameterInvariants(action.Parameters, bindings)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	violations := owner.ActionRequiresViolations(reqFailures, instanceID)
+	violations = append(violations, owner.ParameterInvariantViolations(invFailures, instanceID)...)
+	return violations, nil
 }
 
 // evaluateActionGuarantees evaluates the guarantees for an action and records primed assignments.
@@ -332,32 +463,84 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 	if err := evalLetBindings(action.Guarantees, bindings, "action", action.Name, "guarantee"); err != nil {
 		return err
 	}
-	// Pass 2: Evaluate non-let state_change items.
+	// Pass 2: Non-destroy guarantees (state_change drives association set updates first).
 	for i, guar := range action.Guarantees {
-		if guar.Type == model_logic.LogicTypeLet {
+		if guar.Type == model_logic.LogicTypeDestroy {
 			continue
 		}
-		// Check re-entrancy constraint.
-		if !ctx.CanMutate(instance.ID) {
-			return fmt.Errorf("re-entrant mutation on instance %d in action %s: instance already has primed values from another action", instance.ID, action.Name)
+		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
+			return err
 		}
-
-		if guar.Target == "" {
-			return fmt.Errorf("action %s guarantee[%d]: target must be set", action.Name, i)
+	}
+	// Pass 3: Destroy guarantees fire peer _destroy for peers removed by state_change.
+	for i, guar := range action.Guarantees {
+		if guar.Type != model_logic.LogicTypeDestroy {
+			continue
 		}
-		expr := guar.Spec.Expression
-		if expr == nil {
-			return fmt.Errorf("action %s guarantee[%d]: expression not lowered", action.Name, i)
-		}
-		rhsValue := evaluator.Eval(expr, bindings)
-		if rhsValue.IsError() {
-			return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", action.Name, i, rhsValue.Error.Inspect())
-		}
-		if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
-			return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
+		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func (e *ActionExecutor) evaluateSingleActionGuarantee(
+	ctx *ExecutionContext,
+	actionName string,
+	index int,
+	instance *state.ClassInstance,
+	guar model_logic.Logic,
+	bindings *evaluator.Bindings,
+) error {
+	if guar.Type == model_logic.LogicTypeLet {
+		return nil
+	}
+	if handled, err := e.tryQueueAssociationDestroyGuarantee(ctx, instance, guar, bindings); err != nil {
+		return err
+	} else if handled {
+		return nil
+	}
+	if guar.Target == "" {
+		return fmt.Errorf("action %s guarantee[%d]: target must be set", actionName, index)
+	}
+	expr := guar.Spec.Expression
+	if expr == nil {
+		return fmt.Errorf("action %s guarantee[%d]: expression not lowered", actionName, index)
+	}
+	if handled, err := e.tryQueueAssociationGuaranteeExpr(ctx, instance, guar.Target, expr, bindings); err != nil {
+		return err
+	} else if handled {
+		return nil
+	}
+	if handled, err := e.tryApplyAssociationStateChangeGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
+		return err
+	} else if handled {
+		return nil
+	}
+	rhsValue := evaluator.Eval(expr, bindings)
+	if rhsValue.IsError() {
+		return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", actionName, index, rhsValue.Error.Inspect())
+	}
+	if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
+		return fmt.Errorf("action %s guarantee[%d]: %w", actionName, index, err)
+	}
+	return nil
+}
+
+func (e *ActionExecutor) tryQueueAssociationGuaranteeExpr(
+	ctx *ExecutionContext,
+	instance *state.ClassInstance,
+	target string,
+	expr me.Expression,
+	bindings *evaluator.Bindings,
+) (bool, error) {
+	if handled, err := e.tryQueueAssociationAddOrUpdateGuarantee(ctx, instance, target, expr, bindings); err != nil || handled {
+		return handled, err
+	}
+	if handled, err := e.tryQueueAssociationSetAddGuarantee(ctx, instance, target, expr, bindings); err != nil || handled {
+		return handled, err
+	}
+	return e.tryQueueAssociationSetMapGuarantee(ctx, instance, target, expr, bindings)
 }
 
 // collectActionSafetyRules collects safety rules for deferred evaluation after state changes.
@@ -447,6 +630,9 @@ func (e *ActionExecutor) ExecuteQuery(
 	parameters map[string]object.Object,
 ) (*QueryResult, error) {
 	ctx := NewExecutionContext()
+	paramViolations := invariants.CheckParameterTypeSpecs(
+		query.Parameters, query.Key, query.Name, "query", instance.ID, instance.ClassKey,
+	)
 
 	outputs, err := e.executeQueryInContext(ctx, query, instance, parameters)
 	if err != nil {
@@ -455,6 +641,7 @@ func (e *ActionExecutor) ExecuteQuery(
 
 	// Check post-conditions (reuse shared helper).
 	allViolations := e.checkPostConditions(ctx)
+	allViolations = append(allViolations, paramViolations...)
 
 	return &QueryResult{
 		InstanceID: instance.ID,
@@ -476,44 +663,36 @@ func (e *ActionExecutor) executeQueryInContext(
 	}
 	defer ctx.DecrementDepth()
 
-	// Step 1: Check preconditions
-	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
-
-	// Pass 1: Evaluate all let bindings in requires (in order).
-	if err := evalLetBindings(query.Requires, bindings, "query", query.Name, "requires"); err != nil {
+	bindings := e.buildRequiresBindings(instance, parameters)
+	if err := checkQueryRequires(query, bindings); err != nil {
 		return nil, err
 	}
-	// Pass 2: Evaluate non-let assessment items.
-	for i, req := range query.Requires {
-		if req.Type == model_logic.LogicTypeLet {
-			continue
-		}
-		expr := req.Spec.Expression
-		if expr == nil {
-			return nil, fmt.Errorf("query %s requires[%d]: expression not lowered", query.Name, i)
-		}
+	return evaluateQueryGuarantees(query, bindings)
+}
 
-		if model_bridge.ContainsAnyPrimedME(expr) {
-			return nil, fmt.Errorf("query %s requires[%d]: Requires must not contain primed variables", query.Name, i)
-		}
-
-		result := evaluator.Eval(expr, bindings)
-		if result.IsError() {
-			return nil, fmt.Errorf("query %s requires[%d] evaluation error: %s", query.Name, i, result.Error.Inspect())
-		}
-		if !isTrueBoolean(result.Value) {
-			return nil, fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Spec.Specification)
-		}
+func checkQueryRequires(query model_state.Query, bindings *evaluator.Bindings) error {
+	owner := ParameterOwnerFromQuery(query)
+	reqFailures, err := owner.AssessRequires(query.Parameters, bindings)
+	if err != nil {
+		return err
 	}
+	if err := owner.RequireAssessmentError(reqFailures); err != nil {
+		return err
+	}
+	invFailures, err := owner.AssessParameterInvariants(query.Parameters, bindings)
+	if err != nil {
+		return err
+	}
+	return owner.RequireAssessmentError(invFailures)
+}
 
-	// Step 2: Evaluate guarantees
+func evaluateQueryGuarantees(query model_state.Query, bindings *evaluator.Bindings) (map[string]object.Object, error) {
 	outputs := make(map[string]object.Object)
 
-	// Pass 1: Evaluate all let bindings in guarantees (in order).
-	if err := evalLetBindings(query.Guarantees, bindings, "query", query.Name, "guarantee"); err != nil {
+	if err := evalLetBindings(query.Guarantees, bindings, logicOwnerKindQuery, query.Name, "guarantee"); err != nil {
 		return nil, err
 	}
-	// Pass 2: Evaluate non-let query items.
+
 	for i, guar := range query.Guarantees {
 		if guar.Type == model_logic.LogicTypeLet {
 			continue
@@ -535,6 +714,12 @@ func (e *ActionExecutor) executeQueryInContext(
 	return outputs, nil
 }
 
+// CreationLinkSource holds the association and parent instance for object creation linking.
+type CreationLinkSource struct {
+	SourceAssocKey *identity.Key
+	SourceID       *state.InstanceID
+}
+
 // ExecuteTransition handles an event arriving at an instance.
 // It finds matching transitions, evaluates guards, runs the action (if any),
 // and sets the _state attribute. Handles creation and deletion.
@@ -543,8 +728,8 @@ func (e *ActionExecutor) ExecuteTransition(
 	event model_state.Event,
 	instance *state.ClassInstance, // nil for creation (from initial state)
 	eventParams map[string]object.Object,
-	sourceAssocKey *identity.Key, // association for creation linking
-	sourceID *state.InstanceID, // parent instance for creation linking
+	source CreationLinkSource,
+	targetID *state.InstanceID,
 ) (*TransitionResult, error) {
 	currentStateName := getInstanceCurrentState(instance)
 
@@ -561,15 +746,19 @@ func (e *ActionExecutor) ExecuteTransition(
 	}
 
 	// Step 3: Handle creation (FromStateKey == nil)
+	var associationMaterialization *AssociationMaterialization
 	if chosen.FromStateKey == nil {
-		instance, err = e.handleCreation(class, instance, sourceAssocKey, sourceID)
+		instance, err = e.handleCreation(class, instance, source.SourceAssocKey, source.SourceID, targetID)
 		if err != nil {
 			return nil, err
 		}
+		associationMaterialization = e.associationMaterializationForCreation(class, source, targetID)
 	}
 
-	// Step 4: Execute the action (if any)
+	// Step 4: Execute the action (if any). Multiplicity is deferred until after _state applies.
+	e.deferMultiplicityInActionCheck = true
 	actionResult, err := e.executeTransitionAction(chosen, class, instance, eventParams)
+	e.deferMultiplicityInActionCheck = false
 	if err != nil {
 		return nil, err
 	}
@@ -584,18 +773,49 @@ func (e *ActionExecutor) ExecuteTransition(
 	if actionResult != nil {
 		violations = actionResult.Violations
 	}
+	violations = append(violations, e.checkAssociationStructuralInvariants()...)
 
 	return &TransitionResult{
-		InstanceID:    instance.ID,
-		FromState:     currentStateName,
-		ToState:       toStateName,
-		EventKey:      event.Key,
-		TransitionKey: chosen.Key,
-		WasCreation:   chosen.FromStateKey == nil,
-		WasDeletion:   chosen.ToStateKey == nil,
-		ActionResult:  actionResult,
-		Violations:    violations,
+		InstanceID:                 instance.ID,
+		FromState:                  currentStateName,
+		ToState:                    toStateName,
+		EventKey:                   event.Key,
+		TransitionKey:              chosen.Key,
+		WasCreation:                chosen.FromStateKey == nil,
+		WasDestroy:                 chosen.ToStateKey == nil,
+		AssociationMaterialization: associationMaterialization,
+		ActionResult:               actionResult,
+		Violations:                 violations,
 	}, nil
+}
+
+func (e *ActionExecutor) associationMaterializationForCreation(
+	class model_class.Class,
+	source CreationLinkSource,
+	targetID *state.InstanceID,
+) *AssociationMaterialization {
+	if e.peerCatalog == nil || !e.peerCatalog.IsAssociationClass(class.Key) {
+		return nil
+	}
+	if source.SourceID == nil || targetID == nil {
+		return nil
+	}
+
+	linkInfo := e.peerCatalog.GetAssociationClassInfo(class.Key)
+	if !linkInfo.Found {
+		return nil
+	}
+
+	return &AssociationMaterialization{
+		HostAssociationName: linkInfo.HostAssociationName,
+		HostAssociationKey:  linkInfo.HostAssocKey,
+		FromClassName:       linkInfo.FromClassName,
+		FromClassKey:        linkInfo.FromClassKey,
+		ToClassName:         linkInfo.ToClassName,
+		ToClassKey:          linkInfo.ToClassKey,
+		FromInstanceID:      *source.SourceID,
+		ToInstanceID:        *targetID,
+	}
 }
 
 // getInstanceCurrentState extracts the current state name from an instance.
@@ -689,13 +909,98 @@ func (e *ActionExecutor) handleCreation(
 	_ *state.ClassInstance,
 	sourceAssocKey *identity.Key,
 	sourceID *state.InstanceID,
+	targetID *state.InstanceID,
 ) (*state.ClassInstance, error) {
-	simState := e.bindingsBuilder.State()
-	newAttrs := object.NewRecord()
+	if e.peerCatalog != nil && e.peerCatalog.IsAssociationClass(class.Key) {
+		return e.handleAssociationClassCreation(class, sourceID, targetID)
+	}
 
-	// Generate index-safe values if the class has indexes
-	if e.indexChecker != nil && e.rng != nil {
-		if indexInfo := e.indexChecker.GetClassIndexInfo(class.Key); indexInfo != nil {
+	simState := e.bindingsBuilder.State()
+	newAttrs, err := e.creationAttributes(class, simState)
+	if err != nil {
+		return nil, err
+	}
+
+	instance := simState.CreateInstance(class.Key, newAttrs)
+	if err := e.linkPlainCreationOverAssociation(simState, sourceAssocKey, sourceID, instance.ID); err != nil {
+		return nil, err
+	}
+
+	return instance, nil
+}
+
+func (e *ActionExecutor) creationAttributes(
+	class model_class.Class,
+	simState *state.SimulationState,
+) (*object.Record, error) {
+	newAttrs := object.NewRecord()
+	if e.structuralCheckers == nil || e.structuralCheckers.Index == nil || e.rng == nil {
+		return newAttrs, nil
+	}
+
+	indexInfo := e.structuralCheckers.Index.GetClassIndexInfo(class.Key)
+	if indexInfo == nil {
+		return newAttrs, nil
+	}
+
+	existingInstances := simState.InstancesByClass(class.Key)
+	if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, e.rng); err != nil {
+		return nil, fmt.Errorf("failed to generate index-safe values for class %s: %w", class.Name, err)
+	}
+	return newAttrs, nil
+}
+
+func (e *ActionExecutor) linkPlainCreationOverAssociation(
+	simState *state.SimulationState,
+	sourceAssocKey *identity.Key,
+	sourceID *state.InstanceID,
+	newInstanceID state.InstanceID,
+) error {
+	if sourceAssocKey == nil || sourceID == nil {
+		return nil
+	}
+	if e.peerCatalog != nil && e.peerCatalog.IsAssociationClassHost(*sourceAssocKey) {
+		return fmt.Errorf(
+			"host association %s requires an association-class instance; cannot link endpoints directly",
+			sourceAssocKey.String(),
+		)
+	}
+	if err := simState.AddLink(*sourceAssocKey, *sourceID, newInstanceID); err != nil {
+		return fmt.Errorf("failed to link association %s: %w", sourceAssocKey.String(), err)
+	}
+	return nil
+}
+
+func (e *ActionExecutor) handleAssociationClassCreation(
+	class model_class.Class,
+	sourceID *state.InstanceID,
+	targetID *state.InstanceID,
+) (*state.ClassInstance, error) {
+	if sourceID == nil || targetID == nil {
+		return nil, fmt.Errorf(
+			"association class %s Add requires both endpoint instances",
+			class.Name,
+		)
+	}
+	if e.peerCatalog == nil {
+		return nil, fmt.Errorf("association class %s: no association-class index configured", class.Name)
+	}
+
+	linkInfo := e.peerCatalog.GetAssociationClassInfo(class.Key)
+	if !linkInfo.Found {
+		return nil, fmt.Errorf("association class %s: no host association metadata", class.Name)
+	}
+
+	simState := e.bindingsBuilder.State()
+	fromInstance := simState.GetInstance(*sourceID)
+	toInstance := simState.GetInstance(*targetID)
+	if fromInstance == nil || toInstance == nil {
+		return nil, fmt.Errorf("association class %s Add: endpoint instance not found", class.Name)
+	}
+
+	newAttrs := object.NewRecord()
+	if e.structuralCheckers != nil && e.structuralCheckers.Index != nil && e.rng != nil {
+		if indexInfo := e.structuralCheckers.Index.GetClassIndexInfo(class.Key); indexInfo != nil {
 			existingInstances := simState.InstancesByClass(class.Key)
 			if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, e.rng); err != nil {
 				return nil, fmt.Errorf("failed to generate index-safe values for class %s: %w", class.Name, err)
@@ -704,10 +1009,8 @@ func (e *ActionExecutor) handleCreation(
 	}
 
 	instance := simState.CreateInstance(class.Key, newAttrs)
-
-	// Link to parent over the association
-	if sourceAssocKey != nil && sourceID != nil {
-		simState.AddLink(*sourceAssocKey, *sourceID, instance.ID)
+	if err := simState.AddAssociationLink(linkInfo.HostAssocKey, *sourceID, *targetID, instance.ID); err != nil {
+		return nil, fmt.Errorf("failed to materialize host association %s: %w", linkInfo.HostAssocKey.String(), err)
 	}
 
 	return instance, nil
@@ -798,7 +1101,7 @@ func isTrueBoolean(obj object.Object) bool {
 
 // createPostConditionViolation creates a violation from a deferred post-condition.
 func createPostConditionViolation(pc DeferredPostCondition, message string) *invariants.ViolationError {
-	if pc.SourceType == "action" {
+	if pc.SourceType == logicOwnerKindAction {
 		return invariants.NewActionGuaranteeViolation(
 			pc.SourceKey,
 			pc.SourceName,

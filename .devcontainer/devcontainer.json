@@ -13,14 +13,14 @@
 	"runArgs": [
 		"--name=glemzurg-dev-container",  // Unique name for to avoid collision with other devcontainers.
 		"--label=glemzurg"  // Unique label for shelling into see: scripts/terminal.sh
-	], 
-
-	// The input and output files from the tools are on the host machine.
-	// The host environment variable GLEMZURG_DATA_PATH should point to the
-	// folder on the host machine that the tools can read from and write to.
-	"mounts": [
-		"source=${localEnv:GLEMZURG_DATA_PATH},target=/data,type=bind"
 	],
+
+	// Bind-mount the host data directory onto data_sandbox/ before Docker creates
+	// the workspace mount, so writes inside the container land on the host data
+	// set. The script reads $GLEMZURG_DATA_PATH on the host and is a no-op when
+	// the variable is unset, so the container loads on every host whether or not
+	// data is provided. May prompt for sudo on the host.
+	"initializeCommand": "./scripts/mount-data-sandbox.sh",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -31,7 +31,11 @@
 	// Use 'postCreateCommand' to run commands after the container is created.
 
 	// Add tool to document postgres database schemas.
-	"postCreateCommand": "sudo apt-get update -y && curl -L https://github.com/k1LoW/tbls/releases/download/v1.92.1/tbls_1.92.1-1_amd64.deb -o tbls.deb && sudo dpkg -i tbls.deb && rm tbls.deb"
+	// Add beads (bd) distributed graph issue tracker for AI agents.
+	// Create the requirements database schema so the container is ready to use
+	// immediately after build; the documentation regeneration is a no-op when
+	// the schema has not changed.
+	"postCreateCommand": "sudo apt-get update -y && ARCH=$(dpkg --print-architecture) && curl -L https://github.com/k1LoW/tbls/releases/download/v1.92.1/tbls_1.92.1-1_${ARCH}.deb -o tbls.deb && sudo dpkg -i tbls.deb && rm tbls.deb && curl -L https://github.com/gastownhall/beads/releases/download/v1.0.0/beads_1.0.0_linux_${ARCH}.tar.gz -o beads.tar.gz && tar xzf beads.tar.gz bd && sudo mv bd /usr/local/bin/bd && rm beads.tar.gz && go install github.com/glemzurg/go-complexity-lint/cmd/go-complexity-lint@latest && sudo service postgresql start && ./apps/requirements/req/updatedb-and-doc.sh"
 
 	// Configure tool-specific properties.
 	// "customizations": {},

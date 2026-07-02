@@ -60,6 +60,7 @@ func (suite *UseCaseGeneralizationSuite) TestLoad() {
 				generalization_key,
 				name,
 				details,
+				unfinished_notes,
 				is_complete,
 				is_static,
 				uml_comment
@@ -71,6 +72,7 @@ func (suite *UseCaseGeneralizationSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/ucgeneralization/key',
 				'Name',
 				'Details',
+				'UnfinishedNotes',
 				true,
 				false,
 				'UmlComment'
@@ -82,23 +84,25 @@ func (suite *UseCaseGeneralizationSuite) TestLoad() {
 	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "Details",
-		IsComplete: true,
-		IsStatic:   false,
-		UmlComment: "UmlComment",
+		Key:             suite.generalizationKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		IsComplete:      true,
+		IsStatic:        false,
+		UmlComment:      "UmlComment",
 	}, generalization)
 }
 
 func (suite *UseCaseGeneralizationSuite) TestAdd() {
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "Details",
-		IsComplete: true,
-		IsStatic:   false,
-		UmlComment: "UmlComment",
+		Key:             suite.generalizationKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		IsComplete:      true,
+		IsStatic:        false,
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
@@ -106,23 +110,25 @@ func (suite *UseCaseGeneralizationSuite) TestAdd() {
 	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "Details",
-		IsComplete: true,
-		IsStatic:   false,
-		UmlComment: "UmlComment",
+		Key:             suite.generalizationKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		IsComplete:      true,
+		IsStatic:        false,
+		UmlComment:      "UmlComment",
 	}, generalization)
 }
 
 func (suite *UseCaseGeneralizationSuite) TestAddNulls() {
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "",
-		IsComplete: false,
-		IsStatic:   false,
-		UmlComment: "",
+		Key:             suite.generalizationKey,
+		Name:            "Name",
+		Details:         "",
+		UnfinishedNotes: "",
+		IsComplete:      false,
+		IsStatic:        false,
+		UmlComment:      "",
 	})
 	suite.Require().NoError(err)
 
@@ -130,33 +136,36 @@ func (suite *UseCaseGeneralizationSuite) TestAddNulls() {
 	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "",
-		IsComplete: false,
-		IsStatic:   false,
-		UmlComment: "",
+		Key:             suite.generalizationKey,
+		Name:            "Name",
+		Details:         "",
+		UnfinishedNotes: "",
+		IsComplete:      false,
+		IsStatic:        false,
+		UmlComment:      "",
 	}, generalization)
 }
 
 func (suite *UseCaseGeneralizationSuite) TestUpdate() {
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "Details",
-		IsComplete: true,
-		IsStatic:   false,
-		UmlComment: "UmlComment",
+		Key:             suite.generalizationKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		IsComplete:      true,
+		IsStatic:        false,
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
 	err = UpdateUseCaseGeneralization(suite.db, suite.model.Key, model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		IsComplete: false,
-		IsStatic:   true,
-		UmlComment: "UmlCommentX",
+		Key:             suite.generalizationKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
+		IsComplete:      false,
+		IsStatic:        true,
+		UmlComment:      "UmlCommentX",
 	})
 	suite.Require().NoError(err)
 
@@ -164,33 +173,36 @@ func (suite *UseCaseGeneralizationSuite) TestUpdate() {
 	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		IsComplete: false,
-		IsStatic:   true,
-		UmlComment: "UmlCommentX",
+		Key:             suite.generalizationKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		UnfinishedNotes: "UnfinishedNotesX",
+		IsComplete:      false,
+		IsStatic:        true,
+		UmlComment:      "UmlCommentX",
 	}, generalization)
 }
 
 func (suite *UseCaseGeneralizationSuite) TestUpdateNulls() {
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "Details",
-		IsComplete: true,
-		IsStatic:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.generalizationKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		IsComplete:      true,
+		IsStatic:        true,
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
 	err = UpdateUseCaseGeneralization(suite.db, suite.model.Key, model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "NameX",
-		Details:    "",
-		IsComplete: false,
-		IsStatic:   false,
-		UmlComment: "",
+		Key:             suite.generalizationKey,
+		Name:            "NameX",
+		Details:         "",
+		UnfinishedNotes: "",
+		IsComplete:      false,
+		IsStatic:        false,
+		UmlComment:      "",
 	})
 	suite.Require().NoError(err)
 
@@ -198,23 +210,25 @@ func (suite *UseCaseGeneralizationSuite) TestUpdateNulls() {
 	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "NameX",
-		Details:    "",
-		IsComplete: false,
-		IsStatic:   false,
-		UmlComment: "",
+		Key:             suite.generalizationKey,
+		Name:            "NameX",
+		Details:         "",
+		UnfinishedNotes: "",
+		IsComplete:      false,
+		IsStatic:        false,
+		UmlComment:      "",
 	}, generalization)
 }
 
 func (suite *UseCaseGeneralizationSuite) TestRemove() {
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "Details",
-		IsComplete: true,
-		IsStatic:   false,
-		UmlComment: "UmlComment",
+		Key:             suite.generalizationKey,
+		Name:            "Name",
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		IsComplete:      true,
+		IsStatic:        false,
+		UmlComment:      "UmlComment",
 	})
 	suite.Require().NoError(err)
 
@@ -231,20 +245,22 @@ func (suite *UseCaseGeneralizationSuite) TestQuery() {
 	err := AddUseCaseGeneralizations(suite.db, suite.model.Key, map[identity.Key][]model_use_case.Generalization{
 		suite.subdomain.Key: {
 			{
-				Key:        suite.generalizationKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				IsComplete: false,
-				IsStatic:   true,
-				UmlComment: "UmlCommentX",
+				Key:             suite.generalizationKeyB,
+				Name:            "NameX",
+				Details:         "DetailsX",
+				UnfinishedNotes: "UnfinishedNotesX",
+				IsComplete:      false,
+				IsStatic:        true,
+				UmlComment:      "UmlCommentX",
 			},
 			{
-				Key:        suite.generalizationKey,
-				Name:       "Name",
-				Details:    "Details",
-				IsComplete: true,
-				IsStatic:   false,
-				UmlComment: "UmlComment",
+				Key:             suite.generalizationKey,
+				Name:            "Name",
+				Details:         "Details",
+				UnfinishedNotes: "UnfinishedNotes",
+				IsComplete:      true,
+				IsStatic:        false,
+				UmlComment:      "UmlComment",
 			},
 		},
 	})
@@ -255,20 +271,22 @@ func (suite *UseCaseGeneralizationSuite) TestQuery() {
 	suite.Equal(map[identity.Key][]model_use_case.Generalization{
 		suite.subdomain.Key: {
 			{
-				Key:        suite.generalizationKey,
-				Name:       "Name",
-				Details:    "Details",
-				IsComplete: true,
-				IsStatic:   false,
-				UmlComment: "UmlComment",
+				Key:             suite.generalizationKey,
+				Name:            "Name",
+				Details:         "Details",
+				UnfinishedNotes: "UnfinishedNotes",
+				IsComplete:      true,
+				IsStatic:        false,
+				UmlComment:      "UmlComment",
 			},
 			{
-				Key:        suite.generalizationKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				IsComplete: false,
-				IsStatic:   true,
-				UmlComment: "UmlCommentX",
+				Key:             suite.generalizationKeyB,
+				Name:            "NameX",
+				Details:         "DetailsX",
+				UnfinishedNotes: "UnfinishedNotesX",
+				IsComplete:      false,
+				IsStatic:        true,
+				UmlComment:      "UmlCommentX",
 			},
 		},
 	}, generalizations)
@@ -280,12 +298,13 @@ func (suite *UseCaseGeneralizationSuite) TestQuery() {
 
 func t_AddUseCaseGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, generalizationKey identity.Key) (generalization model_use_case.Generalization) {
 	err := AddUseCaseGeneralization(dbOrTx, modelKey, subdomainKey, model_use_case.Generalization{
-		Key:        generalizationKey,
-		Name:       generalizationKey.String(),
-		Details:    "Details",
-		IsComplete: true,
-		IsStatic:   true,
-		UmlComment: "UmlComment",
+		Key:             generalizationKey,
+		Name:            generalizationKey.String(),
+		Details:         "Details",
+		UnfinishedNotes: "UnfinishedNotes",
+		IsComplete:      true,
+		IsStatic:        true,
+		UmlComment:      "UmlComment",
 	})
 	require.NoError(t, err)
 

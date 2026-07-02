@@ -178,14 +178,12 @@ func buildTestModel() *core.Model {
 								Key:        classKey,
 								Name:       "Account",
 								Invariants: []model_logic.Logic{classInvariant},
-								Attributes: map[identity.Key]model_class.Attribute{
-									attrKey: {
-										Key:              attrKey,
-										Name:             "balance",
-										DerivationPolicy: &derivationPolicy,
-										Invariants:       []model_logic.Logic{attrInvariant},
-									},
-								},
+								Attributes: []model_class.Attribute{{
+									Key:              attrKey,
+									Name:             "balance",
+									DerivationPolicy: &derivationPolicy,
+									Invariants:       []model_logic.Logic{attrInvariant},
+								}},
 								Guards: map[identity.Key]model_state.Guard{
 									guardKey: {
 										Key:   guardKey,

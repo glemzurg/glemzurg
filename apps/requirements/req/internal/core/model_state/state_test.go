@@ -60,6 +60,14 @@ func (suite *StateSuite) TestValidate() {
 			},
 			errstr: "Name",
 		},
+		{
+			testName: "error name with invalid chars",
+			state: State{
+				Key:  validKey,
+				Name: "Fail On Name/DOB",
+			},
+			errstr: "STATE_NAME_INVALID_CHARS",
+		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {

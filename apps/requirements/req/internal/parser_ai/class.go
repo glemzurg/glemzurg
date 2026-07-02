@@ -11,12 +11,14 @@ import (
 
 // inputAttribute represents an attribute within a class.
 type inputAttribute struct {
+	Key              string      `json:"key"`
 	Name             string      `json:"name"`
 	DataTypeRules    string      `json:"data_type_rules,omitempty"`
 	Details          string      `json:"details,omitempty"`
 	DerivationPolicy *inputLogic `json:"derivation_policy,omitempty"`
 	Nullable         bool        `json:"nullable,omitempty"`
 	UMLComment       string      `json:"uml_comment,omitempty"`
+	TypeSpec         string      `json:"type_spec,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Invariants []inputLogic `json:"-"`
@@ -24,12 +26,13 @@ type inputAttribute struct {
 
 // inputClass represents a class JSON file.
 type inputClass struct {
-	Name       string                     `json:"name"`
-	Details    string                     `json:"details,omitempty"`
-	ActorKey   string                     `json:"actor_key,omitempty"`
-	UMLComment string                     `json:"uml_comment,omitempty"`
-	Attributes map[string]*inputAttribute `json:"attributes,omitempty"`
-	Indexes    [][]string                 `json:"indexes,omitempty"`
+	Name            string           `json:"name"`
+	Details         string           `json:"details,omitempty"`
+	UnfinishedNotes string           `json:"unfinished_notes,omitempty"`
+	ActorKey        string           `json:"actor_key,omitempty"`
+	UMLComment      string           `json:"uml_comment,omitempty"`
+	Attributes      []inputAttribute `json:"attributes,omitempty"`
+	Indexes         [][]string       `json:"indexes,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Invariants   []inputLogic            `json:"-"`
@@ -120,24 +123,40 @@ func validateClass(class *inputClass, filename string) error {
 		).WithField("name").WithHint("add a non-empty \"name\" field to class.json")
 	}
 
-	// Validate attributes if present
-	for attrKey, attr := range class.Attributes {
-		// Attribute name is required (schema enforces this)
+	// Validate attributes if present.
+	seenKeys := make(map[string]bool, len(class.Attributes))
+	for i, attr := range class.Attributes {
+		fieldPrefix := fmt.Sprintf("attributes[%d]", i)
+		if attr.Key == "" {
+			return NewParseError(
+				ErrClassAttributeNameEmpty,
+				fmt.Sprintf("attribute[%d] key is required, got ''", i),
+				filename,
+			).WithField(fieldPrefix + ".key").WithHint("each attribute must have a non-empty \"key\" field")
+		}
+		if seenKeys[attr.Key] {
+			return NewParseError(
+				ErrClassAttributeNameEmpty,
+				fmt.Sprintf("duplicate attribute key '%s'", attr.Key),
+				filename,
+			).WithField(fieldPrefix + ".key").WithHint("attribute keys must be unique within the class")
+		}
+		seenKeys[attr.Key] = true
+
 		if attr.Name == "" {
 			return NewParseError(
 				ErrClassAttributeNameEmpty,
-				fmt.Sprintf("attribute '%s' name is required, got ''", attrKey),
+				fmt.Sprintf("attribute '%s' name is required, got ''", attr.Key),
 				filename,
-			).WithField("attributes." + attrKey + ".name").WithHint("each attribute must have a non-empty \"name\" field")
+			).WithField(fieldPrefix + ".name").WithHint("each attribute must have a non-empty \"name\" field")
 		}
 
-		// Attribute name cannot be only whitespace
 		if strings.TrimSpace(attr.Name) == "" {
 			return NewParseError(
 				ErrClassAttributeNameEmpty,
-				fmt.Sprintf("attribute '%s' name cannot be empty or whitespace only, got '%s'", attrKey, attr.Name),
+				fmt.Sprintf("attribute '%s' name cannot be empty or whitespace only, got '%s'", attr.Key, attr.Name),
 				filename,
-			).WithField("attributes." + attrKey + ".name").WithHint("each attribute must have a non-empty \"name\" field")
+			).WithField(fieldPrefix + ".name").WithHint("each attribute must have a non-empty \"name\" field")
 		}
 	}
 

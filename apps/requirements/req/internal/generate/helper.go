@@ -1,9 +1,86 @@
 package generate
 
 import (
+	"html"
 	"strings"
 	"unicode"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
+
+const _unfinishedNotesGlyph = "\u26a0" // ⚠ WARNING SIGN — block leader and list-item marker
+
+// unfinishedNotesBlock renders scratch notes as a preformatted block: a red ⚠,
+// then the note text on the next line via <br />. HTML carries the leader color
+// because fenced code blocks cannot style inline glyphs. Empty or whitespace-only
+// notes produce no output.
+func unfinishedNotesBlock(notes string) string {
+	trimmed := strings.TrimSpace(notes)
+	if trimmed == "" {
+		return ""
+	}
+	return "\n<pre class=\"unfinished-notes-block\"><span class=\"unfinished-notes-glyph\">" +
+		_unfinishedNotesGlyph + "</span><br />\n" + html.EscapeString(trimmed) + "\n</pre>\n"
+}
+
+// unfinishedNotesMarker returns a red ⚠ when notes are present.
+func unfinishedNotesMarker(notes string) string {
+	if strings.TrimSpace(notes) == "" {
+		return ""
+	}
+	return ` <span class="unfinished-notes-glyph">` + _unfinishedNotesGlyph + `</span>`
+}
+
+// actionDisplaySignature renders the MD action header parameter list.
+// Non-creation actions prepend implicit self so set-map peer calls align with the header.
+func actionDisplaySignature(reqs *req_flat.Requirements, action model_state.Action) string {
+	var paramNames []string
+	if actionUsesImplicitSelf(reqs, action.Key) {
+		paramNames = append(paramNames, "self")
+	}
+	for _, param := range action.Parameters {
+		paramNames = append(paramNames, param.Name)
+	}
+	return strings.Join(paramNames, ", ")
+}
+
+func actionUsesImplicitSelf(reqs *req_flat.Requirements, actionKey identity.Key) bool {
+	eventLookup := reqs.EventLookup()
+	for _, transition := range reqs.ActionTransitionsLookup()[actionKey.String()] {
+		event, ok := eventLookup[transition.EventKey.String()]
+		if !ok || model_state.IsSystemCreationEvent(event.Name) {
+			continue
+		}
+		return true
+	}
+	return len(reqs.ActionStateActionsLookup()[actionKey.String()]) > 0
+}
+
+// classHasStateMachine reports whether the class declares any states or transitions.
+func classHasStateMachine(class model_class.Class) bool {
+	return len(class.States) > 0 || len(class.Transitions) > 0
+}
+
+// classStateMachineHasNewEvent reports whether the class defines the system «new» event.
+func classStateMachineHasNewEvent(class model_class.Class) bool {
+	for _, event := range class.Events {
+		if model_state.IsSystemCreationEvent(event.Name) {
+			return true
+		}
+	}
+	return false
+}
+
+// stateMachineIncompleteMarker flags state machines that omit the system «new» event.
+func stateMachineIncompleteMarker(class model_class.Class) string {
+	if !classHasStateMachine(class) || classStateMachineHasNewEvent(class) {
+		return ""
+	}
+	return "\n\n**«incomplete»** — no «new» event defined for creation transitions.\n"
+}
 
 // Skip the header and grab the first markdown paragraph as a summary for showing in table of contents pages.
 func firstMdParagraph(md string) string {

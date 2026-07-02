@@ -169,8 +169,24 @@ func (s *StateTestSuite) TestAddLink() {
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
 
-	state.AddLink(assocKey, order.ID, line.ID)
+	s.Require().NoError(state.AddLink(assocKey, order.ID, line.ID))
 
+	s.Equal(1, state.LinkCount())
+}
+
+func (s *StateTestSuite) TestAddLink_RejectsDuplicatePair() {
+	state := NewSimulationState()
+
+	orderKey := s.createClassKey("orders", "management", "order")
+	lineKey := s.createClassKey("orders", "management", "line")
+	assocKey := s.createAssociationKey()
+
+	order := state.CreateInstance(orderKey, object.NewRecord())
+	line := state.CreateInstance(lineKey, object.NewRecord())
+
+	s.Require().NoError(state.AddLink(assocKey, order.ID, line.ID))
+	err := state.AddLink(assocKey, order.ID, line.ID)
+	s.Require().Error(err)
 	s.Equal(1, state.LinkCount())
 }
 
@@ -184,7 +200,7 @@ func (s *StateTestSuite) TestRemoveLink() {
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
 
-	state.AddLink(assocKey, order.ID, line.ID)
+	s.Require().NoError(state.AddLink(assocKey, order.ID, line.ID))
 	s.Equal(1, state.LinkCount())
 
 	removed := state.RemoveLink(assocKey, order.ID, line.ID)
@@ -207,8 +223,8 @@ func (s *StateTestSuite) TestGetLinkedForward() {
 	line1 := state.CreateInstance(lineKey, object.NewRecord())
 	line2 := state.CreateInstance(lineKey, object.NewRecord())
 
-	state.AddLink(assocKey, order.ID, line1.ID)
-	state.AddLink(assocKey, order.ID, line2.ID)
+	s.Require().NoError(state.AddLink(assocKey, order.ID, line1.ID))
+	s.Require().NoError(state.AddLink(assocKey, order.ID, line2.ID))
 
 	linked := state.GetLinkedForward(order.ID, assocKey)
 	s.Len(linked, 2)
@@ -226,7 +242,7 @@ func (s *StateTestSuite) TestGetLinkedReverse() {
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
 
-	state.AddLink(assocKey, order.ID, line.ID)
+	s.Require().NoError(state.AddLink(assocKey, order.ID, line.ID))
 
 	linked := state.GetLinkedReverse(line.ID, assocKey)
 	s.Len(linked, 1)
@@ -243,7 +259,7 @@ func (s *StateTestSuite) TestDeleteInstanceRemovesLinks() {
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
 
-	state.AddLink(assocKey, order.ID, line.ID)
+	s.Require().NoError(state.AddLink(assocKey, order.ID, line.ID))
 	s.Equal(1, state.LinkCount())
 
 	// Delete order - should remove links
@@ -304,7 +320,7 @@ func (s *StateTestSuite) TestClone() {
 		"status": object.NewString("pending"),
 	}))
 	line := state.CreateInstance(lineKey, object.NewRecord())
-	state.AddLink(assocKey, order.ID, line.ID)
+	s.Require().NoError(state.AddLink(assocKey, order.ID, line.ID))
 	err := state.SetStateMachineState(order.ID, stateKey)
 	s.Require().NoError(err)
 

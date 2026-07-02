@@ -6,7 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // sortedKeys returns sorted keys from a map.
@@ -16,6 +18,18 @@ func sortedKeys[V any](m map[string]V) []string {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+	return keys
+}
+
+// sortedIdentityKeys returns identity keys sorted by Key.String() for deterministic map iteration.
+func sortedIdentityKeys[V any](m map[identity.Key]V) []identity.Key {
+	keys := make([]identity.Key, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].String() < keys[j].String()
+	})
 	return keys
 }
 
@@ -225,14 +239,14 @@ func validateSubdomainCompleteness(domainKey, subdomainKey string, subdomain *in
 func validateClassCompleteness(domainKey, subdomainKey, classKey string, class *inputClass) error {
 	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
 
-	// Check class has at least one attribute
-	if len(class.Attributes) == 0 {
+	// Actor-backed classes model participants, not persisted entity data, so they need no attributes.
+	if len(class.Attributes) == 0 && class.ActorKey == "" {
 		return NewParseError(
 			ErrTreeClassNoAttributes,
-			fmt.Sprintf("class '%s' must have at least one attribute defined - attributes describe the data properties of a class; add attributes to the 'attributes' map in the class.json file with name, data type rules, and details",
+			fmt.Sprintf("class '%s' must have at least one attribute defined - attributes describe the data properties of a class; add attributes to the 'attributes' array in class.json with key, name, and data type rules",
 				classKey),
 			classPath,
-		).WithField("attributes").WithHint("add attributes map to class.json: {\"attributes\": {\"attr_key\": {\"name\": ...}}}")
+		).WithField("attributes").WithHint("add attributes array to class.json: {\"attributes\": [{\"key\": \"attr_key\", \"name\": \"...\"}]}")
 	}
 
 	// Check class has a state machine
@@ -318,6 +332,31 @@ func validateSubdomainTree(model *inputModel, domainKey, subdomainKey string, su
 	return nil
 }
 
+func validateClassIndexReferences(class *inputClass, classKey, classPath string) error {
+	for i, index := range class.Indexes {
+		seen := make(map[string]bool)
+		for j, attrKey := range index {
+			if seen[attrKey] {
+				return NewParseError(
+					ErrTreeClassIndexAttrNotFound,
+					fmt.Sprintf("class '%s' index[%d] contains duplicate attribute key '%s'", classKey, i, attrKey),
+					classPath,
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(class.attributeKeysInOrder(), ", ")))
+			}
+			seen[attrKey] = true
+
+			if !class.hasAttributeKey(attrKey) {
+				return NewParseError(
+					ErrTreeClassIndexAttrNotFound,
+					fmt.Sprintf("class '%s' index[%d] references attribute '%s' which does not exist", classKey, i, attrKey),
+					classPath,
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(class.attributeKeysInOrder(), ", ")))
+			}
+		}
+	}
+	return nil
+}
+
 // validateClassTree validates a class and its children.
 func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey string, class *inputClass) error {
 	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
@@ -333,33 +372,22 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		}
 	}
 
-	// Validate indexes reference valid attributes
-	for i, index := range class.Indexes {
-		seen := make(map[string]bool)
-		for j, attrKey := range index {
-			// Check for duplicates within this index
-			if seen[attrKey] {
-				return NewParseError(
-					ErrTreeClassIndexAttrNotFound,
-					fmt.Sprintf("class '%s' index[%d] contains duplicate attribute key '%s'", classKey, i, attrKey),
-					classPath,
-				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(sortedKeys(class.Attributes), ", ")))
-			}
-			seen[attrKey] = true
-
-			// Check that the attribute exists
-			if _, ok := class.Attributes[attrKey]; !ok {
-				return NewParseError(
-					ErrTreeClassIndexAttrNotFound,
-					fmt.Sprintf("class '%s' index[%d] references attribute '%s' which does not exist", classKey, i, attrKey),
-					classPath,
-				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(sortedKeys(class.Attributes), ", ")))
-			}
-		}
+	if err := validateClassIndexReferences(class, classKey, classPath); err != nil {
+		return err
 	}
 
-	// Validate attribute data_type_rules are parseable
-	if err := validateClassDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
+	// Validate attribute key-name consistency
+	if err := validateAttributeKeyNameConsistency(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
+	// Validate name uniqueness across actions, queries, states, events, guards
+	if err := validateClassNameUniqueness(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
+	// Validate state machine key-name consistency
+	if err := validateStateMachineKeyNameConsistency(class, domainKey, subdomainKey, classKey); err != nil {
 		return err
 	}
 
@@ -370,112 +398,6 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		}
 	}
 
-	return nil
-}
-
-// dataTypeHint is the concise hint shown for data type parse errors.
-const dataTypeHint = "valid types: unconstrained, enum of v1, v2, v3, [1..100] at 1 unit, ordered/unordered/stack/queue of <type>, { field: <type> }. integers and floats are spans e.g. [0..unconstrained] at 1 count or [0..unconstrained] at 0.01 dollars. booleans are enum of true, false. strings are unconstrained for free text, enum of x, y for a fixed set, or ref from Source Name for externally documented values (e.g. ISO codes)"
-
-// validateClassDataTypes validates that all attribute data_type_rules in a class are parseable.
-func validateClassDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
-	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
-
-	// Validate attribute data_type_rules
-	for attrKey, attr := range class.Attributes {
-		if attr.DataTypeRules == "" {
-			continue
-		}
-		_, err := model_data_type.New(attrKey, attr.DataTypeRules, nil)
-		if err != nil {
-			return NewParseError(
-				ErrClassDataTypeUnparseable,
-				fmt.Sprintf("class '%s' attribute '%s' data_type_rules could not be parsed: %s", classKey, attrKey, err.Error()),
-				classPath,
-			).WithField(fmt.Sprintf("attributes.%s.data_type_rules", attrKey)).WithHint(dataTypeHint)
-		}
-	}
-
-	// Validate action parameter data_type_rules
-	if err := validateActionParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
-		return err
-	}
-
-	// Validate query parameter data_type_rules
-	if err := validateQueryParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
-		return err
-	}
-
-	// Validate event parameter data_type_rules
-	if err := validateEventParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// validateActionParamDataTypes validates data_type_rules on action parameters.
-func validateActionParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
-	for actionKey, action := range class.Actions {
-		for i, param := range action.Parameters {
-			if param.DataTypeRules == "" {
-				continue
-			}
-			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
-			if err != nil {
-				actionPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/actions/%s.json", domainKey, subdomainKey, classKey, actionKey)
-				return NewParseError(
-					ErrParamDataTypeUnparseable,
-					fmt.Sprintf("action '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", actionKey, i, param.Name, err.Error()),
-					actionPath,
-				).WithField(fmt.Sprintf("parameters[%d].data_type_rules", i)).WithHint(dataTypeHint)
-			}
-		}
-	}
-	return nil
-}
-
-// validateQueryParamDataTypes validates data_type_rules on query parameters.
-func validateQueryParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
-	for queryKey, query := range class.Queries {
-		for i, param := range query.Parameters {
-			if param.DataTypeRules == "" {
-				continue
-			}
-			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
-			if err != nil {
-				queryPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/queries/%s.json", domainKey, subdomainKey, classKey, queryKey)
-				return NewParseError(
-					ErrParamDataTypeUnparseable,
-					fmt.Sprintf("query '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", queryKey, i, param.Name, err.Error()),
-					queryPath,
-				).WithField(fmt.Sprintf("parameters[%d].data_type_rules", i)).WithHint(dataTypeHint)
-			}
-		}
-	}
-	return nil
-}
-
-// validateEventParamDataTypes validates data_type_rules on event parameters.
-func validateEventParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
-	if class.StateMachine == nil {
-		return nil
-	}
-	for eventKey, event := range class.StateMachine.Events {
-		for i, param := range event.Parameters {
-			if param.DataTypeRules == "" {
-				continue
-			}
-			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
-			if err != nil {
-				smPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKey, subdomainKey, classKey)
-				return NewParseError(
-					ErrEventParamDataTypeUnparseable,
-					fmt.Sprintf("event '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", eventKey, i, param.Name, err.Error()),
-					smPath,
-				).WithField(fmt.Sprintf("events.%s.parameters[%d].data_type_rules", eventKey, i)).WithHint(dataTypeHint)
-			}
-		}
-	}
 	return nil
 }
 
@@ -543,12 +465,31 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 		}
 	}
 
-	if _, ok := sm.Events[transition.EventKey]; !ok {
+	event, eventOK := sm.Events[transition.EventKey]
+	if !eventOK {
 		return NewParseError(
 			ErrTreeStateMachineEventNotFound,
 			fmt.Sprintf("transition[%d] event_key '%s' does not exist", i, transition.EventKey),
 			smPath,
 		).WithField(fmt.Sprintf("transitions[%d].event_key", i)).WithHint(fmt.Sprintf("available events: %s", strings.Join(sortedKeys(sm.Events), ", ")))
+	}
+
+	if transition.FromStateKey == nil && !model_state.IsSystemCreationEvent(event.Name) {
+		return NewParseError(
+			ErrTreeTransitionInitialEventInvalid,
+			fmt.Sprintf("transition[%d] leaves initial but event_key %q (name %q) is not %q", i, transition.EventKey, event.Name, model_state.EventNameNew),
+			smPath,
+		).WithField(fmt.Sprintf("transitions[%d].event_key", i)).
+			WithHint(fmt.Sprintf("declare events.%s and use event_key %q for creation transitions", model_state.EventNameNew, model_state.EventNameNew))
+	}
+
+	if transition.ToStateKey == nil && !model_state.IsSystemFinalEvent(event.Name) {
+		return NewParseError(
+			ErrTreeTransitionFinalEventInvalid,
+			fmt.Sprintf("transition[%d] reaches final but event_key %q (name %q) is not %q", i, transition.EventKey, event.Name, model_state.EventNameDestroy),
+			smPath,
+		).WithField(fmt.Sprintf("transitions[%d].event_key", i)).
+			WithHint(fmt.Sprintf("declare events.%s and use event_key %q for finalization transitions", model_state.EventNameDestroy, model_state.EventNameDestroy))
 	}
 
 	if transition.GuardKey != nil {
@@ -813,6 +754,10 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
+	if err := validateAssociationUniqueness(assoc, assocKey, assocPath); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -953,6 +898,10 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 				assocKey, assoc.ToMultiplicity, err.Error()),
 			assocPath,
 		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
+	}
+
+	if err := validateAssociationUniqueness(assoc, assocKey, assocPath); err != nil {
+		return err
 	}
 
 	return nil
@@ -1129,6 +1078,10 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
+	if err := validateAssociationUniqueness(assoc, assocKey, assocPath); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1157,6 +1110,9 @@ var multiplicityPattern = regexp.MustCompile(`^(\d+|\*)$|^(\d+)\.\.(\d+|\*)$`)
 func validateMultiplicity(mult string) error {
 	if mult == "" {
 		return fmt.Errorf("multiplicity cannot be empty")
+	}
+	if mult == model_class.MULTIPLICITY_ANY || mult == "many" {
+		return nil
 	}
 
 	if !multiplicityPattern.MatchString(mult) {
@@ -1439,5 +1395,132 @@ func validateUseCaseGeneralizationTree(subdomain *inputSubdomain, domainKey, sub
 		}
 	}
 
+	return nil
+}
+
+// validateClassNameUniqueness checks that action names, query names, state names,
+// event names, and guard names are unique within a class.
+func validateClassNameUniqueness(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	// Validate action name uniqueness.
+	actionNames := make(map[string]string) // name -> first key
+	for key, action := range class.Actions {
+		if first, ok := actionNames[action.Name]; ok {
+			actionPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/actions/%s.json", domainKey, subdomainKey, classKey, key)
+			return NewParseError(
+				ErrActionDuplicateName,
+				fmt.Sprintf("class '%s' has duplicate action name '%s' — keys '%s' and '%s' both use this name", classKey, action.Name, first, key),
+				actionPath,
+			).WithField("name").WithHint("each action within a class must have a unique \"name\" value")
+		}
+		actionNames[action.Name] = key
+	}
+
+	// Validate query name uniqueness.
+	queryNames := make(map[string]string) // name -> first key
+	for key, query := range class.Queries {
+		if first, ok := queryNames[query.Name]; ok {
+			queryPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/queries/%s.json", domainKey, subdomainKey, classKey, key)
+			return NewParseError(
+				ErrQueryDuplicateName,
+				fmt.Sprintf("class '%s' has duplicate query name '%s' — keys '%s' and '%s' both use this name", classKey, query.Name, first, key),
+				queryPath,
+			).WithField("name").WithHint("each query within a class must have a unique \"name\" value")
+		}
+		queryNames[query.Name] = key
+	}
+
+	// Validate state machine name uniqueness (states, events, guards).
+	if class.StateMachine != nil {
+		smPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKey, subdomainKey, classKey)
+
+		// State name uniqueness.
+		stateNames := make(map[string]string)
+		for key, state := range class.StateMachine.States {
+			if first, ok := stateNames[state.Name]; ok {
+				return NewParseError(
+					ErrStateDuplicateName,
+					fmt.Sprintf("class '%s' has duplicate state name '%s' — keys '%s' and '%s' both use this name", classKey, state.Name, first, key),
+					smPath,
+				).WithField("states." + key + ".name").WithHint("each state within a state machine must have a unique \"name\" value")
+			}
+			stateNames[state.Name] = key
+		}
+
+		// Event name uniqueness.
+		eventNames := make(map[string]string)
+		for key, event := range class.StateMachine.Events {
+			if first, ok := eventNames[event.Name]; ok {
+				return NewParseError(
+					ErrEventDuplicateName,
+					fmt.Sprintf("class '%s' has duplicate event name '%s' — keys '%s' and '%s' both use this name", classKey, event.Name, first, key),
+					smPath,
+				).WithField("events." + key + ".name").WithHint("each event within a state machine must have a unique \"name\" value")
+			}
+			eventNames[event.Name] = key
+		}
+
+		// Guard name uniqueness.
+		guardNames := make(map[string]string)
+		for key, guard := range class.StateMachine.Guards {
+			if first, ok := guardNames[guard.Name]; ok {
+				return NewParseError(
+					ErrGuardDuplicateName,
+					fmt.Sprintf("class '%s' has duplicate guard name '%s' — keys '%s' and '%s' both use this name", classKey, guard.Name, first, key),
+					smPath,
+				).WithField("guards." + key + ".name").WithHint("each guard within a state machine must have a unique \"name\" value")
+			}
+			guardNames[guard.Name] = key
+		}
+	}
+
+	return nil
+}
+
+// validateAttributeKeyNameConsistency checks that each attribute key matches keyFromName(name).
+func validateAttributeKeyNameConsistency(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
+	for _, attr := range class.Attributes {
+		if err := validateMapKeyMatchesName(attr.Key, attr.Name, "attribute", ErrClassAttrKeyNameMismatch, classPath); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateStateMachineKeyNameConsistency checks that each state machine map key
+// matches keyFromName(name) for states, events, and guards.
+func validateStateMachineKeyNameConsistency(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	if class.StateMachine == nil {
+		return nil
+	}
+	smPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKey, subdomainKey, classKey)
+
+	for key, state := range class.StateMachine.States {
+		if expected := keyFromName(state.Name); key != expected {
+			return NewParseError(
+				ErrStateKeyNameMismatch,
+				fmt.Sprintf("state key '%s' does not match name '%s' — expected key '%s'", key, state.Name, expected),
+				smPath,
+			).WithField("states." + key).WithHint(fmt.Sprintf("rename the key to '%s' or change the name to match the key", expected))
+		}
+	}
+	for key, event := range class.StateMachine.Events {
+		if expected := keyFromName(event.Name); key != expected {
+			return NewParseError(
+				ErrEventKeyNameMismatch,
+				fmt.Sprintf("event key '%s' does not match name '%s' — expected key '%s'", key, event.Name, expected),
+				smPath,
+			).WithField("events." + key).WithHint(fmt.Sprintf("rename the key to '%s' or change the name to match the key", expected))
+		}
+	}
+	for key, guard := range class.StateMachine.Guards {
+		if expected := keyFromName(guard.Name); key != expected {
+			return NewParseError(
+				ErrGuardKeyNameMismatch,
+				fmt.Sprintf("guard key '%s' does not match name '%s' — expected key '%s'", key, guard.Name, expected),
+				smPath,
+			).WithField("guards." + key).WithHint(fmt.Sprintf("rename the key to '%s' or change the name to match the key", expected))
+		}
+	}
 	return nil
 }

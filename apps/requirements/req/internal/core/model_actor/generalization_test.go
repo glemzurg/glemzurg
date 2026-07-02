@@ -77,7 +77,7 @@ func (suite *GeneralizationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	gen := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
+	gen := NewGeneralization(key, GeneralizationDetails{Name: "Name", Details: "Details"}, "", GeneralizationTraits{IsComplete: true, IsStatic: false}, "UmlComment")
 	suite.Equal(Generalization{
 		Key:        key,
 		Name:       "Name",

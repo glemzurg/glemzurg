@@ -25,6 +25,18 @@ func TestGetTestModel(t *testing.T) {
 	// Verify the model validates.
 	err := model.Validate()
 	require.NoError(t, err)
+
+	assert.Equal(t, notesModel, model.UnfinishedNotes)
+	for _, domain := range model.Domains {
+		assert.NotEmpty(t, domain.UnfinishedNotes, "domain %s", domain.Key.SubKey)
+		for _, subdomain := range domain.Subdomains {
+			if domain.Key.SubKey == "domain_b" && subdomain.Key.SubKey == "default" {
+				assert.Equal(t, notesSubdomainDefault, subdomain.UnfinishedNotes)
+			} else {
+				assert.NotEmpty(t, subdomain.UnfinishedNotes, "subdomain %s/%s", domain.Key.SubKey, subdomain.Key.SubKey)
+			}
+		}
+	}
 }
 
 func TestGetStrictTestModel(t *testing.T) {

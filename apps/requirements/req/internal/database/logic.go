@@ -18,6 +18,7 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 	var specification string
 	var targetTypeNotation *string
 	var targetTypeSpecification *string
+	var destroyEventSpecification *string
 
 	if err = scanner.Scan(
 		&keyStr,
@@ -28,6 +29,7 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		&specification,
 		&targetTypeNotation,
 		&targetTypeSpecification,
+		&destroyEventSpecification,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -60,6 +62,14 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		logic.TargetTypeSpec = &ts
 	}
 
+	if destroyEventSpecification != nil && strings.TrimSpace(*destroyEventSpecification) != "" {
+		des, err := logic_spec.NewExpressionSpec(notation, *destroyEventSpecification, nil)
+		if err != nil {
+			return err
+		}
+		logic.DestroyEventSpec = des
+	}
+
 	return nil
 }
 
@@ -82,7 +92,8 @@ func LoadLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic mod
 			notation                   ,
 			specification              ,
 			target_type_notation       ,
-			target_type_specification
+			target_type_specification  ,
+			destroy_event_specification
 		FROM
 			logic
 		WHERE
@@ -113,20 +124,25 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 		ttNotation = &logic.TargetTypeSpec.Notation
 		ttSpecification = &logic.TargetTypeSpec.Specification
 	}
+	var deSpecification *string
+	if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
+		deSpecification = &logic.DestroyEventSpec.Specification
+	}
 
 	// Update the data.
 	err = dbExec(dbOrTx, `
 		UPDATE
 			logic
 		SET
-			logic_type                = $3  ,
-			description               = $4  ,
-			target                    = $5  ,
-			notation                  = $6  ,
-			specification             = $7  ,
-			sort_order                = $8  ,
-			target_type_notation      = $9  ,
-			target_type_specification = $10
+			logic_type                 = $3  ,
+			description                = $4  ,
+			target                     = $5  ,
+			notation                   = $6  ,
+			specification              = $7  ,
+			sort_order                 = $8  ,
+			target_type_notation       = $9  ,
+			target_type_specification  = $10 ,
+			destroy_event_specification = $11
 		WHERE
 			model_key = $1
 		AND
@@ -140,7 +156,8 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 		logic.Spec.Specification,
 		sortOrder,
 		ttNotation,
-		ttSpecification)
+		ttSpecification,
+		deSpecification)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -188,7 +205,8 @@ func QueryLogics(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, er
 			notation                   ,
 			specification              ,
 			target_type_notation       ,
-			target_type_specification
+			target_type_specification  ,
+			destroy_event_specification
 		FROM
 			logic
 		WHERE
@@ -211,14 +229,14 @@ func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortO
 
 	// Build the bulk insert query.
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`INSERT INTO logic (model_key, logic_key, logic_type, description, target, notation, specification, sort_order, target_type_notation, target_type_specification) VALUES `)
-	args := make([]any, 0, len(logics)*10)
+	queryBuilder.WriteString(`INSERT INTO logic (model_key, logic_key, logic_type, description, target, notation, specification, sort_order, target_type_notation, target_type_specification, destroy_event_specification) VALUES `)
+	args := make([]any, 0, len(logics)*11)
 	for i, logic := range logics {
 		if i > 0 {
 			queryBuilder.WriteString(", ")
 		}
-		base := i * 10
-		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
+		base := i * 11
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11)
 
 		var ttNotation *string
 		var ttSpecification *string
@@ -226,8 +244,12 @@ func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortO
 			ttNotation = &logic.TargetTypeSpec.Notation
 			ttSpecification = &logic.TargetTypeSpec.Specification
 		}
+		var deSpecification *string
+		if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
+			deSpecification = &logic.DestroyEventSpec.Specification
+		}
 
-		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Spec.Notation, logic.Spec.Specification, sortOrders[logic.Key.String()], ttNotation, ttSpecification)
+		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Spec.Notation, logic.Spec.Specification, sortOrders[logic.Key.String()], ttNotation, ttSpecification, deSpecification)
 	}
 
 	err = dbExec(dbOrTx, queryBuilder.String(), args...)

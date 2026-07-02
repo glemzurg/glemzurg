@@ -25,12 +25,11 @@ type DerivedAttributeEvaluator struct {
 	// byClass maps class key -> list of derived attribute info for that class.
 	byClass map[identity.Key][]derivedAttrInfo
 
-	// bindingsBuilder is used to create bindings for evaluation.
-	// Note: we build base bindings (without derived resolver) to avoid recursion.
-	state *state.SimulationState
+	// bindingsBuilder supplies association-aware bindings for each evaluation.
+	bindingsBuilder *state.BindingsBuilder
 
-	// relationCtx for building bindings.
-	relationCtx *evaluator.RelationContext
+	// evalCtx enables model global functions during derived evaluation.
+	evalCtx *evaluator.EvalContext
 }
 
 // NewDerivedAttributeEvaluator creates a new evaluator by scanning the model
@@ -41,13 +40,13 @@ type DerivedAttributeEvaluator struct {
 //   - any DerivationPolicy expression contains primed variables
 func NewDerivedAttributeEvaluator(
 	model *core.Model,
-	simState *state.SimulationState,
-	relationCtx *evaluator.RelationContext,
+	bindingsBuilder *state.BindingsBuilder,
+	evalCtx *evaluator.EvalContext,
 ) (*DerivedAttributeEvaluator, error) {
 	dae := &DerivedAttributeEvaluator{
-		byClass:     make(map[identity.Key][]derivedAttrInfo),
-		state:       simState,
-		relationCtx: relationCtx,
+		byClass:         make(map[identity.Key][]derivedAttrInfo),
+		bindingsBuilder: bindingsBuilder,
+		evalCtx:         evalCtx,
 	}
 
 	for _, domain := range model.Domains {
@@ -96,14 +95,16 @@ func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance
 		return make(map[string]object.Object), nil
 	}
 
-	// Build bindings for this instance WITHOUT derived resolver to avoid recursion.
-	bindings := evaluator.NewBindings()
-	bindings.SetRelationContext(d.relationCtx)
-	bindings = bindings.WithSelfAndClass(instance.Attributes, instance.ClassKey.String())
+	bindings := d.bindingsBuilder.BuildForInstanceBase(instance)
 
 	result := make(map[string]object.Object, len(infos))
 	for _, info := range infos {
-		evalResult := evaluator.Eval(info.expression, bindings)
+		var evalResult *evaluator.EvalResult
+		if d.evalCtx != nil {
+			evalResult = evaluator.EvalWithContext(info.expression, bindings, d.evalCtx)
+		} else {
+			evalResult = evaluator.Eval(info.expression, bindings)
+		}
 		if evalResult.IsError() {
 			return nil, fmt.Errorf(
 				"derived attribute %s evaluation error: %s",

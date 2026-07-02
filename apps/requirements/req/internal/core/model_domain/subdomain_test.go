@@ -86,7 +86,7 @@ func (suite *SubdomainSuite) TestNew() {
 	key := helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1"))
 
 	// Test parameters are mapped correctly.
-	subdomain := NewSubdomain(key, "Name", "Details", "UmlComment")
+	subdomain := NewSubdomain(key, "Name", "Details", "", "UmlComment")
 	suite.Equal(Subdomain{
 		Key:        key,
 		Name:       "Name",
@@ -139,7 +139,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 
 	// Test: valid association with subdomain as parent.
 	validAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2, "valid association"))
-	validAssoc := model_class.NewAssociation(validAssocKey, "Association", "", model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, nil, "")
+	validAssoc := model_class.NewAssociation(validAssocKey, model_class.AssociationDetails{Name: "Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	err := subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		validAssocKey: validAssoc,
 	})
@@ -151,7 +151,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	otherDomainSubdomainKey := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain1"))
 	crossDomainClassKey := helper.Must(identity.NewClassKey(otherDomainSubdomainKey, "class1"))
 	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKey1, crossDomainClassKey, "model level association"))
-	modelLevelAssoc := model_class.NewAssociation(modelLevelAssocKey, "Model Level Association", "", model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, nil, "")
+	modelLevelAssoc := model_class.NewAssociation(modelLevelAssocKey, model_class.AssociationDetails{Name: "Model Level Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	err = subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		modelLevelAssocKey: modelLevelAssoc,
 	})
@@ -159,7 +159,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 
 	// Test: error when association parent is different subdomain.
 	wrongParentAssocKey := helper.Must(identity.NewClassAssociationKey(otherSubdomainKey, otherClassKey1, otherClassKey2, "wrong parent association"))
-	wrongParentAssoc := model_class.NewAssociation(wrongParentAssocKey, "Wrong Parent Association", "", model_class.AssociationEnd{ClassKey: otherClassKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: otherClassKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, nil, "")
+	wrongParentAssoc := model_class.NewAssociation(wrongParentAssocKey, model_class.AssociationDetails{Name: "Wrong Parent Association", Details: ""}, model_class.AssociationEnd{ClassKey: otherClassKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: otherClassKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	err = subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		wrongParentAssocKey: wrongParentAssoc,
 	})
@@ -174,7 +174,7 @@ func (suite *SubdomainSuite) TestGetClassAssociations() {
 
 	// Create a subdomain with associations.
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2, "association"))
-	assoc := model_class.NewAssociation(assocKey, "Association", "", model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "Association", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	subdomain := Subdomain{
 		Key:  subdomainKey,
 		Name: "Subdomain",
@@ -192,7 +192,7 @@ func (suite *SubdomainSuite) TestGetClassAssociations() {
 	// Test: returned map is a copy, not the original.
 	classKey3 := helper.Must(identity.NewClassKey(subdomainKey, "class3"))
 	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey3, "new association"))
-	result[newAssocKey] = model_class.NewAssociation(newAssocKey, "New", "", model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey3, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, nil, "")
+	result[newAssocKey] = model_class.NewAssociation(newAssocKey, model_class.AssociationDetails{Name: "New", Details: ""}, model_class.AssociationEnd{ClassKey: classKey1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: classKey3, Multiplicity: helper.Must(model_class.NewMultiplicity("0"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	suite.Len(subdomain.ClassAssociations, 1, "Original should not be modified")
 	suite.Len(result, 2, "Copy should have new entry")
 
@@ -232,7 +232,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			genKey: {Key: genKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err := subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err := subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "Name", "Should validate child Generalizations")
 
 	// Test invalid Class child propagates error.
@@ -243,7 +243,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			classKey: {Key: classKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "Name", "Should validate child Classes")
 
 	// Test invalid UseCase child propagates error.
@@ -254,7 +254,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			useCaseKey: {Key: useCaseKey, Name: "", Level: "sea"}, // Invalid: blank name
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "Name", "Should validate child UseCases")
 
 	// Test invalid ClassAssociation child propagates error.
@@ -266,7 +266,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			assocKey: {Key: assocKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "Name", "Should validate child ClassAssociations")
 
 	// Test invalid UseCaseShares - sea-level key not a use case.
@@ -275,7 +275,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		Key:  subdomainKey,
 		Name: "Name",
 		UseCases: map[identity.Key]model_use_case.UseCase{
-			useCaseKey: model_use_case.NewUseCase(useCaseKey, "UC1", "", "sea", false, model_use_case.GeneralizationRefs{}, ""),
+			useCaseKey: model_use_case.NewUseCase(useCaseKey, model_use_case.UseCaseTraits{Level: "sea", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "UC1", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		UseCaseShares: map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 			nonExistentUseCaseKey: {
@@ -283,7 +283,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			},
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "sea-level key", "Should validate UseCaseShares sea-level key")
 
 	// Test invalid UseCaseShares - mud-level key not a use case.
@@ -291,7 +291,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		Key:  subdomainKey,
 		Name: "Name",
 		UseCases: map[identity.Key]model_use_case.UseCase{
-			useCaseKey: model_use_case.NewUseCase(useCaseKey, "UC1", "", "sea", false, model_use_case.GeneralizationRefs{}, ""),
+			useCaseKey: model_use_case.NewUseCase(useCaseKey, model_use_case.UseCaseTraits{Level: "sea", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "UC1", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		UseCaseShares: map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 			useCaseKey: {
@@ -299,7 +299,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			},
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "mud-level key", "Should validate UseCaseShares mud-level key")
 
 	// Test valid subdomain with all children.
@@ -307,16 +307,16 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		Key:  subdomainKey,
 		Name: "Name",
 		Generalizations: map[identity.Key]model_class.Generalization{
-			genKey: model_class.NewGeneralization(genKey, "Gen", "", false, false, ""),
+			genKey: model_class.NewGeneralization(genKey, model_class.GeneralizationDetails{Name: "Gen", Details: ""}, "", model_class.GeneralizationTraits{IsComplete: false, IsStatic: false}, ""),
 		},
 		Classes: map[identity.Key]model_class.Class{
-			classKey:  model_class.NewClass(classKey, "Class", "", nil, &genKey, nil, ""),
-			classKey2: model_class.NewClass(classKey2, "Class2", "", nil, nil, &genKey, ""),
-			classKey3: model_class.NewClass(classKey3, "Class3", "", nil, nil, &genKey, ""),
+			classKey:  model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &genKey, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""}),
+			classKey2: model_class.NewClass(classKey2, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &genKey}, model_class.ClassDetails{Name: "Class2", Details: "", UnfinishedNotes: "", UmlComment: ""}),
+			classKey3: model_class.NewClass(classKey3, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &genKey}, model_class.ClassDetails{Name: "Class3", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		UseCases: map[identity.Key]model_use_case.UseCase{
-			useCaseKey:  model_use_case.NewUseCase(useCaseKey, "UC1", "", "sea", false, model_use_case.GeneralizationRefs{}, ""),
-			useCaseKey2: model_use_case.NewUseCase(useCaseKey2, "UC2", "", "mud", false, model_use_case.GeneralizationRefs{}, ""),
+			useCaseKey:  model_use_case.NewUseCase(useCaseKey, model_use_case.UseCaseTraits{Level: "sea", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "UC1", Details: "", UnfinishedNotes: "", UmlComment: ""}),
+			useCaseKey2: model_use_case.NewUseCase(useCaseKey2, model_use_case.UseCaseTraits{Level: "mud", ReadOnly: false}, model_use_case.GeneralizationRefs{}, model_use_case.UseCaseDetails{Name: "UC2", Details: "", UnfinishedNotes: "", UmlComment: ""}),
 		},
 		UseCaseShares: map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 			useCaseKey: {
@@ -324,7 +324,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			},
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().NoError(err, "Valid subdomain with all children should pass")
 }
 
@@ -353,16 +353,15 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	derivLogic := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 
 	validGuard := model_state.NewGuard(guardKey, "Guard", guardLogic)
-	validAction := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{reqLogic}, nil, nil, nil)
+	validAction := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Action", Details: ""}, []model_logic.Logic{reqLogic}, nil, nil, nil)
 	validQuery := model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{guarLogic}, nil)
-	validAttr := helper.Must(model_class.NewAttribute(attrKey, "Attr", "", "", &derivLogic, false,
-		model_class.AttributeAnnotations{}))
+	validAttr := helper.Must(model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "Attr", Details: ""}, "", &derivLogic, false, model_class.AttributeAnnotations{}))
 
-	validClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
+	validClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	validClass.Guards = map[identity.Key]model_state.Guard{guardKey: validGuard}
 	validClass.Actions = map[identity.Key]model_state.Action{actionKey: validAction}
 	validClass.Queries = map[identity.Key]model_state.Query{queryKey: validQuery}
-	validClass.Attributes = map[identity.Key]model_class.Attribute{attrKey: validAttr}
+	validClass.Attributes = []model_class.Attribute{validAttr}
 
 	subdomain := Subdomain{
 		Key:  subdomainKey,
@@ -371,7 +370,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 			classKey: validClass,
 		},
 	}
-	err := subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err := subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().NoError(err, "Valid full tree should pass")
 
 	// Test guard logic key mismatch is caught deep in the tree.
@@ -379,7 +378,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	mismatchGuardLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	mismatchGuard := model_state.NewGuard(guardKey, "Guard", mismatchGuardLogic)
 
-	mismatchGuardClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
+	mismatchGuardClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	mismatchGuardClass.Guards = map[identity.Key]model_state.Guard{guardKey: mismatchGuard}
 
 	subdomain = Subdomain{
@@ -389,16 +388,16 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 			classKey: mismatchGuardClass,
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
 
 	// Test action require key with wrong parent is caught deep in the tree.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
 	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	wrongReqAction := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil)
+	wrongReqAction := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Action", Details: ""}, []model_logic.Logic{wrongReqLogic}, nil, nil, nil)
 
-	wrongReqClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
+	wrongReqClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	wrongReqClass.Actions = map[identity.Key]model_state.Action{actionKey: wrongReqAction}
 
 	subdomain = Subdomain{
@@ -408,18 +407,17 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 			classKey: wrongReqClass,
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "requires[0]", "Should catch action require key error in deep tree")
 
 	// Test attribute derivation key with wrong parent is caught deep in the tree.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
 	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
 	wrongDerivLogic := model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeValue, "Computed.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	wrongDerivAttr := helper.Must(model_class.NewAttribute(attrKey, "Attr", "", "", &wrongDerivLogic, false,
-		model_class.AttributeAnnotations{}))
+	wrongDerivAttr := helper.Must(model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "Attr", Details: ""}, "", &wrongDerivLogic, false, model_class.AttributeAnnotations{}))
 
-	wrongDerivClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
-	wrongDerivClass.Attributes = map[identity.Key]model_class.Attribute{attrKey: wrongDerivAttr}
+	wrongDerivClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Class", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	wrongDerivClass.Attributes = []model_class.Attribute{wrongDerivAttr}
 
 	subdomain = Subdomain{
 		Key:  subdomainKey,
@@ -428,6 +426,6 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 			classKey: wrongDerivClass,
 		},
 	}
-	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, actors, classes)
+	err = subdomain.ValidateWithParentAndActorsAndClasses(ctx, &suite.domainKey, ModelCrossRefs{Actors: actors, Classes: classes})
 	suite.Require().ErrorContains(err, "DerivationPolicy", "Should catch attribute derivation key error in deep tree")
 }

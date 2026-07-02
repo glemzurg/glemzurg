@@ -19,8 +19,9 @@ var _genericFileTitleRegexp *regexp.Regexp
 
 // Separators in the files.
 const (
-	_UML_MARKER  = "◆" // U+25C6
-	_DATA_MARKER = "◇" // U+25C7
+	_NOTES_MARKER = "⚠" // U+26A0 WARNING SIGN
+	_UML_MARKER   = "◆" // U+25C6
+	_DATA_MARKER  = "◇" // U+25C7
 )
 
 // All files have similar parts.
@@ -29,26 +30,32 @@ const (
 // The order of the structure is always:
 //
 //  1. optional Markdown, then
-//  2. optional UmlComment, then
-//  3. optional Data
+//  2. optional UnfinishedNotes, then
+//  3. optional UmlComment, then
+//  4. optional Data
 type File struct {
-	Title      string // Extracted from the first non-whitespace line if it has the pattern of: "# title"
-	Markdown   string // The beginning of the document.
-	UmlComment string // Comment for uml display is started by U+25C6, a black diamond (◆).
-	Data       string // Parseable data is started by U+25C7, a white diamond (◇).
+	Title           string // Extracted from the first non-whitespace line if it has the pattern of: "# title"
+	Markdown        string // The beginning of the document.
+	UnfinishedNotes string // Overflow from details; scratch text started by U+26A0 (⚠).
+	UmlComment      string // Comment for uml display is started by U+25C6 (◆).
+	Data            string // Parseable data is started by U+25C7 (◇).
 }
 
-func newFile(filename, title, markdown, umlComment, data string) (file File, err error) {
+func newFile(filename, title, markdown, unfinishedNotes, umlComment, data string) (file File, err error) {
 	// No title, then use the filename.
 	if title == "" {
 		title = filename
 	}
 
-	return File{title, markdown, umlComment, data}, nil
+	return File{title, markdown, unfinishedNotes, umlComment, data}, nil
 }
 
 func parseFile(filename, contents string) (file File, err error) {
 	// There can only be one of each marker, but they aren't required.
+	notesMarkerCount := strings.Count(contents, _NOTES_MARKER)
+	if notesMarkerCount > 1 {
+		return File{}, errors.WithStack(errors.Errorf(`More than one unfinished notes marker (%s): %+v`, _NOTES_MARKER, notesMarkerCount))
+	}
 	umlMarkerCount := strings.Count(contents, _UML_MARKER)
 	if umlMarkerCount > 1 {
 		return File{}, errors.WithStack(errors.Errorf(`More than one uml marker (%s): %+v`, _UML_MARKER, umlMarkerCount))
@@ -59,7 +66,7 @@ func parseFile(filename, contents string) (file File, err error) {
 	}
 
 	// The parts of the generic file.
-	var title, markdown, umlComment, data string
+	var title, markdown, unfinishedNotes, umlComment, data string
 
 	// Start with everything assumed to be in the markdown.
 	markdown = contents
@@ -78,15 +85,23 @@ func parseFile(filename, contents string) (file File, err error) {
 		umlComment = splitMarkdown[1]
 	}
 
+	// Then unfinished notes between markdown and uml comment.
+	if notesMarkerCount > 0 {
+		splitMarkdown := strings.Split(markdown, _NOTES_MARKER)
+		markdown = splitMarkdown[0]
+		unfinishedNotes = splitMarkdown[1]
+	}
+
 	// Remove leading and trailing whitespace from each.
 	markdown = strings.TrimSpace(markdown)
+	unfinishedNotes = strings.TrimSpace(unfinishedNotes)
 	umlComment = strings.TrimSpace(umlComment)
 	data = strings.TrimSpace(data)
 
 	// Get the title from the markdown if there is one.
 	title = extractMarkdownTitle(markdown)
 
-	return newFile(filename, title, markdown, umlComment, data)
+	return newFile(filename, title, markdown, unfinishedNotes, umlComment, data)
 }
 
 func extractMarkdownTitle(markdown string) (title string) {
@@ -144,27 +159,30 @@ func prependMarkdownSubtitle(title, markdown string) string {
 
 func prependMarkdownHeading(prefix, title, markdown string) string {
 	trimmed := strings.TrimSpace(markdown)
-	if trimmed != "" && _genericFileTitleRegexp.MatchString(strings.SplitN(trimmed, "\n", 2)[0]) {
-		return trimmed
-	}
 	if trimmed == "" {
 		return prefix + title
 	}
 	return prefix + title + "\n\n" + trimmed
 }
 
-func generateFileContent(markdown, umlComment, data string) string {
+func generateFileContent(markdown, unfinishedNotes, umlComment, data string) string {
 	// Control whitespace.
 	markdown = strings.TrimSpace(markdown)
+	unfinishedNotes = strings.TrimSpace(unfinishedNotes)
 	umlComment = strings.TrimSpace(umlComment)
+	rawData := data
 	data = strings.TrimSpace(data)
 
 	// Title already in the markdown.
 	content := markdown
+	if unfinishedNotes != "" {
+		content += "\n\n" + _NOTES_MARKER + "\n\n" + unfinishedNotes
+	}
 	if umlComment != "" {
 		content += "\n\n◆\n\n" + umlComment
 	}
-	if data != "" {
+	// Emit the data marker when content is non-empty or callers pass "\n" for an intentionally empty section.
+	if data != "" || rawData == "\n" {
 		content += "\n\n◇\n\n" + data
 	}
 

@@ -20,7 +20,14 @@ type ContentWriter interface {
 }
 
 // GenerateMdToWriter generates markdown documentation to a ContentWriter.
-func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter) error { //nolint:revive // public API name
+//
+// classErrors maps a class key string to a parse-error message. A class listed
+// there has its own page replaced with a red-bold error block; every other page
+// renders normally. Pass nil when there are no parse failures.
+func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter, classErrors map[string]string) error { //nolint:revive // public API name
+	activeParseIssues = BuildParseIssueIndex(&parsedModel, classErrors)
+	defer func() { activeParseIssues = nil }()
+
 	// Create the flattened requirements from the model.
 	reqs := req_flat.NewRequirements(parsedModel)
 
@@ -28,11 +35,11 @@ func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter) error { //
 	reqs.PrepLookups()
 
 	// Generate files to writer.
-	return generateFilesToWriter(reqs, writer)
+	return generateFilesToWriter(reqs, writer, classErrors)
 }
 
 // generateFilesToWriter generates all files and writes them to the ContentWriter.
-func generateFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter, classErrors map[string]string) error {
 	// Write CSS
 	if err := writer.WriteCSS([]byte(_MD_CSS)); err != nil {
 		return err
@@ -64,17 +71,12 @@ func generateFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) er
 	}
 
 	// Generate class files
-	if err := generateClassFilesToWriter(reqs, writer); err != nil {
+	if err := generateClassFilesToWriter(reqs, writer, classErrors); err != nil {
 		return err
 	}
 
 	// Generate use case files
 	if err := generateUseCaseFilesToWriter(reqs, writer); err != nil {
-		return err
-	}
-
-	// Generate scenario files
-	if err := generateScenarioFilesToWriter(reqs, writer); err != nil {
 		return err
 	}
 
@@ -128,21 +130,24 @@ func generateModelFilesToWriter(reqs *req_flat.Requirements, writer ContentWrite
 		return associations[i].Key.String() < associations[j].Key.String()
 	})
 
-	// Generate model summary markdown.
-	mdContents, err := generateModelMdContents(reqs, model, actors, domains)
+	// Generate domains Mermaid diagram.
+	domainsDiagram, err := generateDomainsMermaidContents(reqs, domains, associations)
 	if err != nil {
-		return err
-	}
-	if err := writer.WriteMarkdown("model.md", []byte(mdContents)); err != nil {
 		return err
 	}
 
-	// Generate domains diagram.
-	svgContents, err := generateDomainsSvgContents(reqs, domains, associations)
+	// Generate model summary markdown with embedded diagram.
+	mdContents, err := generateModelMdContents(reqs, model, actors, domains, domainsDiagram)
 	if err != nil {
 		return err
 	}
-	if err := writer.WriteSVG("domains.svg", []byte(svgContents)); err != nil {
+	if activeParseIssues != nil {
+		if banner := activeParseIssues.ModelSummaryBanner(&model); banner != "" {
+			// Blank line required so gomarkdown parses the template's leading # heading.
+			mdContents = banner + "\n\n" + mdContents
+		}
+	}
+	if err := writer.WriteMarkdown("model.md", []byte(mdContents)); err != nil {
 		return err
 	}
 
@@ -172,11 +177,14 @@ func generateDomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWrit
 	domainLookup, _ := reqs.DomainLookup()
 
 	for _, domain := range domainLookup {
-		hasMultipleSubdomains := len(domain.Subdomains) > 1
+		diagrams, err := buildDomainDiagrams(reqs, domain)
+		if err != nil {
+			return err
+		}
 
-		// Generate domain markdown page.
+		// Generate domain markdown page with embedded diagrams.
 		modelFilename := convertKeyToFilename("domain", domain.Key.String(), "", ".md")
-		mdContents, err := generateDomainMdContents(reqs, reqs.Model, domain)
+		mdContents, err := generateDomainMdContents(reqs, reqs.Model, domain, diagrams)
 		if err != nil {
 			return err
 		}
@@ -184,13 +192,11 @@ func generateDomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWrit
 			return err
 		}
 
-		if hasMultipleSubdomains {
-			if err := generateDomainSubdomainsDiagram(reqs, writer, domain); err != nil {
-				return err
-			}
-		} else {
-			if err := generateDomainSingleSubdomainDiagrams(reqs, writer, domain); err != nil {
-				return err
+		if len(domain.Subdomains) == 1 {
+			for _, subdomain := range domain.Subdomains {
+				if err := writeSubdomainFactsToWriter(reqs, writer, domain, subdomain); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -198,64 +204,73 @@ func generateDomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWrit
 	return nil
 }
 
-// generateDomainSubdomainsDiagram generates the subdomains diagram for a domain with multiple subdomains.
-func generateDomainSubdomainsDiagram(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain) error {
-	subdomainsFilename := convertKeyToFilename("domain", domain.Key.String(), "subdomains", ".svg")
-	svgContents, err := generateSubdomainsSvgContents(reqs, domain)
-	if err != nil {
-		return err
+// buildDomainDiagrams generates the Mermaid diagrams needed for a domain page.
+func buildDomainDiagrams(reqs *req_flat.Requirements, domain model_domain.Domain) (domainDiagrams, error) {
+	hasMultipleSubdomains := len(domain.Subdomains) > 1
+
+	if hasMultipleSubdomains {
+		subdomainsDiagram, err := generateSubdomainsMermaidContents(reqs, domain)
+		if err != nil {
+			return domainDiagrams{}, err
+		}
+		return domainDiagrams{SubdomainsDiagram: subdomainsDiagram}, nil
 	}
-	return writer.WriteSVG(subdomainsFilename, []byte(svgContents))
+
+	// Single subdomain: generate classes and use cases diagrams.
+	classesDiagram, err := buildClassesDiagram(reqs, gatherDomainClasses(domain))
+	if err != nil {
+		return domainDiagrams{}, err
+	}
+
+	useCasesDiagram, err := buildUseCasesDiagram(reqs, domain)
+	if err != nil {
+		return domainDiagrams{}, err
+	}
+
+	return domainDiagrams{ClassesDiagram: classesDiagram, UseCasesDiagram: useCasesDiagram}, nil
 }
 
-// generateDomainSingleSubdomainDiagrams generates use case and class diagrams for a domain with a single subdomain.
-func generateDomainSingleSubdomainDiagrams(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain) error {
-	var domainClasses []model_class.Class
+// gatherDomainClasses collects all classes from all subdomains of a domain.
+func gatherDomainClasses(domain model_domain.Domain) []model_class.Class {
+	var classes []model_class.Class
 	for _, subdomain := range domain.Subdomains {
 		for _, class := range subdomain.Classes {
-			domainClasses = append(domainClasses, class)
+			classes = append(classes, class)
 		}
 	}
-
-	// Generate use cases diagram.
-	if err := generateDomainUseCasesDiagram(reqs, writer, domain); err != nil {
-		return err
-	}
-
-	// Generate classes diagram.
-	return generateClassesDiagramForKey(reqs, writer, "domain", domain.Key.String(), domainClasses)
+	return classes
 }
 
-// generateDomainUseCasesDiagram generates a use cases SVG diagram for a domain.
-func generateDomainUseCasesDiagram(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain) error {
-	useCasesFilename := convertKeyToFilename("domain", domain.Key.String(), "use-cases", ".svg")
-	var domainUseCases []model_use_case.UseCase
+// buildClassesDiagram generates a Mermaid class diagram for a set of classes.
+// Returns an empty string when there is nothing to render so the template can
+// omit the mermaid fence; an empty `classDiagram` block is a syntax error in
+// Mermaid 11+.
+func buildClassesDiagram(reqs *req_flat.Requirements, classes []model_class.Class) (string, error) {
+	generalizations, allClasses, associations := reqs.RegardingClasses(classes)
+	if len(generalizations) == 0 && len(allClasses) == 0 && len(associations) == 0 {
+		return "", nil
+	}
+	return generateClassesMermaidContents(reqs, generalizations, allClasses, associations, nil)
+}
+
+// buildUseCasesDiagram generates a Mermaid use case diagram for a domain.
+// Returns an empty string when no use cases exist; rendering an empty subgraph
+// produces a Mermaid syntax error.
+func buildUseCasesDiagram(reqs *req_flat.Requirements, domain model_domain.Domain) (string, error) {
+	var useCases []model_use_case.UseCase
 	for _, subdomain := range domain.Subdomains {
 		for _, useCase := range subdomain.UseCases {
-			domainUseCases = append(domainUseCases, useCase)
+			useCases = append(useCases, useCase)
 		}
 	}
-
-	relevantUseCases, relevantActors, err := reqs.RegardingUseCases(domainUseCases)
-	if err != nil {
-		return err
+	if len(useCases) == 0 {
+		return "", nil
 	}
-	useCasesSvgContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
+	relevantUseCases, relevantActors, err := reqs.RegardingUseCases(useCases)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return writer.WriteSVG(useCasesFilename, []byte(useCasesSvgContents))
-}
-
-// generateClassesDiagramForKey generates a classes SVG diagram for a given key prefix and set of classes.
-func generateClassesDiagramForKey(reqs *req_flat.Requirements, writer ContentWriter, keyType, keyStr string, classes []model_class.Class) error {
-	generalizations, allClasses, associations := reqs.RegardingClasses(classes)
-	classesFilename := convertKeyToFilename(keyType, keyStr, "classes", ".svg")
-	classesSvgContents, err := generateClassesSvgContents(reqs, generalizations, allClasses, associations)
-	if err != nil {
-		return err
-	}
-	return writer.WriteSVG(classesFilename, []byte(classesSvgContents))
+	return generateUseCasesMermaidContents(reqs, domain, relevantUseCases, relevantActors)
 }
 
 // generateSubdomainFilesToWriter generates subdomain files to a ContentWriter.
@@ -280,9 +295,25 @@ func generateSubdomainFilesToWriter(reqs *req_flat.Requirements, writer ContentW
 
 // generateSingleSubdomainFiles generates all files for a single subdomain.
 func generateSingleSubdomainFiles(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain, subdomain model_domain.Subdomain) error {
-	// Generate subdomain markdown page.
+	// Generate classes diagram for subdomain.
+	var subdomainClasses []model_class.Class
+	for _, class := range subdomain.Classes {
+		subdomainClasses = append(subdomainClasses, class)
+	}
+	classesDiagram, err := buildClassesDiagram(reqs, subdomainClasses)
+	if err != nil {
+		return err
+	}
+
+	// Generate use cases diagram for subdomain.
+	useCasesDiagram, err := buildSubdomainUseCasesDiagram(reqs, domain, subdomain)
+	if err != nil {
+		return err
+	}
+
+	// Generate subdomain markdown page with embedded diagrams.
 	subdomainFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "", ".md")
-	mdContents, err := generateSubdomainMdContents(reqs, reqs.Model, domain, subdomain)
+	mdContents, err := generateSubdomainMdContents(reqs, reqs.Model, domain, subdomain, classesDiagram, useCasesDiagram)
 	if err != nil {
 		return err
 	}
@@ -290,79 +321,89 @@ func generateSingleSubdomainFiles(reqs *req_flat.Requirements, writer ContentWri
 		return err
 	}
 
-	// Generate use cases diagram for subdomain.
-	if err := generateSubdomainUseCasesDiagram(reqs, writer, domain, subdomain); err != nil {
+	if err := writeSubdomainFactsToWriter(reqs, writer, domain, subdomain); err != nil {
 		return err
 	}
 
-	// Gather classes for this subdomain and generate classes diagram.
-	var subdomainClasses []model_class.Class
-	for _, class := range subdomain.Classes {
-		subdomainClasses = append(subdomainClasses, class)
-	}
-
-	return generateClassesDiagramForKey(reqs, writer, "subdomain", subdomain.Key.String(), subdomainClasses)
+	return nil
 }
 
-// generateSubdomainUseCasesDiagram generates a use cases SVG diagram for a subdomain.
-func generateSubdomainUseCasesDiagram(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain, subdomain model_domain.Subdomain) error {
-	useCasesFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "use-cases", ".svg")
-	var subdomainUseCases []model_use_case.UseCase
-	for _, useCase := range subdomain.UseCases {
-		subdomainUseCases = append(subdomainUseCases, useCase)
+func writeSubdomainFactsToWriter(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain, subdomain model_domain.Subdomain) error {
+	factsFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "facts", ".md")
+	mdContents, err := generateSubdomainFactsMdContents(reqs, reqs.Model, domain, subdomain)
+	if err != nil {
+		return err
 	}
+	return writer.WriteMarkdown(factsFilename, []byte(mdContents))
+}
 
-	relevantUseCases, relevantActors, err := reqs.RegardingUseCases(subdomainUseCases)
-	if err != nil {
-		return err
+// buildSubdomainUseCasesDiagram generates a Mermaid use case diagram for a subdomain.
+// Returns an empty string when no use cases exist; rendering an empty subgraph
+// produces a Mermaid syntax error.
+func buildSubdomainUseCasesDiagram(reqs *req_flat.Requirements, domain model_domain.Domain, subdomain model_domain.Subdomain) (string, error) {
+	var useCases []model_use_case.UseCase
+	for _, useCase := range subdomain.UseCases {
+		useCases = append(useCases, useCase)
 	}
-	useCasesSvgContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
-	if err != nil {
-		return err
+	if len(useCases) == 0 {
+		return "", nil
 	}
-	return writer.WriteSVG(useCasesFilename, []byte(useCasesSvgContents))
+	relevantUseCases, relevantActors, err := reqs.RegardingUseCases(useCases)
+	if err != nil {
+		return "", err
+	}
+	return generateUseCasesMermaidContents(reqs, domain, relevantUseCases, relevantActors)
 }
 
 // generateClassFilesToWriter generates class files to a ContentWriter.
-func generateClassFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateClassFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter, classErrors map[string]string) error {
 	classLookup, _ := reqs.ClassLookup()
 
 	for _, class := range classLookup {
-		// Generate class summary markdown.
 		classFilename := convertKeyToFilename("class", class.Key.String(), "", ".md")
-		classMdContents, err := generateClassMdContents(reqs, class)
-		if err != nil {
+		if err := writeClassMarkdownPage(reqs, writer, class, classFilename, classErrors); err != nil {
 			return err
-		}
-		if err := writer.WriteMarkdown(classFilename, []byte(classMdContents)); err != nil {
-			return err
-		}
-
-		// Generate classes diagram.
-		generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
-		classesSvgFilename := convertKeyToFilename("class", class.Key.String(), "", ".svg")
-		classesSvgContents, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
-		if err != nil {
-			return err
-		}
-		if err := writer.WriteSVG(classesSvgFilename, []byte(classesSvgContents)); err != nil {
-			return err
-		}
-
-		// State Machine diagram.
-		if len(class.States) > 0 {
-			statesSvgFilename := convertKeyToFilename("class", class.Key.String(), "states", ".svg")
-			statesSvgContents, err := generateClassStateSvgContents(reqs, class)
-			if err != nil {
-				return err
-			}
-			if err := writer.WriteSVG(statesSvgFilename, []byte(statesSvgContents)); err != nil {
-				return err
-			}
 		}
 	}
 
 	return nil
+}
+
+func writeClassMarkdownPage(
+	reqs *req_flat.Requirements,
+	writer ContentWriter,
+	class model_class.Class,
+	classFilename string,
+	classErrors map[string]string,
+) error {
+	if msg, failed := classErrors[class.Key.String()]; failed {
+		return writer.WriteMarkdown(classFilename, ClassErrorMarkdown(class.Name, msg))
+	}
+
+	generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
+	classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations, &class.Key)
+	if err != nil {
+		return err
+	}
+
+	stateDiagram := ""
+	if len(class.States) > 0 {
+		stateDiagram, err = generateClassStateMermaidContents(reqs, class)
+		if err != nil {
+			return err
+		}
+	}
+
+	classMdContents, err := generateClassMdContents(reqs, class, classesDiagram, stateDiagram)
+	if err != nil {
+		return err
+	}
+	if activeParseIssues != nil {
+		if banner := activeParseIssues.ClassExpressionBanner(class.Key); banner != "" {
+			classMdContents = banner + "\n\n" + classMdContents
+		}
+	}
+	return writer.WriteMarkdown(classFilename, []byte(classMdContents))
 }
 
 // generateUseCaseFilesToWriter generates use case files to a ContentWriter.
@@ -376,24 +417,6 @@ func generateUseCaseFilesToWriter(reqs *req_flat.Requirements, writer ContentWri
 			return err
 		}
 		if err := writer.WriteMarkdown(modelFilename, []byte(mdContents)); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// generateScenarioFilesToWriter generates scenario files to a ContentWriter.
-func generateScenarioFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
-	scenarioLookup := reqs.ScenarioLookup()
-
-	for _, scenario := range scenarioLookup {
-		svgFilename := convertKeyToFilename("scenario", scenario.Key.String(), "", ".svg")
-		svgContents, err := generateScenarioSvgContents(reqs, scenario)
-		if err != nil {
-			return err
-		}
-		if err := writer.WriteSVG(svgFilename, []byte(svgContents)); err != nil {
 			return err
 		}
 	}

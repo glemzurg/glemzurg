@@ -8,13 +8,14 @@ A parameter of a query.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.data_type](public.data_type.md) [public.query](public.query.md) | The model this query is part of. |
-| query_key | text |  | false |  | [public.query](public.query.md) | The query this parameter is part of. |
-| parameter_key | text |  | false |  |  | The internal ID, the name but lower case. |
+| model_key | text |  | false | [public.query_parameter_invariant](public.query_parameter_invariant.md) | [public.data_type](public.data_type.md) [public.query](public.query.md) | The model this query is part of. |
+| query_key | text |  | false | [public.query_parameter_invariant](public.query_parameter_invariant.md) | [public.query](public.query.md) | The query this parameter is part of. |
+| parameter_key | text |  | false | [public.query_parameter_invariant](public.query_parameter_invariant.md) |  | The internal ID, the name but lower case. |
 | name | text |  | false |  |  | The unique name of the parameter within the query. |
 | sort_order | integer |  | false |  |  | Parameters are an ordered list. |
 | data_type_rules | text |  | true |  |  | The rules for a well-formed value. |
 | data_type_key | text |  | true |  | [public.data_type](public.data_type.md) | If the rules are parsable, the data type they parse into. |
+| nullable | boolean | false | false |  |  | Whether absent (NULL) is a valid value for this parameter. |
 
 ## Constraints
 
@@ -22,6 +23,7 @@ A parameter of a query.
 | ---- | ---- | ---------- |
 | query_parameter_model_key_not_null | n | NOT NULL model_key |
 | query_parameter_name_not_null | n | NOT NULL name |
+| query_parameter_nullable_not_null | n | NOT NULL nullable |
 | query_parameter_parameter_key_not_null | n | NOT NULL parameter_key |
 | query_parameter_query_key_not_null | n | NOT NULL query_key |
 | query_parameter_sort_order_not_null | n | NOT NULL sort_order |

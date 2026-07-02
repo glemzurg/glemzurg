@@ -12,6 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/perftrack"
 )
 
 // Input format constants.
@@ -21,7 +22,7 @@ const (
 )
 
 // SourceExtensionsYAML defines file extensions for YAML format.
-var SourceExtensionsYAML = []string{".class", ".domain", ".model"}
+var SourceExtensionsYAML = []string{".actor", ".class", ".domain", ".generalization", ".model", ".subdomain", ".uc"}
 
 // SourceExtensionsJSON defines file extensions for JSON format.
 var SourceExtensionsJSON = []string{".json"}
@@ -89,6 +90,9 @@ func (sw *SourceWatcher) eventLoop() {
 			if !ok {
 				return
 			}
+			if event.Op&fsnotify.Create != 0 {
+				sw.handleCreateEvent(event.Name)
+			}
 			if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 				sw.handleFileChange(event.Name)
 			}
@@ -97,6 +101,20 @@ func (sw *SourceWatcher) eventLoop() {
 				return
 			}
 			log.Println("watcher error:", err)
+		}
+	}
+}
+
+// handleCreateEvent adds newly created directories to the watcher.
+func (sw *SourceWatcher) handleCreateEvent(path string) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	if info.IsDir() {
+		err = sw.watcher.Add(path)
+		if err != nil {
+			log.Println("watcher add error:", err)
 		}
 	}
 }
@@ -135,21 +153,43 @@ func (sw *SourceWatcher) debounceUpdate() {
 }
 
 // updateModel parses the source files and updates the model store.
+//
+// On any failure (parse error, or generation error inside SetModel) it records
+// the error in the store and notifies connected browsers, so the web display
+// reloads onto a red-bold error page instead of silently keeping stale content.
+// The error is still returned for logging.
 func (sw *SourceWatcher) updateModel() error {
+	tracker := perftrack.New("model.reload " + sw.modelName)
+	defer tracker.LogIfSlow()
+
+	var err error
 	if sw.inputFormat == InputFormatAIJSON {
-		return sw.updateModelFromJSON()
+		err = sw.updateModelFromJSON(tracker)
+	} else {
+		err = sw.updateModelFromYAML(tracker)
 	}
-	return sw.updateModelFromYAML()
+	if err != nil {
+		sw.store.SetModelError(sw.modelName, err)
+		sw.server.NotifyModel(sw.modelName)
+		return err
+	}
+	return nil
 }
 
 // updateModelFromJSON parses a model from parser_ai JSON format.
-func (sw *SourceWatcher) updateModelFromJSON() error {
-	parsedModel, err := parser_ai.ReadModel(sw.modelPath)
+func (sw *SourceWatcher) updateModelFromJSON(tracker *perftrack.Tracker) error {
+	var parsedModel core.Model
+	var err error
+	perftrack.RunOn(tracker, "parse.json", func() {
+		parsedModel, err = parser_ai.ReadModel(sw.modelPath)
+	})
 	if err != nil {
 		return err
 	}
 
-	err = sw.store.SetModel(sw.modelName, &parsedModel)
+	perftrack.RunOn(tracker, "store.setModel", func() {
+		err = sw.store.SetModelTracked(sw.modelName, &parsedModel, nil, tracker)
+	})
 	if err != nil {
 		return err
 	}
@@ -159,19 +199,44 @@ func (sw *SourceWatcher) updateModelFromJSON() error {
 }
 
 // updateModelFromYAML parses a model from YAML source files.
-func (sw *SourceWatcher) updateModelFromYAML() error {
-	parsedModel, err := parser_human.Parse(sw.modelPath)
+//
+// A parse failure in a single .class file is not a catastrophic error: Parse
+// returns the partial model plus the per-class failures, which generation turns
+// into red-bold error blocks on those classes' pages.
+func (sw *SourceWatcher) updateModelFromYAML(tracker *perftrack.Tracker) error {
+	var parsedModel core.Model
+	var failures []parser_human.ParseFailure
+	var err error
+	perftrack.RunOn(tracker, "parse.yaml", func() {
+		parsedModel, failures, err = parser_human.Parse(sw.modelPath)
+	})
 	if err != nil {
 		return err
 	}
 
-	err = sw.store.SetModel(sw.modelName, &parsedModel)
+	perftrack.RunOn(tracker, "store.setModel", func() {
+		err = sw.store.SetModelTracked(sw.modelName, &parsedModel, classErrorMap(failures), tracker)
+	})
 	if err != nil {
 		return err
 	}
 
 	sw.server.NotifyModel(sw.modelName)
 	return nil
+}
+
+// classErrorMap converts parser failures into a class-key -> error-message map
+// for the generator. Returns nil when there are no failures.
+func classErrorMap(failures []parser_human.ParseFailure) map[string]string {
+	if len(failures) == 0 {
+		return nil
+	}
+	m := make(map[string]string, len(failures))
+	for _, f := range failures {
+		log.Printf("parse failure: %s: %s", f.Path, f.Err)
+		m[f.ClassKey.String()] = f.Err
+	}
+	return m
 }
 
 // LoadModel loads the model from the source path into the store.
@@ -181,7 +246,7 @@ func (sw *SourceWatcher) LoadModel() error {
 
 // LoadModelFromData loads a model from a pre-parsed core.Model.
 func LoadModelFromData(store *ModelStore, server *Server, name string, model *core.Model) error {
-	err := store.SetModel(name, model)
+	err := store.SetModel(name, model, nil)
 	if err != nil {
 		return err
 	}

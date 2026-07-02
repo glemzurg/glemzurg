@@ -18,14 +18,26 @@ type Transition struct {
 	UmlComment   string
 }
 
-func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identity.Key, guardKey, actionKey, toStateKey *identity.Key, umlComment string) Transition {
+// TransitionStateKeys holds optional from and to state references for a transition.
+type TransitionStateKeys struct {
+	FromStateKey *identity.Key
+	ToStateKey   *identity.Key
+}
+
+// TransitionLogicKeys holds optional guard and action references for a transition.
+type TransitionLogicKeys struct {
+	GuardKey  *identity.Key
+	ActionKey *identity.Key
+}
+
+func NewTransition(key identity.Key, eventKey identity.Key, states TransitionStateKeys, logic TransitionLogicKeys, umlComment string) Transition {
 	return Transition{
 		Key:          key,
-		FromStateKey: fromStateKey,
+		FromStateKey: states.FromStateKey,
 		EventKey:     eventKey,
-		GuardKey:     guardKey,
-		ActionKey:    actionKey,
-		ToStateKey:   toStateKey,
+		GuardKey:     logic.GuardKey,
+		ActionKey:    logic.ActionKey,
+		ToStateKey:   states.ToStateKey,
 		UmlComment:   umlComment,
 	}
 }
@@ -89,6 +101,32 @@ func (t *Transition) Validate(ctx *coreerr.ValidationContext) error {
 		return coreerr.New(ctx, coreerr.TransitionNoState, "FromStateKey, ToStateKey: cannot both be blank", "FromStateKey,ToStateKey")
 	}
 
+	return nil
+}
+
+// ValidateSystemEventEdges rejects non-system events on initial and final pseudo-state edges.
+// Initial transitions (FromStateKey nil) must use _new; final transitions (ToStateKey nil) must use _destroy.
+func (t *Transition) ValidateSystemEventEdges(ctx *coreerr.ValidationContext, eventName string) error {
+	if t.FromStateKey == nil && !IsSystemCreationEvent(eventName) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.TransitionInitialEventInvalid,
+			fmt.Sprintf("transition '%s' leaves initial but event %q is not %q", t.Key.String(), eventName, EventNameNew),
+			"EventKey",
+			eventName,
+			EventNameNew,
+		)
+	}
+	if t.ToStateKey == nil && !IsSystemFinalEvent(eventName) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.TransitionFinalEventInvalid,
+			fmt.Sprintf("transition '%s' reaches final but event %q is not %q", t.Key.String(), eventName, EventNameDestroy),
+			"EventKey",
+			eventName,
+			EventNameDestroy,
+		)
+	}
 	return nil
 }
 

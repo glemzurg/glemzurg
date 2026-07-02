@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func generateDomainMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain) (contents string, err error) {
+func generateDomainMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain, diagrams domainDiagrams) (contents string, err error) {
 	// Gather all classes from all subdomains for sorting.
 	var allClasses []model_class.Class
 	for _, subdomain := range domain.Subdomains {
@@ -34,17 +34,23 @@ func generateDomainMdContents(reqs *req_flat.Requirements, model core.Model, dom
 	})
 
 	contents, err = generateFromTemplate(_domainMdTemplate, struct {
-		Reqs       *req_flat.Requirements
-		Model      core.Model
-		Domain     model_domain.Domain
-		Classes    []model_class.Class
-		Subdomains []model_domain.Subdomain
+		Reqs              *req_flat.Requirements
+		Model             core.Model
+		Domain            model_domain.Domain
+		Classes           []model_class.Class
+		Subdomains        []model_domain.Subdomain
+		SubdomainsDiagram string
+		ClassesDiagram    string
+		UseCasesDiagram   string
 	}{
-		Reqs:       reqs,
-		Model:      model,
-		Domain:     domain,
-		Classes:    allClasses,
-		Subdomains: subdomains,
+		Reqs:              reqs,
+		Model:             model,
+		Domain:            domain,
+		Classes:           allClasses,
+		Subdomains:        subdomains,
+		SubdomainsDiagram: diagrams.SubdomainsDiagram,
+		ClassesDiagram:    diagrams.ClassesDiagram,
+		UseCasesDiagram:   diagrams.UseCasesDiagram,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -53,9 +59,16 @@ func generateDomainMdContents(reqs *req_flat.Requirements, model core.Model, dom
 	return contents, nil
 }
 
-// This is the domain graph on the model page.
-func generateDomainsSvgContents(reqs *req_flat.Requirements, domains []model_domain.Domain, associations []model_domain.Association) (svgContents string, err error) {
-	dotContents, err := generateFromTemplate(_domainsDotTemplate, struct {
+// domainDiagrams holds the Mermaid diagram strings for a domain page.
+type domainDiagrams struct {
+	SubdomainsDiagram string
+	ClassesDiagram    string
+	UseCasesDiagram   string
+}
+
+// generateDomainsMermaidContents generates Mermaid markup for the domains overview diagram.
+func generateDomainsMermaidContents(reqs *req_flat.Requirements, domains []model_domain.Domain, associations []model_domain.Association) (contents string, err error) {
+	contents, err = generateFromTemplate(_domainsMermaidTemplate, struct {
 		Reqs         *req_flat.Requirements
 		Domains      []model_domain.Domain
 		Associations []model_domain.Association
@@ -68,16 +81,11 @@ func generateDomainsSvgContents(reqs *req_flat.Requirements, domains []model_dom
 		return "", errors.WithStack(err)
 	}
 
-	svgContents, err = graphvizDotToSvg(dotContents)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return svgContents, nil
+	return contents, nil
 }
 
-// generateSubdomainsSvgContents generates the SVG graph of subdomains for a domain.
-func generateSubdomainsSvgContents(reqs *req_flat.Requirements, domain model_domain.Domain) (svgContents string, err error) {
+// generateSubdomainsMermaidContents generates Mermaid markup for the subdomains diagram.
+func generateSubdomainsMermaidContents(reqs *req_flat.Requirements, domain model_domain.Domain) (contents string, err error) {
 	// Get sorted subdomains.
 	var subdomains []model_domain.Subdomain
 	for _, subdomain := range domain.Subdomains {
@@ -87,7 +95,7 @@ func generateSubdomainsSvgContents(reqs *req_flat.Requirements, domain model_dom
 		return subdomains[i].Key.String() < subdomains[j].Key.String()
 	})
 
-	dotContents, err := generateFromTemplate(_subdomainsDotTemplate, struct {
+	contents, err = generateFromTemplate(_subdomainsMermaidTemplate, struct {
 		Reqs       *req_flat.Requirements
 		Domain     model_domain.Domain
 		Subdomains []model_domain.Subdomain
@@ -100,10 +108,5 @@ func generateSubdomainsSvgContents(reqs *req_flat.Requirements, domain model_dom
 		return "", errors.WithStack(err)
 	}
 
-	svgContents, err = graphvizDotToSvg(dotContents)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return svgContents, nil
+	return contents, nil
 }

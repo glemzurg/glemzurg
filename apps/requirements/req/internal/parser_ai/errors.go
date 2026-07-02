@@ -10,14 +10,16 @@ const (
 	ErrModelSchemaViolation = 1004
 
 	// Actor errors (2xxx).
-	ErrActorNameRequired    = 2001
-	ErrActorNameEmpty       = 2002
-	ErrActorTypeRequired    = 2003
-	ErrActorTypeInvalid     = 2004
-	ErrActorInvalidJSON     = 2005
-	ErrActorSchemaViolation = 2006
-	ErrActorDuplicateKey    = 2007
-	ErrActorFilenameInvalid = 2008
+	ErrActorNameRequired       = 2001
+	ErrActorNameEmpty          = 2002
+	ErrActorTypeRequired       = 2003
+	ErrActorTypeInvalid        = 2004
+	ErrActorInvalidJSON        = 2005
+	ErrActorSchemaViolation    = 2006
+	ErrActorDuplicateKey       = 2007
+	ErrActorFilenameInvalid    = 2008
+	ErrActorKeyNameMismatch    = 2009 // Actor filename does not match keyFromName(name)
+	ErrActorGenKeyNameMismatch = 2010 // Actor generalization filename does not match keyFromName(name)
 
 	// Domain errors (3xxx).
 	ErrDomainNameRequired    = 3001
@@ -26,6 +28,7 @@ const (
 	ErrDomainSchemaViolation = 3004
 	ErrDomainDuplicateKey    = 3005
 	ErrDomainDirInvalid      = 3006
+	ErrDomainKeyNameMismatch = 3007 // Domain directory name does not match keyFromName(name)
 
 	// Subdomain errors (4xxx).
 	ErrSubdomainNameRequired    = 4001
@@ -34,6 +37,7 @@ const (
 	ErrSubdomainSchemaViolation = 4004
 	ErrSubdomainDuplicateKey    = 4005
 	ErrSubdomainDirInvalid      = 4006
+	ErrSubdomainKeyNameMismatch = 4007 // Subdomain directory name does not match keyFromName(name)
 
 	// Class errors (5xxx).
 	ErrClassNameRequired        = 5001
@@ -42,55 +46,63 @@ const (
 	ErrClassSchemaViolation     = 5004
 	ErrClassDuplicateKey        = 5005
 	ErrClassDirInvalid          = 5006
+	ErrClassKeyNameMismatch     = 5012 // Class directory name does not match keyFromName(name)
 	ErrClassActorNotFound       = 5007
 	ErrClassAttributeNameEmpty  = 5008
 	ErrClassIndexInvalid        = 5009
 	ErrClassIndexAttrNotFound   = 5010
-	ErrClassDataTypeUnparseable = 5011 // Attribute data_type_rules could not be parsed
+	ErrClassAttrKeyNameMismatch = 5013 // Attribute map key does not match keyFromName(name)
 
 	// Association errors (6xxx).
-	ErrAssocNameRequired        = 6001
-	ErrAssocNameEmpty           = 6002
-	ErrAssocInvalidJSON         = 6003
-	ErrAssocSchemaViolation     = 6004
-	ErrAssocFromClassRequired   = 6005
-	ErrAssocToClassRequired     = 6006
-	ErrAssocFromMultRequired    = 6007
-	ErrAssocToMultRequired      = 6008
-	ErrAssocFromClassNotFound   = 6009
-	ErrAssocToClassNotFound     = 6010
-	ErrAssocClassNotFound       = 6011
-	ErrAssocMultiplicityInvalid = 6012
-	ErrAssocFilenameInvalid     = 6013
-	ErrAssocDuplicateKey        = 6014
+	ErrAssocNameRequired                = 6001
+	ErrAssocNameEmpty                   = 6002
+	ErrAssocInvalidJSON                 = 6003
+	ErrAssocSchemaViolation             = 6004
+	ErrAssocFromClassRequired           = 6005
+	ErrAssocToClassRequired             = 6006
+	ErrAssocFromMultRequired            = 6007
+	ErrAssocToMultRequired              = 6008
+	ErrAssocFromClassNotFound           = 6009
+	ErrAssocToClassNotFound             = 6010
+	ErrAssocClassNotFound               = 6011
+	ErrAssocMultiplicityInvalid         = 6012
+	ErrAssocFilenameInvalid             = 6013
+	ErrAssocDuplicateKey                = 6014
+	ErrAssocNameMismatch                = 6015
+	ErrAssocUniquenessConstraintInvalid = 6016
 
 	// State machine errors (7xxx).
-	ErrStateMachineInvalidJSON       = 7001
-	ErrStateMachineSchemaViolation   = 7002
-	ErrStateNameRequired             = 7003
-	ErrStateNameEmpty                = 7004
-	ErrStateDuplicateKey             = 7005
-	ErrStateActionKeyRequired        = 7006
-	ErrStateActionWhenRequired       = 7007
-	ErrStateActionWhenInvalid        = 7008
-	ErrEventNameRequired             = 7009
-	ErrEventNameEmpty                = 7010
-	ErrEventDuplicateKey             = 7011
-	ErrEventParamNameRequired        = 7012
-	ErrEventParamSourceRequired      = 7013
-	ErrGuardNameRequired             = 7014
-	ErrGuardNameEmpty                = 7015
-	ErrGuardDetailsRequired          = 7016
-	ErrGuardDuplicateKey             = 7017
-	ErrTransitionEventRequired       = 7018
-	ErrTransitionNoStates            = 7019
-	ErrTransitionFromStateNotFound   = 7020
-	ErrTransitionToStateNotFound     = 7021
-	ErrTransitionEventNotFound       = 7022
-	ErrTransitionGuardNotFound       = 7023
-	ErrTransitionActionNotFound      = 7024
-	ErrTransitionInitialToFinal      = 7025
-	ErrEventParamDataTypeUnparseable = 7026 // Event parameter data_type_rules could not be parsed
+	ErrStateMachineInvalidJSON     = 7001
+	ErrStateMachineSchemaViolation = 7002
+	ErrStateNameRequired           = 7003
+	ErrStateNameEmpty              = 7004
+	ErrStateDuplicateKey           = 7005
+	ErrStateActionKeyRequired      = 7006
+	ErrStateActionWhenRequired     = 7007
+	ErrStateActionWhenInvalid      = 7008
+	ErrEventNameRequired           = 7009
+	ErrEventNameEmpty              = 7010
+	ErrEventDuplicateKey           = 7011
+	ErrEventParamNameRequired      = 7012
+	ErrEventParamSourceRequired    = 7013
+	ErrGuardNameRequired           = 7014
+	ErrGuardNameEmpty              = 7015
+	ErrGuardDetailsRequired        = 7016
+	ErrGuardDuplicateKey           = 7017
+	ErrTransitionEventRequired     = 7018
+	ErrTransitionNoStates          = 7019
+	ErrTransitionFromStateNotFound = 7020
+	ErrTransitionToStateNotFound   = 7021
+	ErrTransitionEventNotFound     = 7022
+	ErrTransitionGuardNotFound     = 7023
+	ErrTransitionActionNotFound    = 7024
+	ErrTransitionInitialToFinal    = 7025
+	ErrStateDuplicateName          = 7027
+	ErrEventDuplicateName          = 7028
+	ErrGuardDuplicateName          = 7029
+	ErrStateKeyNameMismatch        = 7030
+	ErrEventKeyNameMismatch        = 7031
+	ErrGuardKeyNameMismatch        = 7032
 
 	// Action errors (8xxx).
 	ErrActionNameRequired    = 8001
@@ -99,6 +111,7 @@ const (
 	ErrActionSchemaViolation = 8004
 	ErrActionDuplicateKey    = 8005
 	ErrActionFilenameInvalid = 8006
+	ErrActionDuplicateName   = 8007
 
 	// Query errors (9xxx).
 	ErrQueryNameRequired    = 9001
@@ -107,6 +120,7 @@ const (
 	ErrQuerySchemaViolation = 9004
 	ErrQueryDuplicateKey    = 9005
 	ErrQueryFilenameInvalid = 9006
+	ErrQueryDuplicateName   = 9007
 
 	// Class generalization errors (10xxx).
 	ErrClassGenNameRequired         = 10001
@@ -122,6 +136,7 @@ const (
 	ErrClassGenFilenameInvalid      = 10011
 	ErrClassGenSubclassDuplicate    = 10012
 	ErrClassGenSuperclassIsSubclass = 10013
+	ErrClassGenKeyNameMismatch      = 10014 // Class generalization filename does not match keyFromName(name)
 
 	// Actor generalization errors (12xxx).
 	ErrActorGenNameRequired       = 12001
@@ -140,6 +155,7 @@ const (
 	ErrUseCaseGenSuperclassRequired = 13005
 	ErrUseCaseGenSubclassesRequired = 13006
 	ErrUseCaseGenSubclassesEmpty    = 13007
+	ErrUseCaseGenKeyNameMismatch    = 13008 // Use case generalization filename does not match keyFromName(name)
 
 	// Logic errors (14xxx).
 	ErrLogicDescriptionRequired    = 14001
@@ -149,13 +165,15 @@ const (
 	ErrLogicTargetRequired         = 14005
 	ErrLogicTargetNotAllowed       = 14006
 	ErrLogicTargetNoLeadUnderscore = 14007
+	ErrLogicTypeRequired           = 14008
+	ErrLogicDestroyEventRequired   = 14009
+	ErrLogicDestroyEventNotAllowed = 14010
 
 	// Parameter errors (15xxx).
-	ErrParamNameRequired        = 15001
-	ErrParamNameEmpty           = 15002
-	ErrParamInvalidJSON         = 15003
-	ErrParamSchemaViolation     = 15004
-	ErrParamDataTypeUnparseable = 15005 // Parameter data_type_rules could not be parsed
+	ErrParamNameRequired    = 15001
+	ErrParamNameEmpty       = 15002
+	ErrParamInvalidJSON     = 15003
+	ErrParamSchemaViolation = 15004
 
 	// Global function errors (16xxx).
 	ErrGlobalFuncNameRequired     = 16001
@@ -165,6 +183,7 @@ const (
 	ErrGlobalFuncNameNoUnderscore = 16005
 	ErrGlobalFuncParamEmpty       = 16006
 	ErrGlobalFuncLogicRequired    = 16007
+	ErrGlobalFuncKeyNameMismatch  = 16008 // Global function filename does not match keyFromName(name)
 
 	// Domain association errors (17xxx).
 	ErrDomainAssocProblemKeyRequired  = 17001
@@ -227,6 +246,10 @@ const (
 	ErrTreeScenarioStepEventNotFound  = 11035 // Scenario step references an event that doesn't exist on the referenced class
 	ErrTreeScenarioStepQueryNotFound  = 11036 // Scenario step references a query that doesn't exist on the referenced class
 
+	// State machine system-event edge errors (11037+).
+	ErrTreeTransitionInitialEventInvalid = 11037 // Initial transition must use event _new
+	ErrTreeTransitionFinalEventInvalid   = 11038 // Final transition must use event _destroy
+
 	// Use case errors (18xxx).
 	ErrUseCaseNameRequired    = 18001
 	ErrUseCaseNameEmpty       = 18002
@@ -234,12 +257,14 @@ const (
 	ErrUseCaseSchemaViolation = 18004
 	ErrUseCaseLevelRequired   = 18005
 	ErrUseCaseLevelInvalid    = 18006
+	ErrUseCaseKeyNameMismatch = 18007 // Use case directory name does not match keyFromName(name)
 
 	// Scenario errors (19xxx).
 	ErrScenarioNameRequired    = 19001
 	ErrScenarioNameEmpty       = 19002
 	ErrScenarioInvalidJSON     = 19003
 	ErrScenarioSchemaViolation = 19004
+	ErrScenarioKeyNameMismatch = 19005 // Scenario filename does not match keyFromName(name)
 
 	// Use case shared errors (20xxx).
 	ErrUseCaseSharedShareTypeRequired = 20001
@@ -253,6 +278,7 @@ const (
 	ErrNamedSetInvalidJSON      = 22003
 	ErrNamedSetSchemaViolation  = 22004
 	ErrNamedSetNameNoUnderscore = 22005
+	ErrNamedSetKeyNameMismatch  = 22006 // Named set filename does not match keyFromName(name)
 
 	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion.
 	ErrConvKeyConstruction       = 21001 // Identity key construction failed during conversion
@@ -265,22 +291,25 @@ const (
 	ErrConvSourceModelValidation = 21008 // Source model validation failed before ConvertFromModel
 
 	// Mapped core validation errors (21100-21199) - specific core errors mapped to parser_ai errors.
-	ErrConvParamDatatypeRequired     = 21100 // Parameter data_type_rules is empty
-	ErrConvParamNameRequired         = 21101 // Parameter name is empty
-	ErrConvLogicTypeInvalid          = 21102 // Logic has wrong type for its context (e.g., invariant must be assessment/let)
-	ErrConvLogicDuplicateLet         = 21103 // Duplicate let target in logic list
-	ErrConvLogicDuplicateTarget      = 21104 // Duplicate guarantee target in action/query
-	ErrConvLogicTargetRequired       = 21105 // Logic target (attribute) is required but empty
-	ErrConvLogicTargetNotAllowed     = 21106 // Logic target must be empty for this logic type
-	ErrConvLogicTargetNoUnderscore   = 21107 // Logic target must not start with underscore
-	ErrConvReferenceNotFound         = 21108 // Cross-reference to another entity not found
-	ErrConvGenCardinalityInvalid     = 21109 // Generalization has wrong number of super/subclasses
-	ErrConvDomainStructureInvalid    = 21110 // Domain structural rule violated (subdomain naming, orphan associations)
-	ErrConvScenarioStepInvalid       = 21111 // Scenario step structural rule violated
-	ErrConvGuaranteeInvalidTarget    = 21112 // Guarantee targets an attribute that doesn't exist
-	ErrConvAssocClassSameAsEndpoint  = 21113 // Association class cannot be same as from or to class
-	ErrConvInternalKeyError          = 21114 // Internal key validation error (should not normally occur)
-	ErrConvUseCaseActorNotActorClass = 21115 // Use case references class that is not an actor class
-	ErrConvLogicSpecInvalid          = 21116 // Logic specification (TLA+ expression) failed validation
-	ErrConvDomainAssocSameDomains    = 21117 // Domain association references same domain for problem and solution
+	ErrConvParamDatatypeRequired         = 21100 // Parameter data_type_rules is empty
+	ErrConvParamNameRequired             = 21101 // Parameter name is empty
+	ErrConvLogicTypeInvalid              = 21102 // Logic has wrong type for its context (e.g., invariant must be assessment/let)
+	ErrConvLogicDuplicateLet             = 21103 // Duplicate let target in logic list
+	ErrConvLogicDuplicateTarget          = 21104 // Duplicate guarantee target in action/query
+	ErrConvLogicTargetRequired           = 21105 // Logic target (attribute) is required but empty
+	ErrConvLogicTargetNotAllowed         = 21106 // Logic target must be empty for this logic type
+	ErrConvLogicTargetNoUnderscore       = 21107 // Logic target must not start with underscore
+	ErrConvReferenceNotFound             = 21108 // Cross-reference to another entity not found
+	ErrConvGenCardinalityInvalid         = 21109 // Generalization has wrong number of super/subclasses
+	ErrConvDomainStructureInvalid        = 21110 // Domain structural rule violated (subdomain naming, orphan associations)
+	ErrConvScenarioStepInvalid           = 21111 // Scenario step structural rule violated
+	ErrConvGuaranteeInvalidTarget        = 21112 // Guarantee targets an attribute that doesn't exist
+	ErrConvAssocClassSameAsEndpoint      = 21113 // Association class cannot be same as from or to class
+	ErrConvInternalKeyError              = 21114 // Internal key validation error (should not normally occur)
+	ErrConvUseCaseActorNotActorClass     = 21115 // Use case references class that is not an actor class
+	ErrConvLogicSpecInvalid              = 21116 // Logic specification (TLA+ expression) failed validation
+	ErrConvDomainAssocSameDomains        = 21117 // Domain association references same domain for problem and solution
+	ErrConvTransitionInitialEventInvalid = 21118 // Initial transition event is not _new
+	ErrConvTransitionFinalEventInvalid   = 21119 // Final transition event is not _destroy
+	ErrConvAssocUniquenessInvalid        = 21120 // Association uniqueness tuple failed validation during conversion
 )

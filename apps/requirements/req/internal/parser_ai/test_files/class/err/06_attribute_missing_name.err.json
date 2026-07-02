@@ -1,8 +1,9 @@
 {
     "name": "Order",
-    "attributes": {
-        "order_date": {
-            "data_type_rules": "ISO date"
+    "attributes": [
+        {
+            "data_type_rules": "ISO date",
+            "key": "order_date"
         }
-    }
+    ]
 }

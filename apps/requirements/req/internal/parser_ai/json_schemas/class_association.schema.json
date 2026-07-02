@@ -34,6 +34,23 @@
       "description": "Multiplicity at the target (to) end of the association. Format is either a single number (e.g., '1', '2') or a range 'lower..upper'. Use '*' for unbounded (converted internally to 'any' or 'many'). Common values: '1' (exactly one), '0..1' (zero or one), '*' or 'any' (zero or more), '1..*' or '1..many' (one or more), or specific ranges like '2..5'. The upper bound must be >= the lower bound. This indicates how many instances of the to_class can be associated with one instance of the from_class. If validation fails: ensure this follows the format 'N', 'N..M', 'N..*', or 'N..many' where N and M are non-negative integers.",
       "minLength": 1
     },
+    "uniqueness": {
+      "type": "object",
+      "description": "Optional uniqueness tuple for this association. Limits how often the same attribute combination may appear among links. At least one of from_attributes or to_attributes must be non-empty when this object is present. If only one side lists attributes, the other side is unique by instance.",
+      "properties": {
+        "from_attributes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Attribute SubKeys on the from class that form the uniqueness tuple."
+        },
+        "to_attributes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Attribute SubKeys on the to class that form the uniqueness tuple."
+        }
+      },
+      "additionalProperties": false
+    },
     "association_class_key": {
       "type": ["string", "null"],
       "description": "Optional key referencing an association class that holds attributes about the relationship itself. For example, an 'Enrollment' class between 'Student' and 'Course' might hold 'grade' and 'enrollment_date'. The association class must exist in the same scope as the association. Use the same scoping format as from_class_key and to_class_key. Set to null or omit if there is no association class. If validation fails: verify the association class file exists and the key uses the correct scoping format for this directory level."

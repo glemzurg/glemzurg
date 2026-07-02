@@ -4,7 +4,7 @@
     "Details": "Here we have markdown details.\n\nAnd even more.",
     "ActorKey": "actor/actor_key",
     "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
-    "Attributes": {},
+    "Attributes": [],
     "States": {},
     "Events": {},
     "Guards": {},
@@ -16,6 +16,7 @@
             "Details": "Returns the current balance.",
             "Parameters": [
                 {
+                    "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/query/getbalance/parameter/accountid",
                     "Name": "AccountId",
                     "DataTypeRules": "Nat"
                 }

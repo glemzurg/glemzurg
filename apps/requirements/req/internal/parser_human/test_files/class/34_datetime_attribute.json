@@ -1,0 +1,36 @@
+{
+    "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key",
+    "Name": "Event",
+    "Details": "",
+    "ActorKey": null,
+    "UmlComment": "",
+    "Attributes": [
+        {
+            "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/occurred_at",
+            "Name": "Occurred At",
+            "Details": "",
+            "DataTypeRules": "datetime",
+            "DerivationPolicy": null,
+            "Nullable": false,
+            "UmlComment": "",
+            "IndexNums": null,
+            "DataType": {
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/occurred_at/datatype/self",
+                "CollectionType": "atomic",
+                "Atomic": {
+                    "ConstraintType": "datetime"
+                },
+                "TypeSpec": {
+                    "Notation": "tla_plus",
+                    "Specification": "Nat"
+                }
+            }
+        }
+    ],
+    "States": {},
+    "Events": {},
+    "Guards": {},
+    "Actions": {},
+    "Queries": {},
+    "Transitions": {}
+}

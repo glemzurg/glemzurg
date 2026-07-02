@@ -112,6 +112,10 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 		return evalNextState(n, bindings)
 	case *me.NamedSetRef:
 		return evalNamedSetRef(n, bindings)
+	case *me.ClassRef:
+		return evalClassRef(n, bindings)
+	case *me.AssociationRef:
+		return evalAssociationRef(n, bindings)
 
 	// === Binary operators ===
 	case *me.BinaryArith:
@@ -154,6 +158,10 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 	// === Control flow ===
 	case *me.IfThenElse:
 		return evalMEIfThenElse(n, bindings)
+	case *me.LetExpr:
+		return evalMELetExpr(n, bindings)
+	case *me.Choose:
+		return evalMEChoose(n, bindings)
 	case *me.Case:
 		return evalMECase(n, bindings)
 
@@ -162,6 +170,8 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 		return evalMEQuantifier(n, bindings)
 	case *me.SetFilter:
 		return evalMESetFilter(n, bindings)
+	case *me.SetMap:
+		return evalMESetMap(n, bindings)
 
 	// === Calls ===
 	case *me.BuiltinCall:

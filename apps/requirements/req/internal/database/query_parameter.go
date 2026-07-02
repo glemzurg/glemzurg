@@ -14,13 +14,9 @@ import (
 
 // parameterDataTypeKey extracts the data type key string for database storage.
 // Returns nil if no data type is set.
-// The key is preened to match how BulkInsertDataTypes stores data type keys.
 func parameterDataTypeKey(param model_state.Parameter) *string {
 	if param.DataType != nil {
-		s, err := preenKey(param.DataType.Key)
-		if err != nil {
-			return nil
-		}
+		s := param.DataType.Key.String()
 		return &s
 	}
 	return nil
@@ -29,7 +25,7 @@ func parameterDataTypeKey(param model_state.Parameter) *string {
 // Populate a golang struct from a database row.
 func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model_state.Parameter, sortOrder *int) (err error) {
 	var queryKeyStr string
-	var parameterKeyStr string // Read but not used on the struct (it's derived from Name via preenKey).
+	var parameterKeyStr string // Read but not used on the struct.
 	var dataTypeRules sql.NullString
 	var dataTypeKey sql.NullString
 
@@ -40,6 +36,7 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 		sortOrder,
 		&dataTypeRules,
 		&dataTypeKey,
+		&param.Nullable,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -53,6 +50,11 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 		return err
 	}
 
+	param.Key, err = identity.NewParameterKey(*queryKeyPtr, parameterKeyStr)
+	if err != nil {
+		return err
+	}
+
 	// Set nullable fields.
 	if dataTypeRules.Valid {
 		param.DataTypeRules = dataTypeRules.String
@@ -61,7 +63,11 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 	// Create a stub DataType with just the key if present.
 	// The full DataType is stitched in top_level_requirements.go from the data_type table.
 	if dataTypeKey.Valid {
-		param.DataType = &model_data_type.DataType{Key: dataTypeKey.String}
+		parsedKey, parseErr := identity.ParseKey(dataTypeKey.String)
+		if parseErr != nil {
+			return errors.Wrapf(parseErr, "failed to parse data type key '%s'", dataTypeKey.String)
+		}
+		param.DataType = &model_data_type.DataType{Key: parsedKey}
 	}
 
 	return nil
@@ -87,7 +93,8 @@ func LoadQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, p
 			name            ,
 			sort_order      ,
 			data_type_rules ,
-			data_type_key
+			data_type_key   ,
+			nullable
 		FROM
 			query_parameter
 		WHERE
@@ -115,10 +122,7 @@ func AddQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, pa
 
 // UpdateQueryParameter updates a query parameter in the database.
 func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
-	paramKey, err := preenKey(param.Name)
-	if err != nil {
-		return errors.Wrapf(err, "parameter name '%s'", param.Name)
-	}
+	paramKey := param.Key.SubKey
 
 	// Update the data.
 	err = dbExec(dbOrTx, `
@@ -128,7 +132,8 @@ func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 			name            = $4 ,
 			sort_order      = $5 ,
 			data_type_rules = $6 ,
-			data_type_key   = $7
+			data_type_key   = $7 ,
+			nullable        = $8
 		WHERE
 			model_key     = $1
 		AND
@@ -141,7 +146,8 @@ func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 		param.Name,
 		sortOrder,
 		param.DataTypeRules,
-		parameterDataTypeKey(param))
+		parameterDataTypeKey(param),
+		param.Nullable)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -197,7 +203,8 @@ func QueryQueryParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.K
 			name            ,
 			sort_order      ,
 			data_type_rules ,
-			data_type_key
+			data_type_key   ,
+			nullable
 		FROM
 			query_parameter
 		WHERE
@@ -224,8 +231,8 @@ func AddQueryParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 
 	// Build the bulk insert query.
 	var qb strings.Builder
-	qb.WriteString(`INSERT INTO query_parameter (model_key, query_key, parameter_key, name, sort_order, data_type_rules, data_type_key) VALUES `)
-	args := make([]any, 0, count*7)
+	qb.WriteString(`INSERT INTO query_parameter (model_key, query_key, parameter_key, name, sort_order, data_type_rules, data_type_key, nullable) VALUES `)
+	args := make([]any, 0, count*8)
 	i := 0
 	for queryKey, paramList := range params {
 		for paramIdx, param := range paramList {
@@ -233,14 +240,11 @@ func AddQueryParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 				qb.WriteString(", ")
 			}
 
-			paramKey, err := preenKey(param.Name)
-			if err != nil {
-				return errors.Wrapf(err, "parameter name '%s'", param.Name)
-			}
+			paramKey := param.Key.SubKey
 
-			base := i * 7
-			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7))
-			args = append(args, modelKey, queryKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
+			base := i * 8
+			fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+			args = append(args, modelKey, queryKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param), param.Nullable)
 			i++
 		}
 	}

@@ -32,11 +32,17 @@ type AttributeAnnotations struct {
 	IndexNums  []uint
 }
 
-func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, annotations AttributeAnnotations) (attribute Attribute, err error) {
+// AttributeDetails holds the human-authored name and description for an attribute.
+type AttributeDetails struct {
+	Name    string
+	Details string
+}
+
+func NewAttribute(key identity.Key, details AttributeDetails, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, annotations AttributeAnnotations) (attribute Attribute, err error) {
 	attribute = Attribute{
 		Key:              key,
-		Name:             name,
-		Details:          details,
+		Name:             details.Name,
+		Details:          details.Details,
 		DataTypeRules:    dataTypeRules,
 		DerivationPolicy: derivationPolicy,
 		Nullable:         nullable,
@@ -46,8 +52,11 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 
 	// Parse the data type rules into a DataType object if possible.
 	if attribute.DataTypeRules != "" {
-		// Use the attribute key as the key of this data type.
-		dataTypeKey := attribute.Key.String()
+		// Root data type identity.Key parented by this attribute's key.
+		dataTypeKey, err := identity.NewDataTypeKey(attribute.Key, "")
+		if err != nil {
+			return Attribute{}, errors.Wrap(err, "attribute data type key")
+		}
 		parsedDataType, err := model_data_type.New(dataTypeKey, attribute.DataTypeRules, nil)
 
 		// Only an error if it is not a parse error.

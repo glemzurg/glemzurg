@@ -12,13 +12,12 @@
 
 # {{ .Class.Name }}
 
-{{ .Class.Details }}
-
+{{ .Class.Details }}{{ unfinished_notes_block .Class.UnfinishedNotes }}
 {{ if ne .Class.ActorKey nil -}}
 {{- $actor := actor_lookup $reqs .Class.ActorKey -}}
 This is an actor:
 
-- **[{{ $actor.Name }} <img src="{{ $actor.Type }}.svg" width="13" height="30" />]({{ filename "actor" $actor.Key "" ".md" }}).** {{ first_md_sentence $actor.Details }}
+- **[{{ $actor.Name }} <img src="{{ $actor.Type }}.svg" width="13" height="30" />]({{ filename "actor" $actor.Key "" ".md" }}){{ unfinished_notes_marker $actor.UnfinishedNotes }}.** {{ first_md_sentence $actor.Details }}
 
 {{ end }}
 
@@ -29,24 +28,24 @@ This is an actor:
 {{- $gen := generalization_lookup $reqs .Class.SuperclassOfKey -}}
 {{- $super := generalization_superclass $reqs $gen.Key -}}
 {{- $subs := generalization_subclasses $reqs $gen.Key -}}
-- **{{ $gen.Name }}.** {{ $gen.Details }}
-    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Class.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Class.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+- **{{ $gen.Name }}{{ unfinished_notes_marker $gen.UnfinishedNotes }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Class.Key }}{{ $super.Name }}{{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Class.Key }}{{ $sub.Name }}{{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ else }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ end }}{{ else }}???{{ end }}
 {{ end -}}
 {{ if ne .Class.SubclassOfKey nil -}}
 {{- $gen := generalization_lookup $reqs .Class.SubclassOfKey -}}
 {{- $super := generalization_superclass $reqs $gen.Key -}}
 {{- $subs := generalization_subclasses $reqs $gen.Key -}}
-- **{{ $gen.Name }}.** {{ $gen.Details }}
-    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Class.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Class.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+- **{{ $gen.Name }}{{ unfinished_notes_marker $gen.UnfinishedNotes }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Class.Key }}{{ $super.Name }}{{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Class.Key }}{{ $sub.Name }}{{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ else }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ end }}{{ else }}???{{ end }}
 {{ end }}
 {{- end }}
 
 ## Attributes
 
-| Name | Rules | Nullable | Type | Comment |
-| ---- | ----- | -------- | ---- | ------- |
+| Name | Rules | Nullable | TLA+ | Comments / Invariants |
+| ---- | ----- | -------- | ---- | --------------------- |
 {{- range .Class.Attributes }}
-| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Spec.Specification "" }} <br> {{ .DerivationPolicy.Spec.Specification }}{{ end }}{{ end }} | {{ .Nullable }} | {{ if and (ne .DataType nil) (ne .DataType.TypeSpec nil) }}{{ .DataType.TypeSpec.Specification }}{{ end }} | {{ .Details }} |{{end}}
+| {{ class_attribute_table_name . }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ derivation_policy_markdown_html_for_class $.Class .DerivationPolicy }}{{ end }} | {{ .Nullable }} | {{ data_type_spec_display .DataType }} | {{ attribute_comments_invariants_for_class $.Class . }} |{{end}}
 
 {{- $indexes := class_indexes .Class.Attributes }}
 {{ if ne $indexes nil }}
@@ -54,46 +53,54 @@ This is an actor:
 ### Indexes
 
 {{ range $indexes -}}
-- [{{ range $i, $name := . }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
+- {{ .Heading }} [{{ range $i, $name := .Attributes }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
 {{ end }}
 {{ end }}
 
-{{ range .Class.Attributes -}}
-{{ if ne .Invariants nil -}}
-### {{ .Name }} Invariants
+{{- $plainInvariants := class_invariants_without_association_tag .Class.Invariants }}
+{{ if $plainInvariants -}}
+## Invariants
+
+{{ range $plainInvariants -}}
+- {{ .Description }}
+{{ class_logic_markdown_spec_lines $.Class . }}
+{{ end }}
+{{- end }}
+
+{{- $assocInvariants := class_outgoing_associations_with_invariants $reqs .Class.Key }}
+{{- $taggedAssocInvariants := class_association_tagged_invariant_groups $reqs .Class.Key }}
+{{ if or $assocInvariants $taggedAssocInvariants -}}
+## Association Invariants
+
+{{ range $assocInvariants -}}
+### {{ .Name }}
 
 {{ range .Invariants -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
-{{ end -}}
+{{ class_logic_markdown_spec_lines $.Class . }}
 {{ end }}
-{{ end -}}
-{{ end -}}
+{{ end }}
+{{ range $taggedAssocInvariants -}}
+### {{ .Name }}
 
-{{ if ne .Class.Invariants nil -}}
-## Invariants
-
-{{ range .Class.Invariants -}}
+{{ range .Invariants -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
-{{ end -}}
+{{ class_logic_markdown_spec_lines $.Class . }}
+{{ end }}
 {{ end }}
 {{- end }}
 
 ## Relations
 
-![er]({{ filename "class" .Class.Key "" ".svg" }})
+```mermaid
+{{ .ClassesDiagram }}
+```
 
 # State Machine
-
-{{ if ne .Class.States nil -}}
-![er]({{ filename "class" .Class.Key "states" ".svg" }})
+{{ state_machine_incomplete_marker .Class }}{{ if ne .StateDiagram "" -}}
+```mermaid
+{{ .StateDiagram }}
+```
 {{- end }}
 
 ## State and Event Descriptions
@@ -114,8 +121,8 @@ The events for this class.
 
 {{ range .Class.Events -}}
 
-- **{{ .Name }}.** {{ .Details }}{{ if ne .Parameters nil }} Parameters:
-{{ range .Parameters }}   - *{{ .Name }}.* {{ data_type_rules .DataTypeRules .DataType }}
+- **{{ event_display_name .Name }}.** {{ .Details }}{{ if ne .ParameterNames nil }} Parameters:
+{{ range .ParameterNames }}   - *{{ . }}.*
 {{ end }}{{- end }}
 {{ end }}
 
@@ -127,9 +134,8 @@ The events for this class.
 The guards for this class.
 
 {{ range .Class.Guards -}}
-- **[{{ .Logic.Description }}]**
-{{ if ne .Logic.Spec.Specification "" }}    - {{ .Logic.Spec.Specification }}
-{{ end -}}
+- {{ .Logic.Description }}
+{{ class_logic_markdown_spec_lines $.Class .Logic }}
 {{ end }}
 {{- end }}
 
@@ -145,7 +151,7 @@ The actions for this class.
 {{- $fromTransitions := action_transitions $reqs .Key -}}
 {{- $fromStateActions := action_state_actions $reqs .Key -}}
 
-### {{ $action.Name }}({{ action_signature $action }})
+### {{ $action.Name }}({{ action_signature $reqs $action }})
 
 {{ $action.Details }}
 
@@ -153,7 +159,8 @@ The actions for this class.
 Parameters:
 
 {{ range $action.Parameters -}}
-- *{{ .Name }}.* {{ data_type_rules .DataTypeRules .DataType }}
+- *{{ .Name }}.* {{ parameter_data_type_display . }}
+{{ parameter_simulation_markdown_lines $.Class . }}
 {{ end }}
 {{ end -}}
 Requires:
@@ -162,11 +169,7 @@ Requires:
 
 {{ range $action.Requires -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
-{{ end -}}
+{{ class_logic_markdown_spec_lines $.Class . }}
 {{ end }}
 
 {{- else -}}
@@ -178,19 +181,14 @@ Guarantees:
 {{ if ne $action.Guarantees nil -}}
 
 {{ range $action.Guarantees -}}
-{{- $mainBullet := main_bullet .Description }}
-{{- $subBullets := sub_bullets .Description }}
+{{- $displayDesc := action_guarantee_display_description $.Class . $reqs.ClassAssociations -}}
+{{- $mainBullet := main_bullet $displayDesc }}
+{{- $subBullets := sub_bullets $displayDesc }}
 - {{ $mainBullet }}
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ if ne .Target "" }}{{ if eq .Type "let" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ else }}    - {{ .Target }}' = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ end -}}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
-{{ end -}}
+{{ class_logic_markdown_spec_lines $.Class . }}
 {{ end }}
 
 {{- else -}}
@@ -202,11 +200,7 @@ Safety Rules:
 
 {{ range $action.SafetyRules -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
-{{ end -}}
+{{ class_logic_markdown_spec_lines $.Class . }}
 {{ end }}
 {{ end -}}
 Triggered from:
@@ -243,7 +237,7 @@ The queries for this class.
 Parameters:
 
 {{ range $query.Parameters -}}
-- *{{ .Name }}.* {{ data_type_rules .DataTypeRules .DataType }}
+- *{{ .Name }}.* {{ parameter_data_type_display . }}
 {{ end }}
 {{ end -}}
 Requires:
@@ -252,11 +246,7 @@ Requires:
 
 {{ range $query.Requires -}}
 - {{ .Description }}
-{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
-{{ end -}}
+{{ class_logic_markdown_spec_lines $.Class . }}
 {{ end }}
 
 {{- else -}}
@@ -274,13 +264,7 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ if ne .Target "" }}{{ if eq .Type "let" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ else }}    - {{ .Target }}' = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
-{{ end -}}
-{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
-{{ end -}}
-{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
-{{ end -}}
+{{ class_logic_markdown_spec_lines $.Class . }}
 {{ end }}
 
 {{- else -}}

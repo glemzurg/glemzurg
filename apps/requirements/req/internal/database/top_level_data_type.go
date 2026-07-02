@@ -91,7 +91,7 @@ func LoadTopLevelDataTypes(dbOrTx DbOrTx, modelKey string) (map[string]model_dat
 	// Convert to map
 	dataTypeMap := make(map[string]model_data_type.DataType)
 	for _, dt := range reconstructedFlat {
-		dataTypeMap[dt.Key] = dt
+		dataTypeMap[dt.Key.String()] = dt
 	}
 
 	return dataTypeMap, nil

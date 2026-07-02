@@ -36,11 +36,11 @@ func simpleOrderClass() (model_class.Class, identity.Key) {
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 	stateClosed := model_state.NewState(stateClosedKey, "Closed", "", "")
 
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
-	transClose := model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, nil, &stateClosedKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateOpenKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
+	transClose := model_state.NewTransition(transCloseKey, eventCloseKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: &stateClosedKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
 		stateClosedKey: stateClosed,
@@ -156,10 +156,10 @@ func (s *EngineSuite) TestDeadlockDetection() {
 	eventUpdate := model_state.NewEvent(eventUpdateKey, "update", "", nil)
 
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
-	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
+	transUpdate := model_state.NewTransition(transUpdateKey, eventUpdateKey, model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stuck", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -250,8 +250,8 @@ func (s *EngineSuite) TestNoSimulatableClassesReturnsError() {
 	// A class with no states → not simulatable.
 	classKey := mustKey("domain/d/subdomain/s/class/empty")
 
-	class := model_class.NewClass(classKey, "Empty", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Empty", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -264,7 +264,7 @@ func (s *EngineSuite) TestNoSimulatableClassesReturnsError() {
 	config := SimulationConfig{MaxSteps: 10, RandomSeed: 42}
 	_, err := NewSimulationEngine(model, config)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "no simulatable classes")
+	s.Contains(err.Error(), "state machine")
 }
 
 func (s *EngineSuite) TestStepNumbersAreSequential() {

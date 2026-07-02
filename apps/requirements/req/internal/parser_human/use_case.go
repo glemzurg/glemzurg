@@ -47,7 +47,7 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
-	useCase = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), level, readOnly, model_use_case.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, parsedFile.UmlComment)
+	useCase = model_use_case.NewUseCase(useCaseKey, model_use_case.UseCaseTraits{Level: level, ReadOnly: readOnly}, model_use_case.GeneralizationRefs{SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, model_use_case.UseCaseDetails{Name: parsedFile.Title, Details: stripMarkdownTitle(parsedFile.Markdown), UnfinishedNotes: parsedFile.UnfinishedNotes, UmlComment: parsedFile.UmlComment})
 
 	// Parse actors.
 	if err := parseUseCaseActors(&useCase, subdomainKey, yamlData); err != nil {
@@ -107,7 +107,7 @@ func parseUseCaseScenarios(useCase *model_use_case.UseCase, subdomainKey, useCas
 	useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
 	scenariosMap := scenariosAny.(map[string]any)
 	for scenarioSubKey, scenarioDataAny := range scenariosMap {
-		scenarioKey, err := identity.NewScenarioKey(useCaseKey, strings.ToLower(scenarioSubKey))
+		scenarioKey, err := identity.NewScenarioKey(useCaseKey, identity.NormalizeSubKey(scenarioSubKey))
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -207,7 +207,7 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 		if found {
 			objectSubKey = keyAny.(string)
 		}
-		objectSubKey = strings.ToLower(objectSubKey)
+		objectSubKey = identity.NormalizeSubKey(objectSubKey)
 
 		nameAny, found := objectData["name"]
 		if found {
@@ -277,8 +277,7 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 	object = model_scenario.NewObject(
 		objectKey,
 		objectNum,
-		name,
-		nameStyle,
+		model_scenario.ObjectDiagramName{Name: name, NameStyle: nameStyle},
 		classKey,
 		multi,
 		umlComment)
@@ -297,11 +296,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	if yamlStr == "" {
 		yamlStr = "\n"
 	}
-	content := prependMarkdownTitle(useCase.Name, useCase.Details) + "\n\n◆\n\n" + useCase.UmlComment + "\n\n◇"
-	if yamlStr != "" {
-		content += "\n\n" + yamlStr
-	}
-	return strings.TrimSpace(content)
+	return generateFileContent(prependMarkdownTitle(useCase.Name, useCase.Details), useCase.UnfinishedNotes, useCase.UmlComment, yamlStr)
 }
 
 // generateUseCaseTopFields writes the top-level YAML fields (level, superclass_of_key, subclass_of_key).

@@ -10,10 +10,11 @@ import (
 
 // inputActor represents an actor JSON file (e.g., actors/customer.actor.json).
 type inputActor struct {
-	Name       string `json:"name"`
-	Type       string `json:"type"`
-	Details    string `json:"details,omitempty"`
-	UMLComment string `json:"uml_comment,omitempty"`
+	Name            string `json:"name"`
+	Type            string `json:"type"`
+	Details         string `json:"details,omitempty"`
+	UnfinishedNotes string `json:"unfinished_notes,omitempty"`
+	UMLComment      string `json:"uml_comment,omitempty"`
 }
 
 // actorSchema is the compiled JSON schema for actor files.

@@ -44,7 +44,7 @@ func TestStateActionExecutorSuite(t *testing.T) {
 func buildStateActionTestExecutor(simState *state.SimulationState) *actions.ActionExecutor {
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
-	return actions.NewActionExecutor(bb, nil, nil, nil, ge, nil)
+	return actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, nil, nil)
 }
 
 func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
@@ -56,7 +56,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionExitKey, "0"))
 	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", stateActionOrderSpec("self.exit_count + 1"), nil)
-	actionExit := model_state.NewAction(actionExitKey, "OnExit", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionExit := model_state.NewAction(actionExitKey, model_state.ActionDetails{Name: "OnExit", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateActionExit := model_state.NewStateAction(stateActionKey, actionExitKey, "exit")
 
@@ -64,8 +64,8 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	stateOpen.SetActions([]model_state.StateAction{stateActionExit})
 	stateClosed := model_state.NewState(stateClosedKey, "Closed", "", "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
 		stateClosedKey: stateClosed,
@@ -88,7 +88,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	ae := buildStateActionTestExecutor(simState)
 	sae := NewStateActionExecutor(ae)
 
-	violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
+	_, violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
 	s.Require().NoError(err)
 	s.Empty(violations)
 
@@ -105,15 +105,15 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionEntryKey, "0"))
 	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", stateActionOrderSpec("self.entry_count + 1"), nil)
-	actionEntry := model_state.NewAction(actionEntryKey, "OnEntry", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionEntry := model_state.NewAction(actionEntryKey, model_state.ActionDetails{Name: "OnEntry", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateActionEntry := model_state.NewStateAction(stateActionKey, actionEntryKey, "entry")
 
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 	stateOpen.SetActions([]model_state.StateAction{stateActionEntry})
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
 	})
@@ -135,7 +135,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	ae := buildStateActionTestExecutor(simState)
 	sae := NewStateActionExecutor(ae)
 
-	violations, err := sae.ExecuteEntryActions(class, stateOpenKey, instance)
+	_, violations, err := sae.ExecuteEntryActions(class, stateOpenKey, instance)
 	s.Require().NoError(err)
 	s.Empty(violations)
 
@@ -149,8 +149,8 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 
 	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
 	})
@@ -168,7 +168,7 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 	ae := buildStateActionTestExecutor(simState)
 	sae := NewStateActionExecutor(ae)
 
-	violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
+	_, violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
 	s.Require().NoError(err)
 	s.Empty(violations)
 }
@@ -177,8 +177,8 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	bogusStateKey := mustKey("domain/d/subdomain/s/class/order/state/bogus")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -193,7 +193,7 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	ae := buildStateActionTestExecutor(simState)
 	sae := NewStateActionExecutor(ae)
 
-	_, err := sae.ExecuteEntryActions(class, bogusStateKey, instance)
+	_, _, err := sae.ExecuteEntryActions(class, bogusStateKey, instance)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "not found")
 }

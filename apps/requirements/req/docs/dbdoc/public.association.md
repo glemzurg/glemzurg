@@ -8,8 +8,8 @@ A semantic relationship between typed instances.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.model](public.model.md) [public.class](public.class.md) | The model this association is part of. |
-| association_key | text |  | false |  |  | The internal ID. |
+| model_key | text |  | false | [public.association_uniqueness_attribute](public.association_uniqueness_attribute.md) [public.association_invariant](public.association_invariant.md) | [public.model](public.model.md) [public.class](public.class.md) | The model this association is part of. |
+| association_key | text |  | false | [public.association_uniqueness_attribute](public.association_uniqueness_attribute.md) [public.association_invariant](public.association_invariant.md) |  | The internal ID. |
 | from_class_key | text |  | false |  | [public.class](public.class.md) | The away-from direction of the association, for depicting tacochip. |
 | from_multiplicity_lower | integer |  | false |  |  | The multiplicity of the from end of the relation, lower value, 0 means "any". |
 | from_multiplicity_higher | integer |  | false |  |  | The multiplicity of the from end of the relation, higher value, 0 means "any". |

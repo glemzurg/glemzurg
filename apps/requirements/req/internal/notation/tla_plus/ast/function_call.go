@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 // FunctionCall represents a function call with optional scope path.
@@ -57,6 +59,12 @@ func (f *FunctionCall) IsGlobalOrBuiltin() bool {
 	return strings.HasPrefix(f.Name.Value, "_")
 }
 
+// IsSystemEvent reports whether this call is a reserved system event constructor.
+// Canonical TLA uses guillemets («new»); ASCII authoring uses a leading underscore (_new).
+func (f *FunctionCall) IsSystemEvent() bool {
+	return len(f.ScopePath) == 0 && model_state.IsSystemEventTLAName(f.Name.Value)
+}
+
 func (f *FunctionCall) String() string {
 	var out bytes.Buffer
 	for _, seg := range f.ScopePath {
@@ -75,13 +83,22 @@ func (f *FunctionCall) String() string {
 	return out.String()
 }
 
+var systemEventASCII = map[string]string{
+	model_state.EventTLANameNew:     model_state.EventNameNew,
+	model_state.EventTLANameDestroy: model_state.EventNameDestroy,
+}
+
 func (f *FunctionCall) ASCII() string {
 	var out bytes.Buffer
 	for _, seg := range f.ScopePath {
 		out.WriteString(seg.ASCII())
 		out.WriteString("!")
 	}
-	out.WriteString(f.Name.ASCII())
+	name := f.Name.ASCII()
+	if ascii, ok := systemEventASCII[name]; ok {
+		name = ascii
+	}
+	out.WriteString(name)
 	out.WriteString("(")
 	for i, arg := range f.Args {
 		if i > 0 {

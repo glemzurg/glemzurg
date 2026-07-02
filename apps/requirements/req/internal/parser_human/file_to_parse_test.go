@@ -60,6 +60,20 @@ func (suite *FileToParseSuite) TestNew() {
 				Class:     "domain_a/class_a", // Two domains can have different classes.
 			},
 		},
+		// Default subdomain metadata at domain root.
+		{
+			modelPath: "path/model",
+			pathRel:   "domain_b/this.subdomain",
+			pathAbs:   "/home/path/model/domain_b/this.subdomain",
+			toParse: fileToParse{
+				ModelPath: "path/model",
+				PathRel:   "domain_b/this.subdomain",
+				PathAbs:   "/home/path/model/domain_b/this.subdomain",
+				FileType:  ".subdomain",
+				Domain:    "domain_b",
+				Subdomain: "default",
+			},
+		},
 		// Subdomain file.
 		{
 			modelPath: "path/model",

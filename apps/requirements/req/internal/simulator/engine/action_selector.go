@@ -5,39 +5,60 @@ import (
 	"math/rand"
 	"sort"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // PendingAction describes a single eligible simulation action.
 type PendingAction struct {
-	Class      *ClassInfo
-	Event      *model_state.Event   // Non-nil for event-triggered actions.
-	DoAction   *model_state.Action  // Non-nil for "do" state actions.
-	Instance   *state.ClassInstance // nil for creation.
-	IsCreation bool
-	IsDo       bool // True when this is a "do" state action.
+	Class            *ClassInfo
+	Event            *model_state.Event     // Non-nil for event-triggered transitions.
+	Query            *model_state.Query     // Non-nil for query invocations.
+	DerivedAttribute *model_class.Attribute // Non-nil for derived attribute reads.
+	DoAction         *model_state.Action    // Non-nil for "do" state actions.
+	Instance         *state.ClassInstance   // nil for creation.
+	IsCreation       bool
+	IsQuery          bool
+	IsDerivedRead    bool // True when this reads an external derived attribute.
+	IsDo             bool // True when this is a "do" state action.
+
+	// Association-class Add binds both host-association endpoints.
+	SourceAssocKey   *identity.Key
+	SourceInstanceID *state.InstanceID
+	TargetInstanceID *state.InstanceID
 }
 
 // ActionSelector randomly selects the next simulation action.
 type ActionSelector struct {
-	catalog *ClassCatalog
-	rng     *rand.Rand
+	catalog         *ClassCatalog
+	derivedEval     *DerivedAttributeEvaluator
+	bindingsBuilder *state.BindingsBuilder
+	rng             *rand.Rand
 }
 
 // NewActionSelector creates a new action selector.
-func NewActionSelector(catalog *ClassCatalog, rng *rand.Rand) *ActionSelector {
+func NewActionSelector(
+	catalog *ClassCatalog,
+	derivedEval *DerivedAttributeEvaluator,
+	bindingsBuilder *state.BindingsBuilder,
+	rng *rand.Rand,
+) *ActionSelector {
 	return &ActionSelector{
-		catalog: catalog,
-		rng:     rng,
+		catalog:         catalog,
+		derivedEval:     derivedEval,
+		bindingsBuilder: bindingsBuilder,
+		rng:             rng,
 	}
 }
 
 // SelectAction picks a random eligible action from all classes and instances.
 // Returns error if no actions are available (deadlock).
 func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*PendingAction, error) {
-	eligible := s.collectEligibleActions(simState)
+	eligible := s.filterBySimulationRequires(s.collectEligibleActions(simState))
 
 	if len(eligible) == 0 {
 		return nil, fmt.Errorf("deadlock: no eligible actions")
@@ -52,19 +73,20 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 	var eligible []PendingAction
 
 	for _, classInfo := range s.catalog.AllSimulatableClasses() {
-		// External creation events — only events not driven by another class.
-		externalCreationEvents := s.catalog.ExternalCreationEvents(classInfo.ClassKey)
-		for i := range externalCreationEvents {
-			eligible = append(eligible, PendingAction{
-				Class:      classInfo,
-				Event:      &externalCreationEvents[i],
-				Instance:   nil,
-				IsCreation: true,
-			})
+		if classInfo.HasEvents {
+			externalCreationEvents := s.catalog.ExternalCreationEvents(classInfo.ClassKey)
+			for i := range externalCreationEvents {
+				eligible = append(eligible, PendingAction{
+					Class:      classInfo,
+					Event:      &externalCreationEvents[i],
+					Instance:   nil,
+					IsCreation: true,
+				})
+			}
+
+			eligible = append(eligible, s.collectAssociationClassCreations(classInfo, simState)...)
 		}
 
-		// Normal events and "do" actions on existing instances.
-		// Sort instances by ID for deterministic ordering (map iteration is non-deterministic).
 		instances := simState.InstancesByClass(classInfo.ClassKey)
 		sort.Slice(instances, func(i, j int) bool {
 			return instances[i].ID < instances[j].ID
@@ -75,18 +97,29 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 				continue
 			}
 
-			// Normal state transition events.
-			stateEvents := s.catalog.ExternalStateEvents(classInfo.ClassKey, currentState)
-			for i := range stateEvents {
-				eligible = append(eligible, PendingAction{
-					Class:    classInfo,
-					Event:    &stateEvents[i].Event,
-					Instance: instance,
-				})
+			if classInfo.HasEvents {
+				stateEvents := s.catalog.ExternalStateEvents(classInfo.ClassKey, currentState)
+				for i := range stateEvents {
+					eligible = append(eligible, PendingAction{
+						Class:    classInfo,
+						Event:    &stateEvents[i].Event,
+						Instance: instance,
+					})
+				}
+
+				externalQueries := s.catalog.ExternalQueries(classInfo.ClassKey)
+				for i := range externalQueries {
+					eligible = append(eligible, PendingAction{
+						Class:    classInfo,
+						Query:    &externalQueries[i],
+						Instance: instance,
+						IsQuery:  true,
+					})
+				}
 			}
 
-			// "Do" actions — only external ones eligible for top-level firing.
-			doActions := s.catalog.ExternalDoActions(classInfo.ClassKey, currentState)
+			// Do-actions are always surface-level on existing instances.
+			doActions := s.catalog.SurfaceDoActions(classInfo.ClassKey, currentState)
 			for i := range doActions {
 				eligible = append(eligible, PendingAction{
 					Class:    classInfo,
@@ -95,10 +128,124 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 					IsDo:     true,
 				})
 			}
+
+			eligible = append(eligible, s.collectDerivedReadActions(classInfo, instance)...)
 		}
 	}
 
 	return eligible
+}
+
+func (s *ActionSelector) filterBySimulationRequires(eligible []PendingAction) []PendingAction {
+	if s.bindingsBuilder == nil {
+		return eligible
+	}
+	classNameMap := s.catalog.ClassNameMap()
+	filtered := make([]PendingAction, 0, len(eligible))
+	for _, pending := range eligible {
+		if pending.IsQuery || pending.IsDerivedRead {
+			filtered = append(filtered, pending)
+			continue
+		}
+		action := s.resolveSurfaceAction(pending)
+		if action == nil || !actions.ActionHasParameterSimulation(*action) {
+			filtered = append(filtered, pending)
+			continue
+		}
+		bindings := actions.BuildSimulationBindings(s.bindingsBuilder, classNameMap, pending.Instance)
+		ok, err := actions.ActionSimulationRequiresMet(*action, bindings)
+		if err != nil || !ok {
+			continue
+		}
+		filtered = append(filtered, pending)
+	}
+	return filtered
+}
+
+func (s *ActionSelector) resolveSurfaceAction(pending PendingAction) *model_state.Action {
+	if pending.DoAction != nil {
+		return pending.DoAction
+	}
+	if pending.Event == nil {
+		return nil
+	}
+	instanceState := ""
+	if pending.Instance != nil {
+		instanceState = getInstanceStateName(pending.Instance)
+	}
+	action, found := s.catalog.GetActionForEvent(pending.Class.ClassKey, pending.Event.Key, instanceState)
+	if !found {
+		return nil
+	}
+	return action
+}
+
+func (s *ActionSelector) collectDerivedReadActions(
+	classInfo *ClassInfo,
+	instance *state.ClassInstance,
+) []PendingAction {
+	externalDerived := s.catalog.ExternalDerivedAttributes(classInfo.ClassKey)
+	var eligible []PendingAction
+	for i := range externalDerived {
+		eligible = append(eligible, PendingAction{
+			Class:            classInfo,
+			DerivedAttribute: &externalDerived[i],
+			Instance:         instance,
+			IsDerivedRead:    true,
+		})
+	}
+	return eligible
+}
+
+func (s *ActionSelector) collectAssociationClassCreations(
+	classInfo *ClassInfo,
+	simState *state.SimulationState,
+) []PendingAction {
+	acInfo := s.catalog.LookupAssociationClass(classInfo.ClassKey)
+	if acInfo == nil || len(classInfo.CreationEvents) == 0 {
+		return nil
+	}
+
+	fromInstances := simState.InstancesByClass(acInfo.FromClassKey)
+	toInstances := simState.InstancesByClass(acInfo.ToClassKey)
+	sort.Slice(fromInstances, func(i, j int) bool { return fromInstances[i].ID < fromInstances[j].ID })
+	sort.Slice(toInstances, func(i, j int) bool { return toInstances[i].ID < toInstances[j].ID })
+	if len(fromInstances) == 0 || len(toInstances) == 0 {
+		return nil
+	}
+
+	creationEvent := classInfo.CreationEvents[0]
+	var eligible []PendingAction
+	hostAssocKey := acInfo.HostAssociation.Key
+
+	hostAssoc := acInfo.HostAssociation
+	for _, fromInst := range fromInstances {
+		for _, toInst := range toInstances {
+			fromID := fromInst.ID
+			toID := toInst.ID
+			if !s.pairAllowsAnotherLink(hostAssoc, simState, fromID, toID) {
+				continue
+			}
+			eligible = append(eligible, PendingAction{
+				Class:            classInfo,
+				Event:            &creationEvent,
+				Instance:         nil,
+				IsCreation:       true,
+				SourceAssocKey:   &hostAssocKey,
+				SourceInstanceID: &fromID,
+				TargetInstanceID: &toID,
+			})
+		}
+	}
+	return eligible
+}
+
+func (s *ActionSelector) pairAllowsAnotherLink(
+	hostAssoc model_class.Association,
+	simState *state.SimulationState,
+	fromID, toID state.InstanceID,
+) bool {
+	return simState.CountActivePairLinks(hostAssoc, fromID, toID) == 0
 }
 
 // getInstanceStateName extracts the current state name from an instance's _state attribute.

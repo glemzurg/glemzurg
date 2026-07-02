@@ -28,7 +28,7 @@ func (s *ActionSelectorSuite) TestCreationEligibleWhenNoInstancesExist() {
 
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, rng)
+	selector := NewActionSelector(catalog, nil, nil, rng)
 
 	simState := state.NewSimulationState()
 
@@ -45,7 +45,7 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, rng)
+	selector := NewActionSelector(catalog, nil, nil, rng)
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -84,10 +84,10 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 
-	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
+	transUpdate := model_state.NewTransition(transUpdateKey, eventUpdateKey, model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stuck", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -104,7 +104,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, rng)
+	selector := NewActionSelector(catalog, nil, nil, rng)
 
 	// No creation transitions and no instances → deadlock.
 	simState := state.NewSimulationState()
@@ -113,7 +113,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	s.Contains(err.Error(), "deadlock")
 }
 
-func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
+func (s *ActionSelectorSuite) TestDoActionsEligibleOnExistingInstances() {
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/counter/state/active")
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/counter/event/create")
@@ -125,17 +125,17 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
 	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil)
-	actionDo := model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionDo := model_state.NewAction(actionDoKey, model_state.ActionDetails{Name: "DoCount", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateActionDo := model_state.NewStateAction(stateActionKey, actionDoKey, "do")
 
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateActive.SetActions([]model_state.StateAction{stateActionDo})
 
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Counter", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -154,7 +154,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, rng)
+	selector := NewActionSelector(catalog, nil, nil, rng)
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -162,7 +162,6 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 	attrs.Set("count", object.NewInteger(0))
 	simState.CreateInstance(classKey, attrs)
 
-	// Should find "do" actions as eligible.
 	foundDo := false
 	for range 50 {
 		action, err := selector.SelectAction(simState)
@@ -174,5 +173,5 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 			break
 		}
 	}
-	s.True(foundDo, "should find do actions as eligible events")
+	s.True(foundDo, "do actions are surface-level on existing instances")
 }

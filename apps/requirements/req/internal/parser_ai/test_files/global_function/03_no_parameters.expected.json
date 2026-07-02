@@ -1,6 +1,7 @@
 {
     "name": "_SetOfValues",
     "logic": {
+        "type": "value",
         "description": "A set of valid values",
         "notation": "tla_plus"
     }

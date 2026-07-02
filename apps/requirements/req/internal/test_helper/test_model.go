@@ -2,6 +2,7 @@ package test_helper
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
@@ -39,6 +40,51 @@ func parsedSpec(specification string) logic_spec.ExpressionSpec {
 	return spec
 }
 
+// Distinct unfinished-notes strings exercise parser and database round-trips.
+const (
+	notesModel              = "Model scratch: align glossary with downstream design docs."
+	notesDomainCommerce     = "Domain scratch (commerce): pending stakeholder review."
+	notesDomainLogistics    = "Domain scratch (logistics): route constraints TBD."
+	notesDomainExternal     = "Domain scratch (external): partner API matrix incomplete."
+	notesSubdomainOrders    = "Subdomain scratch (orders): split fulfillment use cases."
+	notesSubdomainWarehouse = "Subdomain scratch (warehouse): slotting rules draft."
+	notesSubdomainDefault   = "Subdomain scratch (default): placeholder cleanup needed."
+	notesSubdomainAnalytics = "Subdomain scratch (analytics): metric definitions pending."
+	notesActorGenCustomers  = "Actor-gen scratch (customers): junior role edge cases."
+	notesActorGenUsers      = "Actor-gen scratch (users): privilege model draft."
+	notesActorGenSystems    = "Actor-gen scratch (systems): failover actor mapping."
+	notesActorCustomer      = "Actor scratch (customer): guest checkout actor TBD."
+	notesActorGateway       = "Actor scratch (gateway): retry policy notes."
+	notesActorVip           = "Actor scratch (vip): entitlement tiers draft."
+	notesActorRegular       = "Actor scratch (regular): loyalty program linkage."
+	notesActorAnother       = "Actor scratch (another): duplicate detection rule."
+	notesClassGenVehicles   = "Class-gen scratch (vehicles): subtype completeness check."
+	notesClassGenProducts   = "Class-gen scratch (products): bundle SKU semantics."
+	notesClassGenOrders     = "Class-gen scratch (orders): partial shipment subclass."
+	notesClassOrder         = "Class scratch (order): cancellation window draft."
+	notesClassProduct       = "Class scratch (product): tax category mapping."
+	notesClassLineItem      = "Class scratch (line item): quantity split behavior."
+	notesClassCustomer      = "Class scratch (customer): address validation rule."
+	notesClassVehicle       = "Class scratch (vehicle): registration attribute TBD."
+	notesClassCar           = "Class scratch (car): insurance linkage draft."
+	notesClassWarehouse     = "Class scratch (warehouse): capacity invariant draft."
+	notesClassShelf         = "Class scratch (shelf): replenishment trigger."
+	notesClassAisle         = "Class scratch (aisle): pick-path optimization note."
+	notesClassSupplier      = "Class scratch (supplier): lead-time attribute."
+	notesClassShipment      = "Class scratch (shipment): tracking ID format."
+	notesClassRoute         = "Class scratch (route): multi-stop sequencing."
+	notesClassDummy         = "Class scratch (dummy): auto-generated filler."
+	notesUCGenManagement    = "Use-case-gen scratch (management): extend vs include."
+	notesUCGenView          = "Use-case-gen scratch (view): read-only boundary."
+	notesUCGenCancel        = "Use-case-gen scratch (cancel): compensation flow."
+	notesUCPlaceOrder       = "Use-case scratch (place order): payment timeout."
+	notesUCViewOrder        = "Use-case scratch (view order): PII masking rule."
+	notesUCManageOrder      = "Use-case scratch (manage order): bulk edit limits."
+	notesUCCancelOrder      = "Use-case scratch (cancel order): restocking fee."
+	notesUCViewOrders       = "Use-case scratch (view orders): pagination default."
+	notesUCCancelOrders     = "Use-case scratch (cancel orders): batch threshold."
+)
+
 // testKeys holds all identity keys used throughout the test model.
 type testKeys struct {
 	// Domains.
@@ -67,14 +113,15 @@ type testKeys struct {
 	classGen1, classGen2, classGen3 identity.Key
 
 	// Attributes.
-	attrOrderDate, attrTotal, attrStatus identity.Key
-	attrProductName                      identity.Key
+	attrOrderDate, attrTotal, attrStatus   identity.Key
+	attrProductName                        identity.Key
+	attrCustomerCode, attrShipmentTracking identity.Key
 
 	// States.
 	stateNew, stateProcessing, stateComplete identity.Key
 
 	// Events.
-	eventSubmit, eventFulfill, eventCancel identity.Key
+	eventSubmit, eventFulfill, eventCancel, eventNew, eventDestroy identity.Key
 
 	// Guards.
 	guardHasItems, guardIsValid, guardInStock identity.Key
@@ -84,6 +131,13 @@ type testKeys struct {
 
 	// Queries.
 	queryStatus, queryCount, queryHistory identity.Key
+
+	// Parameters (identity keys for invariant parents).
+	paramQuantity, paramProductID identity.Key
+
+	// Parameter invariant keys.
+	paramInv1, paramInv2, paramInvLet identity.Key // quantity on actionProcess.
+	paramInv3                         identity.Key // product_id on queryStatus.
 
 	// Transitions.
 	transitionSubmit, transitionFulfill, transitionInitial, transitionFinal identity.Key
@@ -193,7 +247,7 @@ func GetStrictTestModel() core.Model {
 			if err != nil {
 				panic(fmt.Sprintf("failed to create default subdomain key: %v", err))
 			}
-			defaultSubdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", "")
+			defaultSubdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", notesSubdomainDefault, "")
 			domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 				defaultSubdomainKey: defaultSubdomain,
 			}
@@ -211,7 +265,7 @@ func GetStrictTestModel() core.Model {
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy class key: %v", err))
 					}
-					dummyClass := model_class.NewClass(dummyClassKey, fmt.Sprintf("Dummy Class %d", i), "Dummy class to satisfy strict requirements.", nil, nil, nil, "")
+					dummyClass := model_class.NewClass(dummyClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: fmt.Sprintf("Dummy Class %d", i), Details: "Dummy class to satisfy strict requirements.", UnfinishedNotes: notesClassDummy, UmlComment: ""})
 					subdomain.Classes[dummyClassKey] = dummyClass
 				}
 			}
@@ -224,17 +278,15 @@ func GetStrictTestModel() core.Model {
 					}
 
 					// Create dummy attribute.
-					dummyAttr, err := model_class.NewAttribute(dummyAttrKey, "Dummy ID", "Dummy attribute to satisfy strict requirements.", "unconstrained", nil, false,
-						model_class.AttributeAnnotations{})
+					dummyAttr, err := model_class.NewAttribute(dummyAttrKey, model_class.AttributeDetails{
+						Name: "Dummy ID", Details: "Dummy attribute to satisfy strict requirements.",
+					}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy attribute: %v", err))
 					}
 
 					// Add to class attributes.
-					if class.Attributes == nil {
-						class.Attributes = make(map[identity.Key]model_class.Attribute)
-					}
-					class.Attributes[dummyAttrKey] = dummyAttr
+					class.Attributes = append(class.Attributes, dummyAttr)
 
 					// Update the class in the subdomain.
 					subdomain.Classes[classKey] = class
@@ -249,19 +301,23 @@ func GetStrictTestModel() core.Model {
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy state key: %v", err))
 					}
-					eventKey, err := identity.NewEventKey(classKey, "create")
+					eventKey, err := identity.NewEventKey(classKey, "_new")
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy event key: %v", err))
 					}
-					transitionKey, err := identity.NewTransitionKey(classKey, "", "create", "", "", "existing")
+					transitionKey, err := identity.NewTransitionKey(classKey, "", "_new", "", "", "existing")
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy transition key: %v", err))
 					}
 
 					// Create objects.
 					state := model_state.NewState(stateKey, "Existing", "The entity exists in the system.", "")
-					event := model_state.NewEvent(eventKey, "Create", "Creates the entity.", nil)
-					transition := model_state.NewTransition(transitionKey, nil, eventKey, nil, nil, &stateKey, "")
+					event := model_state.NewEvent(eventKey, model_state.EventNameNew, "Creates the entity.", nil)
+					transition := model_state.NewTransition(transitionKey, eventKey,
+						model_state.TransitionStateKeys{ToStateKey: &stateKey},
+						model_state.TransitionLogicKeys{},
+						"",
+					)
 
 					// Set on class.
 					class.SetStates(map[identity.Key]model_state.State{stateKey: state})
@@ -300,40 +356,15 @@ func GetStrictTestModel() core.Model {
 
 				dummyAssoc := model_class.NewAssociation(
 					dummyAssocKey,
-					"Dummy Association",
-					"Dummy association to satisfy strict requirements.",
+					model_class.AssociationDetails{
+						Name: "Dummy Association", Details: "Dummy association to satisfy strict requirements.",
+					},
 					model_class.AssociationEnd{ClassKey: classKeys[0], Multiplicity: mult1},
 					model_class.AssociationEnd{ClassKey: classKeys[1], Multiplicity: multMany},
-					nil,
-					"",
+					model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 				)
 				subdomain.ClassAssociations = map[identity.Key]model_class.Association{
 					dummyAssocKey: dummyAssoc,
-				}
-			}
-
-			// Ensure all event parameter DataTypeRules are parseable.
-			// The AI parser validates data_type_rules; the base model may
-			// contain intentionally unparseable values that are valid for the
-			// human parser but not the AI path.
-			for classKey, class := range subdomain.Classes {
-				changed := false
-				for eventKey, event := range class.Events {
-					for i := range event.Parameters {
-						if event.Parameters[i].DataTypeRules != "" && event.Parameters[i].DataType == nil {
-							// Unparseable — replace with unconstrained.
-							p, err := model_state.NewParameter(event.Parameters[i].Name, "unconstrained")
-							if err != nil {
-								panic(fmt.Sprintf("failed to create replacement parameter: %v", err))
-							}
-							event.Parameters[i] = p
-							changed = true
-						}
-					}
-					class.Events[eventKey] = event
-				}
-				if changed {
-					subdomain.Classes[classKey] = class
 				}
 			}
 
@@ -344,7 +375,122 @@ func GetStrictTestModel() core.Model {
 		model.Domains[domainKey] = domain
 	}
 
+	// Ensure all entity names match their keys via keyFromName.
+	// The AI parser validates that keys are derived from names; the base model
+	// may have names that don't match keys (which is fine for the human parser).
+	fixStrictModelNames(&model)
+
 	return model
+}
+
+// fixStrictModelNames ensures all entity names in the model produce the correct key
+// when passed through the AI parser's keyFromName function (lowercase, spaces/hyphens to underscores).
+// This is required because the AI parser validates key-name consistency.
+func fixStrictModelNames(model *core.Model) {
+	// Fix domain names.
+	for domainKey, domain := range model.Domains {
+		expectedName := nameFromKey(domainKey.SubKey)
+		if domain.Name != expectedName {
+			domain.Name = expectedName
+		}
+
+		// Fix subdomain names.
+		for subdomainKey, subdomain := range domain.Subdomains {
+			expectedName := nameFromKey(subdomainKey.SubKey)
+			if subdomain.Name != expectedName {
+				subdomain.Name = expectedName
+			}
+
+			// Fix class names.
+			for classKey, class := range subdomain.Classes {
+				expectedName := nameFromKey(classKey.SubKey)
+				if class.Name != expectedName {
+					class.Name = expectedName
+				}
+
+				// Fix attribute names.
+				for i, attr := range class.Attributes {
+					expectedName := nameFromKey(attr.Key.SubKey)
+					if attr.Name != expectedName {
+						attr.Name = expectedName
+						class.Attributes[i] = attr
+					}
+				}
+
+				subdomain.Classes[classKey] = class
+			}
+
+			// Fix use case names.
+			for ucKey, uc := range subdomain.UseCases {
+				expectedName := nameFromKey(ucKey.SubKey)
+				if uc.Name != expectedName {
+					uc.Name = expectedName
+					subdomain.UseCases[ucKey] = uc
+				}
+
+				// Fix scenario names.
+				for scenKey, scen := range uc.Scenarios {
+					expectedName := nameFromKey(scenKey.SubKey)
+					if scen.Name != expectedName {
+						scen.Name = expectedName
+						uc.Scenarios[scenKey] = scen
+					}
+				}
+			}
+
+			domain.Subdomains[subdomainKey] = subdomain
+		}
+
+		model.Domains[domainKey] = domain
+	}
+
+	// Fix actor names.
+	for actorKey, actor := range model.Actors {
+		expectedName := nameFromKey(actorKey.SubKey)
+		if actor.Name != expectedName {
+			actor.Name = expectedName
+			model.Actors[actorKey] = actor
+		}
+	}
+
+	// Fix actor generalization names.
+	for agKey, ag := range model.ActorGeneralizations {
+		expectedName := nameFromKey(agKey.SubKey)
+		if ag.Name != expectedName {
+			ag.Name = expectedName
+			model.ActorGeneralizations[agKey] = ag
+		}
+	}
+
+	// Fix global function names (names start with "_", keys start with "_" on filesystem but SubKey has _ stripped).
+	for gfKey, gf := range model.GlobalFunctions {
+		expectedName := "_" + nameFromKey(gfKey.SubKey)
+		if gf.Name != expectedName {
+			gf.Name = expectedName
+			model.GlobalFunctions[gfKey] = gf
+		}
+	}
+
+	// Fix named set names (names start with "_", keys do NOT have "_" prefix).
+	for nsKey, ns := range model.NamedSets {
+		expectedName := "_" + nameFromKey(nsKey.SubKey)
+		if ns.Name != expectedName {
+			ns.Name = expectedName
+			model.NamedSets[nsKey] = ns
+		}
+	}
+}
+
+// nameFromKey converts a snake_case key to a Title Case name where keyFromName(result) == key.
+// Example: "domain_b" -> "Domain B", "customer_class" -> "Customer Class".
+func nameFromKey(key string) string {
+	parts := strings.Split(key, "_")
+	for i, part := range parts {
+		if len(part) > 0 {
+			parts[i] = strings.ToUpper(part[:1]) + part[1:]
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 func buildTestModel() (core.Model, error) {
@@ -365,7 +511,7 @@ func buildTestModel() (core.Model, error) {
 		return core.Model{}, err
 	}
 
-	params, err := buildParameters()
+	params, err := buildParameters(k, logic)
 	if err != nil {
 		return core.Model{}, err
 	}
@@ -399,14 +545,9 @@ func buildTestModel() (core.Model, error) {
 	domains := buildDomains(k, subdomains)
 
 	// Assemble the model.
-	model := core.NewModel(
-		"test_model",
-		"Test Model",
-		"A comprehensive test model with every type represented.",
-		logic.invariants,
-		globalFuncs,
-		namedSets,
-	)
+	model := core.NewModel("test_model", core.ModelDetails{
+		Name: "Test Model", Details: "A comprehensive test model with every type represented.",
+	}, notesModel, logic.invariants, globalFuncs, namedSets)
 
 	model.Actors = actors
 	model.ActorGeneralizations = actorGens
@@ -589,6 +730,14 @@ func buildKeys() (testKeys, error) {
 	if err != nil {
 		return k, err
 	}
+	k.attrCustomerCode, err = identity.NewAttributeKey(k.classCustomer, "customer_code")
+	if err != nil {
+		return k, err
+	}
+	k.attrShipmentTracking, err = identity.NewAttributeKey(k.classShipment, "tracking_id")
+	if err != nil {
+		return k, err
+	}
 
 	// States.
 	k.stateNew, err = identity.NewStateKey(k.classOrder, "new")
@@ -614,6 +763,14 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.eventCancel, err = identity.NewEventKey(k.classOrder, "cancel")
+	if err != nil {
+		return k, err
+	}
+	k.eventNew, err = identity.NewEventKey(k.classOrder, "_new")
+	if err != nil {
+		return k, err
+	}
+	k.eventDestroy, err = identity.NewEventKey(k.classOrder, "_destroy")
 	if err != nil {
 		return k, err
 	}
@@ -660,6 +817,31 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 
+	k.paramQuantity, err = identity.NewParameterKey(k.actionProcess, "quantity")
+	if err != nil {
+		return k, err
+	}
+	k.paramProductID, err = identity.NewParameterKey(k.queryStatus, "product_id")
+	if err != nil {
+		return k, err
+	}
+	k.paramInv1, err = identity.NewParameterInvariantKey(k.paramQuantity, "0")
+	if err != nil {
+		return k, err
+	}
+	k.paramInv2, err = identity.NewParameterInvariantKey(k.paramQuantity, "1")
+	if err != nil {
+		return k, err
+	}
+	k.paramInvLet, err = identity.NewParameterInvariantKey(k.paramQuantity, "2")
+	if err != nil {
+		return k, err
+	}
+	k.paramInv3, err = identity.NewParameterInvariantKey(k.paramProductID, "0")
+	if err != nil {
+		return k, err
+	}
+
 	// Transitions.
 	k.transitionSubmit, err = identity.NewTransitionKey(k.classOrder, "new", "submit", "has_items", "process_order", "processing")
 	if err != nil {
@@ -669,11 +851,11 @@ func buildKeys() (testKeys, error) {
 	if err != nil {
 		return k, err
 	}
-	k.transitionInitial, err = identity.NewTransitionKey(k.classOrder, "", "cancel", "", "", "new")
+	k.transitionInitial, err = identity.NewTransitionKey(k.classOrder, "", "_new", "", "", "new")
 	if err != nil {
 		return k, err
 	}
-	k.transitionFinal, err = identity.NewTransitionKey(k.classOrder, "complete", "cancel", "", "", "")
+	k.transitionFinal, err = identity.NewTransitionKey(k.classOrder, "complete", "_destroy", "", "", "")
 	if err != nil {
 		return k, err
 	}
@@ -1084,6 +1266,10 @@ type testLogic struct {
 	attrInvariants1 []model_logic.Logic // Total (3).
 	attrInvariants2 []model_logic.Logic // Status (2).
 	attrInvariants3 []model_logic.Logic // Product name (1).
+
+	// Parameter-level invariants.
+	paramInvariants1 []model_logic.Logic // quantity (actionProcess).
+	paramInvariants2 []model_logic.Logic // product_id (queryStatus).
 }
 
 func buildLogic(k testKeys) (testLogic, error) {
@@ -1192,6 +1378,20 @@ func buildLogic(k testKeys) (testLogic, error) {
 	aInv6 := model_logic.NewLogic(k.attrInv6, model_logic.LogicTypeAssessment, "Product name must not be empty", "", newSpec("Len(self.name) > 0"), nil)
 	l.attrInvariants3 = []model_logic.Logic{aInv6}
 
+	// Parameter invariants — quantity (actionProcess).
+	pInv1 := model_logic.NewLogic(k.paramInv1, model_logic.LogicTypeAssessment, "Quantity must be positive.", "", parsedSpec("quantity > 0"), nil)
+	pInv2 := model_logic.NewLogic(k.paramInv2, model_logic.LogicTypeAssessment, "Quantity must not exceed ten thousand.", "", parsedSpec("quantity <= 10000"), nil)
+	paramInvLetTypeSpec, err := logic_spec.NewTypeSpec("tla_plus", "Int", nil)
+	if err != nil {
+		return l, err
+	}
+	pInvLet := model_logic.NewLogic(k.paramInvLet, model_logic.LogicTypeLet, "Compute max quantity for parameter invariants.", "maxQty", parsedSpec("10000"), &paramInvLetTypeSpec)
+	l.paramInvariants1 = []model_logic.Logic{pInvLet, pInv1, pInv2}
+
+	// Parameter invariants — product_id (queryStatus).
+	pInv3 := model_logic.NewLogic(k.paramInv3, model_logic.LogicTypeAssessment, "Product ID must be set when non-null.", "", parsedSpec("product_id /= NULL => Len(product_id) > 0"), nil)
+	l.paramInvariants2 = []model_logic.Logic{pInv3}
+
 	// Derivation with empty specification (tests empty spec path).
 	l.derivation = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "", parsedSpec("_Sum(things)"), nil)
 
@@ -1247,59 +1447,77 @@ func buildNamedSets(k testKeys) (map[identity.Key]model_logic.NamedSet, error) {
 // Parameters
 // =========================================================================
 
+// testParams holds per-owner parameter slices. Each parameter now has its own
+// identity.Key parented by its owning action / query / event, so previously
+// shared parameter values (e.g., "quantity" reused across an event and an action)
+// are constructed once per owner.
 type testParams struct {
-	quantity, productID, reason model_state.Parameter
-	priority, tags, items       model_state.Parameter
-	format                      model_state.Parameter
-	unparseable                 model_state.Parameter
-	unconstrainedBound          model_state.Parameter
+	eventSubmit   []string
+	eventFulfill  []string
+	actionProcess []model_state.Parameter
+	actionNotify  []model_state.Parameter
+	queryStatus   []model_state.Parameter
+	queryHistory  []model_state.Parameter
 }
 
-func buildParameters() (testParams, error) {
+func buildParameters(k testKeys, l testLogic) (testParams, error) {
 	var p testParams
-	var err error
 
-	// Diverse parseable DataTypeRules.
-	p.quantity, err = model_state.NewParameter("quantity", "[1 .. 10000] at 1 unit")
-	if err != nil {
-		return p, err
-	}
-	p.productID, err = model_state.NewParameter("product_id", "ref from domain_a>subdomain_a>product")
-	if err != nil {
-		return p, err
-	}
-	p.reason, err = model_state.NewParameter("reason", "enum of out_of_stock, changed_mind, defective")
-	if err != nil {
-		return p, err
-	}
-	p.priority, err = model_state.NewParameter("priority", "ordered enum of low, medium, high, critical")
-	if err != nil {
-		return p, err
-	}
-	p.tags, err = model_state.NewParameter("tags", "unique unordered of unconstrained")
-	if err != nil {
-		return p, err
-	}
-	p.items, err = model_state.NewParameter("items", "1-100 ordered of obj of some_class")
-	if err != nil {
-		return p, err
-	}
-	p.format, err = model_state.NewParameter("format", "unconstrained")
-	if err != nil {
-		return p, err
-	}
+	// eventSubmit: action/query param names plus an extra event-only name.
+	p.eventSubmit = []string{"quantity", "product_id", "reason", "extra_telemetry"}
 
-	// Unparseable DataTypeRules: results in nil DataType (CannotParseError silently swallowed).
-	p.unparseable, err = model_state.NewParameter("unparseable_field", "Int")
-	if err != nil {
-		return p, err
-	}
+	// eventFulfill: includes a name not declared on any action/query parameter.
+	p.eventFulfill = []string{"reason", "unparseable_field"}
 
-	// Span with unconstrained lower bound.
-	p.unconstrainedBound, err = model_state.NewParameter("unconstrained_bound", "(unconstrained .. 100] at 1 unit")
+	// actionProcess: quantity, priority, tags.
+	quantityProcess, err := model_state.NewParameter(k.actionProcess, "quantity", "[1 .. 10000] at 1 unit", false)
 	if err != nil {
 		return p, err
 	}
+	priorityProcess, err := model_state.NewParameter(k.actionProcess, "priority", "ordered enum of low, medium, high, critical", false)
+	if err != nil {
+		return p, err
+	}
+	tagsProcess, err := model_state.NewParameter(k.actionProcess, "tags", "unique unordered of unconstrained", false)
+	if err != nil {
+		return p, err
+	}
+	quantityProcess.SetInvariants(l.paramInvariants1)
+	p.actionProcess = []model_state.Parameter{quantityProcess, priorityProcess, tagsProcess}
+
+	// actionNotify: format, unconstrained_bound (span with unconstrained lower bound).
+	formatNotify, err := model_state.NewParameter(k.actionNotify, "format", "unconstrained", false)
+	if err != nil {
+		return p, err
+	}
+	unconstrainedBoundNotify, err := model_state.NewParameter(k.actionNotify, "unconstrained_bound", "(unconstrained .. 100] at 1 unit", true)
+	if err != nil {
+		return p, err
+	}
+	p.actionNotify = []model_state.Parameter{formatNotify, unconstrainedBoundNotify}
+
+	// queryStatus: productID, items, format.
+	productIDStatus, err := model_state.NewParameter(k.queryStatus, "product_id", "ref from domain_a>subdomain_a>product", true)
+	if err != nil {
+		return p, err
+	}
+	itemsStatus, err := model_state.NewParameter(k.queryStatus, "items", "1-100 ordered of obj of some_class", false)
+	if err != nil {
+		return p, err
+	}
+	formatStatus, err := model_state.NewParameter(k.queryStatus, "format", "unconstrained", false)
+	if err != nil {
+		return p, err
+	}
+	productIDStatus.SetInvariants(l.paramInvariants2)
+	p.queryStatus = []model_state.Parameter{productIDStatus, itemsStatus, formatStatus}
+
+	// queryHistory: format.
+	formatHistory, err := model_state.NewParameter(k.queryHistory, "format", "unconstrained", false)
+	if err != nil {
+		return p, err
+	}
+	p.queryHistory = []model_state.Parameter{formatHistory}
 
 	return p, nil
 }
@@ -1343,20 +1561,24 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// --- Events ---
 
-	// eventSubmit: rich (3 parameters).
+	// eventSubmit: name list is a superset of actionProcess parameters.
 	eventSubmit := model_state.NewEvent(k.eventSubmit, "Submit", "Customer submits the order.",
-		[]model_state.Parameter{p.quantity, p.productID, p.reason})
+		p.eventSubmit)
 
 	eventFulfill := model_state.NewEvent(k.eventFulfill, "Fulfill", "Order is fulfilled.",
-		[]model_state.Parameter{p.reason, p.unparseable})
+		p.eventFulfill)
 
-	// eventCancel: empty parent (nil parameters).
+	// eventCancel: no parameter names.
 	eventCancel := model_state.NewEvent(k.eventCancel, "Cancel", "Order is cancelled.", nil)
+	eventNew := model_state.NewEvent(k.eventNew, model_state.EventNameNew, "Creates a new order.", nil)
+	eventDestroy := model_state.NewEvent(k.eventDestroy, model_state.EventNameDestroy, "Deletes the order.", nil)
 
 	sm.events = map[identity.Key]model_state.Event{
 		k.eventSubmit:  eventSubmit,
 		k.eventFulfill: eventFulfill,
 		k.eventCancel:  eventCancel,
+		k.eventNew:     eventNew,
+		k.eventDestroy: eventDestroy,
 	}
 
 	// --- Guards (3) ---
@@ -1375,22 +1597,22 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	// actionProcess: rich (1 let + 3 requires, 1 let + 3 guarantees, 1 let + 3 safety, 3 params).
 	actionProcess := model_state.NewAction(
-		k.actionProcess, "Process Order", "Processes the order for fulfillment.",
+		k.actionProcess, model_state.ActionDetails{Name: "Process Order", Details: "Processes the order for fulfillment."},
 		[]model_logic.Logic{l.actionRequireLet, l.actionRequire1, l.actionRequire2, l.actionRequire3},
 		[]model_logic.Logic{l.actionGuarLet, l.actionGuarantee1, l.actionGuarantee2, l.actionGuarantee3},
 		[]model_logic.Logic{l.actionSafetyLet, l.actionSafety1, l.actionSafety2, l.actionSafety3},
-		[]model_state.Parameter{p.quantity, p.priority, p.tags},
+		p.actionProcess,
 	)
 
 	// actionShip: empty parent (nil for all slices).
 	actionShip := model_state.NewAction(
-		k.actionShip, "Ship Order", "Ships the order to the customer.",
+		k.actionShip, model_state.ActionDetails{Name: "Ship Order", Details: "Ships the order to the customer."},
 		nil, nil, nil, nil,
 	)
 
 	actionNotify := model_state.NewAction(
-		k.actionNotify, "Notify Customer", "Sends notification to customer.",
-		nil, nil, nil, []model_state.Parameter{p.format, p.unconstrainedBound},
+		k.actionNotify, model_state.ActionDetails{Name: "Notify Customer", Details: "Sends notification to customer."},
+		nil, nil, nil, p.actionNotify,
 	)
 
 	sm.actions = map[identity.Key]model_state.Action{
@@ -1406,7 +1628,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 		k.queryStatus, "Get Status", "Returns the current status of the order.",
 		[]model_logic.Logic{l.queryRequireLet, l.queryRequire1, l.queryRequire2, l.queryRequire3},
 		[]model_logic.Logic{l.queryGuarLet, l.queryGuarantee1, l.queryGuarantee2, l.queryGuarantee3},
-		[]model_state.Parameter{p.productID, p.items, p.format},
+		p.queryStatus,
 	)
 
 	// queryCount: empty parent (nil for all slices).
@@ -1417,7 +1639,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 
 	queryHistory := model_state.NewQuery(
 		k.queryHistory, "Get History", "Returns order history.",
-		nil, nil, []model_state.Parameter{p.format},
+		nil, nil, p.queryHistory,
 	)
 
 	sm.queries = map[identity.Key]model_state.Query{
@@ -1429,28 +1651,32 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 	// --- Transitions ---
 
 	transitionSubmit := model_state.NewTransition(
-		k.transitionSubmit,
-		&k.stateNew, k.eventSubmit, &k.guardHasItems, &k.actionProcess, &k.stateProcessing,
+		k.transitionSubmit, k.eventSubmit,
+		model_state.TransitionStateKeys{FromStateKey: &k.stateNew, ToStateKey: &k.stateProcessing},
+		model_state.TransitionLogicKeys{GuardKey: &k.guardHasItems, ActionKey: &k.actionProcess},
 		"submit order transition",
 	)
 
 	transitionFulfill := model_state.NewTransition(
-		k.transitionFulfill,
-		&k.stateProcessing, k.eventFulfill, nil, &k.actionShip, &k.stateComplete,
+		k.transitionFulfill, k.eventFulfill,
+		model_state.TransitionStateKeys{FromStateKey: &k.stateProcessing, ToStateKey: &k.stateComplete},
+		model_state.TransitionLogicKeys{ActionKey: &k.actionShip},
 		"",
 	)
 
 	// Initial transition: nil FromStateKey.
 	transitionInitial := model_state.NewTransition(
-		k.transitionInitial,
-		nil, k.eventCancel, nil, nil, &k.stateNew,
+		k.transitionInitial, k.eventNew,
+		model_state.TransitionStateKeys{ToStateKey: &k.stateNew},
+		model_state.TransitionLogicKeys{},
 		"initial transition",
 	)
 
 	// Final transition: nil ToStateKey.
 	transitionFinal := model_state.NewTransition(
-		k.transitionFinal,
-		&k.stateComplete, k.eventCancel, nil, nil, nil,
+		k.transitionFinal, k.eventDestroy,
+		model_state.TransitionStateKeys{FromStateKey: &k.stateComplete},
+		model_state.TransitionLogicKeys{},
 		"",
 	)
 
@@ -1469,35 +1695,59 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) testStateMachine {
 // =========================================================================
 
 type testAttrs struct {
-	orderDate, total, status model_class.Attribute
-	productName              model_class.Attribute
+	orderDate, total, status       model_class.Attribute
+	productName                    model_class.Attribute
+	customerCode, shipmentTracking model_class.Attribute
 }
 
 func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 	var a testAttrs
 	var err error
 
-	a.orderDate, err = model_class.NewAttribute(k.attrOrderDate, "Order Date", "When the order was placed.", "3+ ordered of unconstrained", nil, false,
-		model_class.AttributeAnnotations{UmlComment: "the date"})
+	a.orderDate, err = model_class.NewAttribute(k.attrOrderDate, model_class.AttributeDetails{
+		Name: "Order Date", Details: "When the order was placed.",
+	}, "3+ ordered of unconstrained", nil, false, model_class.AttributeAnnotations{UmlComment: "the date"})
 	if err != nil {
 		return a, err
 	}
 
 	// Derived attribute with derivation policy.
-	a.total, err = model_class.NewAttribute(k.attrTotal, "Total", "Total amount for the order.", "(0 .. 1000000] at 0.01 dollar", &l.derivation, true,
-		model_class.AttributeAnnotations{IndexNums: []uint{1, 2}})
+	a.total, err = model_class.NewAttribute(k.attrTotal, model_class.AttributeDetails{
+		Name: "Total", Details: "Total amount for the order.",
+	}, "(0 .. 1000000] at 0.01 dollar", &l.derivation, true, model_class.AttributeAnnotations{IndexNums: []uint{1, 2}})
 	if err != nil {
 		return a, err
 	}
 
-	a.status, err = model_class.NewAttribute(k.attrStatus, "Status", "Current order status.", "enum of new, processing, complete", nil, false,
-		model_class.AttributeAnnotations{})
+	a.status, err = model_class.NewAttribute(k.attrStatus, model_class.AttributeDetails{
+		Name: "Status", Details: "Current order status.",
+	}, "enum of new, processing, complete", nil, false, model_class.AttributeAnnotations{})
+	if err != nil {
+		return a, err
+	}
+	statusTypeSpec, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil)
+	if err != nil {
+		return a, err
+	}
+	a.status.DataType.TypeSpec = &statusTypeSpec
+
+	a.productName, err = model_class.NewAttribute(k.attrProductName, model_class.AttributeDetails{
+		Name: "Product Name", Details: "Name of the product.",
+	}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
 	if err != nil {
 		return a, err
 	}
 
-	a.productName, err = model_class.NewAttribute(k.attrProductName, "Product Name", "Name of the product.", "unconstrained", nil, false,
-		model_class.AttributeAnnotations{})
+	a.customerCode, err = model_class.NewAttribute(k.attrCustomerCode, model_class.AttributeDetails{
+		Name: "Customer Code", Details: "Stable identifier for the customer.",
+	}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
+	if err != nil {
+		return a, err
+	}
+
+	a.shipmentTracking, err = model_class.NewAttribute(k.attrShipmentTracking, model_class.AttributeDetails{
+		Name: "Tracking ID", Details: "Carrier tracking identifier for the shipment.",
+	}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
 	if err != nil {
 		return a, err
 	}
@@ -1523,12 +1773,8 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	c.all = make(map[identity.Key]model_class.Class)
 
 	// Order class: rich, full state machine, 3 attributes.
-	classOrder := model_class.NewClass(k.classOrder, "Order", "An order placed by a customer.", nil, nil, nil, "the order class")
-	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{
-		k.attrOrderDate: a.orderDate,
-		k.attrTotal:     a.total,
-		k.attrStatus:    a.status,
-	})
+	classOrder := model_class.NewClass(k.classOrder, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "An order placed by a customer.", UnfinishedNotes: notesClassOrder, UmlComment: "the order class"})
+	classOrder.SetAttributes([]model_class.Attribute{a.orderDate, a.total, a.status})
 	classOrder.SetInvariants(l.classInvariants1)
 	classOrder.SetStates(sm.states)
 	classOrder.SetEvents(sm.events)
@@ -1540,52 +1786,52 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 
 	// Product class: empty parent for state machine (has attribute only).
 	// Superclass in product_types generalization. Linked to actorSystem.
-	classProduct := model_class.NewClass(k.classProduct, "Product", "A product for sale.", &k.actorSystem, &k.classGen2, nil, "")
+	classProduct := model_class.NewClass(k.classProduct, model_class.ClassLinks{ActorKey: &k.actorSystem, SuperclassOfKey: &k.classGen2, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "A product for sale.", UnfinishedNotes: notesClassProduct, UmlComment: ""})
 	classProduct.SetInvariants(l.classInvariants2)
-	classProduct.SetAttributes(map[identity.Key]model_class.Attribute{
-		k.attrProductName: a.productName,
-	})
+	classProduct.SetAttributes([]model_class.Attribute{a.productName})
 	c.all[k.classProduct] = classProduct
 
 	// Line item: association class AND subclass in product_types generalization.
-	classLineItem := model_class.NewClass(k.classLineItem, "Line Item", "A line item in an order.", nil, nil, &k.classGen2, "")
+	classLineItem := model_class.NewClass(k.classLineItem, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: &k.classGen2}, model_class.ClassDetails{Name: "Line Item", Details: "A line item in an order.", UnfinishedNotes: notesClassLineItem, UmlComment: ""})
 	c.all[k.classLineItem] = classLineItem
 
 	// Customer class: linked to actor.
-	classCustomer := model_class.NewClass(k.classCustomer, "Customer", "A customer in the system.", &k.actorPerson, nil, &k.classGen3, "")
+	classCustomer := model_class.NewClass(k.classCustomer, model_class.ClassLinks{ActorKey: &k.actorPerson, SuperclassOfKey: nil, SubclassOfKey: &k.classGen3}, model_class.ClassDetails{Name: "Customer", Details: "A customer in the system.", UnfinishedNotes: notesClassCustomer, UmlComment: ""})
+	classCustomer.SetAttributes([]model_class.Attribute{a.customerCode})
 	c.all[k.classCustomer] = classCustomer
 
 	// Vehicle: superclass in vehicle_types generalization. Linked to actorVip.
-	classVehicle := model_class.NewClass(k.classVehicle, "Vehicle", "A vehicle.", &k.actorVip, &k.classGen1, nil, "")
+	classVehicle := model_class.NewClass(k.classVehicle, model_class.ClassLinks{ActorKey: &k.actorVip, SuperclassOfKey: &k.classGen1, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Vehicle", Details: "A vehicle.", UnfinishedNotes: notesClassVehicle, UmlComment: ""})
 	c.all[k.classVehicle] = classVehicle
 
 	// Car: subclass in vehicle_types generalization. Superclass in order_types generalization.
-	classCar := model_class.NewClass(k.classCar, "Car", "A car is a type of vehicle.", nil, &k.classGen3, &k.classGen1, "")
+	classCar := model_class.NewClass(k.classCar, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &k.classGen3, SubclassOfKey: &k.classGen1}, model_class.ClassDetails{Name: "Car", Details: "A car is a type of vehicle.", UnfinishedNotes: notesClassCar, UmlComment: ""})
 	c.all[k.classCar] = classCar
 
 	// Warehouse (subdomain B).
-	classWarehouse := model_class.NewClass(k.classWarehouse, "Warehouse", "A warehouse for storing products.", nil, nil, nil, "")
+	classWarehouse := model_class.NewClass(k.classWarehouse, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Warehouse", Details: "A warehouse for storing products.", UnfinishedNotes: notesClassWarehouse, UmlComment: ""})
 	classWarehouse.SetInvariants(l.classInvariants3)
 	c.all[k.classWarehouse] = classWarehouse
 
 	// Shelf (subdomain B).
-	classShelf := model_class.NewClass(k.classShelf, "Shelf", "A shelf in a warehouse.", nil, nil, nil, "")
+	classShelf := model_class.NewClass(k.classShelf, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shelf", Details: "A shelf in a warehouse.", UnfinishedNotes: notesClassShelf, UmlComment: ""})
 	c.all[k.classShelf] = classShelf
 
 	// Aisle (subdomain B).
-	classAisle := model_class.NewClass(k.classAisle, "Aisle", "An aisle in a warehouse.", nil, nil, nil, "")
+	classAisle := model_class.NewClass(k.classAisle, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Aisle", Details: "An aisle in a warehouse.", UnfinishedNotes: notesClassAisle, UmlComment: ""})
 	c.all[k.classAisle] = classAisle
 
 	// Supplier (subdomain C / domain B).
-	classSupplier := model_class.NewClass(k.classSupplier, "Supplier", "A supplier of products.", nil, nil, nil, "")
+	classSupplier := model_class.NewClass(k.classSupplier, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Supplier", Details: "A supplier of products.", UnfinishedNotes: notesClassSupplier, UmlComment: ""})
 	c.all[k.classSupplier] = classSupplier
 
 	// Shipment (subdomain C / domain B).
-	classShipment := model_class.NewClass(k.classShipment, "Shipment", "A shipment of goods.", nil, nil, nil, "")
+	classShipment := model_class.NewClass(k.classShipment, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Shipment", Details: "A shipment of goods.", UnfinishedNotes: notesClassShipment, UmlComment: ""})
+	classShipment.SetAttributes([]model_class.Attribute{a.shipmentTracking})
 	c.all[k.classShipment] = classShipment
 
 	// Route (subdomain C / domain B).
-	classRoute := model_class.NewClass(k.classRoute, "Route", "A delivery route.", nil, nil, nil, "")
+	classRoute := model_class.NewClass(k.classRoute, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Route", Details: "A delivery route.", UnfinishedNotes: notesClassRoute, UmlComment: ""})
 	c.all[k.classRoute] = classRoute
 
 	return c
@@ -1604,18 +1850,24 @@ func buildClassGeneralizations(k testKeys) testGeneralizations {
 	g.all = make(map[identity.Key]model_class.Generalization)
 
 	// Pairwise: (T, F).
-	gen1 := model_class.NewGeneralization(k.classGen1, "Vehicle Types", "Specialization of vehicles.", true, false, "vehicle hierarchy")
+	gen1 := model_class.NewGeneralization(k.classGen1, model_class.GeneralizationDetails{Name: "Vehicle Types", Details: "Specialization of vehicles."}, notesClassGenVehicles, model_class.GeneralizationTraits{IsComplete: true, IsStatic: false}, "vehicle hierarchy")
 	g.all[k.classGen1] = gen1
 
 	// Pairwise: (F, F).
-	gen2 := model_class.NewGeneralization(k.classGen2, "Product Types", "Specialization of products.", false, false, "")
+	gen2 := model_class.NewGeneralization(k.classGen2, model_class.GeneralizationDetails{Name: "Product Types", Details: "Specialization of products."}, notesClassGenProducts, model_class.GeneralizationTraits{IsComplete: false, IsStatic: false}, "")
 	g.all[k.classGen2] = gen2
 
 	// Pairwise: (F, T).
-	gen3 := model_class.NewGeneralization(k.classGen3, "Order Types", "Specialization of orders.", false, true, "")
+	gen3 := model_class.NewGeneralization(k.classGen3, model_class.GeneralizationDetails{Name: "Order Types", Details: "Specialization of orders."}, notesClassGenOrders, model_class.GeneralizationTraits{IsComplete: false, IsStatic: true}, "")
 	g.all[k.classGen3] = gen3
 
 	return g
+}
+
+// ptrAssociationUniqueness returns a heap-allocated uniqueness tuple for AssociationOptions.
+func ptrAssociationUniqueness(fromAttributeKeys, toAttributeKeys []identity.Key) *model_class.AssociationUniqueness {
+	u := model_class.NewAssociationUniqueness(fromAttributeKeys, toAttributeKeys)
+	return &u
 }
 
 // =========================================================================
@@ -1658,66 +1910,81 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	// Subdomain-level (3).
 	a1 := model_class.NewAssociation(
-		k.subdomainAssoc1, "order contains products", "Order-Product association.",
-		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, &k.classLineItem, "with line item",
+		k.subdomainAssoc1, model_class.AssociationDetails{Name: "order contains products", Details: "Order-Product association."},
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationOptions{AssociationClassKey: &k.classLineItem, UmlComment: "with line item"},
 	)
 	ta.subdomain[k.subdomainAssoc1] = a1
 	ta.all[k.subdomainAssoc1] = a1
 
 	a2 := model_class.NewAssociation(
-		k.subdomainAssoc2, "order belongs to customer", "Order-Customer association.",
-		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: mult1}, nil, "",
+		k.subdomainAssoc2, model_class.AssociationDetails{Name: "order belongs to customer", Details: "Order-Customer association."},
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: mult1},
+		model_class.AssociationOptions{
+			Uniqueness: ptrAssociationUniqueness(nil, []identity.Key{k.attrCustomerCode}),
+			UmlComment: "",
+		},
 	)
 	ta.subdomain[k.subdomainAssoc2] = a2
 	ta.all[k.subdomainAssoc2] = a2
 
 	a3 := model_class.NewAssociation(
-		k.subdomainAssoc3, "product has line items", "Product-LineItem association.",
-		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classLineItem, Multiplicity: multMany}, nil, "",
+		k.subdomainAssoc3, model_class.AssociationDetails{Name: "product has line items", Details: "Product-LineItem association."},
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classLineItem, Multiplicity: multMany}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	ta.subdomain[k.subdomainAssoc3] = a3
 	ta.all[k.subdomainAssoc3] = a3
 
 	// Domain-level (3).
 	d1 := model_class.NewAssociation(
-		k.domainClassAssoc1, "order ships from warehouse", "Order-Warehouse relationship.",
-		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multOpt}, nil, "",
+		k.domainClassAssoc1, model_class.AssociationDetails{Name: "order ships from warehouse", Details: "Order-Warehouse relationship."},
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multOpt}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	ta.domain[k.domainClassAssoc1] = d1
 	ta.all[k.domainClassAssoc1] = d1
 
 	d2 := model_class.NewAssociation(
-		k.domainClassAssoc2, "product stored on shelf", "Product-Shelf relationship.",
-		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classShelf, Multiplicity: mult1}, nil, "",
+		k.domainClassAssoc2, model_class.AssociationDetails{Name: "product stored on shelf", Details: "Product-Shelf relationship."},
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classShelf, Multiplicity: mult1},
+		model_class.AssociationOptions{
+			Uniqueness: ptrAssociationUniqueness([]identity.Key{k.attrProductName}, nil),
+			UmlComment: "",
+		},
 	)
 	ta.domain[k.domainClassAssoc2] = d2
 	ta.all[k.domainClassAssoc2] = d2
 
 	d3 := model_class.NewAssociation(
-		k.domainClassAssoc3, "customer visits aisle", "Customer-Aisle relationship.",
-		model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classAisle, Multiplicity: multAny}, nil, "",
+		k.domainClassAssoc3, model_class.AssociationDetails{Name: "customer visits aisle", Details: "Customer-Aisle relationship."},
+		model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classAisle, Multiplicity: multAny}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	ta.domain[k.domainClassAssoc3] = d3
 	ta.all[k.domainClassAssoc3] = d3
 
 	// Model-level (3).
 	m1 := model_class.NewAssociation(
-		k.modelClassAssoc1, "product from supplier", "Product-Supplier relationship.",
-		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classSupplier, Multiplicity: mult1}, nil, "cross-domain",
+		k.modelClassAssoc1, model_class.AssociationDetails{Name: "product from supplier", Details: "Product-Supplier relationship."},
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classSupplier, Multiplicity: mult1}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: "cross-domain"},
 	)
 	ta.model[k.modelClassAssoc1] = m1
 	ta.all[k.modelClassAssoc1] = m1
 
 	m2 := model_class.NewAssociation(
-		k.modelClassAssoc2, "order has shipment", "Order-Shipment relationship.",
-		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classShipment, Multiplicity: multOpt}, nil, "",
+		k.modelClassAssoc2, model_class.AssociationDetails{Name: "order has shipment", Details: "Order-Shipment relationship."},
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classShipment, Multiplicity: multOpt},
+		model_class.AssociationOptions{
+			Uniqueness: ptrAssociationUniqueness(
+				[]identity.Key{k.attrOrderDate},
+				[]identity.Key{k.attrShipmentTracking},
+			),
+			UmlComment: "",
+		},
 	)
 	ta.model[k.modelClassAssoc2] = m2
 	ta.all[k.modelClassAssoc2] = m2
 
 	m3 := model_class.NewAssociation(
-		k.modelClassAssoc3, "warehouse on route", "Warehouse-Route relationship.",
-		model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classRoute, Multiplicity: multMany}, nil, "",
+		k.modelClassAssoc3, model_class.AssociationDetails{Name: "warehouse on route", Details: "Warehouse-Route relationship."},
+		model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classRoute, Multiplicity: multMany}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
 	ta.model[k.modelClassAssoc3] = m3
 	ta.all[k.modelClassAssoc3] = m3
@@ -1738,28 +2005,28 @@ func buildScenarios(k testKeys) testScenarios {
 	var s testScenarios
 
 	// Scenario objects (3).
-	objCustomer := model_scenario.NewObject(k.objCustomer, 1, "Alice", "name", k.classCustomer, false, "the customer")
-	objOrder := model_scenario.NewObject(k.objOrder, 2, "42", "id", k.classOrder, false, "")
-	objProduct := model_scenario.NewObject(k.objProduct, 3, "", "unnamed", k.classProduct, true, "")
+	objCustomer := model_scenario.NewObject(k.objCustomer, 1, model_scenario.ObjectDiagramName{Name: "Alice", NameStyle: "name"}, k.classCustomer, false, "the customer")
+	objOrder := model_scenario.NewObject(k.objOrder, 2, model_scenario.ObjectDiagramName{Name: "42", NameStyle: "id"}, k.classOrder, false, "")
+	objProduct := model_scenario.NewObject(k.objProduct, 3, model_scenario.ObjectDiagramName{NameStyle: "unnamed"}, k.classProduct, true, "")
 
 	// Step tree.
 	leafEvent := "event"
 	leafQuery := "query"
 	leafScenario := "scenario"
-	leafDelete := "delete"
+	leafDestroy := "destroy"
 
 	steps := model_scenario.Step{
 		Key:      k.stepRoot,
 		StepType: "sequence",
 		Statements: []model_scenario.Step{
 			{
-				Key: k.step1, StepType: "leaf", LeafType: &leafEvent,
+				Key: k.step1, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafEvent,
 				Description:   "Customer submits order",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				EventKey: &k.eventSubmit,
 			},
 			{
-				Key: k.step2, StepType: "leaf", LeafType: &leafQuery,
+				Key: k.step2, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafQuery,
 				Description:   "Check order status",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				QueryKey: &k.queryStatus,
@@ -1768,7 +2035,7 @@ func buildScenarios(k testKeys) testScenarios {
 				Key: k.step3, StepType: "loop", Condition: "while items remain",
 				Statements: []model_scenario.Step{
 					{
-						Key: k.step4, StepType: "leaf", LeafType: &leafScenario,
+						Key: k.step4, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafScenario,
 						Description:   "Handle item",
 						FromObjectKey: &k.objOrder, ToObjectKey: &k.objProduct,
 						ScenarioKey: &k.scenarioError,
@@ -1782,7 +2049,7 @@ func buildScenarios(k testKeys) testScenarios {
 						Key: k.step6, StepType: "case", Condition: "order is valid",
 						Statements: []model_scenario.Step{
 							{
-								Key: k.step7, StepType: "leaf", LeafType: &leafEvent,
+								Key: k.step7, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafEvent,
 								Description:   "Process order",
 								FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 								EventKey: &k.eventFulfill,
@@ -1793,13 +2060,13 @@ func buildScenarios(k testKeys) testScenarios {
 						Key: k.step8, StepType: "case", Condition: "order is invalid",
 						Statements: []model_scenario.Step{
 							{
-								Key: k.step9, StepType: "leaf", LeafType: &leafQuery,
+								Key: k.step9, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafQuery,
 								Description:   "Get error details",
 								FromObjectKey: &k.objOrder, ToObjectKey: &k.objCustomer,
 								QueryKey: &k.queryStatus,
 							},
 							{
-								Key: k.step10, StepType: "leaf", LeafType: &leafDelete,
+								Key: k.step10, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafDestroy,
 								FromObjectKey: &k.objOrder,
 							},
 						},
@@ -1807,19 +2074,19 @@ func buildScenarios(k testKeys) testScenarios {
 				},
 			},
 			{
-				Key: k.step11, StepType: "leaf", LeafType: &leafEvent,
+				Key: k.step11, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafEvent,
 				Description:   "Product triggers order update",
 				FromObjectKey: &k.objProduct, ToObjectKey: &k.objOrder,
 				EventKey: &k.eventCancel,
 			},
 			{
-				Key: k.step12, StepType: "leaf", LeafType: &leafQuery,
+				Key: k.step12, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafQuery,
 				Description:   "Order queries product details",
 				FromObjectKey: &k.objOrder, ToObjectKey: &k.objProduct,
 				QueryKey: &k.queryCount,
 			},
 			{
-				Key: k.step13, StepType: "leaf", LeafType: &leafScenario,
+				Key: k.step13, StepType: model_scenario.STEP_TYPE_LEAF, LeafType: &leafScenario,
 				Description:   "View the order details",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				ScenarioKey: &k.scenarioView,
@@ -1876,10 +2143,7 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	ucActor3 := model_use_case.NewActor("vip handling")
 
 	// Place Order: sea level, subclass, rich (3 actors, 3 scenarios).
-	ucPlaceOrder := model_use_case.NewUseCase(
-		k.ucPlaceOrder, "Place Order", "Customer places an order.",
-		"sea", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, "place order",
-	)
+	ucPlaceOrder := model_use_case.NewUseCase(k.ucPlaceOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSea, ReadOnly: false}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, model_use_case.UseCaseDetails{Name: "Place Order", Details: "Customer places an order.", UnfinishedNotes: notesUCPlaceOrder, UmlComment: "place order"})
 	ucPlaceOrder.SetActors(map[identity.Key]model_use_case.Actor{
 		k.classCustomer: ucActor1,
 		k.classProduct:  ucActor2,
@@ -1888,35 +2152,20 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	ucPlaceOrder.SetScenarios(sc.placeOrderScenarios)
 
 	// View Order: mud level, read-only, has 1 scenario.
-	ucViewOrder := model_use_case.NewUseCase(
-		k.ucViewOrder, "View Order", "View order details.",
-		"mud", true, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, "",
-	)
+	ucViewOrder := model_use_case.NewUseCase(k.ucViewOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelMud, ReadOnly: true}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, model_use_case.UseCaseDetails{Name: "View Order", Details: "View order details.", UnfinishedNotes: notesUCViewOrder, UmlComment: ""})
 	ucViewOrder.SetScenarios(sc.viewOrderScenarios)
 
 	// Manage Order: sky level, superclass.
-	ucManageOrder := model_use_case.NewUseCase(
-		k.ucManageOrder, "Manage Order", "Manage orders.",
-		"sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, "",
-	)
+	ucManageOrder := model_use_case.NewUseCase(k.ucManageOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: false}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, model_use_case.UseCaseDetails{Name: "Manage Order", Details: "Manage orders.", UnfinishedNotes: notesUCManageOrder, UmlComment: ""})
 
 	// Cancel Order: empty parent (0 actors, 0 scenarios).
-	ucCancelOrder := model_use_case.NewUseCase(
-		k.ucCancelOrder, "Cancel Order", "Customer cancels an order.",
-		"mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, "",
-	)
+	ucCancelOrder := model_use_case.NewUseCase(k.ucCancelOrder, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelMud, ReadOnly: false}, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, model_use_case.UseCaseDetails{Name: "Cancel Order", Details: "Customer cancels an order.", UnfinishedNotes: notesUCCancelOrder, UmlComment: ""})
 
 	// View Orders: sky level, superclass for ucGen2.
-	uc5 := model_use_case.NewUseCase(
-		k.uc5, "View Orders", "View multiple orders.",
-		"sky", true, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, "",
-	)
+	uc5 := model_use_case.NewUseCase(k.uc5, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: true}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, model_use_case.UseCaseDetails{Name: "View Orders", Details: "View multiple orders.", UnfinishedNotes: notesUCViewOrders, UmlComment: ""})
 
 	// Cancel Orders: sky level, superclass for ucGen3.
-	uc6 := model_use_case.NewUseCase(
-		k.uc6, "Cancel Orders", "Cancel multiple orders.",
-		"sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, "",
-	)
+	uc6 := model_use_case.NewUseCase(k.uc6, model_use_case.UseCaseTraits{Level: model_use_case.UseCaseLevelSky, ReadOnly: false}, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, model_use_case.UseCaseDetails{Name: "Cancel Orders", Details: "Cancel multiple orders.", UnfinishedNotes: notesUCCancelOrders, UmlComment: ""})
 
 	u.useCases = map[identity.Key]model_use_case.UseCase{
 		k.ucPlaceOrder:  ucPlaceOrder,
@@ -1928,9 +2177,9 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	}
 
 	// Use case generalizations (3).
-	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", false, true, "")
-	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", true, false, "")
-	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", true, true, "")
+	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, model_use_case.GeneralizationDetails{Name: "Order Management Types", Details: "Types of order management."}, notesUCGenManagement, model_use_case.GeneralizationTraits{IsComplete: false, IsStatic: true}, "")
+	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, model_use_case.GeneralizationDetails{Name: "Order View Types", Details: "Types of order viewing."}, notesUCGenView, model_use_case.GeneralizationTraits{IsComplete: true, IsStatic: false}, "")
+	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, model_use_case.GeneralizationDetails{Name: "Order Cancel Types", Details: "Types of order cancellation."}, notesUCGenCancel, model_use_case.GeneralizationTraits{IsComplete: true, IsStatic: true}, "")
 	u.useCaseGens = map[identity.Key]model_use_case.Generalization{
 		k.ucGen1: ucGen1,
 		k.ucGen2: ucGen2,
@@ -1961,12 +2210,12 @@ func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 
 func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.Key]model_actor.Generalization) {
 	// Actors (4).
-	actorPerson := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "person", &k.actorGen3, nil, "main actor")
+	actorPerson := model_actor.NewActor(k.actorPerson, "person", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen3, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Customer", Details: "A person who buys things.", UnfinishedNotes: notesActorCustomer, UmlComment: "main actor"})
 	// actorSystem: has BOTH SuperclassOfKey AND SubclassOfKey (different generalizations).
-	actorSystem := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "system", &k.actorGen2, &k.actorGen3, "")
-	actorVip := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "person", nil, &k.actorGen2, "")
-	actor4 := model_actor.NewActor(k.actor4, "Regular Customer", "A regular customer.", "person", &k.actorGen1, nil, "")
-	actor5 := model_actor.NewActor(k.actor5, "Another Customer", "Another customer.", "person", nil, &k.actorGen1, "")
+	actorSystem := model_actor.NewActor(k.actorSystem, "system", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen2, SubclassOfKey: &k.actorGen3}, model_actor.ActorDetails{Name: "Payment Gateway", Details: "External payment system.", UnfinishedNotes: notesActorGateway, UmlComment: ""})
+	actorVip := model_actor.NewActor(k.actorVip, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: &k.actorGen2}, model_actor.ActorDetails{Name: "VIP Customer", Details: "A premium customer.", UnfinishedNotes: notesActorVip, UmlComment: ""})
+	actor4 := model_actor.NewActor(k.actor4, "person", model_actor.GeneralizationRefs{SuperclassOfKey: &k.actorGen1, SubclassOfKey: nil}, model_actor.ActorDetails{Name: "Regular Customer", Details: "A regular customer.", UnfinishedNotes: notesActorRegular, UmlComment: ""})
+	actor5 := model_actor.NewActor(k.actor5, "person", model_actor.GeneralizationRefs{SuperclassOfKey: nil, SubclassOfKey: &k.actorGen1}, model_actor.ActorDetails{Name: "Another Customer", Details: "Another customer.", UnfinishedNotes: notesActorAnother, UmlComment: ""})
 
 	actors := map[identity.Key]model_actor.Actor{
 		k.actorPerson: actorPerson,
@@ -1977,9 +2226,9 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 	}
 
 	// Actor generalizations (3). Pairwise: (T,T), (F,F), (T,F).
-	actorGen1 := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", true, true, "customer hierarchy")
-	actorGen2 := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", false, false, "")
-	actorGen3 := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", true, false, "")
+	actorGen1 := model_actor.NewGeneralization(k.actorGen1, model_actor.GeneralizationDetails{Name: "Customer Types", Details: "Types of customers."}, notesActorGenCustomers, model_actor.GeneralizationTraits{IsComplete: true, IsStatic: true}, "customer hierarchy")
+	actorGen2 := model_actor.NewGeneralization(k.actorGen2, model_actor.GeneralizationDetails{Name: "User Types", Details: "Types of users."}, notesActorGenUsers, model_actor.GeneralizationTraits{IsComplete: false, IsStatic: false}, "")
+	actorGen3 := model_actor.NewGeneralization(k.actorGen3, model_actor.GeneralizationDetails{Name: "System Types", Details: "Types of systems."}, notesActorGenSystems, model_actor.GeneralizationTraits{IsComplete: true, IsStatic: false}, "")
 
 	actorGens := map[identity.Key]model_actor.Generalization{
 		k.actorGen1: actorGen1,
@@ -2018,7 +2267,7 @@ func buildSubdomains(
 	assocs testAssociations,
 ) map[identity.Key]model_domain.Subdomain {
 	// Subdomain A: rich (3+ classes, 3 generalizations, 4 use cases, 3 uc gens, 3 class assocs, 3 shares).
-	subdomainA := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", "order subdomain")
+	subdomainA := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", notesSubdomainOrders, "order subdomain")
 	subdomainA.Classes = map[identity.Key]model_class.Class{
 		k.classOrder:    classes.all[k.classOrder],
 		k.classProduct:  classes.all[k.classProduct],
@@ -2034,7 +2283,7 @@ func buildSubdomains(
 	subdomainA.UseCaseShares = uc.useCaseShares
 
 	// Subdomain B: has 3 classes (for domain-level associations).
-	subdomainB := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", "")
+	subdomainB := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", notesSubdomainWarehouse, "")
 	subdomainB.Classes = map[identity.Key]model_class.Class{
 		k.classWarehouse: classes.all[k.classWarehouse],
 		k.classShelf:     classes.all[k.classShelf],
@@ -2042,7 +2291,7 @@ func buildSubdomains(
 	}
 
 	// Subdomain C (domain B): has 3 classes (for model-level associations).
-	subdomainC := model_domain.NewSubdomain(k.subdomainC, "Default", "", "")
+	subdomainC := model_domain.NewSubdomain(k.subdomainC, "Default", "", notesSubdomainDefault, "")
 	subdomainC.Classes = map[identity.Key]model_class.Class{
 		k.classSupplier: classes.all[k.classSupplier],
 		k.classShipment: classes.all[k.classShipment],
@@ -2050,7 +2299,7 @@ func buildSubdomains(
 	}
 
 	// Subdomain D: empty parent (0 classes, 0 everything).
-	subdomainD := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", "")
+	subdomainD := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", notesSubdomainAnalytics, "")
 
 	return map[identity.Key]model_domain.Subdomain{
 		k.subdomainA: subdomainA,
@@ -2066,7 +2315,7 @@ func buildSubdomains(
 
 func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain) map[identity.Key]model_domain.Domain {
 	// Domain A: rich (3 subdomains: A, B, D).
-	domainA := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", false, "main domain")
+	domainA := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", notesDomainCommerce, false, "main domain")
 	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
 		k.subdomainA: subdomains[k.subdomainA],
 		k.subdomainB: subdomains[k.subdomainB],
@@ -2074,13 +2323,13 @@ func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain
 	}
 
 	// Domain B: single subdomain (special case).
-	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", true, "")
+	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", notesDomainLogistics, true, "")
 	domainB.Subdomains = map[identity.Key]model_domain.Subdomain{
 		k.subdomainC: subdomains[k.subdomainC],
 	}
 
 	// Domain C: empty parent (0 subdomains).
-	domainC := model_domain.NewDomain(k.domainC, "External", "External integrations.", false, "")
+	domainC := model_domain.NewDomain(k.domainC, "External", "External integrations.", notesDomainExternal, false, "")
 
 	return map[identity.Key]model_domain.Domain{
 		k.domainA: domainA,

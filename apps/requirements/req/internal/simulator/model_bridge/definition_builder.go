@@ -115,6 +115,16 @@ func (b *DefinitionBuilder) Build(expr ExtractedExpression, reg *registry.Regist
 		result.Definition = def
 		result.Error = err
 
+	case SourceActionParameterSimulationRequire:
+		def, err := b.buildParameterSimulationRequire(expr, reg)
+		result.Definition = def
+		result.Error = err
+
+	case SourceActionParameterSimulationSpec:
+		def, err := b.buildParameterSimulationSpec(expr, reg)
+		result.Definition = def
+		result.Error = err
+
 	default:
 		result.Error = fmt.Errorf("unsupported expression source: %s", expr.Source)
 	}
@@ -154,6 +164,40 @@ func (b *DefinitionBuilder) buildTlaDefinition(
 		return nil, fmt.Errorf("failed to register TLA definition %s: %w", expr.Name, err)
 	}
 
+	return def, nil
+}
+
+func (b *DefinitionBuilder) buildParameterSimulationRequire(
+	expr ExtractedExpression,
+	reg *registry.Registry,
+) (*registry.Definition, error) {
+	return b.buildParameterSimulationExpression(expr, reg, "Require")
+}
+
+func (b *DefinitionBuilder) buildParameterSimulationSpec(
+	expr ExtractedExpression,
+	reg *registry.Registry,
+) (*registry.Definition, error) {
+	return b.buildParameterSimulationExpression(expr, reg, "Spec")
+}
+
+func (b *DefinitionBuilder) buildParameterSimulationExpression(
+	expr ExtractedExpression,
+	reg *registry.Registry,
+	kind string,
+) (*registry.Definition, error) {
+	if expr.ScopeKey == nil {
+		return nil, fmt.Errorf("parameter simulation expression requires a scope key")
+	}
+	domain, subdomain, class, err := extractClassScope(expr.ScopeKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract scope for parameter %s: %w", expr.Name, err)
+	}
+	name := fmt.Sprintf("%s_Simulation%s%d", expr.Name, kind, expr.Index)
+	def, err := reg.RegisterClassFunction(domain, subdomain, class, name, expr.Expression, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register parameter simulation %s: %w", name, err)
+	}
 	return def, nil
 }
 
@@ -319,7 +363,7 @@ func ContainsAnyPrimedME(expr me.Expression) bool {
 	// Leaf nodes.
 	case *me.IntLiteral, *me.RationalLiteral, *me.BoolLiteral, *me.StringLiteral,
 		*me.SetConstant, *me.SelfRef, *me.AttributeRef, *me.LocalVar,
-		*me.PriorFieldValue, *me.NamedSetRef:
+		*me.PriorFieldValue, *me.NamedSetRef, *me.ClassRef:
 		return false
 
 	// Binary operators.
@@ -373,6 +417,10 @@ func ContainsAnyPrimedME(expr me.Expression) bool {
 	// Conditionals.
 	case *me.IfThenElse:
 		return ContainsAnyPrimedME(e.Condition) || ContainsAnyPrimedME(e.Then) || ContainsAnyPrimedME(e.Else)
+	case *me.LetExpr:
+		return ContainsAnyPrimedME(e.Value) || ContainsAnyPrimedME(e.Body)
+	case *me.Choose:
+		return ContainsAnyPrimedME(e.Set) || ContainsAnyPrimedME(e.Predicate)
 	case *me.Case:
 		for _, branch := range e.Branches {
 			if ContainsAnyPrimedME(branch.Condition) || ContainsAnyPrimedME(branch.Result) {
@@ -386,6 +434,8 @@ func ContainsAnyPrimedME(expr me.Expression) bool {
 		return ContainsAnyPrimedME(e.Domain) || ContainsAnyPrimedME(e.Predicate)
 	case *me.SetFilter:
 		return ContainsAnyPrimedME(e.Set) || ContainsAnyPrimedME(e.Predicate)
+	case *me.SetMap:
+		return ContainsAnyPrimedME(e.Set) || ContainsAnyPrimedME(e.Transform)
 	case *me.SetRange:
 		return ContainsAnyPrimedME(e.Start) || ContainsAnyPrimedME(e.End)
 

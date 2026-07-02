@@ -10,10 +10,11 @@ import (
 
 // inputDomain represents a domain.json file.
 type inputDomain struct {
-	Name       string `json:"name"`
-	Details    string `json:"details,omitempty"`
-	Realized   bool   `json:"realized,omitempty"`
-	UMLComment string `json:"uml_comment,omitempty"`
+	Name            string `json:"name"`
+	Details         string `json:"details,omitempty"`
+	UnfinishedNotes string `json:"unfinished_notes,omitempty"`
+	Realized        bool   `json:"realized,omitempty"`
+	UMLComment      string `json:"uml_comment,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Subdomains        map[string]*inputSubdomain        `json:"-"`

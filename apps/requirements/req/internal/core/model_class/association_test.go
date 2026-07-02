@@ -132,6 +132,17 @@ func (suite *AssociationSuite) TestValidate() {
 			errstr: "AssociationClassKey cannot be the same as ToClassKey",
 		},
 		{
+			testName: "error empty uniqueness keys",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+				Uniqueness:   &AssociationUniqueness{},
+			},
+			errstr: "at least one",
+		},
+		{
 			testName: "error AssociationClassKey wrong key type",
 			association: func() Association {
 				wrongKey := domainKey
@@ -172,10 +183,8 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	assoc := NewAssociation(key, "Name", "Details",
-		AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity},
-		AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity},
-		&assocClassKey, "UmlComment")
+	uniqueness := NewAssociationUniqueness(nil, []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))})
+	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, AssociationOptions{AssociationClassKey: &assocClassKey, Uniqueness: &uniqueness, UmlComment: "UmlComment"})
 	suite.Equal(Association{
 		Key:                 key,
 		Name:                "Name",
@@ -184,6 +193,7 @@ func (suite *AssociationSuite) TestNew() {
 		FromMultiplicity:    multiplicity,
 		ToClassKey:          toClassKey,
 		ToMultiplicity:      multiplicity,
+		Uniqueness:          &uniqueness,
 		AssociationClassKey: &assocClassKey,
 		UmlComment:          "UmlComment",
 	}, assoc)
@@ -236,16 +246,16 @@ func (suite *AssociationSuite) TestValidateReferences() {
 	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 
 	// Build lookup map with all valid classes.
-	classes := map[identity.Key]bool{
-		fromClassKey:  true,
-		toClassKey:    true,
-		assocClassKey: true,
+	classes := map[identity.Key]Class{
+		fromClassKey:  NewClass(fromClassKey, ClassLinks{}, ClassDetails{Name: "From"}),
+		toClassKey:    NewClass(toClassKey, ClassLinks{}, ClassDetails{Name: "To"}),
+		assocClassKey: NewClass(assocClassKey, ClassLinks{}, ClassDetails{Name: "Assoc"}),
 	}
 
 	tests := []struct {
 		testName    string
 		association Association
-		classes     map[identity.Key]bool
+		classes     map[identity.Key]Class
 		errstr      string
 	}{
 		{

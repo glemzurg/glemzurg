@@ -53,11 +53,11 @@ func (s *ClassCatalogSuite) TestCatalogWithMultipleClasses() {
 	s.NotNil(catalog.GetClassInfo(itemKey))
 }
 
-func (s *ClassCatalogSuite) TestClassWithNoStatesExcluded() {
+func (s *ClassCatalogSuite) TestClassWithNoStatesScopedForLiveness() {
 	classKey := mustKey("domain/d/subdomain/s/class/simple")
 
-	simpleClass := model_class.NewClass(classKey, "Simple", "", nil, nil, nil, "")
-	simpleClass.SetAttributes(map[identity.Key]model_class.Attribute{})
+	simpleClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Simple", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	simpleClass.SetAttributes(nil)
 	simpleClass.SetStates(map[identity.Key]model_state.State{})
 	simpleClass.SetEvents(map[identity.Key]model_state.Event{})
 	simpleClass.SetGuards(map[identity.Key]model_state.Guard{})
@@ -69,7 +69,10 @@ func (s *ClassCatalogSuite) TestClassWithNoStatesExcluded() {
 
 	catalog := NewClassCatalog(model)
 
-	s.Nil(catalog.GetClassInfo(classKey))
+	info := catalog.GetClassInfo(classKey)
+	s.NotNil(info)
+	s.False(info.HasStates)
+	s.Len(catalog.AllScopedClasses(), 1)
 	s.Empty(catalog.AllSimulatableClasses())
 }
 
@@ -98,7 +101,7 @@ func (s *ClassCatalogSuite) TestMandatoryAssociationsDetected() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -126,17 +129,17 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
 	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil)
-	actionDo := model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionDo := model_state.NewAction(actionDoKey, model_state.ActionDetails{Name: "DoCount", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateActionDo := model_state.NewStateAction(stateActionKey, actionDoKey, "do")
 
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateActive.SetActions([]model_state.StateAction{stateActionDo})
 
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Counter", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -182,7 +185,7 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -198,6 +201,36 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 	// Order creation is still external (nothing creates Order).
 	ext = catalog.ExternalCreationEvents(orderKey)
 	s.Len(ext, 1)
+}
+
+func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociationClass() {
+	tcm := buildAssociationClassTestModel()
+	catalog := NewClassCatalog(tcm.model)
+
+	// To-endpoint stays externally creatable; mandatory link is via association class.
+	ext := catalog.ExternalCreationEvents(tcm.jurisdictionKey)
+	s.Len(ext, 1)
+	s.Equal("create", ext[0].Name)
+
+	// Association-class rows still require both host endpoints.
+	s.Empty(catalog.ExternalCreationEvents(tcm.linkDefKey))
+}
+
+func (s *ClassCatalogSuite) TestGetActionForEvent() {
+	orderClass, orderKey := testOrderClass()
+	model := testModel(classEntry(orderClass, orderKey))
+	catalog := NewClassCatalog(model)
+
+	createEventKey := mustKey("domain/d/subdomain/s/class/order/event/create")
+	action, found := catalog.GetActionForEvent(orderKey, createEventKey, "")
+	s.True(found)
+	s.Nil(action)
+
+	closeEventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
+	closeAction, found := catalog.GetActionForEvent(orderKey, closeEventKey, "Open")
+	s.True(found)
+	s.Require().NotNil(closeAction)
+	s.Equal("DoClose", closeAction.Name)
 }
 
 func (s *ClassCatalogSuite) TestGetCreationEvent() {
@@ -264,8 +297,7 @@ func (s *ClassCatalogSuite) TestExternalStateEvents_SentByOutOfScope() {
 	s.Equal("close", ext[0].Event.Name)
 }
 
-func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
-	// With no CalledBy data, all do-actions are external.
+func (s *ClassCatalogSuite) TestSurfaceDoActions_ReturnsStateDoActions() {
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/counter/state/active")
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/counter/event/create")
@@ -277,17 +309,17 @@ func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
 	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil)
-	actionDo := model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionDo := model_state.NewAction(actionDoKey, model_state.ActionDetails{Name: "DoCount", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateActionDo := model_state.NewStateAction(stateActionKey, actionDoKey, "do")
 
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateActive.SetActions([]model_state.StateAction{stateActionDo})
 
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Counter", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -302,13 +334,13 @@ func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
 
-	ext := catalog.ExternalDoActions(classKey, "Active")
+	ext := catalog.SurfaceDoActions(classKey, "Active")
 	s.Len(ext, 1)
 	s.Equal("DoCount", ext[0].Name)
 }
 
-func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
-	// Action with CalledBy pointing to an in-scope class → internal (filtered out).
+func (s *ClassCatalogSuite) TestSurfaceDoActions_UnaffectedByCalledBy() {
+	// Do-actions are surface-level even when CalledBy points to an in-scope class.
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	stateActiveKey := mustKey("domain/d/subdomain/s/class/counter/state/active")
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/counter/event/create")
@@ -320,19 +352,19 @@ func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
 	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil)
-	actionDo := model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	actionDo := model_state.NewAction(actionDoKey, model_state.ActionDetails{Name: "DoCount", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
 	stateActionDo := model_state.NewStateAction(stateActionKey, actionDoKey, "do")
 
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateActive.SetActions([]model_state.StateAction{stateActionDo})
 
-	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
+	transCreate := model_state.NewTransition(transCreateKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
 	orderClass, orderKey := testOrderClass()
 
-	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Counter", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -350,8 +382,9 @@ func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
 	// Mark the action as called by Order (in-scope).
 	catalog.SetActionCalledBy(actionDoKey, []identity.Key{orderKey})
 
-	ext := catalog.ExternalDoActions(classKey, "Active")
-	s.Empty(ext, "do action should be internal because caller Order is in scope")
+	ext := catalog.SurfaceDoActions(classKey, "Active")
+	s.Len(ext, 1)
+	s.Equal("DoCount", ext[0].Name)
 }
 
 func (s *ClassCatalogSuite) TestCallerDataExport() {

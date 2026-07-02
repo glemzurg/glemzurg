@@ -561,6 +561,10 @@ Keys include domain and subdomain (domain/subdomain/class).
 - `to_class_key` (required): Scoped key of the target class
 - `to_multiplicity` (required): Multiplicity on the "to" side
 - `association_class_key` (optional): Scoped key of association class if any
+- `uniqueness` (optional): Object limiting how often the same attribute tuple may appear among links
+  - `from_attributes` (optional): Attribute SubKeys on the from class that form the tuple
+  - `to_attributes` (optional): Attribute SubKeys on the to class that form the tuple
+  - At least one side must be non-empty when `uniqueness` is present. If only one side lists attributes, the other side is unique by instance.
 - `details` (optional): Markdown description
 - `uml_comment` (optional): Comment for UML diagrams
 
@@ -969,7 +973,7 @@ Steps form a tree structure representing the scenario flow. There are two catego
 - `leaf_type: "scenario"` — A reference to another scenario
   - `scenario_key`: Key of the referenced scenario
   - `description`: What the sub-scenario does
-- `leaf_type: "delete"` — Deletion of an object
+- `leaf_type: "destroy"` — Deletion of an object
   - `from_object_key`: Object initiating deletion
   - `to_object_key`: Object being deleted
   - `description`: What is being deleted

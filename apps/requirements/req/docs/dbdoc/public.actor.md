@@ -12,6 +12,7 @@ A role that a person or system can take who uses the system. Actors are outside 
 | actor_key | text |  | false | [public.class](public.class.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the actor. |
 | details | text |  | true |  |  | A summary description. |
+| unfinished_notes | text |  | true |  |  | Scratch notes not yet placed in final requirement locations. |
 | actor_type | actor_type |  | false |  |  | Whether this actor is a person or a system. |
 | superclass_of_key | text |  | true |  | [public.actor_generalization](public.actor_generalization.md) | The generalization this actor is a superclass of, if it is one. |
 | subclass_of_key | text |  | true |  | [public.actor_generalization](public.actor_generalization.md) | The generalization this actor is a subclass of, if it is one. |

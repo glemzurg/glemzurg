@@ -125,8 +125,18 @@ func writeLogics(tx *sql.Tx, modelKey string, model core.Model) error {
 
 	// Collect logics from domain hierarchy.
 	collectDomainLogics(model, &allLogics, sortOrders)
+	collectAssociationLogics(model, &allLogics, sortOrders)
 
 	return AddLogics(tx, modelKey, allLogics, sortOrders)
+}
+
+func collectAssociationLogics(model core.Model, allLogics *[]model_logic.Logic, sortOrders map[string]int) {
+	for _, assoc := range model.GetClassAssociations() {
+		for i, inv := range assoc.Invariants {
+			sortOrders[inv.Key.String()] = i
+		}
+		*allLogics = append(*allLogics, assoc.Invariants...)
+	}
 }
 
 // collectDomainLogics collects derivation policy, guard, action, query, class invariant, and attribute invariant logics.
@@ -196,6 +206,37 @@ func collectClassLogics(class model_class.Class, allLogics *[]model_logic.Logic,
 			sortOrders[inv.Key.String()] = i
 		}
 		*allLogics = append(*allLogics, attr.Invariants...)
+	}
+
+	collectParameterInvariantLogics(class, allLogics, sortOrders)
+}
+
+func collectParameterInvariantLogics(class model_class.Class, allLogics *[]model_logic.Logic, sortOrders map[string]int) {
+	for _, action := range class.Actions {
+		for _, param := range action.Parameters {
+			for i, inv := range param.Invariants {
+				sortOrders[inv.Key.String()] = i
+			}
+			*allLogics = append(*allLogics, param.Invariants...)
+			if param.Simulation != nil {
+				for i, req := range param.Simulation.Requires {
+					sortOrders[req.Key.String()] = i
+				}
+				*allLogics = append(*allLogics, param.Simulation.Requires...)
+				if param.Simulation.Specification != nil {
+					sortOrders[param.Simulation.Specification.Key.String()] = 0
+					*allLogics = append(*allLogics, *param.Simulation.Specification)
+				}
+			}
+		}
+	}
+	for _, query := range class.Queries {
+		for _, param := range query.Parameters {
+			for i, inv := range param.Invariants {
+				sortOrders[inv.Key.String()] = i
+			}
+			*allLogics = append(*allLogics, param.Invariants...)
+		}
 	}
 }
 
@@ -344,6 +385,9 @@ func writeClassesAndInvariants(tx *sql.Tx, modelKey string, model core.Model) er
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
 				for _, inv := range class.Invariants {
+					if inv.OverAssociationKey != nil {
+						continue
+					}
 					classInvariantsMap[class.Key] = append(classInvariantsMap[class.Key], inv.Key)
 				}
 			}
@@ -396,7 +440,7 @@ func collectDataTypes(model core.Model, attributesMap map[identity.Key][]model_c
 	for _, attrs := range attributesMap {
 		for _, attr := range attrs {
 			if attr.DataType != nil {
-				dataTypes[attr.DataType.Key] = *attr.DataType
+				dataTypes[attr.DataType.Key.String()] = *attr.DataType
 			}
 		}
 	}
@@ -410,26 +454,19 @@ func collectDataTypes(model core.Model, attributesMap map[identity.Key][]model_c
 	return dataTypes
 }
 
-// collectParameterDataTypes collects data types from query, event, and action parameters.
+// collectParameterDataTypes collects data types from query and action parameters.
 func collectParameterDataTypes(class model_class.Class, dataTypes map[string]model_data_type.DataType) {
 	for _, query := range class.Queries {
 		for _, param := range query.Parameters {
 			if param.DataType != nil {
-				dataTypes[param.DataType.Key] = *param.DataType
-			}
-		}
-	}
-	for _, event := range class.Events {
-		for _, param := range event.Parameters {
-			if param.DataType != nil {
-				dataTypes[param.DataType.Key] = *param.DataType
+				dataTypes[param.DataType.Key.String()] = *param.DataType
 			}
 		}
 	}
 	for _, action := range class.Actions {
 		for _, param := range action.Parameters {
 			if param.DataType != nil {
-				dataTypes[param.DataType.Key] = *param.DataType
+				dataTypes[param.DataType.Key.String()] = *param.DataType
 			}
 		}
 	}
@@ -453,14 +490,40 @@ func writeClassIndexes(tx *sql.Tx, modelKey string, model core.Model) error {
 	return nil
 }
 
-// writeClassAssociations inserts class associations.
+// writeClassAssociations inserts class associations and association invariant join rows.
 func writeClassAssociations(tx *sql.Tx, modelKey string, model core.Model) error {
 	allClassAssociations := model.GetClassAssociations()
 	var classAssociationsList []model_class.Association
+	var assocInvariantLinks []AssociationInvariantLink
 	for _, assoc := range allClassAssociations {
 		classAssociationsList = append(classAssociationsList, assoc)
+		for _, inv := range assoc.Invariants {
+			assocInvariantLinks = append(assocInvariantLinks, AssociationInvariantLink{
+				AssociationKey: assoc.Key,
+				LogicKey:       inv.Key,
+			})
+		}
 	}
-	return AddAssociations(tx, modelKey, classAssociationsList)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				for _, inv := range class.Invariants {
+					if inv.OverAssociationKey == nil {
+						continue
+					}
+					assocInvariantLinks = append(assocInvariantLinks, AssociationInvariantLink{
+						AssociationKey: *inv.OverAssociationKey,
+						LogicKey:       inv.Key,
+						ToClassAnchor:  true,
+					})
+				}
+			}
+		}
+	}
+	if err := AddAssociations(tx, modelKey, classAssociationsList); err != nil {
+		return err
+	}
+	return AddAssociationInvariantLinks(tx, modelKey, assocInvariantLinks)
 }
 
 // writeStateItems inserts states, guards, actions, events, queries and their related sub-items.
@@ -468,7 +531,11 @@ func writeStateItems(tx *sql.Tx, modelKey string, model core.Model) error {
 	statesMap, guardsMap, actionsMap, eventsMap, queriesMap := collectStateItemMaps(model)
 
 	// Write core state item rows.
-	if err := writeStateItemCoreRows(tx, modelKey, statesMap, guardsMap, actionsMap, eventsMap, queriesMap); err != nil {
+	if err := writeStateItemCoreRows(tx, modelKey,
+		stateGuardMaps{States: statesMap, Guards: guardsMap},
+		actionEventMaps{Actions: actionsMap, Events: eventsMap},
+		queriesMap,
+	); err != nil {
 		return err
 	}
 
@@ -484,24 +551,28 @@ func writeStateItems(tx *sql.Tx, modelKey string, model core.Model) error {
 	return writeTransitions(tx, modelKey, model)
 }
 
+type stateGuardMaps struct {
+	States map[identity.Key][]model_state.State
+	Guards map[identity.Key][]model_state.Guard
+}
+
+type actionEventMaps struct {
+	Actions map[identity.Key][]model_state.Action
+	Events  map[identity.Key][]model_state.Event
+}
+
 // writeStateItemCoreRows writes the primary rows for states, guards, actions, events, and queries.
-func writeStateItemCoreRows(tx *sql.Tx, modelKey string,
-	statesMap map[identity.Key][]model_state.State,
-	guardsMap map[identity.Key][]model_state.Guard,
-	actionsMap map[identity.Key][]model_state.Action,
-	eventsMap map[identity.Key][]model_state.Event,
-	queriesMap map[identity.Key][]model_state.Query,
-) error {
-	if err := AddStates(tx, modelKey, statesMap); err != nil {
+func writeStateItemCoreRows(tx *sql.Tx, modelKey string, stateGuards stateGuardMaps, actionEvents actionEventMaps, queriesMap map[identity.Key][]model_state.Query) error {
+	if err := AddStates(tx, modelKey, stateGuards.States); err != nil {
 		return err
 	}
-	if err := AddGuards(tx, modelKey, guardsMap); err != nil {
+	if err := AddGuards(tx, modelKey, stateGuards.Guards); err != nil {
 		return err
 	}
-	if err := AddActions(tx, modelKey, actionsMap); err != nil {
+	if err := AddActions(tx, modelKey, actionEvents.Actions); err != nil {
 		return err
 	}
-	if err := AddEvents(tx, modelKey, eventsMap); err != nil {
+	if err := AddEvents(tx, modelKey, actionEvents.Events); err != nil {
 		return err
 	}
 	return AddQueries(tx, modelKey, queriesMap)
@@ -519,7 +590,83 @@ func writeStateItemSubRows(tx *sql.Tx, modelKey string,
 	if err := writeQuerySubItems(tx, modelKey, queriesMap); err != nil {
 		return err
 	}
-	return writeEventParameters(tx, modelKey, eventsMap)
+	if err := writeEventParameters(tx, modelKey, eventsMap); err != nil {
+		return err
+	}
+	if err := writeParameterInvariants(tx, modelKey, actionsMap, queriesMap); err != nil {
+		return err
+	}
+	return writeParameterSimulation(tx, modelKey, actionsMap)
+}
+
+// writeParameterInvariants collects and inserts action and query parameter invariant join rows.
+func writeParameterInvariants(tx *sql.Tx, modelKey string,
+	actionsMap map[identity.Key][]model_state.Action,
+	queriesMap map[identity.Key][]model_state.Query,
+) error {
+	actionInvariants := make(map[identity.Key]map[string][]identity.Key)
+	for _, actionList := range actionsMap {
+		for _, action := range actionList {
+			for _, param := range action.Parameters {
+				for _, inv := range param.Invariants {
+					if actionInvariants[action.Key] == nil {
+						actionInvariants[action.Key] = make(map[string][]identity.Key)
+					}
+					subKey := param.Key.SubKey
+					actionInvariants[action.Key][subKey] = append(actionInvariants[action.Key][subKey], inv.Key)
+				}
+			}
+		}
+	}
+	queryInvariants := make(map[identity.Key]map[string][]identity.Key)
+	for _, queryList := range queriesMap {
+		for _, query := range queryList {
+			for _, param := range query.Parameters {
+				for _, inv := range param.Invariants {
+					if queryInvariants[query.Key] == nil {
+						queryInvariants[query.Key] = make(map[string][]identity.Key)
+					}
+					subKey := param.Key.SubKey
+					queryInvariants[query.Key][subKey] = append(queryInvariants[query.Key][subKey], inv.Key)
+				}
+			}
+		}
+	}
+	if err := AddActionParameterInvariants(tx, modelKey, actionInvariants); err != nil {
+		return err
+	}
+	return AddQueryParameterInvariants(tx, modelKey, queryInvariants)
+}
+
+func writeParameterSimulation(tx *sql.Tx, modelKey string, actionsMap map[identity.Key][]model_state.Action) error {
+	simRequires := make(map[identity.Key]map[string][]identity.Key)
+	simSpecs := make(map[identity.Key]map[string]identity.Key)
+	for _, actionList := range actionsMap {
+		for _, action := range actionList {
+			for _, param := range action.Parameters {
+				if param.Simulation == nil {
+					continue
+				}
+				subKey := param.Key.SubKey
+				for _, req := range param.Simulation.Requires {
+					if simRequires[action.Key] == nil {
+						simRequires[action.Key] = make(map[string][]identity.Key)
+					}
+					simRequires[action.Key][subKey] = append(simRequires[action.Key][subKey], req.Key)
+				}
+				if param.Simulation.Specification != nil {
+					if simSpecs[action.Key] == nil {
+						simSpecs[action.Key] = make(map[string]identity.Key)
+					}
+					simSpecs[action.Key][subKey] = param.Simulation.Specification.Key
+				}
+			}
+		}
+	}
+	if err := AddActionParameterSimulationRequires(tx, modelKey, simRequires); err != nil {
+		return err
+	}
+	return AddActionParameterSimulationSpecs(tx, modelKey, simSpecs)
 }
 
 // collectStateItemMaps collects states, guards, actions, events, and queries from all classes.
@@ -621,15 +768,17 @@ func writeQuerySubItems(tx *sql.Tx, modelKey string, queriesMap map[identity.Key
 	return AddQueryGuarantees(tx, modelKey, queryGuaranteesMap)
 }
 
-// writeEventParameters writes event parameter rows.
+// writeEventParameters writes event parameter name rows.
 func writeEventParameters(tx *sql.Tx, modelKey string, eventsMap map[identity.Key][]model_state.Event) error {
-	eventParamsMap := make(map[identity.Key][]model_state.Parameter)
+	eventNamesMap := make(map[identity.Key][]string)
 	for _, eventList := range eventsMap {
 		for _, event := range eventList {
-			eventParamsMap[event.Key] = append(eventParamsMap[event.Key], event.Parameters...)
+			if len(event.ParameterNames) > 0 {
+				eventNamesMap[event.Key] = event.ParameterNames
+			}
 		}
 	}
-	return AddEventParameters(tx, modelKey, eventParamsMap)
+	return AddEventParameters(tx, modelKey, eventNamesMap)
 }
 
 // writeStateActions collects and inserts state action rows.
@@ -850,27 +999,32 @@ func readModelLevelData(tx *sql.Tx, modelKey string, model *core.Model, logicsBy
 
 // readDomainStructure holds all the data queried at the domain level for tree assembly.
 type readDomainStructure struct {
-	domainsSlice              []model_domain.Domain
-	domainAssociationsSlice   []model_domain.Association
-	subdomainsMap             map[identity.Key][]model_domain.Subdomain
-	generalizationsMap        map[identity.Key][]model_class.Generalization
-	useCaseGeneralizationsMap map[identity.Key][]model_use_case.Generalization
-	useCaseSubdomainKeys      map[identity.Key]identity.Key
-	useCasesSlice             []model_use_case.UseCase
-	useCaseActorsMap          map[identity.Key]map[identity.Key]model_use_case.Actor
-	useCaseSharedsMap         map[identity.Key]map[identity.Key]model_use_case.UseCaseShared
-	scenariosMap              map[identity.Key][]model_scenario.Scenario
-	classesMap                map[identity.Key][]model_class.Class
-	classInvariantsMap        map[identity.Key][]identity.Key
-	attrInvariantsMap         map[identity.Key][]identity.Key
-	attributesMap             map[identity.Key][]model_class.Attribute
-	guardsMap                 map[identity.Key][]model_state.Guard
-	actionsMap                map[identity.Key][]model_state.Action
-	statesMap                 map[identity.Key][]model_state.State
-	transitionsMap            map[identity.Key][]model_state.Transition
-	eventsMap                 map[identity.Key][]model_state.Event
-	queriesMap                map[identity.Key][]model_state.Query
-	dataTypes                 map[string]model_data_type.DataType
+	domainsSlice                     []model_domain.Domain
+	domainAssociationsSlice          []model_domain.Association
+	subdomainsMap                    map[identity.Key][]model_domain.Subdomain
+	generalizationsMap               map[identity.Key][]model_class.Generalization
+	useCaseGeneralizationsMap        map[identity.Key][]model_use_case.Generalization
+	useCaseSubdomainKeys             map[identity.Key]identity.Key
+	useCasesSlice                    []model_use_case.UseCase
+	useCaseActorsMap                 map[identity.Key]map[identity.Key]model_use_case.Actor
+	useCaseSharedsMap                map[identity.Key]map[identity.Key]model_use_case.UseCaseShared
+	scenariosMap                     map[identity.Key][]model_scenario.Scenario
+	classesMap                       map[identity.Key][]model_class.Class
+	classInvariantsMap               map[identity.Key][]identity.Key
+	toAnchoredAssocKeyByLogic        map[identity.Key]identity.Key
+	attrInvariantsMap                map[identity.Key][]identity.Key
+	actionParamInvariantsMap         map[identity.Key][]identity.Key
+	actionParamSimulationRequiresMap map[identity.Key][]identity.Key
+	actionParamSimulationSpecsMap    map[identity.Key]identity.Key
+	queryParamInvariantsMap          map[identity.Key][]identity.Key
+	attributesMap                    map[identity.Key][]model_class.Attribute
+	guardsMap                        map[identity.Key][]model_state.Guard
+	actionsMap                       map[identity.Key][]model_state.Action
+	statesMap                        map[identity.Key][]model_state.State
+	transitionsMap                   map[identity.Key][]model_state.Transition
+	eventsMap                        map[identity.Key][]model_state.Event
+	queriesMap                       map[identity.Key][]model_state.Query
+	dataTypes                        map[string]model_data_type.DataType
 }
 
 // readAndAssembleDomains reads all domain-level data and assembles the model tree.
@@ -887,7 +1041,7 @@ func readAndAssembleDomains(tx *sql.Tx, modelKey string, model *core.Model, logi
 	if err = stitchAttributeData(ds, logicsByKey, tx, modelKey); err != nil {
 		return err
 	}
-	stitchParamDataTypes(ds)
+	stitchParameterData(ds, logicsByKey)
 
 	// Assemble the tree structure.
 	assembleDomainTree(model, ds, logicsByKey)
@@ -900,22 +1054,35 @@ func readAndAssembleDomains(tx *sql.Tx, modelKey string, model *core.Model, logi
 		}
 	}
 
-	// Class associations.
+	return attachClassAssociations(tx, modelKey, model, logicsByKey)
+}
+
+func attachClassAssociations(
+	tx *sql.Tx,
+	modelKey string,
+	model *core.Model,
+	logicsByKey map[identity.Key]model_logic.Logic,
+) error {
 	classAssociationsSlice, err := QueryAssociations(tx, modelKey)
 	if err != nil {
 		return err
 	}
-	if len(classAssociationsSlice) > 0 {
-		allClassAssocs := make(map[identity.Key]model_class.Association)
-		for _, assoc := range classAssociationsSlice {
-			allClassAssocs[assoc.Key] = assoc
-		}
-		if err = model.SetClassAssociations(allClassAssocs); err != nil {
-			return err
-		}
+	if len(classAssociationsSlice) == 0 {
+		return nil
 	}
 
-	return nil
+	assocInvariantLinks, err := QueryAssociationInvariantLinks(tx, modelKey)
+	if err != nil {
+		return err
+	}
+	assocInvariantsMap := FromAnchoredInvariantKeysByAssociation(assocInvariantLinks)
+
+	allClassAssocs := make(map[identity.Key]model_class.Association)
+	for i := range classAssociationsSlice {
+		assembleAssociationInvariants(&classAssociationsSlice[i], assocInvariantsMap[classAssociationsSlice[i].Key], logicsByKey)
+		allClassAssocs[classAssociationsSlice[i].Key] = classAssociationsSlice[i]
+	}
+	return model.SetClassAssociations(allClassAssocs)
 }
 
 // queryAllDomainData runs all the domain-level queries and returns the results.
@@ -1001,6 +1168,32 @@ func queryUseCaseData(tx *sql.Tx, modelKey string, ds *readDomainStructure) erro
 	return queryScenarioData(tx, modelKey, ds)
 }
 
+func queryClassParameterLogicLinks(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
+	var err error
+
+	ds.actionParamInvariantsMap, err = QueryActionParameterInvariants(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.actionParamSimulationRequiresMap, err = QueryActionParameterSimulationRequires(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.actionParamSimulationSpecsMap, err = QueryActionParameterSimulationSpecs(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.queryParamInvariantsMap, err = QueryQueryParameterInvariants(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // queryClassStructure queries classes, invariants, and attributes.
 func queryClassStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
 	var err error
@@ -1015,8 +1208,18 @@ func queryClassStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) e
 		return err
 	}
 
+	assocInvariantLinks, err := QueryAssociationInvariantLinks(tx, modelKey)
+	if err != nil {
+		return err
+	}
+	ds.toAnchoredAssocKeyByLogic = ToAnchoredAssociationKeyByLogic(assocInvariantLinks)
+
 	ds.attrInvariantsMap, err = QueryAttributeInvariants(tx, modelKey)
 	if err != nil {
+		return err
+	}
+
+	if err = queryClassParameterLogicLinks(tx, modelKey, ds); err != nil {
 		return err
 	}
 
@@ -1192,15 +1395,15 @@ func queryEventData(tx *sql.Tx, modelKey string, ds *readDomainStructure) error 
 		return err
 	}
 
-	eventParamsMap, err := QueryEventParameters(tx, modelKey)
+	eventNamesMap, err := QueryEventParameters(tx, modelKey)
 	if err != nil {
 		return err
 	}
 
 	for classKey, events := range ds.eventsMap {
 		for i, event := range events {
-			if params, ok := eventParamsMap[event.Key]; ok {
-				events[i].Parameters = params
+			if names, ok := eventNamesMap[event.Key]; ok {
+				events[i].ParameterNames = names
 			}
 		}
 		ds.eventsMap[classKey] = events
@@ -1331,30 +1534,58 @@ func stitchAttributeData(ds *readDomainStructure, logicsByKey map[identity.Key]m
 	return nil
 }
 
-// stitchParamDataTypes stitches data types onto query, event, and action parameters.
-func stitchParamDataTypes(ds *readDomainStructure) {
-	// Stitch data types onto query parameters.
+// stitchParameterData stitches data types and invariants onto query and action parameters.
+func stitchParameterData(ds *readDomainStructure, logicsByKey map[identity.Key]model_logic.Logic) {
 	for classKey, queries := range ds.queriesMap {
 		for i := range queries {
-			stitchParameterDataTypes(queries[i].Parameters, ds.dataTypes)
+			stitchParameterExtras(&queries[i].Parameters, ds.dataTypes, ds.queryParamInvariantsMap, nil, nil, logicsByKey)
 		}
 		ds.queriesMap[classKey] = queries
 	}
 
-	// Stitch data types onto event parameters.
-	for classKey, events := range ds.eventsMap {
-		for i := range events {
-			stitchParameterDataTypes(events[i].Parameters, ds.dataTypes)
-		}
-		ds.eventsMap[classKey] = events
-	}
-
-	// Stitch data types onto action parameters.
 	for classKey, actions := range ds.actionsMap {
 		for i := range actions {
-			stitchParameterDataTypes(actions[i].Parameters, ds.dataTypes)
+			stitchParameterExtras(&actions[i].Parameters, ds.dataTypes, ds.actionParamInvariantsMap, ds.actionParamSimulationRequiresMap, ds.actionParamSimulationSpecsMap, logicsByKey)
 		}
 		ds.actionsMap[classKey] = actions
+	}
+}
+
+func stitchParameterExtras(
+	params *[]model_state.Parameter,
+	dataTypes map[string]model_data_type.DataType,
+	paramInvariantsMap map[identity.Key][]identity.Key,
+	paramSimulationRequiresMap map[identity.Key][]identity.Key,
+	paramSimulationSpecsMap map[identity.Key]identity.Key,
+	logicsByKey map[identity.Key]model_logic.Logic,
+) {
+	stitchParameterDataTypes(*params, dataTypes)
+	for j, param := range *params {
+		if invKeys, ok := paramInvariantsMap[param.Key]; ok {
+			invariants := make([]model_logic.Logic, len(invKeys))
+			for k, key := range invKeys {
+				invariants[k] = logicsByKey[key]
+			}
+			(*params)[j].SetInvariants(invariants)
+		}
+		reqKeys, hasRequires := paramSimulationRequiresMap[param.Key]
+		specKey, hasSpec := paramSimulationSpecsMap[param.Key]
+		if hasRequires || hasSpec {
+			simulation := &model_state.ParameterSimulation{}
+			if hasRequires {
+				requires := make([]model_logic.Logic, len(reqKeys))
+				for k, key := range reqKeys {
+					requires[k] = logicsByKey[key]
+				}
+				simulation.Requires = requires
+			}
+			if hasSpec {
+				if spec, ok := logicsByKey[specKey]; ok {
+					simulation.Specification = &spec
+				}
+			}
+			(*params)[j].SetSimulation(simulation)
+		}
 	}
 }
 
@@ -1362,7 +1593,7 @@ func stitchParamDataTypes(ds *readDomainStructure) {
 func stitchParameterDataTypes(params []model_state.Parameter, dataTypes map[string]model_data_type.DataType) {
 	for j, param := range params {
 		if param.DataType != nil {
-			if dt, ok := dataTypes[param.DataType.Key]; ok {
+			if dt, ok := dataTypes[param.DataType.Key.String()]; ok {
 				params[j].DataType = &dt
 			}
 		}
@@ -1471,8 +1702,34 @@ func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKe
 	classKey := class.Key
 
 	assembleClassInvariants(class, ds.classInvariantsMap[classKey], logicsByKey)
+	applyToAnchoredAssociationKeys(class, ds.toAnchoredAssocKeyByLogic)
 	assembleClassStructure(class, classKey, ds)
 	assembleClassBehavior(class, classKey, ds)
+}
+
+// assembleAssociationInvariants attaches invariants to an association by resolving logic keys.
+func assembleAssociationInvariants(assoc *model_class.Association, invKeys []identity.Key, logicsByKey map[identity.Key]model_logic.Logic) {
+	if len(invKeys) == 0 {
+		return
+	}
+	assoc.Invariants = make([]model_logic.Logic, len(invKeys))
+	for j, key := range invKeys {
+		assoc.Invariants[j] = logicsByKey[key]
+	}
+}
+
+// applyToAnchoredAssociationKeys sets OverAssociationKey on class invariants stored via association_invariant.
+func applyToAnchoredAssociationKeys(class *model_class.Class, toAnchoredAssocKeyByLogic map[identity.Key]identity.Key) {
+	if len(toAnchoredAssocKeyByLogic) == 0 || len(class.Invariants) == 0 {
+		return
+	}
+	for i := range class.Invariants {
+		assocKey, ok := toAnchoredAssocKeyByLogic[class.Invariants[i].Key]
+		if !ok {
+			continue
+		}
+		class.Invariants[i].SetOverAssociationKey(&assocKey)
+	}
 }
 
 // assembleClassInvariants attaches invariants to a class by resolving logic keys.
@@ -1489,10 +1746,7 @@ func assembleClassInvariants(class *model_class.Class, invKeys []identity.Key, l
 // assembleClassStructure attaches attributes to a class.
 func assembleClassStructure(class *model_class.Class, classKey identity.Key, ds *readDomainStructure) {
 	if attributes, ok := ds.attributesMap[classKey]; ok {
-		class.Attributes = make(map[identity.Key]model_class.Attribute)
-		for _, attr := range attributes {
-			class.Attributes[attr.Key] = attr
-		}
+		class.Attributes = append([]model_class.Attribute(nil), attributes...)
 	}
 }
 

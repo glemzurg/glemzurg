@@ -106,7 +106,7 @@
                                     {
                                         "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/9",
                                         "step_type": "leaf",
-                                        "leaf_type": "delete",
+                                        "leaf_type": "destroy",
                                         "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book"
                                     }
                                 ]

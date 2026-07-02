@@ -9,6 +9,11 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
+const (
+	diagnosticLevelWarning = "warning"
+	diagnosticLevelInfo    = "info"
+)
+
 // Diagnostic represents a non-fatal issue found during surface analysis.
 type Diagnostic struct {
 	Level    string        // "warning" or "info"
@@ -26,6 +31,8 @@ type CallerData struct {
 	ActionCalledBy map[identity.Key][]identity.Key
 	// QueryCalledBy maps query keys to class keys that call them.
 	QueryCalledBy map[identity.Key][]identity.Key
+	// AttributeCalledBy maps derived attribute keys to class keys that reference them in logic.
+	AttributeCalledBy map[identity.Key][]identity.Key
 }
 
 // Diagnose analyzes a resolved surface and produces diagnostic messages
@@ -65,7 +72,7 @@ func diagnoseBrokenCreationChains(resolved *ResolvedSurface, allAssocs map[ident
 					ak := assoc.Key
 					ck := classKey
 					diagnostics = append(diagnostics, Diagnostic{
-						Level: "warning",
+						Level: diagnosticLevelWarning,
 						Message: fmt.Sprintf("broken creation chain: %s has mandatory association '%s' to excluded class %s",
 							classKey.String(), assoc.Name, assoc.ToClassKey.String()),
 						ClassKey: &ck,
@@ -92,7 +99,7 @@ func diagnoseIsolatedClasses(resolved *ResolvedSurface, model *core.Model) []Dia
 		}
 		ck := classKey
 		diagnostics = append(diagnostics, Diagnostic{
-			Level:    "warning",
+			Level:    diagnosticLevelWarning,
 			Message:  fmt.Sprintf("isolated class: %s has no creation events and cannot be instantiated", classKey.String()),
 			ClassKey: &ck,
 		})
@@ -156,7 +163,7 @@ func diagnoseAllEventsInternal(resolved *ResolvedSurface, cd *CallerData) []Diag
 		if allInternal {
 			ck := classKey
 			diagnostics = append(diagnostics, Diagnostic{
-				Level:    "warning",
+				Level:    diagnosticLevelWarning,
 				Message:  fmt.Sprintf("all events internal: %s has no externally-fireable events", classKey.String()),
 				ClassKey: &ck,
 			})
@@ -187,7 +194,7 @@ func diagnoseUnknownClassRefs(model *core.Model, cd *CallerData) []Diagnostic {
 		for _, senderKey := range senders {
 			if _, found := findClassInModel(senderKey, model); !found {
 				diagnostics = append(diagnostics, Diagnostic{
-					Level:   "warning",
+					Level:   diagnosticLevelWarning,
 					Message: fmt.Sprintf("SentBy references unknown class: event %s references %s", eventKey.String(), senderKey.String()),
 				})
 			}
@@ -197,7 +204,7 @@ func diagnoseUnknownClassRefs(model *core.Model, cd *CallerData) []Diagnostic {
 		for _, callerKey := range callers {
 			if _, found := findClassInModel(callerKey, model); !found {
 				diagnostics = append(diagnostics, Diagnostic{
-					Level:   "warning",
+					Level:   diagnosticLevelWarning,
 					Message: fmt.Sprintf("CalledBy references unknown class: action %s references %s", actionKey.String(), callerKey.String()),
 				})
 			}
@@ -207,8 +214,18 @@ func diagnoseUnknownClassRefs(model *core.Model, cd *CallerData) []Diagnostic {
 		for _, callerKey := range callers {
 			if _, found := findClassInModel(callerKey, model); !found {
 				diagnostics = append(diagnostics, Diagnostic{
-					Level:   "warning",
+					Level:   diagnosticLevelWarning,
 					Message: fmt.Sprintf("CalledBy references unknown class: query %s references %s", queryKey.String(), callerKey.String()),
+				})
+			}
+		}
+	}
+	for attributeKey, callers := range cd.AttributeCalledBy {
+		for _, callerKey := range callers {
+			if _, found := findClassInModel(callerKey, model); !found {
+				diagnostics = append(diagnostics, Diagnostic{
+					Level:   diagnosticLevelWarning,
+					Message: fmt.Sprintf("CalledBy references unknown class: derived attribute %s references %s", attributeKey.String(), callerKey.String()),
 				})
 			}
 		}

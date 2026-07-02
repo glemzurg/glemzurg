@@ -1,6 +1,7 @@
 package parser_ai
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
@@ -68,6 +70,7 @@ func convertModelScalars(input *inputModel, modelKey string) (*core.Model, error
 		Key:                  strings.TrimSpace(strings.ToLower(modelKey)),
 		Name:                 input.Name,
 		Details:              input.Details,
+		UnfinishedNotes:      input.UnfinishedNotes,
 		Invariants:           invariants,
 		GlobalFunctions:      globalFunctions,
 		NamedSets:            namedSets,
@@ -238,11 +241,12 @@ func convertActorToModel(keyStr string, actor *inputActor, actorGeneralizations 
 	}
 
 	result := model_actor.Actor{
-		Key:        key,
-		Name:       actor.Name,
-		Type:       actor.Type,
-		Details:    actor.Details,
-		UmlComment: actor.UMLComment,
+		Key:             key,
+		Name:            actor.Name,
+		Type:            actor.Type,
+		Details:         actor.Details,
+		UnfinishedNotes: actor.UnfinishedNotes,
+		UmlComment:      actor.UMLComment,
 	}
 
 	// Set SuperclassOfKey and SubclassOfKey from actor generalizations
@@ -274,12 +278,13 @@ func convertActorGeneralizationToModel(keyStr string, gen *inputActorGeneralizat
 	}
 
 	return model_actor.Generalization{
-		Key:        key,
-		Name:       gen.Name,
-		Details:    gen.Details,
-		IsComplete: gen.IsComplete,
-		IsStatic:   gen.IsStatic,
-		UmlComment: gen.UMLComment,
+		Key:             key,
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UmlComment:      gen.UMLComment,
 	}, nil
 }
 
@@ -337,6 +342,7 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 		Key:               domainKey,
 		Name:              domain.Name,
 		Details:           domain.Details,
+		UnfinishedNotes:   domain.UnfinishedNotes,
 		Realized:          domain.Realized,
 		UmlComment:        domain.UMLComment,
 		Subdomains:        make(map[identity.Key]model_domain.Subdomain),
@@ -396,6 +402,7 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 		Key:                    subdomainKey,
 		Name:                   subdomain.Name,
 		Details:                subdomain.Details,
+		UnfinishedNotes:        subdomain.UnfinishedNotes,
 		UmlComment:             subdomain.UMLComment,
 		Classes:                make(map[identity.Key]model_class.Class),
 		Generalizations:        make(map[identity.Key]model_class.Generalization),
@@ -438,7 +445,7 @@ func convertSubdomainClassesAndGeneralizations(ctx subdomainConvContext, subdoma
 	}
 
 	for key, class := range subdomain.Classes {
-		converted, err := convertClassToModel(key, class, ctx.subdomainKey, subdomain.ClassGeneralizations, genKeyMap, ctx.domainKeyStr, ctx.subdomainKeyStr)
+		converted, err := convertClassToModel(key, class, ctx, subdomain.ClassGeneralizations, genKeyMap)
 		if err != nil {
 			return err
 		}
@@ -532,14 +539,15 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, ctx useCaseConvConte
 	}
 
 	result := model_use_case.UseCase{
-		Key:        useCaseKey,
-		Name:       uc.Name,
-		Details:    uc.Details,
-		Level:      uc.Level,
-		ReadOnly:   uc.ReadOnly,
-		UmlComment: uc.UMLComment,
-		Actors:     make(map[identity.Key]model_use_case.Actor),
-		Scenarios:  make(map[identity.Key]model_scenario.Scenario),
+		Key:             useCaseKey,
+		Name:            uc.Name,
+		Details:         uc.Details,
+		UnfinishedNotes: uc.UnfinishedNotes,
+		Level:           uc.Level,
+		ReadOnly:        uc.ReadOnly,
+		UmlComment:      uc.UMLComment,
+		Actors:          make(map[identity.Key]model_use_case.Actor),
+		Scenarios:       make(map[identity.Key]model_scenario.Scenario),
 	}
 
 	// Set SuperclassOfKey and SubclassOfKey from use case generalizations
@@ -581,7 +589,10 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, ctx useCaseConvConte
 
 	// Convert scenarios
 	for scenKeyStr, scenario := range uc.Scenarios {
-		converted, err := convertScenarioToModel(scenKeyStr, scenario, useCaseKey, ctx.subdomainKey, ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr)
+		converted, err := convertScenarioToModel(scenKeyStr, scenario,
+			useCaseScope{Key: useCaseKey, KeyStr: keyStr}, ctx.subdomainKey,
+			subdomainPath{DomainKeyStr: ctx.domainKeyStr, SubdomainKeyStr: ctx.subdomainKeyStr},
+		)
 		if err != nil {
 			return model_use_case.UseCase{}, err
 		}
@@ -591,11 +602,21 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, ctx useCaseConvConte
 	return result, nil
 }
 
-// convertScenarioToModel converts an inputScenario to a model_scenario.Scenario.
-func convertScenarioToModel(keyStr string, scenario *inputScenario, useCaseKey, subdomainKey identity.Key, domainKeyStr, subdomainKeyStr, useCaseKeyStr string) (model_scenario.Scenario, error) {
-	scenarioFile := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/scenarios/%s.scenario.json", domainKeyStr, subdomainKeyStr, useCaseKeyStr, keyStr)
+type useCaseScope struct {
+	Key    identity.Key
+	KeyStr string
+}
 
-	scenarioKey, err := identity.NewScenarioKey(useCaseKey, keyStr)
+type subdomainPath struct {
+	DomainKeyStr    string
+	SubdomainKeyStr string
+}
+
+// convertScenarioToModel converts an inputScenario to a model_scenario.Scenario.
+func convertScenarioToModel(keyStr string, scenario *inputScenario, useCase useCaseScope, subdomainKey identity.Key, path subdomainPath) (model_scenario.Scenario, error) {
+	scenarioFile := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/scenarios/%s.scenario.json", path.DomainKeyStr, path.SubdomainKeyStr, useCase.KeyStr, keyStr)
+
+	scenarioKey, err := identity.NewScenarioKey(useCase.Key, keyStr)
 	if err != nil {
 		return model_scenario.Scenario{}, convErr(
 			ErrConvKeyConstruction,
@@ -624,7 +645,7 @@ func convertScenarioToModel(keyStr string, scenario *inputScenario, useCaseKey, 
 	if scenario.Steps != nil {
 		stepCtx := stepConvContext{
 			scenarioKey:  scenarioKey,
-			useCaseKey:   useCaseKey,
+			useCaseKey:   useCase.Key,
 			subdomainKey: subdomainKey,
 			objects:      scenario.Objects,
 			scenarioFile: scenarioFile,
@@ -838,20 +859,21 @@ func convertUseCaseGeneralizationToModel(keyStr string, gen *inputUseCaseGeneral
 	}
 
 	return model_use_case.Generalization{
-		Key:        key,
-		Name:       gen.Name,
-		Details:    gen.Details,
-		IsComplete: gen.IsComplete,
-		IsStatic:   gen.IsStatic,
-		UmlComment: gen.UMLComment,
+		Key:             key,
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UmlComment:      gen.UMLComment,
 	}, nil
 }
 
 // convertClassToModel converts an inputClass to a model_class.Class.
-func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity.Key, generalizations map[string]*inputClassGeneralization, genKeyMap map[string]identity.Key, domainKeyStr, subdomainKeyStr string) (model_class.Class, error) {
-	classFile := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKeyStr, subdomainKeyStr, keyStr)
+func convertClassToModel(keyStr string, class *inputClass, ctx subdomainConvContext, generalizations map[string]*inputClassGeneralization, genKeyMap map[string]identity.Key) (model_class.Class, error) {
+	classFile := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr)
 
-	classKey, err := identity.NewClassKey(subdomainKey, keyStr)
+	classKey, err := identity.NewClassKey(ctx.subdomainKey, keyStr)
 	if err != nil {
 		return model_class.Class{}, convErr(
 			ErrConvKeyConstruction,
@@ -861,17 +883,18 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 	}
 
 	result := model_class.Class{
-		Key:         classKey,
-		Name:        class.Name,
-		Details:     class.Details,
-		UmlComment:  class.UMLComment,
-		Attributes:  make(map[identity.Key]model_class.Attribute),
-		States:      make(map[identity.Key]model_state.State),
-		Events:      make(map[identity.Key]model_state.Event),
-		Guards:      make(map[identity.Key]model_state.Guard),
-		Actions:     make(map[identity.Key]model_state.Action),
-		Queries:     make(map[identity.Key]model_state.Query),
-		Transitions: make(map[identity.Key]model_state.Transition),
+		Key:             classKey,
+		Name:            class.Name,
+		Details:         class.Details,
+		UnfinishedNotes: class.UnfinishedNotes,
+		UmlComment:      class.UMLComment,
+		Attributes:      nil,
+		States:          make(map[identity.Key]model_state.State),
+		Events:          make(map[identity.Key]model_state.Event),
+		Guards:          make(map[identity.Key]model_state.Guard),
+		Actions:         make(map[identity.Key]model_state.Action),
+		Queries:         make(map[identity.Key]model_state.Query),
+		Transitions:     make(map[identity.Key]model_state.Transition),
 	}
 
 	// Set actor key if present
@@ -887,31 +910,37 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		result.ActorKey = &actorKey
 	}
 
-	// Find generalization references for this class
+	// Find generalization references for this class.
+	// SubclassKeys may contain short keys (local) or full key paths (cross-domain).
+	classFullKey := classKey.String()
 	for genKeyStr, gen := range generalizations {
 		genKey := genKeyMap[genKeyStr]
 		if gen.SuperclassKey == keyStr {
 			result.SuperclassOfKey = &genKey
 		}
-		if slices.Contains(gen.SubclassKeys, keyStr) {
+		if slices.Contains(gen.SubclassKeys, keyStr) || slices.Contains(gen.SubclassKeys, classFullKey) {
 			result.SubclassOfKey = &genKey
 		}
 	}
 
 	// Convert attributes and invariants
-	if err := convertClassAttributesAndInvariants(class, &result, classKey, classFile); err != nil {
+	subdomainKey, err := identity.ParseKey(classKey.ParentKey)
+	if err != nil {
+		return model_class.Class{}, convErr(ErrConvKeyConstruction, fmt.Sprintf("failed to parse subdomain key: %s", err.Error()), classFile)
+	}
+	if err := convertClassAttributesAndInvariants(class, &result, subdomainKey, classKey, classFile); err != nil {
 		return model_class.Class{}, err
 	}
 
 	// Convert state machine if present
 	if class.StateMachine != nil {
-		if err := convertStateMachineToModel(class.StateMachine, &result, classKey, domainKeyStr, subdomainKeyStr, keyStr); err != nil {
+		if err := convertStateMachineToModel(class.StateMachine, &result, classKey, ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr); err != nil {
 			return model_class.Class{}, err
 		}
 	}
 
 	// Convert actions and queries
-	if err := convertClassActionsAndQueries(class, &result, classKey, domainKeyStr, subdomainKeyStr, keyStr); err != nil {
+	if err := convertClassActionsAndQueries(class, &result, classKey, ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr); err != nil {
 		return model_class.Class{}, err
 	}
 
@@ -919,18 +948,19 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 }
 
 // convertClassAttributesAndInvariants converts attributes and class-level invariants into the result class.
-func convertClassAttributesAndInvariants(class *inputClass, result *model_class.Class, classKey identity.Key, classFile string) error {
-	for attrKeyStr, attr := range class.Attributes {
-		converted, err := convertAttributeToModel(attrKeyStr, attr, classKey, class.Indexes, classFile)
+func convertClassAttributesAndInvariants(class *inputClass, result *model_class.Class, subdomainKey, classKey identity.Key, classFile string) error {
+	for i := range class.Attributes {
+		attr := &class.Attributes[i]
+		converted, err := convertAttributeToModel(attr, classKey, class.Indexes, classFile)
 		if err != nil {
 			return err
 		}
-		result.Attributes[converted.Key] = converted
+		result.Attributes = append(result.Attributes, converted)
 	}
 
-	classInvariants, err := convertLogicsToModel(class.Invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	classInvariants, err := convertClassInvariantsToModel(class.Invariants, subdomainKey, classKey, classFile)
 	if err != nil {
-		return convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert class invariants: %s", err.Error()), classFile)
+		return err
 	}
 	result.SetInvariants(classInvariants)
 	return nil
@@ -956,20 +986,20 @@ func convertClassActionsAndQueries(class *inputClass, result *model_class.Class,
 }
 
 // convertAttributeToModel converts an inputAttribute to a model_class.Attribute.
-func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey identity.Key, indexes [][]string, classFile string) (model_class.Attribute, error) {
-	attrKey, err := identity.NewAttributeKey(classKey, keyStr)
+func convertAttributeToModel(attr *inputAttribute, classKey identity.Key, indexes [][]string, classFile string) (model_class.Attribute, error) {
+	attrKey, err := identity.NewAttributeKey(classKey, attr.Key)
 	if err != nil {
 		return model_class.Attribute{}, convErr(
 			ErrConvKeyConstruction,
-			fmt.Sprintf("failed to create attribute key '%s': %s", keyStr, err.Error()),
+			fmt.Sprintf("failed to create attribute key '%s': %s", attr.Key, err.Error()),
 			classFile,
-		).WithField(fmt.Sprintf("attributes.%s", keyStr))
+		).WithField(fmt.Sprintf("attributes.%s.key", attr.Key))
 	}
 
 	// Find which indexes this attribute is part of
 	var indexNums []uint
 	for i, index := range indexes {
-		if slices.Contains(index, keyStr) {
+		if slices.Contains(index, attr.Key) {
 			indexNums = append(indexNums, uint(i)) //nolint:gosec // index i is bounded by slice length, no overflow possible
 		}
 	}
@@ -983,30 +1013,100 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 		UmlComment:    attr.UMLComment,
 		IndexNums:     indexNums,
 	}
-	if attr.DerivationPolicy != nil {
-		dpKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
-		if err != nil {
-			return model_class.Attribute{}, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create derivation key for attribute '%s': %s", keyStr, err.Error()),
-				classFile,
-			).WithField(fmt.Sprintf("attributes.%s.derivation_policy", keyStr))
-		}
-		dp, err := convertLogicToModel(attr.DerivationPolicy, model_logic.LogicTypeValue, dpKey)
-		if err != nil {
-			return model_class.Attribute{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert derivation policy for attribute '%s': %s", keyStr, err.Error()), classFile)
-		}
-		result.DerivationPolicy = &dp
+
+	// Parse the data type rules.
+	parsedDataType, err := convertAttributeDataType(attrKey, attr, attr.Key, classFile)
+	if err != nil {
+		return model_class.Attribute{}, err
 	}
+	result.DataType = parsedDataType
+
+	// Parse optional type_spec and attach to the DataType.
+	typeSpec, err := convertAttributeTypeSpec(attr, attr.Key, classFile)
+	if err != nil {
+		return model_class.Attribute{}, err
+	}
+	if typeSpec != nil && result.DataType != nil {
+		result.DataType.TypeSpec = typeSpec
+	}
+
+	derivationPolicy, err := convertAttributeDerivation(attr, attrKey, attr.Key, classFile)
+	if err != nil {
+		return model_class.Attribute{}, err
+	}
+	result.DerivationPolicy = derivationPolicy
 
 	// Convert attribute invariants
 	attrInvariants, err := convertLogicsToModel(attr.Invariants, model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
 	if err != nil {
-		return model_class.Attribute{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert attribute '%s' invariants: %s", keyStr, err.Error()), classFile)
+		return model_class.Attribute{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert attribute '%s' invariants: %s", attr.Key, err.Error()), classFile)
 	}
 	result.SetInvariants(attrInvariants)
 
 	return result, nil
+}
+
+// convertAttributeDerivation converts the derivation policy for an attribute.
+// Returns a nil pointer with no error when there is no derivation policy.
+func convertAttributeDerivation(attr *inputAttribute, attrKey identity.Key, keyStr, classFile string) (*model_logic.Logic, error) { //nolint:nilnil // nil pointer means no derivation policy present
+	if attr.DerivationPolicy == nil {
+		return nil, nil //nolint:nilnil // nil pointer means no derivation policy present
+	}
+	dpKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
+	if err != nil {
+		return nil, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create derivation key for attribute '%s': %s", keyStr, err.Error()),
+			classFile,
+		).WithField(fmt.Sprintf("attributes.%s.derivation_policy", keyStr))
+	}
+	dp, err := convertLogicToModel(attr.DerivationPolicy, model_logic.LogicTypeValue, dpKey)
+	if err != nil {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert derivation policy for attribute '%s': %s", keyStr, err.Error()), classFile)
+	}
+	return &dp, nil
+}
+
+// convertAttributeTypeSpec parses the optional type_spec for an attribute.
+// Returns a nil pointer with no error when there is no type spec.
+func convertAttributeTypeSpec(attr *inputAttribute, keyStr, classFile string) (*logic_spec.TypeSpec, error) { //nolint:nilnil // nil pointer means no type spec present
+	return convertInputTypeSpec(attr.TypeSpec, "attribute", keyStr, classFile)
+}
+
+// convertParameterTypeSpec parses the optional type_spec for a parameter.
+// Returns a nil pointer with no error when there is no type spec.
+func convertParameterTypeSpec(param *inputParameter, keyStr, sourceFile string) (*logic_spec.TypeSpec, error) { //nolint:nilnil // nil pointer means no type spec present
+	return convertInputTypeSpec(param.TypeSpec, "parameter", keyStr, sourceFile)
+}
+
+// convertInputTypeSpec parses an optional TLA+ type_spec string from parser_ai input.
+func convertInputTypeSpec(typeSpec, kind, keyStr, sourceFile string) (*logic_spec.TypeSpec, error) { //nolint:nilnil // nil pointer means no type spec present
+	if typeSpec == "" {
+		return nil, nil //nolint:nilnil // nil pointer means no type spec present
+	}
+	ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, typeSpec, nil)
+	if err != nil {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create type spec for %s '%s': %s", kind, keyStr, err.Error()), sourceFile)
+	}
+	return &ts, nil
+}
+
+// convertAttributeDataType parses the data type rules for an attribute.
+// Returns a nil pointer with no error when there are no data type rules to parse.
+func convertAttributeDataType(attrKey identity.Key, attr *inputAttribute, keyStr, classFile string) (*model_data_type.DataType, error) { //nolint:nilnil // nil pointer means no data type rules present
+	if attr.DataTypeRules == "" {
+		return nil, nil //nolint:nilnil // nil pointer means no data type rules present
+	}
+	dataTypeKey, err := identity.NewDataTypeKey(attrKey, "")
+	if err != nil {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to build datatype key for attribute '%s': %s", keyStr, err.Error()), classFile)
+	}
+	parsedDataType, err := model_data_type.New(dataTypeKey, attr.DataTypeRules, nil)
+	var parseError *model_data_type.CannotParseError
+	if err != nil && !errors.As(err, &parseError) {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to parse data type for attribute '%s': %s", keyStr, err.Error()), classFile)
+	}
+	return parsedDataType, nil
 }
 
 // convertStateMachineToModel converts an inputStateMachine to populate a Class's state machine fields.
@@ -1089,19 +1189,7 @@ func convertSMEventsToModel(sm *inputStateMachine, class *model_class.Class, cla
 			).WithField(fmt.Sprintf("events.%s", eventKeyStr))
 		}
 
-		converted := model_state.Event{
-			Key:        eventKey,
-			Name:       event.Name,
-			Details:    event.Details,
-			Parameters: []model_state.Parameter{},
-		}
-
-		for _, param := range event.Parameters {
-			converted.Parameters = append(converted.Parameters, model_state.Parameter{
-				Name:          param.Name,
-				DataTypeRules: param.DataTypeRules,
-			})
-		}
+		converted := model_state.NewEvent(eventKey, event.Name, event.Details, event.Parameters)
 
 		class.Events[converted.Key] = converted
 	}
@@ -1263,11 +1351,16 @@ func convertActionToModel(keyStr string, action *inputAction, classKey identity.
 		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action safety rules: %s", err.Error()), actionFile)
 	}
 
+	parameters, err := convertParametersToModel(action.Parameters, actionKey, actionFile)
+	if err != nil {
+		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action parameters: %s", err.Error()), actionFile)
+	}
+
 	return model_state.Action{
 		Key:         actionKey,
 		Name:        action.Name,
 		Details:     action.Details,
-		Parameters:  convertParametersToModel(action.Parameters),
+		Parameters:  parameters,
 		Requires:    requires,
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,
@@ -1296,11 +1389,16 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 		return model_state.Query{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert query guarantees: %s", err.Error()), queryFile)
 	}
 
+	parameters, err := convertParametersToModel(query.Parameters, queryKey, queryFile)
+	if err != nil {
+		return model_state.Query{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert query parameters: %s", err.Error()), queryFile)
+	}
+
 	return model_state.Query{
 		Key:        queryKey,
 		Name:       query.Name,
 		Details:    query.Details,
-		Parameters: convertParametersToModel(query.Parameters),
+		Parameters: parameters,
 		Requires:   requires,
 		Guarantees: guarantees,
 	}, nil
@@ -1309,10 +1407,36 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 // resolveLogicType returns the logic type from the input if specified as "let",
 // otherwise returns the default type for the context.
 func resolveLogicType(input *inputLogic, defaultType string) string {
-	if input.Type == model_logic.LogicTypeLet {
+	switch input.Type {
+	case model_logic.LogicTypeLet:
 		return model_logic.LogicTypeLet
+	case model_logic.LogicTypeDestroy:
+		if defaultType == model_logic.LogicTypeStateChange {
+			return model_logic.LogicTypeDestroy
+		}
+		return defaultType
+	default:
+		return defaultType
 	}
-	return defaultType
+}
+
+// convertClassInvariantsToModel converts class invariants, resolving optional over_association_key references.
+func convertClassInvariantsToModel(invariants []inputLogic, subdomainKey, classKey identity.Key, classFile string) ([]model_logic.Logic, error) {
+	logics, err := convertLogicsToModel(invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	if err != nil {
+		return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert class invariants: %s", err.Error()), classFile)
+	}
+	for i := range logics {
+		if invariants[i].OverAssociationKey == "" {
+			continue
+		}
+		overKey, err := model_class.ResolveClassAssociationKeyFromRelative(subdomainKey, classKey, invariants[i].OverAssociationKey)
+		if err != nil {
+			return nil, convErr(ErrConvModelValidation, fmt.Sprintf("class invariant %d over_association_key: %s", i, err.Error()), classFile)
+		}
+		logics[i].SetOverAssociationKey(&overKey)
+	}
+	return logics, nil
 }
 
 // convertLogicToModel converts an inputLogic to a model_logic.Logic with the given key.
@@ -1332,6 +1456,13 @@ func convertLogicToModel(input *inputLogic, logicType string, logicKey identity.
 	}
 
 	logic := model_logic.NewLogic(logicKey, logicType, input.Description, input.Target, spec, targetTypeSpec)
+	if strings.TrimSpace(input.DestroyEvent) != "" {
+		destroyEventSpec, err := logic_spec.NewExpressionSpec(input.Notation, input.DestroyEvent, nil)
+		if err != nil {
+			return model_logic.Logic{}, fmt.Errorf("failed to create destroy_event spec: %w", err)
+		}
+		logic.SetDestroyEventSpec(destroyEventSpec)
+	}
 	return logic, nil
 }
 
@@ -1356,19 +1487,33 @@ func convertLogicsToModel(logics []inputLogic, logicType string, parentKey ident
 	return result, nil
 }
 
-// convertParametersToModel converts a slice of inputParameter to a slice of model_state.Parameter.
-func convertParametersToModel(params []inputParameter) []model_state.Parameter {
+// convertParametersToModel converts a slice of inputParameter to a slice of model_state.Parameter,
+// parenting each parameter's identity.Key under the given owner key (action/query/event).
+func convertParametersToModel(params []inputParameter, parentKey identity.Key, sourceFile string) ([]model_state.Parameter, error) {
 	if len(params) == 0 {
-		return nil
+		return nil, nil
 	}
 	result := make([]model_state.Parameter, len(params))
 	for i, param := range params {
-		result[i] = model_state.Parameter{
-			Name:          param.Name,
-			DataTypeRules: param.DataTypeRules,
+		built, err := model_state.NewParameter(parentKey, param.Name, param.DataTypeRules, param.Nullable)
+		if err != nil {
+			return nil, fmt.Errorf("parameter %d (%s): %w", i, param.Name, err)
 		}
+		typeSpec, err := convertParameterTypeSpec(&param, param.Name, sourceFile)
+		if err != nil {
+			return nil, err
+		}
+		if typeSpec != nil && built.DataType != nil {
+			built.DataType.TypeSpec = typeSpec
+		}
+		paramInvariants, err := convertLogicsToModel(param.Invariants, model_logic.LogicTypeAssessment, built.Key, identity.NewParameterInvariantKey)
+		if err != nil {
+			return nil, fmt.Errorf("parameter %d (%s) invariants: %w", i, param.Name, err)
+		}
+		built.SetInvariants(paramInvariants)
+		result[i] = built
 	}
-	return result
+	return result, nil
 }
 
 // convertClassGeneralizationToModel converts an inputClassGeneralization to a model_class.Generalization.
@@ -1385,12 +1530,13 @@ func convertClassGeneralizationToModel(keyStr string, gen *inputClassGeneralizat
 	}
 
 	return model_class.Generalization{
-		Key:        genKey,
-		Name:       gen.Name,
-		Details:    gen.Details,
-		IsComplete: gen.IsComplete,
-		IsStatic:   gen.IsStatic,
-		UmlComment: gen.UMLComment,
+		Key:             genKey,
+		Name:            gen.Name,
+		Details:         gen.Details,
+		UnfinishedNotes: gen.UnfinishedNotes,
+		IsComplete:      gen.IsComplete,
+		IsStatic:        gen.IsStatic,
+		UmlComment:      gen.UMLComment,
 	}, nil
 }
 
@@ -1424,7 +1570,32 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 		).WithField("to_class_key")
 	}
 
-	assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, assoc.Name)
+	result, err := buildClassAssociationFromResolvedEndpoints(subdomainKey, fromClassKey, toClassKey, keyStr, assoc, assocFile)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+
+	// Handle association class key if present
+	if assoc.AssociationClassKey != nil && *assoc.AssociationClassKey != "" {
+		for key := range classes {
+			if key.SubKey == *assoc.AssociationClassKey {
+				result.AssociationClassKey = &key
+				break
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func buildClassAssociationFromResolvedEndpoints(
+	parentKey identity.Key,
+	fromClassKey, toClassKey identity.Key,
+	keyStr string,
+	assoc *inputClassAssociation,
+	assocFile string,
+) (model_class.Association, error) {
+	assocKey, err := identity.NewClassAssociationKey(parentKey, fromClassKey, toClassKey, assoc.Name)
 	if err != nil {
 		return model_class.Association{}, convErr(
 			ErrConvAssocKeyConstruction,
@@ -1451,28 +1622,41 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociat
 		).WithField("to_multiplicity")
 	}
 
-	result := model_class.Association{
-		Key:              assocKey,
-		Name:             assoc.Name,
-		Details:          assoc.Details,
-		FromClassKey:     fromClassKey,
-		FromMultiplicity: fromMult,
-		ToClassKey:       toClassKey,
-		ToMultiplicity:   toMult,
-		UmlComment:       assoc.UmlComment,
+	uniqueness, err := resolveAssociationUniquenessFromInput(assoc, fromClassKey, toClassKey, assocFile)
+	if err != nil {
+		return model_class.Association{}, err
 	}
 
-	// Handle association class key if present
-	if assoc.AssociationClassKey != nil && *assoc.AssociationClassKey != "" {
-		for key := range classes {
-			if key.SubKey == *assoc.AssociationClassKey {
-				result.AssociationClassKey = &key
-				break
-			}
-		}
+	result := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: assoc.Name, Details: assoc.Details},
+		model_class.AssociationEnd{ClassKey: fromClassKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: toClassKey, Multiplicity: toMult},
+		model_class.AssociationOptions{
+			Uniqueness: uniqueness,
+			UmlComment: assoc.UmlComment,
+		},
+	)
+
+	if err := attachAssociationInvariants(&result, assoc); err != nil {
+		return model_class.Association{}, err
 	}
 
 	return result, nil
+}
+
+func attachAssociationInvariants(result *model_class.Association, assoc *inputClassAssociation) error {
+	invariants, err := convertLogicsToModel(
+		assoc.Invariants,
+		model_logic.LogicTypeAssessment,
+		result.Key,
+		identity.NewClassAssociationInvariantKey,
+	)
+	if err != nil {
+		return err
+	}
+	result.SetInvariants(invariants)
+	return nil
 }
 
 // convertDomainClassAssociationToModel converts an inputClassAssociation at domain level to a model_class.Association.
@@ -1533,45 +1717,29 @@ func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssoci
 		).WithField("to_class_key")
 	}
 
-	assocKey, err := identity.NewClassAssociationKey(domainKey, fromClassKey, toClassKey, assoc.Name)
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvAssocKeyConstruction,
-			fmt.Sprintf("failed to create association key for '%s': %s", keyStr, err.Error()),
-			assocFile,
-		).WithField("key")
-	}
+	return buildClassAssociationFromResolvedEndpoints(domainKey, fromClassKey, toClassKey, keyStr, assoc, assocFile)
+}
 
-	fromMult, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.FromMultiplicity))
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse from_multiplicity '%s': %s", assoc.FromMultiplicity, err.Error()),
-			assocFile,
-		).WithField("from_multiplicity")
+func lookupClassKeyInModelDomains(
+	domains map[identity.Key]model_domain.Domain,
+	domainSubKey, subdomainSubKey, classSubKey string,
+) identity.Key {
+	for domKey, domain := range domains {
+		if domKey.SubKey != domainSubKey {
+			continue
+		}
+		for subKey, subdomain := range domain.Subdomains {
+			if subKey.SubKey != subdomainSubKey {
+				continue
+			}
+			for classKey := range subdomain.Classes {
+				if classKey.SubKey == classSubKey {
+					return classKey
+				}
+			}
+		}
 	}
-
-	toMult, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.ToMultiplicity))
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse to_multiplicity '%s': %s", assoc.ToMultiplicity, err.Error()),
-			assocFile,
-		).WithField("to_multiplicity")
-	}
-
-	result := model_class.Association{
-		Key:              assocKey,
-		Name:             assoc.Name,
-		Details:          assoc.Details,
-		FromClassKey:     fromClassKey,
-		FromMultiplicity: fromMult,
-		ToClassKey:       toClassKey,
-		ToMultiplicity:   toMult,
-		UmlComment:       assoc.UmlComment,
-	}
-
-	return result, nil
+	return identity.Key{}
 }
 
 // convertModelAssociationToModel converts an inputClassAssociation at model level to a model_class.Association.
@@ -1596,34 +1764,8 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 		).WithField("to_class_key")
 	}
 
-	// Find the class keys
-	var fromClassKey, toClassKey identity.Key
-	for domKey, domain := range domains {
-		if domKey.SubKey == fromDomain {
-			for subKey, subdomain := range domain.Subdomains {
-				if subKey.SubKey == fromSubdomain {
-					for classKey := range subdomain.Classes {
-						if classKey.SubKey == fromClass {
-							fromClassKey = classKey
-							break
-						}
-					}
-				}
-			}
-		}
-		if domKey.SubKey == toDomain {
-			for subKey, subdomain := range domain.Subdomains {
-				if subKey.SubKey == toSubdomain {
-					for classKey := range subdomain.Classes {
-						if classKey.SubKey == toClass {
-							toClassKey = classKey
-							break
-						}
-					}
-				}
-			}
-		}
-	}
+	fromClassKey := lookupClassKeyInModelDomains(domains, fromDomain, fromSubdomain, fromClass)
+	toClassKey := lookupClassKeyInModelDomains(domains, toDomain, toSubdomain, toClass)
 
 	if fromClassKey.SubKey == "" {
 		return model_class.Association{}, convErr(
@@ -1640,47 +1782,7 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 		).WithField("to_class_key")
 	}
 
-	// For model-level associations, parent key is empty
-	emptyKey := identity.Key{}
-	assocKey, err := identity.NewClassAssociationKey(emptyKey, fromClassKey, toClassKey, assoc.Name)
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvAssocKeyConstruction,
-			fmt.Sprintf("failed to create association key for '%s': %s", keyStr, err.Error()),
-			assocFile,
-		).WithField("key")
-	}
-
-	fromMult, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.FromMultiplicity))
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse from_multiplicity '%s': %s", assoc.FromMultiplicity, err.Error()),
-			assocFile,
-		).WithField("from_multiplicity")
-	}
-
-	toMult, err := model_class.NewMultiplicity(normalizeMultiplicity(assoc.ToMultiplicity))
-	if err != nil {
-		return model_class.Association{}, convErr(
-			ErrConvMultiplicityInvalid,
-			fmt.Sprintf("failed to parse to_multiplicity '%s': %s", assoc.ToMultiplicity, err.Error()),
-			assocFile,
-		).WithField("to_multiplicity")
-	}
-
-	result := model_class.Association{
-		Key:              assocKey,
-		Name:             assoc.Name,
-		Details:          assoc.Details,
-		FromClassKey:     fromClassKey,
-		FromMultiplicity: fromMult,
-		ToClassKey:       toClassKey,
-		ToMultiplicity:   toMult,
-		UmlComment:       assoc.UmlComment,
-	}
-
-	return result, nil
+	return buildClassAssociationFromResolvedEndpoints(identity.Key{}, fromClassKey, toClassKey, keyStr, assoc, assocFile)
 }
 
 // normalizeMultiplicity converts user-friendly multiplicity strings to the format expected by model_class.NewMultiplicity.
@@ -1688,7 +1790,7 @@ func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation,
 func normalizeMultiplicity(mult string) string {
 	// Handle standalone "*"
 	if mult == "*" {
-		return "any"
+		return model_class.MULTIPLICITY_ANY
 	}
 	// Handle "n..*" patterns -> "n..many"
 	if trimmed, ok := strings.CutSuffix(mult, "..*"); ok {

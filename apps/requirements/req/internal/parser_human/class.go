@@ -10,11 +10,26 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
-
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
+
+// safeParseClass wraps parseClass and converts a panic into an error.
+//
+// The parser makes many type assertions on human-entered YAML (e.g. a
+// multiplicity written as a bare number instead of a quoted string). A bad
+// value can panic; recovering here turns that into a normal parse error so the
+// caller isolates the one class as a red error page instead of crashing.
+func safeParseClass(subdomainKey identity.Key, classSubKey, filename, contents string) (class model_class.Class, associations []model_class.Association, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			class = model_class.Class{}
+			associations = nil
+			err = errors.Errorf("malformed class content: %v", r)
+		}
+	}()
+	return parseClass(subdomainKey, classSubKey, filename, contents)
+}
 
 func parseClass(subdomainKey identity.Key, classSubKey, filename, contents string) (class model_class.Class, associations []model_class.Association, err error) {
 	parsedFile, err := parseFile(filename, contents)
@@ -48,7 +63,7 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 		return model_class.Class{}, nil, errors.WithStack(err)
 	}
 
-	class = model_class.NewClass(classKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
+	class = model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: actorKey, SuperclassOfKey: superclassOfKey, SubclassOfKey: subclassOfKey}, model_class.ClassDetails{Name: parsedFile.Title, Details: stripMarkdownTitle(parsedFile.Markdown), UnfinishedNotes: parsedFile.UnfinishedNotes, UmlComment: parsedFile.UmlComment})
 
 	// Parse and set class components from YAML data.
 	associations, err = parseClassComponents(&class, subdomainKey, classKey, yamlData)
@@ -103,7 +118,10 @@ func parseGeneralizationRefKey(subdomainKey identity.Key, yamlData map[string]an
 // actions, states, events, guards, queries, transitions) from YAML data and attaches them to the class.
 func parseClassComponents(class *model_class.Class, subdomainKey, classKey identity.Key, yamlData map[string]any) ([]model_class.Association, error) {
 	// Add any invariants we found.
-	invariants, err := logicListFromYamlData(yamlData, "invariants", model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	invariants, err := logicListFromYamlData(yamlData, "invariants", model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey, &classInvariantLogicOptions{
+		subdomainKey:  subdomainKey,
+		ownerClassKey: classKey,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -175,19 +193,20 @@ func parseClassStateMachine(class *model_class.Class, classKey identity.Key, yam
 
 // parseClassAttributes parses the attributes section from YAML data and sets them on the class.
 func parseClassAttributes(class *model_class.Class, classKey identity.Key, yamlData map[string]any) error {
-	var attributesData map[string]any
 	attributesAny, found := yamlData["attributes"]
-	if found {
-		attributesData = attributesAny.(map[string]any)
+	if !found {
+		class.SetAttributes([]model_class.Attribute{})
+		return nil
 	}
+	attributesData := attributesAny.([]any)
 
-	attributes := make(map[identity.Key]model_class.Attribute)
-	for attrSubKey, attributeAny := range attributesData {
-		attribute, err := attributeFromYamlData(classKey, attrSubKey, attributeAny)
+	attributes := make([]model_class.Attribute, 0, len(attributesData))
+	for _, attributeAny := range attributesData {
+		attribute, err := attributeFromYamlData(classKey, attributeAny)
 		if err != nil {
 			return err
 		}
-		attributes[attribute.Key] = attribute
+		attributes = append(attributes, attribute)
 	}
 	class.SetAttributes(attributes)
 	return nil
@@ -274,7 +293,7 @@ func parseClassEvents(class *model_class.Class, classKey identity.Key, yamlData 
 		if err != nil {
 			return nil, err
 		}
-		eventKeyLookup[event.Name] = event.Key
+		eventKeyLookup[name] = event.Key
 		events[event.Key] = event
 	}
 	class.SetEvents(events)
@@ -352,108 +371,271 @@ func parseClassTransitions(class *model_class.Class, lookups parseKeyLookups, cl
 	return nil
 }
 
-func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAny any) (attribute model_class.Attribute, err error) {
+type attributeYamlScalars struct {
+	attrSubKey    string
+	name          string
+	details       string
+	dataTypeRules string
+	nullable      bool
+}
+
+func attributeScalarsFromYamlData(attributeData map[string]any) attributeYamlScalars {
+	scalars := attributeYamlScalars{}
+	if keyAny, found := attributeData["key"]; found {
+		scalars.attrSubKey = identity.NormalizeSubKey(keyAny.(string))
+	}
+	if nameAny, found := attributeData["name"]; found {
+		scalars.name = nameAny.(string)
+	}
+	if detailsAny, found := attributeData["details"]; found {
+		scalars.details = detailsAny.(string)
+	}
+	if dataTypeRulesAny, found := attributeData["rules"]; found {
+		scalars.dataTypeRules = dataTypeRulesAny.(string)
+	}
+	if nullableAny, found := attributeData["nullable"]; found {
+		scalars.nullable = nullableAny.(bool)
+	}
+	return scalars
+}
+
+type attributeYamlExtras struct {
+	attrKey          identity.Key
+	derivationPolicy *model_logic.Logic
+	annotations      model_class.AttributeAnnotations
+	typeSpec         *logic_spec.TypeSpec
+	invariants       []model_logic.Logic
+}
+
+func attributeExtrasFromYamlData(classKey identity.Key, attrSubKey string, attributeData map[string]any) (attributeYamlExtras, error) {
+	attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
+	if err != nil {
+		return attributeYamlExtras{}, errors.WithStack(err)
+	}
+	extras := attributeYamlExtras{attrKey: attrKey}
+
+	derivationPolicy, err := attributeDerivationFromYamlData(classKey, attrSubKey, attributeData)
+	if err != nil {
+		return attributeYamlExtras{}, err
+	}
+	extras.derivationPolicy = derivationPolicy
+	extras.annotations = attributeAnnotationsFromYamlData(attributeData)
+
+	typeSpec, err := typeSpecFromYamlData(attributeData)
+	if err != nil {
+		return attributeYamlExtras{}, err
+	}
+	extras.typeSpec = typeSpec
+
+	attrInvariants, err := logicListFromYamlData(attributeData, "invariants",
+		model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey, nil)
+	if err != nil {
+		return attributeYamlExtras{}, errors.Wrap(err, "attribute invariants")
+	}
+	extras.invariants = attrInvariants
+	return extras, nil
+}
+
+func attributeFromYamlData(classKey identity.Key, attributeAny any) (attribute model_class.Attribute, err error) {
 	attributeData, ok := attributeAny.(map[string]any)
 	if ok {
-		// Data is in the right structure.
-		// Get each of the values.
-
-		name := ""
-		nameAny, found := attributeData["name"]
-		if found {
-			name = nameAny.(string)
-		}
-
-		details := ""
-		detailsAny, found := attributeData["details"]
-		if found {
-			details = detailsAny.(string)
-		}
-
-		dataTypeRules := ""
-		dataTypeRulesAny, found := attributeData["rules"]
-		if found {
-			dataTypeRules = dataTypeRulesAny.(string)
-		}
-
-		// Parse derivation policy as *model_logic.Logic.
-		var derivationPolicy *model_logic.Logic
-		derivationAny, found := attributeData["derivation"]
-		if found {
-			derivationMap, ok := derivationAny.(map[string]any)
-			if ok {
-				description := ""
-				if descAny, ok := derivationMap["description"]; ok {
-					description = descAny.(string)
-				}
-				specification := ""
-				if specAny, ok := derivationMap["specification"]; ok {
-					specification = specAny.(string)
-				}
-				// Construct the derivation key as a child of the attribute key.
-				attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
-				if err != nil {
-					return model_class.Attribute{}, errors.WithStack(err)
-				}
-				derivKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
-				if err != nil {
-					return model_class.Attribute{}, errors.WithStack(err)
-				}
-				spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
-				if err != nil {
-					return model_class.Attribute{}, errors.Wrap(err, "derivation expression spec")
-				}
-				logic := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
-				derivationPolicy = &logic
-			}
-		}
-
-		nullable := false
-		nullableAny, found := attributeData["nullable"]
-		if found {
-			nullable = nullableAny.(bool)
-		}
-
-		umlComment := ""
-		umlCommentAny, found := attributeData["uml_comment"]
-		if found {
-			umlComment = umlCommentAny.(string)
-		}
-
-		var indexNums []uint
-		indexNumsAny, found := attributeData["index_nums"]
-		if found {
-			indexNumsAnyList := indexNumsAny.([]any)
-			for _, indexNumAny := range indexNumsAnyList {
-				indexNumInt := indexNumAny.(int)
-				indexNums = append(indexNums, uint(indexNumInt)) //nolint:gosec // indexNumInt is a small index from parsed YAML data, no overflow risk
-			}
-		}
-
-		// Construct the identity key for this attribute.
-		attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
-		if err != nil {
-			return model_class.Attribute{}, errors.WithStack(err)
-		}
-
-		attribute, err = model_class.NewAttribute(attrKey, name, details, dataTypeRules, derivationPolicy, nullable,
-			model_class.AttributeAnnotations{UmlComment: umlComment, IndexNums: indexNums})
+		scalars := attributeScalarsFromYamlData(attributeData)
+		extras, err := attributeExtrasFromYamlData(classKey, scalars.attrSubKey, attributeData)
 		if err != nil {
 			return model_class.Attribute{}, err
 		}
 
-		// Parse attribute invariants.
-		attrInvariants, err := logicListFromYamlData(attributeData, "invariants",
-			model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
+		attribute, err = model_class.NewAttribute(extras.attrKey, model_class.AttributeDetails{
+			Name: scalars.name, Details: scalars.details,
+		}, scalars.dataTypeRules, extras.derivationPolicy, scalars.nullable, extras.annotations)
 		if err != nil {
-			return model_class.Attribute{}, errors.Wrap(err, "attribute invariants")
+			return model_class.Attribute{}, err
 		}
-		if len(attrInvariants) > 0 {
-			attribute.SetInvariants(attrInvariants)
+		if extras.typeSpec != nil && attribute.DataType != nil {
+			attribute.DataType.TypeSpec = extras.typeSpec
+		}
+		if len(extras.invariants) > 0 {
+			attribute.SetInvariants(extras.invariants)
 		}
 	}
 
 	return attribute, nil
+}
+
+// attributeDerivationFromYamlData parses the derivation policy from attribute YAML data.
+// Returns a nil pointer with no error when there is no derivation to parse.
+func attributeDerivationFromYamlData(classKey identity.Key, attrSubKey string, attributeData map[string]any) (*model_logic.Logic, error) { //nolint:nilnil // nil pointer means no derivation present
+	derivationAny, found := attributeData["derivation"]
+	if !found {
+		return nil, nil //nolint:nilnil // nil pointer means no derivation present
+	}
+	derivationMap, ok := derivationAny.(map[string]any)
+	if !ok {
+		return nil, nil //nolint:nilnil // nil pointer means no derivation present
+	}
+	description := ""
+	if descAny, ok := derivationMap["description"]; ok {
+		description = descAny.(string)
+	}
+	specification := ""
+	if specAny, ok := derivationMap["specification"]; ok {
+		specification = specAny.(string)
+	}
+	attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	derivKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "derivation expression spec")
+	}
+	logic := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
+	return &logic, nil
+}
+
+// attributeAnnotationsFromYamlData parses annotation fields (uml_comment, index_nums) from attribute YAML data.
+func attributeAnnotationsFromYamlData(attributeData map[string]any) model_class.AttributeAnnotations {
+	umlComment := ""
+	umlCommentAny, found := attributeData["uml_comment"]
+	if found {
+		umlComment = umlCommentAny.(string)
+	}
+
+	var indexNums []uint
+	indexNumsAny, found := attributeData["index_nums"]
+	if found {
+		indexNumsAnyList := indexNumsAny.([]any)
+		for _, indexNumAny := range indexNumsAnyList {
+			indexNumInt := indexNumAny.(int)
+			indexNums = append(indexNums, uint(indexNumInt)) //nolint:gosec // indexNumInt is a small index from parsed YAML data, no overflow risk
+		}
+	}
+
+	return model_class.AttributeAnnotations{UmlComment: umlComment, IndexNums: indexNums}
+}
+
+// typeSpecFromYamlData parses the optional type_spec field from YAML attribute or parameter data.
+func typeSpecFromYamlData(data map[string]any) (*logic_spec.TypeSpec, error) {
+	tsStr, ok := data["type_spec"].(string)
+	if !ok || tsStr == "" {
+		return nil, nil //nolint:nilnil // nil pointer means no type spec present
+	}
+	ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "type spec")
+	}
+	return &ts, nil
+}
+
+// parameterFromYamlMap constructs a parameter from a YAML mapping under an action or query.
+func parameterFromYamlMap(parentKey identity.Key, paramMap map[string]any) (model_state.Parameter, error) {
+	paramName, _ := paramMap["name"].(string)
+	paramRules, _ := paramMap["rules"].(string)
+	nullable := false
+	nullableAny, found := paramMap["nullable"]
+	if found {
+		nullable = nullableAny.(bool)
+	}
+	param, err := model_state.NewParameter(parentKey, paramName, paramRules, nullable)
+	if err != nil {
+		return model_state.Parameter{}, err
+	}
+	typeSpec, err := typeSpecFromYamlData(paramMap)
+	if err != nil {
+		return model_state.Parameter{}, err
+	}
+	if typeSpec != nil && param.DataType != nil {
+		param.DataType.TypeSpec = typeSpec
+	}
+	paramInvariants, err := logicListFromYamlData(paramMap, "invariants",
+		model_logic.LogicTypeAssessment, param.Key, identity.NewParameterInvariantKey, nil)
+	if err != nil {
+		return model_state.Parameter{}, errors.Wrap(err, "parameter invariants")
+	}
+	if len(paramInvariants) > 0 {
+		param.SetInvariants(paramInvariants)
+	}
+	if parentKey.KeyType == identity.KEY_TYPE_ACTION {
+		simulation, err := parameterSimulationFromYamlMap(param.Key, paramMap)
+		if err != nil {
+			return model_state.Parameter{}, errors.Wrap(err, "parameter simulation")
+		}
+		if simulation != nil {
+			param.SetSimulation(simulation)
+		}
+	}
+	return param, nil
+}
+
+func parameterSimulationFromYamlMap(paramKey identity.Key, paramMap map[string]any) (*model_state.ParameterSimulation, error) {
+	simulationAny, found := paramMap["simulation"]
+	if !found {
+		return nil, nil //nolint:nilnil // absent simulation is normal
+	}
+	simulationMap, ok := simulationAny.(map[string]any)
+	if !ok {
+		return nil, errors.Errorf("parameter simulation must be a mapping")
+	}
+	details := ""
+	if detailsAny, ok := simulationMap["details"].(string); ok {
+		details = detailsAny
+	}
+	requires, err := logicListFromYamlData(simulationMap, "requires", model_logic.LogicTypeAssessment, paramKey, identity.NewParameterSimulationRequireKey, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "simulation requires")
+	}
+	specification, err := parameterSimulationSpecFromYamlMap(paramKey, simulationMap)
+	if err != nil {
+		return nil, err
+	}
+	if details == "" && len(requires) == 0 && specification == nil {
+		return nil, nil //nolint:nilnil // empty simulation block is treated as absent
+	}
+	return &model_state.ParameterSimulation{
+		Details:       details,
+		Requires:      requires,
+		Specification: specification,
+	}, nil
+}
+
+func parameterSimulationSpecFromYamlMap(paramKey identity.Key, simulationMap map[string]any) (*model_logic.Logic, error) {
+	specAny, found := simulationMap["specification"]
+	if !found {
+		return nil, nil //nolint:nilnil // specification is optional until sampling runs
+	}
+	specification, ok := specAny.(string)
+	if !ok {
+		return nil, errors.Errorf("parameter simulation specification must be a string")
+	}
+	specKey, err := identity.NewParameterSimulationSpecKey(paramKey)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "simulation specification expression spec")
+	}
+	logic := model_logic.NewLogic(specKey, model_logic.LogicTypeValue, "", "", spec, nil)
+	return &logic, nil
+}
+
+// yamlString reads an optional string field from a YAML map. It returns a clear
+// error when the field is present but not a string — the usual cause is a human
+// writing an unquoted value, e.g. `from_multiplicity: 1` instead of `"1"`.
+func yamlString(data map[string]any, field string) (string, error) {
+	v, found := data[field]
+	if !found {
+		return "", nil
+	}
+	s, ok := v.(string)
+	if !ok {
+		return "", errors.Errorf("field '%s' must be a quoted string value, got %T", field, v)
+	}
+	return s, nil
 }
 
 func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int, associationAny any) (association model_class.Association, err error) {
@@ -464,38 +646,33 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 
 		_ = strconv.Itoa(index + 1) // Don't start at zero (kept for reference but key constructed differently now).
 
-		name := ""
-		nameAny, found := associationData["name"]
-		if found {
-			name = nameAny.(string)
+		name, err := yamlString(associationData, "name")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 
-		details := ""
-		detailsAny, found := associationData["details"]
-		if found {
-			details = detailsAny.(string)
+		details, err := yamlString(associationData, "details")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 
-		fromMultiplicityValue := ""
-		fromMultiplicityAny, found := associationData["from_multiplicity"]
-		if found {
-			fromMultiplicityValue = fromMultiplicityAny.(string)
+		fromMultiplicityValue, err := yamlString(associationData, "from_multiplicity")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 		fromMultiplicity, err := model_class.NewMultiplicity(fromMultiplicityValue)
 		if err != nil {
 			return model_class.Association{}, err
 		}
 
-		toClassKeyStr := ""
-		toClassKeyAny, found := associationData["to_class_key"]
-		if found {
-			toClassKeyStr = toClassKeyAny.(string)
+		toClassKeyStr, err := yamlString(associationData, "to_class_key")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 
-		toMultiplicityValue := ""
-		toMultiplicityAny, found := associationData["to_multiplicity"]
-		if found {
-			toMultiplicityValue = toMultiplicityAny.(string)
+		toMultiplicityValue, err := yamlString(associationData, "to_multiplicity")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 		toMultiplicity, err := model_class.NewMultiplicity(toMultiplicityValue)
 		if err != nil {
@@ -511,6 +688,11 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			return model_class.Association{}, err
 		}
 
+		uniqueness, err := uniquenessFromYaml(fromClassKey, toClassKey, associationData)
+		if err != nil {
+			return model_class.Association{}, err
+		}
+
 		// Determine the association parent key based on which classes are connected.
 		assocParentKey, err := determineAssociationParent(subdomainKey, fromClassKey, toClassKey)
 		if err != nil {
@@ -519,22 +701,21 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 
 		// Parse association class key if present (uses same relative format).
 		var associationClassKey *identity.Key
-		associationClassKeyAny, found := associationData["association_class_key"]
-		if found {
-			associationClassKeyStr := associationClassKeyAny.(string)
-			if associationClassKeyStr != "" {
-				key, err := resolveClassKeyFromRelative(subdomainKey, associationClassKeyStr)
-				if err != nil {
-					return model_class.Association{}, errors.WithStack(err)
-				}
-				associationClassKey = &key
+		associationClassKeyStr, err := yamlString(associationData, "association_class_key")
+		if err != nil {
+			return model_class.Association{}, err
+		}
+		if associationClassKeyStr != "" {
+			key, err := resolveClassKeyFromRelative(subdomainKey, associationClassKeyStr)
+			if err != nil {
+				return model_class.Association{}, errors.WithStack(err)
 			}
+			associationClassKey = &key
 		}
 
-		umlComment := ""
-		umlCommentAny, found := associationData["uml_comment"]
-		if found {
-			umlComment = umlCommentAny.(string)
+		umlComment, err := yamlString(associationData, "uml_comment")
+		if err != nil {
+			return model_class.Association{}, err
 		}
 
 		assocKey, err := identity.NewClassAssociationKey(assocParentKey, fromClassKey, toClassKey, name)
@@ -544,12 +725,20 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 
 		association = model_class.NewAssociation(
 			assocKey,
-			name,
-			details,
+			model_class.AssociationDetails{Name: name, Details: details},
 			model_class.AssociationEnd{ClassKey: fromClassKey, Multiplicity: fromMultiplicity},
 			model_class.AssociationEnd{ClassKey: toClassKey, Multiplicity: toMultiplicity},
-			associationClassKey,
-			umlComment)
+			model_class.AssociationOptions{
+				AssociationClassKey: associationClassKey,
+				Uniqueness:          uniqueness,
+				UmlComment:          umlComment,
+			})
+
+		invariants, err := logicListFromYamlData(associationData, "invariants", model_logic.LogicTypeAssessment, assocKey, identity.NewClassAssociationInvariantKey, nil)
+		if err != nil {
+			return model_class.Association{}, err
+		}
+		association.SetInvariants(invariants)
 	}
 
 	return association, nil
@@ -607,7 +796,7 @@ func determineAssociationParent(subdomainKey, fromClassKey, toClassKey identity.
 
 func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identity.Key, name string, stateAny any) (state model_state.State, err error) {
 	// Construct the state key.
-	stateKey, err := identity.NewStateKey(classKey, strings.ToLower(name))
+	stateKey, err := identity.NewStateKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.State{}, errors.WithStack(err)
 	}
@@ -685,13 +874,13 @@ func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identit
 
 func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event model_state.Event, err error) {
 	// Construct the event key.
-	eventKey, err := identity.NewEventKey(classKey, strings.ToLower(name))
+	eventKey, err := identity.NewEventKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.Event{}, errors.WithStack(err)
 	}
 
 	details := ""
-	var parameters []model_state.Parameter
+	var parameterNames []string
 
 	eventData, ok := eventAny.(map[string]any)
 	if ok {
@@ -700,25 +889,19 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 			details = detailsAny.(string)
 		}
 
-		// Parse event parameters.
+		// Parse event parameter names (ordered string list).
 		parametersAny, found := eventData["parameters"]
 		if found {
 			paramsList, ok := parametersAny.([]any)
 			if !ok {
 				return model_state.Event{}, errors.Errorf("event '%s': parameters must be a sequence", name)
 			}
-			for _, paramAny := range paramsList {
-				paramMap, ok := paramAny.(map[string]any)
+			for i, paramAny := range paramsList {
+				paramName, ok := paramAny.(string)
 				if !ok {
-					return model_state.Event{}, errors.Errorf("event '%s': each parameter must be a mapping", name)
+					return model_state.Event{}, errors.Errorf("event '%s': parameters[%d] must be a string name", name, i)
 				}
-				paramName, _ := paramMap["name"].(string)
-				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(paramName, paramRules)
-				if err != nil {
-					return model_state.Event{}, errors.Wrapf(err, "event '%s' parameter '%s'", name, paramName)
-				}
-				parameters = append(parameters, param)
+				parameterNames = append(parameterNames, paramName)
 			}
 		}
 	}
@@ -727,14 +910,14 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 		eventKey,
 		name,
 		details,
-		parameters)
+		parameterNames)
 
 	return event, nil
 }
 
 func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard model_state.Guard, err error) {
 	// Construct the guard key.
-	guardKey, err := identity.NewGuardKey(classKey, strings.ToLower(name))
+	guardKey, err := identity.NewGuardKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.Guard{}, errors.WithStack(err)
 	}
@@ -772,7 +955,7 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 
 func actionFromYamlData(classKey identity.Key, name string, actionAny any) (action model_state.Action, err error) {
 	// Construct the action key.
-	actionKey, err := identity.NewActionKey(classKey, strings.ToLower(name))
+	actionKey, err := identity.NewActionKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.Action{}, errors.WithStack(err)
 	}
@@ -803,10 +986,9 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 				if !ok {
 					return model_state.Action{}, errors.Errorf("action '%s': each parameter must be a mapping", name)
 				}
-				paramName, _ := paramMap["name"].(string)
-				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(paramName, paramRules)
+				param, err := parameterFromYamlMap(actionKey, paramMap)
 				if err != nil {
+					paramName, _ := paramMap["name"].(string)
 					return model_state.Action{}, errors.Wrapf(err, "action '%s' parameter '%s'", name, paramName)
 				}
 				parameters = append(parameters, param)
@@ -814,19 +996,19 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 		}
 
 		// Parse requires.
-		requires, err = logicListFromYamlData(actionData, "requires", model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey)
+		requires, err = logicListFromYamlData(actionData, "requires", model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey, nil)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
 
 		// Parse guarantees.
-		guarantees, err = logicListFromYamlData(actionData, "guarantees", model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey)
+		guarantees, err = logicListFromYamlData(actionData, "guarantees", model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey, nil)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
 
 		// Parse safety rules.
-		safetyRules, err = logicListFromYamlData(actionData, "safety_rules", model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey)
+		safetyRules, err = logicListFromYamlData(actionData, "safety_rules", model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey, nil)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
@@ -834,8 +1016,7 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 
 	action = model_state.NewAction(
 		actionKey,
-		name,
-		details,
+		model_state.ActionDetails{Name: name, Details: details},
 		requires,
 		guarantees,
 		safetyRules,
@@ -846,7 +1027,7 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 
 func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query model_state.Query, err error) {
 	// Construct the query key.
-	queryKey, err := identity.NewQueryKey(classKey, strings.ToLower(name))
+	queryKey, err := identity.NewQueryKey(classKey, identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_state.Query{}, errors.WithStack(err)
 	}
@@ -875,10 +1056,9 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 				if !ok {
 					return model_state.Query{}, errors.Errorf("query '%s': each parameter must be a mapping", name)
 				}
-				paramName, _ := paramMap["name"].(string)
-				paramRules, _ := paramMap["rules"].(string)
-				param, err := model_state.NewParameter(paramName, paramRules)
+				param, err := parameterFromYamlMap(queryKey, paramMap)
 				if err != nil {
+					paramName, _ := paramMap["name"].(string)
 					return model_state.Query{}, errors.Wrapf(err, "query '%s' parameter '%s'", name, paramName)
 				}
 				parameters = append(parameters, param)
@@ -886,13 +1066,13 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 		}
 
 		// Parse requires.
-		requires, err = logicListFromYamlData(queryData, "requires", model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey)
+		requires, err = logicListFromYamlData(queryData, "requires", model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey, nil)
 		if err != nil {
 			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
 		}
 
 		// Parse guarantees.
-		guarantees, err = logicListFromYamlData(queryData, "guarantees", model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey)
+		guarantees, err = logicListFromYamlData(queryData, "guarantees", model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey, nil)
 		if err != nil {
 			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
 		}
@@ -909,8 +1089,14 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 	return query, nil
 }
 
+// classInvariantLogicOptions supplies subdomain and class context for over_association_key on class invariants.
+type classInvariantLogicOptions struct {
+	subdomainKey  identity.Key
+	ownerClassKey identity.Key
+}
+
 // logicListFromYamlData parses a YAML sequence of logic mappings (details + optional specification).
-func logicListFromYamlData(data map[string]any, field string, logicType string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error)) ([]model_logic.Logic, error) {
+func logicListFromYamlData(data map[string]any, field string, logicType string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error), classInvariantOpts *classInvariantLogicOptions) ([]model_logic.Logic, error) {
 	listAny, found := data[field]
 	if !found {
 		return nil, nil
@@ -929,10 +1115,18 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		target, _ := itemMap["target"].(string)
 		specification, _ := itemMap["specification"].(string)
 
-		// Detect let type override.
+		// Detect explicit logic type override (let or destroy in guarantees).
 		itemType := logicType
-		if typeStr, ok := itemMap["type"].(string); ok && typeStr == "let" {
-			itemType = model_logic.LogicTypeLet
+		if typeStr, ok := itemMap["type"].(string); ok {
+			switch typeStr {
+			case "let":
+				itemType = model_logic.LogicTypeLet
+			case "destroy":
+				if logicType != model_logic.LogicTypeStateChange {
+					return nil, errors.Errorf("%s[%d]: type destroy is only valid in action guarantees", field, i)
+				}
+				itemType = model_logic.LogicTypeDestroy
+			}
 		}
 
 		key, err := newKey(parentKey, strconv.Itoa(i))
@@ -957,6 +1151,22 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		logic := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
+		if deleteEvent, _ := itemMap["destroy_event"].(string); strings.TrimSpace(deleteEvent) != "" {
+			destroyEventSpec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, deleteEvent, nil)
+			if err != nil {
+				return nil, errors.Wrapf(err, "%s[%d] destroy_event", field, i)
+			}
+			logic.SetDestroyEventSpec(destroyEventSpec)
+		}
+		if classInvariantOpts != nil {
+			if overAssociationKeyStr, _ := itemMap["over_association_key"].(string); overAssociationKeyStr != "" {
+				overKey, err := model_class.ResolveClassAssociationKeyFromRelative(classInvariantOpts.subdomainKey, classInvariantOpts.ownerClassKey, overAssociationKeyStr)
+				if err != nil {
+					return nil, errors.Wrapf(err, "%s[%d] over_association_key", field, i)
+				}
+				logic.SetOverAssociationKey(&overKey)
+			}
+		}
 
 		logics = append(logics, logic)
 	}
@@ -976,8 +1186,13 @@ func transitionFromYamlData(lookups parseKeyLookups, classKey identity.Key, tran
 	actionName := yamlStringField(transitionData, "action")
 	toStateName := yamlStringField(transitionData, "to")
 
-	// Construct the transition key using the component names.
-	transitionKey, err := identity.NewTransitionKey(classKey, fromStateName, eventName, guardName, actionName, toStateName)
+	// Construct the transition key using the component names (normalized).
+	transitionKey, err := identity.NewTransitionKey(classKey,
+		identity.NormalizeSubKey(fromStateName),
+		identity.NormalizeSubKey(eventName),
+		identity.NormalizeSubKey(guardName),
+		identity.NormalizeSubKey(actionName),
+		identity.NormalizeSubKey(toStateName))
 	if err != nil {
 		return model_state.Transition{}, errors.WithStack(err)
 	}
@@ -1008,11 +1223,9 @@ func transitionFromYamlData(lookups parseKeyLookups, classKey identity.Key, tran
 
 	transition = model_state.NewTransition(
 		transitionKey,
-		fromStateKey,
 		eventKey,
-		guardKey,
-		actionKey,
-		toStateKey,
+		model_state.TransitionStateKeys{FromStateKey: fromStateKey, ToStateKey: toStateKey},
+		model_state.TransitionLogicKeys{GuardKey: guardKey, ActionKey: actionKey},
 		umlComment)
 
 	return transition, nil
@@ -1061,13 +1274,13 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 	generateClassBehavioralYaml(builder, class)
 
 	yamlStr, _ := builder.Build()
-	return generateFileContent(prependMarkdownTitle(class.Name, class.Details), class.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownTitle(class.Name, class.Details), class.UnfinishedNotes, class.UmlComment, yamlStr)
 }
 
 // generateClassStructuralYaml generates structural sections: top-level fields, invariants, attributes, associations.
 func generateClassStructuralYaml(builder *YamlBuilder, class model_class.Class, associations []model_class.Association) {
 	generateClassTopLevelFields(builder, class)
-	generateLogicSequence(builder, "invariants", class.Invariants)
+	generateClassInvariantLogicSequence(builder, class, class.Invariants)
 	generateClassAttributesYaml(builder, class)
 	generateClassAssociationsYaml(builder, class, associations)
 }
@@ -1123,7 +1336,14 @@ func generateClassTopLevelFields(builder *YamlBuilder, class model_class.Class) 
 		builder.AddField("superclass_of_key", class.SuperclassOfKey.SubKey)
 	}
 	if class.SubclassOfKey != nil {
-		builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey)
+		// Use full key path for cross-subdomain references, SubKey for local references.
+		classSubdomainKey := class.Key.ParentKey
+		genSubdomainKey := class.SubclassOfKey.ParentKey
+		if classSubdomainKey != genSubdomainKey {
+			builder.AddField("subclass_of_key", class.SubclassOfKey.String())
+		} else {
+			builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey)
+		}
 	}
 }
 
@@ -1132,13 +1352,16 @@ func generateClassAttributesYaml(builder *YamlBuilder, class model_class.Class) 
 	if len(class.Attributes) == 0 {
 		return
 	}
-	attrsBuilder := NewYamlBuilder()
-	sortedAttrs := view_helper.GetAttributesSorted(class.Attributes)
-	for _, attr := range sortedAttrs {
+	var attrBuilders []*YamlBuilder
+	for _, attr := range class.Attributes {
 		attrBuilder := NewYamlBuilder()
+		attrBuilder.AddField("key", attr.Key.SubKey)
 		attrBuilder.AddField("name", attr.Name)
 		attrBuilder.AddField("details", attr.Details)
 		attrBuilder.AddField("rules", attr.DataTypeRules)
+		if attr.DataType != nil && attr.DataType.TypeSpec != nil && attr.DataType.TypeSpec.Specification != "" {
+			attrBuilder.AddField("type_spec", attr.DataType.TypeSpec.Specification)
+		}
 		attrBuilder.AddBoolField("nullable", attr.Nullable)
 		if attr.DerivationPolicy != nil {
 			derivBuilder := NewYamlBuilder()
@@ -1155,9 +1378,9 @@ func generateClassAttributesYaml(builder *YamlBuilder, class model_class.Class) 
 			attrBuilder.AddIntSliceField("index_nums", intNums)
 		}
 		generateLogicSequence(attrBuilder, "invariants", attr.Invariants)
-		attrsBuilder.AddMappingField(attr.Key.SubKey, attrBuilder)
+		attrBuilders = append(attrBuilders, attrBuilder)
 	}
-	builder.AddMappingField("attributes", attrsBuilder)
+	builder.AddSequenceOfMappings("attributes", attrBuilders)
 }
 
 // generateClassAssociationsYaml generates the associations YAML section.
@@ -1173,10 +1396,14 @@ func generateClassAssociationsYaml(builder *YamlBuilder, class model_class.Class
 		addMultiplicityField(assocBuilder, "from_multiplicity", assoc.FromMultiplicity)
 		assocBuilder.AddField("to_class_key", classAssociationRelativeKey(class, assoc.ToClassKey))
 		addMultiplicityField(assocBuilder, "to_multiplicity", assoc.ToMultiplicity)
+		if assoc.Uniqueness != nil {
+			generateAssociationUniquenessYaml(assocBuilder, assoc.Uniqueness)
+		}
 		if assoc.AssociationClassKey != nil {
 			assocBuilder.AddField("association_class_key", classAssociationRelativeKey(class, *assoc.AssociationClassKey))
 		}
 		assocBuilder.AddField("uml_comment", assoc.UmlComment)
+		generateLogicSequence(assocBuilder, "invariants", assoc.Invariants)
 		assocBuilders = append(assocBuilders, assocBuilder)
 	}
 	builder.AddSequenceOfMappings("associations", assocBuilders)
@@ -1220,7 +1447,7 @@ func generateClassEventsYaml(builder *YamlBuilder, class model_class.Class) {
 		event := class.Events[key]
 		eventBuilder := NewYamlBuilder()
 		eventBuilder.AddField("details", event.Details)
-		generateParameterSequence(eventBuilder, event.Parameters)
+		generateEventParameterNames(eventBuilder, event.ParameterNames)
 		eventsBuilder.AddMappingFieldAlways(event.Name, eventBuilder)
 	}
 	builder.AddMappingField("events", eventsBuilder)
@@ -1337,9 +1564,40 @@ func generateParameterSequence(builder *YamlBuilder, params []model_state.Parame
 		paramBuilder := NewYamlBuilder()
 		paramBuilder.AddField("name", param.Name)
 		paramBuilder.AddField("rules", param.DataTypeRules)
+		if param.Nullable {
+			paramBuilder.AddBoolField("nullable", param.Nullable)
+		}
+		if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
+			paramBuilder.AddField("type_spec", param.DataType.TypeSpec.Specification)
+		}
+		generateLogicSequence(paramBuilder, "invariants", param.Invariants)
+		generateParameterSimulation(paramBuilder, param.Simulation)
 		items = append(items, paramBuilder)
 	}
 	builder.AddSequenceOfMappings("parameters", items)
+}
+
+func generateParameterSimulation(builder *YamlBuilder, simulation *model_state.ParameterSimulation) {
+	if simulation == nil || !simulation.HasSimulation() {
+		return
+	}
+	simBuilder := NewYamlBuilder()
+	if simulation.Details != "" {
+		simBuilder.AddField("details", simulation.Details)
+	}
+	generateLogicSequence(simBuilder, "requires", simulation.Requires)
+	if simulation.Specification != nil && simulation.Specification.Spec.Specification != "" {
+		simBuilder.AddField("specification", simulation.Specification.Spec.Specification)
+	}
+	builder.AddMappingField("simulation", simBuilder)
+}
+
+// generateEventParameterNames adds an ordered parameter name list for an event.
+func generateEventParameterNames(builder *YamlBuilder, names []string) {
+	if len(names) == 0 {
+		return
+	}
+	builder.AddSequenceField("parameters", names)
 }
 
 // generateLogicSequence adds a logic sequence of mappings to the builder.
@@ -1349,19 +1607,40 @@ func generateLogicSequence(builder *YamlBuilder, field string, logics []model_lo
 	}
 	items := make([]*YamlBuilder, 0, len(logics))
 	for _, logic := range logics {
-		logicBuilder := NewYamlBuilder()
-		if logic.Type == model_logic.LogicTypeLet {
-			logicBuilder.AddField("type", "let")
-		}
-		logicBuilder.AddField("details", logic.Description)
-		logicBuilder.AddField("target", logic.Target)
-		logicBuilder.AddQuotedField("specification", logic.Spec.Specification)
-		if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
-			logicBuilder.AddField("target_type_spec", logic.TargetTypeSpec.Specification)
-		}
-		items = append(items, logicBuilder)
+		items = append(items, buildLogicMappingBuilder(logic, nil))
 	}
 	builder.AddSequenceOfMappings(field, items)
+}
+
+// generateClassInvariantLogicSequence adds class invariants, including optional over_association_key.
+func generateClassInvariantLogicSequence(builder *YamlBuilder, class model_class.Class, logics []model_logic.Logic) {
+	if len(logics) == 0 {
+		return
+	}
+	items := make([]*YamlBuilder, 0, len(logics))
+	for _, logic := range logics {
+		items = append(items, buildLogicMappingBuilder(logic, &class))
+	}
+	builder.AddSequenceOfMappings("invariants", items)
+}
+
+func buildLogicMappingBuilder(logic model_logic.Logic, ownerClass *model_class.Class) *YamlBuilder {
+	logicBuilder := NewYamlBuilder()
+	if logic.Type == model_logic.LogicTypeLet {
+		logicBuilder.AddField("type", "let")
+	}
+	logicBuilder.AddField("details", logic.Description)
+	logicBuilder.AddField("target", logic.Target)
+	if ownerClass != nil && logic.OverAssociationKey != nil {
+		if relative, err := model_class.RelativeClassAssociationKey(ownerClass.Key, *logic.OverAssociationKey); err == nil {
+			logicBuilder.AddField("over_association_key", relative)
+		}
+	}
+	logicBuilder.AddQuotedField("specification", logic.Spec.Specification)
+	if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
+		logicBuilder.AddField("target_type_spec", logic.TargetTypeSpec.Specification)
+	}
+	return logicBuilder
 }
 
 // classAssociationRelativeKey returns the shortest relative key string for a target class key

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -17,11 +18,23 @@ const (
 	// ViolationTypeModelInvariant indicates a TLA+ model invariant violation.
 	ViolationTypeModelInvariant ViolationType = iota
 
+	// ViolationTypeClassInvariant indicates a TLA+ class-level invariant violation.
+	ViolationTypeClassInvariant
+
+	// ViolationTypeActionRequires indicates an action's TLA+ requires (precondition) was not met.
+	ViolationTypeActionRequires
+
 	// ViolationTypeActionGuarantee indicates an action's TLA+ guarantee (post-condition) violation.
 	ViolationTypeActionGuarantee
 
 	// ViolationTypeQueryGuarantee indicates a query's TLA+ guarantee (post-condition) violation.
 	ViolationTypeQueryGuarantee
+
+	// ViolationTypeAttributeInvariant indicates a failed attribute-level invariant assessment.
+	ViolationTypeAttributeInvariant
+
+	// ViolationTypeParameterInvariant indicates a failed action or query parameter invariant assessment.
+	ViolationTypeParameterInvariant
 
 	// ViolationTypeRequiredAttribute indicates a required (non-nullable) attribute is nil.
 	ViolationTypeRequiredAttribute
@@ -38,11 +51,32 @@ const (
 	// ViolationTypeUnparsedDataType indicates an attribute has no parsed DataType.
 	ViolationTypeUnparsedDataType
 
+	// ViolationTypeMissingAttributeTypeSpec indicates a written attribute has no TLA+ type_spec.
+	ViolationTypeMissingAttributeTypeSpec
+
+	// ViolationTypeMissingParameterTypeSpec indicates a simulated parameter has no TLA+ type_spec.
+	ViolationTypeMissingParameterTypeSpec
+
+	// ViolationTypeDateTimeTypeSpecMismatch indicates a datetime attribute or parameter has a type_spec other than Nat.
+	ViolationTypeDateTimeTypeSpecMismatch
+
+	// ViolationTypeDateTimeConstraint indicates a datetime value is outside the allowed Nat range.
+	ViolationTypeDateTimeConstraint
+
 	// ViolationTypeIndexUniqueness indicates two instances share the same index tuple.
 	ViolationTypeIndexUniqueness
 
+	// ViolationTypeAssociationInvariant indicates a failed association-level invariant assessment.
+	ViolationTypeAssociationInvariant
+
 	// ViolationTypeMultiplicity indicates an association multiplicity constraint is not met.
 	ViolationTypeMultiplicity
+
+	// ViolationTypeAssociationUniqueness indicates an association uniqueness tuple is duplicated.
+	ViolationTypeAssociationUniqueness
+
+	// ViolationTypeAssociationDuplicateLink indicates duplicate links between the same instance pair.
+	ViolationTypeAssociationDuplicateLink
 
 	// ViolationTypeSafetyRule indicates an action's safety rule was violated.
 	ViolationTypeSafetyRule
@@ -56,48 +90,70 @@ const (
 	// ViolationTypeLivenessAssociationNotLinked indicates an association never had a link created during simulation.
 	ViolationTypeLivenessAssociationNotLinked
 
-	// ViolationTypeLivenessAttributeNotRead indicates a class attribute was never read during simulation (reserved for future use).
+	// ViolationTypeLivenessAttributeNotRead indicates an external derived attribute was never read during simulation.
 	ViolationTypeLivenessAttributeNotRead
+
+	// ViolationTypeLivenessEventNotSent indicates an event was never fired during simulation.
+	ViolationTypeLivenessEventNotSent
+
+	// ViolationTypeLivenessQueryNotRun indicates a query was never executed during simulation.
+	ViolationTypeLivenessQueryNotRun
+
+	// ViolationTypeLivenessActionNotExecuted indicates an action was never executed during simulation.
+	ViolationTypeLivenessActionNotExecuted
+
+	// ViolationTypeLivenessParameterSimulationNotUsed indicates a parameter simulation specification never produced a value.
+	ViolationTypeLivenessParameterSimulationNotUsed
+
+	// ViolationTypeStateMachineIncomplete indicates a class state machine lacks the system _new event.
+	ViolationTypeStateMachineIncomplete
+
+	// ViolationTypePeerEventUnavailable indicates an association guarantee sent an event
+	// the peer class cannot accept from its current state.
+	ViolationTypePeerEventUnavailable
 )
 
+var violationTypeNames = map[ViolationType]string{
+	ViolationTypeModelInvariant:                     "model_invariant",
+	ViolationTypeClassInvariant:                     "class_invariant",
+	ViolationTypeActionRequires:                     "action_requires",
+	ViolationTypeActionGuarantee:                    "action_guarantee",
+	ViolationTypeQueryGuarantee:                     "query_guarantee",
+	ViolationTypeAttributeInvariant:                 "attribute_invariant",
+	ViolationTypeParameterInvariant:                 "parameter_invariant",
+	ViolationTypeRequiredAttribute:                  "required_attribute",
+	ViolationTypeSpanConstraint:                     "span_constraint",
+	ViolationTypeEnumConstraint:                     "enum_constraint",
+	ViolationTypeCollectionSize:                     "collection_size",
+	ViolationTypeUnparsedDataType:                   "unparsed_data_type",
+	ViolationTypeMissingAttributeTypeSpec:           "missing_attribute_type_spec",
+	ViolationTypeMissingParameterTypeSpec:           "missing_parameter_type_spec",
+	ViolationTypeDateTimeTypeSpecMismatch:           "datetime_type_spec_mismatch",
+	ViolationTypeDateTimeConstraint:                 "datetime_constraint",
+	ViolationTypeIndexUniqueness:                    "index_uniqueness",
+	ViolationTypeAssociationInvariant:               "association_invariant",
+	ViolationTypeMultiplicity:                       "multiplicity",
+	ViolationTypeAssociationUniqueness:              "association_uniqueness",
+	ViolationTypeAssociationDuplicateLink:           "association_duplicate_link",
+	ViolationTypeSafetyRule:                         "safety_rule",
+	ViolationTypeLivenessClassNotInstantiated:       "liveness_class_not_instantiated",
+	ViolationTypeLivenessAttributeNotWritten:        "liveness_attribute_not_written",
+	ViolationTypeLivenessAssociationNotLinked:       "liveness_association_not_linked",
+	ViolationTypeLivenessAttributeNotRead:           "liveness_attribute_not_read",
+	ViolationTypeLivenessEventNotSent:               "liveness_event_not_sent",
+	ViolationTypeLivenessQueryNotRun:                "liveness_query_not_run",
+	ViolationTypeLivenessActionNotExecuted:          "liveness_action_not_executed",
+	ViolationTypeLivenessParameterSimulationNotUsed: "liveness_parameter_simulation_not_used",
+	ViolationTypeStateMachineIncomplete:             "state_machine_incomplete",
+	ViolationTypePeerEventUnavailable:               "peer_event_unavailable",
+}
+
 // String returns a human-readable name for the violation type.
-//
-//complexity:cyclo:warn=30,fail=30 Simple switch.
 func (v ViolationType) String() string {
-	switch v {
-	case ViolationTypeModelInvariant:
-		return "model_invariant"
-	case ViolationTypeActionGuarantee:
-		return "action_guarantee"
-	case ViolationTypeQueryGuarantee:
-		return "query_guarantee"
-	case ViolationTypeRequiredAttribute:
-		return "required_attribute"
-	case ViolationTypeSpanConstraint:
-		return "span_constraint"
-	case ViolationTypeEnumConstraint:
-		return "enum_constraint"
-	case ViolationTypeCollectionSize:
-		return "collection_size"
-	case ViolationTypeUnparsedDataType:
-		return "unparsed_data_type"
-	case ViolationTypeIndexUniqueness:
-		return "index_uniqueness"
-	case ViolationTypeMultiplicity:
-		return "multiplicity"
-	case ViolationTypeSafetyRule:
-		return "safety_rule"
-	case ViolationTypeLivenessClassNotInstantiated:
-		return "liveness_class_not_instantiated"
-	case ViolationTypeLivenessAttributeNotWritten:
-		return "liveness_attribute_not_written"
-	case ViolationTypeLivenessAssociationNotLinked:
-		return "liveness_association_not_linked"
-	case ViolationTypeLivenessAttributeNotRead:
-		return "liveness_attribute_not_read"
-	default:
-		return "unknown"
+	if name, ok := violationTypeNames[v]; ok {
+		return name
 	}
+	return "unknown"
 }
 
 // ViolationError represents a detected invariant violation during simulation.
@@ -152,6 +208,104 @@ func NewModelInvariantViolation(index int, expression string, message string) *V
 		Message:        fmt.Sprintf("model invariant %d failed: %s - %s", index, expression, message),
 		Expression:     expression,
 		InvariantIndex: index,
+	}
+}
+
+// NewClassInvariantViolation creates a violation for a failed class-level invariant.
+func NewClassInvariantViolation(
+	classKey identity.Key,
+	instanceID state.InstanceID,
+	index int,
+	expression string,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:           ViolationTypeClassInvariant,
+		Message:        fmt.Sprintf("class %s invariant %d failed on instance %d: %s - %s", classKey.String(), index, instanceID, expression, message),
+		InstanceID:     instanceID,
+		ClassKey:       classKey,
+		Expression:     expression,
+		InvariantIndex: index,
+	}
+}
+
+// NewAttributeInvariantViolation creates a violation for a failed attribute invariant.
+func NewAttributeInvariantViolation(
+	classKey identity.Key,
+	instanceID state.InstanceID,
+	attributeName string,
+	invariantIndex int,
+	expression string,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:           ViolationTypeAttributeInvariant,
+		Message:        fmt.Sprintf("class %s attribute %q invariant %d failed on instance %d: %s - %s", classKey.String(), attributeName, invariantIndex, instanceID, expression, message),
+		InstanceID:     instanceID,
+		ClassKey:       classKey,
+		AttributeName:  attributeName,
+		Expression:     expression,
+		InvariantIndex: invariantIndex,
+	}
+}
+
+// NewAssociationInvariantViolation creates a violation for a failed association invariant.
+func NewAssociationInvariantViolation(
+	associationKey identity.Key,
+	associationName string,
+	instanceID state.InstanceID,
+	invariantIndex int,
+	expression string,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeAssociationInvariant,
+		Message:           fmt.Sprintf("association %q invariant %d failed on instance %d: %s - %s", associationName, invariantIndex, instanceID, expression, message),
+		InstanceID:        instanceID,
+		Expression:        expression,
+		InvariantIndex:    invariantIndex,
+		ActionOrQueryKey:  associationKey,
+		ActionOrQueryName: associationName,
+	}
+}
+
+// NewParameterInvariantViolation creates a violation for a failed parameter invariant.
+func NewParameterInvariantViolation(
+	ownerKey identity.Key,
+	ownerName string,
+	invariantIndex int,
+	expression string,
+	instanceID state.InstanceID,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeParameterInvariant,
+		Message:           fmt.Sprintf("%s %s parameter invariant %d failed: %s - %s", ownerKey.KeyType, ownerName, invariantIndex, expression, message),
+		InstanceID:        instanceID,
+		ActionOrQueryKey:  ownerKey,
+		ActionOrQueryName: ownerName,
+		Expression:        expression,
+		GuaranteeIndex:    invariantIndex,
+	}
+}
+
+// NewActionRequiresViolation creates a violation for a failed action requires precondition.
+func NewActionRequiresViolation(
+	actionKey identity.Key,
+	actionName string,
+	requireIndex int,
+	expression string,
+	instanceID state.InstanceID,
+	message string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeActionRequires,
+		Message:           fmt.Sprintf("action %s requires[%d] failed: %s - %s", actionName, requireIndex, expression, message),
+		InstanceID:        instanceID,
+		ActionOrQueryKey:  actionKey,
+		ActionOrQueryName: actionName,
+		Expression:        expression,
+		GuaranteeIndex:    requireIndex,
 	}
 }
 
@@ -280,14 +434,159 @@ func NewCollectionSizeViolation(
 	}
 }
 
-// NewUnparsedDataTypeViolation creates a violation for an attribute without a parsed DataType.
+// NewUnparsedDataTypeViolation creates a class-level violation for an attribute without a parsed DataType.
 func NewUnparsedDataTypeViolation(classKey identity.Key, attributeName string, dataTypeRules string) *ViolationError {
 	return &ViolationError{
 		Type:          ViolationTypeUnparsedDataType,
-		Message:       fmt.Sprintf("attribute %s on class %s has unparsed data type: %s", attributeName, classKey.String(), dataTypeRules),
+		Message:       fmt.Sprintf("attribute %s on class %s has unparsed data type rules: %s", attributeName, classKey.String(), dataTypeRules),
 		ClassKey:      classKey,
 		AttributeName: attributeName,
 		ExpectedValue: dataTypeRules,
+	}
+}
+
+// NewUnparsedAttributeDataTypeViolation creates an instance-level violation for an attribute
+// value whose data type rules did not parse.
+func NewUnparsedAttributeDataTypeViolation(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attributeName string,
+	dataTypeRules string,
+) *ViolationError {
+	return &ViolationError{
+		Type:          ViolationTypeUnparsedDataType,
+		Message:       fmt.Sprintf("attribute %s on instance %d of class %s has unparsed data type rules: %s", attributeName, instanceID, classKey.String(), dataTypeRules),
+		InstanceID:    instanceID,
+		ClassKey:      classKey,
+		AttributeName: attributeName,
+		ExpectedValue: dataTypeRules,
+	}
+}
+
+// ViolationSourceIdentity holds the key and name of the action or query that owns a parameter violation.
+type ViolationSourceIdentity struct {
+	Key  identity.Key
+	Name string
+}
+
+// NewUnparsedParameterDataTypeViolation creates a violation when a simulated parameter's
+// data type rules did not parse.
+func NewUnparsedParameterDataTypeViolation(
+	source ViolationSourceIdentity,
+	sourceKind string,
+	parameterName string,
+	dataTypeRules string,
+	instanceID state.InstanceID,
+	classKey identity.Key,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeUnparsedDataType,
+		Message:           fmt.Sprintf("parameter %s on %s %s has unparsed data type rules: %s", parameterName, sourceKind, source.Name, dataTypeRules),
+		InstanceID:        instanceID,
+		ClassKey:          classKey,
+		AttributeName:     parameterName,
+		ActionOrQueryKey:  source.Key,
+		ActionOrQueryName: source.Name,
+		ExpectedValue:     dataTypeRules,
+	}
+}
+
+// NewMissingParameterTypeSpecViolation creates a violation when a simulated action or query
+// parameter declares no TLA+ type_spec.
+func NewMissingParameterTypeSpecViolation(
+	sourceKey identity.Key,
+	sourceName string,
+	sourceKind string,
+	parameterName string,
+	instanceID state.InstanceID,
+	classKey identity.Key,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeMissingParameterTypeSpec,
+		Message:           fmt.Sprintf("parameter %s on %s %s has no TLA+ type_spec", parameterName, sourceKind, sourceName),
+		InstanceID:        instanceID,
+		ClassKey:          classKey,
+		AttributeName:     parameterName,
+		ActionOrQueryKey:  sourceKey,
+		ActionOrQueryName: sourceName,
+	}
+}
+
+// NewMissingAttributeTypeSpecViolation creates a violation when an instance holds a value
+// for an attribute that declares no TLA+ type_spec.
+func NewMissingAttributeTypeSpecViolation(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attributeName string,
+) *ViolationError {
+	return &ViolationError{
+		Type:          ViolationTypeMissingAttributeTypeSpec,
+		Message:       fmt.Sprintf("attribute %s on instance %d of class %s has no TLA+ type_spec but holds a value", attributeName, instanceID, classKey.String()),
+		InstanceID:    instanceID,
+		ClassKey:      classKey,
+		AttributeName: attributeName,
+	}
+}
+
+// NewDateTimeTypeSpecMismatchAttributeViolation reports a datetime attribute whose type_spec is not Nat.
+func NewDateTimeTypeSpecMismatchAttributeViolation(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attributeName string,
+	actualTypeSpec string,
+) *ViolationError {
+	return &ViolationError{
+		Type:          ViolationTypeDateTimeTypeSpecMismatch,
+		Message:       fmt.Sprintf("attribute %s on instance %d of class %s has datetime rules but type_spec %q is not Nat", attributeName, instanceID, classKey.String(), actualTypeSpec),
+		InstanceID:    instanceID,
+		ClassKey:      classKey,
+		AttributeName: attributeName,
+		ActualValue:   actualTypeSpec,
+		ExpectedValue: "Nat",
+	}
+}
+
+// DateTimeTypeSpecMismatchParameterParams holds parameters for a datetime parameter type_spec mismatch.
+type DateTimeTypeSpecMismatchParameterParams struct {
+	Source         ViolationSourceIdentity
+	SourceKind     string
+	ParameterName  string
+	ActualTypeSpec string
+	InstanceID     state.InstanceID
+	ClassKey       identity.Key
+}
+
+// NewDateTimeTypeSpecMismatchParameterViolation reports a datetime parameter whose type_spec is not Nat.
+func NewDateTimeTypeSpecMismatchParameterViolation(params DateTimeTypeSpecMismatchParameterParams) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeDateTimeTypeSpecMismatch,
+		Message:           fmt.Sprintf("parameter %s on %s %s has datetime rules but type_spec %q is not Nat", params.ParameterName, params.SourceKind, params.Source.Name, params.ActualTypeSpec),
+		InstanceID:        params.InstanceID,
+		ClassKey:          params.ClassKey,
+		AttributeName:     params.ParameterName,
+		ActionOrQueryKey:  params.Source.Key,
+		ActionOrQueryName: params.Source.Name,
+		ActualValue:       params.ActualTypeSpec,
+		ExpectedValue:     "Nat",
+	}
+}
+
+// NewDateTimeConstraintViolation creates a violation for a datetime value outside [1, 100000000].
+func NewDateTimeConstraintViolation(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attributeName string,
+	actualValue string,
+) *ViolationError {
+	rangeStr := fmt.Sprintf("[%d, %d]", model_data_type.DateTimeValueMin, model_data_type.DateTimeValueMax)
+	return &ViolationError{
+		Type:          ViolationTypeDateTimeConstraint,
+		Message:       fmt.Sprintf("attribute %s value %s is outside datetime range %s on instance %d of class %s", attributeName, actualValue, rangeStr, instanceID, classKey.String()),
+		InstanceID:    instanceID,
+		ClassKey:      classKey,
+		AttributeName: attributeName,
+		ActualValue:   actualValue,
+		ExpectedValue: rangeStr,
 	}
 }
 
@@ -350,6 +649,55 @@ func NewMultiplicityViolation(params MultiplicityViolationParams) *ViolationErro
 	}
 }
 
+// AssociationUniquenessViolationParams holds parameters for a per-pair association uniqueness failure.
+type AssociationUniquenessViolationParams struct {
+	AssociationName string
+	FromInstanceID  state.InstanceID
+	ToInstanceID    state.InstanceID
+	ActualCount     int
+	RequiredMin     uint
+	RequiredMax     uint
+	Message         string
+}
+
+// NewAssociationUniquenessViolation creates a violation for a duplicated association uniqueness tuple.
+func NewAssociationUniquenessViolation(params AssociationUniquenessViolationParams) *ViolationError {
+	return &ViolationError{
+		Type: ViolationTypeAssociationUniqueness,
+		Message: fmt.Sprintf(
+			"association uniqueness violation: association %s between instances %d and %d %s",
+			params.AssociationName,
+			params.FromInstanceID,
+			params.ToInstanceID,
+			params.Message,
+		),
+		InstanceID: params.FromInstanceID,
+	}
+}
+
+// AssociationDuplicateLinkViolationParams holds parameters for a duplicate instance-pair link failure.
+type AssociationDuplicateLinkViolationParams struct {
+	AssociationName string
+	FromInstanceID  state.InstanceID
+	ToInstanceID    state.InstanceID
+	ActualCount     int
+}
+
+// NewAssociationDuplicateLinkViolation creates a violation for duplicate links on one instance pair.
+func NewAssociationDuplicateLinkViolation(params AssociationDuplicateLinkViolationParams) *ViolationError {
+	return &ViolationError{
+		Type: ViolationTypeAssociationDuplicateLink,
+		Message: fmt.Sprintf(
+			"association duplicate link: association %q has %d links between instances %d and %d",
+			params.AssociationName,
+			params.ActualCount,
+			params.FromInstanceID,
+			params.ToInstanceID,
+		),
+		InstanceID: params.FromInstanceID,
+	}
+}
+
 // NewLivenessClassNotInstantiatedViolation creates a violation for a class that was never instantiated.
 func NewLivenessClassNotInstantiatedViolation(classKey identity.Key, className string) *ViolationError {
 	return &ViolationError{
@@ -374,6 +722,96 @@ func NewLivenessAssociationNotLinkedViolation(_ identity.Key, associationName st
 	return &ViolationError{
 		Type:    ViolationTypeLivenessAssociationNotLinked,
 		Message: fmt.Sprintf("liveness: association %s (between %s and %s) never had a link created during simulation", associationName, fromClassKey.String(), toClassKey.String()),
+	}
+}
+
+// NewLivenessEventNotSentViolation creates a violation for an event that was never fired.
+func NewLivenessEventNotSentViolation(classKey identity.Key, className, eventName string) *ViolationError {
+	return &ViolationError{
+		Type:     ViolationTypeLivenessEventNotSent,
+		Message:  fmt.Sprintf("liveness: event %s on class %s was never sent during simulation", eventName, className),
+		ClassKey: classKey,
+	}
+}
+
+// NewLivenessAttributeNotReadViolation creates a violation for an external derived attribute that was never read.
+func NewLivenessAttributeNotReadViolation(classKey identity.Key, className, attributeName string) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeLivenessAttributeNotRead,
+		Message:           fmt.Sprintf("liveness: derived attribute %s on class %s was never read during simulation", attributeName, className),
+		ClassKey:          classKey,
+		ActionOrQueryName: attributeName,
+	}
+}
+
+// NewLivenessQueryNotRunViolation creates a violation for a query that was never executed.
+func NewLivenessQueryNotRunViolation(classKey identity.Key, className, queryName string) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeLivenessQueryNotRun,
+		Message:           fmt.Sprintf("liveness: query %s on class %s was never run during simulation", queryName, className),
+		ClassKey:          classKey,
+		ActionOrQueryName: queryName,
+	}
+}
+
+// NewLivenessActionNotExecutedViolation creates a violation for an action that was never executed.
+func NewLivenessActionNotExecutedViolation(classKey identity.Key, className, actionName string) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeLivenessActionNotExecuted,
+		Message:           fmt.Sprintf("liveness: action %s on class %s was never executed during simulation", actionName, className),
+		ClassKey:          classKey,
+		ActionOrQueryName: actionName,
+	}
+}
+
+// NewLivenessParameterSimulationNotUsedViolation creates a violation when a parameter simulation specification never sampled a value.
+func NewLivenessParameterSimulationNotUsedViolation(
+	classKey identity.Key,
+	className, actionName, parameterName string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeLivenessParameterSimulationNotUsed,
+		Message:           fmt.Sprintf("liveness: parameter %s simulation on action %s of class %s was never used during simulation", parameterName, actionName, className),
+		ClassKey:          classKey,
+		ActionOrQueryName: actionName,
+		AttributeName:     parameterName,
+	}
+}
+
+// PeerEventUnavailableParams holds parameters for a peer event unavailable violation.
+type PeerEventUnavailableParams struct {
+	OwnerClassKey   identity.Key
+	OwnerInstanceID state.InstanceID
+	AssociationName string
+	PeerClassKey    identity.Key
+	PeerInstanceID  state.InstanceID
+	EventKey        identity.Key
+	EventName       string
+	Message         string
+}
+
+// NewPeerEventUnavailableViolation creates a violation when an association guarantee
+// sends an event the peer class cannot accept.
+func NewPeerEventUnavailableViolation(params PeerEventUnavailableParams) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypePeerEventUnavailable,
+		Message:           params.Message,
+		InstanceID:        params.OwnerInstanceID,
+		ClassKey:          params.OwnerClassKey,
+		ActionOrQueryKey:  params.EventKey,
+		ActionOrQueryName: params.EventName,
+		AttributeName:     params.AssociationName,
+		ExpectedValue:     params.PeerClassKey.String(),
+		ActualValue:       fmt.Sprintf("%d", params.PeerInstanceID),
+	}
+}
+
+// NewStateMachineIncompleteViolation creates a violation for a class state machine that omits _new.
+func NewStateMachineIncompleteViolation(classKey identity.Key, className string) *ViolationError {
+	return &ViolationError{
+		Type:     ViolationTypeStateMachineIncomplete,
+		Message:  fmt.Sprintf("state machine incomplete: class %s has no «new» event for creation transitions", className),
+		ClassKey: classKey,
 	}
 }
 
@@ -402,7 +840,7 @@ func (v ViolationErrors) TLAViolations() ViolationErrors {
 	for _, violation := range v {
 		//nolint:exhaustive // Only TLA+ violation types are relevant here.
 		switch violation.Type {
-		case ViolationTypeModelInvariant, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee:
+		case ViolationTypeModelInvariant, ViolationTypeClassInvariant, ViolationTypeActionRequires, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee, ViolationTypeAttributeInvariant, ViolationTypeParameterInvariant:
 			result = append(result, violation)
 		default:
 			// Not a TLA+ violation; skip.
@@ -417,7 +855,7 @@ func (v ViolationErrors) DataTypeViolations() ViolationErrors {
 	for _, violation := range v {
 		//nolint:exhaustive // Only data type violation types are relevant here.
 		switch violation.Type {
-		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness:
+		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness, ViolationTypeUnparsedDataType, ViolationTypeMissingAttributeTypeSpec, ViolationTypeMissingParameterTypeSpec, ViolationTypeDateTimeTypeSpecMismatch, ViolationTypeDateTimeConstraint:
 			result = append(result, violation)
 		default:
 			// Not a data type violation; skip.
@@ -435,7 +873,11 @@ func (v ViolationErrors) LivenessViolations() ViolationErrors {
 		case ViolationTypeLivenessClassNotInstantiated,
 			ViolationTypeLivenessAttributeNotWritten,
 			ViolationTypeLivenessAssociationNotLinked,
-			ViolationTypeLivenessAttributeNotRead:
+			ViolationTypeLivenessAttributeNotRead,
+			ViolationTypeLivenessEventNotSent,
+			ViolationTypeLivenessQueryNotRun,
+			ViolationTypeLivenessActionNotExecuted,
+			ViolationTypeLivenessParameterSimulationNotUsed:
 			result = append(result, violation)
 		default:
 			// Not a liveness violation; skip.

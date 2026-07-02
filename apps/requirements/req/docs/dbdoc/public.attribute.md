@@ -8,9 +8,10 @@ An attribute of a class.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) | [public.logic](public.logic.md) [public.data_type](public.data_type.md) [public.class](public.class.md) | The model this class attribute is part of. |
-| attribute_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) |  | The internal ID. |
+| model_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) [public.association_uniqueness_attribute](public.association_uniqueness_attribute.md) | [public.logic](public.logic.md) [public.data_type](public.data_type.md) [public.class](public.class.md) | The model this class attribute is part of. |
+| attribute_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) [public.association_uniqueness_attribute](public.association_uniqueness_attribute.md) |  | The internal ID. |
 | class_key | text |  | false |  | [public.class](public.class.md) | The class this attribute is part of. |
+| sort_order | integer |  | false |  |  | Zero-based position of this attribute within its class; preserves source declaration order. |
 | name | text |  | false |  |  | The unique name of the attribute within the class. |
 | details | text |  | true |  |  | A summary description. |
 | data_type_rules | text |  | true |  |  | The rules for a well-formed value. |
@@ -28,6 +29,7 @@ An attribute of a class.
 | attribute_model_key_not_null | n | NOT NULL model_key |
 | attribute_name_not_null | n | NOT NULL name |
 | attribute_nullable_not_null | n | NOT NULL nullable |
+| attribute_sort_order_not_null | n | NOT NULL sort_order |
 | fk_attribute_derivation_logic | FOREIGN KEY | FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
 | fk_attribute_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | fk_attribute_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |

@@ -1,11 +1,15 @@
 package actions
 
 import (
+	"math"
+	"math/big"
 	"math/rand"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
@@ -41,7 +45,7 @@ func buildTestExecutor(simState *state.SimulationState) *ActionExecutor {
 	bb := state.NewBindingsBuilder(simState)
 	ge := NewGuardEvaluator(bb)
 
-	return NewActionExecutor(bb, nil, nil, nil, ge, nil)
+	return NewActionExecutor(bb, InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, nil, nil)
 }
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
@@ -109,6 +113,19 @@ func lowerClass(class model_class.Class, _ identity.Key) model_class.Class {
 	return class
 }
 
+func paramWithNatTypeSpec(parentKey identity.Key, name, rules string) model_state.Parameter {
+	param := helper.Must(model_state.NewParameter(parentKey, name, rules, false))
+	natTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Nat", nil))
+	if param.DataType == nil {
+		param.DataType = &model_data_type.DataType{
+			CollectionType: "atomic",
+			Atomic:         &model_data_type.Atomic{ConstraintType: model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED},
+		}
+	}
+	param.DataType.TypeSpec = &natTypeSpec
+	return param
+}
+
 // --- Helper: create a simple class with states, actions, and transitions ---
 
 // testOrderClass creates an Order class with states (Open, Closed), events (close),
@@ -127,13 +144,13 @@ func testOrderClass() (model_class.Class, identity.Key) {
 		nil,
 	)
 
-	action := model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	action := model_state.NewAction(actionCloseKey, model_state.ActionDetails{Name: "DoClose", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	event := model_state.NewEvent(eventCloseKey, "close", "", nil)
 
-	transition := model_state.NewTransition(transKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, "")
+	transition := model_state.NewTransition(transKey, eventCloseKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: &stateClosedKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: &actionCloseKey}, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateClosedKey: model_state.NewState(stateClosedKey, "Closed", "", ""),
@@ -178,17 +195,17 @@ func (s *ActionsSuite) TestExecutionContextRejectsStateField() {
 
 func (s *ActionsSuite) TestExecutionContextReentrancyGuard() {
 	ctx := NewExecutionContext()
+	actionA := mustKey("domain/d/subdomain/s/class/order/action/a")
+	actionB := mustKey("domain/d/subdomain/s/class/order/action/b")
 
-	// First mutation is fine
-	s.True(ctx.CanMutate(1))
+	s.True(ctx.ClaimInstanceForAction(1, actionA))
 	err := ctx.RecordPrimedAssignment(1, "count", object.NewInteger(1))
 	s.Require().NoError(err)
+	err = ctx.RecordPrimedAssignment(1, "status", object.NewString("open"))
+	s.Require().NoError(err)
 
-	// After mutation, instance 1 is locked
-	s.False(ctx.CanMutate(1))
-
-	// Instance 2 is still available
-	s.True(ctx.CanMutate(2))
+	s.False(ctx.ClaimInstanceForAction(1, actionB))
+	s.True(ctx.ClaimInstanceForAction(2, actionB))
 }
 
 func (s *ActionsSuite) TestExecutionContextDepthLimit() {
@@ -229,7 +246,7 @@ func (s *ActionsSuite) TestExecuteActionWithPrimedAssignment() {
 		nil,
 	)
 
-	action := model_state.NewAction(actionKey, "increment", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "increment", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -264,7 +281,7 @@ func (s *ActionsSuite) TestExecuteActionPreconditionPasses() {
 		nil,
 	)
 
-	action := model_state.NewAction(actionKey, "close", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "close", Details: ""}, []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -297,7 +314,7 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 		nil,
 	)
 
-	action := model_state.NewAction(actionKey, "close", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "close", Details: ""}, []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -307,9 +324,12 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 
 	exec := buildTestExecutor(simState)
 
-	_, err := exec.ExecuteAction(action, instance, nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "precondition failed")
+	result, err := exec.ExecuteAction(action, instance, nil)
+	s.Require().NoError(err)
+	s.False(result.Success)
+	s.Require().Len(result.Violations, 1)
+	s.Equal(invariants.ViolationTypeActionRequires, result.Violations[0].Type)
+	s.Contains(result.Violations[0].Message, "requires[0] failed")
 }
 
 func (s *ActionsSuite) TestExecuteActionWithParameters() {
@@ -322,8 +342,8 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 		nil,
 	)
 
-	actionParams := []model_state.Parameter{helper.Must(model_state.NewParameter("amount", "[0,1000]"))}
-	action := model_state.NewAction(actionKey, "set_amount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, actionParams)
+	actionParams := []model_state.Parameter{paramWithNatTypeSpec(actionKey, "amount", "[0,1000]")}
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "set_amount", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, actionParams)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -343,6 +363,48 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 
 	updated := simState.GetInstance(instance.ID)
 	s.Equal("500", updated.GetAttribute("amount").Inspect())
+}
+
+func (s *ActionsSuite) TestExecuteActionReportsUnparsedParameterDataType() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	actionKey := mustKey("domain/d/subdomain/s/class/order/action/set_amount")
+	param := helper.Must(model_state.NewParameter(actionKey, "amount", "not a valid rule", false))
+	param.DataType = nil
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "set_amount", Details: ""}, nil, nil, nil, []model_state.Parameter{param})
+
+	simState := state.NewSimulationState()
+	instance := simState.CreateInstance(classKey, object.NewRecord())
+	exec := buildTestExecutor(simState)
+
+	result, err := exec.ExecuteAction(action, instance, map[string]object.Object{
+		"amount": object.NewInteger(1),
+	})
+	s.Require().NoError(err)
+	s.False(result.Success)
+	s.Require().Len(result.Violations, 1)
+	s.Equal(invariants.ViolationTypeUnparsedDataType, result.Violations[0].Type)
+}
+
+func (s *ActionsSuite) TestExecuteActionReportsMissingParameterTypeSpec() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	actionKey := mustKey("domain/d/subdomain/s/class/order/action/set_amount")
+	actionParams := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(actionKey, "amount", "unconstrained", false)),
+	}
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "set_amount", Details: ""}, nil, nil, nil, actionParams)
+
+	simState := state.NewSimulationState()
+	instance := simState.CreateInstance(classKey, object.NewRecord())
+	exec := buildTestExecutor(simState)
+
+	result, err := exec.ExecuteAction(action, instance, map[string]object.Object{
+		"amount": object.NewInteger(1),
+	})
+	s.Require().NoError(err)
+	s.False(result.Success)
+	s.Require().Len(result.Violations, 1)
+	s.Equal(invariants.ViolationTypeMissingParameterTypeSpec, result.Violations[0].Type)
+	s.Equal("amount", result.Violations[0].AttributeName)
 }
 
 // ========================================================================
@@ -374,6 +436,28 @@ func (s *ActionsSuite) TestExecuteQueryReturnsOutput() {
 	s.True(result.Success)
 	s.NotNil(result.Outputs["result"])
 	s.Equal("100", result.Outputs["result"].Inspect())
+}
+
+func (s *ActionsSuite) TestExecuteQueryReportsMissingParameterTypeSpec() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	queryKey := mustKey("domain/d/subdomain/s/class/order/query/filter")
+	queryParams := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(queryKey, "limit", "unconstrained", false)),
+	}
+	query := model_state.NewQuery(queryKey, "filter", "", nil, nil, queryParams)
+
+	simState := state.NewSimulationState()
+	instance := simState.CreateInstance(classKey, object.NewRecord())
+	exec := buildTestExecutor(simState)
+
+	result, err := exec.ExecuteQuery(query, instance, map[string]object.Object{
+		"limit": object.NewInteger(5),
+	})
+	s.Require().NoError(err)
+	s.False(result.Success)
+	s.Require().Len(result.Violations, 1)
+	s.Equal(invariants.ViolationTypeMissingParameterTypeSpec, result.Violations[0].Type)
+	s.Equal("limit", result.Violations[0].AttributeName)
 }
 
 func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {
@@ -515,14 +599,14 @@ func (s *ActionsSuite) TestExecuteTransitionNormal() {
 	eventCloseKey := mustKey("domain/d/subdomain/s/class/order/event/close")
 	event := class.Events[eventCloseKey]
 
-	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	result, err := exec.ExecuteTransition(class, event, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 	s.NotNil(result)
 
 	s.Equal("Open", result.FromState)
 	s.Equal("Closed", result.ToState)
 	s.False(result.WasCreation)
-	s.False(result.WasDeletion)
+	s.False(result.WasDestroy)
 
 	// Check action result
 	s.NotNil(result.ActionResult)
@@ -542,10 +626,10 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 
 	event := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
-	transition := model_state.NewTransition(transKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
+	transition := model_state.NewTransition(transKey, eventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateOpenKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 	})
@@ -564,7 +648,7 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 
 	eventObj := class.Events[eventCreateKey]
 
-	result, err := exec.ExecuteTransition(class, eventObj, nil, nil, nil, nil)
+	result, err := exec.ExecuteTransition(class, eventObj, nil, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 	s.True(result.WasCreation)
 	s.Equal("Open", result.ToState)
@@ -584,10 +668,10 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 
 	event := model_state.NewEvent(eventDeleteKey, "delete", "", nil)
 
-	transition := model_state.NewTransition(transKey, &stateOpenKey, eventDeleteKey, nil, nil, nil, "")
+	transition := model_state.NewTransition(transKey, eventDeleteKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: nil}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 	})
@@ -611,9 +695,9 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 
 	eventObj := class.Events[eventDeleteKey]
 
-	result, err := exec.ExecuteTransition(class, eventObj, instance, nil, nil, nil)
+	result, err := exec.ExecuteTransition(class, eventObj, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
-	s.True(result.WasDeletion)
+	s.True(result.WasDestroy)
 
 	// Instance should be deleted
 	s.Nil(simState.GetInstance(instance.ID))
@@ -636,7 +720,7 @@ func (s *ActionsSuite) TestExecuteTransitionNoMatchingTransition() {
 	eventCloseKey := mustKey("domain/d/subdomain/s/class/order/event/close")
 	event := class.Events[eventCloseKey]
 
-	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "no transitions")
 }
@@ -671,11 +755,11 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	guardLow := model_state.NewGuard(guardLowKey, "low_value", guardLowLogic)
 	eventReview := model_state.NewEvent(eventReviewKey, "review", "", nil)
 
-	transApprove := model_state.NewTransition(transApproveKey, &stateOpenKey, eventReviewKey, &guardHighKey, nil, &stateApprovedKey, "")
-	transReject := model_state.NewTransition(transRejectKey, &stateOpenKey, eventReviewKey, &guardLowKey, nil, &stateRejectedKey, "")
+	transApprove := model_state.NewTransition(transApproveKey, eventReviewKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: &stateApprovedKey}, model_state.TransitionLogicKeys{GuardKey: &guardHighKey, ActionKey: nil}, "")
+	transReject := model_state.NewTransition(transRejectKey, eventReviewKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: &stateRejectedKey}, model_state.TransitionLogicKeys{GuardKey: &guardLowKey, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:     model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateApprovedKey: model_state.NewState(stateApprovedKey, "Approved", "", ""),
@@ -708,7 +792,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventReviewKey]
-	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	result, err := exec.ExecuteTransition(class, event, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 	s.Equal("Approved", result.ToState)
 
@@ -719,7 +803,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	instance2 := simState.CreateInstance(classKey, attrs2)
 	_ = simState.SetStateMachineState(instance2.ID, stateOpenKey)
 
-	result2, err := exec.ExecuteTransition(class, event, instance2, nil, nil, nil)
+	result2, err := exec.ExecuteTransition(class, event, instance2, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 	s.Equal("Rejected", result2.ToState)
 }
@@ -742,11 +826,11 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	guardAlways2 := model_state.NewGuard(guardAlwaysKey2, "always2", guardAlways2Logic)
 	eventGo := model_state.NewEvent(eventKey, "go", "", nil)
 
-	trans1 := model_state.NewTransition(trans1Key, &stateOpenKey, eventKey, &guardAlwaysKey1, nil, &stateAKey, "")
-	trans2 := model_state.NewTransition(trans2Key, &stateOpenKey, eventKey, &guardAlwaysKey2, nil, &stateBKey, "")
+	trans1 := model_state.NewTransition(trans1Key, eventKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: &stateAKey}, model_state.TransitionLogicKeys{GuardKey: &guardAlwaysKey1, ActionKey: nil}, "")
+	trans2 := model_state.NewTransition(trans2Key, eventKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: &stateBKey}, model_state.TransitionLogicKeys{GuardKey: &guardAlwaysKey2, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateAKey:    model_state.NewState(stateAKey, "A", "", ""),
@@ -776,7 +860,7 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventKey]
-	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "non-determinism")
 }
@@ -793,10 +877,10 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	guardNever := model_state.NewGuard(guardNeverKey, "never", guardNeverLogic)
 	eventGo := model_state.NewEvent(eventKey, "go", "", nil)
 
-	trans := model_state.NewTransition(transKey, &stateOpenKey, eventKey, &guardNeverKey, nil, &stateAKey, "")
+	trans := model_state.NewTransition(transKey, eventKey, model_state.TransitionStateKeys{FromStateKey: &stateOpenKey, ToStateKey: &stateAKey}, model_state.TransitionLogicKeys{GuardKey: &guardNeverKey, ActionKey: nil}, "")
 
-	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes(nil)
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateAKey:    model_state.NewState(stateAKey, "A", "", ""),
@@ -823,7 +907,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventKey]
-	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "deadlock")
 }
@@ -833,7 +917,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 // ========================================================================
 
 func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
-	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/empty"), "Empty", "", nil, nil, nil, "")
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/empty"), model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Empty", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetStates(map[identity.Key]model_state.State{})
 
 	err := ValidateClassForSimulation(class)
@@ -844,7 +928,7 @@ func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
 func (s *ActionsSuite) TestValidateClassForSimulationWithStates() {
 	stateKey := mustKey("domain/d/subdomain/s/class/c/state/s1")
 
-	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, "")
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "C", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateKey: model_state.NewState(stateKey, "S1", "", ""),
 	})
@@ -861,7 +945,7 @@ func (s *ActionsSuite) TestGetStateEnumValues() {
 	stateOpenKey := mustKey("domain/d/subdomain/s/class/c/state/open")
 	stateClosedKey := mustKey("domain/d/subdomain/s/class/c/state/closed")
 
-	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, "")
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "C", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   model_state.NewState(stateOpenKey, "Open", "", ""),
 		stateClosedKey: model_state.NewState(stateClosedKey, "Closed", "", ""),
@@ -880,9 +964,10 @@ func (s *ActionsSuite) TestGetStateEnumValues() {
 func (s *ActionsSuite) TestBindParametersSuccess() {
 	binder := NewParameterBinder()
 
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
 	paramDefs := []model_state.Parameter{
-		helper.Must(model_state.NewParameter("amount", "[0,100]")),
-		helper.Must(model_state.NewParameter("name", "string")),
+		helper.Must(model_state.NewParameter(ak, "amount", "[0,100]", false)),
+		helper.Must(model_state.NewParameter(ak, "name", "string", false)),
 	}
 
 	values := map[string]object.Object{
@@ -900,8 +985,9 @@ func (s *ActionsSuite) TestBindParametersSuccess() {
 func (s *ActionsSuite) TestBindParametersMissing() {
 	binder := NewParameterBinder()
 
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
 	paramDefs := []model_state.Parameter{
-		helper.Must(model_state.NewParameter("amount", "[0,100]")),
+		helper.Must(model_state.NewParameter(ak, "amount", "[0,100]", false)),
 	}
 
 	values := map[string]object.Object{} // missing amount
@@ -918,9 +1004,10 @@ func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 	lowerValue := 10
 	higherValue := 20
 
-	countParam := helper.Must(model_state.NewParameter("count", "[10, 20]"))
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
+	countParam := helper.Must(model_state.NewParameter(ak, "count", "[10, 20]", false))
 	countParam.DataType = &model_data_type.DataType{
-		Key:            "count",
+		Key:            helper.Must(identity.NewDataTypeKey(countParam.Key, "")),
 		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
 			ConstraintType: "span",
@@ -940,8 +1027,105 @@ func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 		s.Contains(result, "count")
 		num, ok := result["count"].(*object.Number)
 		s.True(ok)
-		val := num.Rat().Num().Int64()
-		s.True(val >= 10 && val <= 20, "Generated value %d should be in [10,20]", val)
+		s.Equal(object.KindReal, num.Kind())
+		val := num.Float64()
+		s.True(val >= 10 && val <= 20, "Generated value %g should be in [10,20]", val)
+	}
+}
+
+func (s *ActionsSuite) TestSpanSamplingIntervalUnconstrainedScalesWithPrecision() {
+	span := &model_data_type.AtomicSpan{
+		LowerType:  "unconstrained",
+		HigherType: "unconstrained",
+		Precision:  0.1,
+	}
+
+	lower, upper := spanSamplingInterval(span)
+	s.InDelta(-10.0, lower, 1e-9)
+	s.InDelta(10.0, upper, 1e-9)
+
+	span.Precision = 1
+	lower, upper = spanSamplingInterval(span)
+	s.InDelta(-100.0, lower, 1e-9)
+	s.InDelta(100.0, upper, 1e-9)
+}
+
+func (s *ActionsSuite) TestGenerateRandomParametersSpanUnconstrainedPrecisionGrid() {
+	binder := NewParameterBinder()
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
+
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
+	amountParam := helper.Must(model_state.NewParameter(ak, "amount", "span", false))
+	amountParam.DataType = &model_data_type.DataType{
+		Key:            helper.Must(identity.NewDataTypeKey(amountParam.Key, "")),
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "span",
+			Span: &model_data_type.AtomicSpan{
+				LowerType:  "unconstrained",
+				HigherType: "unconstrained",
+				Precision:  0.1,
+			},
+		},
+	}
+
+	paramDefs := []model_state.Parameter{amountParam}
+	seen := make(map[float64]struct{})
+
+	for range 5000 {
+		result := binder.GenerateRandomParameters(paramDefs, rng)
+		num, ok := result["amount"].(*object.Number)
+		s.Require().True(ok)
+		s.Equal(object.KindReal, num.Kind())
+		val := num.Float64()
+		s.GreaterOrEqual(val, -10.0)
+		s.LessOrEqual(val, 10.0)
+		quotient := val / 0.1
+		s.InDelta(math.Round(quotient), quotient, 1e-6, "value %g should align to 0.1 grid", val)
+		seen[val] = struct{}{}
+	}
+
+	s.Len(seen, 201)
+}
+
+func (s *ActionsSuite) TestGenerateRandomParametersSpanFractional() {
+	binder := NewParameterBinder()
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
+
+	lowerValue := 3
+	lowerDenom := 4
+	higherValue := 5
+	higherDenom := 6
+
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
+	lengthParam := helper.Must(model_state.NewParameter(ak, "length", "(3/4 .. 5/6]", false))
+	lengthParam.DataType = &model_data_type.DataType{
+		Key:            helper.Must(identity.NewDataTypeKey(lengthParam.Key, "")),
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "span",
+			Span: &model_data_type.AtomicSpan{
+				LowerType:         "open",
+				LowerValue:        &lowerValue,
+				LowerDenominator:  &lowerDenom,
+				HigherType:        "closed",
+				HigherValue:       &higherValue,
+				HigherDenominator: &higherDenom,
+				Precision:         0.01,
+			},
+		},
+	}
+
+	paramDefs := []model_state.Parameter{lengthParam}
+
+	for range 100 {
+		result := binder.GenerateRandomParameters(paramDefs, rng)
+		num, ok := result["length"].(*object.Number)
+		s.Require().True(ok)
+		s.Equal(object.KindReal, num.Kind())
+		val := num.Float64()
+		s.Greater(val, 0.75, "Generated value %g should be above open lower bound 3/4", val)
+		s.LessOrEqual(val, 5.0/6.0+1e-9, "Generated value %g should be at most closed upper bound 5/6", val)
 	}
 }
 
@@ -949,9 +1133,10 @@ func (s *ActionsSuite) TestGenerateRandomParametersEnum() {
 	binder := NewParameterBinder()
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
 
-	colorParam := helper.Must(model_state.NewParameter("color", "{red, green, blue}"))
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
+	colorParam := helper.Must(model_state.NewParameter(ak, "color", "{red, green, blue}", false))
 	colorParam.DataType = &model_data_type.DataType{
-		Key:            "color",
+		Key:            helper.Must(identity.NewDataTypeKey(colorParam.Key, "")),
 		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
 			ConstraintType: "enumeration",
@@ -979,14 +1164,35 @@ func (s *ActionsSuite) TestGenerateRandomParametersNoType() {
 	binder := NewParameterBinder()
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
 
+	ak := mustKey("domain/d/subdomain/s/class/c/action/a")
 	paramDefs := []model_state.Parameter{
-		helper.Must(model_state.NewParameter("x", "unknown")),
+		helper.Must(model_state.NewParameter(ak, "x", "unknown", false)),
 	}
 
 	result := binder.GenerateRandomParameters(paramDefs, rng)
 	s.Contains(result, "x")
 	_, ok := result["x"].(*object.Number)
 	s.True(ok, "Should generate a number as default")
+}
+
+func (s *ActionsSuite) TestGenerateRandomParametersDateTime() {
+	binder := NewParameterBinder()
+	rng := rand.New(rand.NewSource(99)) //nolint:gosec // deterministic seed intentional for test reproducibility
+
+	ak := mustKey("domain/d/subdomain/s/class/event/action/record")
+	paramDefs := []model_state.Parameter{
+		helper.Must(model_state.NewParameter(ak, "when", "datetime", false)),
+	}
+
+	for range 50 {
+		result := binder.GenerateRandomParameters(paramDefs, rng)
+		num, ok := result["when"].(*object.Number)
+		s.Require().True(ok)
+		rat := num.Rat()
+		s.True(rat.IsInt())
+		s.GreaterOrEqual(rat.Cmp(big.NewRat(model_data_type.DateTimeValueMin, 1)), 0)
+		s.LessOrEqual(rat.Cmp(big.NewRat(model_data_type.DateTimeValueMax, 1)), 0)
+	}
 }
 
 // ========================================================================
@@ -1021,7 +1227,7 @@ func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 		nil,
 	)
 
-	action := model_state.NewAction(actionKey, "BadRequires", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "BadRequires", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -1033,7 +1239,7 @@ func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 
 	_, err := executor.ExecuteAction(action, instance, nil)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "Requires must not contain primed variables")
+	s.Contains(err.Error(), "requires[0]: must not contain primed variables")
 }
 
 func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
@@ -1046,7 +1252,7 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 		nil,
 	)
 
-	action := model_state.NewAction(actionKey, "BadSafety", "", nil, nil, []model_logic.Logic{safetyLogic}, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "BadSafety", Details: ""}, nil, nil, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -1080,7 +1286,7 @@ func (s *ActionsSuite) TestActionSafetyRulesPass() {
 		nil,
 	)
 
-	action := model_state.NewAction(actionKey, "GoodAction", "", nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "GoodAction", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -1111,7 +1317,7 @@ func (s *ActionsSuite) TestActionSafetyRuleViolation() {
 		nil,
 	)
 
-	action := model_state.NewAction(actionKey, "ViolatingAction", "", nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil)
+	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "ViolatingAction", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -1189,5 +1395,76 @@ func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 
 	_, err := executor.ExecuteQuery(query, instance, nil)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "Requires must not contain primed variables")
+	s.Contains(err.Error(), "requires[0]: must not contain primed variables")
+}
+
+func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
+	orderClass, orderKey := testOrderClass()
+	itemClass, itemKey := multiplicityItemClass()
+
+	assocKey := multiplicityAssocKey(orderKey, itemKey, "OrderItem")
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity("2..many"))
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
+
+	model := multiplicityTestModel(orderClass, orderKey, itemClass, itemKey)
+	model.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
+
+	simState := state.NewSimulationState()
+	bb := state.NewBindingsBuilder(simState)
+	multChecker := invariants.NewMultiplicityChecker(model)
+	ge := NewGuardEvaluator(bb)
+	exec := NewActionExecutor(bb, InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
+		Multiplicity: multChecker,
+	}, ge, nil, nil)
+
+	orderAttrs := object.NewRecord()
+	orderAttrs.Set("_state", object.NewString("Open"))
+	orderAttrs.Set("amount", object.NewInteger(0))
+	order := simState.CreateInstance(orderKey, orderAttrs)
+	item := simState.CreateInstance(itemKey, object.NewRecord())
+	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
+
+	event := orderClass.Events[mustKey("domain/d/subdomain/s/class/order/event/close")]
+	instance := simState.GetInstance(order.ID)
+	result, err := exec.ExecuteTransition(orderClass, event, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
+	s.Require().NoError(err)
+
+	multViolations := result.Violations.ByType(invariants.ViolationTypeMultiplicity)
+	s.Require().Len(multViolations, 1)
+	s.Contains(multViolations[0].Message, "at least 2")
+}
+
+func multiplicityItemClass() (model_class.Class, identity.Key) {
+	classKey := mustKey("domain/d/subdomain/s/class/item")
+	stateActiveKey := mustKey("domain/d/subdomain/s/class/item/state/active")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Item"})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: model_state.NewState(stateActiveKey, "Active", "", ""),
+	})
+	return class, classKey
+}
+
+func multiplicityTestModel(orderClass model_class.Class, orderKey identity.Key, itemClass model_class.Class, itemKey identity.Key) *core.Model {
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	domainKey := mustKey("domain/d")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		orderKey: orderClass,
+		itemKey:  itemClass,
+	}
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+	return &model
+}
+
+func multiplicityAssocKey(fromClassKey, toClassKey identity.Key, name string) identity.Key {
+	parentKey := mustKey("domain/d/subdomain/s")
+	k, err := identity.NewClassAssociationKey(parentKey, fromClassKey, toClassKey, name)
+	if err != nil {
+		panic(err)
+	}
+	return k
 }

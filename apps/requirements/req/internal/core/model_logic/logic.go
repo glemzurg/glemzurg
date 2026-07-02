@@ -20,6 +20,7 @@ const (
 	LogicTypeSafetyRule  = "safety_rule"  // Boolean check referencing both prior and new state (has primed).
 	LogicTypeValue       = "value"        // Single unnamed value expression (global functions).
 	LogicTypeLet         = "let"          // Local variable definition: target = expression.
+	LogicTypeDestroy     = "destroy"      // Action guarantee only: association peer removal via selection spec + destroy_event.
 )
 
 // validLogicTypes is the set of valid Logic.Type values.
@@ -30,16 +31,31 @@ var validLogicTypes = map[string]bool{
 	LogicTypeSafetyRule:  true,
 	LogicTypeValue:       true,
 	LogicTypeLet:         true,
+	LogicTypeDestroy:     true,
 }
 
 // Logic represents a formal logic specification attached to a model element.
 type Logic struct {
-	Key            identity.Key              // The key is unique in the whole model, and built on the key of the containing object.
-	Type           string                    // One of: assessment, state_change, query, safety_rule, value, let.
-	Description    string                    // Required human-readable description.
-	Target         string                    // Identifier or attribute to set. Required for state_change and query types.
-	Spec           logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
-	TargetTypeSpec *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
+	Key              identity.Key              // The key is unique in the whole model, and built on the key of the containing object.
+	Type             string                    // One of: assessment, state_change, query, safety_rule, value, let, destroy.
+	Description      string                    // Optional human-readable description.
+	Target           string                    // Identifier or attribute to set. Required for state_change, query, let, and destroy types.
+	Spec             logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
+	DestroyEventSpec logic_spec.ExpressionSpec // Destroy-type only: peer event call (e.g. _destroy(b) or _destroy(b, Param)).
+	TargetTypeSpec   *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
+	// OverAssociationKey tags a class invariant as constraining an association; facts and docs
+	// render it as an association invariant while evaluation stays on the owning class.
+	OverAssociationKey *identity.Key
+}
+
+// SetOverAssociationKey tags this logic as constraining the given class association.
+func (l *Logic) SetOverAssociationKey(key *identity.Key) {
+	l.OverAssociationKey = key
+}
+
+// SetDestroyEventSpec sets the peer destroy event call specification for destroy-type logic.
+func (l *Logic) SetDestroyEventSpec(spec logic_spec.ExpressionSpec) {
+	l.DestroyEventSpec = spec
 }
 
 // NewLogic creates a new Logic.
@@ -62,19 +78,18 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 	}
 	// Type is required.
 	if l.Type == "" {
-		return coreerr.NewWithValues(ctx, coreerr.LogicTypeRequired, "Type is required", "Type", "", "one of: assessment, state_change, query, safety_rule, value, let")
+		return coreerr.NewWithValues(ctx, coreerr.LogicTypeRequired, "Type is required", "Type", "", "one of: assessment, state_change, query, safety_rule, value, let, destroy")
 	}
 	// Type must be a valid value.
 	if !validLogicTypes[l.Type] {
-		return coreerr.NewWithValues(ctx, coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let")
+		return coreerr.NewWithValues(ctx, coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let, destroy")
 	}
-	// Description is required.
-	if l.Description == "" {
-		return coreerr.New(ctx, coreerr.LogicDescRequired, "Description is required", "Description")
+	if l.Type == LogicTypeDestroy && l.Key.KeyType != identity.KEY_TYPE_ACTION_GUARANTEE {
+		return coreerr.New(ctx, coreerr.LogicDestroyContextInvalid, "destroy logic may only appear in action guarantees", "Type")
 	}
 	// Target validation based on logic type.
 	switch l.Type {
-	case LogicTypeStateChange, LogicTypeQuery, LogicTypeLet:
+	case LogicTypeStateChange, LogicTypeQuery, LogicTypeLet, LogicTypeDestroy:
 		if l.Target == "" {
 			return coreerr.NewWithValues(ctx, coreerr.LogicTargetRequired, fmt.Sprintf("logic %q of type %q requires a non-empty target", l.Key.String(), l.Type), "Target", "", "non-empty string")
 		}
@@ -87,14 +102,32 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 			return coreerr.NewWithValues(ctx, coreerr.LogicTargetMustBeEmpty, fmt.Sprintf("logic %q of type %q must not have a target, got %q", l.Key.String(), l.Type, l.Target), "Target", l.Target, "empty string")
 		}
 	}
+	if err := validateLogicDestroyFields(ctx, l); err != nil {
+		return err
+	}
 	// Validate the ExpressionSpec.
 	if err := l.Spec.Validate(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q spec: %s", l.Key.String(), err.Error()), "Spec")
+	}
+	if l.Type == LogicTypeDestroy {
+		if err := l.DestroyEventSpec.Validate(ctx.Child("destroy_event", "")); err != nil {
+			return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q destroy_event: %s", l.Key.String(), err.Error()), "DestroyEventSpec")
+		}
 	}
 	// Validate TargetTypeSpec if present.
 	if l.TargetTypeSpec != nil {
 		if err := l.TargetTypeSpec.Validate(ctx); err != nil {
 			return coreerr.New(ctx, coreerr.LogicTargetTypespecInvalid, fmt.Sprintf("logic %q target type spec: %s", l.Key.String(), err.Error()), "TargetTypeSpec")
+		}
+	}
+	if l.OverAssociationKey != nil {
+		if err := l.OverAssociationKey.ValidateWithContext(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.LogicOverAssociationKeyInvalid, fmt.Sprintf("logic %q over association key: %s", l.Key.String(), err.Error()), "OverAssociationKey")
+		}
+		if l.OverAssociationKey.KeyType != identity.KEY_TYPE_CLASS_ASSOCIATION {
+			return coreerr.NewWithValues(ctx, coreerr.LogicOverAssociationKeyTypeInvalid,
+				fmt.Sprintf("logic %q over association key has type %q", l.Key.String(), l.OverAssociationKey.KeyType),
+				"OverAssociationKey", l.OverAssociationKey.KeyType, identity.KEY_TYPE_CLASS_ASSOCIATION)
 		}
 	}
 	return nil

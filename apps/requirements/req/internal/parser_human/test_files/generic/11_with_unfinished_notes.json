@@ -1,0 +1,7 @@
+{
+    "Title": "Draft Class",
+    "Markdown": "# Draft Class\n\nStructured details belong in markdown.",
+    "UnfinishedNotes": "TODO: move invariant sketch into the data section\nAssociation with Wallet still fuzzy.",
+    "UmlComment": "UML placement hint.",
+    "Data": "name: Draft"
+}

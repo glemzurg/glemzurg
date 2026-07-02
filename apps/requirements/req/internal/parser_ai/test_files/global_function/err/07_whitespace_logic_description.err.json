@@ -1,6 +1,7 @@
 {
     "name": "_Max",
     "logic": {
+        "type": "value",
         "description": "   ",
         "notation": "tla_plus"
     }

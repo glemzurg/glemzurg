@@ -28,9 +28,21 @@ type RaiseContext struct {
 	// NamedSets maps named set identity keys to their display names.
 	NamedSets map[identity.Key]string
 
+	// ClassNames maps class identity keys to their display names.
+	ClassNames map[identity.Key]string
+
 	// ActionScopePaths maps cross-class action identity keys to their
 	// fully scoped path (e.g., "Domain!Subdomain!Class!ActionName").
 	ActionScopePaths map[identity.Key]string
+
+	// AssociationNames maps association keys to TLA field names on self.
+	AssociationNames map[identity.Key]string
+
+	// SystemEventNames maps event keys to canonical TLA spellings («new», «destroy»).
+	SystemEventNames map[identity.Key]string
+
+	// PeerEventNames maps peer-class event keys to their declared names.
+	PeerEventNames map[identity.Key]string
 }
 
 // Raise converts a logic_expression.Expression tree into a TLA+ AST expression.
@@ -75,10 +87,13 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 
 	// --- References ---
 	case *me.SelfRef:
-		return &ast.Identifier{Value: "self"}, nil
+		return &ast.Identifier{Value: ast.IdentifierSelf}, nil
 
 	case *me.AttributeRef:
 		return raiseAttributeRef(e, ctx)
+
+	case *me.AssociationRef:
+		return raiseAssociationRef(e, ctx)
 
 	case *me.LocalVar:
 		return &ast.Identifier{Value: e.Name}, nil
@@ -91,6 +106,9 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 
 	case *me.NamedSetRef:
 		return raiseNamedSetRef(e, ctx)
+
+	case *me.ClassRef:
+		return raiseClassRef(e, ctx)
 
 	// --- Unary operators ---
 	case *me.Negate:
@@ -149,6 +167,12 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 	case *me.IfThenElse:
 		return raiseIfThenElse(e, ctx)
 
+	case *me.LetExpr:
+		return raiseLetExpr(e, ctx)
+
+	case *me.Choose:
+		return raiseChoose(e, ctx)
+
 	case *me.Case:
 		return raiseCase(e, ctx)
 
@@ -159,9 +183,15 @@ func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 	case *me.SetFilter:
 		return raiseSetFilter(e, ctx)
 
+	case *me.SetMap:
+		return raiseSetMap(e, ctx)
+
 	// --- Calls ---
 	case *me.ActionCall:
 		return raiseActionCall(e, ctx)
+
+	case *me.EventCall:
+		return raiseEventCall(e, ctx)
 
 	case *me.GlobalCall:
 		return raiseGlobalCall(e, ctx)
@@ -227,10 +257,10 @@ var raiseBagCompareOp = map[me.BagCompareOp]string{
 }
 
 var raiseSetConstantKind = map[me.SetConstantKind]string{
-	me.SetConstantNat:     "Nat",
-	me.SetConstantInt:     "Int",
-	me.SetConstantReal:    "Real",
-	me.SetConstantBoolean: "BOOLEAN",
+	me.SetConstantNat:     ast.SetConstantNat,
+	me.SetConstantInt:     ast.SetConstantInt,
+	me.SetConstantReal:    ast.SetConstantReal,
+	me.SetConstantBoolean: ast.SetConstantBoolean,
 }
 
 var raiseQuantifierKind = map[me.QuantifierKind]string{
@@ -357,6 +387,14 @@ func raiseAttributeRef(e *me.AttributeRef, ctx *RaiseContext) (ast.Expression, e
 	return &ast.Identifier{Value: name}, nil
 }
 
+func raiseAssociationRef(e *me.AssociationRef, ctx *RaiseContext) (ast.Expression, error) {
+	name, ok := ctx.AssociationNames[e.AssociationKey]
+	if !ok {
+		return nil, fmt.Errorf("unresolved association key: %v", e.AssociationKey)
+	}
+	return &ast.Identifier{Value: name}, nil
+}
+
 func raiseNextState(e *me.NextState, ctx *RaiseContext) (ast.Expression, error) {
 	inner, err := Raise(e.Expr, ctx)
 	if err != nil {
@@ -369,6 +407,18 @@ func raiseNamedSetRef(e *me.NamedSetRef, ctx *RaiseContext) (ast.Expression, err
 	name, ok := ctx.NamedSets[e.SetKey]
 	if !ok {
 		return nil, fmt.Errorf("unresolved named set key: %v", e.SetKey)
+	}
+	return &ast.Identifier{Value: name}, nil
+}
+
+func raiseClassRef(e *me.ClassRef, ctx *RaiseContext) (ast.Expression, error) {
+	name := e.Name
+	if name == "" {
+		var ok bool
+		name, ok = ctx.ClassNames[e.ClassKey]
+		if !ok {
+			return nil, fmt.Errorf("unresolved class key: %v", e.ClassKey)
+		}
 	}
 	return &ast.Identifier{Value: name}, nil
 }
@@ -630,6 +680,35 @@ func raiseIfThenElse(e *me.IfThenElse, ctx *RaiseContext) (ast.Expression, error
 	return &ast.IfThenElse{Condition: cond, Then: then, Else: elseExpr}, nil
 }
 
+func raiseLetExpr(e *me.LetExpr, ctx *RaiseContext) (ast.Expression, error) {
+	value, err := Raise(e.Value, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("LetExpr.Value: %w", err)
+	}
+	body, err := Raise(e.Body, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("LetExpr.Body: %w", err)
+	}
+	return &ast.LetExpr{Variable: e.Variable, Value: value, Body: body}, nil
+}
+
+func raiseChoose(e *me.Choose, ctx *RaiseContext) (ast.Expression, error) {
+	set, err := Raise(e.Set, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Choose.Set: %w", err)
+	}
+	predicate, err := Raise(e.Predicate, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Choose.Predicate: %w", err)
+	}
+	membership := &ast.Membership{
+		Operator: "∈",
+		Left:     &ast.Identifier{Value: e.Variable},
+		Right:    set,
+	}
+	return &ast.ChooseExpr{Membership: membership, Predicate: predicate}, nil
+}
+
 func raiseCase(e *me.Case, ctx *RaiseContext) (ast.Expression, error) {
 	branches := make([]*ast.CaseBranch, len(e.Branches))
 	for i, branch := range e.Branches {
@@ -708,6 +787,28 @@ func raiseSetFilter(e *me.SetFilter, ctx *RaiseContext) (ast.Expression, error) 
 	}, nil
 }
 
+func raiseSetMap(e *me.SetMap, ctx *RaiseContext) (ast.Expression, error) {
+	set, err := Raise(e.Set, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("SetMap.Set: %w", err)
+	}
+	transform, err := Raise(e.Transform, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("SetMap.Transform: %w", err)
+	}
+
+	membership := &ast.Membership{
+		Operator: "∈",
+		Left:     &ast.Identifier{Value: e.Variable},
+		Right:    set,
+	}
+
+	return &ast.SetMap{
+		Transform:  transform,
+		Membership: membership,
+	}, nil
+}
+
 // --- Call raising ---
 
 func raiseActionCall(e *me.ActionCall, ctx *RaiseContext) (ast.Expression, error) {
@@ -757,6 +858,28 @@ func raiseActionCall(e *me.ActionCall, ctx *RaiseContext) (ast.Expression, error
 	}
 
 	return nil, fmt.Errorf("unresolved action key: %v", e.ActionKey)
+}
+
+func raiseEventCall(e *me.EventCall, ctx *RaiseContext) (ast.Expression, error) {
+	args := make([]ast.Expression, len(e.Args))
+	for i, arg := range e.Args {
+		raised, err := Raise(arg, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("EventCall.Args[%d]: %w", i, err)
+		}
+		args[i] = raised
+	}
+	name, ok := ctx.SystemEventNames[e.EventKey]
+	if !ok {
+		name, ok = ctx.PeerEventNames[e.EventKey]
+	}
+	if !ok {
+		return nil, fmt.Errorf("unresolved event key: %v", e.EventKey)
+	}
+	return &ast.FunctionCall{
+		Name: &ast.Identifier{Value: name},
+		Args: args,
+	}, nil
 }
 
 func raiseGlobalCall(e *me.GlobalCall, ctx *RaiseContext) (ast.Expression, error) {

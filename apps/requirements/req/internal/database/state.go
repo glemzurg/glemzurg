@@ -193,7 +193,7 @@ func AddStates(dbOrTx DbOrTx, modelKey string, states map[identity.Key][]model_s
 				queryBuilder.WriteString(", ")
 			}
 			base := i * 6
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
 			args = append(args, modelKey, classKey.String(), state.Key.String(), state.Name, state.Details, state.UmlComment)
 			i++
 		}

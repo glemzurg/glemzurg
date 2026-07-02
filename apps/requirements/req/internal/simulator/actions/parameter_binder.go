@@ -2,11 +2,25 @@ package actions
 
 import (
 	"fmt"
+	"math"
+	"math/big"
 	"math/rand"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+)
+
+// nullableNullSampleDenom is the denominator for sampling NULL on nullable parameters (1/denom chance).
+const nullableNullSampleDenom = 10
+
+const (
+	spanBoundUnconstrained = "unconstrained"
+	spanBoundOpen          = "open"
+	// spanDefaultHalfWidth scales unconstrained span ends: ±(halfWidth × precision).
+	spanDefaultHalfWidth = 100
 )
 
 // ParameterBinder validates and generates parameter values for actions and queries.
@@ -30,7 +44,7 @@ func (b *ParameterBinder) BindParameters(
 		if !exists {
 			return nil, fmt.Errorf("missing required parameter: %s", paramDef.Name)
 		}
-		result[paramDef.Name] = value
+		result[paramDef.Name] = CoerceValueForDataType(paramDef.DataType, value)
 	}
 
 	return result, nil
@@ -45,17 +59,43 @@ func (b *ParameterBinder) GenerateRandomParameters(
 	result := make(map[string]object.Object)
 
 	for _, paramDef := range paramDefs {
-		result[paramDef.Name] = generateRandomValue(paramDef.DataType, rng)
+		result[paramDef.Name] = sampleParameterValue(paramDef, rng)
 	}
 
+	coerceSampledParameters(paramDefs, result)
 	return result
 }
 
-// generateRandomValue creates a random value based on data type constraints.
+// sampleParameterValue generates a random value for one action/query parameter.
+// Nullable parameters may be NULL; non-nullable parameters never are.
+func sampleParameterValue(param model_state.Parameter, rng *rand.Rand) object.Object {
+	if param.Nullable && rng.Intn(nullableNullSampleDenom) == 0 {
+		return evaluator.EMPTY_SET
+	}
+	return generateRandomValue(param.DataType, rng)
+}
+
+// generateRandomValue creates a random non-null value based on data type constraints.
 func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	if values := model_data_type.EnumerationValues(dataType); len(values) > 0 {
+		return randomEnumerationValue(dataType, values, rng)
+	}
+
+	if dataType != nil && dataType.TypeSpec != nil {
+		switch strings.ToUpper(strings.TrimSpace(dataType.TypeSpec.Specification)) {
+		case "STRING":
+			return randomString(rng)
+		case "BOOLEAN":
+			if rng.Intn(2) == 0 {
+				return object.NewBoolean(false)
+			}
+			return object.NewBoolean(true)
+		}
+	}
+
 	if dataType == nil || dataType.Atomic == nil {
-		// No type info — generate a default integer in [0, 100).
-		return object.NewNatural(rng.Int63n(100))
+		// No type info — generate a default integer in [0, 99].
+		return randomDefaultNumber(rng)
 	}
 
 	atomic := dataType.Atomic
@@ -66,49 +106,115 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 
 	case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
 		if len(atomic.Enums) == 0 {
-			return object.NewString("")
+			return evaluator.EMPTY_SET
 		}
-		idx := rng.Intn(len(atomic.Enums))
-		return object.NewString(atomic.Enums[idx].Value)
+		values := make([]string, len(atomic.Enums))
+		for i, enum := range atomic.Enums {
+			values[i] = enum.Value
+		}
+		return randomEnumerationValue(dataType, values, rng)
 
 	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
-		return object.NewNatural(rng.Int63n(100))
+		return randomString(rng)
+
+	case model_data_type.CONSTRAINT_TYPE_DATETIME:
+		return randomDateTimeValue(rng)
+
+	case model_data_type.CONSTRAINT_TYPE_REFERENCE, model_data_type.CONSTRAINT_TYPE_OBJECT:
+		return randomString(rng)
 
 	default:
-		return object.NewNatural(rng.Int63n(100))
+		return randomDefaultNumber(rng)
 	}
 }
 
-// randomNumberInSpan generates a random integer within a span's bounds.
+func randomDefaultNumber(rng *rand.Rand) object.Object {
+	return object.NewNatural(rng.Int63n(100))
+}
+
+func randomDateTimeValue(rng *rand.Rand) object.Object {
+	span := model_data_type.DateTimeValueMax - model_data_type.DateTimeValueMin + 1
+	return object.NewNatural(model_data_type.DateTimeValueMin + rng.Int63n(span))
+}
+
+func randomString(rng *rand.Rand) object.Object {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	length := 1 + rng.Intn(8)
+	var b strings.Builder
+	for range length {
+		b.WriteByte(letters[rng.Intn(len(letters))])
+	}
+	return object.NewString(b.String())
+}
+
+// randomNumberInSpan generates a random Real on a span's precision lattice.
 func randomNumberInSpan(span *model_data_type.AtomicSpan, rng *rand.Rand) object.Object {
+	step := spanPrecision(span)
 	if span == nil {
-		return object.NewNatural(rng.Int63n(100))
+		extent := spanDefaultHalfWidth * step
+		return randomRealOnPrecisionGrid(-extent, extent, step, rng)
 	}
 
-	// Determine effective lower bound
-	lower := int64(0)
-	if span.LowerValue != nil {
-		lower = int64(*span.LowerValue)
-		if span.LowerType == "open" {
-			lower++ // Exclude lower bound
+	lower, upper := spanSamplingInterval(span)
+	if upper <= lower {
+		return object.NewFloat(lower)
+	}
+
+	return randomRealOnPrecisionGrid(lower, upper, step, rng)
+}
+
+func spanPrecision(span *model_data_type.AtomicSpan) float64 {
+	if span == nil || span.Precision <= 0 {
+		return 1
+	}
+	return span.Precision
+}
+
+func randomRealOnPrecisionGrid(lower, upper, step float64, rng *rand.Rand) object.Object {
+	if step <= 0 {
+		return object.NewFloat(lower)
+	}
+
+	lowerSteps := int(math.Round(lower / step))
+	upperSteps := int(math.Round(upper / step))
+	if upperSteps < lowerSteps {
+		return object.NewFloat(lower)
+	}
+
+	stepIndex := lowerSteps + rng.Intn(upperSteps-lowerSteps+1)
+	return object.NewFloat(float64(stepIndex) * step)
+}
+
+func spanSamplingInterval(span *model_data_type.AtomicSpan) (lower, upper float64) {
+	step := spanPrecision(span)
+	defaultExtent := spanDefaultHalfWidth * step
+
+	lower = -defaultExtent
+	if span.LowerType != spanBoundUnconstrained && span.LowerValue != nil {
+		lower, _ = spanValueToRat(span.LowerValue, span.LowerDenominator).Float64()
+		if span.LowerType == spanBoundOpen {
+			lower += step
 		}
 	}
 
-	// Determine effective upper bound
-	upper := lower + 100 // Default range if unconstrained
-	if span.HigherValue != nil {
-		upper = int64(*span.HigherValue)
-		if span.HigherType == "open" {
-			upper-- // Exclude upper bound
+	upper = defaultExtent
+	if span.HigherType != spanBoundUnconstrained && span.HigherValue != nil {
+		upper, _ = spanValueToRat(span.HigherValue, span.HigherDenominator).Float64()
+		if span.HigherType == spanBoundOpen {
+			upper -= step
 		}
 	}
 
-	if upper < lower {
-		return object.NewInteger(lower)
-	}
+	return lower, upper
+}
 
-	// Generate random value in [lower, upper]
-	rangeSize := upper - lower + 1
-	value := lower + rng.Int63n(rangeSize)
-	return object.NewInteger(value)
+func spanValueToRat(value *int, denom *int) *big.Rat {
+	if value == nil {
+		return big.NewRat(0, 1)
+	}
+	denomVal := 1
+	if denom != nil {
+		denomVal = *denom
+	}
+	return big.NewRat(int64(*value), int64(denomVal))
 }

@@ -5,6 +5,7 @@ import (
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
@@ -34,7 +35,7 @@ func NewExpressionParseFunc(ctx *LowerContext) logic_spec.ExpressionParseFunc {
 			return nil, ""
 		}
 		// Round-trip: raise back to TLA+ for normalized form.
-		raisedAST, err := Raise(expr, raiseContextFromLower(ctx))
+		raisedAST, err := Raise(expr, RaiseContextFromLower(ctx))
 		if err != nil {
 			// Lowering succeeded but raising failed — keep the expression
 			// with the original specification text.
@@ -63,7 +64,7 @@ func NewExpressionParseFuncStrict(ctx *LowerContext) StrictExpressionParseFunc {
 			return nil, "", fmt.Errorf("TLA+ lowering error in %q: %w", specification, err)
 		}
 		// Round-trip: raise back to TLA+ for normalized form.
-		raisedAST, err := Raise(expr, raiseContextFromLower(ctx))
+		raisedAST, err := Raise(expr, RaiseContextFromLower(ctx))
 		if err != nil {
 			// Lowering succeeded but raising failed — keep the expression
 			// with the original specification text.
@@ -73,18 +74,21 @@ func NewExpressionParseFuncStrict(ctx *LowerContext) StrictExpressionParseFunc {
 	}
 }
 
-// raiseContextFromLower creates a RaiseContext by inverting the name maps
+// RaiseContextFromLower creates a RaiseContext by inverting the name maps
 // from a LowerContext. LowerContext maps name→key, RaiseContext maps key→name.
-func raiseContextFromLower(ctx *LowerContext) *RaiseContext {
+func RaiseContextFromLower(ctx *LowerContext) *RaiseContext {
 	if ctx == nil {
 		return &RaiseContext{}
 	}
 	rc := &RaiseContext{
-		AttributeNames:  invertMap(ctx.AttributeNames),
-		ActionNames:     invertMap(ctx.ActionNames),
-		QueryNames:      invertMap(ctx.QueryNames),
-		GlobalFunctions: invertMap(ctx.GlobalFunctions),
-		NamedSets:       invertMap(ctx.NamedSets),
+		AttributeNames:   invertMap(ctx.AttributeNames),
+		ActionNames:      invertMap(ctx.ActionNames),
+		QueryNames:       invertMap(ctx.QueryNames),
+		AssociationNames: invertMap(ctx.AssociationNames),
+		SystemEventNames: systemEventRaiseNamesFromLower(ctx.SystemEventNames),
+		PeerEventNames:   peerEventRaiseNamesFromLower(ctx.PeerEventNames),
+		GlobalFunctions:  invertMap(ctx.GlobalFunctions),
+		NamedSets:        invertMap(ctx.NamedSets),
 	}
 	// AllActions → ActionScopePaths (scoped names, not simple names).
 	if ctx.AllActions != nil {
@@ -101,6 +105,50 @@ func invertMap(m map[string]identity.Key) map[identity.Key]string {
 	result := make(map[identity.Key]string, len(m))
 	for name, key := range m {
 		result[key] = name
+	}
+	return result
+}
+
+// peerEventRaiseNamesFromLower maps peer event keys to TLA+ spellings for raise.
+// System peer events use guillemet forms; domain events keep their declared names.
+func peerEventRaiseNamesFromLower(m map[string]identity.Key) map[identity.Key]string {
+	if m == nil {
+		return nil
+	}
+	result := make(map[identity.Key]string)
+	for name, key := range m {
+		if model_state.IsSystemCreationEvent(name) || model_state.IsSystemFinalEvent(name) {
+			result[key] = model_state.SystemEventTLAName(name)
+			continue
+		}
+		if model_state.IsSystemEventTLAName(name) {
+			continue
+		}
+		if _, exists := result[key]; !exists {
+			result[key] = name
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+// systemEventRaiseNamesFromLower maps event keys to canonical TLA spellings («new», «destroy»).
+// Lower maps may alias both ASCII and guillemet forms to the same key.
+func systemEventRaiseNamesFromLower(m map[string]identity.Key) map[identity.Key]string {
+	if m == nil {
+		return nil
+	}
+	result := make(map[identity.Key]string)
+	for name, key := range m {
+		if !model_state.IsSystemEventTLAName(name) {
+			continue
+		}
+		result[key] = model_state.SystemEventTLAName(name)
+	}
+	if len(result) == 0 {
+		return nil
 	}
 	return result
 }

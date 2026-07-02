@@ -18,6 +18,9 @@ const _BOUND_TYPE_UNCONSTRAINED = "unconstrained"
 // _BOUND_TYPE_CLOSED is the span bound type indicating an inclusive boundary.
 const _BOUND_TYPE_CLOSED = "closed"
 
+// _BOUND_TYPE_OPEN is the span bound type indicating an exclusive boundary.
+const _BOUND_TYPE_OPEN = "open"
+
 // DataTypeChecker validates attribute values against their data type constraints.
 // It checks:
 //   - Required (non-nullable) attributes are not nil
@@ -27,16 +30,16 @@ const _BOUND_TYPE_CLOSED = "closed"
 type DataTypeChecker struct {
 	// classAttributes maps class key to its attribute definitions
 	classAttributes map[identity.Key]map[string]*model_class.Attribute
+
+	// unparsedAttributeDefs holds class-level violations for attributes whose rules did not parse.
+	unparsedAttributeDefs ViolationErrors
 }
 
 // NewDataTypeChecker creates a new data type checker from a model.
-// Returns an error if any class attribute has an unparsed DataType.
 func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 	checker := &DataTypeChecker{
 		classAttributes: make(map[identity.Key]map[string]*model_class.Attribute),
 	}
-
-	var violations ViolationErrors
 
 	// Iterate through all domains, subdomains, and classes to collect attributes
 	for _, domain := range model.Domains {
@@ -46,15 +49,12 @@ func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 
 				for _, attr := range class.Attributes {
 					attrCopy := attr // Make a copy to get a stable pointer
-					attrMap[attr.Name] = &attrCopy
+					attrMap[attr.Key.SubKey] = &attrCopy
 
-					// Check if DataType is parsed
 					if attr.DataType == nil {
-						violations = append(violations, NewUnparsedDataTypeViolation(
-							class.Key,
-							attr.Name,
-							attr.DataTypeRules,
-						))
+						checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
+							NewUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
+						)
 					}
 				}
 
@@ -63,7 +63,13 @@ func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 		}
 	}
 
-	return checker, violations
+	return checker, checker.unparsedAttributeDefs
+}
+
+// UnparsedAttributeDefinitionViolations returns class-level violations for attributes
+// whose data type rules did not parse in the simulated model.
+func (c *DataTypeChecker) UnparsedAttributeDefinitionViolations() ViolationErrors {
+	return c.unparsedAttributeDefs
 }
 
 // CheckInstance validates all attribute values on an instance against their data type constraints.
@@ -76,35 +82,37 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 		return violations
 	}
 
-	for attrName, attrDef := range attrs {
-		value := instance.GetAttribute(attrName)
+	for fieldKey, attrDef := range attrs {
+		value := instance.GetAttribute(fieldKey)
 
 		// Check required (non-nullable) constraint
-		if !attrDef.Nullable && value == nil {
+		if !attrDef.Nullable && object.IsNull(value) {
 			violations = append(violations, NewRequiredAttributeViolation(
 				instance.ID,
 				instance.ClassKey,
-				attrName,
+				attrDef.Name,
 			))
 			continue // No point checking other constraints on nil value
 		}
 
-		// If value is nil and attribute is nullable, skip constraint checks
-		if value == nil {
+		// If value is NULL and attribute is nullable, skip constraint checks
+		if object.IsNull(value) {
 			continue
 		}
 
-		// Check data type constraints if DataType is parsed
-		if attrDef.DataType != nil {
-			typeViolations := c.checkDataTypeConstraints(
-				instance.ID,
-				instance.ClassKey,
-				attrName,
-				value,
-				attrDef.DataType,
-			)
-			violations = append(violations, typeViolations...)
+		if defViolations := attributeDefinitionViolations(instance.ID, instance.ClassKey, attrDef); len(defViolations) > 0 {
+			violations = append(violations, defViolations...)
+			continue
 		}
+
+		typeViolations := c.checkDataTypeConstraints(
+			instance.ID,
+			instance.ClassKey,
+			attrDef.Name,
+			value,
+			attrDef.DataType,
+		)
+		violations = append(violations, typeViolations...)
 	}
 
 	return violations
@@ -132,6 +140,7 @@ func (c *DataTypeChecker) checkDataTypeConstraints(
 			classKey,
 			attrName,
 			value,
+			dataType,
 			dataType.Atomic,
 		)
 		violations = append(violations, atomicViolations...)
@@ -214,6 +223,7 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
+	dataType *model_data_type.DataType,
 	atomic *model_data_type.Atomic,
 ) ViolationErrors {
 	var violations ViolationErrors
@@ -222,6 +232,11 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
 		// No constraints to check
 		return violations
+
+	case model_data_type.CONSTRAINT_TYPE_DATETIME:
+		if violation := checkDateTimeConstraint(instanceID, classKey, attrName, value); violation != nil {
+			violations = append(violations, violation)
+		}
 
 	case model_data_type.CONSTRAINT_TYPE_SPAN:
 		if atomic.Span != nil {
@@ -232,7 +247,7 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 
 	case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
 		if len(atomic.Enums) > 0 {
-			if violation := c.checkEnumConstraint(instanceID, classKey, attrName, value, atomic.Enums); violation != nil {
+			if violation := c.checkEnumConstraint(instanceID, classKey, attrName, value, dataType, atomic.Enums); violation != nil {
 				violations = append(violations, violation)
 			}
 		}
@@ -243,6 +258,32 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 	}
 
 	return violations
+}
+
+// checkDateTimeConstraint validates an integer timestamp against the datetime Nat range.
+func checkDateTimeConstraint(
+	instanceID state.InstanceID,
+	classKey identity.Key,
+	attrName string,
+	value object.Object,
+) *ViolationError {
+	num, ok := value.(*object.Number)
+	if !ok {
+		return nil
+	}
+
+	rat := num.Rat()
+	if !rat.IsInt() {
+		return NewDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
+	}
+
+	minRat := big.NewRat(model_data_type.DateTimeValueMin, 1)
+	maxRat := big.NewRat(model_data_type.DateTimeValueMax, 1)
+	if rat.Cmp(minRat) < 0 || rat.Cmp(maxRat) > 0 {
+		return NewDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
+	}
+
+	return nil
 }
 
 // checkSpanConstraint validates a numeric value against a span (range) constraint.
@@ -283,7 +324,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 					rangeStr,
 				)
 			}
-		case "open":
+		case _BOUND_TYPE_OPEN:
 			// Open: value > lower
 			if cmp <= 0 {
 				return NewSpanConstraintViolation(
@@ -314,7 +355,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 					rangeStr,
 				)
 			}
-		case "open":
+		case _BOUND_TYPE_OPEN:
 			// Open: value < higher
 			if cmp >= 0 {
 				return NewSpanConstraintViolation(
@@ -388,14 +429,50 @@ func formatSpanValue(value *int, denom *int) string {
 	return fmt.Sprintf("%d/%d", *value, *denom)
 }
 
+// AttributeDef returns the attribute definition for a class field sub-key, if known.
+func (c *DataTypeChecker) AttributeDef(classKey identity.Key, fieldSubKey string) *model_class.Attribute {
+	attrs, ok := c.classAttributes[classKey]
+	if !ok {
+		return nil
+	}
+	return attrs[fieldSubKey]
+}
+
 // checkEnumConstraint validates a value against enumeration constraint.
 func (c *DataTypeChecker) checkEnumConstraint(
 	instanceID state.InstanceID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
+	dataType *model_data_type.DataType,
 	enums []model_data_type.AtomicEnum,
 ) *ViolationError {
+	allowedValues := make([]string, len(enums))
+	for i, enum := range enums {
+		allowedValues[i] = enum.Value
+	}
+
+	if model_data_type.HasBooleanTypeSpec(dataType) {
+		if boolVal, ok := value.(*object.Boolean); ok {
+			literal := "FALSE"
+			if boolVal.Value() {
+				literal = "TRUE"
+			}
+			for _, enum := range enums {
+				if enum.Value == literal {
+					return nil
+				}
+			}
+			return NewEnumConstraintViolation(
+				instanceID,
+				classKey,
+				attrName,
+				literal,
+				allowedValues,
+			)
+		}
+	}
+
 	// Get string value
 	str, ok := value.(*object.String)
 	if !ok {
@@ -406,9 +483,7 @@ func (c *DataTypeChecker) checkEnumConstraint(
 	strVal := str.Value()
 
 	// Check if value is in allowed enumeration
-	allowedValues := make([]string, len(enums))
-	for i, enum := range enums {
-		allowedValues[i] = enum.Value
+	for _, enum := range enums {
 		if enum.Value == strVal {
 			return nil // Value found in enumeration
 		}
@@ -436,15 +511,14 @@ func (c *DataTypeChecker) CheckState(simState *state.SimulationState) ViolationE
 	return violations
 }
 
-// GetAttributeDefinition returns the attribute definition for a class attribute.
-func (c *DataTypeChecker) GetAttributeDefinition(classKey identity.Key, attrName string) *model_class.Attribute {
+// GetAttributeDefinition returns the attribute definition keyed by YAML field name (attribute SubKey).
+func (c *DataTypeChecker) GetAttributeDefinition(classKey identity.Key, fieldKey string) *model_class.Attribute {
 	if attrs, ok := c.classAttributes[classKey]; ok {
-		return attrs[attrName]
+		return attrs[fieldKey]
 	}
 	return nil
 }
 
-// HasClass returns true if the checker has attribute definitions for the class.
 func (c *DataTypeChecker) HasClass(classKey identity.Key) bool {
 	_, ok := c.classAttributes[classKey]
 	return ok

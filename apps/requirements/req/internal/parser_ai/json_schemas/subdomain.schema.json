@@ -17,8 +17,14 @@
     "uml_comment": {
       "type": "string",
       "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the subdomain package in generated UML diagrams."
+    },
+    "unfinished_notes": {
+      "type": "string",
+      "description": "Optional scratch notes not yet placed in final requirement locations."
     }
   },
-  "required": ["name"],
+  "required": [
+    "name"
+  ],
   "additionalProperties": false
 }

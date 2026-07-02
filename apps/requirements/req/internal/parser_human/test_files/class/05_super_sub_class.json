@@ -6,7 +6,7 @@
     "SuperclassOfKey": "domain/test_domain/subdomain/test_subdomain/cgeneralization/superclass_key",
     "SubclassOfKey": "domain/test_domain/subdomain/test_subdomain/cgeneralization/subclass_key",
     "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
-    "Attributes": {},
+    "Attributes": [],
     "States": {},
     "Events": {},
     "Guards": {},

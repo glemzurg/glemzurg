@@ -4,7 +4,7 @@
     "Details": "Here we have markdown details.\n\nAnd even more.",
     "ActorKey": "actor/actor_key",
     "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
-    "Attributes": {},
+    "Attributes": [],
     "States": {},
     "Events": {},
     "Guards": {},
@@ -24,17 +24,23 @@
             "Details": "Appears in data dictionary.",
             "Parameters": [
                 {
+                    "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog/parameter/amount",
                     "Name": "Amount",
                     "DataTypeRules": "Nat"
                 },
                 {
+                    "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog/parameter/label",
                     "Name": "Label",
                     "DataTypeRules": "unconstrained",
                     "DataType": {
-                        "Key": "Label",
+                        "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog/parameter/label/datatype/self",
                         "CollectionType": "atomic",
                         "Atomic": {
                             "ConstraintType": "unconstrained"
+                        },
+                        "TypeSpec": {
+                            "Notation": "tla_plus",
+                            "Specification": "STRING"
                         }
                     }
                 }

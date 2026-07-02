@@ -171,7 +171,7 @@ func (suite *UseCaseSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	useCase := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{SuperclassOfKey: &genKeyA, SubclassOfKey: &genKeyB}, "UmlComment")
+	useCase := NewUseCase(key, UseCaseTraits{Level: _USE_CASE_LEVEL_SEA, ReadOnly: true}, GeneralizationRefs{SuperclassOfKey: &genKeyA, SubclassOfKey: &genKeyB}, UseCaseDetails{Name: "Name", Details: "Details", UnfinishedNotes: "", UmlComment: "UmlComment"})
 	suite.Equal(UseCase{
 		Key:             key,
 		Name:            "Name",
@@ -185,7 +185,7 @@ func (suite *UseCaseSuite) TestNew() {
 
 	// Test with nil superclass/subclass.
 
-	useCase = NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{}, "UmlComment")
+	useCase = NewUseCase(key, UseCaseTraits{Level: _USE_CASE_LEVEL_SEA, ReadOnly: true}, GeneralizationRefs{}, UseCaseDetails{Name: "Name", Details: "Details", UnfinishedNotes: "", UmlComment: "UmlComment"})
 	suite.Equal(UseCase{
 		Key:        key,
 		Name:       "Name",

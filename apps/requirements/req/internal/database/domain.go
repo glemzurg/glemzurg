@@ -18,6 +18,7 @@ func scanDomain(scanner Scanner, domain *model_domain.Domain) (err error) {
 		&keyStr,
 		&domain.Name,
 		&domain.Details,
+		&domain.UnfinishedNotes,
 		&domain.Realized,
 		&domain.UmlComment,
 	); err != nil {
@@ -48,10 +49,11 @@ func LoadDomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (domain 
 			return nil
 		},
 		`SELECT
-			domain_key  ,
-			name        ,
-			details     ,
-			realized    ,
+			domain_key       ,
+			name             ,
+			details          ,
+			unfinished_notes ,
+			realized         ,
 			uml_comment
 		FROM
 			domain
@@ -80,10 +82,11 @@ func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (e
 		UPDATE
 			domain
 		SET
-			name        = $3 ,
-			details     = $4 ,
-			realized    = $5 ,
-			uml_comment = $6
+			name             = $3 ,
+			details          = $4 ,
+			unfinished_notes = $5 ,
+			realized         = $6 ,
+			uml_comment      = $7
 		WHERE
 			model_key = $1
 		AND
@@ -92,6 +95,7 @@ func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (e
 		domain.Key.String(),
 		domain.Name,
 		domain.Details,
+		domain.UnfinishedNotes,
 		domain.Realized,
 		domain.UmlComment)
 	if err != nil {
@@ -134,10 +138,11 @@ func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []model_domain.Domain
 			return nil
 		},
 		`SELECT
-				domain_key  ,
-				name        ,
-				details     ,
-				realized    ,
+				domain_key       ,
+				name             ,
+				details          ,
+				unfinished_notes ,
+				realized         ,
 				uml_comment
 			FROM
 				domain
@@ -160,15 +165,15 @@ func AddDomains(dbOrTx DbOrTx, modelKey string, domains []model_domain.Domain) (
 
 	// Build the bulk insert query.
 	var qb strings.Builder
-	qb.WriteString(`INSERT INTO domain (model_key, domain_key, name, details, realized, uml_comment) VALUES `)
-	args := make([]any, 0, len(domains)*6)
+	qb.WriteString(`INSERT INTO domain (model_key, domain_key, name, details, unfinished_notes, realized, uml_comment) VALUES `)
+	args := make([]any, 0, len(domains)*7)
 	for i, domain := range domains {
 		if i > 0 {
 			qb.WriteString(", ")
 		}
-		base := i * 6
-		qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6))
-		args = append(args, modelKey, domain.Key.String(), domain.Name, domain.Details, domain.Realized, domain.UmlComment)
+		base := i * 7
+		fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+		args = append(args, modelKey, domain.Key.String(), domain.Name, domain.Details, domain.UnfinishedNotes, domain.Realized, domain.UmlComment)
 	}
 
 	err = dbExec(dbOrTx, qb.String(), args...)

@@ -14,13 +14,14 @@ type Class struct {
 	Key             identity.Key
 	Name            string
 	Details         string        // Markdown.
+	UnfinishedNotes string        // Scratch notes not yet placed in final requirement locations.
 	ActorKey        *identity.Key // If this class is an Actor this is the key of that actor.
 	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
 	// Children
-	Invariants  []model_logic.Logic        // Invariants that must be true for all objects of this class.
-	Attributes  map[identity.Key]Attribute // The attributes of a class.
+	Invariants  []model_logic.Logic // Invariants that must be true for all objects of this class.
+	Attributes  []Attribute         // Class attributes in source order; keys are unique within the class.
 	States      map[identity.Key]model_state.State
 	Events      map[identity.Key]model_state.Event
 	Guards      map[identity.Key]model_state.Guard
@@ -29,15 +30,31 @@ type Class struct {
 	Transitions map[identity.Key]model_state.Transition
 }
 
-func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Class {
+// ClassLinks holds optional actor and generalization key references.
+type ClassLinks struct {
+	ActorKey        *identity.Key
+	SuperclassOfKey *identity.Key
+	SubclassOfKey   *identity.Key
+}
+
+// ClassDetails holds human-authored markdown fields from a class file.
+type ClassDetails struct {
+	Name            string
+	Details         string
+	UnfinishedNotes string
+	UmlComment      string
+}
+
+func NewClass(key identity.Key, links ClassLinks, details ClassDetails) Class {
 	return Class{
 		Key:             key,
-		Name:            name,
-		Details:         details,
-		ActorKey:        actorKey,
-		SuperclassOfKey: superclassOfKey,
-		SubclassOfKey:   subclassOfKey,
-		UmlComment:      umlComment,
+		Name:            details.Name,
+		Details:         details.Details,
+		UnfinishedNotes: details.UnfinishedNotes,
+		ActorKey:        links.ActorKey,
+		SuperclassOfKey: links.SuperclassOfKey,
+		SubclassOfKey:   links.SubclassOfKey,
+		UmlComment:      details.UmlComment,
 	}
 }
 
@@ -91,9 +108,9 @@ func (c *Class) Validate(ctx *coreerr.ValidationContext) error {
 
 // ValidateReferences validates that the class's reference keys point to valid entities.
 // - ActorKey must exist in the actors map
-// - SuperclassOfKey must exist in the generalizations map and be in the same subdomain
-// - SubclassOfKey must exist in the generalizations map and be in the same subdomain.
-func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[identity.Key]bool, generalizations map[identity.Key]bool) error {
+// - SuperclassOfKey must exist in the localGeneralizations map and be in the same subdomain
+// - SubclassOfKey must exist in the allGeneralizations map (may be in any subdomain).
+func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[identity.Key]bool, localGeneralizations map[identity.Key]bool, allGeneralizations map[identity.Key]bool) error {
 	// Validate ActorKey references a real actor.
 	if c.ActorKey != nil {
 		if !actors[*c.ActorKey] {
@@ -106,7 +123,7 @@ func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[id
 
 	// Validate SuperclassOfKey references a real generalization in the same subdomain.
 	if c.SuperclassOfKey != nil {
-		if !generalizations[*c.SuperclassOfKey] {
+		if !localGeneralizations[*c.SuperclassOfKey] {
 			return coreerr.NewWithValues(ctx, coreerr.ClassSupergenNotfound, fmt.Sprintf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SuperclassOfKey.String()), "SuperclassOfKey", c.SuperclassOfKey.String(), "")
 		}
 		// Check same subdomain.
@@ -116,15 +133,11 @@ func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[id
 		}
 	}
 
-	// Validate SubclassOfKey references a real generalization in the same subdomain.
+	// Validate SubclassOfKey references a real generalization anywhere in the model.
+	// Subclasses may reference generalizations in other domains/subdomains.
 	if c.SubclassOfKey != nil {
-		if !generalizations[*c.SubclassOfKey] {
+		if !allGeneralizations[*c.SubclassOfKey] {
 			return coreerr.NewWithValues(ctx, coreerr.ClassSubgenNotfound, fmt.Sprintf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SubclassOfKey.String()), "SubclassOfKey", c.SubclassOfKey.String(), "")
-		}
-		// Check same subdomain.
-		generalizationSubdomainKey := c.SubclassOfKey.ParentKey
-		if classSubdomainKey != generalizationSubdomainKey {
-			return coreerr.NewWithValues(ctx, coreerr.ClassSubgenWrongSubdomain, fmt.Sprintf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SubclassOfKey.String()), "SubclassOfKey", c.SubclassOfKey.String(), "")
 		}
 	}
 
@@ -135,7 +148,7 @@ func (c *Class) SetInvariants(invariants []model_logic.Logic) {
 	c.Invariants = invariants
 }
 
-func (c *Class) SetAttributes(attributes map[identity.Key]Attribute) {
+func (c *Class) SetAttributes(attributes []Attribute) {
 	c.Attributes = attributes
 }
 
@@ -165,7 +178,7 @@ func (c *Class) SetTransitions(transitions map[identity.Key]model_state.Transiti
 
 // ValidateWithParent validates the Class, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
-func (c *Class) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
+func (c *Class) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key, allAssociations map[identity.Key]Association) error {
 	if err := c.Validate(ctx); err != nil {
 		return err
 	}
@@ -178,7 +191,7 @@ func (c *Class) ValidateWithParent(ctx *coreerr.ValidationContext, parent *ident
 	if err := c.validateClassChildren(ctx); err != nil {
 		return err
 	}
-	if err := c.validateActionGuarantees(ctx); err != nil {
+	if err := c.validateActionGuarantees(ctx, allAssociations); err != nil {
 		return err
 	}
 	if err := c.validateTransitions(ctx); err != nil {
@@ -211,6 +224,9 @@ func (c *Class) validateClassChildren(ctx *coreerr.ValidationContext) error {
 	actionKeys := make(map[identity.Key]bool)
 	for actionKey := range c.Actions {
 		actionKeys[actionKey] = true
+	}
+	if err := validateUniqueAttributeKeys(ctx, c.Attributes); err != nil {
+		return err
 	}
 	for _, attr := range c.Attributes {
 		attrCtx := ctx.Child("attribute", attr.Key.String())
@@ -245,11 +261,12 @@ func (c *Class) validateClassChildren(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
-func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext) error {
+func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAssociations map[identity.Key]Association) error {
 	attrSubKeys := make(map[string]bool)
 	for _, attr := range c.Attributes {
 		attrSubKeys[attr.Key.SubKey] = true
 	}
+	assocTLAFields := OutgoingAssociationTLAFieldSet(c.Key, allAssociations)
 	for _, action := range c.Actions {
 		actionCtx := ctx.Child("action", action.Key.String())
 		if err := action.ValidateWithParent(actionCtx, &c.Key); err != nil {
@@ -259,10 +276,21 @@ func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext) error {
 			if guar.Type == model_logic.LogicTypeLet {
 				continue
 			}
-			if guar.Target != "" && !attrSubKeys[guar.Target] {
-				guarCtx := actionCtx.Child("guarantee", fmt.Sprintf("%d", i))
-				return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeInvalidTarget, fmt.Sprintf("action %q guarantee %d: target %q is not a valid attribute on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
+			if guar.Target == "" {
+				continue
 			}
+			if guar.Type == model_logic.LogicTypeDestroy {
+				if !assocTLAFields[guar.Target] {
+					guarCtx := actionCtx.Child("guarantee", fmt.Sprintf("%d", i))
+					return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeDestroyTargetInvalid, fmt.Sprintf("action %q guarantee %d: destroy target %q must be an outgoing association on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
+				}
+				continue
+			}
+			if attrSubKeys[guar.Target] || assocTLAFields[guar.Target] {
+				continue
+			}
+			guarCtx := actionCtx.Child("guarantee", fmt.Sprintf("%d", i))
+			return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeInvalidTarget, fmt.Sprintf("action %q guarantee %d: target %q is not a valid attribute or outgoing association on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
 		}
 	}
 	return nil
@@ -292,6 +320,12 @@ func (c *Class) validateTransitions(ctx *coreerr.ValidationContext) error {
 		}
 		if err := transition.ValidateReferences(transCtx, stateKeys, eventKeys, guardKeys, actionKeys); err != nil {
 			return err
+		}
+		event, ok := c.Events[transition.EventKey]
+		if ok {
+			if err := transition.ValidateSystemEventEdges(transCtx, event.Name); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

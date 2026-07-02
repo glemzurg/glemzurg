@@ -79,9 +79,19 @@ func extractGlobalFunctions(model *core.Model) []ExtractedExpression {
 	return expressions
 }
 
-// extractActionExpressions extracts TLA+ requires and guarantees from an action.
+// extractActionExpressions extracts TLA+ requires, guarantees, and parameter simulation logic from an action.
 func extractActionExpressions(action *model_state.Action) []ExtractedExpression {
-	expressions := make([]ExtractedExpression, 0, len(action.Requires)+len(action.Guarantees))
+	extra := 0
+	for _, param := range action.Parameters {
+		if param.Simulation == nil {
+			continue
+		}
+		extra += len(param.Simulation.Requires)
+		if param.Simulation.Specification != nil {
+			extra++
+		}
+	}
+	expressions := make([]ExtractedExpression, 0, len(action.Requires)+len(action.Guarantees)+extra)
 
 	// Extract Requires
 	for i, req := range action.Requires {
@@ -105,6 +115,31 @@ func extractActionExpressions(action *model_state.Action) []ExtractedExpression 
 			Name:       action.Name,
 			Index:      i,
 		})
+	}
+
+	for _, param := range action.Parameters {
+		if param.Simulation == nil {
+			continue
+		}
+		paramKey := param.Key
+		for i, req := range param.Simulation.Requires {
+			expressions = append(expressions, ExtractedExpression{
+				Source:     SourceActionParameterSimulationRequire,
+				Expression: req.Spec.Expression,
+				ScopeKey:   &paramKey,
+				Name:       param.Name,
+				Index:      i,
+			})
+		}
+		if param.Simulation.Specification != nil {
+			expressions = append(expressions, ExtractedExpression{
+				Source:     SourceActionParameterSimulationSpec,
+				Expression: param.Simulation.Specification.Spec.Expression,
+				ScopeKey:   &paramKey,
+				Name:       param.Name,
+				Index:      0,
+			})
+		}
 	}
 
 	return expressions

@@ -1,0 +1,57 @@
+{{- $reqs := .Reqs -}}
+---
+config:
+  class:
+    hideEmptyMembersBox: true
+---
+classDiagram
+{{ range .Generalizations -}}
+{{- $superclass := generalization_superclass $reqs .Key -}}
+{{- $subclasses := generalization_subclasses $reqs .Key -}}
+{{ range $subclasses -}}
+    {{ nodeid "class" $superclass.Key }} <|-- {{ nodeid "class" .Key }}
+{{ end -}}
+{{ end -}}
+{{ range .Classes -}}
+{{- $class := class_lookup $reqs .Key -}}
+    class {{ nodeid "class" .Key }}["{{ .Name }}"] {
+{{ if ne .ActorKey nil }}
+        {{ classes_mermaid_stereotype_annotation "actor" }}
+{{ end -}}
+{{- range .Attributes }}
+        {{ classes_mermaid_attribute_member . }}
+{{- end }}
+    }
+{{ end -}}
+{{ if has_mermaid_focal_class .FocalClassKey -}}
+style {{ nodeid "class" (mermaid_focal_class_key .FocalClassKey) }} {{ classes_mermaid_focal_class_style }}
+{{ end -}}
+{{ range .Associations -}}
+{{ if render_association_class_mermaid . -}}
+    class {{ nodeid "assoc" .Key }}["{{ classes_mermaid_association_node_title $reqs . }}"] {
+        {{ classes_mermaid_stereotype_annotation "association" }}
+    }
+{{ end -}}
+{{ end -}}
+{{ range .Associations -}}
+{{ if render_association_class_mermaid . -}}
+style {{ nodeid "assoc" .Key }} stroke:#333,stroke-dasharray:5 5
+{{ end -}}
+{{ end -}}
+{{ range .Associations -}}
+{{ if render_association_class_mermaid . -}}
+{{ $fromClassKey := nodeid "class" .FromClassKey -}}
+{{ $toClassKey := nodeid "class" .ToClassKey -}}
+{{ $associationClassKey := nodeid "class" (association_class_key .) -}}
+{{ $associationLinkKey := nodeid "assoc" .Key -}}
+    {{ $fromClassKey }} "{{ multiplicity .FromMultiplicity }}" -- {{ $associationLinkKey }}
+    {{ $associationLinkKey }} --> "{{ multiplicity .ToMultiplicity }}" {{ $toClassKey }}
+    {{ $associationClassKey }} .. {{ $associationLinkKey }}
+{{ else -}}
+{{ $fromClassKey := nodeid "class" .FromClassKey -}}
+{{ $fromMultiplicity := multiplicity .FromMultiplicity -}}
+{{ $toClassKey := nodeid "class" .ToClassKey -}}
+{{ $toMultiplicity := multiplicity .ToMultiplicity -}}
+    {{ $fromClassKey }} "{{ $fromMultiplicity }}" --> "{{ $toMultiplicity }}" {{ $toClassKey }} : {{ classes_mermaid_association_link_label $reqs . }}
+{{ end -}}
+{{ end -}}

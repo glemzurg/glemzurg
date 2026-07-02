@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -55,16 +54,11 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 
 	derivationLogic := model_logic.NewLogic(mustKey("invariant/10"), model_logic.LogicTypeValue, "Double the price.", "", productSpec("self.price * 2"), nil)
 
-	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false,
-		model_class.AttributeAnnotations{}))
-	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false,
-		model_class.AttributeAnnotations{}))
+	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, model_class.AttributeDetails{Name: "price", Details: ""}, "", nil, false, model_class.AttributeAnnotations{}))
+	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, model_class.AttributeDetails{Name: "doublePrice", Details: ""}, "", &derivationLogic, false, model_class.AttributeAnnotations{}))
 
-	class := model_class.NewClass(classKey, "Product", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrPriceKey:       attrPrice,
-		attrDoublePriceKey: attrDoublePrice,
-	})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes([]model_class.Attribute{attrPrice, attrDoublePrice})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -73,10 +67,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
-	relationCtx := evaluator.NewRelationContext()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
 	s.Require().NoError(err)
 	s.NotNil(dae)
 
@@ -103,13 +97,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 
 	derivationLogic := model_logic.NewLogic(mustKey("invariant/11"), model_logic.LogicTypeValue, "A derived field.", "", helper.Must(logic_spec.NewExpressionSpec("tla_plus", "", nil)), nil)
 
-	attrDerived := helper.Must(model_class.NewAttribute(attrKey, "derivedField", "", "", &derivationLogic, false,
-		model_class.AttributeAnnotations{}))
+	attrDerived := helper.Must(model_class.NewAttribute(attrKey, model_class.AttributeDetails{Name: "derivedField", Details: ""}, "", &derivationLogic, false, model_class.AttributeAnnotations{}))
 
-	class := model_class.NewClass(classKey, "Product", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrKey: attrDerived,
-	})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes([]model_class.Attribute{attrDerived})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -118,10 +109,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
-	relationCtx := evaluator.NewRelationContext()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
 	s.Require().NoError(err)
 	s.NotNil(dae)
 	// Empty specification is silently skipped — no derived attributes.
@@ -137,16 +128,11 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 
 	derivationLogic := model_logic.NewLogic(mustKey("invariant/12"), model_logic.LogicTypeValue, "A derived field.", "", productSpec("self.price'"), nil)
 
-	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false,
-		model_class.AttributeAnnotations{}))
-	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "derivedField", "", "", &derivationLogic, false,
-		model_class.AttributeAnnotations{}))
+	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, model_class.AttributeDetails{Name: "price", Details: ""}, "", nil, false, model_class.AttributeAnnotations{}))
+	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, model_class.AttributeDetails{Name: "derivedField", Details: ""}, "", &derivationLogic, false, model_class.AttributeAnnotations{}))
 
-	class := model_class.NewClass(classKey, "Product", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrPriceKey:   attrPrice,
-		attrDerivedKey: attrDerived,
-	})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes([]model_class.Attribute{attrPrice, attrDerived})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -155,10 +141,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
-	relationCtx := evaluator.NewRelationContext()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
 	s.Require().Error(err)
 	s.Nil(dae)
 	s.Contains(err.Error(), "must not contain primed variables")
@@ -174,16 +160,11 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 
 	derivationLogic := model_logic.NewLogic(mustKey("invariant/13"), model_logic.LogicTypeValue, "Double the price.", "", productSpec("self.price * 2"), nil)
 
-	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false,
-		model_class.AttributeAnnotations{}))
-	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false,
-		model_class.AttributeAnnotations{}))
+	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, model_class.AttributeDetails{Name: "price", Details: ""}, "", nil, false, model_class.AttributeAnnotations{}))
+	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, model_class.AttributeDetails{Name: "doublePrice", Details: ""}, "", &derivationLogic, false, model_class.AttributeAnnotations{}))
 
-	class := model_class.NewClass(classKey, "Product", "", nil, nil, nil, "")
-	class.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrPriceKey:       attrPrice,
-		attrDoublePriceKey: attrDoublePrice,
-	})
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Product", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes([]model_class.Attribute{attrPrice, attrDoublePrice})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
@@ -192,10 +173,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
-	relationCtx := evaluator.NewRelationContext()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
 	s.Require().NoError(err)
 
 	// Create an instance with price=5.

@@ -13,23 +13,25 @@ import (
 
 // Domain is a root category of the mode.
 type Domain struct {
-	Key        identity.Key
-	Name       string
-	Details    string // Markdown.
-	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
-	UmlComment string
+	Key             identity.Key
+	Name            string
+	Details         string // Markdown.
+	UnfinishedNotes string // Scratch notes not yet placed in final requirement locations.
+	Realized        bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
+	UmlComment      string
 	// Children
 	Subdomains        map[identity.Key]Subdomain
 	ClassAssociations map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
 }
 
-func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) Domain {
+func NewDomain(key identity.Key, name, details, unfinishedNotes string, realized bool, umlComment string) Domain {
 	return Domain{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		Realized:   realized,
-		UmlComment: umlComment,
+		Key:             key,
+		Name:            name,
+		Details:         details,
+		UnfinishedNotes: unfinishedNotes,
+		Realized:        realized,
+		UmlComment:      umlComment,
 	}
 }
 
@@ -52,21 +54,22 @@ func (d *Domain) Validate(ctx *coreerr.ValidationContext) error {
 // ValidateWithParent validates the Domain, its key's parent relationship, and all children.
 // The parent must be nil (domains are root-level entities).
 func (d *Domain) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
-	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, nil, nil)
+	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, ModelCrossRefs{})
 }
 
 // ValidateWithParentAndActors validates the Domain with access to actors for cross-reference validation.
 // The parent must be nil (domains are root-level entities).
 // The actors map is used to validate that class ActorKey references exist.
 func (d *Domain) ValidateWithParentAndActors(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool) error {
-	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, actors, nil)
+	return d.ValidateWithParentAndActorsAndClasses(ctx, parent, ModelCrossRefs{Actors: actors})
 }
 
 // ValidateWithParentAndActorsAndClasses validates the Domain with access to actors and classes for cross-reference validation.
 // The parent must be nil (domains are root-level entities).
 // The actors map is used to validate that class ActorKey references exist.
 // The classes map is used to validate that association class references exist.
-func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool) error {
+// The allGeneralizations and allClasses maps enable cross-domain subclass validation.
+func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, refs ModelCrossRefs) error {
 	// Validate the object itself.
 	if err := d.Validate(ctx); err != nil {
 		return err
@@ -96,7 +99,7 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationCo
 	// Validate all children.
 	for _, subdomain := range d.Subdomains {
 		childCtx := ctx.Child("subdomain", subdomain.Key.String())
-		if err := subdomain.ValidateWithParentAndActorsAndClasses(childCtx, &d.Key, actors, classes); err != nil {
+		if err := subdomain.ValidateWithParentAndActorsAndClasses(childCtx, &d.Key, refs); err != nil {
 			return err
 		}
 	}
@@ -105,7 +108,7 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationCo
 		if err := classAssoc.ValidateWithParent(assocCtx, &d.Key); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(assocCtx, classes); err != nil {
+		if err := classAssoc.ValidateReferences(assocCtx, refs.AllClasses); err != nil {
 			return err
 		}
 	}

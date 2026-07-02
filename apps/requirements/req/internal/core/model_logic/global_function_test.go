@@ -135,7 +135,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 			errstr: "does not match global function key",
 		},
 		{
-			testName: "error missing specification description",
+			testName: "valid without specification description",
 			gf: GlobalFunction{
 				Key:        gfKey1,
 				Name:       "_Max",
@@ -147,7 +147,6 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 					Spec:        validSpec(),
 				},
 			},
-			errstr: "Description",
 		},
 		{
 			testName: "error missing specification notation",
@@ -260,7 +259,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 	s.Require().Error(err)
 	s.Contains(err.Error(), "must start with underscore")
 
-	// Test that Specification.ValidateWithParent is called - invalid spec description should fail.
+	// Test that Specification.ValidateWithParent accepts an empty logic description.
 	gf = GlobalFunction{
 		Key:        gfKey,
 		Name:       "_Max",
@@ -268,11 +267,10 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 		Logic: Logic{
 			Key:         gfKey,
 			Type:        LogicTypeValue,
-			Description: "", // Invalid: missing description
+			Description: "",
 			Spec:        validSpec(),
 		},
 	}
 	err = gf.ValidateWithParent(ctx)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "Description")
+	s.Require().NoError(err)
 }

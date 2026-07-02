@@ -108,6 +108,14 @@ type AttributeRef struct {
 func (n *AttributeRef) expressionNode()  {}
 func (n *AttributeRef) NodeType() string { return NodeAttributeRef }
 
+// AssociationRef represents an outgoing association field on self, identified by key.
+type AssociationRef struct {
+	AssociationKey identity.Key
+}
+
+func (n *AssociationRef) expressionNode()  {}
+func (n *AssociationRef) NodeType() string { return NodeAssociationRef }
+
 // LocalVar represents a quantifier-bound or parameter-bound variable.
 type LocalVar struct {
 	Name string
@@ -307,6 +315,26 @@ type Case struct {
 func (n *Case) expressionNode()  {}
 func (n *Case) NodeType() string { return NodeCase }
 
+// LetExpr is a local binding: LET name == value IN body.
+type LetExpr struct {
+	Variable string
+	Value    Expression
+	Body     Expression
+}
+
+func (n *LetExpr) expressionNode()  {}
+func (n *LetExpr) NodeType() string { return NodeLetExpr }
+
+// Choose picks one element from a finite set satisfying a predicate.
+type Choose struct {
+	Variable  string
+	Set       Expression
+	Predicate Expression
+}
+
+func (n *Choose) expressionNode()  {}
+func (n *Choose) NodeType() string { return NodeChoose }
+
 // --- Quantifiers ---
 
 // Quantifier represents universal (∀) or existential (∃) quantification.
@@ -330,6 +358,16 @@ type SetFilter struct {
 func (n *SetFilter) expressionNode()  {}
 func (n *SetFilter) NodeType() string { return NodeSetFilter }
 
+// SetMap represents a set map expression: {f(x) : x ∈ S}.
+type SetMap struct {
+	Variable  string
+	Set       Expression
+	Transform Expression
+}
+
+func (n *SetMap) expressionNode()  {}
+func (n *SetMap) NodeType() string { return NodeSetMap }
+
 // SetRange represents a contiguous integer range: start..end.
 type SetRange struct {
 	Start Expression
@@ -349,6 +387,15 @@ type ActionCall struct {
 
 func (n *ActionCall) expressionNode()  {}
 func (n *ActionCall) NodeType() string { return NodeActionCall }
+
+// EventCall represents a system event constructor such as _new(args...).
+type EventCall struct {
+	EventKey identity.Key
+	Args     []Expression
+}
+
+func (n *EventCall) expressionNode()  {}
+func (n *EventCall) NodeType() string { return NodeEventCall }
 
 // GlobalCall represents a call to a global function, identified by key.
 type GlobalCall struct {
@@ -378,3 +425,13 @@ type NamedSetRef struct {
 
 func (n *NamedSetRef) expressionNode()  {}
 func (n *NamedSetRef) NodeType() string { return NodeNamedSetRef }
+
+// ClassRef references a class instance set by key. Name is the class display name
+// used for simulator binding lookup and TLA+ round-trip.
+type ClassRef struct {
+	ClassKey identity.Key
+	Name     string
+}
+
+func (n *ClassRef) expressionNode()  {}
+func (n *ClassRef) NodeType() string { return NodeClassRef }

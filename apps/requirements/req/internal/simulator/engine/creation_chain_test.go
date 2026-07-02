@@ -37,7 +37,7 @@ func buildChainTestComponents(
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, rng)
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, nil, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
 
@@ -63,7 +63,7 @@ func buildOrderItemModel(mandatory bool) *testChainModel {
 	}
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity(toMultStr))
-	assoc := model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	m := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	m.ClassAssociations = map[identity.Key]model_class.Association{
@@ -87,7 +87,7 @@ func (s *CreationChainSuite) TestNoMandatoryAssociationsReturnsEmpty() {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
 
-	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil)
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
 	// Handle creation chain — nothing should cascade.
@@ -106,7 +106,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
 
-	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil)
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 	s.True(result.WasCreation)
 
@@ -134,13 +134,50 @@ func (s *CreationChainSuite) TestCascadeDepthLimitReturnsError() {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
 
-	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil)
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
 	// Simulate exceeding depth limit.
 	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, maxCascadeDepth+1)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "max depth")
+}
+
+func (s *CreationChainSuite) TestMandatoryAssociationClassCreatesEndpointAndLink() {
+	tcm := buildAssociationClassTestModel()
+	handler, simState, ae := buildAssociationClassChainComponents(tcm)
+
+	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
+	partnerEvent := partnerClass.Events[mustKey("domain/d/subdomain/s/class/partner/event/create")]
+
+	result, err := ae.ExecuteTransition(partnerClass, partnerEvent, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
+	s.Require().NoError(err)
+
+	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
+	s.Require().NoError(err)
+	s.Require().Len(steps, 2)
+	s.Equal("Jurisdiction", steps[0].ClassName)
+	s.Equal("LinkDef", steps[1].ClassName)
+	s.Equal("Add", steps[1].EventName)
+
+	acInfo := NewClassCatalog(tcm.model).LookupAssociationClass(tcm.linkDefKey)
+	s.Require().NotNil(acInfo)
+	links := simState.AssociationLinksFromEndpoint(acInfo.HostAssociation.Key, result.InstanceID)
+	s.Len(links, 1)
+}
+
+func buildAssociationClassChainComponents(tcm *acTestModel) (*CreationChainHandler, *state.SimulationState, *actions.ActionExecutor) {
+	simState := state.NewSimulationState()
+	bb := state.NewBindingsBuilder(simState)
+	registerCatalogAssociations(NewClassCatalog(tcm.model), bb)
+	ge := actions.NewGuardEvaluator(bb)
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
+	catalog := NewClassCatalog(tcm.model)
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, catalog, rng)
+	pb := actions.NewParameterBinder()
+	sae := NewStateActionExecutor(ae)
+	handler := NewCreationChainHandler(catalog, ae, sae, pb, rng)
+	return handler, simState, ae
 }
 
 func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
@@ -155,10 +192,10 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 
 	eventUpdate := model_state.NewEvent(eventUpdateKey, "update", "", nil)
 	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
-	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
+	transUpdate := model_state.NewTransition(transUpdateKey, eventUpdateKey, model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 
-	itemClass := model_class.NewClass(itemKey, "Item", "", nil, nil, nil, "")
-	itemClass.SetAttributes(map[identity.Key]model_class.Attribute{})
+	itemClass := model_class.NewClass(itemKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	itemClass.SetAttributes(nil)
 	itemClass.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
 	})
@@ -175,7 +212,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
+	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -186,7 +223,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, rng)
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, nil, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
 	catalog := NewClassCatalog(model)
@@ -195,7 +232,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	// Create an Order.
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
-	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, nil, nil)
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
 	// Handle chain — should fail because Item has no creation transition.

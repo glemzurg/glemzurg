@@ -12,6 +12,7 @@ A sequence of steps in the business rules.
 | use_case_key | text |  | false | [public.use_case_actor](public.use_case_actor.md) [public.use_case_shared](public.use_case_shared.md) [public.scenario](public.scenario.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the use case. |
 | details | text |  | true |  |  | A summary description. |
+| unfinished_notes | text |  | true |  |  | Scratch notes not yet placed in final requirement locations. |
 | level | use_case_level |  | false |  |  | How big is the scope of this use case. |
 | read_only | boolean |  | false |  |  | When true, this use case changes no state. |
 | subdomain_key | text |  | false |  | [public.subdomain](public.subdomain.md) | The subdomain this use case is part of. |

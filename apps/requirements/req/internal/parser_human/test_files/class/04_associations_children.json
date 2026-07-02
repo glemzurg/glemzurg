@@ -7,6 +7,7 @@
         "FromMultiplicity": {"LowerBound": 1, "HigherBound": 1},
         "ToClassKey": "domain/test_domain/subdomain/test_subdomain/class/child_key",
         "ToMultiplicity": {"LowerBound": 0, "HigherBound": 0},
+        "Uniqueness": null,
         "AssociationClassKey": "domain/test_domain/subdomain/test_subdomain/class/association_class_key",
         "UmlComment": "very import to users"
     },
@@ -18,6 +19,7 @@
         "FromMultiplicity": {"LowerBound": 0, "HigherBound": 0},
         "ToClassKey": "domain/test_domain/subdomain/test_subdomain/class/parent_key",
         "ToMultiplicity": {"LowerBound": 1, "HigherBound": 1},
+        "Uniqueness": null,
         "AssociationClassKey": null,
         "UmlComment": ""
     }

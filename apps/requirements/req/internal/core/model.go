@@ -17,10 +17,11 @@ import (
 
 // Model is the documentation summary of a set of requirements.
 type Model struct {
-	Key        string // Models do not have keys like other entitites. They just need to be unique to other models in the system.
-	Name       string
-	Details    string              // Markdown.
-	Invariants []model_logic.Logic // Invariants that must be true for this model.
+	Key             string // Models do not have keys like other entitites. They just need to be unique to other models in the system.
+	Name            string
+	Details         string              // Markdown.
+	UnfinishedNotes string              // Scratch notes not yet placed in final requirement locations.
+	Invariants      []model_logic.Logic // Invariants that must be true for this model.
 	// Global functions that can be referenced from other expressions.
 	GlobalFunctions map[identity.Key]model_logic.GlobalFunction
 	// Named sets that can be referenced from behavioral logic.
@@ -33,11 +34,18 @@ type Model struct {
 	ClassAssociations    map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_logic.NamedSet) Model {
+// ModelDetails holds the human-authored name and description from a model file.
+type ModelDetails struct {
+	Name    string
+	Details string
+}
+
+func NewModel(key string, details ModelDetails, unfinishedNotes string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_logic.NamedSet) Model {
 	return Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
-		Name:            name,
-		Details:         details,
+		Name:            details.Name,
+		Details:         details.Details,
+		UnfinishedNotes: unfinishedNotes,
 		Invariants:      invariants,
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
@@ -191,9 +199,18 @@ func (m *Model) validateDomains(ctx *coreerr.ValidationContext) error {
 		actorKeys[actorKey] = true
 	}
 	classKeys := m.buildClassKeys()
+	allGeneralizations := m.buildGeneralizationKeys()
+	allClasses := m.buildAllClasses()
+	allAssociations := m.GetClassAssociations()
 	for _, domain := range m.Domains {
 		childCtx := ctx.Child("domain", domain.Key.String())
-		if err := domain.ValidateWithParentAndActorsAndClasses(childCtx, nil, actorKeys, classKeys); err != nil {
+		if err := domain.ValidateWithParentAndActorsAndClasses(childCtx, nil, model_domain.ModelCrossRefs{
+			Actors:             actorKeys,
+			Classes:            classKeys,
+			AllGeneralizations: allGeneralizations,
+			AllClasses:         allClasses,
+			AllAssociations:    allAssociations,
+		}); err != nil {
 			return err
 		}
 	}
@@ -210,6 +227,28 @@ func (m *Model) buildClassKeys() map[identity.Key]bool {
 		}
 	}
 	return classKeys
+}
+
+func (m *Model) buildGeneralizationKeys() map[identity.Key]bool {
+	genKeys := make(map[identity.Key]bool)
+	for _, domain := range m.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for genKey := range subdomain.Generalizations {
+				genKeys[genKey] = true
+			}
+		}
+	}
+	return genKeys
+}
+
+func (m *Model) buildAllClasses() map[identity.Key]model_class.Class {
+	allClasses := make(map[identity.Key]model_class.Class)
+	for _, domain := range m.Domains {
+		for _, subdomain := range domain.Subdomains {
+			maps.Copy(allClasses, subdomain.Classes)
+		}
+	}
+	return allClasses
 }
 
 func (m *Model) validateDomainAssociations(ctx *coreerr.ValidationContext) error {
@@ -230,13 +269,13 @@ func (m *Model) validateDomainAssociations(ctx *coreerr.ValidationContext) error
 }
 
 func (m *Model) validateClassAssociations(ctx *coreerr.ValidationContext) error {
-	classKeys := m.buildClassKeys()
+	allClasses := m.buildAllClasses()
 	for _, classAssoc := range m.ClassAssociations {
 		childCtx := ctx.Child("classAssociation", classAssoc.Key.String())
 		if err := classAssoc.ValidateWithParent(childCtx, nil); err != nil {
 			return err
 		}
-		if err := classAssoc.ValidateReferences(childCtx, classKeys); err != nil {
+		if err := classAssoc.ValidateReferences(childCtx, allClasses); err != nil {
 			return err
 		}
 	}

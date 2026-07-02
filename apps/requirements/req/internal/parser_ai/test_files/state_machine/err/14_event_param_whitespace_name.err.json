@@ -3,10 +3,7 @@
         "approve": {
             "name": "Approve",
             "parameters": [
-                {
-                    "name": "   ",
-                    "data_type_rules": "User input"
-                }
+                "   "
             ]
         }
     }

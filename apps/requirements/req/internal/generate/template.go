@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"log"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -37,17 +36,18 @@ var _templateFS embed.FS
 
 // _templateRegistry maps template filenames to pointers where the parsed templates should be stored.
 var _templateRegistry = map[string]**template.Template{
-	"model.md.template":        &_modelMdTemplate,
-	"actor.md.template":        &_actorMdTemplate,
-	"domain.md.template":       &_domainMdTemplate,
-	"domains.dot.template":     &_domainsDotTemplate,
-	"use_cases.dot.template":   &_useCasesDotTemplate,
-	"classes.dot.template":     &_classesDotTemplate,
-	"class.md.template":        &_classMdTemplate,
-	"class-state.dot.template": &_classStateDotTemplate,
-	"use_case.md.template":     &_useCaseMdTemplate,
-	"subdomain.md.template":    &_subdomainMdTemplate,
-	"subdomains.dot.template":  &_subdomainsDotTemplate,
+	"model.md.template":            &_modelMdTemplate,
+	"actor.md.template":            &_actorMdTemplate,
+	"domain.md.template":           &_domainMdTemplate,
+	"domains.mermaid.template":     &_domainsMermaidTemplate,
+	"use_cases.mermaid.template":   &_useCasesMermaidTemplate,
+	"classes.mermaid.template":     &_classesMermaidTemplate,
+	"class.md.template":            &_classMdTemplate,
+	"class-state.mermaid.template": &_classStateMermaidTemplate,
+	"use_case.md.template":         &_useCaseMdTemplate,
+	"subdomain.md.template":        &_subdomainMdTemplate,
+	"subdomains.mermaid.template":  &_subdomainsMermaidTemplate,
+	"facts.md.template":            &_factsMdTemplate,
 }
 
 func init() {
@@ -106,23 +106,24 @@ func parseAndRegisterTemplate(path string) error {
 var _modelMdTemplate *template.Template
 var _actorMdTemplate *template.Template
 var _domainMdTemplate *template.Template
-var _domainsDotTemplate *template.Template  // DOT input to GraphViz for SVG UML diagram.
-var _useCasesDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
-var _classesDotTemplate *template.Template  // DOT input to GraphViz for SVG UML diagram.
+var _domainsMermaidTemplate *template.Template
+var _useCasesMermaidTemplate *template.Template
+var _classesMermaidTemplate *template.Template
 var _classMdTemplate *template.Template
-var _classStateDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
+var _classStateMermaidTemplate *template.Template
 var _useCaseMdTemplate *template.Template
 var _subdomainMdTemplate *template.Template
-var _subdomainsDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
+var _subdomainsMermaidTemplate *template.Template
+var _factsMdTemplate *template.Template
 
 // Define some function for our templates.
 var _funcMap = template.FuncMap{
 	"nodeid": func(idtype string, key identity.Key) string {
 		keyStr := key.String()
-		// Replace / with _
+		// Replace characters that are invalid in Mermaid node IDs.
 		keyStr = strings.ReplaceAll(keyStr, "/", "_")
-		// Replace - with _
 		keyStr = strings.ReplaceAll(keyStr, "-", "_")
+		keyStr = strings.ReplaceAll(keyStr, ".", "_")
 		return idtype + "_" + keyStr
 	},
 
@@ -137,19 +138,51 @@ var _funcMap = template.FuncMap{
 	"filename": func(objType string, key identity.Key, suffix, ext string) (filename string) {
 		return convertKeyToFilename(objType, key.String(), suffix, ext)
 	},
-	"data_type_rules": func(rules string, dataType *model_data_type.DataType) (value string) {
-		if dataType == nil {
-			return `_(unparsed)_ ` + rules
-		}
-		return "__" + dataType.String() + "__"
-	},
-	"first_md_paragraph": firstMdParagraph,
+	"data_type_rules":                     formatDataTypeRules,
+	"data_type_spec_display":              dataTypeSpecDisplay,
+	"parameter_data_type_display":         parameterDataTypeDisplay,
+	"parameter_simulation_markdown_lines": parameterSimulationMarkdownLines,
+	"first_md_paragraph":                  firstMdParagraph,
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},
+	"unfinished_notes_block":            unfinishedNotesBlock,
+	"unfinished_notes_marker":           unfinishedNotesMarker,
+	"state_machine_incomplete_marker":   stateMachineIncompleteMarker,
+	"class_has_state_machine":           classHasStateMachine,
+	"class_state_machine_has_new_event": classStateMachineHasNewEvent,
+	"event_display_name":                model_state.SystemEventDisplayName,
+	"parse_error_marker": func(classKey identity.Key) string {
+		if activeParseIssues == nil {
+			return ""
+		}
+		return activeParseIssues.ClassMarker(classKey)
+	},
+	"expression_spec_display":                   expressionSpecDisplay,
+	"expression_spec_bold_display":              expressionSpecBoldDisplay,
+	"expression_spec_bold_indented_line":        expressionSpecBoldIndentedLine,
+	"logic_markdown_spec_lines":                 logicMarkdownSpecLines,
+	"class_logic_markdown_spec_lines":           logicMarkdownSpecLinesForClass,
+	"derivation_policy_markdown_html":           derivationPolicyMarkdownHTML,
+	"derivation_policy_markdown_html_for_class": derivationPolicyMarkdownHTMLForClass,
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
+	"render_association_class_mermaid":      renderAssociationClassMermaid,
+	"association_class_key":                 associationClassKeyNode,
+	"classes_mermaid_stereotype_annotation": classesMermaidStereotypeAnnotation,
+	"classes_mermaid_association_link_label": func(reqs *req_flat.Requirements, assoc model_class.Association) string {
+		lookup, _ := reqs.ClassLookup()
+		return classesMermaidAssociationLinkLabel(assoc, lookup[assoc.FromClassKey.String()], lookup[assoc.ToClassKey.String()])
+	},
+	"classes_mermaid_association_node_title": func(reqs *req_flat.Requirements, assoc model_class.Association) string {
+		lookup, _ := reqs.ClassLookup()
+		return classesMermaidAssociationNodeTitle(assoc, lookup[assoc.FromClassKey.String()], lookup[assoc.ToClassKey.String()])
+	},
+	"classes_mermaid_attribute_member":  classesMermaidAttributeMember,
+	"classes_mermaid_focal_class_style": func() string { return classesMermaidFocalClassStyle },
+	"has_mermaid_focal_class":           hasMermaidFocalClass,
+	"mermaid_focal_class_key":           mermaidFocalClassKey,
 	"generalization_label": func(reqs *req_flat.Requirements, generalizationKey identity.Key) (value string) {
 		generalizationLookup := reqs.GeneralizationLookup()
 		generalization := generalizationLookup[generalizationKey.String()]
@@ -172,14 +205,11 @@ var _funcMap = template.FuncMap{
 		event := eventLookup[transition.EventKey.String()]
 
 		// Create a signature for the event.
-		var paramNames []string
-		for _, param := range event.Parameters {
-			paramNames = append(paramNames, param.Name)
-		}
+		paramNames := event.ParameterNames
 		signature := strings.Join(paramNames, ", ")
 
 		// The main call.
-		eventCall = event.Name + "(" + signature + ")"
+		eventCall = model_state.SystemEventDisplayName(event.Name) + "(" + signature + ")"
 
 		// Add a guard if there is one.
 		if transition.GuardKey != nil {
@@ -189,13 +219,7 @@ var _funcMap = template.FuncMap{
 
 		return eventCall
 	},
-	"action_signature": func(action model_state.Action) (signature string) {
-		var paramNames []string
-		for _, param := range action.Parameters {
-			paramNames = append(paramNames, param.Name)
-		}
-		return strings.Join(paramNames, ", ")
-	},
+	"action_signature": actionDisplaySignature,
 	"query_signature": func(query model_state.Query) (signature string) {
 		var paramNames []string
 		for _, param := range query.Parameters {
@@ -213,6 +237,15 @@ var _funcMap = template.FuncMap{
 		_, subBullets = splitBulletTextIntoMainAndSubBullets(bulletText)
 		return subBullets
 	},
+	"action_guarantee_display_description": func(class model_class.Class, guarantee model_logic.Logic, associations map[identity.Key]model_class.Association) string {
+		if guarantee.Description != "" {
+			return guarantee.Description
+		}
+		if description, ok := model_class.ComputedActionGuaranteeDescription(guarantee, class.Attributes, associations); ok {
+			return description
+		}
+		return ""
+	},
 
 	// Lookup methods for objects.
 	"domain_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_domain.Domain) {
@@ -222,6 +255,9 @@ var _funcMap = template.FuncMap{
 	"class_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_class.Class) {
 		lookup, _ := reqs.ClassLookup()
 		return lookup[key.String()]
+	},
+	"is_association_class": func(reqs *req_flat.Requirements, key identity.Key) bool {
+		return reqs.IsAssociationClass(key)
 	},
 	"state_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.State) {
 		lookup := reqs.StateLookup()
@@ -246,6 +282,15 @@ var _funcMap = template.FuncMap{
 	"scenario_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_scenario.Scenario) {
 		lookup := reqs.ScenarioLookup()
 		return lookup[key.String()]
+	},
+	"scenario_mermaid": func(reqs *req_flat.Requirements, key identity.Key) (value string) {
+		lookup := reqs.ScenarioLookup()
+		scenario := lookup[key.String()]
+		contents, err := generateScenarioMermaidContents(reqs, scenario)
+		if err != nil {
+			panic(errors.WithStack(err))
+		}
+		return contents
 	},
 	"actor_lookup": func(reqs *req_flat.Requirements, key identity.Key) (actor model_actor.Actor) {
 		lookup := reqs.ActorLookup()
@@ -405,31 +450,42 @@ var _funcMap = template.FuncMap{
 		})
 		return results
 	},
-	"class_indexes": func(attributes map[identity.Key]model_class.Attribute) (indexes [][]string) {
-		// Group attribute names by index number.
-		indexMap := map[uint][]string{}
-		for _, attr := range attributes {
-			for _, idx := range attr.IndexNums {
-				indexMap[idx] = append(indexMap[idx], attr.Name)
-			}
-		}
-		if len(indexMap) == 0 {
-			return nil
-		}
-		// Collect and sort index numbers.
-		var nums []uint
-		for num := range indexMap {
-			nums = append(nums, num)
-		}
-		slices.Sort(nums)
-		// Build sorted result.
-		for _, num := range nums {
-			names := indexMap[num]
-			sort.Strings(names)
-			indexes = append(indexes, names)
-		}
-		return indexes
+	"class_indexes":                           classIndexListings,
+	"class_attribute_table_name":              classAttributeTableName,
+	"attribute_comments_invariants":           attributeCommentsInvariants,
+	"attribute_comments_invariants_for_class": attributeCommentsInvariantsForClass,
+	"class_outgoing_associations_with_invariants": func(reqs *req_flat.Requirements, classKey identity.Key) []model_class.Association {
+		return reqs.ClassOutgoingAssociationsWithInvariants(classKey)
 	},
+	"class_association_tagged_invariant_groups": func(reqs *req_flat.Requirements, classKey identity.Key) []req_flat.ClassAssociationInvariantGroup {
+		return reqs.ClassAssociationTaggedInvariantGroups(classKey)
+	},
+	"class_invariants_without_association_tag": req_flat.ClassInvariantsWithoutAssociationTag,
+}
+
+func formatDataTypeRules(rules string, dataType *model_data_type.DataType) string {
+	if dataType == nil {
+		return `_(unparsed)_ ` + rules
+	}
+	return "__" + dataType.String() + "__"
+}
+
+func dataTypeSpecDisplay(dataType *model_data_type.DataType) string {
+	if dataType != nil && dataType.TypeSpec != nil && dataType.TypeSpec.Specification != "" {
+		return dataType.TypeSpec.Specification
+	}
+	return ""
+}
+
+func parameterDataTypeDisplay(param model_state.Parameter) string {
+	display := formatDataTypeRules(param.DataTypeRules, param.DataType)
+	if param.DataType != nil && param.DataType.TypeSpec != nil && param.DataType.TypeSpec.Specification != "" {
+		display += " (" + param.DataType.TypeSpec.Specification + ")"
+	}
+	if param.Nullable {
+		display += " (nullable)"
+	}
+	return display
 }
 
 // Split multi-line bullets into sub bullets.

@@ -37,11 +37,26 @@ func (suite *EventSuite) TestValidate() {
 			},
 		},
 		{
+			testName: "valid system creation event name",
+			event: Event{
+				Key:  validKey,
+				Name: EventNameNew,
+			},
+		},
+		{
+			testName: "valid system final event name",
+			event: Event{
+				Key:  validKey,
+				Name: EventNameDestroy,
+			},
+		},
+		{
 			testName: "valid event with all optional fields",
 			event: Event{
-				Key:     validKey,
-				Name:    "Name",
-				Details: "Details",
+				Key:            validKey,
+				Name:           "Name",
+				Details:        "Details",
+				ParameterNames: []string{"ParamA", "ParamB"},
 			},
 		},
 		{
@@ -68,6 +83,32 @@ func (suite *EventSuite) TestValidate() {
 			},
 			errstr: "Name",
 		},
+		{
+			testName: "error name with invalid chars",
+			event: Event{
+				Key:  validKey,
+				Name: "Fail On Name/DOB",
+			},
+			errstr: "EVENT_NAME_INVALID_CHARS",
+		},
+		{
+			testName: "error blank parameter name",
+			event: Event{
+				Key:            validKey,
+				Name:           "Name",
+				ParameterNames: []string{"ParamA", ""},
+			},
+			errstr: "EVENT_PARAMETER_NAME_REQUIRED",
+		},
+		{
+			testName: "error duplicate parameter names after normalization",
+			event: Event{
+				Key:            validKey,
+				Name:           "Name",
+				ParameterNames: []string{"CountryCode", "countrycode"},
+			},
+			errstr: "EVENT_PARAMETER_NAME_DUPLICATE",
+		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
@@ -82,27 +123,21 @@ func (suite *EventSuite) TestValidate() {
 	}
 }
 
-// TestNew tests that NewEvent maps parameters correctly and calls Validate.
+// TestNew tests that NewEvent maps parameter names correctly.
 func (suite *EventSuite) TestNew() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewEventKey(classKey, "event1"))
 
-	// Test parameters are mapped correctly.
-	event := NewEvent(key, "Name", "Details",
-		[]Parameter{helper.Must(NewParameter("ParamA", "Nat")), helper.Must(NewParameter("ParamB", "Int"))})
+	event := NewEvent(key, "Name", "Details", []string{"ParamA", "ParamB"})
 	suite.Equal(Event{
-		Key:     key,
-		Name:    "Name",
-		Details: "Details",
-		Parameters: []Parameter{
-			helper.Must(NewParameter("ParamA", "Nat")),
-			helper.Must(NewParameter("ParamB", "Int")),
-		},
+		Key:            key,
+		Name:           "Name",
+		Details:        "Details",
+		ParameterNames: []string{"ParamA", "ParamB"},
 	}, event)
 
-	// Test with nil optional Parameters.
 	event = NewEvent(key, "Name", "Details", nil)
 	suite.Equal(Event{
 		Key:     key,
@@ -121,15 +156,13 @@ func (suite *EventSuite) TestValidateWithParent() {
 
 	ctx := coreerr.NewContext("test", "")
 
-	// Test that Validate is called.
 	event := Event{
 		Key:  validKey,
-		Name: "", // Invalid
+		Name: "",
 	}
 	err := event.ValidateWithParent(ctx, &classKey)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
-	// Test that ValidateParent is called - event key has class1 as parent, but we pass other_class.
 	event = Event{
 		Key:  validKey,
 		Name: "Name",
@@ -137,29 +170,30 @@ func (suite *EventSuite) TestValidateWithParent() {
 	err = event.ValidateWithParent(ctx, &otherClassKey)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
-	// Test valid case.
 	err = event.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
 
-	// Test child Parameter validation propagates error.
 	event = Event{
-		Key:  validKey,
-		Name: "Name",
-		Parameters: []Parameter{
-			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
-		},
-	}
-	err = event.ValidateWithParent(ctx, &classKey)
-	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
-
-	// Test valid with child Parameters.
-	event = Event{
-		Key:  validKey,
-		Name: "Name",
-		Parameters: []Parameter{
-			helper.Must(NewParameter("param1", "Nat")),
-		},
+		Key:            validKey,
+		Name:           "Name",
+		ParameterNames: []string{"param1"},
 	}
 	err = event.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
+}
+
+func (suite *EventSuite) TestSystemEventNames() {
+	suite.True(IsSystemCreationEvent(EventNameNew))
+	suite.False(IsSystemCreationEvent("Add"))
+	suite.True(IsSystemFinalEvent(EventNameDestroy))
+	suite.False(IsSystemFinalEvent("Delete"))
+	suite.Equal("«new»", SystemEventDisplayName(EventNameNew))
+	suite.Equal("«destroy»", SystemEventDisplayName(EventNameDestroy))
+	suite.Equal("Submit", SystemEventDisplayName("Submit"))
+	suite.Equal("«new»", SystemEventTLAName(EventNameNew))
+	suite.Equal("«new»", SystemEventTLAName("«new»"))
+	suite.Equal("«destroy»", SystemEventTLAName(EventNameDestroy))
+	suite.True(IsSystemEventTLAName(EventNameNew))
+	suite.True(IsSystemEventTLAName("«new»"))
+	suite.False(IsSystemEventTLAName("Submit"))
 }

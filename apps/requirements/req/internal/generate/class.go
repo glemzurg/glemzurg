@@ -2,20 +2,24 @@ package generate
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
 
-func generateClassMdContents(reqs *req_flat.Requirements, class model_class.Class) (contents string, err error) {
-	// Create the lookups of keys to meaningful values.
-
+func generateClassMdContents(reqs *req_flat.Requirements, class model_class.Class, classesDiagram, stateDiagram string) (contents string, err error) {
 	contents, err = generateFromTemplate(_classMdTemplate, struct {
-		Reqs  *req_flat.Requirements
-		Class model_class.Class
+		Reqs           *req_flat.Requirements
+		Class          model_class.Class
+		ClassesDiagram string
+		StateDiagram   string
 	}{
-		Reqs:  reqs,
-		Class: class,
+		Reqs:           reqs,
+		Class:          class,
+		ClassesDiagram: classesDiagram,
+		StateDiagram:   stateDiagram,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -24,11 +28,10 @@ func generateClassMdContents(reqs *req_flat.Requirements, class model_class.Clas
 	return contents, nil
 }
 
-func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_class.Class) (svgContents string, err error) {
-	// Create the lookups of keys to meaningful values.
+func generateClassStateMermaidContents(reqs *req_flat.Requirements, class model_class.Class) (contents string, err error) {
 	eventNameLookup := map[string]string{}
 	for _, event := range class.Events {
-		eventNameLookup[event.Key.String()] = event.Name
+		eventNameLookup[event.Key.String()] = model_state.SystemEventDisplayName(event.Name)
 	}
 	guardDetailsLookup := map[string]string{}
 	for _, guard := range class.Guards {
@@ -39,7 +42,7 @@ func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_clas
 		actionNameLookup[action.Key.String()] = action.Name
 	}
 
-	dotContents, err := generateFromTemplate(_classStateDotTemplate, struct {
+	contents, err = generateFromTemplate(_classStateMermaidTemplate, struct {
 		Reqs               *req_flat.Requirements
 		Class              model_class.Class
 		EventNameLookup    map[string]string
@@ -56,35 +59,34 @@ func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_clas
 		return "", errors.WithStack(err)
 	}
 
-	svgContents, err = graphvizDotToSvg(dotContents)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return svgContents, nil
+	return contents, nil
 }
 
-// This is the class graph on a domain and class pages.
-func generateClassesSvgContents(reqs *req_flat.Requirements, generalizations []model_class.Generalization, classes []model_class.Class, associations []model_class.Association) (svgContents string, err error) {
-	dotContents, err := generateFromTemplate(_classesDotTemplate, struct {
+// generateClassesMermaidContents generates Mermaid class diagram markup.
+// focalClassKey, when set, applies a stronger border to that class (class pages only).
+func generateClassesMermaidContents(
+	reqs *req_flat.Requirements,
+	generalizations []model_class.Generalization,
+	classes []model_class.Class,
+	associations []model_class.Association,
+	focalClassKey *identity.Key,
+) (contents string, err error) {
+	contents, err = generateFromTemplate(_classesMermaidTemplate, struct {
 		Reqs            *req_flat.Requirements
 		Generalizations []model_class.Generalization
 		Classes         []model_class.Class
 		Associations    []model_class.Association
+		FocalClassKey   *identity.Key
 	}{
 		Reqs:            reqs,
 		Generalizations: generalizations,
 		Classes:         classes,
 		Associations:    associations,
+		FocalClassKey:   focalClassKey,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	svgContents, err = graphvizDotToSvg(dotContents)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return svgContents, nil
+	return contents, nil
 }

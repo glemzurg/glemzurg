@@ -139,7 +139,7 @@ func AddAttributeInvariants(dbOrTx DbOrTx, modelKey string, attrInvariants map[i
 				queryBuilder.WriteString(", ")
 			}
 			first = false
-			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3))
+			fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3)
 
 			args = append(args, modelKey, attrKey.String(), logicKey.String())
 			argIdx += 3

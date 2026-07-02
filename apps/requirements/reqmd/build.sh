@@ -13,25 +13,25 @@ cd $SCRIPT_PATH
 # Uncomment to get tools.
 
 # Get all the libraries we need.
-echo -e "\nGET\n"
+# echo -e "\nGET\n"
 
-  # # Testing libraries.
-  # go get github.com/smartystreets/goconvey
-  # [ $? -ne 0 ] && exit 1
-  # go get github.com/stretchr/testify
-  # [ $? -ne 0 ] && exit 1
+# # Testing libraries.
+# go get github.com/smartystreets/goconvey
+# [ $? -ne 0 ] && exit 1
+# go get github.com/stretchr/testify
+# [ $? -ne 0 ] && exit 1
 
-  # # Get the linter.
-  # go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-  # [ $? -ne 0 ] && exit 1
+# # Get the linter.
+# go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+# [ $? -ne 0 ] && exit 1
 
 # Complexity linter.
-go install github.com/glemzurg/go-complexity-lint/cmd/go-complexity-lint@latest
-[ $? -ne 0 ] && exit 1
+# go install github.com/glemzurg/go-complexity-lint/cmd/go-complexity-lint@latest
+# [ $? -ne 0 ] && exit 1
 
-  # # Any imported libraries.
-  # go get -d "glemzurg..."
-  # [ $? -ne 0 ] && exit 1
+# # Any imported libraries.
+# go get -d "glemzurg..."
+# [ $? -ne 0 ] && exit 1
 
 # ================================================
 
@@ -81,7 +81,7 @@ golangci-lint run ./...
 
 # Complexity linter.
 echo -e "\nCOMPLEXITY\n"
-go-complexity-lint -exclude="*.generated.go" ./...
+go-complexity-lint -warnings=none -exclude="*.generated.go,test_model.go" ./...
 [ $? -ne 0 ] && exit 1
 
 # Everything is fine.

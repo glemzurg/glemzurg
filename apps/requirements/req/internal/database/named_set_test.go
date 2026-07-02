@@ -36,8 +36,8 @@ func (suite *NamedSetSuite) SetupTest() {
 	suite.model = t_AddModel(suite.T(), suite.db)
 
 	// Create the keys for reuse.
-	suite.nsKey = helper.Must(identity.NewNamedSetKey("_key"))
-	suite.nsKeyB = helper.Must(identity.NewNamedSetKey("_key_b"))
+	suite.nsKey = helper.Must(identity.NewNamedSetKey("test_key"))
+	suite.nsKeyB = helper.Must(identity.NewNamedSetKey("test_key_b"))
 }
 
 func (suite *NamedSetSuite) TestLoad() {
@@ -50,7 +50,7 @@ func (suite *NamedSetSuite) TestLoad() {
 		INSERT INTO named_set
 			(model_key, set_key, name, description, notation, specification)
 		VALUES
-			('model_key', 'nset/_key', '_ValidStatuses', 'Valid statuses', 'tla_plus', '{"pending", "active"}')
+			('model_key', 'nset/test_key', '_ValidStatuses', 'Valid statuses', 'tla_plus', '{"pending", "active"}')
 	`)
 	suite.Require().NoError(err)
 

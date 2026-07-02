@@ -117,7 +117,7 @@ func AddInvariants(dbOrTx DbOrTx, modelKey string, logicKeys []identity.Key) (er
 			qb.WriteString(", ")
 		}
 		base := i * 2
-		qb.WriteString(fmt.Sprintf("($%d, $%d)", base+1, base+2))
+		fmt.Fprintf(&qb, "($%d, $%d)", base+1, base+2)
 		args = append(args, modelKey, logicKey.String())
 	}
 

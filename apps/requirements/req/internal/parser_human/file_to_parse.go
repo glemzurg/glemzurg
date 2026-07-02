@@ -108,7 +108,12 @@ func newFileToParse(modelPath, pathRel, pathAbs string) (toParse fileToParse, er
 	if fileType == _EXT_SUBDOMAIN {
 		pathRelParts := strings.Split(pathRel, string(filepath.Separator))
 		if len(pathRelParts) >= 2 {
-			subdomain = pathRelParts[1] // domain/subdomain_name/this.subdomain
+			// domain/this.subdomain carries default-subdomain metadata at the domain root.
+			if pathRelParts[1] == "this"+_EXT_SUBDOMAIN {
+				subdomain = _DEFAULT_SUBDOMAIN_NAME
+			} else {
+				subdomain = pathRelParts[1] // domain/subdomain_name/this.subdomain
+			}
 		}
 	}
 

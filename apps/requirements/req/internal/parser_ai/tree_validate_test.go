@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -69,9 +70,9 @@ func (suite *TreeValidateSuite) TestClassIndexAttrNotFound() {
 func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
 	model := t_buildMinimalModelTree()
 	// Add attribute and index with duplicate
-	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Attributes = map[string]*inputAttribute{
+	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Attributes = inputAttributesFrom(map[string]inputAttribute{
 		"id": {Name: "ID", DataTypeRules: "unconstrained"},
-	}
+	})
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Indexes = [][]string{{"id", "id"}}
 
 	err := validateModelTree(model)
@@ -122,14 +123,14 @@ func (suite *TreeValidateSuite) TestTransitionNoStates() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   nil,
-				EventKey:     "create",
+				EventKey:     "_new",
 			},
 		},
 	}
@@ -213,6 +214,72 @@ func (suite *TreeValidateSuite) TestTransitionToStateNotFound() {
 	suite.Equal("transitions[0].to_state_key", parseErr.Field)
 }
 
+// TestTransitionInitialEventInvalid verifies error when an initial transition does not use _new.
+func (suite *TreeValidateSuite) TestTransitionInitialEventInvalid() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	toState := "pending"
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{
+			"create": {Name: "create"},
+		},
+		Guards: map[string]*inputGuard{},
+		Transitions: []inputTransition{
+			{
+				FromStateKey: nil,
+				ToStateKey:   &toState,
+				EventKey:     "create",
+			},
+		},
+	}
+	class.Actions = map[string]*inputAction{}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrTreeTransitionInitialEventInvalid, parseErr.Code)
+	suite.Equal("transitions[0].event_key", parseErr.Field)
+}
+
+// TestTransitionFinalEventInvalid verifies error when a final transition does not use _destroy.
+func (suite *TreeValidateSuite) TestTransitionFinalEventInvalid() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	fromState := "pending"
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{
+			"complete": {Name: "complete"},
+		},
+		Guards: map[string]*inputGuard{},
+		Transitions: []inputTransition{
+			{
+				FromStateKey: &fromState,
+				ToStateKey:   nil,
+				EventKey:     "complete",
+			},
+		},
+	}
+	class.Actions = map[string]*inputAction{}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrTreeTransitionFinalEventInvalid, parseErr.Code)
+	suite.Equal("transitions[0].event_key", parseErr.Field)
+}
+
 // TestTransitionEventNotFound verifies error when transition event_key doesn't exist.
 func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
 	model := t_buildMinimalModelTree()
@@ -255,14 +322,14 @@ func (suite *TreeValidateSuite) TestTransitionGuardNotFound() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 				GuardKey:     &missingGuard,
 			},
 		},
@@ -290,14 +357,14 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 				ActionKey:    &missingAction,
 			},
 		},
@@ -324,14 +391,14 @@ func (suite *TreeValidateSuite) TestActionUnreferenced() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 				// No action_key - the action is not referenced
 			},
 		},
@@ -368,14 +435,14 @@ func (suite *TreeValidateSuite) TestActionReferencedByStateAction() {
 			},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 			},
 		},
 	}
@@ -398,14 +465,14 @@ func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
 			"pending": {Name: "Pending"},
 		},
 		Events: map[string]*inputEvent{
-			"create": {Name: "create"},
+			"_new": {Name: "_new"},
 		},
 		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
 				ToStateKey:   &toState,
-				EventKey:     "create",
+				EventKey:     "_new",
 				ActionKey:    &actionKey,
 			},
 		},
@@ -567,11 +634,12 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
 	missingClass := "missing_class"
 	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
-			Name:                "Test Association",
-			FromClassKey:        "class1",
-			FromMultiplicity:    "1",
-			ToClassKey:          "class2",
-			ToMultiplicity:      "*",
+			Name:             "Test Association",
+			FromClassKey:     "class1",
+			FromMultiplicity: "1",
+			ToClassKey:       "class2",
+			ToMultiplicity:   "*",
+
 			AssociationClassKey: &missingClass,
 		},
 	}
@@ -594,11 +662,12 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
 	sameAsFrom := "class1"
 	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
-			Name:                "Test Association",
-			FromClassKey:        "class1",
-			FromMultiplicity:    "1",
-			ToClassKey:          "class2",
-			ToMultiplicity:      "*",
+			Name:             "Test Association",
+			FromClassKey:     "class1",
+			FromMultiplicity: "1",
+			ToClassKey:       "class2",
+			ToMultiplicity:   "*",
+
 			AssociationClassKey: &sameAsFrom,
 		},
 	}
@@ -622,11 +691,12 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
 	sameAsTo := "class2"
 	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
-			Name:                "Test Association",
-			FromClassKey:        "class1",
-			FromMultiplicity:    "1",
-			ToClassKey:          "class2",
-			ToMultiplicity:      "*",
+			Name:             "Test Association",
+			FromClassKey:     "class1",
+			FromMultiplicity: "1",
+			ToClassKey:       "class2",
+			ToMultiplicity:   "*",
+
 			AssociationClassKey: &sameAsTo,
 		},
 	}
@@ -1038,10 +1108,24 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	suite.Contains(parseErr.Message, "class_associations/") // Check for guidance about file location
 }
 
+// TestCompletenessActorClassNoAttributes verifies actor-backed classes may have no attributes.
+func (suite *TreeValidateSuite) TestCompletenessActorClassNoAttributes() {
+	model := t_buildCompleteModelTree()
+	administrator := t_buildCompleteClass()
+	administrator.Name = "Administrator"
+	administrator.ActorKey = "customer"
+	administrator.Attributes = nil
+	administrator.Indexes = nil
+	model.Domains["orders"].Subdomains["default"].Classes["administrator"] = administrator
+
+	err := validateModelCompleteness(model)
+	suite.NoError(err)
+}
+
 // TestCompletenessClassNoAttributes verifies error when class has no attributes.
 func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
 	model := t_buildCompleteModelTree()
-	model.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = map[string]*inputAttribute{} // Remove all attributes
+	model.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = nil // Remove all attributes
 
 	err := validateModelCompleteness(model)
 	suite.Require().Error(err)
@@ -1181,7 +1265,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			name: "no_attributes",
 			buildModel: func() *inputModel {
 				m := t_buildCompleteModelTree()
-				m.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = map[string]*inputAttribute{}
+				m.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = nil
 				return m
 			},
 			expectedCode: ErrTreeClassNoAttributes,
@@ -1370,7 +1454,7 @@ func t_buildMinimalModelTree() *inputModel {
 						Classes: map[string]*inputClass{
 							"class1": {
 								Name:       "Class 1",
-								Attributes: map[string]*inputAttribute{},
+								Attributes: nil,
 							},
 						},
 						ClassGeneralizations: map[string]*inputClassGeneralization{},
@@ -1406,10 +1490,10 @@ func t_buildValidModelTree() *inputModel {
 							"order": {
 								Name:     "Order",
 								ActorKey: "customer",
-								Attributes: map[string]*inputAttribute{
+								Attributes: inputAttributesFrom(map[string]inputAttribute{
 									"id":     {Name: "ID", DataTypeRules: "unconstrained"},
 									"status": {Name: "Status", DataTypeRules: "enum of active, pending, completed"},
-								},
+								}),
 								Indexes: [][]string{{"id"}, {"status"}},
 								StateMachine: &inputStateMachine{
 									States: map[string]*inputState{
@@ -1420,7 +1504,7 @@ func t_buildValidModelTree() *inputModel {
 										"confirm": {Name: "confirm"},
 									},
 									Guards: map[string]*inputGuard{
-										"has_items": {Name: "hasItems", Logic: inputLogic{Description: "Order has items", Notation: "tla_plus"}},
+										"has_items": {Name: "Has Items", Logic: inputLogic{Description: "Order has items", Notation: "tla_plus"}},
 									},
 									Transitions: []inputTransition{
 										{
@@ -1439,15 +1523,15 @@ func t_buildValidModelTree() *inputModel {
 							},
 							"line_item": {
 								Name:       "Line Item",
-								Attributes: map[string]*inputAttribute{},
+								Attributes: nil,
 							},
 							"product": {
 								Name:       "Product",
-								Attributes: map[string]*inputAttribute{},
+								Attributes: nil,
 							},
 							"book": {
 								Name:       "Book",
-								Attributes: map[string]*inputAttribute{},
+								Attributes: nil,
 							},
 						},
 						ClassGeneralizations: map[string]*inputClassGeneralization{
@@ -1517,26 +1601,267 @@ func t_buildCompleteClass() *inputClass {
 	toState := "active"
 	return &inputClass{
 		Name: "Complete Class",
-		Attributes: map[string]*inputAttribute{
+		Attributes: inputAttributesFrom(map[string]inputAttribute{
 			"id": {Name: "ID", DataTypeRules: "unconstrained"},
-		},
+		}),
 		StateMachine: &inputStateMachine{
 			States: map[string]*inputState{
 				"active": {Name: "Active"},
 			},
 			Events: map[string]*inputEvent{
-				"create": {Name: "create"},
+				"_new": {Name: model_state.EventNameNew},
 			},
 			Guards: map[string]*inputGuard{},
 			Transitions: []inputTransition{
 				{
 					FromStateKey: nil, // Initial transition
 					ToStateKey:   &toState,
-					EventKey:     "create",
+					EventKey:     "_new",
 				},
 			},
 		},
 		Actions: map[string]*inputAction{},
 		Queries: map[string]*inputQuery{},
 	}
+}
+
+// TestActionDuplicateName verifies error when two actions have the same name.
+func (suite *TreeValidateSuite) TestActionDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.Actions = map[string]*inputAction{
+		"action_a": {Name: "Do Something"},
+		"action_b": {Name: "Do Something"},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrActionDuplicateName, parseErr.Code)
+	suite.Equal("name", parseErr.Field)
+	suite.Contains(parseErr.Message, "duplicate action name")
+	suite.Contains(parseErr.Message, "Do Something")
+}
+
+// TestQueryDuplicateName verifies error when two queries have the same name.
+func (suite *TreeValidateSuite) TestQueryDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.Queries = map[string]*inputQuery{
+		"query_a": {Name: "Get Items"},
+		"query_b": {Name: "Get Items"},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrQueryDuplicateName, parseErr.Code)
+	suite.Equal("name", parseErr.Field)
+	suite.Contains(parseErr.Message, "duplicate query name")
+	suite.Contains(parseErr.Message, "Get Items")
+}
+
+// TestStateDuplicateName verifies error when two states have the same name.
+func (suite *TreeValidateSuite) TestStateDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"state_a": {Name: "Active"},
+			"state_b": {Name: "Active"},
+		},
+		Events:      map[string]*inputEvent{},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrStateDuplicateName, parseErr.Code)
+	suite.Contains(parseErr.Message, "duplicate state name")
+	suite.Contains(parseErr.Message, "Active")
+}
+
+// TestEventDuplicateName verifies error when two events have the same name.
+func (suite *TreeValidateSuite) TestEventDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{
+			"event_a": {Name: "Submit"},
+			"event_b": {Name: "Submit"},
+		},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrEventDuplicateName, parseErr.Code)
+	suite.Contains(parseErr.Message, "duplicate event name")
+	suite.Contains(parseErr.Message, "Submit")
+}
+
+// TestGuardDuplicateName verifies error when two guards have the same name.
+func (suite *TreeValidateSuite) TestGuardDuplicateName() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{},
+		Guards: map[string]*inputGuard{
+			"guard_a": {Name: "Is Ready", Logic: inputLogic{Description: "check readiness"}},
+			"guard_b": {Name: "Is Ready", Logic: inputLogic{Description: "another check"}},
+		},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrGuardDuplicateName, parseErr.Code)
+	suite.Contains(parseErr.Message, "duplicate guard name")
+	suite.Contains(parseErr.Message, "Is Ready")
+}
+
+// TestStateKeyNameMismatch verifies error when state map key doesn't match keyFromName(name).
+func (suite *TreeValidateSuite) TestStateKeyNameMismatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"wrong_key": {Name: "Pending Approval"},
+		},
+		Events:      map[string]*inputEvent{},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrStateKeyNameMismatch, parseErr.Code)
+	suite.Contains(parseErr.Message, "wrong_key")
+	suite.Contains(parseErr.Message, "pending_approval")
+}
+
+// TestEventKeyNameMismatch verifies error when event map key doesn't match keyFromName(name).
+func (suite *TreeValidateSuite) TestEventKeyNameMismatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{},
+		Events: map[string]*inputEvent{
+			"bad_key": {Name: "Submit Order"},
+		},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrEventKeyNameMismatch, parseErr.Code)
+	suite.Contains(parseErr.Message, "bad_key")
+	suite.Contains(parseErr.Message, "submit_order")
+}
+
+// TestGuardKeyNameMismatch verifies error when guard map key doesn't match keyFromName(name).
+func (suite *TreeValidateSuite) TestGuardKeyNameMismatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{},
+		Events: map[string]*inputEvent{},
+		Guards: map[string]*inputGuard{
+			"wrong": {Name: "Has Items", Logic: inputLogic{Description: "check items"}},
+		},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrGuardKeyNameMismatch, parseErr.Code)
+	suite.Contains(parseErr.Message, "wrong")
+	suite.Contains(parseErr.Message, "has_items")
+}
+
+// TestStateKeyNameMatch verifies that matching state key and name passes validation.
+func (suite *TreeValidateSuite) TestStateKeyNameMatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending_approval": {Name: "Pending Approval"},
+		},
+		Events:      map[string]*inputEvent{},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{},
+	}
+
+	err := validateModelTree(model)
+	suite.Require().NoError(err)
+}
+
+// TestAttributeKeyNameMismatch verifies error when attribute map key doesn't match keyFromName(name).
+func (suite *TreeValidateSuite) TestAttributeKeyNameMismatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.Attributes = inputAttributesFrom(map[string]inputAttribute{
+		"wrong_key": {Name: "Order Total"},
+	})
+
+	err := validateModelTree(model)
+	suite.Require().Error(err)
+
+	var parseErr *ParseError
+	ok := errors.As(err, &parseErr)
+	suite.True(ok)
+	suite.Equal(ErrClassAttrKeyNameMismatch, parseErr.Code)
+	suite.Contains(parseErr.Message, "wrong_key")
+	suite.Contains(parseErr.Message, "order_total")
+}
+
+// TestAttributeKeyNameMatch verifies no error when attribute map key matches keyFromName(name).
+func (suite *TreeValidateSuite) TestAttributeKeyNameMatch() {
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	class.Attributes = inputAttributesFrom(map[string]inputAttribute{
+		"order_total": {Name: "Order Total"},
+	})
+
+	err := validateModelTree(model)
+	suite.Require().NoError(err)
 }

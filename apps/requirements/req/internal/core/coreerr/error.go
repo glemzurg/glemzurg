@@ -160,3 +160,14 @@ func (vc *ValidationContext) Child(entity, key string) *ValidationContext {
 func (vc *ValidationContext) ContextPath() []PathSegment {
 	return vc.path
 }
+
+// ValidateNameChars checks that name contains only A-Za-z0-9, space, hyphen, and underscore.
+// Returns the first invalid character found, or empty string if valid.
+func ValidateNameChars(name string) string {
+	for _, r := range name {
+		if (r < 'A' || r > 'Z') && (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != ' ' && r != '-' && r != '_' {
+			return string(r)
+		}
+	}
+	return ""
+}

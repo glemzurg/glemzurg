@@ -270,6 +270,30 @@ func (suite *LogicSuite) TestAddLetType() {
 	}, logic)
 }
 
+func (suite *LogicSuite) TestAddDeleteType() {
+	logicIn := model_logic.Logic{
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeDestroy,
+		Description: "Remove peers",
+		Target:      "AssocField",
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ b \in AssocField : TRUE }`},
+	}
+	logicIn.SetDestroyEventSpec(logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "_destroy(b)"})
+	err := AddLogic(suite.db, suite.model.Key, logicIn)
+	suite.Require().NoError(err)
+
+	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
+	suite.Require().NoError(err)
+	suite.Equal(model_logic.Logic{
+		Key:              suite.logicKey,
+		Type:             model_logic.LogicTypeDestroy,
+		Description:      "Remove peers",
+		Target:           "AssocField",
+		Spec:             logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ b \in AssocField : TRUE }`},
+		DestroyEventSpec: logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "_destroy(b)"},
+	}, logic)
+}
+
 func (suite *LogicSuite) TestAddWithTargetTypeSpec() {
 	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "STRING"}
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{

@@ -44,6 +44,7 @@ func (suite *AssociationSuite) TestParseAssociationFiles() {
 			suite.Equal(expected.ToMultiplicity, actual.ToMultiplicity, testName+" to_multiplicity")
 			suite.Equal(expected.AssociationClassKey, actual.AssociationClassKey, testName+" association_class_key")
 			suite.Equal(expected.UmlComment, actual.UmlComment, testName+" uml_comment")
+			suite.Equal(expected.Uniqueness, actual.Uniqueness, testName+" uniqueness")
 		})
 		if !pass {
 			break

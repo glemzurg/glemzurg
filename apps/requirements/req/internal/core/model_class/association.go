@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -13,13 +14,15 @@ import (
 type Association struct {
 	Key                 identity.Key
 	Name                string
-	Details             string        // Markdown.
-	FromClassKey        identity.Key  // The class on one end of the association.
-	FromMultiplicity    Multiplicity  // The multiplicity from one end of the association.
-	ToClassKey          identity.Key  // The class on the other end of the association.
-	ToMultiplicity      Multiplicity  // The multiplicity on the other end of the association.
-	AssociationClassKey *identity.Key // Any class that points to this association.
+	Details             string                 // Markdown.
+	FromClassKey        identity.Key           // The class on one end of the association.
+	FromMultiplicity    Multiplicity           // The multiplicity from one end of the association.
+	ToClassKey          identity.Key           // The class on the other end of the association.
+	ToMultiplicity      Multiplicity           // The multiplicity on the other end of the association.
+	AssociationClassKey *identity.Key          // Any class that points to this association.
+	Uniqueness          *AssociationUniqueness // Any extra constraint on uniqueness.
 	UmlComment          string
+	Invariants          []model_logic.Logic // Constraints on link sets from the from-class anchor.
 }
 
 // AssociationEnd describes one end of an association: which class and its multiplicity.
@@ -28,17 +31,35 @@ type AssociationEnd struct {
 	Multiplicity Multiplicity
 }
 
-func NewAssociation(key identity.Key, name, details string, from, to AssociationEnd, associationClassKey *identity.Key, umlComment string) Association {
+// AssociationDetails holds the human-authored name and description from an association file.
+type AssociationDetails struct {
+	Name    string
+	Details string
+}
+
+// AssociationOptions holds optional association-class, uniqueness, and diagram metadata.
+type AssociationOptions struct {
+	AssociationClassKey *identity.Key
+	Uniqueness          *AssociationUniqueness
+	UmlComment          string
+}
+
+func (a *Association) SetInvariants(invariants []model_logic.Logic) {
+	a.Invariants = invariants
+}
+
+func NewAssociation(key identity.Key, details AssociationDetails, from, to AssociationEnd, options AssociationOptions) Association {
 	return Association{
 		Key:                 key,
-		Name:                name,
-		Details:             details,
+		Name:                details.Name,
+		Details:             details.Details,
 		FromClassKey:        from.ClassKey,
 		FromMultiplicity:    from.Multiplicity,
 		ToClassKey:          to.ClassKey,
 		ToMultiplicity:      to.Multiplicity,
-		AssociationClassKey: associationClassKey,
-		UmlComment:          umlComment,
+		Uniqueness:          options.Uniqueness,
+		AssociationClassKey: options.AssociationClassKey,
+		UmlComment:          options.UmlComment,
 	}
 }
 
@@ -79,6 +100,11 @@ func (a *Association) Validate(ctx *coreerr.ValidationContext) error {
 	}
 	if err := a.ToMultiplicity.Validate(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.AssocToMultInvalid, fmt.Sprintf("ToMultiplicity: %s", err.Error()), "ToMultiplicity")
+	}
+	if a.Uniqueness != nil {
+		if err := a.Uniqueness.Validate(ctx); err != nil {
+			return err
+		}
 	}
 	// Validate AssociationClassKey FK key type and constraints.
 	if a.AssociationClassKey != nil {
@@ -137,24 +163,48 @@ func (a *Association) ValidateWithParent(ctx *coreerr.ValidationContext, parent 
 	if err := a.Key.ValidateParentWithContext(ctx, parent); err != nil {
 		return err
 	}
-	// Association has no children with keys that need validation.
+	return a.validateAssociationInvariants(ctx)
+}
+
+func (a *Association) validateAssociationInvariants(ctx *coreerr.ValidationContext) error {
+	letTargets := make(map[string]bool)
+	for i, inv := range a.Invariants {
+		invCtx := ctx.Child("invariant", fmt.Sprintf("%d", i))
+		if err := inv.ValidateWithParent(invCtx, &a.Key); err != nil {
+			return coreerr.New(invCtx, coreerr.AssocInvariantTypeInvalid, fmt.Sprintf("invariant %d: %s", i, err.Error()), "Invariants")
+		}
+		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
+			return coreerr.NewWithValues(invCtx, coreerr.AssocInvariantTypeInvalid, fmt.Sprintf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type), "Invariants", inv.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
+		}
+		if inv.Type == model_logic.LogicTypeLet {
+			if letTargets[inv.Target] {
+				return coreerr.NewWithValues(invCtx, coreerr.AssocInvariantDuplicateLet, fmt.Sprintf("invariant %d: duplicate let target %q", i, inv.Target), "Invariants", inv.Target, "")
+			}
+			letTargets[inv.Target] = true
+		}
+	}
 	return nil
 }
 
-// ValidateReferences validates that the association's class keys reference real classes.
-// - FromClassKey must exist in the classes map
-// - ToClassKey must exist in the classes map
-// - AssociationClassKey (if set) must exist in the classes map.
-func (a *Association) ValidateReferences(ctx *coreerr.ValidationContext, classes map[identity.Key]bool) error {
-	if !classes[a.FromClassKey] {
+// ValidateReferences validates that the association's class keys reference real classes
+// and that uniqueness constraint attributes exist on the endpoint classes.
+func (a *Association) ValidateReferences(ctx *coreerr.ValidationContext, allClasses map[identity.Key]Class) error {
+	fromClass, okFrom := allClasses[a.FromClassKey]
+	if !okFrom {
 		return coreerr.NewWithValues(ctx, coreerr.AssocFromNotfound, fmt.Sprintf("association '%s' references non-existent from class '%s'", a.Key.String(), a.FromClassKey.String()), "FromClassKey", a.FromClassKey.String(), "")
 	}
-	if !classes[a.ToClassKey] {
+	toClass, okTo := allClasses[a.ToClassKey]
+	if !okTo {
 		return coreerr.NewWithValues(ctx, coreerr.AssocToNotfound, fmt.Sprintf("association '%s' references non-existent to class '%s'", a.Key.String(), a.ToClassKey.String()), "ToClassKey", a.ToClassKey.String(), "")
 	}
 	if a.AssociationClassKey != nil {
-		if !classes[*a.AssociationClassKey] {
+		if _, ok := allClasses[*a.AssociationClassKey]; !ok {
 			return coreerr.NewWithValues(ctx, coreerr.AssocAssocclassNotfound, fmt.Sprintf("association '%s' references non-existent association class '%s'", a.Key.String(), a.AssociationClassKey.String()), "AssociationClassKey", a.AssociationClassKey.String(), "")
+		}
+	}
+	if a.Uniqueness != nil {
+		if err := a.Uniqueness.ValidateAttributeReferences(ctx, fromClass, toClass); err != nil {
+			return err
 		}
 	}
 	return nil

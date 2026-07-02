@@ -36,6 +36,9 @@ func (g *Guard) Validate(ctx *coreerr.ValidationContext) error {
 	if g.Name == "" {
 		return coreerr.New(ctx, coreerr.GuardNameRequired, "Name is required", "Name")
 	}
+	if badChar := coreerr.ValidateNameChars(g.Name); badChar != "" {
+		return coreerr.NewWithValues(ctx, coreerr.GuardNameInvalidChars, fmt.Sprintf("Name contains invalid character %q", badChar), "Name", g.Name, "A-Za-z0-9 space hyphen underscore")
+	}
 
 	if err := g.Logic.Validate(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.GuardLogicInvalid, fmt.Sprintf("logic: %s", err.Error()), "Logic")

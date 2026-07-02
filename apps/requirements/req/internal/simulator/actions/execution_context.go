@@ -6,6 +6,7 @@ import (
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -33,6 +34,26 @@ type DeferredPostCondition struct {
 
 	// OriginalExpression is the original TLA+ string (for error messages).
 	OriginalExpression string
+}
+
+// DeferredPeerCreation creates a peer instance for an association set-add guarantee.
+type DeferredPeerCreation struct {
+	FromInstanceID state.InstanceID
+	AssocKey       identity.Key
+	ToClassKey     identity.Key
+	Params         map[string]object.Object
+}
+
+// DeferredPeerUpdate fires a peer-class event on an existing association link target.
+type DeferredPeerUpdate struct {
+	OwnerInstanceID state.InstanceID
+	AssocKey        identity.Key
+	PeerInstanceID  state.InstanceID
+	ToClassKey      identity.Key
+	EventKey        identity.Key
+	EventName       string
+	Params          map[string]object.Object
+	RemovesLink     bool
 }
 
 // DeferredSafetyRule holds a safety rule to check after all primed assignments
@@ -73,9 +94,12 @@ type ExecutionContext struct {
 	// These are applied at the end of the top-level action.
 	collectedPrimed map[state.InstanceID]map[string]object.Object
 
-	// mutatedInstances tracks which instances have had actions set primed
-	// values on them. These instances are "locked" for further action mutations.
+	// mutatedInstances tracks which instances have had primed values recorded.
 	mutatedInstances map[state.InstanceID]bool
+
+	// instanceActionOwner maps instance ID to the action key that first claimed
+	// mutation rights in this chain (blocks a different chained action).
+	instanceActionOwner map[state.InstanceID]identity.Key
 
 	// postConditions holds all post-conditions to check after primed
 	// values are applied.
@@ -84,25 +108,57 @@ type ExecutionContext struct {
 	// safetyRules holds all safety rules to check after primed values are applied.
 	safetyRules []DeferredSafetyRule
 
+	// peerCreations materialize association set-add guarantees: create the to-class
+	// via its creation transition and link back to the owning instance.
+	peerCreations []DeferredPeerCreation
+
+	// peerUpdates fire peer-class events for association set-map guarantees.
+	peerUpdates []DeferredPeerUpdate
+
+	// peerTransitions records peer-class transitions for trace output.
+	peerTransitions []PeerTransitionRecord
+
+	// peerViolations records association peer events the target class could not accept.
+	peerViolations invariants.ViolationErrors
+
 	// depth tracks the current call chain depth (for debugging/limits).
 	depth int
+
+	// requiresViolations holds precondition failures that block guarantee application.
+	requiresViolations invariants.ViolationErrors
+
+	// associationRemovedPeers records peers dropped by association state_change guarantees.
+	associationRemovedPeers map[associationRemovalKey][]state.InstanceID
+
+	// associationDestroyCandidates tracks removed peers targeted for peer _destroy. While targeted,
+	// association links stay put; unavailable _destroy records PeerEventUnavailable and leaves links.
+	associationDestroyCandidates map[associationRemovalKey]map[state.InstanceID]bool
+}
+
+type associationRemovalKey struct {
+	OwnerInstanceID state.InstanceID
+	AssocKey        identity.Key
 }
 
 // NewExecutionContext creates a new top-level execution context.
 func NewExecutionContext() *ExecutionContext {
 	return &ExecutionContext{
-		collectedPrimed:  make(map[state.InstanceID]map[string]object.Object),
-		mutatedInstances: make(map[state.InstanceID]bool),
-		postConditions:   nil,
-		depth:            0,
+		collectedPrimed:     make(map[state.InstanceID]map[string]object.Object),
+		mutatedInstances:    make(map[state.InstanceID]bool),
+		instanceActionOwner: make(map[state.InstanceID]identity.Key),
+		postConditions:      nil,
+		depth:               0,
 	}
 }
 
-// CanMutate checks if an action is allowed to set primed values on this instance.
-// Returns false if the instance already has primed assignments from a different
-// action in the chain.
-func (ctx *ExecutionContext) CanMutate(instanceID state.InstanceID) bool {
-	return !ctx.mutatedInstances[instanceID]
+// ClaimInstanceForAction records that actionKey may mutate instanceID in this chain.
+// Returns false if another action already claimed the instance.
+func (ctx *ExecutionContext) ClaimInstanceForAction(instanceID state.InstanceID, actionKey identity.Key) bool {
+	if owner, ok := ctx.instanceActionOwner[instanceID]; ok && owner != actionKey {
+		return false
+	}
+	ctx.instanceActionOwner[instanceID] = actionKey
+	return true
 }
 
 // RecordPrimedAssignment stores a primed assignment for deferred application.
@@ -145,6 +201,49 @@ func (ctx *ExecutionContext) AddSafetyRule(sr DeferredSafetyRule) {
 	ctx.safetyRules = append(ctx.safetyRules, sr)
 }
 
+// AddPeerCreation queues a peer instance to create and link for an association set-add guarantee.
+func (ctx *ExecutionContext) AddPeerCreation(pc DeferredPeerCreation) {
+	ctx.peerCreations = append(ctx.peerCreations, pc)
+}
+
+// GetPeerCreations returns queued peer creations.
+func (ctx *ExecutionContext) GetPeerCreations() []DeferredPeerCreation {
+	return ctx.peerCreations
+}
+
+// AddPeerUpdate queues a peer-class event for an association set-map guarantee.
+func (ctx *ExecutionContext) AddPeerUpdate(pu DeferredPeerUpdate) {
+	ctx.peerUpdates = append(ctx.peerUpdates, pu)
+}
+
+// GetPeerUpdates returns queued peer updates.
+func (ctx *ExecutionContext) GetPeerUpdates() []DeferredPeerUpdate {
+	return ctx.peerUpdates
+}
+
+// AddPeerTransition records a peer-class transition for cascaded trace output.
+func (ctx *ExecutionContext) AddPeerTransition(rec PeerTransitionRecord) {
+	ctx.peerTransitions = append(ctx.peerTransitions, rec)
+}
+
+// GetPeerTransitions returns recorded peer-class transitions.
+func (ctx *ExecutionContext) GetPeerTransitions() []PeerTransitionRecord {
+	return ctx.peerTransitions
+}
+
+// AddPeerViolation records an association peer event the target class could not accept.
+func (ctx *ExecutionContext) AddPeerViolation(v *invariants.ViolationError) {
+	if v == nil {
+		return
+	}
+	ctx.peerViolations = append(ctx.peerViolations, v)
+}
+
+// GetPeerViolations returns association peer event violations.
+func (ctx *ExecutionContext) GetPeerViolations() invariants.ViolationErrors {
+	return ctx.peerViolations
+}
+
 // GetAllSafetyRules returns all queued safety rules.
 func (ctx *ExecutionContext) GetAllSafetyRules() []DeferredSafetyRule {
 	return ctx.safetyRules
@@ -177,4 +276,71 @@ func (ctx *ExecutionContext) IncrementDepth() error {
 // DecrementDepth decrements the call depth.
 func (ctx *ExecutionContext) DecrementDepth() {
 	ctx.depth--
+}
+
+// SetRequiresViolations records precondition failures for the current action chain.
+func (ctx *ExecutionContext) SetRequiresViolations(violations invariants.ViolationErrors) {
+	ctx.requiresViolations = violations
+}
+
+// RequiresViolations returns precondition failures recorded during execution.
+func (ctx *ExecutionContext) RequiresViolations() invariants.ViolationErrors {
+	return ctx.requiresViolations
+}
+
+// SetAssociationRemovedPeers records peers removed from an association by state_change.
+func (ctx *ExecutionContext) SetAssociationRemovedPeers(
+	ownerInstanceID state.InstanceID,
+	assocKey identity.Key,
+	peerIDs []state.InstanceID,
+) {
+	if len(peerIDs) == 0 {
+		return
+	}
+	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
+	if ctx.associationRemovedPeers == nil {
+		ctx.associationRemovedPeers = make(map[associationRemovalKey][]state.InstanceID)
+	}
+	ctx.associationRemovedPeers[key] = append(ctx.associationRemovedPeers[key], peerIDs...)
+}
+
+// AssociationRemovedPeers returns peers recorded as removed for one association.
+func (ctx *ExecutionContext) AssociationRemovedPeers(
+	ownerInstanceID state.InstanceID,
+	assocKey identity.Key,
+) []state.InstanceID {
+	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
+	return ctx.associationRemovedPeers[key]
+}
+
+// MarkAssociationDestroyCandidate records a removed peer targeted by a destroy guarantee.
+func (ctx *ExecutionContext) MarkAssociationDestroyCandidate(
+	ownerInstanceID state.InstanceID,
+	assocKey identity.Key,
+	peerID state.InstanceID,
+) {
+	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
+	if ctx.associationDestroyCandidates == nil {
+		ctx.associationDestroyCandidates = make(map[associationRemovalKey]map[state.InstanceID]bool)
+	}
+	if ctx.associationDestroyCandidates[key] == nil {
+		ctx.associationDestroyCandidates[key] = make(map[state.InstanceID]bool)
+	}
+	ctx.associationDestroyCandidates[key][peerID] = true
+}
+
+// AssociationDestroyCandidate reports whether a removed peer was selected for peer _destroy.
+func (ctx *ExecutionContext) AssociationDestroyCandidate(key associationRemovalKey, peerID state.InstanceID) bool {
+	if ctx.associationDestroyCandidates == nil {
+		return false
+	}
+	return ctx.associationDestroyCandidates[key][peerID]
+}
+
+// associationRemovedPeerSets returns all association removal batches from state_change.
+func (ctx *ExecutionContext) associationRemovedPeerSets() map[associationRemovalKey][]state.InstanceID {
+	if len(ctx.associationRemovedPeers) == 0 {
+		return nil
+	}
+	return ctx.associationRemovedPeers
 }

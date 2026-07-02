@@ -21,6 +21,7 @@ func scanUseCase(scanner Scanner, subdomainKeyPtr *identity.Key, useCase *model_
 		&useCaseKeyStr,
 		&useCase.Name,
 		&useCase.Details,
+		&useCase.UnfinishedNotes,
 		&useCase.Level,
 		&useCase.ReadOnly,
 		&superclassOfKeyPtr,
@@ -78,6 +79,7 @@ func LoadUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (subdo
 			use_case_key      ,
 			name              ,
 			details           ,
+			unfinished_notes  ,
 			level             ,
 			read_only         ,
 			superclass_of_key ,
@@ -126,11 +128,12 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCas
 		SET
 			name              = $3 ,
 			details           = $4 ,
-			level             = $5 ,
-			read_only         = $6 ,
-			superclass_of_key = $7 ,
-			subclass_of_key   = $8 ,
-			uml_comment       = $9
+			unfinished_notes  = $5 ,
+			level             = $6 ,
+			read_only         = $7 ,
+			superclass_of_key = $8 ,
+			subclass_of_key   = $9 ,
+			uml_comment       = $10
 		WHERE
 			model_key = $1
 		AND
@@ -139,6 +142,7 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCas
 		useCase.Key.String(),
 		useCase.Name,
 		useCase.Details,
+		useCase.UnfinishedNotes,
 		useCase.Level,
 		useCase.ReadOnly,
 		superclassOfKeyPtr,
@@ -193,6 +197,7 @@ func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[identity.K
 			use_case_key      ,
 			name              ,
 			details           ,
+			unfinished_notes  ,
 			level             ,
 			read_only         ,
 			superclass_of_key ,
@@ -220,14 +225,14 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 
 	// Build the bulk insert query.
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
-	args := make([]any, 0, len(useCases)*10)
+	queryBuilder.WriteString(`INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, unfinished_notes, level, read_only, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(useCases)*11)
 	for i, uc := range useCases {
 		if i > 0 {
 			queryBuilder.WriteString(", ")
 		}
-		base := i * 10
-		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
+		base := i * 11
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11)
 
 		// Handle optional key pointers.
 		var superclassOfKeyPtr, subclassOfKeyPtr *string
@@ -241,7 +246,7 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 		}
 
 		subdomainKey := subdomainKeys[uc.Key]
-		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.Level, uc.ReadOnly, superclassOfKeyPtr, subclassOfKeyPtr, uc.UmlComment)
+		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.UnfinishedNotes, uc.Level, uc.ReadOnly, superclassOfKeyPtr, subclassOfKeyPtr, uc.UmlComment)
 	}
 
 	err = dbExec(dbOrTx, queryBuilder.String(), args...)

@@ -4,11 +4,13 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
@@ -81,8 +83,8 @@ func testAssocKey(fromKey, toKey identity.Key, name string) identity.Key {
 
 // makeOrderClass builds a simple Order class with states and creation transition.
 func makeOrderClass() model_class.Class {
-	class := model_class.NewClass(orderClassKey, "Order", "", nil, nil, nil, "")
-	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class := model_class.NewClass(orderClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Order", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.Attributes = nil
 	class.States = map[identity.Key]model_state.State{
 		orderStateOpenKey:   model_state.NewState(orderStateOpenKey, "Open", "", ""),
 		orderStateClosedKey: model_state.NewState(orderStateClosedKey, "Closed", "", ""),
@@ -95,16 +97,16 @@ func makeOrderClass() model_class.Class {
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		orderTransCreateKey: model_state.NewTransition(orderTransCreateKey, nil, orderEventCreateKey, nil, nil, &orderStateOpenKey, ""),
-		orderTransCloseKey:  model_state.NewTransition(orderTransCloseKey, &orderStateOpenKey, orderEventCloseKey, nil, nil, &orderStateClosedKey, ""),
+		orderTransCreateKey: model_state.NewTransition(orderTransCreateKey, orderEventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &orderStateOpenKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
+		orderTransCloseKey:  model_state.NewTransition(orderTransCloseKey, orderEventCloseKey, model_state.TransitionStateKeys{FromStateKey: &orderStateOpenKey, ToStateKey: &orderStateClosedKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
 	}
 	return class
 }
 
 // makeItemClass builds a simple Item class with one state and creation.
 func makeItemClass() model_class.Class {
-	class := model_class.NewClass(itemClassKey, "Item", "", nil, nil, nil, "")
-	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class := model_class.NewClass(itemClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Item", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.Attributes = nil
 	class.States = map[identity.Key]model_state.State{
 		itemStateActiveKey: model_state.NewState(itemStateActiveKey, "Active", "", ""),
 	}
@@ -115,15 +117,15 @@ func makeItemClass() model_class.Class {
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		itemTransCreateKey: model_state.NewTransition(itemTransCreateKey, nil, itemEventCreateKey, nil, nil, &itemStateActiveKey, ""),
+		itemTransCreateKey: model_state.NewTransition(itemTransCreateKey, itemEventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &itemStateActiveKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
 	}
 	return class
 }
 
 // makePaymentClass builds a simple Payment class in domain2.
 func makePaymentClass() model_class.Class {
-	class := model_class.NewClass(paymentClassKey, "Payment", "", nil, nil, nil, "")
-	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class := model_class.NewClass(paymentClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Payment", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.Attributes = nil
 	class.States = map[identity.Key]model_state.State{
 		paymentStatePendingKey: model_state.NewState(paymentStatePendingKey, "Pending", "", ""),
 	}
@@ -134,7 +136,7 @@ func makePaymentClass() model_class.Class {
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		paymentTransCreateKey: model_state.NewTransition(paymentTransCreateKey, nil, paymentEventCreateKey, nil, nil, &paymentStatePendingKey, ""),
+		paymentTransCreateKey: model_state.NewTransition(paymentTransCreateKey, paymentEventCreateKey, model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &paymentStatePendingKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, ""),
 	}
 	return class
 }
@@ -142,8 +144,8 @@ func makePaymentClass() model_class.Class {
 // makeStatelessClass builds a class with no states (not simulatable).
 func makeStatelessClass() model_class.Class {
 	cKey := mustKey("domain/d/subdomain/s/class/stateless")
-	class := model_class.NewClass(cKey, "Stateless", "", nil, nil, nil, "")
-	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class := model_class.NewClass(cKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Stateless", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.Attributes = nil
 	class.States = map[identity.Key]model_state.State{}
 	class.Events = map[identity.Key]model_state.Event{}
 	class.Guards = map[identity.Key]model_state.Guard{}
@@ -157,31 +159,31 @@ func makeStatelessClass() model_class.Class {
 func buildTwoDomainModel() *core.Model {
 	assocKey := testAssocKey(orderClassKey, itemClassKey, "order_items")
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		itemClassKey:  makeItemClass(),
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, ""),
+		assocKey: model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""}),
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "S2", "", "")
+	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "S2", "", "", "")
 	subdomain2.Classes = map[identity.Key]model_class.Class{
 		paymentClassKey: makePaymentClass(),
 	}
 
-	domain2 := model_domain.NewDomain(domain2Key, "D2", "", false, "")
+	domain2 := model_domain.NewDomain(domain2Key, "D2", "", "", false, "")
 	domain2.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomain2Key: subdomain2,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey:  domain,
 		domain2Key: domain2,
@@ -191,18 +193,18 @@ func buildTwoDomainModel() *core.Model {
 
 // buildSingleDomainModel creates a model with just Order and Item.
 func buildSingleDomainModel() *core.Model {
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		itemClassKey:  makeItemClass(),
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -387,31 +389,37 @@ func (s *ResolverSuite) TestResolve_ExcludeClass() {
 	s.NotContains(resolved.Classes, itemClassKey)
 }
 
-func (s *ResolverSuite) TestResolve_FiltersStatelessClasses() {
+func (s *ResolverSuite) TestResolve_StatelessClass_IncludedWithWarning() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		statelessKey:  makeStatelessClass(),
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
 
 	resolved, err := Resolve(nil, &model)
 	s.Require().NoError(err)
-	// Stateless class should be filtered out.
-	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, orderClassKey)
-	s.NotContains(resolved.Classes, statelessKey)
+	s.Contains(resolved.Classes, statelessKey)
+	foundWarning := false
+	for _, w := range resolved.Warnings {
+		if contains(w, "no state machine") {
+			foundWarning = true
+			break
+		}
+	}
+	s.True(foundWarning, "expected warning about stateless class")
 }
 
 func (s *ResolverSuite) TestResolve_AssociationsBothEndpointsInScope() {
@@ -478,24 +486,24 @@ func (s *ResolverSuite) TestResolve_RealizedDomainExcluded() {
 func (s *ResolverSuite) TestResolve_NoSimulatableClasses_Error() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
-	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		statelessKey: makeStatelessClass(),
 	}
 
-	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := core.NewModel("test", "Test", "", nil, nil, nil)
+	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
 
 	_, err := Resolve(nil, &model)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "no simulatable classes")
+	s.Contains(err.Error(), "no simulatable classes remain")
 }
 
 func (s *ResolverSuite) TestResolve_InvalidSpec_Error() {
@@ -705,7 +713,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations: map[identity.Key]model_class.Association{
-			assocKey: model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""),
+			assocKey: model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "order_items", Details: ""}, model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""}),
 		},
 		ModelInvariants: []model_logic.Logic{},
 	}
@@ -723,6 +731,51 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 	}
 	// The association exists at subdomain level in the original model.
 	s.Equal(1, totalAssocs)
+}
+
+func (s *FilteredModelSuite) TestBuildFilteredModel_PreservesActorAndUseCaseGeneralizations() {
+	actorGenKey := helper.Must(identity.NewActorGeneralizationKey("customers"))
+	actorGen := model_actor.NewGeneralization(actorGenKey, model_actor.GeneralizationDetails{Name: "Customers", Details: ""}, "actor gen notes", model_actor.GeneralizationTraits{IsComplete: true, IsStatic: true}, "")
+
+	ucGenKey := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "management"))
+	ucGen := model_use_case.NewGeneralization(ucGenKey, model_use_case.GeneralizationDetails{Name: "Management", Details: ""}, "uc gen notes", model_use_case.GeneralizationTraits{IsComplete: true, IsStatic: true}, "")
+
+	model := buildSingleDomainModel()
+	model.ActorGeneralizations = map[identity.Key]model_actor.Generalization{
+		actorGenKey: actorGen,
+	}
+
+	domain := model.Domains[domainKey]
+	subdomain := domain.Subdomains[subdomainKey]
+	subdomain.UseCaseGeneralizations = map[identity.Key]model_use_case.Generalization{
+		ucGenKey: ucGen,
+	}
+	domain.Subdomains[subdomainKey] = subdomain
+	model.Domains[domainKey] = domain
+
+	resolved := &ResolvedSurface{
+		Classes: map[identity.Key]model_class.Class{
+			orderClassKey: makeOrderClass(),
+		},
+		Associations:    map[identity.Key]model_class.Association{},
+		ModelInvariants: []model_logic.Logic{},
+	}
+
+	filtered, err := BuildFilteredModel(model, resolved)
+	s.Require().NoError(err)
+	s.Require().Len(filtered.ActorGeneralizations, 1)
+	s.Equal("actor gen notes", filtered.ActorGeneralizations[actorGenKey].UnfinishedNotes)
+
+	foundUCGen := false
+	for _, dom := range filtered.Domains {
+		for _, sub := range dom.Subdomains {
+			if gen, ok := sub.UseCaseGeneralizations[ucGenKey]; ok {
+				s.Equal("uc gen notes", gen.UnfinishedNotes)
+				foundUCGen = true
+			}
+		}
+	}
+	s.True(foundUCGen, "filtered subdomain should retain use case generalizations")
 }
 
 func (s *FilteredModelSuite) TestBuildFilteredModel_PreservesModelMetadata() {

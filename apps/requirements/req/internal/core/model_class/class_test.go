@@ -144,7 +144,7 @@ func (suite *ClassSuite) TestNew() {
 	subclassOfKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2"))
 
 	// Test parameters are mapped correctly.
-	class := NewClass(key, "Name", "Details", &actorKey, &superclassOfKey, &subclassOfKey, "UmlComment")
+	class := NewClass(key, ClassLinks{ActorKey: &actorKey, SuperclassOfKey: &superclassOfKey, SubclassOfKey: &subclassOfKey}, ClassDetails{Name: "Name", Details: "Details", UnfinishedNotes: "", UmlComment: "UmlComment"})
 	suite.Equal(Class{
 		Key:             key,
 		Name:            "Name",
@@ -169,7 +169,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := class.ValidateWithParent(ctx, &subdomainKey)
+	err := class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - class key has subdomain1 as parent, but we pass other_subdomain.
@@ -177,11 +177,11 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = class.ValidateWithParent(ctx, &otherSubdomainKey)
+	err = class.ValidateWithParent(ctx, &otherSubdomainKey, nil)
 	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().NoError(err)
 
 	// Test child Invariant validation propagates error.
@@ -192,7 +192,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}}, // Invalid: empty key
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "invariant 0", "Should validate child Invariants")
 
 	// Test child Invariant with wrong parent key is caught.
@@ -205,7 +205,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "invariant 0", "Should catch invariant with wrong parent key")
 
 	// Test valid class with let in invariants.
@@ -219,7 +219,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeAssessment, "Must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().NoError(err, "Class with let in invariants should be valid")
 
 	// Test duplicate let target in class invariants.
@@ -231,7 +231,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeLet, "Local a again.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "duplicate let target \"a\"", "Should catch duplicate let target in class invariants")
 
 	// Test child Attribute validation propagates error.
@@ -239,11 +239,11 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
-		Attributes: map[identity.Key]Attribute{
-			attrKey: {Key: attrKey, Name: ""}, // Invalid: blank name
+		Attributes: []Attribute{
+			{Key: attrKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Attributes")
 
 	// Test child Action validation propagates error.
@@ -255,7 +255,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			actionKey: {Key: actionKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Actions")
 
 	// Test child Query validation propagates error.
@@ -267,7 +267,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			queryKey: {Key: queryKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Queries")
 
 	// Test child Event validation propagates error.
@@ -279,7 +279,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			eventKey: {Key: eventKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Events")
 
 	// Test child Guard validation propagates error.
@@ -291,7 +291,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			guardKey: {Key: guardKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Guards")
 
 	// Test child State validation propagates error.
@@ -303,7 +303,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			stateKey: {Key: stateKey, Name: ""}, // Invalid: blank name
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child States")
 
 	// Test child Transition validation propagates error (bad event key).
@@ -315,25 +315,25 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			transitionKey: {Key: transitionKey, EventKey: identity.Key{}}, // Invalid: empty event key
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().Error(err, "Should validate child Transitions")
 
 	// Test valid class with all child types.
 	invKey := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
 	validInvariant := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	validLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	validAction := model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil)
+	validAction := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Action", Details: ""}, nil, nil, nil, nil)
 	validEvent := model_state.NewEvent(eventKey, "Event", "", nil)
 	validState := model_state.NewState(stateKey, "State", "", "")
 	validGuard := model_state.NewGuard(guardKey, "Guard", validLogic)
 	validQuery := model_state.NewQuery(queryKey, "Query", "", nil, nil, nil)
 	validAttr := Attribute{Key: attrKey, Name: "Attr"}
-	validTransition := model_state.NewTransition(transitionKey, &stateKey, eventKey, nil, nil, &stateKey, "")
+	validTransition := model_state.NewTransition(transitionKey, eventKey, model_state.TransitionStateKeys{FromStateKey: &stateKey, ToStateKey: &stateKey}, model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "")
 	class = Class{
 		Key:         validKey,
 		Name:        "Name",
 		Invariants:  []model_logic.Logic{validInvariant},
-		Attributes:  map[identity.Key]Attribute{attrKey: validAttr},
+		Attributes:  []Attribute{validAttr},
 		States:      map[identity.Key]model_state.State{stateKey: validState},
 		Events:      map[identity.Key]model_state.Event{eventKey: validEvent},
 		Guards:      map[identity.Key]model_state.Guard{guardKey: validGuard},
@@ -341,7 +341,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Queries:     map[identity.Key]model_state.Query{queryKey: validQuery},
 		Transitions: map[identity.Key]model_state.Transition{transitionKey: validTransition},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().NoError(err, "Valid class with all children should pass")
 
 	// Test guard logic key mismatch is caught through class validation.
@@ -354,7 +354,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			guardKey: model_state.NewGuard(guardKey, "Guard", mismatchedLogic),
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch")
 
 	// Test action require key with wrong parent is caught.
@@ -365,10 +365,10 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Actions: map[identity.Key]model_state.Action{
-			actionKey: model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil),
+			actionKey: model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Action", Details: ""}, []model_logic.Logic{wrongReqLogic}, nil, nil, nil),
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "requires[0]", "Should catch action require key with wrong parent")
 
 	// Test query guarantee key with wrong parent is caught.
@@ -382,7 +382,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 			queryKey: model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{wrongGuarLogic}, nil),
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "guarantees[0]", "Should catch query guarantee key with wrong parent")
 
 	// Test attribute derivation policy key with wrong parent is caught.
@@ -392,11 +392,11 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
-		Attributes: map[identity.Key]Attribute{
-			attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &wrongDerivLogic},
+		Attributes: []Attribute{
+			{Key: attrKey, Name: "Attr", DerivationPolicy: &wrongDerivLogic},
 		},
 	}
-	err = class.ValidateWithParent(ctx, &subdomainKey)
+	err = class.ValidateWithParent(ctx, &subdomainKey, nil)
 	suite.Require().ErrorContains(err, "DerivationPolicy", "Should catch attribute derivation policy key with wrong parent")
 }
 
@@ -420,7 +420,7 @@ func (suite *ClassSuite) TestSetters() {
 	class.SetInvariants(invariants)
 	suite.Equal(invariants, class.Invariants)
 
-	attrs := map[identity.Key]Attribute{attrKey: {Key: attrKey, Name: "Attr"}}
+	attrs := []Attribute{{Key: attrKey, Name: "Attr"}}
 	class.SetAttributes(attrs)
 	suite.Equal(attrs, class.Attributes)
 
@@ -436,7 +436,7 @@ func (suite *ClassSuite) TestSetters() {
 	class.SetGuards(guards)
 	suite.Equal(guards, class.Guards)
 
-	actions := map[identity.Key]model_state.Action{actionKey: model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil)}
+	actions := map[identity.Key]model_state.Action{actionKey: model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Action", Details: ""}, nil, nil, nil, nil)}
 	class.SetActions(actions)
 	suite.Equal(actions, class.Actions)
 
@@ -465,16 +465,21 @@ func (suite *ClassSuite) TestValidateReferences() {
 	actors := map[identity.Key]bool{
 		actorKey: true,
 	}
-	generalizations := map[identity.Key]bool{
+	localGeneralizations := map[identity.Key]bool{
 		genKey: true,
+	}
+	allGeneralizations := map[identity.Key]bool{
+		genKey:              true,
+		genInOtherSubdomain: true,
 	}
 
 	tests := []struct {
-		testName        string
-		class           Class
-		actors          map[identity.Key]bool
-		generalizations map[identity.Key]bool
-		errstr          string
+		testName             string
+		class                Class
+		actors               map[identity.Key]bool
+		localGeneralizations map[identity.Key]bool
+		allGeneralizations   map[identity.Key]bool
+		errstr               string
 	}{
 		{
 			testName: "valid class with no references",
@@ -482,8 +487,9 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Key:  classKey,
 				Name: "Name",
 			},
-			actors:          actors,
-			generalizations: generalizations,
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
 		},
 		{
 			testName: "valid class with ActorKey reference",
@@ -492,8 +498,9 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:     "Name",
 				ActorKey: &actorKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
 		},
 		{
 			testName: "error ActorKey references non-existent actor",
@@ -502,9 +509,10 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:     "Name",
 				ActorKey: &nonExistentActorKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
-			errstr:          "references non-existent actor",
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
+			errstr:               "references non-existent actor",
 		},
 		{
 			testName: "valid class with SuperclassOfKey reference",
@@ -513,8 +521,9 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:            "Name",
 				SuperclassOfKey: &genKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
 		},
 		{
 			testName: "error SuperclassOfKey references non-existent generalization",
@@ -523,9 +532,10 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:            "Name",
 				SuperclassOfKey: &nonExistentGenKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
-			errstr:          "references non-existent generalization",
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
+			errstr:               "references non-existent generalization",
 		},
 		{
 			testName: "error SuperclassOfKey references generalization in different subdomain",
@@ -534,22 +544,32 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:            "Name",
 				SuperclassOfKey: &genInOtherSubdomain,
 			},
-			actors: actors,
-			generalizations: map[identity.Key]bool{
-				genKey:              true,
-				genInOtherSubdomain: true,
-			},
-			errstr: "must be in the same subdomain",
+			actors:               actors,
+			localGeneralizations: allGeneralizations,
+			allGeneralizations:   allGeneralizations,
+			errstr:               "must be in the same subdomain",
 		},
 		{
-			testName: "valid class with SubclassOfKey reference",
+			testName: "valid class with SubclassOfKey in same subdomain",
 			class: Class{
 				Key:           classKey,
 				Name:          "Name",
 				SubclassOfKey: &genKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
+		},
+		{
+			testName: "valid class with SubclassOfKey in different subdomain",
+			class: Class{
+				Key:           classKey,
+				Name:          "Name",
+				SubclassOfKey: &genInOtherSubdomain,
+			},
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
 		},
 		{
 			testName: "error SubclassOfKey references non-existent generalization",
@@ -558,29 +578,145 @@ func (suite *ClassSuite) TestValidateReferences() {
 				Name:          "Name",
 				SubclassOfKey: &nonExistentGenKey,
 			},
-			actors:          actors,
-			generalizations: generalizations,
-			errstr:          "references non-existent generalization",
-		},
-		{
-			testName: "error SubclassOfKey references generalization in different subdomain",
-			class: Class{
-				Key:           classKey,
-				Name:          "Name",
-				SubclassOfKey: &genInOtherSubdomain,
-			},
-			actors: actors,
-			generalizations: map[identity.Key]bool{
-				genKey:              true,
-				genInOtherSubdomain: true,
-			},
-			errstr: "must be in the same subdomain",
+			actors:               actors,
+			localGeneralizations: localGeneralizations,
+			allGeneralizations:   allGeneralizations,
+			errstr:               "references non-existent generalization",
 		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
 			ctx := coreerr.NewContext("test", "")
-			err := tt.class.ValidateReferences(ctx, tt.actors, tt.generalizations)
+			err := tt.class.ValidateReferences(ctx, tt.actors, tt.localGeneralizations, tt.allGeneralizations)
+			if tt.errstr == "" {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().ErrorContains(err, tt.errstr)
+			}
+		})
+	}
+}
+
+func (suite *ClassSuite) TestValidateTransitionSystemEvents() {
+	ctx := coreerr.NewContext("test", "")
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	stateActiveKey := helper.Must(identity.NewStateKey(classKey, "active"))
+	eventNewKey := helper.Must(identity.NewEventKey(classKey, "_new"))
+	eventAddKey := helper.Must(identity.NewEventKey(classKey, "add"))
+	eventDeleteKey := helper.Must(identity.NewEventKey(classKey, "_destroy"))
+	eventOtherDeleteKey := helper.Must(identity.NewEventKey(classKey, "delete"))
+	transCreateKey := helper.Must(identity.NewTransitionKey(classKey, "", "_new", "", "", "active"))
+	transCreateBadKey := helper.Must(identity.NewTransitionKey(classKey, "", "add", "", "", "active"))
+	transFinalKey := helper.Must(identity.NewTransitionKey(classKey, "active", "_destroy", "", "", ""))
+	transFinalBadKey := helper.Must(identity.NewTransitionKey(classKey, "active", "delete", "", "", ""))
+
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
+	eventNew := model_state.NewEvent(eventNewKey, model_state.EventNameNew, "", nil)
+	eventAdd := model_state.NewEvent(eventAddKey, "Add", "", nil)
+	eventDelete := model_state.NewEvent(eventDeleteKey, model_state.EventNameDestroy, "", nil)
+	eventOtherDelete := model_state.NewEvent(eventOtherDeleteKey, "Delete", "", nil)
+
+	tests := []struct {
+		testName string
+		class    Class
+		errstr   string
+	}{
+		{
+			testName: "valid initial transition with «new»",
+			class: Class{
+				Key:  classKey,
+				Name: "Name",
+				States: map[identity.Key]model_state.State{
+					stateActiveKey: stateActive,
+				},
+				Events: map[identity.Key]model_state.Event{
+					eventNewKey: eventNew,
+				},
+				Transitions: map[identity.Key]model_state.Transition{
+					transCreateKey: model_state.NewTransition(
+						transCreateKey,
+						eventNewKey,
+						model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey},
+						model_state.TransitionLogicKeys{},
+						"",
+					),
+				},
+			},
+		},
+		{
+			testName: "error initial transition without «new»",
+			class: Class{
+				Key:  classKey,
+				Name: "Name",
+				States: map[identity.Key]model_state.State{
+					stateActiveKey: stateActive,
+				},
+				Events: map[identity.Key]model_state.Event{
+					eventAddKey: eventAdd,
+				},
+				Transitions: map[identity.Key]model_state.Transition{
+					transCreateBadKey: model_state.NewTransition(
+						transCreateBadKey,
+						eventAddKey,
+						model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &stateActiveKey},
+						model_state.TransitionLogicKeys{},
+						"",
+					),
+				},
+			},
+			errstr: "TRANSITION_INITIAL_EVENT_INVALID",
+		},
+		{
+			testName: "valid final transition with _destroy",
+			class: Class{
+				Key:  classKey,
+				Name: "Name",
+				States: map[identity.Key]model_state.State{
+					stateActiveKey: stateActive,
+				},
+				Events: map[identity.Key]model_state.Event{
+					eventDeleteKey: eventDelete,
+				},
+				Transitions: map[identity.Key]model_state.Transition{
+					transFinalKey: model_state.NewTransition(
+						transFinalKey,
+						eventDeleteKey,
+						model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil},
+						model_state.TransitionLogicKeys{},
+						"",
+					),
+				},
+			},
+		},
+		{
+			testName: "error final transition without _destroy",
+			class: Class{
+				Key:  classKey,
+				Name: "Name",
+				States: map[identity.Key]model_state.State{
+					stateActiveKey: stateActive,
+				},
+				Events: map[identity.Key]model_state.Event{
+					eventOtherDeleteKey: eventOtherDelete,
+				},
+				Transitions: map[identity.Key]model_state.Transition{
+					transFinalBadKey: model_state.NewTransition(
+						transFinalBadKey,
+						eventOtherDeleteKey,
+						model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: nil},
+						model_state.TransitionLogicKeys{},
+						"",
+					),
+				},
+			},
+			errstr: "TRANSITION_FINAL_EVENT_INVALID",
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.testName, func() {
+			err := tt.class.ValidateWithParent(ctx, &subdomainKey, nil)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {

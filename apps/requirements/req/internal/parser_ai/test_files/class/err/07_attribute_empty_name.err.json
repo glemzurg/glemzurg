@@ -1,8 +1,9 @@
 {
     "name": "Order",
-    "attributes": {
-        "order_date": {
-            "name": ""
+    "attributes": [
+        {
+            "name": "",
+            "key": "order_date"
         }
-    }
+    ]
 }

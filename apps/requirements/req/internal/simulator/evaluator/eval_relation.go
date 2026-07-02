@@ -29,14 +29,30 @@ func evalRelationTraversal(record *object.Record, relInfo *RelationInfo, relCtx 
 		return NewEvalError("relation context is nil")
 	}
 
-	// Get related records from the link table
-	relatedRecords := relCtx.GetRelatedRecords(record, relInfo.AssociationKey, relInfo.Reverse)
+	endpointRecords := relCtx.GetRelatedRecords(record, relInfo.AssociationKey, relInfo.Reverse)
+	endpointElements := recordsToObjects(endpointRecords)
 
-	// Convert to a Set of Objects
-	elements := make([]object.Object, len(relatedRecords))
-	for i, rec := range relatedRecords {
-		elements[i] = rec
+	if relInfo.LinkClassMember == "" {
+		return NewEvalResult(object.NewSetFromElements(endpointElements))
 	}
 
-	return NewEvalResult(object.NewSetFromElements(elements))
+	linkByEndpoint := relCtx.GetAssociationClassLinksByEndpoint(
+		record,
+		relInfo.AssociationKey,
+		relInfo.Reverse,
+	)
+
+	return NewEvalResult(object.NewAssociationRelation(
+		object.NewSetFromElements(endpointElements),
+		relInfo.LinkClassMember,
+		linkByEndpoint,
+	))
+}
+
+func recordsToObjects(records []*object.Record) []object.Object {
+	elements := make([]object.Object, len(records))
+	for i, rec := range records {
+		elements[i] = rec
+	}
+	return elements
 }

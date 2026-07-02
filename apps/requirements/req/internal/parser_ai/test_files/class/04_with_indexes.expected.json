@@ -1,19 +1,29 @@
 {
     "name": "Order",
-    "attributes": {
-        "customer_id": {
-            "name": "Customer ID"
+    "attributes": [
+        {
+            "name": "Customer ID",
+            "key": "customer_id"
         },
-        "order_date": {
-            "name": "Order Date"
+        {
+            "name": "Order Date",
+            "key": "order_date"
         },
-        "status": {
-            "name": "Status"
+        {
+            "name": "Status",
+            "key": "status"
         }
-    },
+    ],
     "indexes": [
-        ["customer_id"],
-        ["customer_id", "order_date"],
-        ["status"]
+        [
+            "customer_id"
+        ],
+        [
+            "customer_id",
+            "order_date"
+        ],
+        [
+            "status"
+        ]
     ]
 }

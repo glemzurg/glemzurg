@@ -20,16 +20,16 @@ type printer struct{}
 
 // print returns the TLA+ string for an expression.
 //
-//complexity:cyclo:warn=60,fail=60 Mostly simple routing switch.
-//complexity:fanout:warn=60,fail=60 Mostly simple routing switch.
+//complexity:cyclo:warn=70,fail=70 Mostly simple routing switch.
+//complexity:fanout:warn=70,fail=70 Mostly simple routing switch.
 func (p *printer) print(expr Expression) string {
 	switch e := expr.(type) {
 	// --- Literals ---
 	case *BooleanLiteral:
 		if e.Value {
-			return "TRUE"
+			return LiteralTrue
 		}
-		return "FALSE"
+		return LiteralFalse
 
 	case *NumberLiteral:
 		return e.String()
@@ -213,7 +213,9 @@ func (p *printer) print(expr Expression) string {
 	case *Primed:
 		return p.wrap(e.Base, precPrime, assocPostfix, posOnly) + "'"
 
-	// --- Set filter ---
+	// --- Set map / filter ---
+	case *SetMap:
+		return "{" + p.print(e.Transform) + " : " + p.print(e.Membership) + "}"
 	case *SetFilter:
 		return "{" + p.print(e.Membership) + " : " + p.print(e.Predicate) + "}"
 
@@ -226,6 +228,12 @@ func (p *printer) print(expr Expression) string {
 		return "IF " + p.print(e.Condition) +
 			" THEN " + p.print(e.Then) +
 			" ELSE " + p.print(e.Else)
+
+	// --- LET / CHOOSE ---
+	case *LetExpr:
+		return "LET " + e.Variable + " == " + p.print(e.Value) + " IN " + p.print(e.Body)
+	case *ChooseExpr:
+		return "CHOOSE " + p.print(e.Membership) + " : " + p.print(e.Predicate)
 
 	// --- CASE ---
 	case *CaseExpr:

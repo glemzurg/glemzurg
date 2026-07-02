@@ -57,6 +57,34 @@ func (suite *KeySuite) TestNewKey() {
 			subKey:    "somethingelse",
 			errstr:    "key type is required",
 		},
+		{
+			testName:  "error subkey with space",
+			parentKey: "domain/d1",
+			keyType:   "subdomain",
+			subKey:    "has space",
+			errstr:    "must match pattern",
+		},
+		{
+			testName:  "error subkey with hyphen",
+			parentKey: "domain/d1",
+			keyType:   "subdomain",
+			subKey:    "has-hyphen",
+			errstr:    "must match pattern",
+		},
+		{
+			testName:  "error subkey starts with number",
+			parentKey: "domain/d1",
+			keyType:   "subdomain",
+			subKey:    "1bad",
+			errstr:    "must match pattern",
+		},
+		{
+			testName:  "error subkey starts with underscore",
+			parentKey: "domain/d1",
+			keyType:   "subdomain",
+			subKey:    "_bad",
+			errstr:    "must match pattern",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {

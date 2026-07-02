@@ -99,14 +99,36 @@ func QueryClassInvariants(dbOrTx DbOrTx, modelKey string) (result map[identity.K
 			return nil
 		},
 		`SELECT
-			ci.class_key, ci.logic_key
-		FROM
-			class_invariant ci
-		JOIN
-			logic l ON l.model_key = ci.model_key AND l.logic_key = ci.logic_key
-		WHERE
-			ci.model_key = $1
-		ORDER BY ci.class_key, l.sort_order, ci.logic_key`,
+			combined.class_key,
+			combined.logic_key
+		FROM (
+			SELECT
+				ci.class_key,
+				ci.logic_key,
+				l.sort_order
+			FROM
+				class_invariant ci
+			JOIN
+				logic l ON l.model_key = ci.model_key AND l.logic_key = ci.logic_key
+			WHERE
+				ci.model_key = $1
+			UNION ALL
+			SELECT
+				a.to_class_key,
+				ai.logic_key,
+				l.sort_order
+			FROM
+				association_invariant ai
+			JOIN
+				association a ON a.model_key = ai.model_key AND a.association_key = ai.association_key
+			JOIN
+				logic l ON l.model_key = ai.model_key AND l.logic_key = ai.logic_key
+			WHERE
+				ai.model_key = $1
+			AND
+				ai.to_class_anchor = true
+		) combined
+		ORDER BY combined.class_key, combined.sort_order, combined.logic_key`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -139,7 +161,7 @@ func AddClassInvariants(dbOrTx DbOrTx, modelKey string, classInvariants map[iden
 				qb.WriteString(", ")
 			}
 			first = false
-			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3))
+			fmt.Fprintf(&qb, "($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3)
 			args = append(args, modelKey, classKey.String(), logicKey.String())
 			argIdx += 3
 		}

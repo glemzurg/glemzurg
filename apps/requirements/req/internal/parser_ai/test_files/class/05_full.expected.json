@@ -3,33 +3,47 @@
     "details": "Represents a customer's order with full lifecycle tracking",
     "actor_key": "customer",
     "uml_comment": "Core aggregate root",
-    "attributes": {
-        "order_number": {
+    "attributes": [
+        {
             "name": "Order Number",
             "data_type_rules": "Unique alphanumeric string, format: ORD-YYYYMMDD-XXXXX",
             "details": "Human-readable order identifier",
             "nullable": false,
-            "uml_comment": "<<unique>>"
+            "uml_comment": "<<unique>>",
+            "key": "order_number"
         },
-        "order_date": {
+        {
             "name": "Order Date",
             "data_type_rules": "ISO 8601 datetime with timezone",
-            "nullable": false
+            "nullable": false,
+            "key": "order_date"
         },
-        "total_amount": {
+        {
             "name": "Total Amount",
             "data_type_rules": "Positive decimal with 2 decimal places",
-            "derivation_policy": {"description": "Sum of all order line item amounts plus taxes minus discounts", "notation": "tla_plus"},
-            "nullable": false
+            "derivation_policy": {
+                "type": "value",
+                "description": "Sum of all order line item amounts plus taxes minus discounts",
+                "notation": "tla_plus"
+            },
+            "nullable": false,
+            "key": "total_amount"
         },
-        "status": {
+        {
             "name": "Status",
             "data_type_rules": "Enum: pending, confirmed, shipped, delivered, cancelled",
-            "nullable": false
+            "nullable": false,
+            "type_spec": "STRING",
+            "key": "status"
         }
-    },
+    ],
     "indexes": [
-        ["order_number"],
-        ["order_date", "status"]
+        [
+            "order_number"
+        ],
+        [
+            "order_date",
+            "status"
+        ]
     ]
 }

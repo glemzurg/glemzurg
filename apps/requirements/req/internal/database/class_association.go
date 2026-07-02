@@ -69,6 +69,18 @@ func scanAssociation(scanner Scanner, association *model_class.Association) (err
 	return nil
 }
 
+const associationSelectColumns = `association_key,
+			name,
+			details,
+			from_class_key,
+			from_multiplicity_lower,
+			from_multiplicity_higher,
+			to_class_key,
+			to_multiplicity_lower,
+			to_multiplicity_higher,
+			association_class_key,
+			uml_comment`
+
 // LoadAssociation loads a association from the database.
 func LoadAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (association model_class.Association, err error) {
 	// Query the database.
@@ -80,29 +92,19 @@ func LoadAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key
 			}
 			return nil
 		},
-		`SELECT
-			association_key          ,
-			name                     ,
-			details                  ,
-			from_class_key           ,
-			from_multiplicity_lower  ,
-			from_multiplicity_higher ,
-			to_class_key             ,
-			to_multiplicity_lower    ,
-			to_multiplicity_higher   ,
-			association_class_key    ,
-			uml_comment
-		FROM
-			association
-		WHERE
-			association_key = $2
-		AND
-			model_key = $1
-		ORDER BY association_key`,
+		fmt.Sprintf(`SELECT %s FROM association WHERE association_key = $2 AND model_key = $1 ORDER BY association_key`, associationSelectColumns),
 		modelKey,
 		associationKey.String())
 	if err != nil {
 		return model_class.Association{}, errors.WithStack(err)
+	}
+
+	uniquenessByAssoc, err := QueryAssociationUniqueness(dbOrTx, modelKey)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+	if uniqueness, ok := uniquenessByAssoc[association.Key]; ok {
+		association.Uniqueness = uniqueness
 	}
 
 	return association, nil
@@ -192,26 +194,20 @@ func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_cla
 			associations = append(associations, association)
 			return nil
 		},
-		`SELECT
-			association_key          ,
-			name                     ,
-			details                  ,
-			from_class_key           ,
-			from_multiplicity_lower  ,
-			from_multiplicity_higher ,
-			to_class_key             ,
-			to_multiplicity_lower    ,
-			to_multiplicity_higher   ,
-			association_class_key    ,
-			uml_comment
-		FROM
-			association
-		WHERE
-			model_key = $1
-		ORDER BY association_key`,
+		fmt.Sprintf(`SELECT %s FROM association WHERE model_key = $1 ORDER BY association_key`, associationSelectColumns),
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
+	}
+
+	uniquenessByAssoc, err := QueryAssociationUniqueness(dbOrTx, modelKey)
+	if err != nil {
+		return nil, err
+	}
+	for i := range associations {
+		if uniqueness, ok := uniquenessByAssoc[associations[i].Key]; ok {
+			associations[i].Uniqueness = uniqueness
+		}
 	}
 
 	return associations, nil
@@ -232,7 +228,7 @@ func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.
 			queryBuilder.WriteString(", ")
 		}
 		base := i * 12
-		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12))
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12)
 
 		// Handle optional association class key.
 		var associationClassKeyPtr *string
@@ -249,5 +245,5 @@ func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.
 		return errors.WithStack(err)
 	}
 
-	return nil
+	return AddAssociationUniqueness(dbOrTx, modelKey, associations)
 }

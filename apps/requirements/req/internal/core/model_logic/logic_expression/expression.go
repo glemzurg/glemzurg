@@ -27,6 +27,7 @@ const (
 	// References.
 	NodeSelfRef         = "self_ref"
 	NodeAttributeRef    = "attribute_ref"
+	NodeAssociationRef  = "association_ref"
 	NodeLocalVar        = "local_var"
 	NodePriorFieldValue = "prior_field_value"
 	NodeNextState       = "next_state"
@@ -56,17 +57,22 @@ const (
 	// Control flow.
 	NodeIfThenElse = "if_then_else"
 	NodeCase       = "case"
+	NodeLetExpr    = "let_expr"
+	NodeChoose     = "choose"
 
 	// Quantifiers.
 	NodeQuantifier = "quantifier"
 	NodeSetFilter  = "set_filter"
+	NodeSetMap     = "set_map"
 	NodeSetRange   = "set_range"
 
 	// Calls.
 	NodeActionCall  = "action_call"
+	NodeEventCall   = "event_call"
 	NodeGlobalCall  = "global_call"
 	NodeBuiltinCall = "builtin_call"
 	NodeNamedSetRef = "named_set_ref"
+	NodeClassRef    = "class_ref"
 )
 
 // ValidateExpression validates an Expression if it is non-nil.

@@ -14,6 +14,10 @@ func TestLinkTableSuite(t *testing.T) {
 	suite.Run(t, new(LinkTableTestSuite))
 }
 
+func (s *LinkTableTestSuite) addLink(table *LinkTable, assocKey AssociationKey, fromID, toID ObjectID) {
+	s.Require().NoError(table.AddLink(assocKey, fromID, toID))
+}
+
 func (s *LinkTableTestSuite) TestNewLinkTable() {
 	table := NewLinkTable()
 	s.NotNil(table)
@@ -24,7 +28,7 @@ func (s *LinkTableTestSuite) TestAddLink_QueryForward() {
 	table := NewLinkTable()
 	assocKey := AssociationKey("test/association")
 
-	table.AddLink(assocKey, ObjectID(1), ObjectID(2))
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(2))
 
 	forward := table.GetForward(ObjectID(1), assocKey)
 	s.Len(forward, 1)
@@ -35,20 +39,20 @@ func (s *LinkTableTestSuite) TestAddLink_QueryReverse() {
 	table := NewLinkTable()
 	assocKey := AssociationKey("test/association")
 
-	table.AddLink(assocKey, ObjectID(1), ObjectID(2))
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(2))
 
 	reverse := table.GetReverse(ObjectID(2), assocKey)
 	s.Len(reverse, 1)
 	s.Contains(reverse, ObjectID(1))
 }
 
-func (s *LinkTableTestSuite) TestAddLink_PreventsDuplicates() {
+func (s *LinkTableTestSuite) TestAddLink_RejectsDuplicate() {
 	table := NewLinkTable()
 	assocKey := AssociationKey("test/association")
 
-	table.AddLink(assocKey, ObjectID(1), ObjectID(2))
-	table.AddLink(assocKey, ObjectID(1), ObjectID(2)) // Duplicate
-
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(2))
+	err := table.AddLink(assocKey, ObjectID(1), ObjectID(2))
+	s.Require().Error(err)
 	s.Equal(1, table.Count())
 
 	forward := table.GetForward(ObjectID(1), assocKey)
@@ -59,7 +63,7 @@ func (s *LinkTableTestSuite) TestRemoveLink() {
 	table := NewLinkTable()
 	assocKey := AssociationKey("test/association")
 
-	table.AddLink(assocKey, ObjectID(1), ObjectID(2))
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(2))
 	s.Equal(1, table.Count())
 
 	removed := table.RemoveLink(assocKey, ObjectID(1), ObjectID(2))
@@ -85,9 +89,9 @@ func (s *LinkTableTestSuite) TestMultipleLinksFromSameObject() {
 	table := NewLinkTable()
 	assocKey := AssociationKey("test/association")
 
-	table.AddLink(assocKey, ObjectID(1), ObjectID(2))
-	table.AddLink(assocKey, ObjectID(1), ObjectID(3))
-	table.AddLink(assocKey, ObjectID(1), ObjectID(4))
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(2))
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(3))
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(4))
 
 	forward := table.GetForward(ObjectID(1), assocKey)
 	s.Len(forward, 3)
@@ -100,9 +104,9 @@ func (s *LinkTableTestSuite) TestMultipleLinksToSameObject() {
 	table := NewLinkTable()
 	assocKey := AssociationKey("test/association")
 
-	table.AddLink(assocKey, ObjectID(1), ObjectID(10))
-	table.AddLink(assocKey, ObjectID(2), ObjectID(10))
-	table.AddLink(assocKey, ObjectID(3), ObjectID(10))
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(10))
+	s.addLink(table, assocKey, ObjectID(2), ObjectID(10))
+	s.addLink(table, assocKey, ObjectID(3), ObjectID(10))
 
 	reverse := table.GetReverse(ObjectID(10), assocKey)
 	s.Len(reverse, 3)
@@ -116,8 +120,8 @@ func (s *LinkTableTestSuite) TestDifferentAssociations() {
 	assoc1 := AssociationKey("assoc/one")
 	assoc2 := AssociationKey("assoc/two")
 
-	table.AddLink(assoc1, ObjectID(1), ObjectID(2))
-	table.AddLink(assoc2, ObjectID(1), ObjectID(3))
+	s.addLink(table, assoc1, ObjectID(1), ObjectID(2))
+	s.addLink(table, assoc2, ObjectID(1), ObjectID(3))
 
 	forward1 := table.GetForward(ObjectID(1), assoc1)
 	s.Len(forward1, 1)
@@ -133,8 +137,8 @@ func (s *LinkTableTestSuite) TestGetAllForward() {
 	assoc1 := AssociationKey("assoc/one")
 	assoc2 := AssociationKey("assoc/two")
 
-	table.AddLink(assoc1, ObjectID(1), ObjectID(2))
-	table.AddLink(assoc2, ObjectID(1), ObjectID(3))
+	s.addLink(table, assoc1, ObjectID(1), ObjectID(2))
+	s.addLink(table, assoc2, ObjectID(1), ObjectID(3))
 
 	all := table.GetAllForward(ObjectID(1))
 	s.Len(all, 2)
@@ -145,8 +149,8 @@ func (s *LinkTableTestSuite) TestGetAllReverse() {
 	assoc1 := AssociationKey("assoc/one")
 	assoc2 := AssociationKey("assoc/two")
 
-	table.AddLink(assoc1, ObjectID(1), ObjectID(10))
-	table.AddLink(assoc2, ObjectID(2), ObjectID(10))
+	s.addLink(table, assoc1, ObjectID(1), ObjectID(10))
+	s.addLink(table, assoc2, ObjectID(2), ObjectID(10))
 
 	all := table.GetAllReverse(ObjectID(10))
 	s.Len(all, 2)
@@ -156,8 +160,8 @@ func (s *LinkTableTestSuite) TestClear() {
 	table := NewLinkTable()
 	assocKey := AssociationKey("test/association")
 
-	table.AddLink(assocKey, ObjectID(1), ObjectID(2))
-	table.AddLink(assocKey, ObjectID(3), ObjectID(4))
+	s.addLink(table, assocKey, ObjectID(1), ObjectID(2))
+	s.addLink(table, assocKey, ObjectID(3), ObjectID(4))
 
 	s.Equal(2, table.Count())
 

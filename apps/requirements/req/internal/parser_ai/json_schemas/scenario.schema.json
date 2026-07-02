@@ -69,8 +69,8 @@
         },
         "leaf_type": {
           "type": "string",
-          "description": "For leaf steps only, the type of leaf action. Must be one of: 'event' (triggers a state machine event on the target object, requires 'to_object_key' and 'event_key'), 'query' (reads data from the target object, requires 'to_object_key' and 'query_key'), 'scenario' (calls another scenario, requires 'scenario_key'), or 'delete' (deletes the target object, requires 'to_object_key'). Required when step_type is 'leaf'. If validation fails: ensure this is exactly one of 'event', 'query', 'scenario', 'delete'.",
-          "enum": ["event", "query", "scenario", "delete"]
+          "description": "For leaf steps only, the type of leaf action. Must be one of: 'event' (triggers a state machine event on the target object, requires 'to_object_key' and 'event_key'), 'query' (reads data from the target object, requires 'to_object_key' and 'query_key'), 'scenario' (calls another scenario, requires 'scenario_key'), or 'destroy' (destroys the target object, requires 'from_object_key'). Required when step_type is 'leaf'. If validation fails: ensure this is exactly one of 'event', 'query', 'scenario', 'destroy'.",
+          "enum": ["event", "query", "scenario", "destroy"]
         },
         "statements": {
           "type": "array",
@@ -93,7 +93,7 @@
         },
         "to_object_key": {
           "type": "string",
-          "description": "Key of the target object for this step. Must match a key defined in the 'objects' map of this scenario. For 'event' leaf type, this is the object receiving the event. For 'query' leaf type, this is the object being queried. For 'delete' leaf type, this is the object being deleted."
+          "description": "Key of the target object for this step. Must match a key defined in the 'objects' map of this scenario. For 'event' leaf type, this is the object receiving the event. For 'query' leaf type, this is the object being queried. For 'destroy' leaf type, use from_object_key instead; to_object_key must be omitted."
         },
         "event_key": {
           "type": "string",

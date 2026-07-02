@@ -87,7 +87,7 @@ func walkIdentifiersLeaf(expr me.Expression, result map[string]bool) bool {
 	case *me.AttributeRef, *me.SelfRef, *me.PriorFieldValue:
 		// No identifier names to collect.
 	case *me.BoolLiteral, *me.IntLiteral, *me.RationalLiteral,
-		*me.StringLiteral, *me.SetConstant, *me.NamedSetRef:
+		*me.StringLiteral, *me.SetConstant, *me.NamedSetRef, *me.ClassRef:
 		// No expression children.
 	default:
 		return false
@@ -173,12 +173,20 @@ func walkIdentifiersControlFlow(expr me.Expression, result map[string]bool) {
 		walkBinaryIR(e.Domain, e.Predicate, result)
 	case *me.SetFilter:
 		walkBinaryIR(e.Set, e.Predicate, result)
+	case *me.SetMap:
+		walkBinaryIR(e.Set, e.Transform, result)
 	case *me.SetRange:
 		walkBinaryIR(e.Start, e.End, result)
 	case *me.IfThenElse:
 		walkIdentifiersIR(e.Condition, result)
 		walkIdentifiersIR(e.Then, result)
 		walkIdentifiersIR(e.Else, result)
+	case *me.LetExpr:
+		walkIdentifiersIR(e.Value, result)
+		walkIdentifiersIR(e.Body, result)
+	case *me.Choose:
+		walkIdentifiersIR(e.Set, result)
+		walkIdentifiersIR(e.Predicate, result)
 	case *me.Case:
 		for _, branch := range e.Branches {
 			walkBinaryIR(branch.Condition, branch.Result, result)

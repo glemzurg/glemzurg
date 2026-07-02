@@ -39,7 +39,7 @@ func parseDomain(domainSubKey, filename, contents string) (domain model_domain.D
 		return model_domain.Domain{}, nil, errors.WithStack(err)
 	}
 
-	domain = model_domain.NewDomain(domainKey, parsedFile.Title, stripMarkdownTitle(markdown), realized, parsedFile.UmlComment)
+	domain = model_domain.NewDomain(domainKey, parsedFile.Title, stripMarkdownTitle(markdown), parsedFile.UnfinishedNotes, realized, parsedFile.UmlComment)
 
 	// Add any associations we found (returned separately, stored at model level).
 	var associationsData []any
@@ -114,5 +114,5 @@ func generateDomainContent(domain model_domain.Domain, associations []model_doma
 	}
 
 	yamlStr := strings.TrimSpace(yb.String())
-	return generateFileContent(prependMarkdownTitle(domain.Name, domain.Details), domain.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownTitle(domain.Name, domain.Details), domain.UnfinishedNotes, domain.UmlComment, yamlStr)
 }

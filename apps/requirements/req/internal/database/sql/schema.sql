@@ -5,6 +5,7 @@ CREATE TABLE model (
   model_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   PRIMARY KEY (model_key)
 );
 
@@ -12,13 +13,14 @@ COMMENT ON TABLE model IS 'A fully distinct semantic model, separate from all ot
 COMMENT ON COLUMN model.model_key IS 'The internal ID.';
 COMMENT ON COLUMN model.name IS 'The unique name of the model.';
 COMMENT ON COLUMN model.details IS 'A summary description.';
+COMMENT ON COLUMN model.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 
 --------------------------------------------------------------
 
 CREATE TYPE notation AS ENUM ('tla_plus');
 COMMENT ON TYPE notation IS 'The notation used for a logic or type specification.';
 
-CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value', 'let');
+CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value', 'let', 'destroy');
 COMMENT ON TYPE logic_type IS 'The kind of logic specification, each has different rules for well-formedness.';
 
 CREATE TABLE logic (
@@ -32,6 +34,7 @@ CREATE TABLE logic (
   specification text DEFAULT NULL,
   target_type_notation notation DEFAULT NULL,
   target_type_specification text DEFAULT NULL,
+  destroy_event_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, logic_key),
   CONSTRAINT fk_logic_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
@@ -47,6 +50,7 @@ COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specifica
 COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
 COMMENT ON COLUMN logic.target_type_notation IS 'Optional notation for the declared type of the logic target (e.g., tla_plus).';
 COMMENT ON COLUMN logic.target_type_specification IS 'Optional type specification string for the logic target (e.g., Int, STRING).';
+COMMENT ON COLUMN logic.destroy_event_specification IS 'Optional peer destroy event call for destroy-type logic (e.g., _destroy(b)); uses logic.notation for notation.';
 
 --------------------------------------------------------------
 
@@ -112,6 +116,7 @@ CREATE TABLE domain (
   model_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   realized boolean NOT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, domain_key),
@@ -123,6 +128,7 @@ COMMENT ON COLUMN domain.domain_key IS 'The internal ID.';
 COMMENT ON COLUMN domain.model_key IS 'The model this domain is part of.';
 COMMENT ON COLUMN domain.name IS 'The unique name of the domain.';
 COMMENT ON COLUMN domain.details IS 'A summary description.';
+COMMENT ON COLUMN domain.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN domain.realized IS 'A realized domain is one with no semantic model, which is preexisting, and just design and later artifacts.';
 COMMENT ON COLUMN domain.uml_comment IS 'A comment that appears in the diagrams.';
 
@@ -134,6 +140,7 @@ CREATE TABLE subdomain (
   domain_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, subdomain_key),
   CONSTRAINT fk_subdomain_domain FOREIGN KEY (model_key, domain_key) REFERENCES domain (model_key, domain_key) ON DELETE CASCADE
@@ -144,6 +151,7 @@ COMMENT ON COLUMN subdomain.subdomain_key IS 'The internal ID.';
 COMMENT ON COLUMN subdomain.model_key IS 'The model this subdomain is part of.';
 COMMENT ON COLUMN subdomain.name IS 'The unique name of the subdomain.';
 COMMENT ON COLUMN subdomain.details IS 'A summary description.';
+COMMENT ON COLUMN subdomain.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN subdomain.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -176,6 +184,7 @@ CREATE TABLE actor_generalization (
   is_complete boolean DEFAULT NULL,
   is_static boolean DEFAULT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, generalization_key),
   CONSTRAINT fk_actor_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
@@ -188,6 +197,7 @@ COMMENT ON COLUMN actor_generalization.name IS 'The unique name of the generaliz
 COMMENT ON COLUMN actor_generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
 COMMENT ON COLUMN actor_generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
 COMMENT ON COLUMN actor_generalization.details IS 'A summary description.';
+COMMENT ON COLUMN actor_generalization.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN actor_generalization.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -200,6 +210,7 @@ CREATE TABLE actor (
   actor_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   actor_type actor_type NOT NULL,
   superclass_of_key text DEFAULT NULL,
   subclass_of_key text DEFAULT NULL,
@@ -215,6 +226,7 @@ COMMENT ON COLUMN actor.model_key IS 'The model this actor is part of.';
 COMMENT ON COLUMN actor.actor_key IS 'The internal ID.';
 COMMENT ON COLUMN actor.name IS 'The unique name of the actor.';
 COMMENT ON COLUMN actor.details IS 'A summary description.';
+COMMENT ON COLUMN actor.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN actor.actor_type IS 'Whether this actor is a person or a system.';
 COMMENT ON COLUMN actor.superclass_of_key IS 'The generalization this actor is a superclass of, if it is one.';
 COMMENT ON COLUMN actor.subclass_of_key IS 'The generalization this actor is a subclass of, if it is one.';
@@ -240,10 +252,12 @@ CREATE TABLE data_type (
   collection_unique boolean DEFAULT NULL,
   collection_min bigint CHECK (collection_min > 0) DEFAULT NULL,
   collection_max bigint CHECK (collection_max > 0) DEFAULT NULL,
+  element_data_type_key text DEFAULT NULL,
   type_spec_notation notation DEFAULT NULL,
   type_spec_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, data_type_key),
-  CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
+  CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
+  CONSTRAINT fk_data_type_element FOREIGN KEY (model_key, element_data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE data_type IS 'A data type for use in a class attribute or action parameter.';
@@ -253,18 +267,20 @@ COMMENT ON COLUMN data_type.collection_type IS 'Whether a collection or atomic v
 COMMENT ON COLUMN data_type.collection_unique IS 'If a collection, is this collection unique.';
 COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum. Always set if maximum set.';
 COMMENT ON COLUMN data_type.collection_max IS 'If a collection and there is a maximum number of items, the maximum.';
+COMMENT ON COLUMN data_type.element_data_type_key IS 'When a collection element is a record or nested collection, the child data_type row key; NULL when the element is atomic on this row.';
 COMMENT ON COLUMN data_type.type_spec_notation IS 'Optional notation for a precise type specification (e.g., tla_plus).';
 COMMENT ON COLUMN data_type.type_spec_specification IS 'Optional precise type specification string (e.g., Seq(Int), SUBSET STRING).';
 
 --------------------------------------------------------------
 
-CREATE TYPE constraint_type AS ENUM ('span', 'enumeration', 'reference', 'unconstrained', 'object');
+CREATE TYPE constraint_type AS ENUM ('span', 'enumeration', 'reference', 'unconstrained', 'datetime', 'object');
 COMMENT ON TYPE constraint_type IS 'How an attribute constrains its values.
 
 - Span. A lower and upper bound with precision and units.
 - Enumeration. A list of acceptable values.
 - Reference. A citation of documentation outside of the system.
 - Unconstrained.
+- Datetime. A timestamp represented as Nat in TLA+.
 - Object. A reference to a class. This is used in parameters, but not class attributes which use associations.
 ';
 
@@ -373,6 +389,7 @@ CREATE TABLE class_generalization (
   is_complete boolean DEFAULT NULL,
   is_static boolean DEFAULT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, generalization_key),
   CONSTRAINT fk_class_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
@@ -387,6 +404,7 @@ COMMENT ON COLUMN class_generalization.subdomain_key IS 'The subdomain this clas
 COMMENT ON COLUMN class_generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
 COMMENT ON COLUMN class_generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
 COMMENT ON COLUMN class_generalization.details IS 'A summary description.';
+COMMENT ON COLUMN class_generalization.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN class_generalization.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -400,6 +418,7 @@ CREATE TABLE class (
   superclass_of_key text DEFAULT NULL,
   subclass_of_key text DEFAULT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, class_key),
   CONSTRAINT fk_class_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
@@ -418,6 +437,7 @@ COMMENT ON COLUMN class.actor_key IS 'If this class is also an actor, which acto
 COMMENT ON COLUMN class.superclass_of_key IS 'The generalization this class is a superclass of, if it is one.';
 COMMENT ON COLUMN class.subclass_of_key IS 'The generalization this class is a subclass of, if it is one.';
 COMMENT ON COLUMN class.details IS 'A summary description.';
+COMMENT ON COLUMN class.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN class.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -430,6 +450,7 @@ CREATE TABLE attribute (
   model_key text NOT NULL,
   attribute_key text NOT NULL,
   class_key text NOT NULL,
+  sort_order int NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
   data_type_rules text DEFAULT NULL,
@@ -446,6 +467,7 @@ CREATE TABLE attribute (
 COMMENT ON TABLE attribute IS 'An attribute of a class.';
 COMMENT ON COLUMN attribute.attribute_key IS 'The internal ID.';
 COMMENT ON COLUMN attribute.class_key IS 'The class this attribute is part of.';
+COMMENT ON COLUMN attribute.sort_order IS 'Zero-based position of this attribute within its class; preserves source declaration order.';
 COMMENT ON COLUMN attribute.model_key IS 'The model this class attribute is part of.';
 COMMENT ON COLUMN attribute.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN attribute.data_type_key IS 'If the rules are parsable, the data type they parse into.';
@@ -543,6 +565,44 @@ COMMENT ON COLUMN association.uml_comment IS 'A comment that appears in the diag
 
 --------------------------------------------------------------
 
+CREATE TYPE association_end AS ENUM ('from', 'to');
+
+CREATE TABLE association_uniqueness_attribute (
+  model_key text NOT NULL,
+  association_key text NOT NULL,
+  end_side association_end NOT NULL,
+  attribute_sort_order int NOT NULL,
+  attribute_key text NOT NULL,
+  PRIMARY KEY (model_key, association_key, end_side, attribute_sort_order),
+  CONSTRAINT fk_assoc_uniq_attr_association FOREIGN KEY (model_key, association_key) REFERENCES association (model_key, association_key) ON DELETE CASCADE,
+  CONSTRAINT fk_assoc_uniq_attr_attribute FOREIGN KEY (model_key, attribute_key) REFERENCES attribute (model_key, attribute_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE association_uniqueness_attribute IS 'Attributes that form one side of an association uniqueness tuple.';
+COMMENT ON COLUMN association_uniqueness_attribute.end_side IS 'Whether the attribute belongs to the from or to endpoint class.';
+COMMENT ON COLUMN association_uniqueness_attribute.attribute_sort_order IS 'Order of this attribute within the from or to tuple.';
+COMMENT ON COLUMN association_uniqueness_attribute.attribute_key IS 'The endpoint-class attribute that contributes to the uniqueness tuple.';
+
+--------------------------------------------------------------
+
+CREATE TABLE association_invariant (
+  model_key text NOT NULL,
+  association_key text NOT NULL,
+  logic_key text NOT NULL,
+  to_class_anchor boolean NOT NULL DEFAULT false,
+  PRIMARY KEY (model_key, association_key, logic_key),
+  CONSTRAINT fk_assoc_invariant_association FOREIGN KEY (model_key, association_key) REFERENCES association (model_key, association_key) ON DELETE CASCADE,
+  CONSTRAINT fk_assoc_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE association_invariant IS 'Join table linking class associations to their invariant logic predicates.';
+COMMENT ON COLUMN association_invariant.model_key IS 'The model this association invariant belongs to.';
+COMMENT ON COLUMN association_invariant.association_key IS 'The association this invariant constrains.';
+COMMENT ON COLUMN association_invariant.logic_key IS 'The logic predicate that must hold for the association link set.';
+COMMENT ON COLUMN association_invariant.to_class_anchor IS 'True when the invariant is anchored on the association to-class rather than the default from-class.';
+
+--------------------------------------------------------------
+
 CREATE TABLE query (
   model_key text NOT NULL,
   class_key text NOT NULL,
@@ -570,6 +630,7 @@ CREATE TABLE query_parameter (
   sort_order int NOT NULL,
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
+  nullable boolean NOT NULL DEFAULT false,
   PRIMARY KEY (model_key, query_key, parameter_key),
   CONSTRAINT fk_query_parameter_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
   CONSTRAINT fk_query_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
@@ -583,6 +644,25 @@ COMMENT ON COLUMN query_parameter.name IS 'The unique name of the parameter with
 COMMENT ON COLUMN query_parameter.sort_order IS 'Parameters are an ordered list.';
 COMMENT ON COLUMN query_parameter.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN query_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
+COMMENT ON COLUMN query_parameter.nullable IS 'Whether absent (NULL) is a valid value for this parameter.';
+
+--------------------------------------------------------------
+
+CREATE TABLE query_parameter_invariant (
+  model_key text NOT NULL,
+  query_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, query_key, parameter_key, logic_key),
+  CONSTRAINT fk_query_param_invariant_parameter FOREIGN KEY (model_key, query_key, parameter_key) REFERENCES query_parameter (model_key, query_key, parameter_key) ON DELETE CASCADE,
+  CONSTRAINT fk_query_param_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE query_parameter_invariant IS 'Join table linking query parameters to their invariant logic predicates.';
+COMMENT ON COLUMN query_parameter_invariant.model_key IS 'The model this query parameter invariant belongs to.';
+COMMENT ON COLUMN query_parameter_invariant.query_key IS 'The query this parameter invariant is part of.';
+COMMENT ON COLUMN query_parameter_invariant.parameter_key IS 'The parameter this invariant constrains.';
+COMMENT ON COLUMN query_parameter_invariant.logic_key IS 'The logic predicate that must hold for the parameter value.';
 
 --------------------------------------------------------------
 
@@ -668,21 +748,16 @@ CREATE TABLE event_parameter (
   parameter_key text NOT NULL,
   name text NOT NULL,
   sort_order int NOT NULL,
-  data_type_rules text DEFAULT NULL,
-  data_type_key text DEFAULT NULL,
   PRIMARY KEY (model_key, event_key, parameter_key),
-  CONSTRAINT fk_event_parameter_event FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE,
-  CONSTRAINT fk_event_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
+  CONSTRAINT fk_event_parameter_event FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE event_parameter IS 'A parameter of an event.';
+COMMENT ON TABLE event_parameter IS 'An ordered parameter name carried by an event payload.';
 COMMENT ON COLUMN event_parameter.model_key IS 'The model this event is part of.';
-COMMENT ON COLUMN event_parameter.event_key IS 'The event this parameter is part of.';
+COMMENT ON COLUMN event_parameter.event_key IS 'The event this parameter name is part of.';
 COMMENT ON COLUMN event_parameter.parameter_key IS 'The internal ID, the name but lower case.';
 COMMENT ON COLUMN event_parameter.name IS 'The unique name of the parameter within the event.';
-COMMENT ON COLUMN event_parameter.sort_order IS 'Parameters are an ordered list.';
-COMMENT ON COLUMN event_parameter.data_type_rules IS 'The rules for a well-formed value.';
-COMMENT ON COLUMN event_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
+COMMENT ON COLUMN event_parameter.sort_order IS 'Parameter names are an ordered list.';
 
 --------------------------------------------------------------
 
@@ -731,6 +806,7 @@ CREATE TABLE action_parameter (
   sort_order int NOT NULL,
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
+  nullable boolean NOT NULL DEFAULT false,
   PRIMARY KEY (model_key, action_key, parameter_key),
   CONSTRAINT fk_action_parameter_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
   CONSTRAINT fk_action_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
@@ -744,6 +820,61 @@ COMMENT ON COLUMN action_parameter.name IS 'The unique name of the parameter wit
 COMMENT ON COLUMN action_parameter.sort_order IS 'Parameters are an ordered list.';
 COMMENT ON COLUMN action_parameter.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN action_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
+COMMENT ON COLUMN action_parameter.nullable IS 'Whether absent (NULL) is a valid value for this parameter.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_parameter_invariant (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, parameter_key, logic_key),
+  CONSTRAINT fk_action_param_invariant_parameter FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter (model_key, action_key, parameter_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_param_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_parameter_invariant IS 'Join table linking action parameters to their invariant logic predicates.';
+COMMENT ON COLUMN action_parameter_invariant.model_key IS 'The model this action parameter invariant belongs to.';
+COMMENT ON COLUMN action_parameter_invariant.action_key IS 'The action this parameter invariant is part of.';
+COMMENT ON COLUMN action_parameter_invariant.parameter_key IS 'The parameter this invariant constrains.';
+COMMENT ON COLUMN action_parameter_invariant.logic_key IS 'The logic predicate that must hold for the parameter value.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_parameter_simulation_require (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, parameter_key, logic_key),
+  CONSTRAINT fk_action_param_sim_req_parameter FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter (model_key, action_key, parameter_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_param_sim_req_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_parameter_simulation_require IS 'Simulator-only sampling preconditions for an action parameter.';
+COMMENT ON COLUMN action_parameter_simulation_require.model_key IS 'The model this join row belongs to.';
+COMMENT ON COLUMN action_parameter_simulation_require.action_key IS 'The action that owns the parameter.';
+COMMENT ON COLUMN action_parameter_simulation_require.parameter_key IS 'The parameter subkey.';
+COMMENT ON COLUMN action_parameter_simulation_require.logic_key IS 'Assessment logic that must hold before the parameter may be sampled.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_parameter_simulation_spec (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  parameter_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, parameter_key),
+  CONSTRAINT fk_action_param_sim_spec_parameter FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter (model_key, action_key, parameter_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_param_sim_spec_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_parameter_simulation_spec IS 'Simulator-only value expression for sampling an action parameter.';
+COMMENT ON COLUMN action_parameter_simulation_spec.model_key IS 'The model this join row belongs to.';
+COMMENT ON COLUMN action_parameter_simulation_spec.action_key IS 'The action that owns the parameter.';
+COMMENT ON COLUMN action_parameter_simulation_spec.parameter_key IS 'The parameter subkey.';
+COMMENT ON COLUMN action_parameter_simulation_spec.logic_key IS 'Value logic that evaluates to the sampled parameter value.';
 
 --------------------------------------------------------------
 
@@ -858,6 +989,7 @@ CREATE TABLE use_case_generalization (
   is_complete boolean DEFAULT NULL,
   is_static boolean DEFAULT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, generalization_key),
   CONSTRAINT fk_use_case_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
@@ -872,6 +1004,7 @@ COMMENT ON COLUMN use_case_generalization.subdomain_key IS 'The subdomain this u
 COMMENT ON COLUMN use_case_generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
 COMMENT ON COLUMN use_case_generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
 COMMENT ON COLUMN use_case_generalization.details IS 'A summary description.';
+COMMENT ON COLUMN use_case_generalization.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN use_case_generalization.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -889,6 +1022,7 @@ CREATE TABLE use_case (
   use_case_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
+  unfinished_notes text DEFAULT NULL,
   level use_case_level NOT NULL,
   read_only boolean NOT NULL,
   subdomain_key text NOT NULL,
@@ -912,6 +1046,7 @@ COMMENT ON COLUMN use_case.subdomain_key IS 'The subdomain this use case is part
 COMMENT ON COLUMN use_case.superclass_of_key IS 'The generalization this use case is a superclass of, if it is one.';
 COMMENT ON COLUMN use_case.subclass_of_key IS 'The generalization this use case is a subclass of, if it is one.';
 COMMENT ON COLUMN use_case.details IS 'A summary description.';
+COMMENT ON COLUMN use_case.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN use_case.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -1017,7 +1152,7 @@ COMMENT ON COLUMN scenario_object.uml_comment IS 'A comment that appears in the 
 CREATE TYPE step_type AS ENUM ('sequence', 'switch', 'case', 'loop', 'leaf');
 COMMENT ON TYPE step_type IS 'The kind of scenario step this is';
 
-CREATE TYPE leaf_type AS ENUM ('event', 'query', 'scenario', 'delete');
+CREATE TYPE leaf_type AS ENUM ('event', 'query', 'scenario', 'destroy');
 COMMENT ON TYPE leaf_type IS 'If a leaf step, the kind of leaf step this is';
 
 CREATE TABLE scenario_step (

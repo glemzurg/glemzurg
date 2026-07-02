@@ -15,7 +15,7 @@ import (
 // Populate a golang struct from a database row.
 func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *model_state.Parameter, sortOrder *int) (err error) {
 	var actionKeyStr string
-	var parameterKeyStr string // Read but not used on the struct (it's derived from Name via preenKey).
+	var parameterKeyStr string // Read but not used on the struct.
 	var dataTypeRules sql.NullString
 	var dataTypeKey sql.NullString
 
@@ -26,6 +26,7 @@ func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *mod
 		sortOrder,
 		&dataTypeRules,
 		&dataTypeKey,
+		&param.Nullable,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -39,6 +40,11 @@ func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *mod
 		return err
 	}
 
+	param.Key, err = identity.NewParameterKey(*actionKeyPtr, parameterKeyStr)
+	if err != nil {
+		return err
+	}
+
 	// Set nullable fields.
 	if dataTypeRules.Valid {
 		param.DataTypeRules = dataTypeRules.String
@@ -47,7 +53,11 @@ func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *mod
 	// Create a stub DataType with just the key if present.
 	// The full DataType is stitched in top_level_requirements.go from the data_type table.
 	if dataTypeKey.Valid {
-		param.DataType = &model_data_type.DataType{Key: dataTypeKey.String}
+		parsedKey, parseErr := identity.ParseKey(dataTypeKey.String)
+		if parseErr != nil {
+			return errors.Wrapf(parseErr, "failed to parse data type key '%s'", dataTypeKey.String)
+		}
+		param.DataType = &model_data_type.DataType{Key: parsedKey}
 	}
 
 	return nil
@@ -73,7 +83,8 @@ func LoadActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key,
 			name            ,
 			sort_order      ,
 			data_type_rules ,
-			data_type_key
+			data_type_key   ,
+			nullable
 		FROM
 			action_parameter
 		WHERE
@@ -101,10 +112,7 @@ func AddActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, 
 
 // UpdateActionParameter updates an action parameter in the database.
 func UpdateActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
-	paramKey, err := preenKey(param.Name)
-	if err != nil {
-		return errors.Wrapf(err, "parameter name '%s'", param.Name)
-	}
+	paramKey := param.Key.SubKey
 
 	// Update the data.
 	err = dbExec(dbOrTx, `
@@ -114,7 +122,8 @@ func UpdateActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Ke
 			name            = $4 ,
 			sort_order      = $5 ,
 			data_type_rules = $6 ,
-			data_type_key   = $7
+			data_type_key   = $7 ,
+			nullable        = $8
 		WHERE
 			model_key     = $1
 		AND
@@ -127,7 +136,8 @@ func UpdateActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Ke
 		param.Name,
 		sortOrder,
 		param.DataTypeRules,
-		parameterDataTypeKey(param))
+		parameterDataTypeKey(param),
+		param.Nullable)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -183,7 +193,8 @@ func QueryActionParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.
 			name            ,
 			sort_order      ,
 			data_type_rules ,
-			data_type_key
+			data_type_key   ,
+			nullable
 		FROM
 			action_parameter
 		WHERE
@@ -210,8 +221,8 @@ func AddActionParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key
 
 	// Build the bulk insert query.
 	var sqlQueryBuilder strings.Builder
-	sqlQueryBuilder.WriteString(`INSERT INTO action_parameter (model_key, action_key, parameter_key, name, sort_order, data_type_rules, data_type_key) VALUES `)
-	args := make([]any, 0, count*7)
+	sqlQueryBuilder.WriteString(`INSERT INTO action_parameter (model_key, action_key, parameter_key, name, sort_order, data_type_rules, data_type_key, nullable) VALUES `)
+	args := make([]any, 0, count*8)
 	i := 0
 	for actionKey, paramList := range params {
 		for paramIdx, param := range paramList {
@@ -219,14 +230,11 @@ func AddActionParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key
 				sqlQueryBuilder.WriteString(", ")
 			}
 
-			paramKey, err := preenKey(param.Name)
-			if err != nil {
-				return errors.Wrapf(err, "parameter name '%s'", param.Name)
-			}
+			paramKey := param.Key.SubKey
 
-			base := i * 7
-			sqlQueryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7))
-			args = append(args, modelKey, actionKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
+			base := i * 8
+			fmt.Fprintf(&sqlQueryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+			args = append(args, modelKey, actionKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param), param.Nullable)
 			i++
 		}
 	}

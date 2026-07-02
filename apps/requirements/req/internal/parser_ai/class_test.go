@@ -42,20 +42,7 @@ func (suite *ClassSuite) TestParseClassFiles() {
 			suite.Equal(expected.UMLComment, actual.UMLComment, testName+" uml_comment")
 			suite.Equal(expected.Indexes, actual.Indexes, testName+" indexes")
 
-			// Compare attributes map
-			suite.Len(actual.Attributes, len(expected.Attributes), testName+" attributes count")
-			for key, expectedAttr := range expected.Attributes {
-				actualAttr, exists := actual.Attributes[key]
-				suite.True(exists, testName+" attribute '"+key+"' should exist")
-				if exists {
-					suite.Equal(expectedAttr.Name, actualAttr.Name, testName+" attribute '"+key+"' name")
-					suite.Equal(expectedAttr.DataTypeRules, actualAttr.DataTypeRules, testName+" attribute '"+key+"' data_type_rules")
-					suite.Equal(expectedAttr.Details, actualAttr.Details, testName+" attribute '"+key+"' details")
-					suite.Equal(expectedAttr.DerivationPolicy, actualAttr.DerivationPolicy, testName+" attribute '"+key+"' derivation_policy")
-					suite.Equal(expectedAttr.Nullable, actualAttr.Nullable, testName+" attribute '"+key+"' nullable")
-					suite.Equal(expectedAttr.UMLComment, actualAttr.UMLComment, testName+" attribute '"+key+"' uml_comment")
-				}
-			}
+			suite.Equal(expected.Attributes, actual.Attributes, testName+" attributes")
 		})
 		if !pass {
 			// The earlier test set the basics for later tests, stop as soon as we have an error.

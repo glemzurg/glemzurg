@@ -31,14 +31,9 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 		markdown += "\n\n" + parsedFile.UmlComment
 	}
 
-	model = core.NewModel(
-		strings.TrimSpace(strings.ToLower(key)),
-		parsedFile.Title,
-		markdown,
-		invariants,
-		globalFunctions,
-		namedSets,
-	)
+	model = core.NewModel(strings.TrimSpace(strings.ToLower(key)), core.ModelDetails{
+		Name: parsedFile.Title, Details: markdown,
+	}, parsedFile.UnfinishedNotes, invariants, globalFunctions, namedSets)
 
 	return model, nil
 }
@@ -58,7 +53,7 @@ func parseModelYamlData(data string) ([]model_logic.Logic, map[identity.Key]mode
 		return identity.NewInvariantKey(subKey)
 	}
 	invariants, err := logicListFromYamlData(yamlData, "invariants",
-		model_logic.LogicTypeAssessment, identity.Key{}, invariantKeyFunc)
+		model_logic.LogicTypeAssessment, identity.Key{}, invariantKeyFunc, nil)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "model invariants")
 	}
@@ -108,7 +103,7 @@ func parseOneGlobalFunction(gfMap map[string]any) (model_logic.GlobalFunction, e
 		name = n.(string)
 	}
 
-	gfKey, err := identity.NewGlobalFunctionKey(strings.ToLower(name))
+	gfKey, err := identity.NewGlobalFunctionKey(identity.NormalizeSubKey(name))
 	if err != nil {
 		return model_logic.GlobalFunction{}, errors.WithStack(err)
 	}
@@ -223,7 +218,7 @@ func generateModelContent(model core.Model) string {
 
 	dataStr, _ := builder.Build()
 
-	return generateFileContent(prependMarkdownTitle(model.Name, model.Details), "", dataStr)
+	return generateFileContent(prependMarkdownTitle(model.Name, model.Details), model.UnfinishedNotes, "", dataStr)
 }
 
 // generateGlobalFunctionsYaml generates the global_functions YAML section.

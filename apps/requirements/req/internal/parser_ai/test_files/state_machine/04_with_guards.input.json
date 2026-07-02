@@ -15,11 +15,19 @@
     "guards": {
         "is_valid": {
             "name": "Is Valid",
-            "logic": {"description": "The request passes all validation rules", "notation": "tla_plus"}
+            "logic": {
+                "type": "assessment",
+                "description": "The request passes all validation rules",
+                "notation": "tla_plus"
+            }
         },
         "has_budget": {
             "name": "Has Budget",
-            "logic": {"description": "Sufficient budget is available for the request", "notation": "tla_plus"}
+            "logic": {
+                "type": "assessment",
+                "description": "Sufficient budget is available for the request",
+                "notation": "tla_plus"
+            }
         }
     }
 }

@@ -1,44 +1,66 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
+// StepParameterGenerator supplies surface and nested event parameter values.
+type StepParameterGenerator struct {
+	Binder  *actions.ParameterBinder
+	Sampler *actions.ParameterSampler
+}
+
+// NewStepParameterGenerator wires type-only and requires-aware parameter generation.
+func NewStepParameterGenerator(binder *actions.ParameterBinder, sampler *actions.ParameterSampler) *StepParameterGenerator {
+	return &StepParameterGenerator{Binder: binder, Sampler: sampler}
+}
+
+// StepExecutorDeps groups construction inputs for StepExecutor.
+type StepExecutorDeps struct {
+	ActionExecutor     *actions.ActionExecutor
+	StateActionExec    *StateActionExecutor
+	ChainHandler       *CreationChainHandler
+	ParamGen           *StepParameterGenerator
+	Catalog            *ClassCatalog
+	DerivedEval        *DerivedAttributeEvaluator
+	RNG                *rand.Rand
+	SimulationCoverage *SimulationCoverageTracker
+	BindingsBuilder    *state.BindingsBuilder
+}
+
 // StepExecutor executes a single simulation step end-to-end.
 type StepExecutor struct {
-	actionExecutor  *actions.ActionExecutor
-	stateActionExec *StateActionExecutor
-	chainHandler    *CreationChainHandler
-	multChecker     *MultiplicityChecker
-	paramBinder     *actions.ParameterBinder
-	catalog         *ClassCatalog
-	rng             *rand.Rand
+	actionExecutor     *actions.ActionExecutor
+	stateActionExec    *StateActionExecutor
+	chainHandler       *CreationChainHandler
+	paramGen           *StepParameterGenerator
+	catalog            *ClassCatalog
+	derivedEval        *DerivedAttributeEvaluator
+	rng                *rand.Rand
+	simulationCoverage *SimulationCoverageTracker
+	bindingsBuilder    *state.BindingsBuilder
 }
 
 // NewStepExecutor creates a new step executor.
-func NewStepExecutor(
-	actionExecutor *actions.ActionExecutor,
-	stateActionExec *StateActionExecutor,
-	chainHandler *CreationChainHandler,
-	multChecker *MultiplicityChecker,
-	paramBinder *actions.ParameterBinder,
-	catalog *ClassCatalog,
-	rng *rand.Rand,
-) *StepExecutor {
+func NewStepExecutor(deps StepExecutorDeps) *StepExecutor {
 	return &StepExecutor{
-		actionExecutor:  actionExecutor,
-		stateActionExec: stateActionExec,
-		chainHandler:    chainHandler,
-		multChecker:     multChecker,
-		paramBinder:     paramBinder,
-		catalog:         catalog,
-		rng:             rng,
+		actionExecutor:     deps.ActionExecutor,
+		stateActionExec:    deps.StateActionExec,
+		chainHandler:       deps.ChainHandler,
+		paramGen:           deps.ParamGen,
+		catalog:            deps.Catalog,
+		derivedEval:        deps.DerivedEval,
+		rng:                deps.RNG,
+		simulationCoverage: deps.SimulationCoverage,
+		bindingsBuilder:    deps.BindingsBuilder,
 	}
 }
 
@@ -48,12 +70,91 @@ func (e *StepExecutor) Execute(
 	simState *state.SimulationState,
 	stepNumber int,
 ) (*SimulationStep, error) {
+	if pending.IsQuery {
+		return e.executeQuery(pending, stepNumber)
+	}
+
+	if pending.IsDerivedRead {
+		return e.executeDerivedRead(pending, stepNumber)
+	}
+
 	// Handle "do" actions separately — they don't involve state transitions.
 	if pending.IsDo {
 		return e.executeDo(pending, stepNumber)
 	}
 
 	return e.executeTransition(pending, simState, stepNumber)
+}
+
+// executeQuery runs a read-only query on an existing instance.
+func (e *StepExecutor) executeQuery(
+	pending *PendingAction,
+	stepNumber int,
+) (*SimulationStep, error) {
+	step := &SimulationStep{
+		StepNumber: stepNumber,
+		Kind:       StepKindNormal,
+		ClassKey:   pending.Class.ClassKey,
+		ClassName:  pending.Class.Class.Name,
+		InstanceID: pending.Instance.ID,
+	}
+
+	if pending.Query == nil {
+		return nil, fmt.Errorf("query is nil")
+	}
+
+	params, err := e.sampleQueryParameters(pending)
+	if err != nil {
+		return nil, fmt.Errorf("query %s parameter sampling: %w", pending.Query.Name, err)
+	}
+	step.Parameters = params
+
+	result, err := e.actionExecutor.ExecuteQuery(*pending.Query, pending.Instance, params)
+	if err != nil {
+		return nil, fmt.Errorf("query %s error: %w", pending.Query.Name, err)
+	}
+
+	step.QueryKey = pending.Query.Key
+	step.QueryName = pending.Query.Name
+	step.QueryResult = result
+	step.Violations = append(step.Violations, result.Violations...)
+	return step, nil
+}
+
+// executeDerivedRead evaluates one external derived attribute on an existing instance.
+func (e *StepExecutor) executeDerivedRead(
+	pending *PendingAction,
+	stepNumber int,
+) (*SimulationStep, error) {
+	step := &SimulationStep{
+		StepNumber: stepNumber,
+		Kind:       StepKindNormal,
+		ClassKey:   pending.Class.ClassKey,
+		ClassName:  pending.Class.Class.Name,
+		InstanceID: pending.Instance.ID,
+	}
+
+	if pending.DerivedAttribute == nil {
+		return nil, fmt.Errorf("derived attribute is nil")
+	}
+	if e.derivedEval == nil {
+		return nil, fmt.Errorf("derived attribute %s: evaluator not configured", pending.DerivedAttribute.Name)
+	}
+
+	derived, err := e.derivedEval.ResolveDerived(pending.Instance)
+	if err != nil {
+		return nil, fmt.Errorf("derived attribute %s error: %w", pending.DerivedAttribute.Name, err)
+	}
+
+	value, ok := derived[pending.DerivedAttribute.Name]
+	if !ok || value == nil {
+		return nil, fmt.Errorf("derived attribute %s produced no value", pending.DerivedAttribute.Name)
+	}
+
+	step.DerivedAttributeKey = pending.DerivedAttribute.Key
+	step.DerivedAttributeName = pending.DerivedAttribute.Name
+	step.DerivedReadValue = value
+	return step, nil
 }
 
 // executeDo handles a "do" state action — runs the action on the instance.
@@ -78,6 +179,7 @@ func (e *StepExecutor) executeDo(
 		return nil, fmt.Errorf("do action %s error: %w", pending.DoAction.Name, err)
 	}
 
+	step.ExecutedActionKeys = append(step.ExecutedActionKeys, pending.DoAction.Key)
 	step.DoActionResult = result
 	step.Violations = append(step.Violations, result.Violations...)
 	return step, nil
@@ -101,8 +203,11 @@ func (e *StepExecutor) executeTransition(
 		EventName:  pending.Event.Name,
 	}
 
-	// 1. Generate event parameters.
-	params := e.paramBinder.GenerateRandomParameters(pending.Event.Parameters, e.rng)
+	// 1. Generate event parameters (surface steps sample from transition action requires).
+	params, err := e.sampleEventParameters(pending)
+	if err != nil {
+		return nil, fmt.Errorf("event %s parameter sampling: %w", pending.Event.Name, err)
+	}
 	step.Parameters = params
 
 	// 2. Execute exit StateActions (if not creation).
@@ -113,7 +218,10 @@ func (e *StepExecutor) executeTransition(
 	// 3. Execute the transition.
 	result, err := e.actionExecutor.ExecuteTransition(
 		pending.Class.Class, *pending.Event, pending.Instance,
-		params, nil, nil, // No source association for top-level steps.
+		params, actions.CreationLinkSource{
+			SourceAssocKey: pending.SourceAssocKey,
+			SourceID:       pending.SourceInstanceID,
+		}, pending.TargetInstanceID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("transition error: %w", err)
@@ -128,8 +236,8 @@ func (e *StepExecutor) executeTransition(
 	switch {
 	case result.WasCreation:
 		step.Kind = StepKindCreation
-	case result.WasDeletion:
-		step.Kind = StepKindDeletion
+	case result.WasDestroy:
+		step.Kind = StepKindDestroy
 	default:
 		step.Kind = StepKindNormal
 	}
@@ -139,15 +247,70 @@ func (e *StepExecutor) executeTransition(
 		return nil, err
 	}
 
-	// 5. Handle creation chains (if creation).
+	// 5. Record association peer effects from the transition action (set-add / set-map).
+	if err := e.appendAssociationPeerCascades(step, result, simState); err != nil {
+		return nil, err
+	}
+
+	// 6. Handle creation chains (if creation).
 	if err := e.handleCreationChain(result, simState, step); err != nil {
 		return nil, err
 	}
 
-	// 6. Check multiplicity constraints.
-	e.checkMultiplicityConstraints(result, simState, step)
-
 	return step, nil
+}
+
+// sampleQueryParameters generates parameters for a query step.
+func (e *StepExecutor) sampleQueryParameters(pending *PendingAction) (map[string]object.Object, error) {
+	if pending.Query == nil || len(pending.Query.Parameters) == 0 {
+		return map[string]object.Object{}, nil
+	}
+	if e.paramGen != nil && e.paramGen.Sampler != nil {
+		return e.paramGen.Sampler.SampleQueryFromRequires(*pending.Query, e.rng)
+	}
+	binder := actions.NewParameterBinder()
+	if e.paramGen != nil && e.paramGen.Binder != nil {
+		binder = e.paramGen.Binder
+	}
+	return binder.GenerateRandomParameters(pending.Query.Parameters, e.rng), nil
+}
+
+// sampleEventParameters generates parameters for a top-level transition event.
+func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string]object.Object, error) {
+	instanceState := ""
+	if pending.Instance != nil {
+		instanceState = getInstanceStateName(pending.Instance)
+	}
+
+	action, found := e.catalog.GetActionForEvent(pending.Class.ClassKey, pending.Event.Key, instanceState)
+	var actionPtr *model_state.Action
+	if found && action != nil {
+		actionPtr = action
+	}
+
+	if e.paramGen != nil && e.paramGen.Sampler != nil {
+		if pending.Instance != nil {
+			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.ID)
+		} else {
+			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(0)
+		}
+	}
+
+	params, err := sampleSurfaceEventPayload(pending, actionPtr, surfaceEventSamplingDeps{
+		paramGen:           e.paramGen,
+		bindingsBuilder:    e.bindingsBuilder,
+		catalog:            e.catalog,
+		simulationCoverage: e.simulationCoverage,
+		rng:                e.rng,
+	})
+	if err != nil {
+		var unsupported *actions.UnsupportedRequiresSamplingError
+		if errors.As(err, &unsupported) {
+			unsupported.ClassName = pending.Class.Class.Name
+		}
+		return nil, err
+	}
+	return params, nil
 }
 
 // executeExitActions runs exit state actions for a non-creation transition.
@@ -159,12 +322,13 @@ func (e *StepExecutor) executeExitActions(pending *PendingAction, step *Simulati
 	if fromStateKey == nil {
 		return nil
 	}
-	exitViolations, err := e.stateActionExec.ExecuteExitActions(
+	exitKeys, exitViolations, err := e.stateActionExec.ExecuteExitActions(
 		pending.Class.Class, *fromStateKey, pending.Instance,
 	)
 	if err != nil {
 		return fmt.Errorf("exit actions error: %w", err)
 	}
+	step.ExecutedActionKeys = append(step.ExecutedActionKeys, exitKeys...)
 	step.Violations = append(step.Violations, exitViolations...)
 	return nil
 }
@@ -176,7 +340,7 @@ func (e *StepExecutor) executeEntryActions(
 	simState *state.SimulationState,
 	step *SimulationStep,
 ) error {
-	if result.WasDeletion || result.ToState == "" {
+	if result.WasDestroy || result.ToState == "" {
 		return nil
 	}
 	toStateKey := stateNameToKey(result.ToState, pending.Class.Class)
@@ -187,12 +351,13 @@ func (e *StepExecutor) executeEntryActions(
 	if entryInstance == nil {
 		return nil
 	}
-	entryViolations, err := e.stateActionExec.ExecuteEntryActions(
+	entryKeys, entryViolations, err := e.stateActionExec.ExecuteEntryActions(
 		pending.Class.Class, *toStateKey, entryInstance,
 	)
 	if err != nil {
 		return fmt.Errorf("entry actions error: %w", err)
 	}
+	step.ExecutedActionKeys = append(step.ExecutedActionKeys, entryKeys...)
 	step.Violations = append(step.Violations, entryViolations...)
 	return nil
 }
@@ -215,33 +380,6 @@ func (e *StepExecutor) handleCreationChain(
 	step.CascadedSteps = cascadedSteps
 	step.Violations = append(step.Violations, cascadeViolations...)
 	return nil
-}
-
-// checkMultiplicityConstraints checks multiplicity constraints on the result instance.
-func (e *StepExecutor) checkMultiplicityConstraints(
-	result *actions.TransitionResult,
-	simState *state.SimulationState,
-	step *SimulationStep,
-) {
-	instance := simState.GetInstance(result.InstanceID)
-	if instance == nil {
-		return
-	}
-	multViolations := e.multChecker.CheckInstance(instance, simState)
-	for _, mv := range multViolations {
-		step.Violations = append(step.Violations, invariants.NewMultiplicityViolation(
-			invariants.MultiplicityViolationParams{
-				InstanceID:      mv.InstanceID,
-				ClassKey:        mv.ClassKey,
-				AssociationName: mv.AssociationName,
-				Direction:       mv.Direction,
-				ActualCount:     mv.ActualCount,
-				RequiredMin:     mv.RequiredMin,
-				RequiredMax:     mv.RequiredMax,
-				Message:         mv.Message,
-			},
-		))
-	}
 }
 
 // getCurrentStateKey looks up the instance's current state key from its _state attribute.

@@ -15,6 +15,19 @@ func TestActionSuite(t *testing.T) {
 	suite.Run(t, new(ActionSuite))
 }
 
+func newDestroyGuarantee(key identity.Key, description, target string) model_logic.Logic {
+	logic := model_logic.NewLogic(
+		key,
+		model_logic.LogicTypeDestroy,
+		description,
+		target,
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ b \\in " + target + " : TRUE }"},
+		nil,
+	)
+	logic.SetDestroyEventSpec(logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "_destroy(b)"})
+	return logic
+}
+
 type ActionSuite struct {
 	suite.Suite
 }
@@ -113,6 +126,14 @@ func (suite *ActionSuite) TestValidate() {
 			errstr: "Name",
 		},
 		{
+			testName: "error name with invalid chars",
+			action: Action{
+				Key:  validKey,
+				Name: "Fail On Name/DOB",
+			},
+			errstr: "ACTION_NAME_INVALID_CHARS",
+		},
+		{
 			testName: "error blank name with logic fields set",
 			action: Action{
 				Key:  validKey,
@@ -179,7 +200,7 @@ func (suite *ActionSuite) TestValidate() {
 					model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Set x to 1.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 				},
 			},
-			errstr: "guarantee 0: logic kind must be 'state_change' or 'let'",
+			errstr: "guarantee 0: logic kind must be 'state_change', 'let', or 'destroy'",
 		},
 		{
 			testName: "error safety rule wrong kind",
@@ -262,7 +283,7 @@ func (suite *ActionSuite) TestValidate() {
 			errstr: "duplicate let target \"a\"",
 		},
 		{
-			testName: "error let target collides with state_change target in guarantees",
+			testName: "valid let and state_change may share target name in guarantees",
 			action: Action{
 				Key:  validKey,
 				Name: "Name",
@@ -271,7 +292,29 @@ func (suite *ActionSuite) TestValidate() {
 					model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local x.", "x", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 				},
 			},
-			errstr: "duplicate let target \"x\"",
+		},
+		{
+			testName: "valid state_change and destroy on same association target",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Subtract removed peers.", "AssocField", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "AssocField \\ ToDelete"}, nil),
+					newDestroyGuarantee(guarKey, "Remove peers.", "AssocField"),
+				},
+			},
+		},
+		{
+			testName: "error duplicate destroy guarantee target",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					newDestroyGuarantee(guarKey, "Remove peers.", "AssocField"),
+					newDestroyGuarantee(guarKey, "Remove peers again.", "AssocField"),
+				},
+			},
+			errstr: "duplicate destroy target",
 		},
 		{
 			testName: "error duplicate let target in safety rules",
@@ -321,12 +364,11 @@ func (suite *ActionSuite) TestNew() {
 
 	// Test all parameters are mapped correctly.
 	params := []Parameter{
-		helper.Must(NewParameter("ParamA", "Nat")),
-		helper.Must(NewParameter("ParamB", "Int")),
+		helper.Must(NewParameter(key, "ParamA", "Nat", false)),
+		helper.Must(NewParameter(key, "ParamB", "Int", false)),
 	}
 
-	action := NewAction(key, "Name", "Details",
-		requires, guarantees, safetyRules, params)
+	action := NewAction(key, ActionDetails{Name: "Name", Details: "Details"}, requires, guarantees, safetyRules, params)
 	suite.Equal(Action{
 		Key:         key,
 		Name:        "Name",
@@ -335,15 +377,14 @@ func (suite *ActionSuite) TestNew() {
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,
 		Parameters: []Parameter{
-			helper.Must(NewParameter("ParamA", "Nat")),
-			helper.Must(NewParameter("ParamB", "Int")),
+			helper.Must(NewParameter(key, "ParamA", "Nat", false)),
+			helper.Must(NewParameter(key, "ParamB", "Int", false)),
 		},
 	}, action)
 
 	// Test with nil optional fields (all Logic slice fields are optional).
 
-	action = NewAction(key, "Name", "Details",
-		nil, nil, nil, nil)
+	action = NewAction(key, ActionDetails{Name: "Name", Details: "Details"}, nil, nil, nil, nil)
 	suite.Equal(Action{
 		Key:     key,
 		Name:    "Name",
@@ -419,18 +460,18 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Parameters: []Parameter{
-			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
+			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name (and missing key)
 		},
 	}
 	err = action.ValidateWithParent(ctx, &classKey)
-	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
+	suite.Require().Error(err, "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
 	action = Action{
 		Key:  validKey,
 		Name: "Name",
 		Parameters: []Parameter{
-			helper.Must(NewParameter("param1", "Nat")),
+			helper.Must(NewParameter(validKey, "param1", "Nat", false)),
 		},
 	}
 	err = action.ValidateWithParent(ctx, &classKey)

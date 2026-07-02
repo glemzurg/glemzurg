@@ -49,6 +49,11 @@ type Requirements struct {
 
 	// Prepared flag to avoid re-processing.
 	prepared bool
+
+	// associationClassKeys is the set of class-key strings that appear as
+	// AssociationClassKey on some class association anywhere in the model.
+	// Populated by PrepLookups.
+	associationClassKeys map[string]bool
 }
 
 // NewRequirements creates a Requirements from a Model, flattening the tree into lookups.
@@ -132,7 +137,9 @@ func (r *Requirements) flattenModel() {
 				r.Classes[classKey] = class
 
 				// Attributes.
-				maps.Copy(r.Attributes, class.Attributes)
+				for _, attr := range class.Attributes {
+					r.Attributes[attr.Key] = attr
+				}
 
 				// Class invariants (slice, not map).
 				for _, inv := range class.Invariants {
@@ -188,6 +195,21 @@ func (r *Requirements) PrepLookups() {
 		return
 	}
 	r.prepared = true
+
+	// Collect the set of class keys used as association classes.
+	r.associationClassKeys = map[string]bool{}
+	for _, assoc := range r.ClassAssociations {
+		if assoc.AssociationClassKey != nil {
+			r.associationClassKeys[assoc.AssociationClassKey.String()] = true
+		}
+	}
+}
+
+// IsAssociationClass reports whether the given class key is used as an
+// AssociationClassKey on any class association in the model.
+func (r *Requirements) IsAssociationClass(key identity.Key) bool {
+	r.PrepLookups()
+	return r.associationClassKeys[key.String()]
 }
 
 // ActorLookup returns actors by key (as string for template use).
@@ -595,6 +617,82 @@ func (r *Requirements) ClassInvariantLookup() map[string]model_logic.Logic {
 	return lookup
 }
 
+// ClassAssociationInvariantGroup groups class invariants tagged with over_association.
+type ClassAssociationInvariantGroup struct {
+	Name       string
+	Invariants []model_logic.Logic
+}
+
+// ClassAssociationTaggedInvariantGroups returns class invariants tagged as association invariants.
+func (r *Requirements) ClassAssociationTaggedInvariantGroups(classKey identity.Key) []ClassAssociationInvariantGroup {
+	r.PrepLookups()
+	class, ok := r.Classes[classKey]
+	if !ok {
+		return nil
+	}
+
+	byName := make(map[string][]model_logic.Logic)
+	for _, inv := range class.Invariants {
+		if inv.OverAssociationKey == nil {
+			continue
+		}
+		assoc, ok := r.ClassAssociations[*inv.OverAssociationKey]
+		if !ok {
+			continue
+		}
+		byName[assoc.Name] = append(byName[assoc.Name], inv)
+	}
+	if len(byName) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(byName))
+	for name := range byName {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	groups := make([]ClassAssociationInvariantGroup, 0, len(names))
+	for _, name := range names {
+		groups = append(groups, ClassAssociationInvariantGroup{
+			Name:       name,
+			Invariants: byName[name],
+		})
+	}
+	return groups
+}
+
+// ClassInvariantsWithoutAssociationTag returns class invariants not tagged over_association.
+func ClassInvariantsWithoutAssociationTag(invariants []model_logic.Logic) []model_logic.Logic {
+	if len(invariants) == 0 {
+		return nil
+	}
+	filtered := make([]model_logic.Logic, 0, len(invariants))
+	for _, inv := range invariants {
+		if inv.OverAssociationKey != nil {
+			continue
+		}
+		filtered = append(filtered, inv)
+	}
+	return filtered
+}
+
+// ClassOutgoingAssociationsWithInvariants returns from-class associations that declare invariants.
+func (r *Requirements) ClassOutgoingAssociationsWithInvariants(classKey identity.Key) []model_class.Association {
+	r.PrepLookups()
+	associations := make([]model_class.Association, 0)
+	for _, assoc := range r.ClassAssociations {
+		if assoc.FromClassKey != classKey || len(assoc.Invariants) == 0 {
+			continue
+		}
+		associations = append(associations, assoc)
+	}
+	sort.Slice(associations, func(i, j int) bool {
+		return associations[i].Key.String() < associations[j].Key.String()
+	})
+	return associations
+}
+
 // ActorGeneralizationLookup returns actor generalizations by key.
 func (r *Requirements) ActorGeneralizationLookup() map[string]model_actor.Generalization {
 	r.PrepLookups()
@@ -763,12 +861,12 @@ func (r *Requirements) RegardingClasses(inClasses []model_class.Class) (generali
 	for _, generalization := range relevantGeneralizationLookup {
 		generalizations = append(generalizations, generalization)
 	}
+	// Include every relevant class as its own node. Classes in a generalization
+	// also need to be defined here so the generalization arrows (drawn by the
+	// template's generalization branch) reference nodes that have labels and
+	// attributes — otherwise mermaid renders only the raw node ID.
 	for _, class := range relevantClassLookup {
-		// Only include classes *not* in a generalization.
-		// The classes in a generalization will be drawn by the generalization code.
-		if class.SuperclassOfKey == nil && class.SubclassOfKey == nil {
-			classes = append(classes, class)
-		}
+		classes = append(classes, class)
 	}
 	for _, association := range relevantAssociationsLookup {
 		associations = append(associations, association)
