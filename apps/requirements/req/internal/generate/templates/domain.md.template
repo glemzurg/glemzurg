@@ -12,7 +12,9 @@
 
 The subdomains of this domain.
 
+```mermaid
 {{ .SubdomainsDiagram }}
+```
 
 {{ range .Subdomains -}}
 - **[{{ .Name }}]({{ filename "subdomain" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
@@ -33,7 +35,9 @@ The subdomains of this domain.
 The classes of this domain.
 
 {{ if ne .ClassesDiagram "" }}
+```mermaid
 {{ .ClassesDiagram }}
+```
 {{ end }}
 {{ range $domainClasses -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}){{ parse_error_marker .Key }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
@@ -57,7 +61,9 @@ The class generalizations of this subdomain.
 ## Use Cases
 
 {{ if ne .UseCasesDiagram "" }}
+```mermaid
 {{ .UseCasesDiagram }}
+```
 {{ end }}
 {{ range $domainUseCases -}}
 - **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ if .ReadOnly }}«read-only» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}){{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}

@@ -20,9 +20,6 @@ func (c *collectWriter) WriteMarkdown(f string, b []byte) error {
 }
 func (c *collectWriter) WriteSVG(string, []byte) error { return nil }
 func (c *collectWriter) WriteCSS([]byte) error         { return nil }
-func (c *collectWriter) DiagramMode() DiagramOutputMode {
-	return DiagramInlineMermaid
-}
 
 func TestGenerateClassErrorBlock(t *testing.T) {
 	model := test_helper.GetTestModel()

@@ -155,8 +155,3 @@ func (c *ContentCollector) WriteCSS(content []byte) error {
 	c.CSS = content
 	return nil
 }
-
-// DiagramMode returns DiagramInlineMermaid so the HTTP server can render fences in-browser.
-func (c *ContentCollector) DiagramMode() generate.DiagramOutputMode {
-	return generate.DiagramInlineMermaid
-}

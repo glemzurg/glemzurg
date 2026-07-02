@@ -56,14 +56,19 @@
 
 Flows of interest.
 
-{{ if ne .ScenarioSections nil -}}
-{{ range .ScenarioSections -}}
+{{ if ne .UseCase.Scenarios nil -}}
+{{ range .UseCase.Scenarios -}}
 
-### {{ .Scenario.Name }}
+    {{- $scenario := scenario_lookup $reqs .Key -}}
 
-{{ .Scenario.Details }}
+### {{ $scenario.Name }}
 
-{{ .DiagramEmbed }}
+{{ $scenario.Details }}
+
+```mermaid
+sequenceDiagram
+{{ scenario_mermaid $reqs $scenario.Key }}
+```
 
 {{ end -}}
 {{- else -}}

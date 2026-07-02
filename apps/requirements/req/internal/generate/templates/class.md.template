@@ -92,11 +92,15 @@ This is an actor:
 
 ## Relations
 
+```mermaid
 {{ .ClassesDiagram }}
+```
 
 # State Machine
 {{ state_machine_incomplete_marker .Class }}{{ if ne .StateDiagram "" -}}
+```mermaid
 {{ .StateDiagram }}
+```
 {{- end }}
 
 ## State and Event Descriptions
