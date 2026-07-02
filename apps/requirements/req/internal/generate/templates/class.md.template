@@ -92,9 +92,14 @@ This is an actor:
 
 ## Relations
 
+The classes in this diagram.
+
 ```mermaid
 {{ .ClassesDiagram }}
 ```
+{{ range .DiagramClasses -}}
+- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}){{ parse_error_marker .Key }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
+{{ end }}
 
 # State Machine
 {{ state_machine_incomplete_marker .Class }}{{ if ne .StateDiagram "" -}}

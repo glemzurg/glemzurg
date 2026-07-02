@@ -394,7 +394,7 @@ func writeClassMarkdownPage(
 		}
 	}
 
-	classMdContents, err := generateClassMdContents(reqs, class, classesDiagram, stateDiagram)
+	classMdContents, err := generateClassMdContents(reqs, class, classes, classesDiagram, stateDiagram)
 	if err != nil {
 		return err
 	}
