@@ -12,6 +12,7 @@
 | [public.domain](public.domain.md) | 7 | A bucket for parts of a model. | BASE TABLE |
 | [public.subdomain](public.subdomain.md) | 7 | A bucket for parts of a model. | BASE TABLE |
 | [public.domain_association](public.domain_association.md) | 5 | A semantic relationship between two domains. | BASE TABLE |
+| [public.subdomain_association](public.subdomain_association.md) | 5 | A semantic relationship between two subdomains in the same domain. | BASE TABLE |
 | [public.actor_generalization](public.actor_generalization.md) | 8 | A relationship between actors indicating super classes and subclasses. | BASE TABLE |
 | [public.actor](public.actor.md) | 9 | A role that a person or system can take who uses the system. Actors are outside of subdomains. | BASE TABLE |
 | [public.data_type](public.data_type.md) | 9 | A data type for use in a class attribute or action parameter. | BASE TABLE |
