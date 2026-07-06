@@ -27,8 +27,6 @@ The subdomains of this domain.
 
 {{ .Details }}{{ unfinished_notes_block .UnfinishedNotes }}
 {{ end -}}
-[Model facts]({{ filename "subdomain" .Key "facts" ".md" }})
-
 {{ end }}
 ## Classes
 
@@ -45,7 +43,10 @@ The classes of this domain.
 {{ range .ExternalDiagramClasses -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ class_markdown_display_name $reqs $.ViewerSubdomainKey . }}]({{ filename "class" .Key "" ".md" }}){{ parse_error_marker .Key }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
+{{ range .Subdomains -}}
+[Model facts]({{ filename "subdomain" .Key "facts" ".md" }})
 
+{{ end }}
 {{ range .Subdomains -}}
 {{ if ne .Generalizations nil -}}
 ### Generalizations

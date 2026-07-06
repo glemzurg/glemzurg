@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/modelfacts"
@@ -42,7 +43,18 @@ func TestGenerateSubdomainFactsPages(t *testing.T) {
 	subdomainFile := convertKeyToFilename("subdomain", subdomain.Key.String(), "", ".md")
 	subdomainBody, ok := writer.md[subdomainFile]
 	require.True(t, ok, "expected subdomain page %s", subdomainFile)
-	assert.Contains(t, string(subdomainBody), "[Model facts]("+factsFile+")")
+	factsLink := "[Model facts](" + factsFile + ")"
+	subdomainText := string(subdomainBody)
+	assert.Contains(t, subdomainText, factsLink)
+	classesIdx := strings.Index(subdomainText, "## Classes")
+	factsIdx := strings.Index(subdomainText, factsLink)
+	require.Positive(t, classesIdx)
+	require.Positive(t, factsIdx)
+	assert.Greater(t, factsIdx, classesIdx, "Model facts should follow the Classes section")
+	generalizationsIdx := strings.Index(subdomainText, "### Generalizations")
+	if generalizationsIdx >= 0 {
+		assert.Less(t, factsIdx, generalizationsIdx, "Model facts should precede generalizations")
+	}
 }
 
 func TestGenerateSingleSubdomainFactsOnDomainPage(t *testing.T) {
@@ -60,7 +72,14 @@ func TestGenerateSingleSubdomainFactsOnDomainPage(t *testing.T) {
 	domainFile := convertKeyToFilename("domain", domain.Key.String(), "", ".md")
 	domainBody, ok := writer.md[domainFile]
 	require.True(t, ok, "expected domain page %s", domainFile)
-	assert.Contains(t, string(domainBody), "[Model facts]("+factsFile+")")
+	factsLink := "[Model facts](" + factsFile + ")"
+	domainText := string(domainBody)
+	assert.Contains(t, domainText, factsLink)
+	classesIdx := strings.Index(domainText, "## Classes")
+	factsIdx := strings.Index(domainText, factsLink)
+	require.Positive(t, classesIdx)
+	require.Positive(t, factsIdx)
+	assert.Greater(t, factsIdx, classesIdx, "Model facts should follow the Classes section")
 
 	subdomainFile := convertKeyToFilename("subdomain", subdomain.Key.String(), "", ".md")
 	_, hasSubdomainPage := writer.md[subdomainFile]
