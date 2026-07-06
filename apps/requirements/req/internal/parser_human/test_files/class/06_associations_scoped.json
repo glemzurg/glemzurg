@@ -1,0 +1,13 @@
+{
+    "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key",
+    "Name": "Scoped Association Keys",
+    "Details": "Cross-subdomain and cross-domain association targets use compact scoped keys.",
+    "UmlComment": "",
+    "Attributes": [],
+    "States": {},
+    "Events": {},
+    "Guards": {},
+    "Actions": {},
+    "Queries": {},
+    "Transitions": {}
+}

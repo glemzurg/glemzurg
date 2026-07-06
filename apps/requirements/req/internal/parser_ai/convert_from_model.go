@@ -723,19 +723,17 @@ func convertAssociationFromModel(assoc *model_class.Association, parentType stri
 			result.AssociationClassKey = &key
 		}
 	case identity.KEY_TYPE_DOMAIN:
-		// Domain level - subdomain/class format
-		result.FromClassKey = extractDomainScopedKey(assoc.FromClassKey)
-		result.ToClassKey = extractDomainScopedKey(assoc.ToClassKey)
+		result.FromClassKey = mustFormatDomainScopedClassKey(assoc.FromClassKey)
+		result.ToClassKey = mustFormatDomainScopedClassKey(assoc.ToClassKey)
 		if assoc.AssociationClassKey != nil {
-			key := extractDomainScopedKey(*assoc.AssociationClassKey)
+			key := mustFormatDomainScopedClassKey(*assoc.AssociationClassKey)
 			result.AssociationClassKey = &key
 		}
 	default:
-		// Model level - domain/subdomain/class format
-		result.FromClassKey = extractModelScopedKey(assoc.FromClassKey)
-		result.ToClassKey = extractModelScopedKey(assoc.ToClassKey)
+		result.FromClassKey = mustFormatModelScopedClassKey(assoc.FromClassKey)
+		result.ToClassKey = mustFormatModelScopedClassKey(assoc.ToClassKey)
 		if assoc.AssociationClassKey != nil {
-			key := extractModelScopedKey(*assoc.AssociationClassKey)
+			key := mustFormatModelScopedClassKey(*assoc.AssociationClassKey)
 			result.AssociationClassKey = &key
 		}
 	}
@@ -743,62 +741,18 @@ func convertAssociationFromModel(assoc *model_class.Association, parentType stri
 	return result
 }
 
-// extractDomainScopedKey extracts subdomain/class from a full class key.
-func extractDomainScopedKey(classKey identity.Key) string {
-	// Class key format: domain/domainName/subdomain/subdomainName/class/className
-	// We want: subdomainName/className
-	keyStr := classKey.String()
-	// Parse to find subdomain and class
-	parts := splitKeyPath(keyStr)
-	var subdomainName, className string
-	for i := range len(parts) - 1 {
-		if parts[i] == identity.KEY_TYPE_SUBDOMAIN && i+1 < len(parts) {
-			subdomainName = parts[i+1]
-		}
-		if parts[i] == identity.KEY_TYPE_CLASS && i+1 < len(parts) {
-			className = parts[i+1]
-		}
+func mustFormatDomainScopedClassKey(classKey identity.Key) string {
+	scoped, err := model_class.FormatDomainScopedClassKey(classKey)
+	if err != nil {
+		panic(err)
 	}
-	return subdomainName + "/" + className
+	return scoped
 }
 
-// extractModelScopedKey extracts domain/subdomain/class from a full class key.
-func extractModelScopedKey(classKey identity.Key) string {
-	// Class key format: domain/domainName/subdomain/subdomainName/class/className
-	// We want: domainName/subdomainName/className
-	keyStr := classKey.String()
-	parts := splitKeyPath(keyStr)
-	var domainName, subdomainName, className string
-	for i := range len(parts) - 1 {
-		if parts[i] == identity.KEY_TYPE_DOMAIN && i+1 < len(parts) {
-			domainName = parts[i+1]
-		}
-		if parts[i] == identity.KEY_TYPE_SUBDOMAIN && i+1 < len(parts) {
-			subdomainName = parts[i+1]
-		}
-		if parts[i] == identity.KEY_TYPE_CLASS && i+1 < len(parts) {
-			className = parts[i+1]
-		}
+func mustFormatModelScopedClassKey(classKey identity.Key) string {
+	scoped, err := model_class.FormatModelScopedClassKey(classKey)
+	if err != nil {
+		panic(err)
 	}
-	return domainName + "/" + subdomainName + "/" + className
-}
-
-// splitKeyPath splits a key string by "/".
-func splitKeyPath(keyStr string) []string {
-	result := []string{}
-	current := ""
-	for _, c := range keyStr {
-		if c == '/' {
-			if current != "" {
-				result = append(result, current)
-				current = ""
-			}
-		} else {
-			current += string(c)
-		}
-	}
-	if current != "" {
-		result = append(result, current)
-	}
-	return result
+	return scoped
 }

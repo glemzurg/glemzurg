@@ -60,7 +60,7 @@ func ResolveClassAssociationKeyFromRelative(subdomainKey, ownerClassKey identity
 	if keyStr == "" {
 		return identity.Key{}, errors.New("over_association_key is empty")
 	}
-	if strings.Contains(keyStr, identity.KEY_TYPE_CLASS_ASSOCIATION) || strings.HasPrefix(keyStr, identity.KEY_TYPE_DOMAIN+"/") {
+	if strings.Contains(keyStr, identity.KEY_TYPE_CLASS_ASSOCIATION) {
 		key, err := identity.ParseKey(keyStr)
 		if err != nil {
 			return identity.Key{}, errors.WithStack(err)
@@ -71,7 +71,7 @@ func ResolveClassAssociationKeyFromRelative(subdomainKey, ownerClassKey identity
 	parts := strings.Split(keyStr, "/")
 	switch len(parts) {
 	case 2:
-		fromClassKey, err := resolveClassKeyFromRelative(subdomainKey, parts[0])
+		fromClassKey, err := ResolveScopedClassKey(subdomainKey, parts[0])
 		if err != nil {
 			return identity.Key{}, err
 		}
@@ -81,11 +81,11 @@ func ResolveClassAssociationKeyFromRelative(subdomainKey, ownerClassKey identity
 		}
 		return identity.NewClassAssociationKey(parentKey, fromClassKey, ownerClassKey, parts[1])
 	case 3:
-		fromClassKey, err := resolveClassKeyFromRelative(subdomainKey, parts[0])
+		fromClassKey, err := ResolveScopedClassKey(subdomainKey, parts[0])
 		if err != nil {
 			return identity.Key{}, err
 		}
-		toClassKey, err := resolveClassKeyFromRelative(subdomainKey, parts[1])
+		toClassKey, err := ResolveScopedClassKey(subdomainKey, parts[1])
 		if err != nil {
 			return identity.Key{}, err
 		}
@@ -104,17 +104,6 @@ func classSubKeyFromClassKey(classKey identity.Key) (string, error) {
 		return "", errors.Errorf("key %q is not a class", classKey.String())
 	}
 	return classKey.SubKey, nil
-}
-
-func resolveClassKeyFromRelative(subdomainKey identity.Key, keyStr string) (identity.Key, error) {
-	if !strings.Contains(keyStr, "/") {
-		return identity.NewClassKey(subdomainKey, keyStr)
-	}
-	if strings.HasPrefix(keyStr, identity.KEY_TYPE_SUBDOMAIN+"/") {
-		fullKeyStr := subdomainKey.ParentKey + "/" + keyStr
-		return identity.ParseKey(fullKeyStr)
-	}
-	return identity.ParseKey(keyStr)
 }
 
 func associationParentForClasses(subdomainKey, fromClassKey, toClassKey identity.Key) (identity.Key, error) {

@@ -679,11 +679,7 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			return model_class.Association{}, err
 		}
 
-		// Resolve the to-class key based on the path format.
-		// Simple key (no /): same subdomain.
-		// Starts with "subdomain/": same domain, different subdomain — prepend domain prefix.
-		// Starts with "domain/": different domain — full key, parse directly.
-		toClassKey, err := resolveClassKeyFromRelative(subdomainKey, toClassKeyStr)
+		toClassKey, err := model_class.ResolveScopedClassKey(subdomainKey, toClassKeyStr)
 		if err != nil {
 			return model_class.Association{}, err
 		}
@@ -706,7 +702,7 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			return model_class.Association{}, err
 		}
 		if associationClassKeyStr != "" {
-			key, err := resolveClassKeyFromRelative(subdomainKey, associationClassKeyStr)
+			key, err := model_class.ResolveScopedClassKey(subdomainKey, associationClassKeyStr)
 			if err != nil {
 				return model_class.Association{}, errors.WithStack(err)
 			}
@@ -742,24 +738,6 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 	}
 
 	return association, nil
-}
-
-// resolveClassKeyFromRelative resolves a class key string relative to a subdomain.
-// Simple key (no /): same subdomain → NewClassKey(subdomainKey, str).
-// Starts with "subdomain/": same domain, different subdomain → prepend domain prefix and parse.
-// Starts with "domain/": different domain → parse as full key.
-func resolveClassKeyFromRelative(subdomainKey identity.Key, keyStr string) (identity.Key, error) {
-	if !strings.Contains(keyStr, "/") {
-		// Simple key: same subdomain.
-		return identity.NewClassKey(subdomainKey, keyStr)
-	}
-	if strings.HasPrefix(keyStr, identity.KEY_TYPE_SUBDOMAIN+"/") {
-		// Relative to domain: prepend the domain prefix.
-		fullKeyStr := subdomainKey.ParentKey + "/" + keyStr
-		return identity.ParseKey(fullKeyStr)
-	}
-	// Full key (starts with "domain/" or similar): parse directly.
-	return identity.ParseKey(keyStr)
 }
 
 // determineAssociationParent determines the correct parent key for a class association
@@ -1394,13 +1372,13 @@ func generateClassAssociationsYaml(builder *YamlBuilder, class model_class.Class
 		assocBuilder.AddField("name", assoc.Name)
 		assocBuilder.AddField("details", assoc.Details)
 		addMultiplicityField(assocBuilder, "from_multiplicity", assoc.FromMultiplicity)
-		assocBuilder.AddField("to_class_key", classAssociationRelativeKey(class, assoc.ToClassKey))
+		assocBuilder.AddField("to_class_key", mustFormatScopedClassKey(class.Key, assoc.ToClassKey))
 		addMultiplicityField(assocBuilder, "to_multiplicity", assoc.ToMultiplicity)
 		if assoc.Uniqueness != nil {
 			generateAssociationUniquenessYaml(assocBuilder, assoc.Uniqueness)
 		}
 		if assoc.AssociationClassKey != nil {
-			assocBuilder.AddField("association_class_key", classAssociationRelativeKey(class, *assoc.AssociationClassKey))
+			assocBuilder.AddField("association_class_key", mustFormatScopedClassKey(class.Key, *assoc.AssociationClassKey))
 		}
 		assocBuilder.AddField("uml_comment", assoc.UmlComment)
 		generateLogicSequence(assocBuilder, "invariants", assoc.Invariants)
@@ -1643,31 +1621,12 @@ func buildLogicMappingBuilder(logic model_logic.Logic, ownerClass *model_class.C
 	return logicBuilder
 }
 
-// classAssociationRelativeKey returns the shortest relative key string for a target class key
-// relative to the from-class. If both classes share the same subdomain, returns just the SubKey.
-// If they share the same domain, returns the path relative to the domain (subdomain/X/class/Y).
-// Otherwise returns the full key string (domain/X/subdomain/Y/class/Z).
-func classAssociationRelativeKey(fromClass model_class.Class, targetClassKey identity.Key) string {
-	fromSubdomain := fromClass.Key.ParentKey
-	targetSubdomain := targetClassKey.ParentKey
-
-	// Same subdomain: just the class subkey.
-	if fromSubdomain == targetSubdomain {
-		return targetClassKey.SubKey
+func mustFormatScopedClassKey(fromClassKey, targetClassKey identity.Key) string {
+	scoped, err := model_class.FormatScopedClassKey(fromClassKey, targetClassKey)
+	if err != nil {
+		panic(err)
 	}
-
-	// Check if same domain by parsing subdomain parent keys.
-	fromSubdomainParsed, err1 := identity.ParseKey(fromSubdomain)
-	targetSubdomainParsed, err2 := identity.ParseKey(targetSubdomain)
-	if err1 == nil && err2 == nil && fromSubdomainParsed.ParentKey == targetSubdomainParsed.ParentKey {
-		// Same domain, different subdomain: path relative to domain.
-		// Strip the domain prefix to get "subdomain/X/class/Y".
-		domainPrefix := fromSubdomainParsed.ParentKey + "/"
-		return strings.TrimPrefix(targetClassKey.String(), domainPrefix)
-	}
-
-	// Different domains: full key string.
-	return targetClassKey.String()
+	return scoped
 }
 
 // addMultiplicityField adds a multiplicity field to the builder.
