@@ -58,7 +58,7 @@ func TestGenerateSubdomainFactsRendersAssociationInvariants(t *testing.T) {
 	writer := newCollectWriter()
 	require.NoError(t, GenerateMdToWriter(model, writer, nil))
 
-	facts := modelfacts.FactsForSubdomain(subdomain)
+	facts := modelfacts.FactsForSubdomain(model, subdomain)
 	require.Len(t, facts.AssociationInvariants, 1)
 	require.Equal(t, spec, facts.AssociationInvariants[0].Spec)
 

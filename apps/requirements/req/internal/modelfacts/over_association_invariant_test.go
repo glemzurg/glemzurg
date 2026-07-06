@@ -3,6 +3,7 @@ package modelfacts
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
@@ -52,7 +53,17 @@ func TestAssociationInvariantFactsIncludeClassInvariantTaggedOverAssociation(t *
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	facts := AssociationInvariantFactsForSubdomain(subdomain)
+	model := core.Model{
+		Domains: map[identity.Key]model_domain.Domain{
+			domainKey: {
+				Key:        domainKey,
+				Name:       "Finance",
+				Subdomains: map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain},
+			},
+		},
+	}
+
+	facts := AssociationInvariantFactsForSubdomain(model, subdomain)
 	require.Len(t, facts, 1)
 	require.Equal(t, "Jurisdiction (configures customers for)", facts[0].Label)
 	require.Equal(t, "A jurisdiction cannot be linked to a given partner more than once.", facts[0].Description)

@@ -21,7 +21,7 @@ func TestGenerateSubdomainFactsPages(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	facts := modelfacts.FactsForSubdomain(subdomain)
+	facts := modelfacts.FactsForSubdomain(model, subdomain)
 	require.NotEmpty(t, facts.Associations)
 	require.NotEmpty(t, facts.Indexes)
 

@@ -10,7 +10,7 @@ import (
 )
 
 func generateSubdomainFactsMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain, subdomain model_domain.Subdomain) (contents string, err error) {
-	facts := modelfacts.FactsForSubdomain(subdomain)
+	facts := modelfacts.FactsForSubdomain(model, subdomain)
 
 	contents, err = generateFromTemplate(_factsMdTemplate, struct {
 		Reqs      *req_flat.Requirements
