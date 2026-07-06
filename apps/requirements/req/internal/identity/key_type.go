@@ -13,13 +13,14 @@ const (
 	// It is a string that is unique in the system.
 
 	// Keys without parents (parent is the model itself).
-	KEY_TYPE_ACTOR                = "actor"
-	KEY_TYPE_ACTOR_GENERALIZATION = "ageneralization"
-	KEY_TYPE_DOMAIN               = "domain"
-	KEY_TYPE_DOMAIN_ASSOCIATION   = "dassociation"
-	KEY_TYPE_GLOBAL_FUNCTION      = "gfunc"
-	KEY_TYPE_INVARIANT            = "invariant"
-	KEY_TYPE_NAMED_SET            = "nset"
+	KEY_TYPE_ACTOR                 = "actor"
+	KEY_TYPE_ACTOR_GENERALIZATION  = "ageneralization"
+	KEY_TYPE_DOMAIN                = "domain"
+	KEY_TYPE_DOMAIN_ASSOCIATION    = "dassociation"
+	KEY_TYPE_SUBDOMAIN_ASSOCIATION = "sassociation"
+	KEY_TYPE_GLOBAL_FUNCTION       = "gfunc"
+	KEY_TYPE_INVARIANT             = "invariant"
+	KEY_TYPE_NAMED_SET             = "nset"
 
 	// Keys with domain parents.
 	KEY_TYPE_SUBDOMAIN = "subdomain"
@@ -130,6 +131,25 @@ func NewDomainAssociationKey(problemDomainKey, solutionDomainKey Key) (key Key, 
 	}
 	// No parent, problem domain subKey as subKey, solution domain subKey as subKey2.
 	return newKeyWithSubKey2("", KEY_TYPE_DOMAIN_ASSOCIATION, problemDomainKey.GetSubKey(), solutionDomainKey.GetSubKey())
+}
+
+func NewSubdomainAssociationKey(domainKey, problemSubdomainKey, solutionSubdomainKey Key) (key Key, err error) {
+	if domainKey.GetKeyType() != KEY_TYPE_DOMAIN {
+		return Key{}, errors.Errorf("domain key cannot be of type '%s' for 'sassociation' key", domainKey.GetKeyType())
+	}
+	if problemSubdomainKey.GetKeyType() != KEY_TYPE_SUBDOMAIN {
+		return Key{}, errors.Errorf("problem subdomain key cannot be of type '%s' for 'sassociation' key", problemSubdomainKey.GetKeyType())
+	}
+	if solutionSubdomainKey.GetKeyType() != KEY_TYPE_SUBDOMAIN {
+		return Key{}, errors.Errorf("solution subdomain key cannot be of type '%s' for 'sassociation' key", solutionSubdomainKey.GetKeyType())
+	}
+	if !problemSubdomainKey.IsParent(domainKey) {
+		return Key{}, errors.Errorf("problem subdomain key '%s' is not in domain '%s'", problemSubdomainKey.String(), domainKey.String())
+	}
+	if !solutionSubdomainKey.IsParent(domainKey) {
+		return Key{}, errors.Errorf("solution subdomain key '%s' is not in domain '%s'", solutionSubdomainKey.String(), domainKey.String())
+	}
+	return newKeyWithSubKey2(domainKey.String(), KEY_TYPE_SUBDOMAIN_ASSOCIATION, problemSubdomainKey.GetSubKey(), solutionSubdomainKey.GetSubKey())
 }
 
 func NewSubdomainKey(domainKey Key, subKey string) (key Key, err error) {

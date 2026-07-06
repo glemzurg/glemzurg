@@ -337,9 +337,16 @@ func parseSubdomainFile(model *core.Model, ctx *parseContext, toParseFile fileTo
 	}
 	domain := model.Domains[domainKey]
 
-	subdomain, err := parseSubdomain(domainKey, toParseFile.Subdomain, toParseFile.PathRel, contents)
+	subdomain, associations, err := parseSubdomain(domainKey, toParseFile.Subdomain, toParseFile.PathRel, contents)
 	if err != nil {
 		return err
+	}
+
+	for _, assoc := range associations {
+		if domain.SubdomainAssociations == nil {
+			domain.SubdomainAssociations = make(map[identity.Key]model_domain.SubdomainAssociation)
+		}
+		domain.SubdomainAssociations[assoc.Key] = assoc
 	}
 
 	domain.Subdomains[subdomain.Key] = subdomain

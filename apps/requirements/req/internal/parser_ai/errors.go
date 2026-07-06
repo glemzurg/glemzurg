@@ -193,6 +193,15 @@ const (
 	ErrDomainAssocInvalidJSON         = 17005
 	ErrDomainAssocSchemaViolation     = 17006
 
+	// Subdomain association errors (171xx).
+	ErrSubdomainAssocProblemKeyRequired  = 17101
+	ErrSubdomainAssocProblemKeyEmpty     = 17102
+	ErrSubdomainAssocSolutionKeyRequired = 17103
+	ErrSubdomainAssocSolutionKeyEmpty    = 17104
+	ErrSubdomainAssocInvalidJSON         = 17105
+	ErrSubdomainAssocSchemaViolation     = 17106
+	ErrSubdomainAssocSameSubdomains      = 17107
+
 	// Tree validation errors (11xxx) - cross-reference and structural integrity.
 	ErrTreeClassActorNotFound           = 11001 // Class references an actor that doesn't exist
 	ErrTreeAssocFromClassNotFound       = 11002 // Association from_class_key not found
@@ -236,7 +245,9 @@ const (
 
 	// Additional tree-level errors (11032+)
 	// Domain association tree errors.
-	ErrTreeDomainAssocDomainNotFound = 11032 // Domain association references a domain that doesn't exist
+	ErrTreeDomainAssocDomainNotFound       = 11032 // Domain association references a domain that doesn't exist
+	ErrTreeSubdomainAssocSubdomainNotFound = 11039 // Subdomain association references a subdomain that doesn't exist
+	ErrTreeSubdomainAssocSingleSubdomain   = 11040 // Subdomain associations require at least two subdomains in the domain
 
 	// Actor generalization tree errors.
 	ErrTreeActorGenActorNotFound = 11033 // Actor generalization references an actor that doesn't exist
@@ -309,6 +320,8 @@ const (
 	ErrConvUseCaseActorNotActorClass     = 21115 // Use case references class that is not an actor class
 	ErrConvLogicSpecInvalid              = 21116 // Logic specification (TLA+ expression) failed validation
 	ErrConvDomainAssocSameDomains        = 21117 // Domain association references same domain for problem and solution
+	ErrConvSubdomainAssocSameSubdomains  = 21121 // Subdomain association references same subdomain for problem and solution
+	ErrConvDomainSassocSingleSubdomain   = 21122 // Subdomain associations require at least two subdomains
 	ErrConvTransitionInitialEventInvalid = 21118 // Initial transition event is not _new
 	ErrConvTransitionFinalEventInvalid   = 21119 // Final transition event is not _destroy
 	ErrConvAssocUniquenessInvalid        = 21120 // Association uniqueness tuple failed validation during conversion

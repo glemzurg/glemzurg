@@ -82,7 +82,7 @@ func ValidateKey(key, keyType, filePath string) error {
 		).WithField(keyType).WithHint("keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$")
 	}
 
-	if keyType == "domain_association_key" {
+	if keyType == "domain_association_key" || keyType == "subdomain_association_key" {
 		dotPattern := regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*\.[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
 		if dotPattern.MatchString(key) {
 			return nil
@@ -129,7 +129,7 @@ func suggestKeyFix(key, keyType string) string {
 	}
 
 	// Check for dots
-	if keyType != "domain_association_key" {
+	if keyType != "domain_association_key" && keyType != "subdomain_association_key" {
 		if strings.Contains(key, ".") {
 			issues = append(issues, "replace dots with underscores")
 		}

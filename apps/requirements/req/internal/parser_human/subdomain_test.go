@@ -36,8 +36,9 @@ func (suite *SubdomainFileSuite) TestParseSubdomainFiles() {
 		testName := testData.Filename
 		var expected, actual model_domain.Subdomain
 
-		actual, err := parseSubdomain(domainKey, subdomainSubKey, testData.Filename, testData.Contents)
+		actual, actualAssocs, err := parseSubdomain(domainKey, subdomainSubKey, testData.Filename, testData.Contents)
 		suite.Require().NoError(err, testName)
+		suite.Empty(actualAssocs, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
 		suite.Require().NoError(err, testName)
@@ -45,7 +46,7 @@ func (suite *SubdomainFileSuite) TestParseSubdomainFiles() {
 		suite.Equal(expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
-		generated := generateSubdomainContent(actual)
+		generated := generateSubdomainContent(actual, nil)
 		suite.Equal(testData.Contents, generated, testName)
 	}
 }

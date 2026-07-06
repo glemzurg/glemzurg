@@ -20,8 +20,9 @@ type Domain struct {
 	Realized        bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
 	UmlComment      string
 	// Children
-	Subdomains        map[identity.Key]Subdomain
-	ClassAssociations map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
+	Subdomains            map[identity.Key]Subdomain
+	SubdomainAssociations map[identity.Key]SubdomainAssociation
+	ClassAssociations     map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
 }
 
 func NewDomain(key identity.Key, name, details, unfinishedNotes string, realized bool, umlComment string) Domain {
@@ -79,29 +80,38 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationCo
 		return err
 	}
 
-	// Validate subdomain key naming rules.
+	if err := d.validateSubdomainKeyNamingRules(ctx); err != nil {
+		return err
+	}
+	return d.validateDomainChildren(ctx, refs)
+}
+
+func (d *Domain) validateSubdomainKeyNamingRules(ctx *coreerr.ValidationContext) error {
 	if len(d.Subdomains) == 1 {
-		// Single subdomain must have the key "default".
 		for subdomainKey := range d.Subdomains {
 			if subdomainKey.GetSubKey() != "default" {
 				return coreerr.NewWithValues(ctx, coreerr.DomainSubdomainSingleKey, fmt.Sprintf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey()), "Subdomains", subdomainKey.GetSubKey(), "default")
 			}
 		}
 	} else if len(d.Subdomains) > 1 {
-		// Multiple subdomains cannot have the key "default".
 		for subdomainKey := range d.Subdomains {
 			if subdomainKey.GetSubKey() == "default" {
 				return coreerr.NewWithValues(ctx, coreerr.DomainSubdomainMultiDefault, fmt.Sprintf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String()), "Subdomains", "default", "")
 			}
 		}
 	}
+	return nil
+}
 
-	// Validate all children.
+func (d *Domain) validateDomainChildren(ctx *coreerr.ValidationContext, refs ModelCrossRefs) error {
 	for _, subdomain := range d.Subdomains {
 		childCtx := ctx.Child("subdomain", subdomain.Key.String())
 		if err := subdomain.ValidateWithParentAndActorsAndClasses(childCtx, &d.Key, refs); err != nil {
 			return err
 		}
+	}
+	if err := d.validateSubdomainAssociations(ctx); err != nil {
+		return err
 	}
 	for _, classAssoc := range d.ClassAssociations {
 		assocCtx := ctx.Child("classAssociation", classAssoc.Key.String())
@@ -109,6 +119,29 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(ctx *coreerr.ValidationCo
 			return err
 		}
 		if err := classAssoc.ValidateReferences(assocCtx, refs.AllClasses); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *Domain) validateSubdomainAssociations(ctx *coreerr.ValidationContext) error {
+	if len(d.SubdomainAssociations) == 0 {
+		return nil
+	}
+	if len(d.Subdomains) < 2 {
+		return coreerr.NewWithValues(ctx, coreerr.DomainSassocSingleSubdomain, fmt.Sprintf("domain '%s' has subdomain associations but only one subdomain; at least two subdomains are required", d.Key.String()), "SubdomainAssociations", fmt.Sprintf("%d", len(d.SubdomainAssociations)), "0")
+	}
+	subdomainKeys := make(map[identity.Key]bool, len(d.Subdomains))
+	for subdomainKey := range d.Subdomains {
+		subdomainKeys[subdomainKey] = true
+	}
+	for _, subdomainAssoc := range d.SubdomainAssociations {
+		assocCtx := ctx.Child("subdomainAssociation", subdomainAssoc.Key.String())
+		if err := subdomainAssoc.ValidateWithParent(assocCtx, &d.Key); err != nil {
+			return err
+		}
+		if err := subdomainAssoc.ValidateReferences(assocCtx, d.Key, subdomainKeys); err != nil {
 			return err
 		}
 	}

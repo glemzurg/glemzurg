@@ -374,6 +374,58 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewSubdomainAssociationKey() {
+	domainKey := helper.Must(NewDomainKey("domain1"))
+	problemSubdomainKey := helper.Must(NewSubdomainKey(domainKey, "billing"))
+	solutionSubdomainKey := helper.Must(NewSubdomainKey(domainKey, "fulfillment"))
+	otherDomainKey := helper.Must(NewDomainKey("domain2"))
+	foreignSubdomainKey := helper.Must(NewSubdomainKey(otherDomainKey, "billing"))
+
+	tests := []struct {
+		testName             string
+		domainKey            Key
+		problemSubdomainKey  Key
+		solutionSubdomainKey Key
+		expected             Key
+		errstr               string
+	}{
+		{
+			testName:             "ok",
+			domainKey:            domainKey,
+			problemSubdomainKey:  problemSubdomainKey,
+			solutionSubdomainKey: solutionSubdomainKey,
+			expected: Key{
+				ParentKey: domainKey.String(),
+				KeyType:   KEY_TYPE_SUBDOMAIN_ASSOCIATION,
+				SubKey:    "billing",
+				SubKey2:   "fulfillment",
+			},
+		},
+		{
+			testName:             "error foreign problem subdomain",
+			domainKey:            domainKey,
+			problemSubdomainKey:  foreignSubdomainKey,
+			solutionSubdomainKey: solutionSubdomainKey,
+			errstr:               "is not in domain",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.Run(tt.testName, func() {
+			key, err := NewSubdomainAssociationKey(tt.domainKey, tt.problemSubdomainKey, tt.solutionSubdomainKey)
+			if tt.errstr == "" {
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
+			} else {
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 	domainKey, err := NewDomainKey("domain1")
 	suite.Require().NoError(err)

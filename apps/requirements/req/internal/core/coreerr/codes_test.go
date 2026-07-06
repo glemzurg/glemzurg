@@ -370,6 +370,19 @@ func allCodeConstants() map[string]Code {
 		"DassocProblemNotfound":    DassocProblemNotfound,
 		"DassocSolutionNotfound":   DassocSolutionNotfound,
 
+		// SubdomainAssociation errors.
+		"SassocKeyInvalid":            SassocKeyInvalid,
+		"SassocKeyTypeInvalid":        SassocKeyTypeInvalid,
+		"SassocProblemkeyInvalid":     SassocProblemkeyInvalid,
+		"SassocProblemkeyType":        SassocProblemkeyType,
+		"SassocSolutionkeyInvalid":    SassocSolutionkeyInvalid,
+		"SassocSolutionkeyType":       SassocSolutionkeyType,
+		"SassocSameSubdomains":        SassocSameSubdomains,
+		"SassocProblemNotfound":       SassocProblemNotfound,
+		"SassocSolutionNotfound":      SassocSolutionNotfound,
+		"SassocCrossDomain":           SassocCrossDomain,
+		"DomainSassocSingleSubdomain": DomainSassocSingleSubdomain,
+
 		// Subdomain errors.
 		"SubdomainKeyInvalid":             SubdomainKeyInvalid,
 		"SubdomainKeyTypeInvalid":         SubdomainKeyTypeInvalid,

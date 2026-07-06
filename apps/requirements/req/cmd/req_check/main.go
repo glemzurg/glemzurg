@@ -53,6 +53,8 @@ const treeText = `Expected directory structure for a requirements model:
         ├── domain.json                                         domain definition
         ├── class_associations/
         │   └── <from>--<to>--<name>.assoc.json                 domain-level association (cross-subdomain)
+        ├── subdomain_associations/
+        │   └── <problem>--<solution>.subdomain_assoc.json      subdomain dependency (same domain)
         └── subdomains/
             └── <subdomain_key>/
                 ├── subdomain.json                              subdomain definition

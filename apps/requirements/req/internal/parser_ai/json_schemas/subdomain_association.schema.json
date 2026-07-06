@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "subdomain_association.schema.json",
+  "title": "Subdomain Association",
+  "description": "Schema for a subdomain association JSON file. Subdomain associations describe constraint relationships between subdomains in the same domain where a problem subdomain enforces requirements on a solution subdomain.",
+  "type": "object",
+  "properties": {
+    "problem_subdomain_key": {
+      "type": "string",
+      "description": "The key of the problem subdomain that enforces requirements. Must match a subdomain directory under this domain.",
+      "minLength": 1
+    },
+    "solution_subdomain_key": {
+      "type": "string",
+      "description": "The key of the solution subdomain that satisfies the requirements. Must match a subdomain directory under this domain and differ from problem_subdomain_key.",
+      "minLength": 1
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for this subdomain association."
+    }
+  },
+  "required": ["problem_subdomain_key", "solution_subdomain_key"],
+  "additionalProperties": false
+}

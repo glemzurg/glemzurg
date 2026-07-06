@@ -339,14 +339,15 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 	}
 
 	result := model_domain.Domain{
-		Key:               domainKey,
-		Name:              domain.Name,
-		Details:           domain.Details,
-		UnfinishedNotes:   domain.UnfinishedNotes,
-		Realized:          domain.Realized,
-		UmlComment:        domain.UMLComment,
-		Subdomains:        make(map[identity.Key]model_domain.Subdomain),
-		ClassAssociations: make(map[identity.Key]model_class.Association),
+		Key:                   domainKey,
+		Name:                  domain.Name,
+		Details:               domain.Details,
+		UnfinishedNotes:       domain.UnfinishedNotes,
+		Realized:              domain.Realized,
+		UmlComment:            domain.UMLComment,
+		Subdomains:            make(map[identity.Key]model_domain.Subdomain),
+		SubdomainAssociations: make(map[identity.Key]model_domain.SubdomainAssociation),
+		ClassAssociations:     make(map[identity.Key]model_class.Association),
 	}
 
 	// Convert subdomains
@@ -356,6 +357,14 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 			return model_domain.Domain{}, err
 		}
 		result.Subdomains[converted.Key] = converted
+	}
+
+	for key, assoc := range domain.SubdomainAssociations {
+		converted, err := convertSubdomainAssocToModel(keyStr, key, assoc)
+		if err != nil {
+			return model_domain.Domain{}, err
+		}
+		result.SubdomainAssociations[converted.Key] = converted
 	}
 
 	// Convert domain-level class associations
@@ -368,6 +377,50 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 	}
 
 	return result, nil
+}
+
+func convertSubdomainAssocToModel(domainKeyStr, keyStr string, assoc *inputSubdomainAssociation) (model_domain.SubdomainAssociation, error) {
+	assocFile := fmt.Sprintf("domains/%s/subdomain_associations/%s.subdomain_assoc.json", domainKeyStr, keyStr)
+
+	domainKey, err := identity.NewDomainKey(domainKeyStr)
+	if err != nil {
+		return model_domain.SubdomainAssociation{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create domain key '%s': %s", domainKeyStr, err.Error()),
+			assocFile,
+		).WithField("domain_key")
+	}
+	problemSubdomainKey, err := identity.NewSubdomainKey(domainKey, assoc.ProblemSubdomainKey)
+	if err != nil {
+		return model_domain.SubdomainAssociation{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create problem subdomain key '%s': %s", assoc.ProblemSubdomainKey, err.Error()),
+			assocFile,
+		).WithField("problem_subdomain_key")
+	}
+	solutionSubdomainKey, err := identity.NewSubdomainKey(domainKey, assoc.SolutionSubdomainKey)
+	if err != nil {
+		return model_domain.SubdomainAssociation{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create solution subdomain key '%s': %s", assoc.SolutionSubdomainKey, err.Error()),
+			assocFile,
+		).WithField("solution_subdomain_key")
+	}
+	key, err := identity.NewSubdomainAssociationKey(domainKey, problemSubdomainKey, solutionSubdomainKey)
+	if err != nil {
+		return model_domain.SubdomainAssociation{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create subdomain association key: %s", err.Error()),
+			assocFile,
+		).WithField("key")
+	}
+
+	return model_domain.SubdomainAssociation{
+		Key:                  key,
+		ProblemSubdomainKey:  problemSubdomainKey,
+		SolutionSubdomainKey: solutionSubdomainKey,
+		UmlComment:           assoc.UmlComment,
+	}, nil
 }
 
 // subdomainConvContext holds the context needed for subdomain-level conversions.

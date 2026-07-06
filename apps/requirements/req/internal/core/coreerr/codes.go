@@ -403,6 +403,21 @@ const (
 	DassocSolutionNotfound   Code = "DASSOC_SOLUTION_NOTFOUND"   // SolutionDomainKey references non-existent domain.
 
 	// ---------------------------------------------------------------
+	// SubdomainAssociation errors.
+
+	SassocKeyInvalid            Code = "SASSOC_KEY_INVALID"             // SubdomainAssociation key failed validation.
+	SassocKeyTypeInvalid        Code = "SASSOC_KEY_TYPE_INVALID"        // Key is not KEY_TYPE_SUBDOMAIN_ASSOCIATION.
+	SassocProblemkeyInvalid     Code = "SASSOC_PROBLEMKEY_INVALID"      // ProblemSubdomainKey failed validation.
+	SassocProblemkeyType        Code = "SASSOC_PROBLEMKEY_TYPE"         // ProblemSubdomainKey is not KEY_TYPE_SUBDOMAIN.
+	SassocSolutionkeyInvalid    Code = "SASSOC_SOLUTIONKEY_INVALID"     // SolutionSubdomainKey failed validation.
+	SassocSolutionkeyType       Code = "SASSOC_SOLUTIONKEY_TYPE"        // SolutionSubdomainKey is not KEY_TYPE_SUBDOMAIN.
+	SassocSameSubdomains        Code = "SASSOC_SAME_SUBDOMAINS"         // ProblemSubdomainKey and SolutionSubdomainKey are the same.
+	SassocProblemNotfound       Code = "SASSOC_PROBLEM_NOTFOUND"        // ProblemSubdomainKey references non-existent subdomain.
+	SassocSolutionNotfound      Code = "SASSOC_SOLUTION_NOTFOUND"       // SolutionSubdomainKey references non-existent subdomain.
+	SassocCrossDomain           Code = "SASSOC_CROSS_DOMAIN"            // Subdomain key is not in this domain.
+	DomainSassocSingleSubdomain Code = "DOMAIN_SASSOC_SINGLE_SUBDOMAIN" // Subdomain associations require at least two subdomains.
+
+	// ---------------------------------------------------------------
 	// Subdomain errors.
 
 	SubdomainKeyInvalid             Code = "SUBDOMAIN_KEY_INVALID"              // Subdomain key failed validation.

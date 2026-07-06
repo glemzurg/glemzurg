@@ -202,6 +202,19 @@ func writeDomainTree(domain *inputDomain, domainDir string) error {
 		return err
 	}
 
+	if len(domain.SubdomainAssociations) > 0 {
+		saDir := filepath.Join(domainDir, "subdomain_associations")
+		if err := os.MkdirAll(saDir, 0755); err != nil {
+			return err
+		}
+		for _, key := range sortedKeys(domain.SubdomainAssociations) {
+			sa := domain.SubdomainAssociations[key]
+			if err := writeJSON(filepath.Join(saDir, key+".subdomain_assoc.json"), sa); err != nil {
+				return err
+			}
+		}
+	}
+
 	// Write domain-level class associations
 	if len(domain.ClassAssociations) > 0 {
 		assocDir := filepath.Join(domainDir, "class_associations")

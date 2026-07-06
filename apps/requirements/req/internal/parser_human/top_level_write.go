@@ -42,10 +42,11 @@ func Write(model core.Model, outputPath string) error {
 
 	// Build association lookups and write domains.
 	domainAssocsByDomain := buildDomainAssociationsLookup(model.DomainAssociations)
+	subdomainAssocsBySubdomain := buildSubdomainAssociationsLookup(model.Domains)
 	classAssocsByClass := buildClassAssociationsLookup(model.GetClassAssociations())
 
 	for _, domain := range model.Domains {
-		if err := writeDomain(outputPath, domain, domainAssocsByDomain, classAssocsByClass); err != nil {
+		if err := writeDomain(outputPath, domain, domainAssocsByDomain, subdomainAssocsBySubdomain, classAssocsByClass); err != nil {
 			return err
 		}
 	}
@@ -83,6 +84,17 @@ func writeActors(outputPath string, model core.Model) error {
 	return nil
 }
 
+func buildSubdomainAssociationsLookup(domains map[identity.Key]model_domain.Domain) map[string][]model_domain.SubdomainAssociation {
+	lookup := make(map[string][]model_domain.SubdomainAssociation)
+	for _, domain := range domains {
+		for _, assoc := range domain.SubdomainAssociations {
+			problemKeyStr := assoc.ProblemSubdomainKey.String()
+			lookup[problemKeyStr] = append(lookup[problemKeyStr], assoc)
+		}
+	}
+	return lookup
+}
+
 // buildDomainAssociationsLookup creates a map of domain associations grouped by problem domain key.
 func buildDomainAssociationsLookup(associations map[identity.Key]model_domain.Association) map[string][]model_domain.Association {
 	lookup := make(map[string][]model_domain.Association)
@@ -94,7 +106,7 @@ func buildDomainAssociationsLookup(associations map[identity.Key]model_domain.As
 }
 
 // writeDomain writes a domain and its contents to the filesystem.
-func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDomain map[string][]model_domain.Association, classAssocsByClass map[string][]model_class.Association) error {
+func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDomain map[string][]model_domain.Association, subdomainAssocsBySubdomain map[string][]model_domain.SubdomainAssociation, classAssocsByClass map[string][]model_class.Association) error {
 	// Create the domain directory using the domain's subkey.
 	domainDir := filepath.Join(outputPath, domain.Key.SubKey)
 	if err := os.MkdirAll(domainDir, 0755); err != nil {
@@ -116,8 +128,8 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 		if subdomain.Key.SubKey == _DEFAULT_SUBDOMAIN_NAME {
 			// Default subdomain: write contents directly under domain directory (backward compatible).
 			// Persist metadata at the domain root when it would otherwise be lost on read.
-			if defaultSubdomainHasMetadata(subdomain) {
-				subdomainContent := generateSubdomainContent(subdomain)
+			if defaultSubdomainHasMetadata(subdomain) || len(subdomainAssocsBySubdomain[subdomain.Key.String()]) > 0 {
+				subdomainContent := generateSubdomainContent(subdomain, subdomainAssocsBySubdomain[subdomain.Key.String()])
 				subdomainPath := filepath.Join(domainDir, "this"+_EXT_SUBDOMAIN)
 				if err := os.WriteFile(subdomainPath, []byte(subdomainContent), 0600); err != nil {
 					return errors.Wrap(err, "failed to write default subdomain file")
@@ -128,7 +140,7 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 			}
 		} else {
 			// Explicit subdomain: create subdomain directory with this.subdomain file.
-			if err := writeExplicitSubdomain(domainDir, subdomain, classAssocsByClass); err != nil {
+			if err := writeExplicitSubdomain(domainDir, subdomain, subdomainAssocsBySubdomain, classAssocsByClass); err != nil {
 				return err
 			}
 		}
@@ -139,7 +151,7 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 
 // writeExplicitSubdomain writes an explicit (non-default) subdomain as a separate directory
 // with a this.subdomain file and its contents.
-func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, classAssocsByClass map[string][]model_class.Association) error {
+func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, subdomainAssocsBySubdomain map[string][]model_domain.SubdomainAssociation, classAssocsByClass map[string][]model_class.Association) error {
 	// Create subdomain directory.
 	subdomainDir := filepath.Join(domainDir, subdomain.Key.SubKey)
 	if err := os.MkdirAll(subdomainDir, 0755); err != nil {
@@ -147,7 +159,7 @@ func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, 
 	}
 
 	// Write this.subdomain file.
-	subdomainContent := generateSubdomainContent(subdomain)
+	subdomainContent := generateSubdomainContent(subdomain, subdomainAssocsBySubdomain[subdomain.Key.String()])
 	subdomainPath := filepath.Join(subdomainDir, "this"+_EXT_SUBDOMAIN)
 	if err := os.WriteFile(subdomainPath, []byte(subdomainContent), 0600); err != nil {
 		return errors.Wrapf(err, "failed to write subdomain file: %s", subdomain.Key.SubKey)

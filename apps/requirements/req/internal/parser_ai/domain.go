@@ -17,8 +17,9 @@ type inputDomain struct {
 	UMLComment      string `json:"uml_comment,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
-	Subdomains        map[string]*inputSubdomain        `json:"-"`
-	ClassAssociations map[string]*inputClassAssociation `json:"-"`
+	Subdomains            map[string]*inputSubdomain            `json:"-"`
+	SubdomainAssociations map[string]*inputSubdomainAssociation `json:"-"`
+	ClassAssociations     map[string]*inputClassAssociation     `json:"-"`
 }
 
 // domainSchema is the compiled JSON schema for domain files.

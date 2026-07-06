@@ -150,6 +150,14 @@ func convertGlobalFunctionFromModel(gf *model_logic.GlobalFunction) *inputGlobal
 	}
 }
 
+func convertSubdomainAssocFromModel(assoc *model_domain.SubdomainAssociation) *inputSubdomainAssociation {
+	return &inputSubdomainAssociation{
+		ProblemSubdomainKey:  assoc.ProblemSubdomainKey.SubKey,
+		SolutionSubdomainKey: assoc.SolutionSubdomainKey.SubKey,
+		UmlComment:           assoc.UmlComment,
+	}
+}
+
 // convertDomainAssocFromModel converts a model_domain.Association to an inputDomainAssociation.
 func convertDomainAssocFromModel(assoc *model_domain.Association) *inputDomainAssociation {
 	return &inputDomainAssociation{
@@ -162,19 +170,25 @@ func convertDomainAssocFromModel(assoc *model_domain.Association) *inputDomainAs
 // convertDomainFromModel converts a model_domain.Domain to an inputDomain.
 func convertDomainFromModel(domain *model_domain.Domain, allClasses map[identity.Key]model_class.Class) *inputDomain {
 	result := &inputDomain{
-		Name:              domain.Name,
-		Details:           domain.Details,
-		UnfinishedNotes:   domain.UnfinishedNotes,
-		Realized:          domain.Realized,
-		UMLComment:        domain.UmlComment,
-		Subdomains:        make(map[string]*inputSubdomain),
-		ClassAssociations: make(map[string]*inputClassAssociation),
+		Name:                  domain.Name,
+		Details:               domain.Details,
+		UnfinishedNotes:       domain.UnfinishedNotes,
+		Realized:              domain.Realized,
+		UMLComment:            domain.UmlComment,
+		Subdomains:            make(map[string]*inputSubdomain),
+		SubdomainAssociations: make(map[string]*inputSubdomainAssociation),
+		ClassAssociations:     make(map[string]*inputClassAssociation),
 	}
 
 	// Convert subdomains
 	for key, subdomain := range domain.Subdomains {
 		converted := convertSubdomainFromModel(&subdomain, allClasses)
 		result.Subdomains[key.SubKey] = converted
+	}
+
+	for _, assoc := range domain.SubdomainAssociations {
+		converted := convertSubdomainAssocFromModel(&assoc)
+		result.SubdomainAssociations[assoc.Key.SubKey+"."+assoc.Key.SubKey2] = converted
 	}
 
 	// Convert domain-level class associations

@@ -86,6 +86,9 @@ func writeStructuralData(tx *sql.Tx, modelKey string, model core.Model) error {
 	if err := writeSubdomainHierarchy(tx, modelKey, model); err != nil {
 		return err
 	}
+	if err := writeSubdomainAssociations(tx, modelKey, model); err != nil {
+		return err
+	}
 	if err := writeUseCases(tx, modelKey, model); err != nil {
 		return err
 	}
@@ -306,6 +309,22 @@ func writeDomains(tx *sql.Tx, modelKey string, model core.Model) error {
 		domainAssociationsSlice = append(domainAssociationsSlice, association)
 	}
 	return AddDomainAssociations(tx, modelKey, domainAssociationsSlice)
+}
+
+func writeSubdomainAssociations(tx *sql.Tx, modelKey string, model core.Model) error {
+	for _, domain := range model.Domains {
+		if len(domain.SubdomainAssociations) == 0 {
+			continue
+		}
+		associationsSlice := make([]model_domain.SubdomainAssociation, 0, len(domain.SubdomainAssociations))
+		for _, association := range domain.SubdomainAssociations {
+			associationsSlice = append(associationsSlice, association)
+		}
+		if err := AddSubdomainAssociations(tx, modelKey, associationsSlice); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // writeSubdomainHierarchy collects and inserts subdomains, generalizations, use case generalizations,
@@ -1001,6 +1020,7 @@ func readModelLevelData(tx *sql.Tx, modelKey string, model *core.Model, logicsBy
 type readDomainStructure struct {
 	domainsSlice                     []model_domain.Domain
 	domainAssociationsSlice          []model_domain.Association
+	subdomainAssociationsMap         map[identity.Key][]model_domain.SubdomainAssociation
 	subdomainsMap                    map[identity.Key][]model_domain.Subdomain
 	generalizationsMap               map[identity.Key][]model_class.Generalization
 	useCaseGeneralizationsMap        map[identity.Key][]model_use_case.Generalization
@@ -1131,6 +1151,21 @@ func queryDomainStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) 
 	ds.domainAssociationsSlice, err = QueryDomainAssociations(tx, modelKey)
 	if err != nil {
 		return err
+	}
+
+	subdomainAssociationsSlice, err := QuerySubdomainAssociations(tx, modelKey)
+	if err != nil {
+		return err
+	}
+	if len(subdomainAssociationsSlice) > 0 {
+		ds.subdomainAssociationsMap = make(map[identity.Key][]model_domain.SubdomainAssociation)
+		for _, assoc := range subdomainAssociationsSlice {
+			domainKey, err := identity.ParseKey(assoc.Key.ParentKey)
+			if err != nil {
+				return err
+			}
+			ds.subdomainAssociationsMap[domainKey] = append(ds.subdomainAssociationsMap[domainKey], assoc)
+		}
 	}
 
 	ds.generalizationsMap, err = QueryGeneralizations(tx, modelKey)
@@ -1616,6 +1651,13 @@ func assembleDomainTree(model *core.Model, ds *readDomainStructure, logicsByKey 
 			for _, subdomain := range subdomains {
 				assembleSubdomain(&subdomain, ds, logicsByKey)
 				domain.Subdomains[subdomain.Key] = subdomain
+			}
+		}
+
+		if subdomainAssocs, ok := ds.subdomainAssociationsMap[domainKey]; ok {
+			domain.SubdomainAssociations = make(map[identity.Key]model_domain.SubdomainAssociation, len(subdomainAssocs))
+			for _, assoc := range subdomainAssocs {
+				domain.SubdomainAssociations[assoc.Key] = assoc
 			}
 		}
 

@@ -429,10 +429,14 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 
 	// Initialize child maps
 	domain.Subdomains = make(map[string]*inputSubdomain)
+	domain.SubdomainAssociations = make(map[string]*inputSubdomainAssociation)
 	domain.ClassAssociations = make(map[string]*inputClassAssociation)
 
 	var errs []error
-	if err := readDomainAssociations(domainDir, domain); err != nil {
+	if err := readDomainClassAssociations(domainDir, domain); err != nil {
+		errs = append(errs, err)
+	}
+	if err := readDomainSubdomainAssociations(domainDir, domain); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -471,8 +475,48 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 	return domain, nil
 }
 
-// readDomainAssociations reads domain-level class association files.
-func readDomainAssociations(domainDir string, domain *inputDomain) error {
+// readDomainSubdomainAssociations reads domain-level subdomain dependency files.
+func readDomainSubdomainAssociations(domainDir string, domain *inputDomain) error {
+	assocDir := filepath.Join(domainDir, "subdomain_associations")
+	entries, err := os.ReadDir(assocDir)
+	if err != nil {
+		return nil
+	}
+	var errs []error
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".subdomain_assoc.json") {
+			continue
+		}
+		key := strings.TrimSuffix(name, ".subdomain_assoc.json")
+		filePath := filepath.Join(assocDir, name)
+		if err := ValidateKey(key, "subdomain_association_key", filePath); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		sa, err := parseSubdomainAssociation(content, filePath)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		domain.SubdomainAssociations[key] = sa
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+// readDomainClassAssociations reads domain-level class association files.
+func readDomainClassAssociations(domainDir string, domain *inputDomain) error {
 	assocDir := filepath.Join(domainDir, "class_associations")
 	entries, err := os.ReadDir(assocDir)
 	if err != nil {

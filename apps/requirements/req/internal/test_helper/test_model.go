@@ -213,6 +213,9 @@ type testKeys struct {
 	// Domain association keys.
 	domainAssoc1, domainAssoc2, domainAssoc3 identity.Key
 
+	// Subdomain dependency association keys (same domain).
+	subdomainDepAssoc1, subdomainDepAssoc2, subdomainDepAssoc3 identity.Key
+
 	// Class association keys.
 	subdomainAssoc1, subdomainAssoc2, subdomainAssoc3       identity.Key
 	domainClassAssoc1, domainClassAssoc2, domainClassAssoc3 identity.Key
@@ -1175,6 +1178,19 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.domainAssoc3, err = identity.NewDomainAssociationKey(k.domainB, k.domainC)
+	if err != nil {
+		return k, err
+	}
+
+	k.subdomainDepAssoc1, err = identity.NewSubdomainAssociationKey(k.domainA, k.subdomainA, k.subdomainB)
+	if err != nil {
+		return k, err
+	}
+	k.subdomainDepAssoc2, err = identity.NewSubdomainAssociationKey(k.domainA, k.subdomainA, k.subdomainD)
+	if err != nil {
+		return k, err
+	}
+	k.subdomainDepAssoc3, err = identity.NewSubdomainAssociationKey(k.domainA, k.subdomainB, k.subdomainD)
 	if err != nil {
 		return k, err
 	}
@@ -2243,6 +2259,18 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 // Domain associations
 // =========================================================================
 
+func buildSubdomainAssociations(k testKeys) map[identity.Key]model_domain.SubdomainAssociation {
+	sa1 := model_domain.NewSubdomainAssociation(k.subdomainDepAssoc1, k.subdomainA, k.subdomainB, "orders require warehouse capacity")
+	sa2 := model_domain.NewSubdomainAssociation(k.subdomainDepAssoc2, k.subdomainA, k.subdomainD, "orders feed analytics")
+	sa3 := model_domain.NewSubdomainAssociation(k.subdomainDepAssoc3, k.subdomainB, k.subdomainD, "warehouse feeds analytics")
+
+	return map[identity.Key]model_domain.SubdomainAssociation{
+		k.subdomainDepAssoc1: sa1,
+		k.subdomainDepAssoc2: sa2,
+		k.subdomainDepAssoc3: sa3,
+	}
+}
+
 func buildDomainAssociations(k testKeys) map[identity.Key]model_domain.Association {
 	da1 := model_domain.NewAssociation(k.domainAssoc1, k.domainA, k.domainB, "domain link")
 	da2 := model_domain.NewAssociation(k.domainAssoc2, k.domainA, k.domainC, "commerce to external")
@@ -2321,6 +2349,7 @@ func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain
 		k.subdomainB: subdomains[k.subdomainB],
 		k.subdomainD: subdomains[k.subdomainD],
 	}
+	domainA.SubdomainAssociations = buildSubdomainAssociations(k)
 
 	// Domain B: single subdomain (special case).
 	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", notesDomainLogistics, true, "")

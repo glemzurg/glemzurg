@@ -147,6 +147,10 @@ var coreToParserCode = map[coreerr.Code]int{
 	// Domain association same domains.
 	coreerr.DassocSameDomains: ErrConvDomainAssocSameDomains,
 
+	// Subdomain association rules.
+	coreerr.SassocSameSubdomains:        ErrConvSubdomainAssocSameSubdomains,
+	coreerr.DomainSassocSingleSubdomain: ErrConvDomainSassocSingleSubdomain,
+
 	// Association class same as endpoint.
 	coreerr.AssocAssocclassSameFrom: ErrConvAssocClassSameAsEndpoint,
 	coreerr.AssocAssocclassSameTo:   ErrConvAssocClassSameAsEndpoint,

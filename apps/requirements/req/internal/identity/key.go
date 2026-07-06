@@ -60,7 +60,7 @@ func newRootKey(keyType, rootKey string) (key Key, err error) {
 // validKeyTypes is the set of all valid KeyType values.
 var validKeyTypes = map[string]bool{
 	KEY_TYPE_ACTOR: true, KEY_TYPE_ACTOR_GENERALIZATION: true,
-	KEY_TYPE_DOMAIN: true, KEY_TYPE_DOMAIN_ASSOCIATION: true,
+	KEY_TYPE_DOMAIN: true, KEY_TYPE_DOMAIN_ASSOCIATION: true, KEY_TYPE_SUBDOMAIN_ASSOCIATION: true,
 	KEY_TYPE_GLOBAL_FUNCTION: true, KEY_TYPE_INVARIANT: true, KEY_TYPE_NAMED_SET: true,
 	KEY_TYPE_SUBDOMAIN: true,
 	KEY_TYPE_USE_CASE:  true, KEY_TYPE_USE_CASE_GENERALIZATION: true,
@@ -155,6 +155,13 @@ func (k *Key) ValidateWithContext(ctx *coreerr.ValidationContext) error {
 				fmt.Sprintf("parentKey must be blank for '%s' keys, cannot be '%s'", k.KeyType, k.ParentKey),
 				"ParentKey", k.ParentKey, "blank")
 		}
+	case KEY_TYPE_SUBDOMAIN_ASSOCIATION:
+		// Subdomain associations are parented by their domain.
+		if k.ParentKey == "" {
+			return coreerr.NewWithValues(ctx, coreerr.KeyParentkeyRequired,
+				fmt.Sprintf("parentKey must be non-blank for '%s' keys", k.KeyType),
+				"ParentKey", "", "non-blank parent key")
+		}
 	case KEY_TYPE_CLASS_ASSOCIATION:
 		// Class associations can have blank parentKey (model-level) or non-blank (domain/subdomain level).
 		// No validation needed - both are valid.
@@ -237,6 +244,9 @@ func (k *Key) ValidateParentWithContext(ctx *coreerr.ValidationContext, parent *
 	switch k.KeyType {
 	case KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT, KEY_TYPE_NAMED_SET:
 		return k.validateRootParent(ctx, parent)
+
+	case KEY_TYPE_SUBDOMAIN_ASSOCIATION:
+		return k.validateRequiredParent(ctx, parent, KEY_TYPE_DOMAIN)
 
 	case KEY_TYPE_SUBDOMAIN:
 		return k.validateRequiredParent(ctx, parent, KEY_TYPE_DOMAIN)
@@ -441,6 +451,13 @@ func ParseKey(s string) (key Key, err error) {
 	// Format: dassociation/problemSubKey/solutionSubKey
 	if len(parts) == 3 && parts[0] == KEY_TYPE_DOMAIN_ASSOCIATION {
 		return newKeyWithSubKey2("", KEY_TYPE_DOMAIN_ASSOCIATION, parts[1], parts[2])
+	}
+
+	// Subdomain association key (domain parent with subKey2).
+	// Format: domain/{domainSubKey}/sassociation/{problemSubKey}/{solutionSubKey}
+	if len(parts) == 5 && parts[0] == KEY_TYPE_DOMAIN && parts[2] == KEY_TYPE_SUBDOMAIN_ASSOCIATION {
+		parentKey := parts[0] + "/" + parts[1]
+		return newKeyWithSubKey2(parentKey, KEY_TYPE_SUBDOMAIN_ASSOCIATION, parts[3], parts[4])
 	}
 
 	// Try parsing as a class association key.

@@ -17,6 +17,7 @@ func PruneToModelOnly(model core.Model) core.Model {
 	// Strip subdomains from each domain, keeping only the domain-level fields.
 	for domainKey, domain := range model.Domains {
 		domain.ClassAssociations = nil
+		domain.SubdomainAssociations = nil
 		for subdomainKey, subdomain := range domain.Subdomains {
 			subdomain.Classes = nil
 			subdomain.Generalizations = nil
@@ -41,6 +42,7 @@ func PruneToClassAttributes(model core.Model) core.Model {
 
 	for domainKey, domain := range model.Domains {
 		domain.ClassAssociations = nil
+		domain.SubdomainAssociations = nil
 		for subdomainKey, subdomain := range domain.Subdomains {
 			subdomain.UseCases = nil
 			subdomain.UseCaseGeneralizations = nil

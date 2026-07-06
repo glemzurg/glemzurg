@@ -282,9 +282,24 @@ func validateDomainTree(model *inputModel, domainKey string, domain *inputDomain
 		}
 	}
 
-	// Validate domain-level associations
+	if len(domain.SubdomainAssociations) > 0 && len(domain.Subdomains) < 2 {
+		return NewParseError(
+			ErrTreeSubdomainAssocSingleSubdomain,
+			fmt.Sprintf("domain '%s' has subdomain associations but only %d subdomain(s); at least two subdomains are required",
+				domainKey, len(domain.Subdomains)),
+			fmt.Sprintf("domains/%s/subdomain_associations", domainKey),
+		).WithField("subdomain_associations").WithHint("add another subdomain or remove subdomain association files")
+	}
+
+	for assocKey, assoc := range domain.SubdomainAssociations {
+		if err := validateDomainSubdomainAssociation(domainKey, domain, assocKey, assoc); err != nil {
+			return err
+		}
+	}
+
+	// Validate domain-level class associations
 	for assocKey, assoc := range domain.ClassAssociations {
-		if err := validateDomainAssociation(domainKey, domain, assocKey, assoc); err != nil {
+		if err := validateDomainClassAssociation(domainKey, domain, assocKey, assoc); err != nil {
 			return err
 		}
 	}
@@ -761,9 +776,31 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 	return nil
 }
 
-// validateDomainAssociation validates an association at the domain level.
+func validateDomainSubdomainAssociation(domainKey string, domain *inputDomain, assocKey string, assoc *inputSubdomainAssociation) error {
+	assocPath := fmt.Sprintf("domains/%s/subdomain_associations/%s.subdomain_assoc.json", domainKey, assocKey)
+
+	if _, ok := domain.Subdomains[assoc.ProblemSubdomainKey]; !ok {
+		return NewParseError(
+			ErrTreeSubdomainAssocSubdomainNotFound,
+			fmt.Sprintf("subdomain association '%s' problem_subdomain_key '%s' references subdomain which does not exist",
+				assocKey, assoc.ProblemSubdomainKey),
+			assocPath,
+		).WithField("problem_subdomain_key").WithHint(fmt.Sprintf("available subdomains: %s", strings.Join(sortedKeys(domain.Subdomains), ", ")))
+	}
+	if _, ok := domain.Subdomains[assoc.SolutionSubdomainKey]; !ok {
+		return NewParseError(
+			ErrTreeSubdomainAssocSubdomainNotFound,
+			fmt.Sprintf("subdomain association '%s' solution_subdomain_key '%s' references subdomain which does not exist",
+				assocKey, assoc.SolutionSubdomainKey),
+			assocPath,
+		).WithField("solution_subdomain_key").WithHint(fmt.Sprintf("available subdomains: %s", strings.Join(sortedKeys(domain.Subdomains), ", ")))
+	}
+	return nil
+}
+
+// validateDomainClassAssociation validates a class association at the domain level.
 // Keys include subdomain to disambiguate (subdomain/class).
-func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey string, assoc *inputClassAssociation) error {
+func validateDomainClassAssociation(domainKey string, domain *inputDomain, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("domains/%s/class_associations/%s.assoc.json", domainKey, assocKey)
 
 	domainClassKeys := domainScopedClassKeys(domain)

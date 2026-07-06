@@ -127,14 +127,24 @@ func generateSubdomainsMermaidContents(reqs *req_flat.Requirements, domain model
 		return subdomains[i].Key.String() < subdomains[j].Key.String()
 	})
 
+	var associations []model_domain.SubdomainAssociation
+	for _, assoc := range domain.SubdomainAssociations {
+		associations = append(associations, assoc)
+	}
+	sort.Slice(associations, func(i, j int) bool {
+		return associations[i].Key.String() < associations[j].Key.String()
+	})
+
 	contents, err = generateFromTemplate(_subdomainsMermaidTemplate, struct {
-		Reqs       *req_flat.Requirements
-		Domain     model_domain.Domain
-		Subdomains []model_domain.Subdomain
+		Reqs         *req_flat.Requirements
+		Domain       model_domain.Domain
+		Subdomains   []model_domain.Subdomain
+		Associations []model_domain.SubdomainAssociation
 	}{
-		Reqs:       reqs,
-		Domain:     domain,
-		Subdomains: subdomains,
+		Reqs:         reqs,
+		Domain:       domain,
+		Subdomains:   subdomains,
+		Associations: associations,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)
