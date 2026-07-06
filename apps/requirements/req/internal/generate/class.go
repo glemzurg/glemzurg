@@ -86,18 +86,26 @@ func generateClassesMermaidContents(
 	generalizations []model_class.Generalization,
 	classes []model_class.Class,
 	associations []model_class.Association,
+	viewerSubdomainKey identity.Key,
 	focalClassKey *identity.Key,
 ) (contents string, err error) {
+	layout, err := groupClassesMermaidByNamespace(reqs, viewerSubdomainKey, classes)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
 	contents, err = generateFromTemplate(_classesMermaidTemplate, struct {
 		Reqs            *req_flat.Requirements
 		Generalizations []model_class.Generalization
-		Classes         []model_class.Class
+		LocalClasses    []model_class.Class
+		Namespaces      []classesMermaidNamespaceGroup
 		Associations    []model_class.Association
 		FocalClassKey   *identity.Key
 	}{
 		Reqs:            reqs,
 		Generalizations: generalizations,
-		Classes:         classes,
+		LocalClasses:    layout.LocalClasses,
+		Namespaces:      layout.Namespaces,
 		Associations:    associations,
 		FocalClassKey:   focalClassKey,
 	})

@@ -209,3 +209,73 @@ func TestFormatClassMarkdownDisplayName(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatClassMermaidNamespaceSegments(t *testing.T) {
+	t.Parallel()
+
+	backofficeDomain := helper.Must(identity.NewDomainKey("backoffice"))
+	backofficeDefault := helper.Must(identity.NewSubdomainKey(backofficeDomain, "default"))
+	backofficeAdmin := NewClass(helper.Must(identity.NewClassKey(backofficeDefault, "administrator")), ClassLinks{}, ClassDetails{Name: "Administrator", Details: ""})
+
+	platformDomain := helper.Must(identity.NewDomainKey("platform"))
+	platformLeaderboards := helper.Must(identity.NewSubdomainKey(platformDomain, "leaderboards"))
+	platformResolver := NewClass(helper.Must(identity.NewClassKey(platformLeaderboards, "resolver")), ClassLinks{}, ClassDetails{Name: "Resolver", Details: ""})
+
+	financeDomain := helper.Must(identity.NewDomainKey("finance"))
+	walletSub := helper.Must(identity.NewSubdomainKey(financeDomain, "wallet"))
+	opsSub := helper.Must(identity.NewSubdomainKey(financeDomain, "operations"))
+	opsPlayer := NewClass(helper.Must(identity.NewClassKey(opsSub, "player")), ClassLinks{}, ClassDetails{Name: "Player", Details: ""})
+	defaultAccount := NewClass(helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(financeDomain, "default")), "account")), ClassLinks{}, ClassDetails{Name: "Account", Details: ""})
+
+	tests := []struct {
+		name                       string
+		viewer                     identity.Key
+		target                     Class
+		targetDomainDisplayName    string
+		targetSubdomainDisplayName string
+		want                       []string
+	}{
+		{name: "same subdomain", viewer: backofficeDefault, target: backofficeAdmin, want: nil},
+		{
+			name:                       "cross domain non-default",
+			viewer:                     backofficeDefault,
+			target:                     platformResolver,
+			targetDomainDisplayName:    "Platform",
+			targetSubdomainDisplayName: "Leaderboards",
+			want:                       []string{"Platform", "Leaderboards"},
+		},
+		{
+			name:                       "cross domain default",
+			viewer:                     platformLeaderboards,
+			target:                     backofficeAdmin,
+			targetDomainDisplayName:    "Backoffice",
+			targetSubdomainDisplayName: "Default",
+			want:                       []string{"Backoffice"},
+		},
+		{
+			name:                       "cross subdomain same domain",
+			viewer:                     walletSub,
+			target:                     opsPlayer,
+			targetDomainDisplayName:    "Finance",
+			targetSubdomainDisplayName: "Operations",
+			want:                       []string{"Operations"},
+		},
+		{
+			name:                       "cross subdomain same domain default target",
+			viewer:                     walletSub,
+			target:                     defaultAccount,
+			targetDomainDisplayName:    "Finance",
+			targetSubdomainDisplayName: "Default",
+			want:                       nil,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := FormatClassMermaidNamespaceSegments(tc.viewer, tc.target, tc.targetDomainDisplayName, tc.targetSubdomainDisplayName)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}

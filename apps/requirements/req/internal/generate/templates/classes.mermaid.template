@@ -12,7 +12,7 @@ classDiagram
     {{ nodeid "class" $superclass.Key }} <|-- {{ nodeid "class" .Key }}
 {{ end -}}
 {{ end -}}
-{{ range .Classes -}}
+{{ range .LocalClasses -}}
 {{- $class := class_lookup $reqs .Key -}}
     class {{ nodeid "class" .Key }}["{{ .Name }}"] {
 {{- range .Attributes }}
@@ -23,6 +23,23 @@ classDiagram
 {{ classes_mermaid_stereotype_line "actor" (nodeid "class" .Key) -}}
 {{ end -}}
 {{ classes_mermaid_class_note . -}}
+{{ end -}}
+{{ range .Namespaces -}}
+    namespace {{ .Path }} {
+{{ range .Classes -}}
+        class {{ nodeid "class" .Key }}["{{ .Name }}"] {
+{{- range .Attributes }}
+            {{ classes_mermaid_attribute_member . }}
+{{- end }}
+        }
+{{ end -}}
+    }
+{{ range .Classes -}}
+{{ if ne .ActorKey nil -}}
+{{ classes_mermaid_stereotype_line "actor" (nodeid "class" .Key) -}}
+{{ end -}}
+{{ classes_mermaid_class_note . -}}
+{{ end -}}
 {{ end -}}
 {{ if has_mermaid_focal_class .FocalClassKey -}}
 style {{ nodeid "class" (mermaid_focal_class_key .FocalClassKey) }} {{ classes_mermaid_focal_class_style }}

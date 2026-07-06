@@ -10,6 +10,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+
+	"github.com/pkg/errors"
 )
 
 // ContentWriter is an interface for writing generated content.
@@ -217,7 +220,12 @@ func buildDomainDiagrams(reqs *req_flat.Requirements, domain model_domain.Domain
 	}
 
 	// Single subdomain: generate classes and use cases diagrams.
-	classesDiagram, err := buildClassesDiagram(reqs, gatherDomainClasses(domain))
+	localClasses := gatherDomainClasses(domain)
+	viewerSubdomainKey, ok := soleSubdomainKey(domain)
+	if !ok && len(localClasses) > 0 {
+		return domainDiagrams{}, errors.Errorf("single-subdomain domain %q has classes but no subdomain", domain.Key.String())
+	}
+	classesDiagram, err := buildClassesDiagram(reqs, localClasses, viewerSubdomainKey)
 	if err != nil {
 		return domainDiagrams{}, err
 	}
@@ -245,12 +253,19 @@ func gatherDomainClasses(domain model_domain.Domain) []model_class.Class {
 // Returns an empty string when there is nothing to render so the template can
 // omit the mermaid fence; an empty `classDiagram` block is a syntax error in
 // Mermaid 11+.
-func buildClassesDiagram(reqs *req_flat.Requirements, classes []model_class.Class) (string, error) {
+func buildClassesDiagram(reqs *req_flat.Requirements, classes []model_class.Class, viewerSubdomainKey identity.Key) (string, error) {
 	generalizations, allClasses, associations := reqs.RegardingClasses(classes)
 	if len(generalizations) == 0 && len(allClasses) == 0 && len(associations) == 0 {
 		return "", nil
 	}
-	return generateClassesMermaidContents(reqs, generalizations, allClasses, associations, nil)
+	return generateClassesMermaidContents(reqs, generalizations, allClasses, associations, viewerSubdomainKey, nil)
+}
+
+func soleSubdomainKey(domain model_domain.Domain) (identity.Key, bool) {
+	for _, subdomain := range domain.Subdomains {
+		return subdomain.Key, true
+	}
+	return identity.Key{}, false
 }
 
 // buildUseCasesDiagram generates a Mermaid use case diagram for a domain.
@@ -300,7 +315,7 @@ func generateSingleSubdomainFiles(reqs *req_flat.Requirements, writer ContentWri
 	for _, class := range subdomain.Classes {
 		subdomainClasses = append(subdomainClasses, class)
 	}
-	classesDiagram, err := buildClassesDiagram(reqs, subdomainClasses)
+	classesDiagram, err := buildClassesDiagram(reqs, subdomainClasses, subdomain.Key)
 	if err != nil {
 		return err
 	}
@@ -381,7 +396,11 @@ func writeClassMarkdownPage(
 	}
 
 	generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
-	classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations, &class.Key)
+	viewerSubdomainKey, err := identity.ParseKey(class.Key.ParentKey)
+	if err != nil {
+		return err
+	}
+	classesDiagram, err := generateClassesMermaidContents(reqs, generalizations, classes, associations, viewerSubdomainKey, &class.Key)
 	if err != nil {
 		return err
 	}

@@ -155,6 +155,52 @@ func FormatClassMarkdownDisplayName(
 	return targetDomainDisplayName + "::" + targetSubdomainDisplayName + "::" + targetClass.Name, nil
 }
 
+// FormatClassMermaidNamespaceSegments returns namespace path segments for a class on a class diagram
+// relative to the viewing subdomain. An empty slice places the class in the diagram root.
+// Cross-subdomain yields [SubdomainName]; cross-domain with a default subdomain yields
+// [DomainName]; cross-domain otherwise yields [DomainName, SubdomainName].
+func FormatClassMermaidNamespaceSegments(
+	viewerSubdomainKey identity.Key,
+	targetClass Class,
+	targetDomainDisplayName, targetSubdomainDisplayName string,
+) ([]string, error) {
+	if viewerSubdomainKey.String() == targetClass.Key.ParentKey {
+		return nil, nil
+	}
+
+	targetDomainKey, targetSubdomainKey, err := classKeyLocationKeys(targetClass.Key)
+	if err != nil {
+		return nil, err
+	}
+	targetInDefaultSubdomain := targetSubdomainKey.SubKey == defaultSubdomainKeySubkey
+
+	viewerSubdomain, err := identity.ParseKey(viewerSubdomainKey.String())
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if viewerSubdomain.KeyType != identity.KEY_TYPE_SUBDOMAIN {
+		return nil, errors.Errorf("viewer key %q is not a subdomain", viewerSubdomainKey.String())
+	}
+	viewerDomain, err := identity.ParseKey(viewerSubdomain.ParentKey)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if viewerDomain.KeyType != identity.KEY_TYPE_DOMAIN {
+		return nil, errors.Errorf("viewer parent %q is not a domain", viewerSubdomain.ParentKey)
+	}
+
+	if viewerDomain.SubKey == targetDomainKey.SubKey {
+		if targetInDefaultSubdomain {
+			return nil, nil
+		}
+		return []string{targetSubdomainDisplayName}, nil
+	}
+	if targetInDefaultSubdomain {
+		return []string{targetDomainDisplayName}, nil
+	}
+	return []string{targetDomainDisplayName, targetSubdomainDisplayName}, nil
+}
+
 func classKeyLocationKeys(classKey identity.Key) (domainKey, subdomainKey identity.Key, err error) {
 	if classKey.KeyType != identity.KEY_TYPE_CLASS {
 		return identity.Key{}, identity.Key{}, errors.Errorf("key %q is not a class", classKey.String())
