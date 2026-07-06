@@ -1,0 +1,6 @@
+{
+    "Key": "domain/test_domain/subdomain/billing",
+    "Name": "Billing",
+    "Details": "Billing pushes requirements on other subdomains in this domain.",
+    "UmlComment": "Subdomain dependency source."
+}

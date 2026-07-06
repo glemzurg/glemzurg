@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,30 +24,40 @@ type SubdomainFileSuite struct {
 }
 
 func (suite *SubdomainFileSuite) TestParseSubdomainFiles() {
-	// Create a parent domain key for testing.
-	domainKey, err := identity.NewDomainKey("test_domain")
-	suite.Require().NoError(err)
-
-	subdomainSubKey := "subdomain_key"
-
 	testDataFiles, err := t_ContentsForAllMdFiles(t_SUBDOMAIN_PATH_OK)
 	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		var expected, actual model_domain.Subdomain
+		domainKey, subdomainSubKey := subdomainTestKeys(testData.Filename)
 
-		actual, actualAssocs, err := parseSubdomain(domainKey, subdomainSubKey, testData.Filename, testData.Contents)
+		var expected model_domain.Subdomain
+		actual, associations, err := parseSubdomain(domainKey, subdomainSubKey, testData.Filename, testData.Contents)
 		suite.Require().NoError(err, testName)
-		suite.Empty(actualAssocs, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
 		suite.Require().NoError(err, testName)
 
 		suite.Equal(expected, actual, testName)
 
-		// Test round-trip: generate content from parsed object and compare to original.
-		generated := generateSubdomainContent(actual, nil)
+		if testData.JsonChildren != "" {
+			var expectedAssociations []model_domain.SubdomainAssociation
+			err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
+			suite.Require().NoError(err, testName+" associations json")
+			suite.Equal(expectedAssociations, associations, testName+" associations")
+		} else {
+			suite.Empty(associations, testName)
+		}
+
+		generated := generateSubdomainContent(actual, associations)
 		suite.Equal(testData.Contents, generated, testName)
 	}
+}
+
+func subdomainTestKeys(filename string) (domainKey identity.Key, subdomainSubKey string) {
+	domainKey = helper.Must(identity.NewDomainKey("test_domain"))
+	if filename == "test_files/subdomain/02_associations.md" {
+		return domainKey, "billing"
+	}
+	return domainKey, "subdomain_key"
 }
