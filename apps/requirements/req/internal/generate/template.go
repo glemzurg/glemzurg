@@ -317,6 +317,7 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.ClassSubdomainLookup()
 		return lookup[key.String()]
 	},
+	"class_markdown_display_name": classMarkdownDisplayName,
 	"use_case_subdomain": func(reqs *req_flat.Requirements, key identity.Key) (subdomain model_domain.Subdomain) {
 		lookup := reqs.UseCaseSubdomainLookup()
 		return lookup[key.String()]

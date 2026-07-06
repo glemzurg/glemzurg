@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -33,30 +34,61 @@ func generateDomainMdContents(reqs *req_flat.Requirements, model core.Model, dom
 		return subdomains[i].Key.String() < subdomains[j].Key.String()
 	})
 
+	var viewerSubdomainKey identity.Key
+	var externalDiagramClasses []model_class.Class
+	if len(subdomains) == 1 {
+		viewerSubdomainKey = subdomains[0].Key
+		externalDiagramClasses = diagramClassesOutsideDomain(reqs, domain)
+	}
+
 	contents, err = generateFromTemplate(_domainMdTemplate, struct {
-		Reqs              *req_flat.Requirements
-		Model             core.Model
-		Domain            model_domain.Domain
-		Classes           []model_class.Class
-		Subdomains        []model_domain.Subdomain
-		SubdomainsDiagram string
-		ClassesDiagram    string
-		UseCasesDiagram   string
+		Reqs                   *req_flat.Requirements
+		Model                  core.Model
+		Domain                 model_domain.Domain
+		Classes                []model_class.Class
+		Subdomains             []model_domain.Subdomain
+		ViewerSubdomainKey     identity.Key
+		ExternalDiagramClasses []model_class.Class
+		SubdomainsDiagram      string
+		ClassesDiagram         string
+		UseCasesDiagram        string
 	}{
-		Reqs:              reqs,
-		Model:             model,
-		Domain:            domain,
-		Classes:           allClasses,
-		Subdomains:        subdomains,
-		SubdomainsDiagram: diagrams.SubdomainsDiagram,
-		ClassesDiagram:    diagrams.ClassesDiagram,
-		UseCasesDiagram:   diagrams.UseCasesDiagram,
+		Reqs:                   reqs,
+		Model:                  model,
+		Domain:                 domain,
+		Classes:                allClasses,
+		Subdomains:             subdomains,
+		ViewerSubdomainKey:     viewerSubdomainKey,
+		ExternalDiagramClasses: externalDiagramClasses,
+		SubdomainsDiagram:      diagrams.SubdomainsDiagram,
+		ClassesDiagram:         diagrams.ClassesDiagram,
+		UseCasesDiagram:        diagrams.UseCasesDiagram,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
 	return contents, nil
+}
+
+// diagramClassesOutsideDomain returns classes in the domain class UML that live outside the domain.
+func diagramClassesOutsideDomain(reqs *req_flat.Requirements, domain model_domain.Domain) []model_class.Class {
+	localClasses := gatherDomainClasses(domain)
+	_, diagramClasses, _ := reqs.RegardingClasses(localClasses)
+
+	localKeys := make(map[string]struct{}, len(localClasses))
+	for _, class := range localClasses {
+		localKeys[class.Key.String()] = struct{}{}
+	}
+
+	var external []model_class.Class
+	for _, class := range diagramClasses {
+		if _, inDomain := localKeys[class.Key.String()]; inDomain {
+			continue
+		}
+		external = append(external, class)
+	}
+	return classesSortedByName(external)
 }
 
 // domainDiagrams holds the Mermaid diagram strings for a domain page.

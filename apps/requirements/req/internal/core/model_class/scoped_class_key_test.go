@@ -138,3 +138,74 @@ func TestFormatScopedClassKey(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, platformMetric, resolved)
 }
+
+func TestFormatClassMarkdownDisplayName(t *testing.T) {
+	t.Parallel()
+
+	backofficeDomain := helper.Must(identity.NewDomainKey("backoffice"))
+	backofficeDefault := helper.Must(identity.NewSubdomainKey(backofficeDomain, "default"))
+	backofficeAdmin := helper.Must(identity.NewClassKey(backofficeDefault, "administrator"))
+	backofficeAdminClass := NewClass(backofficeAdmin, ClassLinks{}, ClassDetails{Name: "Administrator", Details: ""})
+
+	platformDomain := helper.Must(identity.NewDomainKey("platform"))
+	platformLeaderboards := helper.Must(identity.NewSubdomainKey(platformDomain, "leaderboards"))
+	platformResolver := helper.Must(identity.NewClassKey(platformLeaderboards, "resolver"))
+	platformResolverClass := NewClass(platformResolver, ClassLinks{}, ClassDetails{Name: "Resolver", Details: ""})
+
+	financeDomain := helper.Must(identity.NewDomainKey("finance"))
+	walletSub := helper.Must(identity.NewSubdomainKey(financeDomain, "wallet"))
+	opsSub := helper.Must(identity.NewSubdomainKey(financeDomain, "operations"))
+	opsPlayer := NewClass(helper.Must(identity.NewClassKey(opsSub, "player")), ClassLinks{}, ClassDetails{Name: "Player", Details: ""})
+
+	tests := []struct {
+		name                       string
+		viewer                     identity.Key
+		target                     Class
+		targetDomainDisplayName    string
+		targetSubdomainDisplayName string
+		want                       string
+	}{
+		{name: "same subdomain", viewer: backofficeDefault, target: backofficeAdminClass, want: "Administrator"},
+		{
+			name:                       "cross subdomain",
+			viewer:                     walletSub,
+			target:                     opsPlayer,
+			targetDomainDisplayName:    "Finance",
+			targetSubdomainDisplayName: "Operations",
+			want:                       "Operations::Player",
+		},
+		{
+			name:                       "cross domain",
+			viewer:                     backofficeDefault,
+			target:                     platformResolverClass,
+			targetDomainDisplayName:    "Platform",
+			targetSubdomainDisplayName: "Leaderboards",
+			want:                       "Platform::Leaderboards::Resolver",
+		},
+		{
+			name:                       "cross domain default subdomain",
+			viewer:                     platformLeaderboards,
+			target:                     backofficeAdminClass,
+			targetDomainDisplayName:    "Backoffice",
+			targetSubdomainDisplayName: "Default",
+			want:                       "Backoffice::Administrator",
+		},
+		{
+			name:                       "cross subdomain same domain default target",
+			viewer:                     walletSub,
+			target:                     NewClass(helper.Must(identity.NewClassKey(helper.Must(identity.NewSubdomainKey(financeDomain, "default")), "account")), ClassLinks{}, ClassDetails{Name: "Account", Details: ""}),
+			targetDomainDisplayName:    "Finance",
+			targetSubdomainDisplayName: "Default",
+			want:                       "Account",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := FormatClassMarkdownDisplayName(tc.viewer, tc.target, tc.targetDomainDisplayName, tc.targetSubdomainDisplayName)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}

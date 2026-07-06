@@ -104,3 +104,74 @@ func FormatModelScopedClassKey(classKey identity.Key) (string, error) {
 	}
 	return domainName + "/" + subdomainName + "/" + className, nil
 }
+
+// defaultSubdomainKeySubkey matches the reserved single-subdomain key enforced by domain validation.
+const defaultSubdomainKeySubkey = "default"
+
+// FormatClassMarkdownDisplayName returns the class display name for markdown prose relative to a
+// viewing subdomain. Scope is determined from keys; domain and subdomain labels use their display
+// names. Same subdomain yields ClassName; cross-subdomain yields SubdomainName::ClassName;
+// cross-domain yields DomainName::SubdomainName::ClassName. Classes in the default subdomain omit
+// the subdomain segment because that subdomain is implicit for single-subdomain domains.
+func FormatClassMarkdownDisplayName(
+	viewerSubdomainKey identity.Key,
+	targetClass Class,
+	targetDomainDisplayName, targetSubdomainDisplayName string,
+) (string, error) {
+	if viewerSubdomainKey.String() == targetClass.Key.ParentKey {
+		return targetClass.Name, nil
+	}
+
+	targetDomainKey, targetSubdomainKey, err := classKeyLocationKeys(targetClass.Key)
+	if err != nil {
+		return "", err
+	}
+	targetInDefaultSubdomain := targetSubdomainKey.SubKey == defaultSubdomainKeySubkey
+
+	viewerSubdomain, err := identity.ParseKey(viewerSubdomainKey.String())
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	if viewerSubdomain.KeyType != identity.KEY_TYPE_SUBDOMAIN {
+		return "", errors.Errorf("viewer key %q is not a subdomain", viewerSubdomainKey.String())
+	}
+	viewerDomain, err := identity.ParseKey(viewerSubdomain.ParentKey)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	if viewerDomain.KeyType != identity.KEY_TYPE_DOMAIN {
+		return "", errors.Errorf("viewer parent %q is not a domain", viewerSubdomain.ParentKey)
+	}
+
+	if viewerDomain.SubKey == targetDomainKey.SubKey {
+		if targetInDefaultSubdomain {
+			return targetClass.Name, nil
+		}
+		return targetSubdomainDisplayName + "::" + targetClass.Name, nil
+	}
+	if targetInDefaultSubdomain {
+		return targetDomainDisplayName + "::" + targetClass.Name, nil
+	}
+	return targetDomainDisplayName + "::" + targetSubdomainDisplayName + "::" + targetClass.Name, nil
+}
+
+func classKeyLocationKeys(classKey identity.Key) (domainKey, subdomainKey identity.Key, err error) {
+	if classKey.KeyType != identity.KEY_TYPE_CLASS {
+		return identity.Key{}, identity.Key{}, errors.Errorf("key %q is not a class", classKey.String())
+	}
+	subdomainKey, err = identity.ParseKey(classKey.ParentKey)
+	if err != nil {
+		return identity.Key{}, identity.Key{}, errors.WithStack(err)
+	}
+	if subdomainKey.KeyType != identity.KEY_TYPE_SUBDOMAIN {
+		return identity.Key{}, identity.Key{}, errors.Errorf("class parent %q is not a subdomain", classKey.ParentKey)
+	}
+	domainKey, err = identity.ParseKey(subdomainKey.ParentKey)
+	if err != nil {
+		return identity.Key{}, identity.Key{}, errors.WithStack(err)
+	}
+	if domainKey.KeyType != identity.KEY_TYPE_DOMAIN {
+		return identity.Key{}, identity.Key{}, errors.Errorf("subdomain parent %q is not a domain", subdomainKey.ParentKey)
+	}
+	return domainKey, subdomainKey, nil
+}
