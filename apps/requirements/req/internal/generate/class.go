@@ -1,6 +1,8 @@
 package generate
 
 import (
+	"sort"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
@@ -9,15 +11,30 @@ import (
 	"github.com/pkg/errors"
 )
 
-func generateClassMdContents(reqs *req_flat.Requirements, class model_class.Class, classesDiagram, stateDiagram string) (contents string, err error) {
+func classesSortedByName(classes []model_class.Class) []model_class.Class {
+	sorted := append([]model_class.Class(nil), classes...)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Name < sorted[j].Name
+	})
+	return sorted
+}
+
+func generateClassMdContents(
+	reqs *req_flat.Requirements,
+	class model_class.Class,
+	diagramClasses []model_class.Class,
+	classesDiagram, stateDiagram string,
+) (contents string, err error) {
 	contents, err = generateFromTemplate(_classMdTemplate, struct {
 		Reqs           *req_flat.Requirements
 		Class          model_class.Class
+		DiagramClasses []model_class.Class
 		ClassesDiagram string
 		StateDiagram   string
 	}{
 		Reqs:           reqs,
 		Class:          class,
+		DiagramClasses: classesSortedByName(diagramClasses),
 		ClassesDiagram: classesDiagram,
 		StateDiagram:   stateDiagram,
 	})
@@ -69,18 +86,26 @@ func generateClassesMermaidContents(
 	generalizations []model_class.Generalization,
 	classes []model_class.Class,
 	associations []model_class.Association,
+	viewerSubdomainKey identity.Key,
 	focalClassKey *identity.Key,
 ) (contents string, err error) {
+	layout, err := groupClassesMermaidByNamespace(reqs, viewerSubdomainKey, classes)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
 	contents, err = generateFromTemplate(_classesMermaidTemplate, struct {
 		Reqs            *req_flat.Requirements
 		Generalizations []model_class.Generalization
-		Classes         []model_class.Class
+		LocalClasses    []model_class.Class
+		Namespaces      []classesMermaidNamespaceGroup
 		Associations    []model_class.Association
 		FocalClassKey   *identity.Key
 	}{
 		Reqs:            reqs,
 		Generalizations: generalizations,
-		Classes:         classes,
+		LocalClasses:    layout.LocalClasses,
+		Namespaces:      layout.Namespaces,
 		Associations:    associations,
 		FocalClassKey:   focalClassKey,
 	})

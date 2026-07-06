@@ -63,7 +63,7 @@ func TestClassMarkdownRendersAssociationInvariants(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
-	contents, err := generateClassMdContents(reqs, partner, "", "")
+	contents, err := generateClassMdContents(reqs, partner, nil, "", "")
 	require.NoError(t, err)
 	require.Contains(t, contents, "## Association Invariants")
 	require.Contains(t, contents, "### Configures Customers For")
@@ -104,7 +104,7 @@ func TestClassMarkdownOmitsAssociationInvariantsWhenNone(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
-	contents, err := generateClassMdContents(reqs, partner, "", "")
+	contents, err := generateClassMdContents(reqs, partner, nil, "", "")
 	require.NoError(t, err)
 	require.NotContains(t, contents, "## Association Invariants")
 }

@@ -293,7 +293,7 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
 			ctx := coreerr.NewContext("test", "")
-			err := tt.useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, tt.classes, tt.actorClasses)
+			err := tt.useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, tt.classes, tt.actorClasses, nil)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
@@ -313,7 +313,7 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	ctx := coreerr.NewContext("test", "")
-	err := useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, classes, actorClasses)
+	err := useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, classes, actorClasses, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Scenarios")
 
 	// Test valid with child Scenario.
@@ -325,7 +325,7 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 			scenarioKey: {Key: scenarioKey, Name: "Scenario"},
 		},
 	}
-	err = useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, classes, actorClasses)
+	err = useCase.ValidateWithParentAndClasses(ctx, &subdomainKey, classes, actorClasses, nil)
 	suite.Require().NoError(err)
 }
 

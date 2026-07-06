@@ -48,7 +48,7 @@ func TestParameterTypeSpecDisplayInMarkdown(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
-	contents, err := generateClassMdContents(reqs, class, "", "")
+	contents, err := generateClassMdContents(reqs, class, nil, "", "")
 	require.NoError(t, err)
 	require.Contains(t, contents, "- *Amount.* __unconstrained__ (STRING)")
 	require.Contains(t, contents, "- *Label.* __unconstrained__")
@@ -117,7 +117,7 @@ func TestParameterSimulationDisplayInMarkdown(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
-	contents, err := generateClassMdContents(reqs, class, "", "")
+	contents, err := generateClassMdContents(reqs, class, nil, "", "")
 	require.NoError(t, err)
 	require.Contains(t, contents, "- *Amounts.*")
 	require.Contains(t, contents, "    - Simulation:")
@@ -159,7 +159,7 @@ func TestNullableQueryParameterDisplayInMarkdown(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
-	contents, err := generateClassMdContents(reqs, class, "", "")
+	contents, err := generateClassMdContents(reqs, class, nil, "", "")
 	require.NoError(t, err)
 	require.Contains(t, contents, "- *Id.* _(unparsed)_ Nat")
 	require.NotContains(t, contents, "- *Id.* _(unparsed)_ Nat (nullable)")
@@ -191,7 +191,7 @@ func TestUnconstrainedAttributeTypeSpecDisplayInMarkdown(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
-	contents, err := generateClassMdContents(reqs, class, "", "")
+	contents, err := generateClassMdContents(reqs, class, nil, "", "")
 	require.NoError(t, err)
 	require.Contains(t, contents, "| Note | __unconstrained__ | false | STRING | A note field. |")
 }

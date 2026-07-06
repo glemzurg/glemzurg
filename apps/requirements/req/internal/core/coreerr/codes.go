@@ -322,6 +322,7 @@ const (
 	SstepTokeyTypeInvalid       Code = "SSTEP_TOKEY_TYPE_INVALID"       // ToObjectKey is not KEY_TYPE_SCENARIO_OBJECT.
 	SstepEventkeyInvalid        Code = "SSTEP_EVENTKEY_INVALID"         // EventKey failed validation.
 	SstepEventkeyTypeInvalid    Code = "SSTEP_EVENTKEY_TYPE_INVALID"    // EventKey is not KEY_TYPE_EVENT.
+	SstepEventNotfound          Code = "SSTEP_EVENT_NOTFOUND"           // EventKey references non-existent class event.
 	SstepQuerykeyInvalid        Code = "SSTEP_QUERYKEY_INVALID"         // QueryKey failed validation.
 	SstepQuerykeyTypeInvalid    Code = "SSTEP_QUERYKEY_TYPE_INVALID"    // QueryKey is not KEY_TYPE_QUERY.
 	SstepScenariokeyInvalid     Code = "SSTEP_SCENARIOKEY_INVALID"      // ScenarioKey failed validation.

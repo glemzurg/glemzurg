@@ -48,13 +48,14 @@ func (s *Scenario) SetObjects(objects map[identity.Key]Object) {
 // ValidateWithParent validates the Scenario, its key's parent relationship, and all children.
 // The parent must be a UseCase.
 func (s *Scenario) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
-	return s.ValidateWithParentAndClasses(ctx, parent, nil)
+	return s.ValidateWithParentAndClasses(ctx, parent, nil, nil)
 }
 
 // ValidateWithParentAndClasses validates the Scenario with access to classes for cross-reference validation.
 // The parent must be a UseCase.
 // The classes map is used to validate that Object ClassKey references exist.
-func (s *Scenario) ValidateWithParentAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, classes map[identity.Key]bool) error {
+// The events map is used to validate that step EventKey references exist on the event's class.
+func (s *Scenario) ValidateWithParentAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, classes map[identity.Key]bool, events map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := s.Validate(ctx); err != nil {
 		return err
@@ -78,6 +79,11 @@ func (s *Scenario) ValidateWithParentAndClasses(ctx *coreerr.ValidationContext, 
 		childCtx := ctx.Child("steps", s.Key.String())
 		if err := s.Steps.ValidateWithParent(childCtx, &s.Key); err != nil {
 			return err
+		}
+		if events != nil {
+			if err := s.Steps.ValidateReferences(childCtx, events); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

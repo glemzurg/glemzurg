@@ -166,7 +166,7 @@ func TestClassMarkdownUsesCommentsInvariantsColumn(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	reqs := req_flat.NewRequirements(model)
-	contents, err := generateClassMdContents(reqs, class, "", "")
+	contents, err := generateClassMdContents(reqs, class, nil, "", "")
 	require.NoError(t, err)
 	require.Contains(t, contents, "| Comments / Invariants |")
 	require.Contains(t, contents, "Must be social when code is null.")

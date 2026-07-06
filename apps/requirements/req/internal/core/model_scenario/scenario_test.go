@@ -145,7 +145,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	ctx := coreerr.NewContext("test", "")
-	err := scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes)
+	err := scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes, nil)
 	suite.Require().NoError(err)
 
 	// Test invalid child Object (blank name with name style) propagates error.
@@ -156,7 +156,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 			objectKey: {Key: objectKey, ObjectNumber: 1, Name: "", NameStyle: "name", ClassKey: classKey}, // Invalid: name required for "name" style
 		},
 	}
-	err = scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes)
+	err = scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes, nil)
 	suite.Require().ErrorContains(err, "Name", "Should validate child Objects")
 
 	// Test Object references non-existent class.
@@ -167,9 +167,48 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 			objectKey: {Key: objectKey, ObjectNumber: 1, Name: "Obj", NameStyle: "name", ClassKey: nonExistentClassKey},
 		},
 	}
-	err = scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes)
+	err = scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, classes, nil)
 	suite.Require().ErrorContains(err, "references non-existent class", "Should validate Object class references")
 }
+
+func (suite *ScenarioSuite) TestValidateWithParentAndClassesEventReference() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	scenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	fromObjKey := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "from"))
+	toObjKey := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "to"))
+	stepKey := helper.Must(identity.NewScenarioStepKey(scenarioKey, "0"))
+	definedEventKey := helper.Must(identity.NewEventKey(classKey, "_new"))
+	missingEventKey := helper.Must(identity.NewEventKey(classKey, "add"))
+
+	events := map[identity.Key]bool{
+		definedEventKey: true,
+	}
+
+	scenario := Scenario{
+		Key:  scenarioKey,
+		Name: "Name",
+		Steps: &Step{
+			Key:           stepKey,
+			StepType:      STEP_TYPE_LEAF,
+			LeafType:      strPtr("event"),
+			FromObjectKey: &fromObjKey,
+			ToObjectKey:   &toObjKey,
+			EventKey:      &missingEventKey,
+		},
+	}
+	ctx := coreerr.NewContext("test", "")
+	err := scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, nil, events)
+	suite.Require().ErrorContains(err, "references non-existent event")
+
+	scenario.Steps.EventKey = &definedEventKey
+	err = scenario.ValidateWithParentAndClasses(ctx, &useCaseKey, nil, events)
+	suite.Require().NoError(err)
+}
+
+func strPtr(s string) *string { return &s }
 
 // TestSetObjects tests that SetObjects correctly sets objects.
 func (suite *ScenarioSuite) TestSetObjects() {

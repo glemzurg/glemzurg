@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
@@ -113,12 +114,14 @@ func TestFormatAssociationFact(t *testing.T) {
 
 			assoc := model_class.NewAssociation(helper.Must(identity.NewClassAssociationKey(subdomainKey, fromKey, toKey, tc.assocName)), model_class.AssociationDetails{Name: tc.assocName, Details: tc.details}, model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 
-			got := FormatAssociationFact(
-				assoc,
-				model_class.NewClass(fromKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: tc.fromName, Details: "", UnfinishedNotes: "", UmlComment: ""}),
-				model_class.NewClass(toKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: tc.toName, Details: "", UnfinishedNotes: "", UmlComment: ""}),
-				nil,
-			)
+			fromClass := model_class.NewClass(fromKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: tc.fromName, Details: "", UnfinishedNotes: "", UmlComment: ""})
+			toClass := model_class.NewClass(toKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: tc.toName, Details: "", UnfinishedNotes: "", UmlComment: ""})
+			got := FormatAssociationFact(assoc, associationFactEnds{
+				fromClass:   fromClass,
+				toClass:     toClass,
+				fromDisplay: tc.fromName,
+				toDisplay:   tc.toName,
+			})
 
 			for _, substr := range tc.wantSubstr {
 				assert.Contains(t, got, substr)
@@ -145,12 +148,9 @@ func TestFormatAssociationInvariantFact(t *testing.T) {
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
 		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
-	partner := model_class.NewClass(partnerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"})
-
 	spec := `∀ j1 ∈ self.ConfiguresCustomersFor : ∀ j2 ∈ self.ConfiguresCustomersFor : ((j1 ≠ j2) ⇒ (j1.jurisdiction_code ≠ j2.jurisdiction_code))`
 	got := FormatAssociationInvariantFact(
 		assoc,
-		partner,
 		model_logic.NewLogic(
 			invKey,
 			model_logic.LogicTypeAssessment,
@@ -159,6 +159,7 @@ func TestFormatAssociationInvariantFact(t *testing.T) {
 			logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: spec},
 			nil,
 		),
+		"Partner",
 	)
 	assert.Equal(t, AssociationInvariantFact{
 		Label:       "Partner (configures customers for)",
@@ -185,11 +186,8 @@ func TestFormatAssociationInvariantFactUsesSpecWhenDescriptionMissing(t *testing
 		model_class.AssociationEnd{ClassKey: jurisdictionKey, Multiplicity: anyMult},
 		model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
 	)
-	partner := model_class.NewClass(partnerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Partner"})
-
 	got := FormatAssociationInvariantFact(
 		assoc,
-		partner,
 		model_logic.NewLogic(
 			invKey,
 			model_logic.LogicTypeAssessment,
@@ -198,6 +196,7 @@ func TestFormatAssociationInvariantFactUsesSpecWhenDescriptionMissing(t *testing
 			logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
 			nil,
 		),
+		"Partner",
 	)
 	assert.Equal(t, AssociationInvariantFact{
 		Label:       "Partner (configures customers for)",
@@ -242,7 +241,17 @@ func TestAssociationInvariantFactsForSubdomain(t *testing.T) {
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	facts := AssociationInvariantFactsForSubdomain(subdomain)
+	model := core.Model{
+		Domains: map[identity.Key]model_domain.Domain{
+			domainKey: {
+				Key:        domainKey,
+				Name:       "Finance",
+				Subdomains: map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain},
+			},
+		},
+	}
+
+	facts := AssociationInvariantFactsForSubdomain(model, subdomain)
 	require.Len(t, facts, 1)
 	assert.Equal(t, "Partner (configures customers for)", facts[0].Label)
 	assert.Equal(t, "Jurisdiction codes must be unique per partner.", facts[0].Description)
@@ -295,8 +304,8 @@ func TestAssociationFactsForSubdomain_testModel(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	facts := AssociationFactsForSubdomain(subdomain)
-	require.Len(t, facts, 3)
+	facts := AssociationFactsForSubdomain(model, subdomain)
+	require.GreaterOrEqual(t, len(facts), 3)
 
 	joined := strings.Join(facts, "\n")
 	assert.Contains(t, joined, "each order (order contains products) links to one or more products")
@@ -307,6 +316,22 @@ func TestAssociationFactsForSubdomain_testModel(t *testing.T) {
 	assert.Contains(t, joined, "each product (product has line items) links to one or more line items")
 	assert.Contains(t, joined, "each line item links to exactly one product")
 	assert.Contains(t, joined, "each order–customer pairing has the uniqueness → Customer Code")
+	assert.Contains(t, joined, "Warehousing::Warehouse")
+}
+
+func TestAssociationFactsForSubdomainIncludesCrossScopeAssociations(t *testing.T) {
+	t.Parallel()
+
+	model := test_helper.GetTestModel()
+	subdomain, err := FindSubdomain(model, SubdomainPath{
+		DomainSubKey:    "domain_a",
+		SubdomainSubKey: "subdomain_b",
+	})
+	require.NoError(t, err)
+
+	facts := AssociationFactsForSubdomain(model, subdomain)
+	joined := strings.Join(facts, "\n")
+	assert.Contains(t, joined, "Order Management::Order")
 }
 
 func TestFormatAssociationUniquenessDisplay(t *testing.T) {
@@ -401,7 +426,7 @@ func TestIndexFactsForSubdomain_testModel(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	facts := IndexFactsForSubdomain(subdomain)
+	facts := IndexFactsForSubdomain(model, subdomain)
 	require.Len(t, facts, 2)
 
 	joined := strings.Join(facts, "\n")

@@ -700,6 +700,30 @@ func (suite *ScenarioStepsSuite) TestValidateKeyErrors() {
 	suite.Require().ErrorContains(err, "invalid key type 'domain' for scenario step")
 }
 
+func (suite *ScenarioStepsSuite) TestValidateReferencesEvent() {
+	ctx := coreerr.NewContext("test", "")
+	events := map[identity.Key]bool{
+		*suite.eventKey: true,
+	}
+
+	step := Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
+	}
+	err := step.ValidateReferences(ctx, events)
+	suite.Require().NoError(err)
+
+	bogusEventKey, err := identity.NewEventKey(suite.classKey, "missing_event")
+	suite.Require().NoError(err)
+	step.EventKey = &bogusEventKey
+	err = step.ValidateReferences(ctx, events)
+	suite.Require().ErrorContains(err, "references non-existent event")
+}
+
 func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 	ctx := coreerr.NewContext("test", "")
 	// Valid: correct parent

@@ -125,14 +125,15 @@ func (uc *UseCase) SetScenarios(scenarios map[identity.Key]model_scenario.Scenar
 // ValidateWithParent validates the UseCase, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
 func (uc *UseCase) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
-	return uc.ValidateWithParentAndClasses(ctx, parent, nil, nil)
+	return uc.ValidateWithParentAndClasses(ctx, parent, nil, nil, nil)
 }
 
 // ValidateWithParentAndClasses validates the UseCase with access to classes for cross-reference validation.
 // The parent must be a Subdomain.
 // The classes map is used to validate that scenario object ClassKey references exist.
 // The actorClasses map contains class keys that have an ActorKey defined (i.e., classes that represent actors).
-func (uc *UseCase) ValidateWithParentAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, classes map[identity.Key]bool, actorClasses map[identity.Key]bool) error {
+// The events map is used to validate that scenario step EventKey references exist on the event's class.
+func (uc *UseCase) ValidateWithParentAndClasses(ctx *coreerr.ValidationContext, parent *identity.Key, classes map[identity.Key]bool, actorClasses map[identity.Key]bool, events map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := uc.Validate(ctx); err != nil {
 		return err
@@ -154,7 +155,7 @@ func (uc *UseCase) ValidateWithParentAndClasses(ctx *coreerr.ValidationContext, 
 	}
 	for _, scenario := range uc.Scenarios {
 		childCtx := ctx.Child("scenario", scenario.Key.String())
-		if err := scenario.ValidateWithParentAndClasses(childCtx, &uc.Key, classes); err != nil {
+		if err := scenario.ValidateWithParentAndClasses(childCtx, &uc.Key, classes, events); err != nil {
 			return err
 		}
 	}

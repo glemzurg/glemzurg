@@ -91,7 +91,7 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 	wantTo := linkNode + ` --> "1" ` + bNode
 	wantACLink := cNode + ` .. ` + linkNode
 	wantLinkNode := `class ` + linkNode + `["links"]`
-	wantLinkStereotype := `<<association>>`
+	wantLinkStereotype := `<<association>> ` + linkNode
 	wantClassMemberBlock := `class ` + aNode + `["A"] {`
 	wantHideEmptyMembersBox := "hideEmptyMembersBox: true"
 	if !strings.Contains(got, wantHideEmptyMembersBox) {
@@ -104,10 +104,10 @@ func TestGenerateAssociationClassMermaid(t *testing.T) {
 		t.Errorf("missing association link node title, want %q in:\n%s", wantLinkNode, got)
 	}
 	if !strings.Contains(got, wantLinkStereotype) {
-		t.Errorf("association link should use Mermaid stereotype annotation, want %q in:\n%s", wantLinkStereotype, got)
+		t.Errorf("missing association stereotype line, want %q in:\n%s", wantLinkStereotype, got)
 	}
 	if strings.Contains(got, `«association»<br/>`) || strings.Contains(got, `<<association>><br/>`) {
-		t.Errorf("association stereotype should be a class-body annotation, not embedded in the title label:\n%s", got)
+		t.Errorf("association stereotype should be an inline class annotation, not embedded in the title label:\n%s", got)
 	}
 	if !strings.Contains(got, wantFrom) {
 		t.Errorf("missing from→association link leg: want %q in:\n%s", wantFrom, got)

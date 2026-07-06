@@ -12,29 +12,47 @@ classDiagram
     {{ nodeid "class" $superclass.Key }} <|-- {{ nodeid "class" .Key }}
 {{ end -}}
 {{ end -}}
-{{ range .Classes -}}
+{{ range .LocalClasses -}}
 {{- $class := class_lookup $reqs .Key -}}
     class {{ nodeid "class" .Key }}["{{ .Name }}"] {
-{{ if ne .ActorKey nil }}
-        {{ classes_mermaid_stereotype_annotation "actor" }}
-{{ end -}}
 {{- range .Attributes }}
         {{ classes_mermaid_attribute_member . }}
 {{- end }}
     }
+{{ if ne .ActorKey nil -}}
+{{ classes_mermaid_stereotype_line "actor" (nodeid "class" .Key) -}}
+{{ end -}}
+{{ classes_mermaid_class_note . -}}
+{{ end -}}
+{{ range .Namespaces -}}
+    namespace {{ .Path }} {
+{{ range .Classes -}}
+        class {{ nodeid "class" .Key }}["{{ .Name }}"] {
+{{- range .Attributes }}
+            {{ classes_mermaid_attribute_member . }}
+{{- end }}
+        }
+{{ end -}}
+    }
+{{ range .Classes -}}
+{{ if ne .ActorKey nil -}}
+{{ classes_mermaid_stereotype_line "actor" (nodeid "class" .Key) -}}
+{{ end -}}
+{{ classes_mermaid_class_note . -}}
+{{ end -}}
 {{ end -}}
 {{ if has_mermaid_focal_class .FocalClassKey -}}
 style {{ nodeid "class" (mermaid_focal_class_key .FocalClassKey) }} {{ classes_mermaid_focal_class_style }}
 {{ end -}}
 {{ range .Associations -}}
-{{ if render_association_class_mermaid . -}}
-    class {{ nodeid "assoc" .Key }}["{{ classes_mermaid_association_node_title $reqs . }}"] {
-        {{ classes_mermaid_stereotype_annotation "association" }}
-    }
+{{ if render_association_link_node_mermaid . -}}
+    class {{ nodeid "assoc" .Key }}["{{ classes_mermaid_association_node_title $reqs . }}"]
+{{ classes_mermaid_stereotype_line "association" (nodeid "assoc" .Key) -}}
+{{ classes_mermaid_association_link_note . -}}
 {{ end -}}
 {{ end -}}
 {{ range .Associations -}}
-{{ if render_association_class_mermaid . -}}
+{{ if render_association_link_node_mermaid . -}}
 style {{ nodeid "assoc" .Key }} stroke:#333,stroke-dasharray:5 5
 {{ end -}}
 {{ end -}}
@@ -47,6 +65,12 @@ style {{ nodeid "assoc" .Key }} stroke:#333,stroke-dasharray:5 5
     {{ $fromClassKey }} "{{ multiplicity .FromMultiplicity }}" -- {{ $associationLinkKey }}
     {{ $associationLinkKey }} --> "{{ multiplicity .ToMultiplicity }}" {{ $toClassKey }}
     {{ $associationClassKey }} .. {{ $associationLinkKey }}
+{{ else if render_association_link_node_mermaid . -}}
+{{ $fromClassKey := nodeid "class" .FromClassKey -}}
+{{ $toClassKey := nodeid "class" .ToClassKey -}}
+{{ $associationLinkKey := nodeid "assoc" .Key -}}
+    {{ $fromClassKey }} "{{ multiplicity .FromMultiplicity }}" -- {{ $associationLinkKey }}
+    {{ $associationLinkKey }} --> "{{ multiplicity .ToMultiplicity }}" {{ $toClassKey }}
 {{ else -}}
 {{ $fromClassKey := nodeid "class" .FromClassKey -}}
 {{ $fromMultiplicity := multiplicity .FromMultiplicity -}}

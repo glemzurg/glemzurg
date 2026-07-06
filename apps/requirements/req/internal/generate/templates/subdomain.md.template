@@ -4,8 +4,6 @@
 
 # {{ .Subdomain.Name }}
 
-[Model facts]({{ filename "subdomain" .Subdomain.Key "facts" ".md" }})
-
 {{ .Subdomain.Details }}{{ unfinished_notes_block .Subdomain.UnfinishedNotes }}
 ## Classes
 
@@ -19,6 +17,10 @@ The classes of this subdomain.
 {{ range .Classes -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}){{ parse_error_marker .Key }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
 {{ end }}
+{{- range .ExternalDiagramClasses -}}
+- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ class_markdown_display_name $reqs $.Subdomain.Key . }}]({{ filename "class" .Key "" ".md" }}){{ parse_error_marker .Key }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ first_md_sentence .Details }}
+{{ end }}
+[Model facts]({{ filename "subdomain" .Subdomain.Key "facts" ".md" }})
 
 {{ if ne .Subdomain.Generalizations nil -}}
 ### Generalizations
@@ -29,7 +31,7 @@ The class generalizations of this subdomain.
 {{- $super := generalization_superclass $reqs .Key -}}
 {{- $subs := generalization_subclasses $reqs .Key -}}
 - **{{ .Name }}{{ unfinished_notes_marker .UnfinishedNotes }}.** {{ .Details }}
-    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }}
+    - {{ if ne $super.Name "" }}[{{ class_markdown_display_name $reqs $.Subdomain.Key $super }}]({{ filename "class" $super.Key "" ".md" }}){{ unfinished_notes_marker $super.UnfinishedNotes }}{{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ class_markdown_display_name $reqs $.Subdomain.Key $sub }}]({{ filename "class" $sub.Key "" ".md" }}){{ unfinished_notes_marker $sub.UnfinishedNotes }}{{ end }}{{ else }}???{{ end }}
 {{ end }}
 {{- end }}
 ## Use Cases

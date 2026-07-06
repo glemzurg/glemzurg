@@ -77,7 +77,7 @@ func TestGenerateClassMdContentsRendersSelfAmountAsDisplayTLAName(t *testing.T) 
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	contents, err := generateClassMdContents(req_flat.NewRequirements(model), class, "", "")
+	contents, err := generateClassMdContents(req_flat.NewRequirements(model), class, nil, "", "")
 	require.NoError(t, err)
 	require.Contains(t, contents, "**self.Amount /= 0**")
 	require.NotContains(t, contents, "self.amount")

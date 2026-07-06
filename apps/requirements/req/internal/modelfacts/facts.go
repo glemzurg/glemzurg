@@ -60,39 +60,45 @@ type SubdomainFacts struct {
 }
 
 // FactsForSubdomain returns association, association invariant, and index uniqueness facts for one subdomain.
-func FactsForSubdomain(subdomain model_domain.Subdomain) SubdomainFacts {
+func FactsForSubdomain(model core.Model, subdomain model_domain.Subdomain) SubdomainFacts {
 	return SubdomainFacts{
-		Associations:          AssociationFactsForSubdomain(subdomain),
-		AssociationInvariants: AssociationInvariantFactsForSubdomain(subdomain),
-		Indexes:               IndexFactsForSubdomain(subdomain),
+		Associations:          AssociationFactsForSubdomain(model, subdomain),
+		AssociationInvariants: AssociationInvariantFactsForSubdomain(model, subdomain),
+		Indexes:               IndexFactsForSubdomain(model, subdomain),
 	}
 }
 
-// AssociationFactsForSubdomain returns human-readable association facts for associations whose
-// from- and to-classes both belong to the subdomain.
-func AssociationFactsForSubdomain(subdomain model_domain.Subdomain) []string {
-	classByKey := make(map[string]model_class.Class, len(subdomain.Classes))
-	for key, class := range subdomain.Classes {
-		classByKey[key.String()] = class
-	}
+// AssociationFactsForSubdomain returns human-readable association facts for associations that
+// touch the subdomain via either end or an association class in that subdomain.
+func AssociationFactsForSubdomain(model core.Model, subdomain model_domain.Subdomain) []string {
+	ctx := newSubdomainFactsContext(model, subdomain)
 
 	var facts []string
-	for _, assoc := range subdomain.ClassAssociations {
-		if !associationWhollyInSubdomain(assoc, subdomain.Key) {
+	for _, assoc := range model.GetClassAssociations() {
+		if !associationTouchesSubdomain(assoc, subdomain.Key) {
 			continue
 		}
-		fromClass, okFrom := classByKey[assoc.FromClassKey.String()]
-		toClass, okTo := classByKey[assoc.ToClassKey.String()]
+		fromClass, okFrom := ctx.classByKeyString(assoc.FromClassKey.String())
+		toClass, okTo := ctx.classByKeyString(assoc.ToClassKey.String())
 		if !okFrom || !okTo {
 			continue
 		}
 		var assocClass *model_class.Class
+		assocClassDisplay := ""
 		if assoc.AssociationClassKey != nil {
-			if ac, ok := classByKey[assoc.AssociationClassKey.String()]; ok {
+			if ac, ok := ctx.classByKeyString(assoc.AssociationClassKey.String()); ok {
 				assocClass = &ac
+				assocClassDisplay = ctx.classDisplayName(ac)
 			}
 		}
-		facts = append(facts, FormatAssociationFact(assoc, fromClass, toClass, assocClass))
+		facts = append(facts, FormatAssociationFact(assoc, associationFactEnds{
+			fromClass:               fromClass,
+			toClass:                 toClass,
+			associationClass:        assocClass,
+			fromDisplay:             ctx.classDisplayName(fromClass),
+			toDisplay:               ctx.classDisplayName(toClass),
+			associationClassDisplay: assocClassDisplay,
+		}))
 	}
 
 	sort.Strings(facts)
@@ -100,23 +106,22 @@ func AssociationFactsForSubdomain(subdomain model_domain.Subdomain) []string {
 }
 
 // AssociationInvariantFactsForSubdomain returns human-readable facts for association-authored invariants.
-func AssociationInvariantFactsForSubdomain(subdomain model_domain.Subdomain) []AssociationInvariantFact {
-	classByKey := make(map[string]model_class.Class, len(subdomain.Classes))
-	for key, class := range subdomain.Classes {
-		classByKey[key.String()] = class
-	}
+func AssociationInvariantFactsForSubdomain(model core.Model, subdomain model_domain.Subdomain) []AssociationInvariantFact {
+	ctx := newSubdomainFactsContext(model, subdomain)
+	allAssociations := model.GetClassAssociations()
 
 	var facts []AssociationInvariantFact
-	for _, assoc := range subdomain.ClassAssociations {
-		if !associationWhollyInSubdomain(assoc, subdomain.Key) || len(assoc.Invariants) == 0 {
+	for _, assoc := range allAssociations {
+		if !associationTouchesSubdomain(assoc, subdomain.Key) || len(assoc.Invariants) == 0 {
 			continue
 		}
-		fromClass, okFrom := classByKey[assoc.FromClassKey.String()]
-		if !okFrom {
+		labelClass, ok := ctx.preferredAssociationLabelClass(assoc)
+		if !ok {
 			continue
 		}
+		label := ctx.classDisplayName(labelClass)
 		for _, inv := range assoc.Invariants {
-			facts = append(facts, FormatAssociationInvariantFact(assoc, fromClass, inv))
+			facts = append(facts, FormatAssociationInvariantFact(assoc, inv, label))
 		}
 	}
 
@@ -125,11 +130,11 @@ func AssociationInvariantFactsForSubdomain(subdomain model_domain.Subdomain) []A
 			if inv.OverAssociationKey == nil {
 				continue
 			}
-			assoc, ok := subdomain.ClassAssociations[*inv.OverAssociationKey]
-			if !ok {
+			assoc, ok := allAssociations[*inv.OverAssociationKey]
+			if !ok || !associationTouchesSubdomain(assoc, subdomain.Key) {
 				continue
 			}
-			facts = append(facts, FormatAssociationInvariantFact(assoc, class, inv))
+			facts = append(facts, FormatAssociationInvariantFact(assoc, inv, ctx.classDisplayName(class)))
 		}
 	}
 
@@ -140,7 +145,8 @@ func AssociationInvariantFactsForSubdomain(subdomain model_domain.Subdomain) []A
 }
 
 // IndexFactsForSubdomain returns human-readable uniqueness facts for class attribute indexes.
-func IndexFactsForSubdomain(subdomain model_domain.Subdomain) []string {
+func IndexFactsForSubdomain(model core.Model, subdomain model_domain.Subdomain) []string {
+	ctx := newSubdomainFactsContext(model, subdomain)
 	classes := make([]model_class.Class, 0, len(subdomain.Classes))
 	for _, class := range subdomain.Classes {
 		classes = append(classes, class)
@@ -170,7 +176,7 @@ func IndexFactsForSubdomain(subdomain model_domain.Subdomain) []string {
 		for _, indexNum := range indexNums {
 			names := indexMap[indexNum]
 			sort.Strings(names)
-			facts = append(facts, FormatIndexFact(class.Name, names))
+			facts = append(facts, FormatIndexFact(ctx.classDisplayName(class), names))
 		}
 	}
 
@@ -178,15 +184,12 @@ func IndexFactsForSubdomain(subdomain model_domain.Subdomain) []string {
 	return facts
 }
 
-func associationWhollyInSubdomain(assoc model_class.Association, subdomainKey identity.Key) bool {
-	subdomainStr := subdomainKey.String()
-	if assoc.FromClassKey.ParentKey != subdomainStr || assoc.ToClassKey.ParentKey != subdomainStr {
-		return false
-	}
-	if assoc.AssociationClassKey != nil && assoc.AssociationClassKey.ParentKey != subdomainStr {
-		return false
-	}
-	return true
+// associationFactEnds groups association endpoint classes and their scoped display names.
+type associationFactEnds struct {
+	fromClass, toClass      model_class.Class
+	associationClass        *model_class.Class
+	fromDisplay, toDisplay  string
+	associationClassDisplay string
 }
 
 // FormatAssociationFact renders one class association as a review sentence.
@@ -194,9 +197,9 @@ func associationWhollyInSubdomain(assoc model_class.Association, subdomainKey id
 // Multiplicity follows UML end notation as stored in the model: ToMultiplicity is how
 // many to-class instances per one from-class instance; FromMultiplicity is how many
 // from-class instances per one to-class instance.
-func FormatAssociationFact(assoc model_class.Association, fromClass, toClass model_class.Class, associationClass *model_class.Class) string {
-	fromPhrase := classPhrase(fromClass.Name)
-	toPhrase := classPhrase(toClass.Name)
+func FormatAssociationFact(assoc model_class.Association, ends associationFactEnds) string {
+	fromPhrase := classPhrase(ends.fromDisplay)
+	toPhrase := classPhrase(ends.toDisplay)
 
 	forward := endConstraint(assoc.ToMultiplicity, fromPhrase, toPhrase, assoc.Name)
 	inverse := endConstraint(assoc.FromMultiplicity, toPhrase, fromPhrase, "")
@@ -207,13 +210,13 @@ func FormatAssociationFact(assoc model_class.Association, fromClass, toClass mod
 		b.WriteString("; ")
 		b.WriteString(inverse)
 	}
-	if associationClass != nil {
+	if ends.associationClass != nil {
 		b.WriteString("; each ")
 		b.WriteString(pairingPhrase(fromPhrase, toPhrase))
 		b.WriteString(" is a ")
-		b.WriteString(classPhrase(associationClass.Name).lower())
+		b.WriteString(classPhrase(ends.associationClassDisplay).lower())
 	}
-	if uniq := formatAssociationUniquenessDisplay(assoc.Uniqueness, fromClass, toClass); uniq != "" {
+	if uniq := formatAssociationUniquenessDisplay(assoc.Uniqueness, ends.fromClass, ends.toClass); uniq != "" {
 		b.WriteString("; each ")
 		b.WriteString(pairingPhrase(fromPhrase, toPhrase))
 		b.WriteString(" has the uniqueness ")
@@ -229,12 +232,12 @@ func FormatAssociationFact(assoc model_class.Association, fromClass, toClass mod
 }
 
 // FormatAssociationInvariantFact renders one association invariant for facts pages.
-func FormatAssociationInvariantFact(assoc model_class.Association, fromClass model_class.Class, inv model_logic.Logic) AssociationInvariantFact {
+func FormatAssociationInvariantFact(assoc model_class.Association, inv model_logic.Logic, fromDisplay string) AssociationInvariantFact {
 	desc := singleLine(strings.TrimSpace(inv.Description))
 	spec := logicSpecDisplay(inv)
 
 	fact := AssociationInvariantFact{
-		Label: fmt.Sprintf("%s (%s)", fromClass.Name, associationLabel(assoc.Name)),
+		Label: fmt.Sprintf("%s (%s)", fromDisplay, associationLabel(assoc.Name)),
 	}
 
 	switch {
@@ -394,19 +397,44 @@ func associationLabel(assocName string) string {
 
 type classPhrase string
 
+// lower returns prose casing for a class display name. Scoped names (Domain::Class) keep their
+// display casing; same-subdomain names are lowercased for readable fact sentences.
 func (c classPhrase) lower() string {
-	return strings.ToLower(string(c))
+	s := string(c)
+	if strings.Contains(s, "::") {
+		return s
+	}
+	return strings.ToLower(s)
 }
 
 func (c classPhrase) plural() string {
-	lower := c.lower()
-	if strings.HasSuffix(lower, "y") && len(lower) > 1 {
+	s := string(c)
+	if strings.Contains(s, "::") {
+		parts := strings.Split(s, "::")
+		parts[len(parts)-1] = pluralizeDisplayWord(parts[len(parts)-1])
+		return strings.Join(parts, "::")
+	}
+	return pluralizeWord(strings.ToLower(s))
+}
+
+func pluralizeWord(word string) string {
+	lower := strings.ToLower(word)
+	switch {
+	case strings.HasSuffix(lower, "y") && len(lower) > 1:
 		return strings.TrimSuffix(lower, "y") + "ies"
-	}
-	if strings.HasSuffix(lower, "s") {
+	case strings.HasSuffix(lower, "s"):
 		return lower + "es"
+	default:
+		return lower + "s"
 	}
-	return lower + "s"
+}
+
+func pluralizeDisplayWord(word string) string {
+	plural := pluralizeWord(word)
+	if len(word) > 0 && word[0] >= 'A' && word[0] <= 'Z' {
+		return strings.ToUpper(plural[:1]) + plural[1:]
+	}
+	return plural
 }
 
 func pairingPhrase(from, to classPhrase) string {

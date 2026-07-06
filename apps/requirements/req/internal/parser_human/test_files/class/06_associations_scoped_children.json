@@ -1,0 +1,38 @@
+[
+    {
+        "Key": "domain/test_domain/subdomain/test_subdomain/cassociation/class/class_key/class/local_target/uses_local",
+        "Name": "Uses Local",
+        "Details": "",
+        "FromClassKey": "domain/test_domain/subdomain/test_subdomain/class/class_key",
+        "FromMultiplicity": {"LowerBound": 1, "HigherBound": 1},
+        "ToClassKey": "domain/test_domain/subdomain/test_subdomain/class/local_target",
+        "ToMultiplicity": {"LowerBound": 1, "HigherBound": 1},
+        "Uniqueness": null,
+        "AssociationClassKey": null,
+        "UmlComment": ""
+    },
+    {
+        "Key": "domain/test_domain/cassociation/subdomain/test_subdomain/class/class_key/subdomain/other_subdomain/class/remote_class/uses_cross_subdomain",
+        "Name": "Uses Cross Subdomain",
+        "Details": "",
+        "FromClassKey": "domain/test_domain/subdomain/test_subdomain/class/class_key",
+        "FromMultiplicity": {"LowerBound": 1, "HigherBound": 1},
+        "ToClassKey": "domain/test_domain/subdomain/other_subdomain/class/remote_class",
+        "ToMultiplicity": {"LowerBound": 0, "HigherBound": 0},
+        "Uniqueness": null,
+        "AssociationClassKey": null,
+        "UmlComment": ""
+    },
+    {
+        "Key": "cassociation/domain/test_domain/subdomain/test_subdomain/class/class_key/domain/other_domain/subdomain/other_subdomain/class/remote_class/uses_cross_domain",
+        "Name": "Uses Cross Domain",
+        "Details": "",
+        "FromClassKey": "domain/test_domain/subdomain/test_subdomain/class/class_key",
+        "FromMultiplicity": {"LowerBound": 1, "HigherBound": 1},
+        "ToClassKey": "domain/other_domain/subdomain/other_subdomain/class/remote_class",
+        "ToMultiplicity": {"LowerBound": 0, "HigherBound": 0},
+        "Uniqueness": null,
+        "AssociationClassKey": null,
+        "UmlComment": ""
+    }
+]

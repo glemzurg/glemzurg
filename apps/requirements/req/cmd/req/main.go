@@ -351,7 +351,7 @@ func runModelFacts(rootSourcePath, model, subdomainPath string) error {
 		return err
 	}
 
-	facts := modelfacts.FactsForSubdomain(subdomain)
+	facts := modelfacts.FactsForSubdomain(parsed, subdomain)
 	printModelFactLines(facts.Associations)
 	if len(facts.Associations) > 0 && len(facts.AssociationInvariants) > 0 {
 		_, _ = fmt.Fprintln(os.Stdout)

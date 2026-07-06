@@ -201,6 +201,25 @@ func (s *Step) Validate(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
+// ValidateReferences validates that event leaf EventKey values reference class events in the model.
+func (s *Step) ValidateReferences(ctx *coreerr.ValidationContext, events map[identity.Key]bool) error {
+	if s == nil {
+		return nil
+	}
+	if s.EventKey != nil && !events[*s.EventKey] {
+		return coreerr.NewWithValues(ctx, coreerr.SstepEventNotfound,
+			fmt.Sprintf("scenario step '%s' references non-existent event '%s'", s.Key.String(), s.EventKey.String()),
+			"EventKey", s.EventKey.String(), "")
+	}
+	for i := range s.Statements {
+		childCtx := ctx.Child("statement", fmt.Sprintf("%d", i))
+		if err := s.Statements[i].ValidateReferences(childCtx, events); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ValidateWithParent validates the Step and its key's parent relationship.
 func (s *Step) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identity.Key) error {
 	if err := s.Validate(ctx); err != nil {

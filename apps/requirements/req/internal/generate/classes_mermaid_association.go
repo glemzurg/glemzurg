@@ -35,8 +35,8 @@ func associationUniquenessMermaidTag(
 	if uniqueness == nil {
 		return ""
 	}
-	fromAttrs := attributeNamesJoined(fromClass, uniqueness.FromAttributeKeys, "+")
-	toAttrs := attributeNamesJoined(toClass, uniqueness.ToAttributeKeys, "+")
+	fromAttrs := attributeNamesJoined(fromClass, uniqueness.FromAttributeKeys, ", ")
+	toAttrs := attributeNamesJoined(toClass, uniqueness.ToAttributeKeys, ", ")
 	var tuple string
 	switch {
 	case fromAttrs == "" && toAttrs == "":
@@ -48,7 +48,8 @@ func associationUniquenessMermaidTag(
 	default:
 		tuple = fromAttrs + " → " + toAttrs
 	}
-	return fmt.Sprintf("{unique: %s}", tuple)
+	// Edge labels use Mermaid's LABEL token, which ends at the next colon; keep "unique" unquoted.
+	return fmt.Sprintf("{unique %s}", tuple)
 }
 
 // classesMermaidAssociationLinkLabel formats the edge label for a direct association arrow.
