@@ -397,24 +397,20 @@ func associationLabel(assocName string) string {
 
 type classPhrase string
 
-// lower returns prose casing for a class display name. Scoped names (Domain::Class) keep their
-// display casing; same-subdomain names are lowercased for readable fact sentences.
+// lower returns the class display name for fact prose. Names come from the model (or scoped
+// markdown display), not from class keys.
 func (c classPhrase) lower() string {
-	s := string(c)
-	if strings.Contains(s, "::") {
-		return s
-	}
-	return strings.ToLower(s)
+	return string(c)
 }
 
 func (c classPhrase) plural() string {
 	s := string(c)
 	if strings.Contains(s, "::") {
 		parts := strings.Split(s, "::")
-		parts[len(parts)-1] = pluralizeDisplayWord(parts[len(parts)-1])
+		parts[len(parts)-1] = pluralizeDisplayPhrase(parts[len(parts)-1])
 		return strings.Join(parts, "::")
 	}
-	return pluralizeWord(strings.ToLower(s))
+	return pluralizeDisplayPhrase(s)
 }
 
 func pluralizeWord(word string) string {
@@ -435,6 +431,15 @@ func pluralizeDisplayWord(word string) string {
 		return strings.ToUpper(plural[:1]) + plural[1:]
 	}
 	return plural
+}
+
+func pluralizeDisplayPhrase(phrase string) string {
+	words := strings.Fields(phrase)
+	if len(words) == 0 {
+		return phrase
+	}
+	words[len(words)-1] = pluralizeDisplayWord(words[len(words)-1])
+	return strings.Join(words, " ")
 }
 
 func pairingPhrase(from, to classPhrase) string {
