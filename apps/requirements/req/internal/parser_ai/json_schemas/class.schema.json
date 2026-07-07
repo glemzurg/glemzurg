@@ -35,7 +35,7 @@
           },
           "name": {
             "type": "string",
-            "description": "The display name of the attribute (e.g., 'Order Date', 'Total Amount'). This is the human-readable name shown in diagrams and documentation. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+            "description": "The display name of the attribute (e.g., 'Order Date', 'Total Amount'). This is the human-readable name shown in diagrams and documentation. Must be non-empty and match ^[a-zA-Z][a-zA-Z0-9_ ]*$. If validation fails: ensure this is a string with at least one character.",
             "minLength": 1,
             "pattern": "^[a-zA-Z][a-zA-Z0-9_ ]*$"
           },

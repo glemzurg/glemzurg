@@ -109,12 +109,26 @@ func (e *Event) ValidateWithParent(ctx *coreerr.ValidationContext, parent *ident
 	return nil
 }
 
+func isValidEventName(name string) bool {
+	if name == EventNameNew || name == EventNameDestroy {
+		return true
+	}
+	return coreerr.ValidateIdentifierName(name)
+}
+
 func validateEventName(ctx *coreerr.ValidationContext, name string) error {
 	if name == "" {
 		return coreerr.New(ctx, coreerr.EventNameRequired, "Name is required", "Name")
 	}
-	if badChar := coreerr.ValidateNameChars(name); badChar != "" {
-		return coreerr.NewWithValues(ctx, coreerr.EventNameInvalidChars, fmt.Sprintf("Name contains invalid character %q", badChar), "Name", name, "A-Za-z0-9 space hyphen underscore")
+	if !isValidEventName(name) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.EventNameInvalidChars,
+			fmt.Sprintf("Name %q must be _new, _destroy, or match ^[a-zA-Z][a-zA-Z0-9_-]*$", name),
+			"Name",
+			name,
+			"_new, _destroy, or ^[a-zA-Z][a-zA-Z0-9_-]*$",
+		)
 	}
 	return nil
 }
@@ -129,6 +143,16 @@ func validateEventParameterNames(ctx *coreerr.ValidationContext, names []string)
 		childCtx := ctx.Child("parameter_name", fmt.Sprintf("%d", i))
 		if strings.TrimSpace(name) == "" {
 			return coreerr.New(childCtx, coreerr.EventParameterNameRequired, "Parameter name is required", "ParameterNames")
+		}
+		if !coreerr.ValidateIdentifierName(name) {
+			return coreerr.NewWithValues(
+				childCtx,
+				coreerr.EventParameterNameInvalidChars,
+				fmt.Sprintf("Parameter name %q must match ^[a-zA-Z][a-zA-Z0-9_-]*$", name),
+				"ParameterNames",
+				name,
+				"^[a-zA-Z][a-zA-Z0-9_-]*$",
+			)
 		}
 		normalized := identity.NormalizeSubKey(name)
 		if seen[normalized] {

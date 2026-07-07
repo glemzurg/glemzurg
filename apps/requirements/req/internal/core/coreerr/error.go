@@ -2,6 +2,7 @@ package coreerr
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -170,4 +171,20 @@ func ValidateNameChars(name string) string {
 		}
 	}
 	return ""
+}
+
+var (
+	attributeNamePattern  = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_ ]*$`)
+	identifierNamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]*$`)
+)
+
+// ValidateAttributeName reports whether name matches the attribute display-name pattern.
+func ValidateAttributeName(name string) bool {
+	return attributeNamePattern.MatchString(name)
+}
+
+// ValidateIdentifierName reports whether name is a space-free identifier: letter-first,
+// then letters, digits, hyphen, or underscore.
+func ValidateIdentifierName(name string) bool {
+	return identifierNamePattern.MatchString(name)
 }

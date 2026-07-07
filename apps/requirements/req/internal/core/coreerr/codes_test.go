@@ -114,6 +114,7 @@ func allCodeConstants() map[string]Code {
 		"ParamKeyInvalid":            ParamKeyInvalid,
 		"ParamKeyTypeInvalid":        ParamKeyTypeInvalid,
 		"ParamNameRequired":          ParamNameRequired,
+		"ParamNameInvalidChars":      ParamNameInvalidChars,
 		"ParamDatatypesRequired":     ParamDatatypesRequired,
 		"ParamDatatypeKeyMismatch":   ParamDatatypeKeyMismatch,
 		"ParamInvariantTypeInvalid":  ParamInvariantTypeInvalid,
@@ -142,12 +143,13 @@ func allCodeConstants() map[string]Code {
 		"GuardLogicTypeInvalid": GuardLogicTypeInvalid,
 
 		// Event errors.
-		"EventKeyInvalid":             EventKeyInvalid,
-		"EventKeyTypeInvalid":         EventKeyTypeInvalid,
-		"EventNameRequired":           EventNameRequired,
-		"EventNameInvalidChars":       EventNameInvalidChars,
-		"EventParameterNameRequired":  EventParameterNameRequired,
-		"EventParameterNameDuplicate": EventParameterNameDuplicate,
+		"EventKeyInvalid":                EventKeyInvalid,
+		"EventKeyTypeInvalid":            EventKeyTypeInvalid,
+		"EventNameRequired":              EventNameRequired,
+		"EventNameInvalidChars":          EventNameInvalidChars,
+		"EventParameterNameRequired":     EventParameterNameRequired,
+		"EventParameterNameInvalidChars": EventParameterNameInvalidChars,
+		"EventParameterNameDuplicate":    EventParameterNameDuplicate,
 
 		// Query errors.
 		"QueryKeyInvalid":               QueryKeyInvalid,
@@ -220,6 +222,7 @@ func allCodeConstants() map[string]Code {
 		"AttrKeyTypeInvalid":        AttrKeyTypeInvalid,
 		"AttrDuplicateKey":          AttrDuplicateKey,
 		"AttrNameRequired":          AttrNameRequired,
+		"AttrNameInvalidPattern":    AttrNameInvalidPattern,
 		"AttrDerivationTypeInvalid": AttrDerivationTypeInvalid,
 		"AttrInvariantTypeInvalid":  AttrInvariantTypeInvalid,
 		"AttrInvariantDuplicateLet": AttrInvariantDuplicateLet,

@@ -86,6 +86,16 @@ func (a *Attribute) Validate(ctx *coreerr.ValidationContext) error {
 	if a.Name == "" {
 		return coreerr.New(ctx, coreerr.AttrNameRequired, "Name is required", "Name")
 	}
+	if !coreerr.ValidateAttributeName(a.Name) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.AttrNameInvalidPattern,
+			fmt.Sprintf("Name %q does not match ^[a-zA-Z][a-zA-Z0-9_ ]*$", a.Name),
+			"Name",
+			a.Name,
+			"^[a-zA-Z][a-zA-Z0-9_ ]*$",
+		)
+	}
 
 	// Validate the derivation policy logic if present.
 	if a.DerivationPolicy != nil {
