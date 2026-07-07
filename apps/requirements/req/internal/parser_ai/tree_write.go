@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -154,8 +155,7 @@ func writeModelAssociationsAndDomains(model *inputModel, modelDir string) error 
 		}
 		for _, key := range sortedKeys(model.ClassAssociations) {
 			assoc := model.ClassAssociations[key]
-			filename := classAssociationFilename(assoc)
-			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
+			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
 				return err
 			}
 			if err := writeAssociationInvariants(assocDir, key, assoc); err != nil {
@@ -223,8 +223,7 @@ func writeDomainTree(domain *inputDomain, domainDir string) error {
 		}
 		for _, key := range sortedKeys(domain.ClassAssociations) {
 			assoc := domain.ClassAssociations[key]
-			filename := classAssociationFilename(assoc)
-			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
+			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
 				return err
 			}
 			if err := writeAssociationInvariants(assocDir, key, assoc); err != nil {
@@ -270,8 +269,7 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 		}
 		for _, key := range sortedKeys(subdomain.ClassAssociations) {
 			assoc := subdomain.ClassAssociations[key]
-			filename := classAssociationFilename(assoc)
-			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
+			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
 				return err
 			}
 			if err := writeAssociationInvariants(assocDir, key, assoc); err != nil {
@@ -479,11 +477,21 @@ func writeOwnerParameterInvariants(classDir, ownerKind, ownerKey string, params 
 	return nil
 }
 
-func classAssociationFilename(assoc *inputClassAssociation) string {
+// classAssociationMapKey builds the map key and filename stem for a class association.
+func classAssociationMapKey(assoc *inputClassAssociation, nameKey string) string {
 	from := strings.ReplaceAll(assoc.FromClassKey, "/", ".")
 	to := strings.ReplaceAll(assoc.ToClassKey, "/", ".")
-	name := keyFromName(assoc.Name)
-	return fmt.Sprintf("%s--%s--%s.assoc.json", from, to, name)
+	return fmt.Sprintf("%s--%s--%s", from, to, nameKey)
+}
+
+// sortedKeys returns sorted keys from a string-keyed map.
+func sortedKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 // writeJSON writes a struct as JSON to a file.

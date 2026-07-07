@@ -25,7 +25,7 @@ func convErr(code int, msg, file string) *ParseError {
 }
 
 // ConvertToModel converts an inputModel to a core.Model.
-// The input model is assumed to have been validated by readModelTree.
+// The input model is assumed to have been loaded from the filesystem with wire-format checks only.
 // This function performs the conversion and validates the resulting core.Model.
 func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
 	result, err := convertModelScalars(input, modelKey)
@@ -40,6 +40,8 @@ func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
 	if err := convertDomainsAndAssociationsToModel(input, result); err != nil {
 		return nil, err
 	}
+
+	removeEmptyDefaultSubdomains(result)
 
 	// Validate the resulting model
 	if err := result.Validate(); err != nil {
@@ -1850,4 +1852,49 @@ func normalizeMultiplicity(mult string) string {
 		return trimmed + "..many"
 	}
 	return mult
+}
+
+// parseDomainScopedKey parses a key in subdomain/class format.
+func parseDomainScopedKey(key string) (subdomain, class string, err error) {
+	parts := strings.Split(key, "/")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("expected format 'subdomain/class', got '%s'", key)
+	}
+	return parts[0], parts[1], nil
+}
+
+// parseModelScopedKey parses a key in domain/subdomain/class format.
+func parseModelScopedKey(key string) (domain, subdomain, class string, err error) {
+	parts := strings.Split(key, "/")
+	if len(parts) != 3 {
+		return "", "", "", fmt.Errorf("expected format 'domain/subdomain/class', got '%s'", key)
+	}
+	return parts[0], parts[1], parts[2], nil
+}
+
+const defaultSubdomainName = "default"
+
+// removeEmptyDefaultSubdomains drops placeholder default subdomains with no content
+// and normalizes empty subdomain maps to nil, matching parser_human assembly.
+func removeEmptyDefaultSubdomains(model *core.Model) {
+	for domainKey, domain := range model.Domains {
+		for subdomainKey, subdomain := range domain.Subdomains {
+			if subdomainKey.SubKey == defaultSubdomainName && isEmptySubdomain(subdomain) {
+				delete(domain.Subdomains, subdomainKey)
+			}
+		}
+		if len(domain.Subdomains) == 0 {
+			domain.Subdomains = nil
+		}
+		model.Domains[domainKey] = domain
+	}
+}
+
+func isEmptySubdomain(subdomain model_domain.Subdomain) bool {
+	return len(subdomain.Classes) == 0 &&
+		len(subdomain.Generalizations) == 0 &&
+		len(subdomain.UseCases) == 0 &&
+		len(subdomain.UseCaseGeneralizations) == 0 &&
+		len(subdomain.ClassAssociations) == 0 &&
+		len(subdomain.UseCaseShares) == 0
 }

@@ -98,7 +98,7 @@ func convertDomainsAndAssociationsFromModel(model *core.Model, result *inputMode
 	}
 	for _, assoc := range model.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, "")
-		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		mapKey := classAssociationMapKey(converted, assoc.Key.SubKey3)
 		result.ClassAssociations[mapKey] = converted
 	}
 }
@@ -194,7 +194,7 @@ func convertDomainFromModel(domain *model_domain.Domain, allClasses map[identity
 	// Convert domain-level class associations
 	for _, assoc := range domain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_DOMAIN)
-		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		mapKey := classAssociationMapKey(converted, assoc.Key.SubKey3)
 		result.ClassAssociations[mapKey] = converted
 	}
 
@@ -255,7 +255,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, allClasses map
 	// Convert subdomain-level class associations
 	for _, assoc := range subdomain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_SUBDOMAIN)
-		mapKey := strings.TrimSuffix(classAssociationFilename(converted), ".assoc.json")
+		mapKey := classAssociationMapKey(converted, assoc.Key.SubKey3)
 		result.ClassAssociations[mapKey] = converted
 	}
 
@@ -438,13 +438,13 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 	// Convert actions
 	for key, action := range class.Actions {
 		converted := convertActionFromModel(&action)
-		result.Actions[keyFromName(key.SubKey)] = converted
+		result.Actions[key.SubKey] = converted
 	}
 
 	// Convert queries
 	for key, query := range class.Queries {
 		converted := convertQueryFromModel(&query)
-		result.Queries[keyFromName(key.SubKey)] = converted
+		result.Queries[key.SubKey] = converted
 	}
 
 	return result
@@ -483,19 +483,19 @@ func convertStateMachineFromModel(class *model_class.Class) *inputStateMachine {
 	// Convert states
 	for key, state := range class.States {
 		converted := convertStateFromModel(&state)
-		sm.States[keyFromName(key.SubKey)] = converted
+		sm.States[key.SubKey] = converted
 	}
 
 	// Convert events
 	for key, event := range class.Events {
 		converted := convertEventFromModel(&event)
-		sm.Events[keyFromName(key.SubKey)] = converted
+		sm.Events[key.SubKey] = converted
 	}
 
 	// Convert guards
 	for key, guard := range class.Guards {
 		converted := convertGuardFromModel(&guard)
-		sm.Guards[keyFromName(key.SubKey)] = converted
+		sm.Guards[key.SubKey] = converted
 	}
 
 	// Convert transitions in stable key order; map iteration is nondeterministic in Go.
@@ -520,7 +520,7 @@ func convertStateFromModel(state *model_state.State) *inputState {
 	// Convert state actions
 	for _, stateAction := range state.Actions {
 		converted := inputStateAction{
-			ActionKey: keyFromName(stateAction.ActionKey.SubKey),
+			ActionKey: stateAction.ActionKey.SubKey,
 			When:      stateAction.When,
 		}
 		result.Actions = append(result.Actions, converted)
@@ -551,31 +551,31 @@ func convertGuardFromModel(guard *model_state.Guard) *inputGuard {
 // convertTransitionFromModel converts a model_state.Transition to an inputTransition.
 func convertTransitionFromModel(transition *model_state.Transition) inputTransition {
 	result := inputTransition{
-		EventKey:   keyFromName(transition.EventKey.SubKey),
+		EventKey:   transition.EventKey.SubKey,
 		UMLComment: transition.UmlComment,
 	}
 
 	// Handle from state (nil for initial transitions)
 	if transition.FromStateKey != nil {
-		fromKey := keyFromName(transition.FromStateKey.SubKey)
+		fromKey := transition.FromStateKey.SubKey
 		result.FromStateKey = &fromKey
 	}
 
 	// Handle to state (nil for final transitions)
 	if transition.ToStateKey != nil {
-		toKey := keyFromName(transition.ToStateKey.SubKey)
+		toKey := transition.ToStateKey.SubKey
 		result.ToStateKey = &toKey
 	}
 
 	// Handle guard key
 	if transition.GuardKey != nil {
-		guardKey := keyFromName(transition.GuardKey.SubKey)
+		guardKey := transition.GuardKey.SubKey
 		result.GuardKey = &guardKey
 	}
 
 	// Handle action key
 	if transition.ActionKey != nil {
-		actionKey := keyFromName(transition.ActionKey.SubKey)
+		actionKey := transition.ActionKey.SubKey
 		result.ActionKey = &actionKey
 	}
 
@@ -769,4 +769,16 @@ func mustFormatModelScopedClassKey(classKey identity.Key) string {
 		panic(err)
 	}
 	return scoped
+}
+
+// sortedIdentityKeys returns identity keys sorted by Key.String() for deterministic map iteration.
+func sortedIdentityKeys[V any](m map[identity.Key]V) []identity.Key {
+	keys := make([]identity.Key, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].String() < keys[j].String()
+	})
+	return keys
 }
