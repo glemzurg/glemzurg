@@ -16,7 +16,7 @@
     },
     "actor_key": {
       "type": "string",
-      "description": "Optional key referencing the actor that owns or primarily interacts with this class. The actor_key must match a filename (without extension) in the 'actors/' directory at the model root. For example, if you have 'actors/customer.actor.json', use 'customer' as the actor_key. If validation fails: verify the actor file exists at 'actors/{actor_key}.actor.json' and the filename matches exactly (case-sensitive)."
+      "description": "Optional identity subkey referencing the actor that owns or primarily interacts with this class. Must match an actor filename stem in 'actors/' (e.g., 'customer' for 'actors/customer.actor.json'). Independent of the actor display name. Cross-reference validity is enforced by core.Model.Validate() after assembly."
     },
     "uml_comment": {
       "type": "string",
@@ -30,8 +30,8 @@
         "properties": {
           "key": {
             "type": "string",
-            "description": "Unique attribute identifier within the class (e.g., 'order_date', 'total_amount'). Referenced by indexes. Must match pattern for valid identifiers.",
-            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+            "description": "Unique attribute identity subkey within the class (e.g., 'order_date', 'total_amount'). Independent of the display 'name' field. Referenced by indexes. Must match core identity pattern ^[a-z][a-z0-9_]*$.",
+            "pattern": "^[a-z][a-z0-9_]*$"
           },
           "name": {
             "type": "string",
@@ -104,7 +104,7 @@
     },
     "indexes": {
       "type": "array",
-      "description": "List of indexes for the class. Each index is an array of attribute keys that together form a unique or lookup index. The attribute keys must match 'key' values defined in the 'attributes' array above. For example, if you have attributes with keys 'customer_id' and 'order_date', an index could be ['customer_id', 'order_date']. If validation fails: verify each string in the index arrays matches an attribute key defined in this class's 'attributes' array.",
+      "description": "List of indexes for the class. Each index is an array of attribute identity subkeys. Index membership is not validated at wire-format read time; invalid references surface via core.Model.Validate() after assembly when applicable.",
       "items": {
         "type": "array",
         "items": {

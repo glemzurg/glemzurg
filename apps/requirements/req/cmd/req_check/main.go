@@ -273,17 +273,10 @@ func buildParseErrorHint(pe *parser_ai.ParseError, code string) string {
 func isFileStructureError(code int) bool {
 	switch code {
 	case
-		parser_ai.ErrTreeModelNoActors,                // need to create actor files
-		parser_ai.ErrTreeModelNoDomains,               // need to create domain dirs
-		parser_ai.ErrTreeDomainNoSubdomains,           // need to create subdomain dirs
-		parser_ai.ErrTreeSubdomainTooFewClasses,       // need to create class dirs
-		parser_ai.ErrTreeSubdomainNoAssociations,      // need to create assoc files
-		parser_ai.ErrTreeClassNoStateMachine,          // need to create state_machine.json
-		parser_ai.ErrKeyInvalidFormat,                 // filename/dir naming
-		parser_ai.ErrAssocFilenameInvalidFormat,       // assoc filename format
-		parser_ai.ErrAssocFilenameInvalidComponent,    // assoc filename component
-		parser_ai.ErrTreeSingleSubdomainNotDefault,    // dir naming
-		parser_ai.ErrTreeMultipleSubdomainsHasDefault: // dir naming
+		parser_ai.ErrKeyInvalidFormat,              // filename/dir key syntax
+		parser_ai.ErrAssocFilenameInvalidFormat,    // assoc filename format
+		parser_ai.ErrAssocFilenameInvalidComponent, // assoc filename component
+		parser_ai.ErrConvDomainStructureInvalid:    // subdomain naming rules (core)
 		return true
 	}
 	return false

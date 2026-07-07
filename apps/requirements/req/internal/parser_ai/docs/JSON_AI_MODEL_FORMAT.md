@@ -62,9 +62,11 @@ Classes can be derived from the persistent storage in the existing system:
 
 Each persistent entity typically becomes a class. The columns, fields, or properties become attributes.
 
-### State Machines for Stateless Classes
+### State Machines for Stateless Classes (optional)
 
-If a class has no obvious state attribute (no `status`, `state`, or lifecycle column), create a minimal state machine with a single state called `existing`:
+If a class has no lifecycle behavior to model, you may omit `state_machine.json` entirely. State machines are only required when the class has states, events, guards, actions, or transitions to represent.
+
+When you do need a placeholder lifecycle, a minimal state machine with a single state called `existing` is one option:
 
 ```json
 {
@@ -90,7 +92,7 @@ If a class has no obvious state attribute (no `status`, `state`, or lifecycle co
 }
 ```
 
-This provides a valid state machine even when the class doesn't have explicit lifecycle states.
+This pattern is a modeling convenience, not a parser requirement.
 
 ### Events and Queries from Server Protocols
 
@@ -1162,13 +1164,13 @@ Each entity type has appropriate structured fields for logic:
 
 ## Constraints
 
-1. **Subdomain size**: Subdomains should contain between 20-40 classes. When a domain grows beyond 40 classes, consider splitting it into multiple subdomains to maintain manageable, cohesive groupings. When starting a new domain, begin with a single subdomain and split when needed.
+Parser enforcement matches `parser_human`: **wire-format integrity** (valid JSON, directory layout, filename/key syntax, JSON Schema shape) during read, then **`core.Model.Validate()`** after assembly. Display names are independent of filesystem keys.
 
-2. **Actions are independent**: Actions do not reference or call other actions.
+1. **Subdomain size** (recommendation): Subdomains often work well with 20-40 classes. Split when a domain grows large enough to need multiple cohesive groupings.
 
-3. **Subdomain naming**: A domain with exactly one subdomain must name it `default`. A domain with multiple subdomains cannot use `default` as any of their names.
+2. **Actions are independent**: Actions do not reference or call other actions (core invariant).
 
-4. **Model completeness**: A valid model must have at least one actor and at least one domain. Each domain must have at least one subdomain.
+3. **Subdomain naming** (core): A domain with exactly one subdomain must name it `default`. A domain with multiple subdomains cannot use `default` as any of their names.
 
 ## Implementation Architecture
 
@@ -1178,9 +1180,7 @@ The JSON import package uses its own set of Go structs, separate from the `req_m
 
 1. **Optimized input shapes**: The JSON format can use structures that are easier for input (e.g., superclass/subclass defined in generalization rather than spread across class files).
 
-2. **Distinct error handling**: Each validation error has two distinct components:
-   - **Unique error number**: Every error type has its own identifier for programmatic handling and documentation reference.
-   - **Detailed output with construction advice**: Error messages include specific guidance on how to correct the input, helping AI or human authors fix issues quickly.
+2. **Distinct error handling**: Wire-format errors surface during tree read (JSON syntax, schema shape, key syntax). Semantic errors surface after conversion via `core.Model.Validate()`, mapped to `ErrConv*` codes with file-path context.
 
    These error types are specific to import validation and don't belong in the main model tree.
 
