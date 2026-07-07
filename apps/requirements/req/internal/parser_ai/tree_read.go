@@ -383,6 +383,10 @@ func readModelDomains(modelDir string, model *inputModel) error {
 
 // readDomainTree reads a domain and its children from the filesystem.
 func readDomainTree(domainDir string) (*inputDomain, error) {
+	if err := rejectDomainLevelModelContent(domainDir); err != nil {
+		return nil, err
+	}
+
 	// Read domain.json
 	domainContent, err := os.ReadFile(filepath.Join(domainDir, "domain.json"))
 	if err != nil {

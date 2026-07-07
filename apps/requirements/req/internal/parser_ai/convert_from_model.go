@@ -180,7 +180,9 @@ func convertDomainFromModel(domain *model_domain.Domain, allClasses map[identity
 		ClassAssociations:     make(map[string]*inputClassAssociation),
 	}
 
-	// Convert subdomains
+	// Convert subdomains. parser_ai always emits explicit subdomains/{key}/ trees on disk,
+	// including subdomains/default/ for single-subdomain domains; it never flattens classes
+	// to a domain-root classes/ directory like parser_human.
 	for key, subdomain := range domain.Subdomains {
 		converted := convertSubdomainFromModel(&subdomain, allClasses)
 		result.Subdomains[key.SubKey] = converted
