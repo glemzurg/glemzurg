@@ -124,10 +124,10 @@ func validateEventName(ctx *coreerr.ValidationContext, name string) error {
 		return coreerr.NewWithValues(
 			ctx,
 			coreerr.EventNameInvalidChars,
-			fmt.Sprintf("Name %q must be _new, _destroy, or match ^[a-zA-Z][a-zA-Z0-9_-]*$", name),
+			fmt.Sprintf("Name %q must be _new, _destroy, or match ^[a-zA-Z][a-zA-Z0-9_]*$", name),
 			"Name",
 			name,
-			"_new, _destroy, or ^[a-zA-Z][a-zA-Z0-9_-]*$",
+			"_new, _destroy, or ^[a-zA-Z][a-zA-Z0-9_]*$",
 		)
 	}
 	return nil
@@ -148,10 +148,10 @@ func validateEventParameterNames(ctx *coreerr.ValidationContext, names []string)
 			return coreerr.NewWithValues(
 				childCtx,
 				coreerr.EventParameterNameInvalidChars,
-				fmt.Sprintf("Parameter name %q must match ^[a-zA-Z][a-zA-Z0-9_-]*$", name),
+				fmt.Sprintf("Parameter name %q must match ^[a-zA-Z][a-zA-Z0-9_]*$", name),
 				"ParameterNames",
 				name,
-				"^[a-zA-Z][a-zA-Z0-9_-]*$",
+				"^[a-zA-Z][a-zA-Z0-9_]*$",
 			)
 		}
 		normalized := identity.NormalizeSubKey(name)

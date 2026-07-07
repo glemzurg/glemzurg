@@ -193,7 +193,7 @@ func (suite *ErrorSuite) TestNamePatternValidators() {
 			testName:  "identifier names",
 			validator: ValidateIdentifierName,
 			valid:     []string{"amount", "user_id", "CountryCode"},
-			invalid:   []string{"", "user id", "bad/name", "_new"},
+			invalid:   []string{"", "user id", "bad/name", "_new", "user-id"},
 		},
 	}
 	for _, tc := range tests {

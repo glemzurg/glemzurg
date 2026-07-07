@@ -75,10 +75,10 @@ func (p *Parameter) Validate(ctx *coreerr.ValidationContext) error {
 		return coreerr.NewWithValues(
 			ctx,
 			coreerr.ParamNameInvalidChars,
-			fmt.Sprintf("Name %q must match ^[a-zA-Z][a-zA-Z0-9_-]*$", p.Name),
+			fmt.Sprintf("Name %q must match ^[a-zA-Z][a-zA-Z0-9_]*$", p.Name),
 			"Name",
 			p.Name,
-			"^[a-zA-Z][a-zA-Z0-9_-]*$",
+			"^[a-zA-Z][a-zA-Z0-9_]*$",
 		)
 	}
 	if p.DataTypeRules == "" {

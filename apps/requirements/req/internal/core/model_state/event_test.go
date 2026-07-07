@@ -126,6 +126,23 @@ func (suite *EventSuite) TestValidate() {
 			},
 			errstr: "EVENT_PARAMETER_NAME_INVALID_CHARS",
 		},
+		{
+			testName: "error name with hyphen",
+			event: Event{
+				Key:  validKey,
+				Name: "Pay-Now",
+			},
+			errstr: "EVENT_NAME_INVALID_CHARS",
+		},
+		{
+			testName: "error parameter name with hyphen",
+			event: Event{
+				Key:            validKey,
+				Name:           "Submit",
+				ParameterNames: []string{"user-id"},
+			},
+			errstr: "EVENT_PARAMETER_NAME_INVALID_CHARS",
+		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {

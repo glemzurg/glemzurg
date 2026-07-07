@@ -175,7 +175,7 @@ func ValidateNameChars(name string) string {
 
 var (
 	attributeNamePattern  = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_ ]*$`)
-	identifierNamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]*$`)
+	identifierNamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
 )
 
 // ValidateAttributeName reports whether name matches the attribute display-name pattern.
@@ -184,7 +184,7 @@ func ValidateAttributeName(name string) bool {
 }
 
 // ValidateIdentifierName reports whether name is a space-free identifier: letter-first,
-// then letters, digits, hyphen, or underscore.
+// then letters, digits, or underscore.
 func ValidateIdentifierName(name string) bool {
 	return identifierNamePattern.MatchString(name)
 }

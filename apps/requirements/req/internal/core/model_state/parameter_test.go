@@ -102,6 +102,15 @@ func (suite *ParameterSuite) TestValidate() {
 			errstr: "PARAM_NAME_INVALID_CHARS",
 		},
 		{
+			testName: "error name with hyphen",
+			param: Parameter{
+				Key:           validKey,
+				Name:          "user-id",
+				DataTypeRules: "Nat",
+			},
+			errstr: "PARAM_NAME_INVALID_CHARS",
+		},
+		{
 			testName: "error blank data type rules",
 			param: Parameter{
 				Key:           validKey,

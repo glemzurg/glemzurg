@@ -95,7 +95,7 @@ const (
 	ParamKeyInvalid                   Code = "PARAM_KEY_INVALID"                     // Parameter key failed validation.
 	ParamKeyTypeInvalid               Code = "PARAM_KEY_TYPE_INVALID"                // Parameter key is not KEY_TYPE_PARAMETER.
 	ParamNameRequired                 Code = "PARAM_NAME_REQUIRED"                   // Parameter Name is empty.
-	ParamNameInvalidChars             Code = "PARAM_NAME_INVALID_CHARS"              // Parameter Name contains spaces or characters outside A-Za-z0-9 hyphen underscore.
+	ParamNameInvalidChars             Code = "PARAM_NAME_INVALID_CHARS"              // Parameter Name contains spaces or characters outside A-Za-z0-9 underscore.
 	ParamDatatypesRequired            Code = "PARAM_DATATYPES_REQUIRED"              // Parameter DataTypes is empty.
 	ParamDatatypeKeyMismatch          Code = "PARAM_DATATYPE_KEY_MISMATCH"           // Parameter DataType.Key does not match Parameter.Name.
 	ParamInvariantTypeInvalid         Code = "PARAM_INVARIANT_TYPE_INVALID"          // Parameter invariant has wrong logic type.
@@ -137,9 +137,9 @@ const (
 	EventKeyInvalid                Code = "EVENT_KEY_INVALID"                  // Event key failed validation.
 	EventKeyTypeInvalid            Code = "EVENT_KEY_TYPE_INVALID"             // Key is not KEY_TYPE_EVENT.
 	EventNameRequired              Code = "EVENT_NAME_REQUIRED"                // Event Name is empty.
-	EventNameInvalidChars          Code = "EVENT_NAME_INVALID_CHARS"           // Event Name contains spaces or characters outside A-Za-z0-9 hyphen underscore (system events _new and _destroy excepted).
+	EventNameInvalidChars          Code = "EVENT_NAME_INVALID_CHARS"           // Event Name contains spaces or characters outside A-Za-z0-9 underscore (system events _new and _destroy excepted).
 	EventParameterNameRequired     Code = "EVENT_PARAMETER_NAME_REQUIRED"      // An entry in ParameterNames is empty.
-	EventParameterNameInvalidChars Code = "EVENT_PARAMETER_NAME_INVALID_CHARS" // An entry in ParameterNames contains spaces or characters outside A-Za-z0-9 hyphen underscore.
+	EventParameterNameInvalidChars Code = "EVENT_PARAMETER_NAME_INVALID_CHARS" // An entry in ParameterNames contains spaces or characters outside A-Za-z0-9 underscore.
 	EventParameterNameDuplicate    Code = "EVENT_PARAMETER_NAME_DUPLICATE"     // ParameterNames contains duplicate names (after normalization).
 
 	// ---------------------------------------------------------------
