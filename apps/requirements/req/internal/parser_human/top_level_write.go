@@ -92,6 +92,12 @@ func buildSubdomainAssociationsLookup(domains map[identity.Key]model_domain.Doma
 			lookup[problemKeyStr] = append(lookup[problemKeyStr], assoc)
 		}
 	}
+	// Sort each slice for deterministic output.
+	for k := range lookup {
+		sort.Slice(lookup[k], func(i, j int) bool {
+			return lookup[k][i].Key.String() < lookup[k][j].Key.String()
+		})
+	}
 	return lookup
 }
 
@@ -101,6 +107,12 @@ func buildDomainAssociationsLookup(associations map[identity.Key]model_domain.As
 	for _, assoc := range associations {
 		domainKeyStr := assoc.ProblemDomainKey.String()
 		lookup[domainKeyStr] = append(lookup[domainKeyStr], assoc)
+	}
+	// Sort each slice for deterministic output.
+	for k := range lookup {
+		sort.Slice(lookup[k], func(i, j int) bool {
+			return lookup[k][i].Key.String() < lookup[k][j].Key.String()
+		})
 	}
 	return lookup
 }
