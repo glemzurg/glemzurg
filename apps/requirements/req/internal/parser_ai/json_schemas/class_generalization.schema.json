@@ -16,7 +16,7 @@
     },
     "superclass_key": {
       "type": "string",
-      "description": "Key referencing the superclass (parent class) in the generalization. The class key is constructed from the domain path plus filename: for a class at 'billing/payment.class.json', the key is 'billing.payment'. For nested subdomains like 'billing/methods/card.class.json', the key is 'billing.methods.card'. The superclass is the general category that the subclasses specialize. If validation fails: verify the class file exists at the expected path and the key matches the domain.filename pattern exactly.",
+      "description": "Identity subkey of the superclass class within this subdomain (class directory name under subdomains/{subdomain}/classes/). Independent of display names. Cross-references and cardinality are enforced by core.Model.Validate() after assembly.",
       "minLength": 1
     },
     "subclass_keys": {

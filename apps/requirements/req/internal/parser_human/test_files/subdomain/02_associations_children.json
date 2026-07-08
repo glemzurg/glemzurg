@@ -1,0 +1,14 @@
+[
+    {
+        "Key": "domain/test_domain/sassociation/billing/fulfillment",
+        "ProblemSubdomainKey": "domain/test_domain/subdomain/billing",
+        "SolutionSubdomainKey": "domain/test_domain/subdomain/fulfillment",
+        "UmlComment": "orders require fulfillment capacity"
+    },
+    {
+        "Key": "domain/test_domain/sassociation/billing/analytics",
+        "ProblemSubdomainKey": "domain/test_domain/subdomain/billing",
+        "SolutionSubdomainKey": "domain/test_domain/subdomain/analytics",
+        "UmlComment": ""
+    }
+]

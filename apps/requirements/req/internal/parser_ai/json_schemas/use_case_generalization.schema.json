@@ -16,7 +16,7 @@
     },
     "superclass_key": {
       "type": "string",
-      "description": "Key referencing the superclass (parent use case) in the use case generalization. The use case key matches the use case filename without extension: for a use case at 'use_cases/manage_order.uc.json', the key is 'manage_order'. The superclass is the general use case that the subclass use cases specialize. If validation fails: verify the use case file exists at the expected path and the key matches the filename pattern exactly.",
+      "description": "Identity subkey of the superclass use case (use case directory name under use_cases/). Independent of display names. Cross-references and cardinality are enforced by core.Model.Validate() after assembly.",
       "minLength": 1
     },
     "subclass_keys": {

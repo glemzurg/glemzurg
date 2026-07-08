@@ -1022,6 +1022,150 @@
       ]
     },
     {
+      "name": "public.subdomain_association",
+      "type": "BASE TABLE",
+      "comment": "A semantic relationship between two subdomains in the same domain.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this association is part of."
+        },
+        {
+          "name": "association_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID."
+        },
+        {
+          "name": "problem_subdomain_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The subdomain that defines requirements for the other."
+        },
+        {
+          "name": "solution_subdomain_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The subdomain that is constrained by the others requirements."
+        },
+        {
+          "name": "uml_comment",
+          "type": "text",
+          "nullable": true,
+          "comment": "A comment that appears in the diagrams."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "subdomain_association_pkey",
+          "def": "CREATE UNIQUE INDEX subdomain_association_pkey ON public.subdomain_association USING btree (model_key, association_key)",
+          "table": "public.subdomain_association",
+          "columns": [
+            "model_key",
+            "association_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "subdomain_association_association_key_not_null",
+          "type": "n",
+          "def": "NOT NULL association_key",
+          "table": "public.subdomain_association",
+          "referenced_table": "",
+          "columns": [
+            "association_key"
+          ]
+        },
+        {
+          "name": "subdomain_association_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.subdomain_association",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "subdomain_association_problem_subdomain_key_not_null",
+          "type": "n",
+          "def": "NOT NULL problem_subdomain_key",
+          "table": "public.subdomain_association",
+          "referenced_table": "",
+          "columns": [
+            "problem_subdomain_key"
+          ]
+        },
+        {
+          "name": "subdomain_association_solution_subdomain_key_not_null",
+          "type": "n",
+          "def": "NOT NULL solution_subdomain_key",
+          "table": "public.subdomain_association",
+          "referenced_table": "",
+          "columns": [
+            "solution_subdomain_key"
+          ]
+        },
+        {
+          "name": "fk_subdomain_association_model",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE",
+          "table": "public.subdomain_association",
+          "referenced_table": "model",
+          "columns": [
+            "model_key"
+          ],
+          "referenced_columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "fk_subdomain_association_problem",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, problem_subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE",
+          "table": "public.subdomain_association",
+          "referenced_table": "subdomain",
+          "columns": [
+            "model_key",
+            "problem_subdomain_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "subdomain_key"
+          ]
+        },
+        {
+          "name": "fk_subdomain_association_solution",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, solution_subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE",
+          "table": "public.subdomain_association",
+          "referenced_table": "subdomain",
+          "columns": [
+            "model_key",
+            "solution_subdomain_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "subdomain_key"
+          ]
+        },
+        {
+          "name": "subdomain_association_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, association_key)",
+          "table": "public.subdomain_association",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "association_key"
+          ]
+        }
+      ]
+    },
+    {
       "name": "public.actor_generalization",
       "type": "BASE TABLE",
       "comment": "A relationship between actors indicating super classes and subclasses.",
@@ -7293,6 +7437,49 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, solution_domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.subdomain_association",
+      "columns": [
+        "model_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.model",
+      "parent_columns": [
+        "model_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.subdomain_association",
+      "columns": [
+        "model_key",
+        "problem_subdomain_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.subdomain",
+      "parent_columns": [
+        "model_key",
+        "subdomain_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, problem_subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.subdomain_association",
+      "columns": [
+        "model_key",
+        "solution_subdomain_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.subdomain",
+      "parent_columns": [
+        "model_key",
+        "subdomain_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, solution_subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE"
     },
     {
       "table": "public.actor_generalization",

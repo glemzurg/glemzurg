@@ -92,6 +92,14 @@ func (suite *EventSuite) TestValidate() {
 			errstr: "EVENT_NAME_INVALID_CHARS",
 		},
 		{
+			testName: "error name with spaces",
+			event: Event{
+				Key:  validKey,
+				Name: "Payment Received",
+			},
+			errstr: "EVENT_NAME_INVALID_CHARS",
+		},
+		{
 			testName: "error blank parameter name",
 			event: Event{
 				Key:            validKey,
@@ -108,6 +116,32 @@ func (suite *EventSuite) TestValidate() {
 				ParameterNames: []string{"CountryCode", "countrycode"},
 			},
 			errstr: "EVENT_PARAMETER_NAME_DUPLICATE",
+		},
+		{
+			testName: "error parameter name with spaces",
+			event: Event{
+				Key:            validKey,
+				Name:           "Submit",
+				ParameterNames: []string{"user id"},
+			},
+			errstr: "EVENT_PARAMETER_NAME_INVALID_CHARS",
+		},
+		{
+			testName: "error name with hyphen",
+			event: Event{
+				Key:  validKey,
+				Name: "Pay-Now",
+			},
+			errstr: "EVENT_NAME_INVALID_CHARS",
+		},
+		{
+			testName: "error parameter name with hyphen",
+			event: Event{
+				Key:            validKey,
+				Name:           "Submit",
+				ParameterNames: []string{"user-id"},
+			},
+			errstr: "EVENT_PARAMETER_NAME_INVALID_CHARS",
 		},
 	}
 	for _, tt := range tests {
@@ -180,6 +214,25 @@ func (suite *EventSuite) TestValidateWithParent() {
 	}
 	err = event.ValidateWithParent(ctx, &classKey)
 	suite.Require().NoError(err)
+}
+
+func (suite *EventSuite) TestIsValidEventName() {
+	tests := []struct {
+		testName string
+		name     string
+		valid    bool
+	}{
+		{testName: "submit", name: "Submit", valid: true},
+		{testName: "system new", name: EventNameNew, valid: true},
+		{testName: "system destroy", name: EventNameDestroy, valid: true},
+		{testName: "with spaces", name: "Payment Received", valid: false},
+		{testName: "with slash", name: "bad/name", valid: false},
+	}
+	for _, tc := range tests {
+		suite.Run(tc.testName, func() {
+			suite.Equal(tc.valid, isValidEventName(tc.name))
+		})
+	}
 }
 
 func (suite *EventSuite) TestSystemEventNames() {

@@ -3,3 +3,8 @@ graph TD
 {{ $subdomainKey := nodeid "subdomain" .Key -}}
     {{ $subdomainKey }}["{{ .Name }}"]
 {{ end -}}
+{{ range .Associations -}}
+{{ $problemSubdomainKey := nodeid "subdomain" .ProblemSubdomainKey -}}
+{{ $solutionSubdomainKey := nodeid "subdomain" .SolutionSubdomainKey -}}
+    {{ $problemSubdomainKey }} -.-> {{ $solutionSubdomainKey }}
+{{ end -}}

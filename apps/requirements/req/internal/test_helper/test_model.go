@@ -2,7 +2,6 @@ package test_helper
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
@@ -73,16 +72,16 @@ const (
 	notesClassSupplier      = "Class scratch (supplier): lead-time attribute."
 	notesClassShipment      = "Class scratch (shipment): tracking ID format."
 	notesClassRoute         = "Class scratch (route): multi-stop sequencing."
-	notesClassDummy         = "Class scratch (dummy): auto-generated filler."
-	notesUCGenManagement    = "Use-case-gen scratch (management): extend vs include."
-	notesUCGenView          = "Use-case-gen scratch (view): read-only boundary."
-	notesUCGenCancel        = "Use-case-gen scratch (cancel): compensation flow."
-	notesUCPlaceOrder       = "Use-case scratch (place order): payment timeout."
-	notesUCViewOrder        = "Use-case scratch (view order): PII masking rule."
-	notesUCManageOrder      = "Use-case scratch (manage order): bulk edit limits."
-	notesUCCancelOrder      = "Use-case scratch (cancel order): restocking fee."
-	notesUCViewOrders       = "Use-case scratch (view orders): pagination default."
-	notesUCCancelOrders     = "Use-case scratch (cancel orders): batch threshold."
+
+	notesUCGenManagement = "Use-case-gen scratch (management): extend vs include."
+	notesUCGenView       = "Use-case-gen scratch (view): read-only boundary."
+	notesUCGenCancel     = "Use-case-gen scratch (cancel): compensation flow."
+	notesUCPlaceOrder    = "Use-case scratch (place order): payment timeout."
+	notesUCViewOrder     = "Use-case scratch (view order): PII masking rule."
+	notesUCManageOrder   = "Use-case scratch (manage order): bulk edit limits."
+	notesUCCancelOrder   = "Use-case scratch (cancel order): restocking fee."
+	notesUCViewOrders    = "Use-case scratch (view orders): pagination default."
+	notesUCCancelOrders  = "Use-case scratch (cancel orders): batch threshold."
 )
 
 // testKeys holds all identity keys used throughout the test model.
@@ -213,6 +212,9 @@ type testKeys struct {
 	// Domain association keys.
 	domainAssoc1, domainAssoc2, domainAssoc3 identity.Key
 
+	// Subdomain dependency association keys (same domain).
+	subdomainDepAssoc1, subdomainDepAssoc2, subdomainDepAssoc3 identity.Key
+
 	// Class association keys.
 	subdomainAssoc1, subdomainAssoc2, subdomainAssoc3       identity.Key
 	domainClassAssoc1, domainClassAssoc2, domainClassAssoc3 identity.Key
@@ -231,266 +233,6 @@ func GetTestModel() core.Model {
 		panic("failed to validate test model: " + err.Error())
 	}
 	return model
-}
-
-func GetStrictTestModel() core.Model {
-	// Add any data so that there are no incomplete parts of the model.
-	// For example the ai input package forces all classes to have attributes,
-	// but that is not needed by other parts of the system.
-	model := GetTestModel()
-
-	// Ensure every class has at least one attribute by adding a dummy if needed.
-	for domainKey, domain := range model.Domains {
-		// Ensure every domain has at least one subdomain.
-		if len(domain.Subdomains) == 0 {
-			defaultSubdomainKey, err := identity.NewSubdomainKey(domainKey, "default")
-			if err != nil {
-				panic(fmt.Sprintf("failed to create default subdomain key: %v", err))
-			}
-			defaultSubdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", notesSubdomainDefault, "")
-			domain.Subdomains = map[identity.Key]model_domain.Subdomain{
-				defaultSubdomainKey: defaultSubdomain,
-			}
-			model.Domains[domainKey] = domain
-		}
-
-		for subdomainKey, subdomain := range domain.Subdomains {
-			// Ensure every subdomain has at least 2 classes.
-			if len(subdomain.Classes) < 2 {
-				if subdomain.Classes == nil {
-					subdomain.Classes = make(map[identity.Key]model_class.Class)
-				}
-				for i := 1; len(subdomain.Classes) < 2; i++ {
-					dummyClassKey, err := identity.NewClassKey(subdomainKey, fmt.Sprintf("dummy_class_%d", i))
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy class key: %v", err))
-					}
-					dummyClass := model_class.NewClass(dummyClassKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: fmt.Sprintf("Dummy Class %d", i), Details: "Dummy class to satisfy strict requirements.", UnfinishedNotes: notesClassDummy, UmlComment: ""})
-					subdomain.Classes[dummyClassKey] = dummyClass
-				}
-			}
-			for classKey, class := range subdomain.Classes {
-				if len(class.Attributes) == 0 {
-					// Create dummy attribute key.
-					dummyAttrKey, err := identity.NewAttributeKey(classKey, "dummy_id")
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy attribute key: %v", err))
-					}
-
-					// Create dummy attribute.
-					dummyAttr, err := model_class.NewAttribute(dummyAttrKey, model_class.AttributeDetails{
-						Name: "Dummy ID", Details: "Dummy attribute to satisfy strict requirements.",
-					}, "unconstrained", nil, false, model_class.AttributeAnnotations{})
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy attribute: %v", err))
-					}
-
-					// Add to class attributes.
-					class.Attributes = append(class.Attributes, dummyAttr)
-
-					// Update the class in the subdomain.
-					subdomain.Classes[classKey] = class
-				}
-			}
-
-			// Ensure every class has a state machine.
-			for classKey, class := range subdomain.Classes {
-				if len(class.States) == 0 {
-					// Create keys for minimal state machine.
-					stateKey, err := identity.NewStateKey(classKey, "existing")
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy state key: %v", err))
-					}
-					eventKey, err := identity.NewEventKey(classKey, "_new")
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy event key: %v", err))
-					}
-					transitionKey, err := identity.NewTransitionKey(classKey, "", "_new", "", "", "existing")
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy transition key: %v", err))
-					}
-
-					// Create objects.
-					state := model_state.NewState(stateKey, "Existing", "The entity exists in the system.", "")
-					event := model_state.NewEvent(eventKey, model_state.EventNameNew, "Creates the entity.", nil)
-					transition := model_state.NewTransition(transitionKey, eventKey,
-						model_state.TransitionStateKeys{ToStateKey: &stateKey},
-						model_state.TransitionLogicKeys{},
-						"",
-					)
-
-					// Set on class.
-					class.SetStates(map[identity.Key]model_state.State{stateKey: state})
-					class.SetEvents(map[identity.Key]model_state.Event{eventKey: event})
-					class.SetTransitions(map[identity.Key]model_state.Transition{transitionKey: transition})
-
-					// Update class in subdomain.
-					subdomain.Classes[classKey] = class
-				}
-			}
-
-			// Ensure every subdomain has at least one association.
-			if len(subdomain.ClassAssociations) == 0 && len(subdomain.Classes) >= 2 {
-				// Get two class keys.
-				var classKeys []identity.Key
-				for ck := range subdomain.Classes {
-					classKeys = append(classKeys, ck)
-					if len(classKeys) == 2 {
-						break
-					}
-				}
-
-				dummyAssocKey, err := identity.NewClassAssociationKey(subdomainKey, classKeys[0], classKeys[1], "dummy_assoc")
-				if err != nil {
-					panic(fmt.Sprintf("failed to create dummy association key: %v", err))
-				}
-
-				mult1, err := model_class.NewMultiplicity(model_class.MULTIPLICITY_0_1)
-				if err != nil {
-					panic(fmt.Sprintf("failed to create multiplicity: %v", err))
-				}
-				multMany, err := model_class.NewMultiplicity(model_class.MULTIPLICITY_ANY)
-				if err != nil {
-					panic(fmt.Sprintf("failed to create multiplicity: %v", err))
-				}
-
-				dummyAssoc := model_class.NewAssociation(
-					dummyAssocKey,
-					model_class.AssociationDetails{
-						Name: "Dummy Association", Details: "Dummy association to satisfy strict requirements.",
-					},
-					model_class.AssociationEnd{ClassKey: classKeys[0], Multiplicity: mult1},
-					model_class.AssociationEnd{ClassKey: classKeys[1], Multiplicity: multMany},
-					model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""},
-				)
-				subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-					dummyAssocKey: dummyAssoc,
-				}
-			}
-
-			// Update subdomain in domain.
-			domain.Subdomains[subdomainKey] = subdomain
-		}
-		// Update domain in model.
-		model.Domains[domainKey] = domain
-	}
-
-	// Ensure all entity names match their keys via keyFromName.
-	// The AI parser validates that keys are derived from names; the base model
-	// may have names that don't match keys (which is fine for the human parser).
-	fixStrictModelNames(&model)
-
-	return model
-}
-
-// fixStrictModelNames ensures all entity names in the model produce the correct key
-// when passed through the AI parser's keyFromName function (lowercase, spaces/hyphens to underscores).
-// This is required because the AI parser validates key-name consistency.
-func fixStrictModelNames(model *core.Model) {
-	// Fix domain names.
-	for domainKey, domain := range model.Domains {
-		expectedName := nameFromKey(domainKey.SubKey)
-		if domain.Name != expectedName {
-			domain.Name = expectedName
-		}
-
-		// Fix subdomain names.
-		for subdomainKey, subdomain := range domain.Subdomains {
-			expectedName := nameFromKey(subdomainKey.SubKey)
-			if subdomain.Name != expectedName {
-				subdomain.Name = expectedName
-			}
-
-			// Fix class names.
-			for classKey, class := range subdomain.Classes {
-				expectedName := nameFromKey(classKey.SubKey)
-				if class.Name != expectedName {
-					class.Name = expectedName
-				}
-
-				// Fix attribute names.
-				for i, attr := range class.Attributes {
-					expectedName := nameFromKey(attr.Key.SubKey)
-					if attr.Name != expectedName {
-						attr.Name = expectedName
-						class.Attributes[i] = attr
-					}
-				}
-
-				subdomain.Classes[classKey] = class
-			}
-
-			// Fix use case names.
-			for ucKey, uc := range subdomain.UseCases {
-				expectedName := nameFromKey(ucKey.SubKey)
-				if uc.Name != expectedName {
-					uc.Name = expectedName
-					subdomain.UseCases[ucKey] = uc
-				}
-
-				// Fix scenario names.
-				for scenKey, scen := range uc.Scenarios {
-					expectedName := nameFromKey(scenKey.SubKey)
-					if scen.Name != expectedName {
-						scen.Name = expectedName
-						uc.Scenarios[scenKey] = scen
-					}
-				}
-			}
-
-			domain.Subdomains[subdomainKey] = subdomain
-		}
-
-		model.Domains[domainKey] = domain
-	}
-
-	// Fix actor names.
-	for actorKey, actor := range model.Actors {
-		expectedName := nameFromKey(actorKey.SubKey)
-		if actor.Name != expectedName {
-			actor.Name = expectedName
-			model.Actors[actorKey] = actor
-		}
-	}
-
-	// Fix actor generalization names.
-	for agKey, ag := range model.ActorGeneralizations {
-		expectedName := nameFromKey(agKey.SubKey)
-		if ag.Name != expectedName {
-			ag.Name = expectedName
-			model.ActorGeneralizations[agKey] = ag
-		}
-	}
-
-	// Fix global function names (names start with "_", keys start with "_" on filesystem but SubKey has _ stripped).
-	for gfKey, gf := range model.GlobalFunctions {
-		expectedName := "_" + nameFromKey(gfKey.SubKey)
-		if gf.Name != expectedName {
-			gf.Name = expectedName
-			model.GlobalFunctions[gfKey] = gf
-		}
-	}
-
-	// Fix named set names (names start with "_", keys do NOT have "_" prefix).
-	for nsKey, ns := range model.NamedSets {
-		expectedName := "_" + nameFromKey(nsKey.SubKey)
-		if ns.Name != expectedName {
-			ns.Name = expectedName
-			model.NamedSets[nsKey] = ns
-		}
-	}
-}
-
-// nameFromKey converts a snake_case key to a Title Case name where keyFromName(result) == key.
-// Example: "domain_b" -> "Domain B", "customer_class" -> "Customer Class".
-func nameFromKey(key string) string {
-	parts := strings.Split(key, "_")
-	for i, part := range parts {
-		if len(part) > 0 {
-			parts[i] = strings.ToUpper(part[:1]) + part[1:]
-		}
-	}
-	return strings.Join(parts, " ")
 }
 
 func buildTestModel() (core.Model, error) {
@@ -1175,6 +917,19 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.domainAssoc3, err = identity.NewDomainAssociationKey(k.domainB, k.domainC)
+	if err != nil {
+		return k, err
+	}
+
+	k.subdomainDepAssoc1, err = identity.NewSubdomainAssociationKey(k.domainA, k.subdomainA, k.subdomainB)
+	if err != nil {
+		return k, err
+	}
+	k.subdomainDepAssoc2, err = identity.NewSubdomainAssociationKey(k.domainA, k.subdomainA, k.subdomainD)
+	if err != nil {
+		return k, err
+	}
+	k.subdomainDepAssoc3, err = identity.NewSubdomainAssociationKey(k.domainA, k.subdomainB, k.subdomainD)
 	if err != nil {
 		return k, err
 	}
@@ -2243,6 +1998,18 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 // Domain associations
 // =========================================================================
 
+func buildSubdomainAssociations(k testKeys) map[identity.Key]model_domain.SubdomainAssociation {
+	sa1 := model_domain.NewSubdomainAssociation(k.subdomainDepAssoc1, k.subdomainA, k.subdomainB, "orders require warehouse capacity")
+	sa2 := model_domain.NewSubdomainAssociation(k.subdomainDepAssoc2, k.subdomainA, k.subdomainD, "orders feed analytics")
+	sa3 := model_domain.NewSubdomainAssociation(k.subdomainDepAssoc3, k.subdomainB, k.subdomainD, "warehouse feeds analytics")
+
+	return map[identity.Key]model_domain.SubdomainAssociation{
+		k.subdomainDepAssoc1: sa1,
+		k.subdomainDepAssoc2: sa2,
+		k.subdomainDepAssoc3: sa3,
+	}
+}
+
 func buildDomainAssociations(k testKeys) map[identity.Key]model_domain.Association {
 	da1 := model_domain.NewAssociation(k.domainAssoc1, k.domainA, k.domainB, "domain link")
 	da2 := model_domain.NewAssociation(k.domainAssoc2, k.domainA, k.domainC, "commerce to external")
@@ -2321,6 +2088,7 @@ func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain
 		k.subdomainB: subdomains[k.subdomainB],
 		k.subdomainD: subdomains[k.subdomainD],
 	}
+	domainA.SubdomainAssociations = buildSubdomainAssociations(k)
 
 	// Domain B: single subdomain (special case).
 	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", notesDomainLogistics, true, "")

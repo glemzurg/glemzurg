@@ -71,6 +71,16 @@ func (p *Parameter) Validate(ctx *coreerr.ValidationContext) error {
 	if p.Name == "" {
 		return coreerr.New(ctx, coreerr.ParamNameRequired, "Name is required", "Name")
 	}
+	if !coreerr.ValidateIdentifierName(p.Name) {
+		return coreerr.NewWithValues(
+			ctx,
+			coreerr.ParamNameInvalidChars,
+			fmt.Sprintf("Name %q must match ^[a-zA-Z][a-zA-Z0-9_]*$", p.Name),
+			"Name",
+			p.Name,
+			"^[a-zA-Z][a-zA-Z0-9_]*$",
+		)
+	}
 	if p.DataTypeRules == "" {
 		return coreerr.New(ctx, coreerr.ParamDatatypesRequired, "DataTypeRules is required", "DataTypeRules")
 	}

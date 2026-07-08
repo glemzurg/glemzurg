@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "subdomain.schema.json",
   "title": "Subdomain",
-  "description": "Schema for subdomain JSON files that define subdomains within a domain. Subdomains provide finer-grained organization within a domain. Subdomain files are located within a domain directory. The subdomain's key is derived from its path relative to the domain. If validation fails, verify 'name' is present and non-empty.",
+  "description": "Schema for subdomain JSON files that define subdomains within a domain. The subdomain identity subkey is the parent directory name under domains/{domain}/subdomains/; it is independent of the display 'name' field. Wire-format checks apply here; structural rules (e.g. default subdomain naming) are enforced by core.Model.Validate() after assembly.",
   "type": "object",
   "properties": {
     "name": {

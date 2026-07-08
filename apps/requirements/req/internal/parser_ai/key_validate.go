@@ -82,7 +82,7 @@ func ValidateKey(key, keyType, filePath string) error {
 		).WithField(keyType).WithHint("keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$")
 	}
 
-	if keyType == "domain_association_key" {
+	if keyType == "domain_association_key" || keyType == "subdomain_association_key" {
 		dotPattern := regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*\.[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
 		if dotPattern.MatchString(key) {
 			return nil
@@ -129,7 +129,7 @@ func suggestKeyFix(key, keyType string) string {
 	}
 
 	// Check for dots
-	if keyType != "domain_association_key" {
+	if keyType != "domain_association_key" && keyType != "subdomain_association_key" {
 		if strings.Contains(key, ".") {
 			issues = append(issues, "replace dots with underscores")
 		}
@@ -306,119 +306,6 @@ func validatePathComponent(path, componentName string, expectedParts int, filePa
 	}
 
 	return nil
-}
-
-// validateAssocFilenameMatchesName checks that an association filename's name component matches the name field.
-// The filename has format "from--to--name" and the name component must equal keyFromName(assoc.Name).
-func validateAssocFilenameMatchesName(filenameKey, name, filePath string) error {
-	parts := strings.Split(filenameKey, "--")
-	if len(parts) != 3 {
-		return nil // Format errors are caught by ValidateAssociationFilename
-	}
-	nameComponent := parts[2]
-	expectedName := keyFromName(name)
-	if nameComponent != expectedName {
-		return NewParseError(
-			ErrAssocNameMismatch,
-			fmt.Sprintf("association filename name component '%s' does not match name '%s' - expected name component '%s'",
-				nameComponent, name, expectedName),
-			filePath,
-		).WithField("name").WithHint(fmt.Sprintf("rename the file so the name component (third part after '--') is '%s', or change the name field to match the current filename", expectedName))
-	}
-	return nil
-}
-
-// validateFilenameMatchesName checks that a filesystem key matches the expected key derived from the name field.
-// The expected key is derived by lowercasing the name and replacing spaces and hyphens with underscores.
-// entityType is used in error messages (e.g., "action", "query").
-func validateFilenameMatchesName(key, name, entityType string, errCode int, filePath string) error {
-	expectedKey := keyFromName(name)
-	if key != expectedKey {
-		return NewParseError(
-			errCode,
-			fmt.Sprintf("%s filename '%s.json' does not match name '%s' - expected filename '%s.json'",
-				entityType, key, name, expectedKey),
-			filePath,
-		).WithField("name").WithHint(fmt.Sprintf("rename the file to '%s.json' or change the name field to match the current filename", expectedKey))
-	}
-	return nil
-}
-
-// validateDirMatchesName checks that a directory key matches the expected key derived from the name field.
-// entityType is used in error messages (e.g., "domain", "subdomain", "class").
-func validateDirMatchesName(key, name, entityType string, errCode int, filePath string) error {
-	expectedKey := keyFromName(name)
-	if key != expectedKey {
-		return NewParseError(
-			errCode,
-			fmt.Sprintf("%s directory '%s' does not match name '%s' - expected directory '%s'",
-				entityType, key, name, expectedKey),
-			filePath,
-		).WithField("name").WithHint(fmt.Sprintf("rename the directory to '%s' or change the name field to match the current directory", expectedKey))
-	}
-	return nil
-}
-
-// validateMapKeyMatchesName checks that a map key matches the expected key derived from the name field.
-// entityType is used in error messages (e.g., "attribute").
-func validateMapKeyMatchesName(key, name, entityType string, errCode int, filePath string) error {
-	expectedKey := keyFromName(name)
-	if key != expectedKey {
-		return NewParseError(
-			errCode,
-			fmt.Sprintf("%s key '%s' does not match name '%s' — expected key '%s'", entityType, key, name, expectedKey),
-			filePath,
-		).WithField(entityType + "s." + key).WithHint(fmt.Sprintf("rename the key to '%s' or change the name to match the key", expectedKey))
-	}
-	return nil
-}
-
-// prefixedFilenameKeyName holds the filename key and entity name compared during validation.
-type prefixedFilenameKeyName struct {
-	Key  string
-	Name string
-}
-
-// validatePrefixedFilenameMatchesName checks that a prefixed filename key matches the expected key.
-// Used for entities like global functions where the key has a prefix (e.g., "_") that the name also has.
-// The prefix is stripped from both key and name before comparison.
-func validatePrefixedFilenameMatchesName(keyName prefixedFilenameKeyName, prefix, entityType, extension string, errCode int, filePath string) error {
-	nameWithoutPrefix := strings.TrimPrefix(keyName.Name, prefix)
-	expectedKey := prefix + keyFromName(nameWithoutPrefix)
-	if keyName.Key != expectedKey {
-		return NewParseError(
-			errCode,
-			fmt.Sprintf("%s filename '%s%s' does not match name '%s' - expected filename '%s%s'",
-				entityType, keyName.Key, extension, keyName.Name, expectedKey, extension),
-			filePath,
-		).WithField("name").WithHint(fmt.Sprintf("rename the file to '%s%s' or change the name field to match the current filename", expectedKey, extension))
-	}
-	return nil
-}
-
-// validateNamedSetFilenameMatchesName checks that a named set filename key matches the expected key.
-// Named set names start with "_" but the filename does not include the "_" prefix.
-func validateNamedSetFilenameMatchesName(key, name string, errCode int, filePath string) error {
-	nameWithoutPrefix := strings.TrimPrefix(name, "_")
-	expectedKey := keyFromName(nameWithoutPrefix)
-	if key != expectedKey {
-		return NewParseError(
-			errCode,
-			fmt.Sprintf("named set filename '%s.nset.json' does not match name '%s' - expected filename '%s.nset.json'",
-				key, name, expectedKey),
-			filePath,
-		).WithField("name").WithHint(fmt.Sprintf("rename the file to '%s.nset.json' or change the name field to match the current filename", expectedKey))
-	}
-	return nil
-}
-
-// keyFromName derives a filesystem key from a name field.
-// It lowercases the name and replaces spaces and hyphens with underscores.
-func keyFromName(name string) string {
-	key := strings.ToLower(name)
-	key = strings.ReplaceAll(key, " ", "_")
-	key = strings.ReplaceAll(key, "-", "_")
-	return key
 }
 
 // NormalizeToKey converts a human-readable name to a valid key.

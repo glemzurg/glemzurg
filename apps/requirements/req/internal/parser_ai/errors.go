@@ -10,16 +10,14 @@ const (
 	ErrModelSchemaViolation = 1004
 
 	// Actor errors (2xxx).
-	ErrActorNameRequired       = 2001
-	ErrActorNameEmpty          = 2002
-	ErrActorTypeRequired       = 2003
-	ErrActorTypeInvalid        = 2004
-	ErrActorInvalidJSON        = 2005
-	ErrActorSchemaViolation    = 2006
-	ErrActorDuplicateKey       = 2007
-	ErrActorFilenameInvalid    = 2008
-	ErrActorKeyNameMismatch    = 2009 // Actor filename does not match keyFromName(name)
-	ErrActorGenKeyNameMismatch = 2010 // Actor generalization filename does not match keyFromName(name)
+	ErrActorNameRequired    = 2001
+	ErrActorNameEmpty       = 2002
+	ErrActorTypeRequired    = 2003
+	ErrActorTypeInvalid     = 2004
+	ErrActorInvalidJSON     = 2005
+	ErrActorSchemaViolation = 2006
+	ErrActorDuplicateKey    = 2007
+	ErrActorFilenameInvalid = 2008
 
 	// Domain errors (3xxx).
 	ErrDomainNameRequired    = 3001
@@ -28,7 +26,6 @@ const (
 	ErrDomainSchemaViolation = 3004
 	ErrDomainDuplicateKey    = 3005
 	ErrDomainDirInvalid      = 3006
-	ErrDomainKeyNameMismatch = 3007 // Domain directory name does not match keyFromName(name)
 
 	// Subdomain errors (4xxx).
 	ErrSubdomainNameRequired    = 4001
@@ -37,21 +34,18 @@ const (
 	ErrSubdomainSchemaViolation = 4004
 	ErrSubdomainDuplicateKey    = 4005
 	ErrSubdomainDirInvalid      = 4006
-	ErrSubdomainKeyNameMismatch = 4007 // Subdomain directory name does not match keyFromName(name)
 
 	// Class errors (5xxx).
-	ErrClassNameRequired        = 5001
-	ErrClassNameEmpty           = 5002
-	ErrClassInvalidJSON         = 5003
-	ErrClassSchemaViolation     = 5004
-	ErrClassDuplicateKey        = 5005
-	ErrClassDirInvalid          = 5006
-	ErrClassKeyNameMismatch     = 5012 // Class directory name does not match keyFromName(name)
-	ErrClassActorNotFound       = 5007
-	ErrClassAttributeNameEmpty  = 5008
-	ErrClassIndexInvalid        = 5009
-	ErrClassIndexAttrNotFound   = 5010
-	ErrClassAttrKeyNameMismatch = 5013 // Attribute map key does not match keyFromName(name)
+	ErrClassNameRequired       = 5001
+	ErrClassNameEmpty          = 5002
+	ErrClassInvalidJSON        = 5003
+	ErrClassSchemaViolation    = 5004
+	ErrClassDuplicateKey       = 5005
+	ErrClassDirInvalid         = 5006
+	ErrClassActorNotFound      = 5007
+	ErrClassAttributeNameEmpty = 5008
+	ErrClassIndexInvalid       = 5009
+	ErrClassIndexAttrNotFound  = 5010
 
 	// Association errors (6xxx).
 	ErrAssocNameRequired                = 6001
@@ -68,7 +62,6 @@ const (
 	ErrAssocMultiplicityInvalid         = 6012
 	ErrAssocFilenameInvalid             = 6013
 	ErrAssocDuplicateKey                = 6014
-	ErrAssocNameMismatch                = 6015
 	ErrAssocUniquenessConstraintInvalid = 6016
 
 	// State machine errors (7xxx).
@@ -97,12 +90,6 @@ const (
 	ErrTransitionGuardNotFound     = 7023
 	ErrTransitionActionNotFound    = 7024
 	ErrTransitionInitialToFinal    = 7025
-	ErrStateDuplicateName          = 7027
-	ErrEventDuplicateName          = 7028
-	ErrGuardDuplicateName          = 7029
-	ErrStateKeyNameMismatch        = 7030
-	ErrEventKeyNameMismatch        = 7031
-	ErrGuardKeyNameMismatch        = 7032
 
 	// Action errors (8xxx).
 	ErrActionNameRequired    = 8001
@@ -111,7 +98,6 @@ const (
 	ErrActionSchemaViolation = 8004
 	ErrActionDuplicateKey    = 8005
 	ErrActionFilenameInvalid = 8006
-	ErrActionDuplicateName   = 8007
 
 	// Query errors (9xxx).
 	ErrQueryNameRequired    = 9001
@@ -120,7 +106,6 @@ const (
 	ErrQuerySchemaViolation = 9004
 	ErrQueryDuplicateKey    = 9005
 	ErrQueryFilenameInvalid = 9006
-	ErrQueryDuplicateName   = 9007
 
 	// Class generalization errors (10xxx).
 	ErrClassGenNameRequired         = 10001
@@ -136,7 +121,6 @@ const (
 	ErrClassGenFilenameInvalid      = 10011
 	ErrClassGenSubclassDuplicate    = 10012
 	ErrClassGenSuperclassIsSubclass = 10013
-	ErrClassGenKeyNameMismatch      = 10014 // Class generalization filename does not match keyFromName(name)
 
 	// Actor generalization errors (12xxx).
 	ErrActorGenNameRequired       = 12001
@@ -155,7 +139,6 @@ const (
 	ErrUseCaseGenSuperclassRequired = 13005
 	ErrUseCaseGenSubclassesRequired = 13006
 	ErrUseCaseGenSubclassesEmpty    = 13007
-	ErrUseCaseGenKeyNameMismatch    = 13008 // Use case generalization filename does not match keyFromName(name)
 
 	// Logic errors (14xxx).
 	ErrLogicDescriptionRequired    = 14001
@@ -183,7 +166,6 @@ const (
 	ErrGlobalFuncNameNoUnderscore = 16005
 	ErrGlobalFuncParamEmpty       = 16006
 	ErrGlobalFuncLogicRequired    = 16007
-	ErrGlobalFuncKeyNameMismatch  = 16008 // Global function filename does not match keyFromName(name)
 
 	// Domain association errors (17xxx).
 	ErrDomainAssocProblemKeyRequired  = 17001
@@ -193,62 +175,19 @@ const (
 	ErrDomainAssocInvalidJSON         = 17005
 	ErrDomainAssocSchemaViolation     = 17006
 
-	// Tree validation errors (11xxx) - cross-reference and structural integrity.
-	ErrTreeClassActorNotFound           = 11001 // Class references an actor that doesn't exist
-	ErrTreeAssocFromClassNotFound       = 11002 // Association from_class_key not found
-	ErrTreeAssocToClassNotFound         = 11003 // Association to_class_key not found
-	ErrTreeAssocClassNotFound           = 11004 // Association association_class_key not found
-	ErrTreeClassGenSuperclassNotFound   = 11005 // Class generalization superclass_key not found
-	ErrTreeClassGenSubclassNotFound     = 11006 // Class generalization subclass_key not found
-	ErrTreeClassIndexAttrNotFound       = 11007 // Class index references attribute that doesn't exist
-	ErrTreeStateMachineStateNotFound    = 11008 // Transition references state that doesn't exist
-	ErrTreeStateMachineEventNotFound    = 11009 // Transition references event that doesn't exist
-	ErrTreeStateMachineGuardNotFound    = 11010 // Transition references guard that doesn't exist
-	ErrTreeStateMachineActionNotFound   = 11011 // Transition or state action references action that doesn't exist
-	ErrTreeTransitionNoStates           = 11012 // Transition has neither from_state_key nor to_state_key
-	ErrTreeTransitionInitialToFinal     = 11013 // Transition is both initial and final (invalid)
-	ErrTreeClassGenSuperclassIsSubclass = 11014 // Superclass cannot also be a subclass
-	ErrTreeClassGenSubclassDuplicate    = 11015 // Same class listed multiple times in subclass_keys
-	ErrTreeAssocMultiplicityInvalid     = 11016 // Invalid multiplicity format
-	ErrTreeAssocClassSameAsEndpoint     = 11025 // Association class cannot be the same as from or to class
+	// Subdomain association errors (171xx).
+	ErrSubdomainAssocProblemKeyRequired  = 17101
+	ErrSubdomainAssocProblemKeyEmpty     = 17102
+	ErrSubdomainAssocSolutionKeyRequired = 17103
+	ErrSubdomainAssocSolutionKeyEmpty    = 17104
+	ErrSubdomainAssocInvalidJSON         = 17105
+	ErrSubdomainAssocSchemaViolation     = 17106
+	ErrSubdomainAssocSameSubdomains      = 17107
 
-	// Tree completeness errors (11017+) - ensure model is complete enough for AI guidance.
-	ErrTreeModelNoActors             = 11017 // Model must have at least one actor defined
-	ErrTreeModelNoDomains            = 11018 // Model must have at least one domain defined
-	ErrTreeDomainNoSubdomains        = 11019 // Domain must have at least one subdomain defined
-	ErrTreeSubdomainTooFewClasses    = 11020 // Subdomain must have at least 2 classes defined
-	ErrTreeSubdomainNoAssociations   = 11021 // Subdomain must have at least one association defined
-	ErrTreeClassNoAttributes         = 11022 // Class must have at least one attribute defined
-	ErrTreeClassNoStateMachine       = 11023 // Class must have a state machine defined
-	ErrTreeStateMachineNoTransitions = 11024 // State machine must have at least one transition defined
-
-	// Key format errors (11026+) - keys derived from filenames must be well-formed.
+	// Key format errors (11026+) - filesystem wire-format keys must be well-formed snake_case.
 	ErrKeyInvalidFormat              = 11026 // Key has invalid format (must be lowercase snake_case)
 	ErrAssocFilenameInvalidFormat    = 11027 // Association filename has invalid format
 	ErrAssocFilenameInvalidComponent = 11028 // Association filename has invalid component (must be snake_case)
-
-	// Unreferenced entity errors (11029+) - entities must be used.
-	ErrTreeActionUnreferenced = 11029 // Action is defined but not referenced by any state or transition
-
-	// Subdomain naming errors (11030+).
-	ErrTreeSingleSubdomainNotDefault    = 11030 // Single subdomain must be named "default"
-	ErrTreeMultipleSubdomainsHasDefault = 11031 // Multiple subdomains cannot include one named "default"
-
-	// Additional tree-level errors (11032+)
-	// Domain association tree errors.
-	ErrTreeDomainAssocDomainNotFound = 11032 // Domain association references a domain that doesn't exist
-
-	// Actor generalization tree errors.
-	ErrTreeActorGenActorNotFound = 11033 // Actor generalization references an actor that doesn't exist
-
-	// Scenario/step tree errors.
-	ErrTreeScenarioStepObjectNotFound = 11034 // Scenario step references an object key that doesn't exist
-	ErrTreeScenarioStepEventNotFound  = 11035 // Scenario step references an event that doesn't exist on the referenced class
-	ErrTreeScenarioStepQueryNotFound  = 11036 // Scenario step references a query that doesn't exist on the referenced class
-
-	// State machine system-event edge errors (11037+).
-	ErrTreeTransitionInitialEventInvalid = 11037 // Initial transition must use event _new
-	ErrTreeTransitionFinalEventInvalid   = 11038 // Final transition must use event _destroy
 
 	// Use case errors (18xxx).
 	ErrUseCaseNameRequired    = 18001
@@ -257,14 +196,12 @@ const (
 	ErrUseCaseSchemaViolation = 18004
 	ErrUseCaseLevelRequired   = 18005
 	ErrUseCaseLevelInvalid    = 18006
-	ErrUseCaseKeyNameMismatch = 18007 // Use case directory name does not match keyFromName(name)
 
 	// Scenario errors (19xxx).
 	ErrScenarioNameRequired    = 19001
 	ErrScenarioNameEmpty       = 19002
 	ErrScenarioInvalidJSON     = 19003
 	ErrScenarioSchemaViolation = 19004
-	ErrScenarioKeyNameMismatch = 19005 // Scenario filename does not match keyFromName(name)
 
 	// Use case shared errors (20xxx).
 	ErrUseCaseSharedShareTypeRequired = 20001
@@ -278,7 +215,6 @@ const (
 	ErrNamedSetInvalidJSON      = 22003
 	ErrNamedSetSchemaViolation  = 22004
 	ErrNamedSetNameNoUnderscore = 22005
-	ErrNamedSetKeyNameMismatch  = 22006 // Named set filename does not match keyFromName(name)
 
 	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion.
 	ErrConvKeyConstruction       = 21001 // Identity key construction failed during conversion
@@ -309,6 +245,8 @@ const (
 	ErrConvUseCaseActorNotActorClass     = 21115 // Use case references class that is not an actor class
 	ErrConvLogicSpecInvalid              = 21116 // Logic specification (TLA+ expression) failed validation
 	ErrConvDomainAssocSameDomains        = 21117 // Domain association references same domain for problem and solution
+	ErrConvSubdomainAssocSameSubdomains  = 21121 // Subdomain association references same subdomain for problem and solution
+	ErrConvDomainSassocSingleSubdomain   = 21122 // Subdomain associations require at least two subdomains
 	ErrConvTransitionInitialEventInvalid = 21118 // Initial transition event is not _new
 	ErrConvTransitionFinalEventInvalid   = 21119 // Final transition event is not _destroy
 	ErrConvAssocUniquenessInvalid        = 21120 // Association uniqueness tuple failed validation during conversion

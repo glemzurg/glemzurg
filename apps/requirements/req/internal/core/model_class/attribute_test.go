@@ -75,6 +75,21 @@ func (suite *AttributeSuite) TestValidate() {
 			errstr: "Name",
 		},
 		{
+			testName: "valid name with spaces",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Order Date",
+			},
+		},
+		{
+			testName: "error name with slash",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Human / Event / League / Game",
+			},
+			errstr: "ATTR_NAME_INVALID_PATTERN",
+		},
+		{
 			testName: "valid with DerivationPolicy",
 			attribute: Attribute{
 				Key:              validKey,

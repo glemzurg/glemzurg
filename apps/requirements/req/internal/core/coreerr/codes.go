@@ -95,6 +95,7 @@ const (
 	ParamKeyInvalid                   Code = "PARAM_KEY_INVALID"                     // Parameter key failed validation.
 	ParamKeyTypeInvalid               Code = "PARAM_KEY_TYPE_INVALID"                // Parameter key is not KEY_TYPE_PARAMETER.
 	ParamNameRequired                 Code = "PARAM_NAME_REQUIRED"                   // Parameter Name is empty.
+	ParamNameInvalidChars             Code = "PARAM_NAME_INVALID_CHARS"              // Parameter Name contains spaces or characters outside A-Za-z0-9 underscore.
 	ParamDatatypesRequired            Code = "PARAM_DATATYPES_REQUIRED"              // Parameter DataTypes is empty.
 	ParamDatatypeKeyMismatch          Code = "PARAM_DATATYPE_KEY_MISMATCH"           // Parameter DataType.Key does not match Parameter.Name.
 	ParamInvariantTypeInvalid         Code = "PARAM_INVARIANT_TYPE_INVALID"          // Parameter invariant has wrong logic type.
@@ -133,12 +134,13 @@ const (
 	// ---------------------------------------------------------------
 	// Event errors.
 
-	EventKeyInvalid             Code = "EVENT_KEY_INVALID"              // Event key failed validation.
-	EventKeyTypeInvalid         Code = "EVENT_KEY_TYPE_INVALID"         // Key is not KEY_TYPE_EVENT.
-	EventNameRequired           Code = "EVENT_NAME_REQUIRED"            // Event Name is empty.
-	EventNameInvalidChars       Code = "EVENT_NAME_INVALID_CHARS"       // Event Name contains characters outside A-Za-z0-9 space hyphen underscore.
-	EventParameterNameRequired  Code = "EVENT_PARAMETER_NAME_REQUIRED"  // An entry in ParameterNames is empty.
-	EventParameterNameDuplicate Code = "EVENT_PARAMETER_NAME_DUPLICATE" // ParameterNames contains duplicate names (after normalization).
+	EventKeyInvalid                Code = "EVENT_KEY_INVALID"                  // Event key failed validation.
+	EventKeyTypeInvalid            Code = "EVENT_KEY_TYPE_INVALID"             // Key is not KEY_TYPE_EVENT.
+	EventNameRequired              Code = "EVENT_NAME_REQUIRED"                // Event Name is empty.
+	EventNameInvalidChars          Code = "EVENT_NAME_INVALID_CHARS"           // Event Name contains spaces or characters outside A-Za-z0-9 underscore (system events _new and _destroy excepted).
+	EventParameterNameRequired     Code = "EVENT_PARAMETER_NAME_REQUIRED"      // An entry in ParameterNames is empty.
+	EventParameterNameInvalidChars Code = "EVENT_PARAMETER_NAME_INVALID_CHARS" // An entry in ParameterNames contains spaces or characters outside A-Za-z0-9 underscore.
+	EventParameterNameDuplicate    Code = "EVENT_PARAMETER_NAME_DUPLICATE"     // ParameterNames contains duplicate names (after normalization).
 
 	// ---------------------------------------------------------------
 	// Query errors.
@@ -226,6 +228,7 @@ const (
 	AttrKeyTypeInvalid        Code = "ATTR_KEY_TYPE_INVALID"        // Key is not KEY_TYPE_ATTRIBUTE.
 	AttrDuplicateKey          Code = "ATTR_DUPLICATE_KEY"           // Class lists the same attribute key more than once.
 	AttrNameRequired          Code = "ATTR_NAME_REQUIRED"           // Attribute Name is empty.
+	AttrNameInvalidPattern    Code = "ATTR_NAME_INVALID_PATTERN"    // Attribute Name does not match ^[a-zA-Z][a-zA-Z0-9_ ]*$.
 	AttrDerivationTypeInvalid Code = "ATTR_DERIVATION_TYPE_INVALID" // DerivationPolicy logic type is invalid.
 	AttrInvariantTypeInvalid  Code = "ATTR_INVARIANT_TYPE_INVALID"  // Attribute invariant has wrong logic type.
 	AttrInvariantDuplicateLet Code = "ATTR_INVARIANT_DUPLICATE_LET" // Attribute invariant has duplicate let target.
@@ -401,6 +404,21 @@ const (
 	DassocSameDomains        Code = "DASSOC_SAME_DOMAINS"        // ProblemDomainKey and SolutionDomainKey are the same.
 	DassocProblemNotfound    Code = "DASSOC_PROBLEM_NOTFOUND"    // ProblemDomainKey references non-existent domain.
 	DassocSolutionNotfound   Code = "DASSOC_SOLUTION_NOTFOUND"   // SolutionDomainKey references non-existent domain.
+
+	// ---------------------------------------------------------------
+	// SubdomainAssociation errors.
+
+	SassocKeyInvalid            Code = "SASSOC_KEY_INVALID"             // SubdomainAssociation key failed validation.
+	SassocKeyTypeInvalid        Code = "SASSOC_KEY_TYPE_INVALID"        // Key is not KEY_TYPE_SUBDOMAIN_ASSOCIATION.
+	SassocProblemkeyInvalid     Code = "SASSOC_PROBLEMKEY_INVALID"      // ProblemSubdomainKey failed validation.
+	SassocProblemkeyType        Code = "SASSOC_PROBLEMKEY_TYPE"         // ProblemSubdomainKey is not KEY_TYPE_SUBDOMAIN.
+	SassocSolutionkeyInvalid    Code = "SASSOC_SOLUTIONKEY_INVALID"     // SolutionSubdomainKey failed validation.
+	SassocSolutionkeyType       Code = "SASSOC_SOLUTIONKEY_TYPE"        // SolutionSubdomainKey is not KEY_TYPE_SUBDOMAIN.
+	SassocSameSubdomains        Code = "SASSOC_SAME_SUBDOMAINS"         // ProblemSubdomainKey and SolutionSubdomainKey are the same.
+	SassocProblemNotfound       Code = "SASSOC_PROBLEM_NOTFOUND"        // ProblemSubdomainKey references non-existent subdomain.
+	SassocSolutionNotfound      Code = "SASSOC_SOLUTION_NOTFOUND"       // SolutionSubdomainKey references non-existent subdomain.
+	SassocCrossDomain           Code = "SASSOC_CROSS_DOMAIN"            // Subdomain key is not in this domain.
+	DomainSassocSingleSubdomain Code = "DOMAIN_SASSOC_SINGLE_SUBDOMAIN" // Subdomain associations require at least two subdomains.
 
 	// ---------------------------------------------------------------
 	// Subdomain errors.

@@ -176,6 +176,38 @@ func (suite *ErrorSuite) TestNewWithValuesPanicsOnEmptyMessage() {
 	suite.Panics(func() { _ = NewWithValues(ctx, "CODE", "", "Field", "got", "want") })
 }
 
+func (suite *ErrorSuite) TestNamePatternValidators() {
+	tests := []struct {
+		testName  string
+		validator func(string) bool
+		valid     []string
+		invalid   []string
+	}{
+		{
+			testName:  "attribute names",
+			validator: ValidateAttributeName,
+			valid:     []string{"Order Date", "Total_Amount", "A"},
+			invalid:   []string{"", "Human / Event", "1bad", "_leading"},
+		},
+		{
+			testName:  "identifier names",
+			validator: ValidateIdentifierName,
+			valid:     []string{"amount", "user_id", "CountryCode"},
+			invalid:   []string{"", "user id", "bad/name", "_new", "user-id"},
+		},
+	}
+	for _, tc := range tests {
+		suite.Run(tc.testName, func() {
+			for _, name := range tc.valid {
+				suite.True(tc.validator(name), "expected valid: %q", name)
+			}
+			for _, name := range tc.invalid {
+				suite.False(tc.validator(name), "expected invalid: %q", name)
+			}
+		})
+	}
+}
+
 func (suite *ErrorSuite) TestPathIsPopulated() {
 	ctx := NewContext("model", "").Child("domains", "d1").Child("classes", "order")
 	err := New(ctx, "TEST_CODE", "msg", "Field")

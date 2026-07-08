@@ -28,6 +28,7 @@ type Requirements struct {
 	Domains                map[identity.Key]model_domain.Domain
 	Subdomains             map[identity.Key]model_domain.Subdomain
 	DomainAssociations     map[identity.Key]model_domain.Association
+	SubdomainAssociations  map[identity.Key]model_domain.SubdomainAssociation
 	Generalizations        map[identity.Key]model_class.Generalization
 	Classes                map[identity.Key]model_class.Class
 	Attributes             map[identity.Key]model_class.Attribute
@@ -73,6 +74,7 @@ func (r *Requirements) flattenModel() {
 	r.Domains = make(map[identity.Key]model_domain.Domain)
 	r.Subdomains = make(map[identity.Key]model_domain.Subdomain)
 	r.DomainAssociations = make(map[identity.Key]model_domain.Association)
+	r.SubdomainAssociations = make(map[identity.Key]model_domain.SubdomainAssociation)
 	r.Generalizations = make(map[identity.Key]model_class.Generalization)
 	r.Classes = make(map[identity.Key]model_class.Class)
 	r.Attributes = make(map[identity.Key]model_class.Attribute)
@@ -115,6 +117,8 @@ func (r *Requirements) flattenModel() {
 	// Walk domains.
 	for domainKey, domain := range r.Model.Domains {
 		r.Domains[domainKey] = domain
+
+		maps.Copy(r.SubdomainAssociations, domain.SubdomainAssociations)
 
 		// Domain-level class associations.
 		maps.Copy(r.ClassAssociations, domain.ClassAssociations)

@@ -7,12 +7,12 @@
   "properties": {
     "problem_domain_key": {
       "type": "string",
-      "description": "The key of the problem domain that enforces requirements. Must match the directory name of an existing domain (e.g., 'order_management'). The domain directory must exist in the model root. If validation fails: verify the domain directory exists and the key matches the directory name exactly.",
+      "description": "Identity subkey of the problem domain (e.g., 'order_management' for domains/order_management/). Independent of the domain display name. Existence is validated by core.Model.Validate() after assembly.",
       "minLength": 1
     },
     "solution_domain_key": {
       "type": "string",
-      "description": "The key of the solution domain that satisfies the requirements. Must match the directory name of an existing domain (e.g., 'inventory'). Must be different from problem_domain_key. If validation fails: verify the domain directory exists and the key matches the directory name exactly.",
+      "description": "Identity subkey of the solution domain. Must differ from problem_domain_key. Existence is validated by core.Model.Validate() after assembly.",
       "minLength": 1
     },
     "uml_comment": {

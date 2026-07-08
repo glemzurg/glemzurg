@@ -72,6 +72,10 @@ func (s *MapValidationErrorSuite) TestMappedCoreCodeWithPath() {
 		// Domain association same domains.
 		{"dassoc same domains", coreerr.DassocSameDomains, ErrConvDomainAssocSameDomains},
 
+		// Subdomain association rules.
+		{"sassoc same subdomains", coreerr.SassocSameSubdomains, ErrConvSubdomainAssocSameSubdomains},
+		{"domain sassoc single subdomain", coreerr.DomainSassocSingleSubdomain, ErrConvDomainSassocSingleSubdomain},
+
 		// Association class same as endpoint.
 		{"assoc assocclass same from", coreerr.AssocAssocclassSameFrom, ErrConvAssocClassSameAsEndpoint},
 		{"assoc assocclass same to", coreerr.AssocAssocclassSameTo, ErrConvAssocClassSameAsEndpoint},
@@ -265,6 +269,8 @@ func (s *MapValidationErrorSuite) TestAllCoreCodesInMapHaveMatchingParserCode() 
 		ErrConvUseCaseActorNotActorClass:     true,
 		ErrConvLogicSpecInvalid:              true,
 		ErrConvDomainAssocSameDomains:        true,
+		ErrConvSubdomainAssocSameSubdomains:  true,
+		ErrConvDomainSassocSingleSubdomain:   true,
 		ErrConvTransitionInitialEventInvalid: true,
 		ErrConvTransitionFinalEventInvalid:   true,
 		ErrConvAssocUniquenessInvalid:        true,

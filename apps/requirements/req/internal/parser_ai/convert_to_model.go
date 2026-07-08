@@ -25,7 +25,7 @@ func convErr(code int, msg, file string) *ParseError {
 }
 
 // ConvertToModel converts an inputModel to a core.Model.
-// The input model is assumed to have been validated by readModelTree.
+// The input model is assumed to have been loaded from the filesystem with wire-format checks only.
 // This function performs the conversion and validates the resulting core.Model.
 func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
 	result, err := convertModelScalars(input, modelKey)
@@ -40,6 +40,8 @@ func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
 	if err := convertDomainsAndAssociationsToModel(input, result); err != nil {
 		return nil, err
 	}
+
+	removeEmptyDefaultSubdomains(result)
 
 	// Validate the resulting model
 	if err := result.Validate(); err != nil {
@@ -339,14 +341,15 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 	}
 
 	result := model_domain.Domain{
-		Key:               domainKey,
-		Name:              domain.Name,
-		Details:           domain.Details,
-		UnfinishedNotes:   domain.UnfinishedNotes,
-		Realized:          domain.Realized,
-		UmlComment:        domain.UMLComment,
-		Subdomains:        make(map[identity.Key]model_domain.Subdomain),
-		ClassAssociations: make(map[identity.Key]model_class.Association),
+		Key:                   domainKey,
+		Name:                  domain.Name,
+		Details:               domain.Details,
+		UnfinishedNotes:       domain.UnfinishedNotes,
+		Realized:              domain.Realized,
+		UmlComment:            domain.UMLComment,
+		Subdomains:            make(map[identity.Key]model_domain.Subdomain),
+		SubdomainAssociations: make(map[identity.Key]model_domain.SubdomainAssociation),
+		ClassAssociations:     make(map[identity.Key]model_class.Association),
 	}
 
 	// Convert subdomains
@@ -356,6 +359,14 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 			return model_domain.Domain{}, err
 		}
 		result.Subdomains[converted.Key] = converted
+	}
+
+	for key, assoc := range domain.SubdomainAssociations {
+		converted, err := convertSubdomainAssocToModel(keyStr, key, assoc)
+		if err != nil {
+			return model_domain.Domain{}, err
+		}
+		result.SubdomainAssociations[converted.Key] = converted
 	}
 
 	// Convert domain-level class associations
@@ -368,6 +379,50 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 	}
 
 	return result, nil
+}
+
+func convertSubdomainAssocToModel(domainKeyStr, keyStr string, assoc *inputSubdomainAssociation) (model_domain.SubdomainAssociation, error) {
+	assocFile := fmt.Sprintf("domains/%s/subdomain_associations/%s.subdomain_assoc.json", domainKeyStr, keyStr)
+
+	domainKey, err := identity.NewDomainKey(domainKeyStr)
+	if err != nil {
+		return model_domain.SubdomainAssociation{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create domain key '%s': %s", domainKeyStr, err.Error()),
+			assocFile,
+		).WithField("domain_key")
+	}
+	problemSubdomainKey, err := identity.NewSubdomainKey(domainKey, assoc.ProblemSubdomainKey)
+	if err != nil {
+		return model_domain.SubdomainAssociation{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create problem subdomain key '%s': %s", assoc.ProblemSubdomainKey, err.Error()),
+			assocFile,
+		).WithField("problem_subdomain_key")
+	}
+	solutionSubdomainKey, err := identity.NewSubdomainKey(domainKey, assoc.SolutionSubdomainKey)
+	if err != nil {
+		return model_domain.SubdomainAssociation{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create solution subdomain key '%s': %s", assoc.SolutionSubdomainKey, err.Error()),
+			assocFile,
+		).WithField("solution_subdomain_key")
+	}
+	key, err := identity.NewSubdomainAssociationKey(domainKey, problemSubdomainKey, solutionSubdomainKey)
+	if err != nil {
+		return model_domain.SubdomainAssociation{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create subdomain association key: %s", err.Error()),
+			assocFile,
+		).WithField("key")
+	}
+
+	return model_domain.SubdomainAssociation{
+		Key:                  key,
+		ProblemSubdomainKey:  problemSubdomainKey,
+		SolutionSubdomainKey: solutionSubdomainKey,
+		UmlComment:           assoc.UmlComment,
+	}, nil
 }
 
 // subdomainConvContext holds the context needed for subdomain-level conversions.
@@ -1797,4 +1852,49 @@ func normalizeMultiplicity(mult string) string {
 		return trimmed + "..many"
 	}
 	return mult
+}
+
+// parseDomainScopedKey parses a key in subdomain/class format.
+func parseDomainScopedKey(key string) (subdomain, class string, err error) {
+	parts := strings.Split(key, "/")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("expected format 'subdomain/class', got '%s'", key)
+	}
+	return parts[0], parts[1], nil
+}
+
+// parseModelScopedKey parses a key in domain/subdomain/class format.
+func parseModelScopedKey(key string) (domain, subdomain, class string, err error) {
+	parts := strings.Split(key, "/")
+	if len(parts) != 3 {
+		return "", "", "", fmt.Errorf("expected format 'domain/subdomain/class', got '%s'", key)
+	}
+	return parts[0], parts[1], parts[2], nil
+}
+
+const defaultSubdomainName = "default"
+
+// removeEmptyDefaultSubdomains drops placeholder default subdomains with no content
+// and normalizes empty subdomain maps to nil, matching parser_human assembly.
+func removeEmptyDefaultSubdomains(model *core.Model) {
+	for domainKey, domain := range model.Domains {
+		for subdomainKey, subdomain := range domain.Subdomains {
+			if subdomainKey.SubKey == defaultSubdomainName && isEmptySubdomain(subdomain) {
+				delete(domain.Subdomains, subdomainKey)
+			}
+		}
+		if len(domain.Subdomains) == 0 {
+			domain.Subdomains = nil
+		}
+		model.Domains[domainKey] = domain
+	}
+}
+
+func isEmptySubdomain(subdomain model_domain.Subdomain) bool {
+	return len(subdomain.Classes) == 0 &&
+		len(subdomain.Generalizations) == 0 &&
+		len(subdomain.UseCases) == 0 &&
+		len(subdomain.UseCaseGeneralizations) == 0 &&
+		len(subdomain.ClassAssociations) == 0 &&
+		len(subdomain.UseCaseShares) == 0
 }

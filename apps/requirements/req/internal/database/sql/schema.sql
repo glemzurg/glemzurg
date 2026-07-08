@@ -177,6 +177,27 @@ COMMENT ON COLUMN domain_association.uml_comment IS 'A comment that appears in t
 
 --------------------------------------------------------------
 
+CREATE TABLE subdomain_association (
+  model_key text NOT NULL,
+  association_key text NOT NULL,
+  problem_subdomain_key text NOT NULL,
+  solution_subdomain_key text NOT NULL,
+  uml_comment text DEFAULT NULL,
+  PRIMARY KEY (model_key, association_key),
+  CONSTRAINT fk_subdomain_association_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
+  CONSTRAINT fk_subdomain_association_problem FOREIGN KEY (model_key, problem_subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE,
+  CONSTRAINT fk_subdomain_association_solution FOREIGN KEY (model_key, solution_subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE subdomain_association IS 'A semantic relationship between two subdomains in the same domain.';
+COMMENT ON COLUMN subdomain_association.model_key IS 'The model this association is part of.';
+COMMENT ON COLUMN subdomain_association.association_key IS 'The internal ID.';
+COMMENT ON COLUMN subdomain_association.problem_subdomain_key IS 'The subdomain that defines requirements for the other.';
+COMMENT ON COLUMN subdomain_association.solution_subdomain_key IS 'The subdomain that is constrained by the others requirements.';
+COMMENT ON COLUMN subdomain_association.uml_comment IS 'A comment that appears in the diagrams.';
+
+--------------------------------------------------------------
+
 CREATE TABLE actor_generalization (
   model_key text NOT NULL,
   generalization_key text NOT NULL,

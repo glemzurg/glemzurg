@@ -265,6 +265,42 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 	suite.Empty(emptyResult)
 }
 
+func (suite *DomainSuite) TestValidateSubdomainAssociationsRequireMultipleSubdomains() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	defaultSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
+	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "billing"))
+	solutionSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "fulfillment"))
+	assocKey := helper.Must(identity.NewSubdomainAssociationKey(domainKey, otherSubdomainKey, solutionSubdomainKey))
+
+	singleSubdomainDomain := Domain{
+		Key:  domainKey,
+		Name: "Domain",
+		Subdomains: map[identity.Key]Subdomain{
+			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: "Default"},
+		},
+		SubdomainAssociations: map[identity.Key]SubdomainAssociation{
+			assocKey: NewSubdomainAssociation(assocKey, otherSubdomainKey, solutionSubdomainKey, ""),
+		},
+	}
+	ctx := coreerr.NewContext("test", "")
+	err := singleSubdomainDomain.ValidateWithParent(ctx, nil)
+	suite.Require().ErrorContains(err, "only one subdomain")
+
+	multiSubdomainDomain := Domain{
+		Key:  domainKey,
+		Name: "Domain",
+		Subdomains: map[identity.Key]Subdomain{
+			otherSubdomainKey:    {Key: otherSubdomainKey, Name: "Billing"},
+			solutionSubdomainKey: {Key: solutionSubdomainKey, Name: "Fulfillment"},
+		},
+		SubdomainAssociations: map[identity.Key]SubdomainAssociation{
+			assocKey: NewSubdomainAssociation(assocKey, otherSubdomainKey, solutionSubdomainKey, ""),
+		},
+	}
+	err = multiSubdomainDomain.ValidateWithParent(ctx, nil)
+	suite.Require().NoError(err)
+}
+
 // TestValidateWithParentDeepTree tests that key validation propagates through the full tree:
 // domain → subdomain → class → guard/action/query logic keys.
 func (suite *DomainSuite) TestValidateWithParentDeepTree() {

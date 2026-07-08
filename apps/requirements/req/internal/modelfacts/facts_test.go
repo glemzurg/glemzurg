@@ -80,8 +80,8 @@ func TestFormatAssociationFact(t *testing.T) {
 			fromMult:  "1",
 			toMult:    "1..many",
 			wantSubstr: []string{
-				"each actor a (can game with) links to one or more resource bs",
-				"each resource b links to exactly one actor a",
+				"each Actor A (can game with) links to one or more Resource Bs",
+				"each Resource B links to exactly one Actor A",
 				"(Fixture detail text.)",
 			},
 		},
@@ -96,8 +96,8 @@ func TestFormatAssociationFact(t *testing.T) {
 			fromMult:  "1",
 			toMult:    "any",
 			wantSubstr: []string{
-				"each container (is subdivided into) links to any number of parts",
-				"each part links to exactly one container",
+				"each Container (is subdivided into) links to any number of Parts",
+				"each Part links to exactly one Container",
 				"(Fixture split detail.)",
 			},
 		},
@@ -271,19 +271,19 @@ func TestFormatIndexFact(t *testing.T) {
 			name:      "key index single attribute",
 			className: "Currency",
 			attrNames: []string{"Abbr"},
-			want:      "No currencies can share the same Abbr.",
+			want:      "No Currencies can share the same Abbr.",
 		},
 		{
 			name:      "secondary index composite",
 			className: "Widget",
 			attrNames: []string{"Email", "Tenant"},
-			want:      "No widgets can share the same Email and Tenant combination.",
+			want:      "No Widgets can share the same Email and Tenant combination.",
 		},
 		{
 			name:      "secondary index three attributes",
 			className: "Order",
 			attrNames: []string{"Alpha", "Beta", "Gamma"},
-			want:      "No orders can share the same Alpha, Beta, and Gamma combination.",
+			want:      "No Orders can share the same Alpha, Beta, and Gamma combination.",
 		},
 	}
 	for _, tc := range cases {
@@ -308,14 +308,14 @@ func TestAssociationFactsForSubdomain_testModel(t *testing.T) {
 	require.GreaterOrEqual(t, len(facts), 3)
 
 	joined := strings.Join(facts, "\n")
-	assert.Contains(t, joined, "each order (order contains products) links to one or more products")
-	assert.Contains(t, joined, "each product links to exactly one order")
-	assert.Contains(t, joined, "each order–product pairing is a line item")
-	assert.Contains(t, joined, "each order (order belongs to customer) links to exactly one customer")
-	assert.Contains(t, joined, "each customer links to one or more orders")
-	assert.Contains(t, joined, "each product (product has line items) links to one or more line items")
-	assert.Contains(t, joined, "each line item links to exactly one product")
-	assert.Contains(t, joined, "each order–customer pairing has the uniqueness → Customer Code")
+	assert.Contains(t, joined, "each Order (order contains products) links to one or more Products")
+	assert.Contains(t, joined, "each Product links to exactly one Order")
+	assert.Contains(t, joined, "each Order–Product pairing is a Line Item")
+	assert.Contains(t, joined, "each Order (order belongs to customer) links to exactly one Customer")
+	assert.Contains(t, joined, "each Customer links to one or more Orders")
+	assert.Contains(t, joined, "each Product (product has line items) links to one or more Line Items")
+	assert.Contains(t, joined, "each Line Item links to exactly one Product")
+	assert.Contains(t, joined, "each Order–Customer pairing has the uniqueness → Customer Code")
 	assert.Contains(t, joined, "Warehousing::Warehouse")
 }
 
@@ -430,5 +430,5 @@ func TestIndexFactsForSubdomain_testModel(t *testing.T) {
 	require.Len(t, facts, 2)
 
 	joined := strings.Join(facts, "\n")
-	assert.Contains(t, joined, "No orders can share the same Total.")
+	assert.Contains(t, joined, "No Orders can share the same Total.")
 }

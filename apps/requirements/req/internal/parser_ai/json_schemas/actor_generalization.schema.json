@@ -16,12 +16,12 @@
     },
     "superclass_key": {
       "type": "string",
-      "description": "Key referencing the superclass (parent actor) in the actor generalization. The actor key matches the actor filename without extension: for an actor at 'actors/user.actor.json', the key is 'user'. The superclass is the general actor that the subclass actors specialize. If validation fails: verify the actor file exists at the expected path and the key matches the filename pattern exactly.",
+      "description": "Identity subkey of the superclass actor (actor filename stem under actors/, e.g. 'user' for actors/user.actor.json). Independent of display names. Cardinality and cross-references are enforced by core.Model.Validate() after assembly.",
       "minLength": 1
     },
     "subclass_keys": {
       "type": "array",
-      "description": "Keys referencing the subclass (child actors) that inherit from the superclass actor. Each key matches the actor filename without extension. There must be at least one subclass. If validation fails: verify each actor file exists and keys are correctly formatted.",
+      "description": "Identity subkeys of subclass actors (actor filename stems). At least one required by schema; generalization cardinality is enforced by core.Model.Validate() after assembly.",
       "items": {
         "type": "string",
         "description": "An actor key referencing a subclass actor. Must match an actor file using the filename pattern (e.g., 'admin', 'customer'). If validation fails: verify the actor file exists at 'actors/{key}.actor.json'.",

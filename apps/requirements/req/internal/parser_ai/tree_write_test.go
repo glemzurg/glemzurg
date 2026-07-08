@@ -6,10 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestClassAssociationFilename(t *testing.T) {
+func TestClassAssociationMapKey(t *testing.T) {
 	tests := []struct {
 		name     string
 		assoc    *inputClassAssociation
+		nameKey  string
 		expected string
 	}{
 		{
@@ -17,33 +18,33 @@ func TestClassAssociationFilename(t *testing.T) {
 			assoc: &inputClassAssociation{
 				FromClassKey: "book_order",
 				ToClassKey:   "book_order_line",
-				Name:         "order lines",
 			},
-			expected: "book_order--book_order_line--order_lines.assoc.json",
+			nameKey:  "has_lines",
+			expected: "book_order--book_order_line--has_lines",
 		},
 		{
 			name: "domain level",
 			assoc: &inputClassAssociation{
 				FromClassKey: "orders/book_order",
 				ToClassKey:   "shipping/shipment",
-				Name:         "order shipment",
 			},
-			expected: "orders.book_order--shipping.shipment--order_shipment.assoc.json",
+			nameKey:  "ships_via",
+			expected: "orders.book_order--shipping.shipment--ships_via",
 		},
 		{
 			name: "model level",
 			assoc: &inputClassAssociation{
 				FromClassKey: "order_fulfillment/default/book_order_line",
 				ToClassKey:   "inventory/default/inventory_item",
-				Name:         "order inventory",
 			},
-			expected: "order_fulfillment.default.book_order_line--inventory.default.inventory_item--order_inventory.assoc.json",
+			nameKey:  "reserves",
+			expected: "order_fulfillment.default.book_order_line--inventory.default.inventory_item--reserves",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := classAssociationFilename(tt.assoc)
+			got := classAssociationMapKey(tt.assoc, tt.nameKey)
 			assert.Equal(t, tt.expected, got)
 		})
 	}

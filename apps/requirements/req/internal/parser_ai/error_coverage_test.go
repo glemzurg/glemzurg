@@ -22,16 +22,14 @@ func allErrorCodes() map[int]string {
 		ErrModelSchemaViolation: "ErrModelSchemaViolation",
 
 		// Actor errors (2xxx).
-		ErrActorNameRequired:       "ErrActorNameRequired",
-		ErrActorNameEmpty:          "ErrActorNameEmpty",
-		ErrActorTypeRequired:       "ErrActorTypeRequired",
-		ErrActorTypeInvalid:        "ErrActorTypeInvalid",
-		ErrActorInvalidJSON:        "ErrActorInvalidJSON",
-		ErrActorSchemaViolation:    "ErrActorSchemaViolation",
-		ErrActorDuplicateKey:       "ErrActorDuplicateKey",
-		ErrActorFilenameInvalid:    "ErrActorFilenameInvalid",
-		ErrActorKeyNameMismatch:    "ErrActorKeyNameMismatch",
-		ErrActorGenKeyNameMismatch: "ErrActorGenKeyNameMismatch",
+		ErrActorNameRequired:    "ErrActorNameRequired",
+		ErrActorNameEmpty:       "ErrActorNameEmpty",
+		ErrActorTypeRequired:    "ErrActorTypeRequired",
+		ErrActorTypeInvalid:     "ErrActorTypeInvalid",
+		ErrActorInvalidJSON:     "ErrActorInvalidJSON",
+		ErrActorSchemaViolation: "ErrActorSchemaViolation",
+		ErrActorDuplicateKey:    "ErrActorDuplicateKey",
+		ErrActorFilenameInvalid: "ErrActorFilenameInvalid",
 
 		// Domain errors (3xxx).
 		ErrDomainNameRequired:    "ErrDomainNameRequired",
@@ -40,7 +38,6 @@ func allErrorCodes() map[int]string {
 		ErrDomainSchemaViolation: "ErrDomainSchemaViolation",
 		ErrDomainDuplicateKey:    "ErrDomainDuplicateKey",
 		ErrDomainDirInvalid:      "ErrDomainDirInvalid",
-		ErrDomainKeyNameMismatch: "ErrDomainKeyNameMismatch",
 
 		// Subdomain errors (4xxx).
 		ErrSubdomainNameRequired:    "ErrSubdomainNameRequired",
@@ -49,21 +46,18 @@ func allErrorCodes() map[int]string {
 		ErrSubdomainSchemaViolation: "ErrSubdomainSchemaViolation",
 		ErrSubdomainDuplicateKey:    "ErrSubdomainDuplicateKey",
 		ErrSubdomainDirInvalid:      "ErrSubdomainDirInvalid",
-		ErrSubdomainKeyNameMismatch: "ErrSubdomainKeyNameMismatch",
 
 		// Class errors (5xxx).
-		ErrClassNameRequired:        "ErrClassNameRequired",
-		ErrClassNameEmpty:           "ErrClassNameEmpty",
-		ErrClassInvalidJSON:         "ErrClassInvalidJSON",
-		ErrClassSchemaViolation:     "ErrClassSchemaViolation",
-		ErrClassDuplicateKey:        "ErrClassDuplicateKey",
-		ErrClassDirInvalid:          "ErrClassDirInvalid",
-		ErrClassActorNotFound:       "ErrClassActorNotFound",
-		ErrClassAttributeNameEmpty:  "ErrClassAttributeNameEmpty",
-		ErrClassIndexInvalid:        "ErrClassIndexInvalid",
-		ErrClassIndexAttrNotFound:   "ErrClassIndexAttrNotFound",
-		ErrClassKeyNameMismatch:     "ErrClassKeyNameMismatch",
-		ErrClassAttrKeyNameMismatch: "ErrClassAttrKeyNameMismatch",
+		ErrClassNameRequired:       "ErrClassNameRequired",
+		ErrClassNameEmpty:          "ErrClassNameEmpty",
+		ErrClassInvalidJSON:        "ErrClassInvalidJSON",
+		ErrClassSchemaViolation:    "ErrClassSchemaViolation",
+		ErrClassDuplicateKey:       "ErrClassDuplicateKey",
+		ErrClassDirInvalid:         "ErrClassDirInvalid",
+		ErrClassActorNotFound:      "ErrClassActorNotFound",
+		ErrClassAttributeNameEmpty: "ErrClassAttributeNameEmpty",
+		ErrClassIndexInvalid:       "ErrClassIndexInvalid",
+		ErrClassIndexAttrNotFound:  "ErrClassIndexAttrNotFound",
 
 		// Association errors (6xxx).
 		ErrAssocNameRequired:                "ErrAssocNameRequired",
@@ -80,7 +74,6 @@ func allErrorCodes() map[int]string {
 		ErrAssocMultiplicityInvalid:         "ErrAssocMultiplicityInvalid",
 		ErrAssocFilenameInvalid:             "ErrAssocFilenameInvalid",
 		ErrAssocDuplicateKey:                "ErrAssocDuplicateKey",
-		ErrAssocNameMismatch:                "ErrAssocNameMismatch",
 		ErrAssocUniquenessConstraintInvalid: "ErrAssocUniquenessConstraintInvalid",
 
 		// State machine errors (7xxx).
@@ -109,12 +102,6 @@ func allErrorCodes() map[int]string {
 		ErrTransitionGuardNotFound:     "ErrTransitionGuardNotFound",
 		ErrTransitionActionNotFound:    "ErrTransitionActionNotFound",
 		ErrTransitionInitialToFinal:    "ErrTransitionInitialToFinal",
-		ErrStateDuplicateName:          "ErrStateDuplicateName",
-		ErrEventDuplicateName:          "ErrEventDuplicateName",
-		ErrGuardDuplicateName:          "ErrGuardDuplicateName",
-		ErrStateKeyNameMismatch:        "ErrStateKeyNameMismatch",
-		ErrEventKeyNameMismatch:        "ErrEventKeyNameMismatch",
-		ErrGuardKeyNameMismatch:        "ErrGuardKeyNameMismatch",
 
 		// Action errors (8xxx).
 		ErrActionNameRequired:    "ErrActionNameRequired",
@@ -123,7 +110,6 @@ func allErrorCodes() map[int]string {
 		ErrActionSchemaViolation: "ErrActionSchemaViolation",
 		ErrActionDuplicateKey:    "ErrActionDuplicateKey",
 		ErrActionFilenameInvalid: "ErrActionFilenameInvalid",
-		ErrActionDuplicateName:   "ErrActionDuplicateName",
 
 		// Query errors (9xxx).
 		ErrQueryNameRequired:    "ErrQueryNameRequired",
@@ -132,7 +118,6 @@ func allErrorCodes() map[int]string {
 		ErrQuerySchemaViolation: "ErrQuerySchemaViolation",
 		ErrQueryDuplicateKey:    "ErrQueryDuplicateKey",
 		ErrQueryFilenameInvalid: "ErrQueryFilenameInvalid",
-		ErrQueryDuplicateName:   "ErrQueryDuplicateName",
 
 		// Class generalization errors (10xxx).
 		ErrClassGenNameRequired:         "ErrClassGenNameRequired",
@@ -148,47 +133,11 @@ func allErrorCodes() map[int]string {
 		ErrClassGenFilenameInvalid:      "ErrClassGenFilenameInvalid",
 		ErrClassGenSubclassDuplicate:    "ErrClassGenSubclassDuplicate",
 		ErrClassGenSuperclassIsSubclass: "ErrClassGenSuperclassIsSubclass",
-		ErrClassGenKeyNameMismatch:      "ErrClassGenKeyNameMismatch",
 
-		// Tree validation errors (11xxx).
-		ErrTreeClassActorNotFound:            "ErrTreeClassActorNotFound",
-		ErrTreeAssocFromClassNotFound:        "ErrTreeAssocFromClassNotFound",
-		ErrTreeAssocToClassNotFound:          "ErrTreeAssocToClassNotFound",
-		ErrTreeAssocClassNotFound:            "ErrTreeAssocClassNotFound",
-		ErrTreeClassGenSuperclassNotFound:    "ErrTreeClassGenSuperclassNotFound",
-		ErrTreeClassGenSubclassNotFound:      "ErrTreeClassGenSubclassNotFound",
-		ErrTreeClassIndexAttrNotFound:        "ErrTreeClassIndexAttrNotFound",
-		ErrTreeStateMachineStateNotFound:     "ErrTreeStateMachineStateNotFound",
-		ErrTreeStateMachineEventNotFound:     "ErrTreeStateMachineEventNotFound",
-		ErrTreeStateMachineGuardNotFound:     "ErrTreeStateMachineGuardNotFound",
-		ErrTreeStateMachineActionNotFound:    "ErrTreeStateMachineActionNotFound",
-		ErrTreeTransitionNoStates:            "ErrTreeTransitionNoStates",
-		ErrTreeTransitionInitialToFinal:      "ErrTreeTransitionInitialToFinal",
-		ErrTreeClassGenSuperclassIsSubclass:  "ErrTreeClassGenSuperclassIsSubclass",
-		ErrTreeClassGenSubclassDuplicate:     "ErrTreeClassGenSubclassDuplicate",
-		ErrTreeAssocMultiplicityInvalid:      "ErrTreeAssocMultiplicityInvalid",
-		ErrTreeAssocClassSameAsEndpoint:      "ErrTreeAssocClassSameAsEndpoint",
-		ErrTreeModelNoActors:                 "ErrTreeModelNoActors",
-		ErrTreeModelNoDomains:                "ErrTreeModelNoDomains",
-		ErrTreeDomainNoSubdomains:            "ErrTreeDomainNoSubdomains",
-		ErrTreeSubdomainTooFewClasses:        "ErrTreeSubdomainTooFewClasses",
-		ErrTreeSubdomainNoAssociations:       "ErrTreeSubdomainNoAssociations",
-		ErrTreeClassNoAttributes:             "ErrTreeClassNoAttributes",
-		ErrTreeClassNoStateMachine:           "ErrTreeClassNoStateMachine",
-		ErrTreeStateMachineNoTransitions:     "ErrTreeStateMachineNoTransitions",
-		ErrKeyInvalidFormat:                  "ErrKeyInvalidFormat",
-		ErrAssocFilenameInvalidFormat:        "ErrAssocFilenameInvalidFormat",
-		ErrAssocFilenameInvalidComponent:     "ErrAssocFilenameInvalidComponent",
-		ErrTreeActionUnreferenced:            "ErrTreeActionUnreferenced",
-		ErrTreeSingleSubdomainNotDefault:     "ErrTreeSingleSubdomainNotDefault",
-		ErrTreeMultipleSubdomainsHasDefault:  "ErrTreeMultipleSubdomainsHasDefault",
-		ErrTreeDomainAssocDomainNotFound:     "ErrTreeDomainAssocDomainNotFound",
-		ErrTreeActorGenActorNotFound:         "ErrTreeActorGenActorNotFound",
-		ErrTreeScenarioStepObjectNotFound:    "ErrTreeScenarioStepObjectNotFound",
-		ErrTreeScenarioStepEventNotFound:     "ErrTreeScenarioStepEventNotFound",
-		ErrTreeScenarioStepQueryNotFound:     "ErrTreeScenarioStepQueryNotFound",
-		ErrTreeTransitionInitialEventInvalid: "ErrTreeTransitionInitialEventInvalid",
-		ErrTreeTransitionFinalEventInvalid:   "ErrTreeTransitionFinalEventInvalid",
+		// Key format errors (11xxx).
+		ErrKeyInvalidFormat:              "ErrKeyInvalidFormat",
+		ErrAssocFilenameInvalidFormat:    "ErrAssocFilenameInvalidFormat",
+		ErrAssocFilenameInvalidComponent: "ErrAssocFilenameInvalidComponent",
 
 		// Actor generalization errors (12xxx).
 		ErrActorGenNameRequired:       "ErrActorGenNameRequired",
@@ -207,7 +156,6 @@ func allErrorCodes() map[int]string {
 		ErrUseCaseGenSuperclassRequired: "ErrUseCaseGenSuperclassRequired",
 		ErrUseCaseGenSubclassesRequired: "ErrUseCaseGenSubclassesRequired",
 		ErrUseCaseGenSubclassesEmpty:    "ErrUseCaseGenSubclassesEmpty",
-		ErrUseCaseGenKeyNameMismatch:    "ErrUseCaseGenKeyNameMismatch",
 
 		// Logic errors (14xxx).
 		ErrLogicDescriptionRequired:    "ErrLogicDescriptionRequired",
@@ -235,7 +183,6 @@ func allErrorCodes() map[int]string {
 		ErrGlobalFuncNameNoUnderscore: "ErrGlobalFuncNameNoUnderscore",
 		ErrGlobalFuncParamEmpty:       "ErrGlobalFuncParamEmpty",
 		ErrGlobalFuncLogicRequired:    "ErrGlobalFuncLogicRequired",
-		ErrGlobalFuncKeyNameMismatch:  "ErrGlobalFuncKeyNameMismatch",
 
 		// Domain association errors (17xxx).
 		ErrDomainAssocProblemKeyRequired:  "ErrDomainAssocProblemKeyRequired",
@@ -245,6 +192,15 @@ func allErrorCodes() map[int]string {
 		ErrDomainAssocInvalidJSON:         "ErrDomainAssocInvalidJSON",
 		ErrDomainAssocSchemaViolation:     "ErrDomainAssocSchemaViolation",
 
+		// Subdomain association errors (171xx).
+		ErrSubdomainAssocProblemKeyRequired:  "ErrSubdomainAssocProblemKeyRequired",
+		ErrSubdomainAssocProblemKeyEmpty:     "ErrSubdomainAssocProblemKeyEmpty",
+		ErrSubdomainAssocSolutionKeyRequired: "ErrSubdomainAssocSolutionKeyRequired",
+		ErrSubdomainAssocSolutionKeyEmpty:    "ErrSubdomainAssocSolutionKeyEmpty",
+		ErrSubdomainAssocInvalidJSON:         "ErrSubdomainAssocInvalidJSON",
+		ErrSubdomainAssocSchemaViolation:     "ErrSubdomainAssocSchemaViolation",
+		ErrSubdomainAssocSameSubdomains:      "ErrSubdomainAssocSameSubdomains",
+
 		// Use case errors (18xxx).
 		ErrUseCaseNameRequired:    "ErrUseCaseNameRequired",
 		ErrUseCaseNameEmpty:       "ErrUseCaseNameEmpty",
@@ -252,14 +208,12 @@ func allErrorCodes() map[int]string {
 		ErrUseCaseSchemaViolation: "ErrUseCaseSchemaViolation",
 		ErrUseCaseLevelRequired:   "ErrUseCaseLevelRequired",
 		ErrUseCaseLevelInvalid:    "ErrUseCaseLevelInvalid",
-		ErrUseCaseKeyNameMismatch: "ErrUseCaseKeyNameMismatch",
 
 		// Scenario errors (19xxx).
 		ErrScenarioNameRequired:    "ErrScenarioNameRequired",
 		ErrScenarioNameEmpty:       "ErrScenarioNameEmpty",
 		ErrScenarioInvalidJSON:     "ErrScenarioInvalidJSON",
 		ErrScenarioSchemaViolation: "ErrScenarioSchemaViolation",
-		ErrScenarioKeyNameMismatch: "ErrScenarioKeyNameMismatch",
 
 		// Use case shared errors (20xxx).
 		ErrUseCaseSharedShareTypeRequired: "ErrUseCaseSharedShareTypeRequired",
@@ -268,16 +222,14 @@ func allErrorCodes() map[int]string {
 		ErrUseCaseSharedSchemaViolation:   "ErrUseCaseSharedSchemaViolation",
 
 		// Conversion errors (21xxx).
-		ErrConvKeyConstruction:       "ErrConvKeyConstruction",
-		ErrConvModelValidation:       "ErrConvModelValidation",
-		ErrConvMultiplicityInvalid:   "ErrConvMultiplicityInvalid",
-		ErrConvClassNotFound:         "ErrConvClassNotFound",
-		ErrConvAssocKeyConstruction:  "ErrConvAssocKeyConstruction",
-		ErrConvScopedKeyInvalid:      "ErrConvScopedKeyInvalid",
-		ErrConvObjectResolveFailed:   "ErrConvObjectResolveFailed",
-		ErrConvSourceModelValidation: "ErrConvSourceModelValidation",
-
-		// Mapped core validation errors (21100-21199).
+		ErrConvKeyConstruction:               "ErrConvKeyConstruction",
+		ErrConvModelValidation:               "ErrConvModelValidation",
+		ErrConvMultiplicityInvalid:           "ErrConvMultiplicityInvalid",
+		ErrConvClassNotFound:                 "ErrConvClassNotFound",
+		ErrConvAssocKeyConstruction:          "ErrConvAssocKeyConstruction",
+		ErrConvScopedKeyInvalid:              "ErrConvScopedKeyInvalid",
+		ErrConvObjectResolveFailed:           "ErrConvObjectResolveFailed",
+		ErrConvSourceModelValidation:         "ErrConvSourceModelValidation",
 		ErrConvParamDatatypeRequired:         "ErrConvParamDatatypeRequired",
 		ErrConvParamNameRequired:             "ErrConvParamNameRequired",
 		ErrConvLogicTypeInvalid:              "ErrConvLogicTypeInvalid",
@@ -299,6 +251,8 @@ func allErrorCodes() map[int]string {
 		ErrConvTransitionInitialEventInvalid: "ErrConvTransitionInitialEventInvalid",
 		ErrConvTransitionFinalEventInvalid:   "ErrConvTransitionFinalEventInvalid",
 		ErrConvAssocUniquenessInvalid:        "ErrConvAssocUniquenessInvalid",
+		ErrConvSubdomainAssocSameSubdomains:  "ErrConvSubdomainAssocSameSubdomains",
+		ErrConvDomainSassocSingleSubdomain:   "ErrConvDomainSassocSingleSubdomain",
 
 		// Named set errors (22xxx).
 		ErrNamedSetNameRequired:     "ErrNamedSetNameRequired",
@@ -306,7 +260,6 @@ func allErrorCodes() map[int]string {
 		ErrNamedSetInvalidJSON:      "ErrNamedSetInvalidJSON",
 		ErrNamedSetSchemaViolation:  "ErrNamedSetSchemaViolation",
 		ErrNamedSetNameNoUnderscore: "ErrNamedSetNameNoUnderscore",
-		ErrNamedSetKeyNameMismatch:  "ErrNamedSetKeyNameMismatch",
 	}
 }
 
@@ -411,8 +364,8 @@ func (s *ErrorCoverageSuite) TestAllDocsAreNonEmpty() {
 // This test catches cases where a new constant is added to errors.go but not to allErrorCodes().
 func (s *ErrorCoverageSuite) TestErrorCodeCount() {
 	codes := allErrorCodes()
-	// 240 error codes as of current implementation.
+	// 200 error codes as of current implementation.
 	// Update this number when adding new error codes.
-	s.Len(codes, 247,
+	s.Len(codes, 200,
 		"allErrorCodes() count doesn't match expected. If you added new error codes to errors.go, add them to allErrorCodes() in error_coverage_test.go too.")
 }
