@@ -25,12 +25,15 @@ var builtins = map[string]BuiltinFn{
 	"_Queue!Enqueue": builtinQueueEnqueue,
 	"_Queue!Dequeue": builtinQueueDequeue,
 
-	// Bags
+	// Bags (CommunityModules Bags — bag arguments only except SetToBag)
 	"_Bags!SetToBag":       builtinSetToBag,
 	"_Bags!BagToSet":       builtinBagToSet,
 	"_Bags!CopiesIn":       builtinCopiesIn,
 	"_Bags!BagIn":          builtinBagIn,
 	"_Bags!BagCardinality": builtinBagCardinality,
+
+	// FiniteSets (standard TLA+ FiniteSets module)
+	"_FiniteSets!Cardinality": builtinFiniteSetsCardinality,
 }
 
 // LookupBuiltin returns the builtin function for the given name.
@@ -151,10 +154,13 @@ func builtinSetToBag(args []object.Object) *EvalResult {
 	if len(args) != 1 {
 		return NewEvalError("_Bags!SetToBag requires 1 argument, got %d", len(args))
 	}
-	// Association navigations are relation images; CoerceToSet unwraps AssociationRelation endpoints.
+	// Set or association navigation (relation image). Bags must not be passed here.
+	if _, isBag := args[0].(*object.Bag); isBag {
+		return NewEvalError("_Bags!SetToBag requires Set, got Bag (already a bag)")
+	}
 	set, ok := CoerceToSet(args[0])
 	if !ok {
-		return NewEvalError("_Bags!SetToBag requires Set or AssociationRelation, got %s", args[0].Type())
+		return NewEvalError("_Bags!SetToBag requires Set, got %s", args[0].Type())
 	}
 	bag := object.NewBag()
 	for _, elem := range set.Elements() {
@@ -194,14 +200,12 @@ func builtinBagCardinality(args []object.Object) *EvalResult {
 	if len(args) != 1 {
 		return NewEvalError("_Bags!BagCardinality requires 1 argument, got %d", len(args))
 	}
-	if bag, ok := args[0].(*object.Bag); ok {
-		return NewEvalResult(object.NewNatural(int64(bag.Size())))
+	bag, ok := args[0].(*object.Bag)
+	if !ok {
+		// Sets and association images must use SetToBag first (or FiniteSets!Cardinality for set size).
+		return NewEvalError("_Bags!BagCardinality requires Bag, got %s (use _Bags!SetToBag for sets, or _FiniteSets!Cardinality)", args[0].Type())
 	}
-	// Set and AssociationRelation (endpoint image) share one coercion path.
-	if set, ok := CoerceToSet(args[0]); ok {
-		return NewEvalResult(object.NewNatural(int64(set.Size())))
-	}
-	return NewEvalError("_Bags!BagCardinality requires Bag, Set, or AssociationRelation, got %s", args[0].Type())
+	return NewEvalResult(object.NewNatural(int64(bag.Size())))
 }
 
 func builtinBagIn(args []object.Object) *EvalResult {
@@ -214,4 +218,22 @@ func builtinBagIn(args []object.Object) *EvalResult {
 	}
 	contains := bag.Contains(args[0])
 	return NewEvalResult(nativeBoolToBoolean(contains))
+}
+
+// === FiniteSets Builtins ===
+
+// builtinFiniteSetsCardinality is FiniteSets!Cardinality: size of a finite set.
+// Association navigations coerce to their endpoint set (relation image).
+func builtinFiniteSetsCardinality(args []object.Object) *EvalResult {
+	if len(args) != 1 {
+		return NewEvalError("_FiniteSets!Cardinality requires 1 argument, got %d", len(args))
+	}
+	if _, isBag := args[0].(*object.Bag); isBag {
+		return NewEvalError("_FiniteSets!Cardinality requires Set, got Bag (use _Bags!BagCardinality)")
+	}
+	set, ok := CoerceToSet(args[0])
+	if !ok {
+		return NewEvalError("_FiniteSets!Cardinality requires Set, got %s", args[0].Type())
+	}
+	return NewEvalResult(object.NewNatural(int64(set.Size())))
 }

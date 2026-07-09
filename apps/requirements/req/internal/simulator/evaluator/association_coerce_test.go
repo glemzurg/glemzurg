@@ -63,12 +63,12 @@ func (s *AssociationCoerceSuite) TestSetToBagAcceptsAssociationRelation() {
 		{
 			name:    "rejects Number",
 			value:   object.NewInteger(3),
-			wantErr: "AssociationRelation",
+			wantErr: "requires Set",
 		},
 		{
 			name:    "rejects Bag",
 			value:   object.NewBag(),
-			wantErr: "AssociationRelation",
+			wantErr: "got Bag",
 		},
 	}
 
@@ -95,64 +95,28 @@ func (s *AssociationCoerceSuite) TestSetToBagAcceptsAssociationRelation() {
 	}
 }
 
-func (s *AssociationCoerceSuite) TestBagCardinalityUsesCoerceToSet() {
+func (s *AssociationCoerceSuite) TestFiniteSetsCardinalityOnAssociationRelation() {
 	ep1 := object.NewRecord()
 	ep1.Set("Code", object.NewString("US"))
 	ep2 := object.NewRecord()
 	ep2.Set("Code", object.NewString("UK"))
 	ar := s.newAR(ep1, ep2)
 
-	tests := []struct {
-		name    string
-		value   object.Object
-		want    int64
-		wantErr string
-	}{
-		{
-			name:  "Bag",
-			value: func() *object.Bag { b := object.NewBag(); b.Add(object.NewInteger(1), 2); return b }(),
-			want:  2,
-		},
-		{
-			name:  "Set",
-			value: object.NewSetFromElements([]object.Object{object.NewInteger(1), object.NewInteger(2)}),
-			want:  2,
-		},
-		{
-			name:  "AssociationRelation",
-			value: ar,
-			want:  2,
-		},
-		{
-			name:    "rejects Number",
-			value:   object.NewInteger(9),
-			wantErr: "AssociationRelation",
-		},
+	// Conventional set cardinality on association image.
+	cardCall := &me.BuiltinCall{
+		Module:   "_FiniteSets",
+		Function: "Cardinality",
+		Args:     []me.Expression{&me.LocalVar{Name: "v"}},
 	}
+	bindings := evaluator.NewBindings()
+	bindings.Set("v", ar, evaluator.NamespaceLocal)
+	result := evaluator.Eval(cardCall, bindings)
+	s.Require().False(result.IsError(), result.Error)
+	n, ok := result.Value.(*object.Number)
+	s.Require().True(ok)
+	s.Equal(0, n.Cmp(object.NewInteger(2)))
 
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			call := &me.BuiltinCall{
-				Module:   "_Bags",
-				Function: "BagCardinality",
-				Args:     []me.Expression{&me.LocalVar{Name: "v"}},
-			}
-			bindings := evaluator.NewBindings()
-			bindings.Set("v", tc.value, evaluator.NamespaceLocal)
-			result := evaluator.Eval(call, bindings)
-			if tc.wantErr != "" {
-				s.Require().True(result.IsError())
-				s.Contains(result.Error.Inspect(), tc.wantErr)
-				return
-			}
-			s.Require().False(result.IsError(), result.Error)
-			n, ok := result.Value.(*object.Number)
-			s.Require().True(ok)
-			s.Equal(0, n.Cmp(object.NewInteger(tc.want)))
-		})
-	}
-
-	// Composition: BagCardinality(SetToBag(AR)) equals endpoint size.
+	// Bags require conversion: BagCardinality(SetToBag(AR)).
 	composed := &me.BuiltinCall{
 		Module:   "_Bags",
 		Function: "BagCardinality",
@@ -164,13 +128,21 @@ func (s *AssociationCoerceSuite) TestBagCardinalityUsesCoerceToSet() {
 			},
 		},
 	}
-	bindings := evaluator.NewBindings()
-	bindings.Set("v", ar, evaluator.NamespaceLocal)
-	result := evaluator.Eval(composed, bindings)
-	s.Require().False(result.IsError(), result.Error)
-	n, ok := result.Value.(*object.Number)
+	bagResult := evaluator.Eval(composed, bindings)
+	s.Require().False(bagResult.IsError(), bagResult.Error)
+	bn, ok := bagResult.Value.(*object.Number)
 	s.Require().True(ok)
-	s.Equal(0, n.Cmp(object.NewInteger(2)))
+	s.Equal(0, bn.Cmp(object.NewInteger(2)))
+
+	// Direct BagCardinality on AR is an error.
+	direct := &me.BuiltinCall{
+		Module:   "_Bags",
+		Function: "BagCardinality",
+		Args:     []me.Expression{&me.LocalVar{Name: "v"}},
+	}
+	errResult := evaluator.Eval(direct, bindings)
+	s.Require().True(errResult.IsError())
+	s.Contains(errResult.Error.Inspect(), "requires Bag")
 }
 
 func (s *AssociationCoerceSuite) TestAssociationEqualsTruthTable() {

@@ -57,9 +57,12 @@ Module-qualified TLA+ constructors and operators use the `_Module!Name` form in 
 | --- | --- | --- |
 | `_Seq!` | Sequences | `Head`, `Tail`, `Append`, `Len` |
 | `_Bags!` | Bags | `SetToBag`, `BagToSet`, `CopiesIn`, `BagIn`, `BagCardinality` |
+| `_FiniteSets!` | FiniteSets | `Cardinality` |
 | `_Stack!`, `_Queue!` | (req data-type helpers) | Stack/queue ops on tuples — not TLA+ standard modules; used only for data-type sampling |
 
-Do not add invented operators under `_Seq!` or `_Bags!` (for example a hypothetical `_FiniteSets!Sum`). When the standard libraries lack an operator you need, express the computation in plain TLA+ (conditionals, `LET`, `CHOOSE`, quantifiers, recursion) or as a model global function whose body is valid TLA+.
+**Sets vs bags.** Count a **set** (including an association navigation image) with `_FiniteSets!Cardinality(S)`. Bag operators other than `SetToBag` require a **bag**: convert with `_Bags!SetToBag(S)` first. Do not pass a set (or association image) to `_Bags!BagCardinality`. Do not pass a bag to `_FiniteSets!Cardinality`.
+
+Do not invent operators under these prefixes (for example a hypothetical `_FiniteSets!Sum`). When the standard libraries lack an operator you need, express the computation in plain TLA+ (conditionals, `LET`, `CHOOSE`, quantifiers, recursion) or as a model global function whose body is valid TLA+.
 
 | Form | Meaning |
 | --- | --- |
@@ -68,7 +71,7 @@ Do not add invented operators under `_Seq!` or `_Bags!` (for example a hypotheti
 
 Replace `T` with any valid type expression, including nested forms.
 
-Sets and bags have no standard TLA+ type constructor. Use `data_type_rules` for unordered collections and multisets; in specifications use set literals, `\in`, and real `_Bags!` operators such as `SetToBag` and `BagCardinality` — not invented `_Set!_Set` or `_Bags!_Bag` forms.
+Sets and bags have no standard TLA+ type constructor. Use `data_type_rules` for unordered collections and multisets; in specifications use set literals, `\in`, `_FiniteSets!Cardinality`, and real `_Bags!` operators (`SetToBag`, `BagCardinality` on bags only) — not invented `_Set!_Set` or `_Bags!_Bag` forms.
 
 ### Records
 
