@@ -3,6 +3,7 @@ package state
 import (
 	"fmt"
 	"maps"
+	"math"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -145,32 +146,85 @@ func (b *BindingsBuilder) BuildForInstanceWithVariables(
 	return bindings
 }
 
+// Class extent elements bound into TLA as records [id |-> N, data |-> attrs].
+// id is the engine instance identity (number); data is the attribute record.
+// Association links use id; authors read attributes via x.data.field (or self as data in instance scope).
+const (
+	ClassExtentIDField   = "id"
+	ClassExtentDataField = "data"
+)
+
 // BuildWithClassInstances creates bindings that include all instances of classes
 // as sets accessible by class name. This enables expressions like "∀ o ∈ Orders : ...".
 func (b *BindingsBuilder) BuildWithClassInstances(classNameMap map[identity.Key]string) *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
 	bindings.SetRelationContext(b.buildRelationContext())
-
-	// Build sets for each class
-	for classKey, className := range classNameMap {
-		instances := b.state.InstancesByClass(classKey)
-
-		// Create a set of all instance attribute records
-		elements := make([]object.Object, len(instances))
-		for i, instance := range instances {
-			elements[i] = instance.Attributes
-		}
-
-		classSet := object.NewSet()
-		for _, elem := range elements {
-			classSet.Add(elem)
-		}
-
-		bindings.Set(className, classSet, evaluator.NamespaceGlobal)
-	}
-
+	b.bindClassInstanceSets(bindings, classNameMap)
 	b.applyNamedSets(bindings)
 	return bindings
+}
+
+// bindClassInstanceSets adds one set per class name. Each element is [id, data].
+func (b *BindingsBuilder) bindClassInstanceSets(bindings *evaluator.Bindings, classNameMap map[identity.Key]string) {
+	for classKey, className := range classNameMap {
+		bindings.Set(className, classInstanceExtentSet(b.state.InstancesByClass(classKey)), evaluator.NamespaceGlobal)
+	}
+}
+
+// classInstanceExtentSet builds the TLA class extent: a set of [id |-> id, data |-> attributes].
+// Distinct ids keep instances separate even when attribute data is identical.
+func classInstanceExtentSet(instances []*ClassInstance) *object.Set {
+	classSet := object.NewSet()
+	for _, instance := range instances {
+		classSet.Add(ClassExtentElement(instance.ID, instance.Attributes))
+	}
+	return classSet
+}
+
+// ClassExtentElement builds one class-extent record [id |-> id, data |-> attrs].
+// data is a clone so evaluation cannot mutate persisted instance attributes through the extent.
+func ClassExtentElement(id InstanceID, attrs *object.Record) *object.Record {
+	data := attrs
+	if data != nil {
+		data = data.Clone().(*object.Record)
+	} else {
+		data = object.NewRecord()
+	}
+	return object.NewRecordFromFields(map[string]object.Object{
+		ClassExtentIDField:   object.NewNatural(instanceIDAsInt64(id)),
+		ClassExtentDataField: data,
+	})
+}
+
+// InstanceIDFromExtentElement returns the engine id from a class-extent [id, data] record.
+func InstanceIDFromExtentElement(elem *object.Record) (InstanceID, bool) {
+	if elem == nil {
+		return 0, false
+	}
+	idVal := elem.Get(ClassExtentIDField)
+	if idVal == nil {
+		return 0, false
+	}
+	n, ok := idVal.(*object.Number)
+	if !ok || n.Sign() < 0 {
+		return 0, false
+	}
+	v := n.Rat().Num().Int64()
+	if v < 0 {
+		return 0, false
+	}
+	return InstanceID(uint64(v)), true
+}
+
+// DataFromExtentElement returns the data record from a class-extent element, or elem itself if flat.
+func DataFromExtentElement(elem *object.Record) *object.Record {
+	if elem == nil {
+		return nil
+	}
+	if data, ok := elem.Get(ClassExtentDataField).(*object.Record); ok && data != nil {
+		return data
+	}
+	return elem
 }
 
 // BuildWithClassInstancesForInstance combines BuildWithClassInstances and BuildForInstance.
@@ -346,4 +400,13 @@ func (b *BindingsBuilder) ApplyPrimedBindings(
 	}
 
 	return nil
+}
+
+// instanceIDAsInt64 converts a simulation instance id for embedding in TLA records.
+// Instance ids are small sequential values; values above MaxInt64 are clamped.
+func instanceIDAsInt64(id InstanceID) int64 {
+	if id > math.MaxInt64 {
+		return math.MaxInt64
+	}
+	return int64(id)
 }

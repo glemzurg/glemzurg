@@ -332,8 +332,16 @@ func instanceIDForRecord(
 	classKey identity.Key,
 	attrs *object.Record,
 ) (state.InstanceID, bool) {
+	// Class-extent element [id |-> N, data |-> attrs].
+	if id, ok := state.InstanceIDFromExtentElement(attrs); ok {
+		if inst := simState.GetInstance(id); inst != nil && inst.ClassKey == classKey {
+			return id, true
+		}
+	}
+	// Flat attribute record (legacy / non-extent value).
+	data := state.DataFromExtentElement(attrs)
 	for _, inst := range simState.InstancesByClass(classKey) {
-		if inst.Attributes == attrs || inst.Attributes.Equals(attrs) {
+		if inst.Attributes == data || inst.Attributes == attrs || inst.Attributes.Equals(data) {
 			return inst.ID, true
 		}
 	}

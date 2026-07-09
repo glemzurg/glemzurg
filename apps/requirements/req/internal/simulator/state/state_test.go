@@ -406,11 +406,12 @@ func (s *StateTestSuite) TestBindingsBuilder_BuildWithClassInstances() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 
+	// Identical attribute data: extent must still have two elements (distinct ids).
 	state.CreateInstance(orderKey, object.NewRecordFromFields(map[string]object.Object{
-		"id": object.NewInteger(1),
+		"_state": object.NewString("Open"),
 	}))
 	state.CreateInstance(orderKey, object.NewRecordFromFields(map[string]object.Object{
-		"id": object.NewInteger(2),
+		"_state": object.NewString("Open"),
 	}))
 
 	builder := NewBindingsBuilder(state)
@@ -426,6 +427,18 @@ func (s *StateTestSuite) TestBindingsBuilder_BuildWithClassInstances() {
 
 	set := ordersSet.(*object.Set)
 	s.Equal(2, set.Size())
+
+	for _, elem := range set.Elements() {
+		rec, ok := elem.(*object.Record)
+		s.Require().True(ok)
+		s.True(rec.Has(ClassExtentIDField))
+		s.True(rec.Has(ClassExtentDataField))
+		data, ok := rec.Get(ClassExtentDataField).(*object.Record)
+		s.Require().True(ok)
+		s.Equal("Open", data.Get("_state").(*object.String).Value())
+		// data must not be polluted with a synthetic id field for identity
+		s.False(data.Has(ClassExtentIDField))
+	}
 }
 
 func (s *StateTestSuite) TestBindingsBuilder_AddAssociation() {

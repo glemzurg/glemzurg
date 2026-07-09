@@ -8,17 +8,45 @@ Related: [Attribute `type_spec`](attribute-type-spec.md) for TLA+ type strings; 
 
 ## The mental model
 
+### Representation vs access (keep these distinct)
+
+**How the simulator stores things** is not the same as inventing TLA+ map types.
+
+| Concept | Internal representation | How TLA+ usually sees it |
+| --- | --- | --- |
+| Class extent (e.g. `Account`) | Map-like: engine **id → attribute data** | A **set of records** `[id |-> N, data |-> attrs]` — standard TLA record shape, not a special Map type |
+| Instance under evaluation (`self`) | Attribute record on that id | **Data only** — `self.amount`, `self.timestamp` (flat attribute SubKeys) |
+| Association | Links **id → id** (host rows / endpoints) | Navigation `self.Assoc` as related **endpoints** (see below) |
+
+Class-extent elements are ordinary records with two fields:
+
+```tla
+\* One live account in the class extent Account:
+[id |-> 3, data |-> [_state |-> "Exists", …]]
+```
+
+- **`id`** — engine instance identity (a number). Used so two instances with the same attribute values stay distinct in the set, and so associations can connect ids.
+- **`data`** — what used to be thought of as “the object as a set element”: the attribute record (SubKeys).
+
+Authors rarely invent new TLA types for this. Patterns:
+
+```tla
+Account /= {}                                    \* extent nonempty
+_FiniteSets!Cardinality(Account) >= 3            \* number of instances (by id)
+CHOOSE a \in Account : TRUE                      \* a is [id, data]
+a.id                                             \* identity
+a.data                                           \* attribute record
+\* When quantifying the extent and reading attributes:
+\E a \in Account : a.data._state = "Exists"
+```
+
+**`self` is not the extent element.** In a class invariant or action on a live instance, `self` is the **data** record (attributes), so existing specs keep writing `self.amount` rather than `self.data.amount`.
+
+Association navigations (`self.Adjusts`) still expose related **endpoint data** (or association-class structure) for Approach A quantifiers over peers; the underlying links are id-to-id.
+
 ### Instances are id + data
 
-A class instance is not a bare identifier. It is an **identity** plus a **record of attributes** (the data).
-
-| Layer | What you see |
-| --- | --- |
-| In the model | A class with attributes, states, associations |
-| In expressions | `self` and related objects as **records** you can field-access (`self.timestamp`, `a.region`) |
-| In the simulator | `ClassInstance` (engine id) + `object.Record` (attribute map keyed by attribute **SubKeys**) |
-
-When you quantify over related objects, each element is one of those id+data records—not a naked id.
+A class instance is not a bare identifier and not “just” an attribute bag. Identity and data are separate; the extent package above makes that visible in TLA without a map type.
 
 ### Associations are relations
 
@@ -336,4 +364,5 @@ MyGlobal(self.Assoc.LinkClassMember)          \* AC rows (multi → set; sole �
 2. **Associations** = relations; **`self.Assoc`** = set (image) of related records.  
 3. **Association classes** = one link row per pair; navigate with `self.Assoc.LinkClassMember` under an endpoint binder when both sides matter.  
 4. Write invariants with **quantifiers over the image**, attribute **SubKeys**, `_FiniteSets!Cardinality` for set size, and `_Bags!` only on bags (use `SetToBag` to convert).  
-5. The simulator coerces association navigations to endpoint sets for set ops and `SetToBag` / `Cardinality`, and projects AC fields with sole/binder awareness.
+5. Class extents are sets of `[id, data]` records; `self` stays flat **data**. Associations link **ids**.  
+6. The simulator coerces association navigations to endpoint sets for set ops and `SetToBag` / `Cardinality`, and projects AC fields with sole/binder awareness.
