@@ -19,6 +19,7 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 	var targetTypeNotation *string
 	var targetTypeSpecification *string
 	var destroyEventSpecification *string
+	var endpointSelectorSpecification *string
 
 	if err = scanner.Scan(
 		&keyStr,
@@ -30,26 +31,24 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		&targetTypeNotation,
 		&targetTypeSpecification,
 		&destroyEventSpecification,
+		&endpointSelectorSpecification,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
 		}
-		return err // Do not wrap in stack here. It will be wrapped in the database calls.
+		return err
 	}
 
-	// Parse the key string into an identity.Key.
 	logic.Key, err = identity.ParseKey(keyStr)
 	if err != nil {
 		return err
 	}
 
-	// Construct ExpressionSpec via constructor (nil parseFunc — parsing happens at higher layers).
 	logic.Spec, err = logic_spec.NewExpressionSpec(notation, specification, nil)
 	if err != nil {
 		return err
 	}
 
-	// Reconstitute TargetTypeSpec if present.
 	if targetTypeNotation != nil && *targetTypeNotation != "" {
 		spec := ""
 		if targetTypeSpecification != nil {
@@ -70,19 +69,23 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		logic.DestroyEventSpec = des
 	}
 
+	if endpointSelectorSpecification != nil && strings.TrimSpace(*endpointSelectorSpecification) != "" {
+		es, err := logic_spec.NewExpressionSpec(notation, *endpointSelectorSpecification, nil)
+		if err != nil {
+			return err
+		}
+		logic.EndpointSelectorSpec = es
+	}
+
 	return nil
 }
 
 // LoadLogic loads a logic from the database.
 func LoadLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic model_logic.Logic, err error) {
-	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanLogic(scanner, &logic); err != nil {
-				return err
-			}
-			return nil
+			return scanLogic(scanner, &logic)
 		},
 		`SELECT
 			logic_key                  ,
@@ -93,7 +96,8 @@ func LoadLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic mod
 			specification              ,
 			target_type_notation       ,
 			target_type_specification  ,
-			destroy_event_specification
+			destroy_event_specification,
+			endpoint_selector_specification
 		FROM
 			logic
 		WHERE
@@ -117,7 +121,6 @@ func AddLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic) (err erro
 
 // UpdateLogic updates a logic in the database.
 func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOrder int) (err error) {
-	// Extract target type spec fields.
 	var ttNotation *string
 	var ttSpecification *string
 	if logic.TargetTypeSpec != nil {
@@ -128,21 +131,25 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 	if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
 		deSpecification = &logic.DestroyEventSpec.Specification
 	}
+	var esSpecification *string
+	if strings.TrimSpace(logic.EndpointSelectorSpec.Specification) != "" {
+		esSpecification = &logic.EndpointSelectorSpec.Specification
+	}
 
-	// Update the data.
 	err = dbExec(dbOrTx, `
 		UPDATE
 			logic
 		SET
-			logic_type                 = $3  ,
-			description                = $4  ,
-			target                     = $5  ,
-			notation                   = $6  ,
-			specification              = $7  ,
-			sort_order                 = $8  ,
-			target_type_notation       = $9  ,
-			target_type_specification  = $10 ,
-			destroy_event_specification = $11
+			logic_type                      = $3  ,
+			description                     = $4  ,
+			target                          = $5  ,
+			notation                        = $6  ,
+			specification                   = $7  ,
+			sort_order                      = $8  ,
+			target_type_notation            = $9  ,
+			target_type_specification       = $10 ,
+			destroy_event_specification     = $11 ,
+			endpoint_selector_specification = $12
 		WHERE
 			model_key = $1
 		AND
@@ -157,7 +164,8 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 		sortOrder,
 		ttNotation,
 		ttSpecification,
-		deSpecification)
+		deSpecification,
+		esSpecification)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -167,7 +175,6 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 
 // RemoveLogic deletes a logic from the database.
 func RemoveLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err error) {
-	// Delete the data.
 	err = dbExec(dbOrTx, `
 		DELETE FROM
 			logic
@@ -186,7 +193,6 @@ func RemoveLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err err
 
 // QueryLogics loads all logics from the database for a given model.
 func QueryLogics(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, err error) {
-	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -206,7 +212,8 @@ func QueryLogics(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, er
 			specification              ,
 			target_type_notation       ,
 			target_type_specification  ,
-			destroy_event_specification
+			destroy_event_specification,
+			endpoint_selector_specification
 		FROM
 			logic
 		WHERE
@@ -221,22 +228,21 @@ func QueryLogics(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, er
 }
 
 // AddLogics adds multiple logics to the database in a single insert.
-// sortOrders maps logic_key string to the sort_order value for that logic.
 func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortOrders map[string]int) (err error) {
 	if len(logics) == 0 {
 		return nil
 	}
 
-	// Build the bulk insert query.
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`INSERT INTO logic (model_key, logic_key, logic_type, description, target, notation, specification, sort_order, target_type_notation, target_type_specification, destroy_event_specification) VALUES `)
-	args := make([]any, 0, len(logics)*11)
+	queryBuilder.WriteString(`INSERT INTO logic (model_key, logic_key, logic_type, description, target, notation, specification, sort_order, target_type_notation, target_type_specification, destroy_event_specification, endpoint_selector_specification) VALUES `)
+	args := make([]any, 0, len(logics)*12)
 	for i, logic := range logics {
 		if i > 0 {
 			queryBuilder.WriteString(", ")
 		}
-		base := i * 11
-		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11)
+		base := i * 12
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+			base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12)
 
 		var ttNotation *string
 		var ttSpecification *string
@@ -248,8 +254,12 @@ func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortO
 		if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
 			deSpecification = &logic.DestroyEventSpec.Specification
 		}
+		var esSpecification *string
+		if strings.TrimSpace(logic.EndpointSelectorSpec.Specification) != "" {
+			esSpecification = &logic.EndpointSelectorSpec.Specification
+		}
 
-		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Spec.Notation, logic.Spec.Specification, sortOrders[logic.Key.String()], ttNotation, ttSpecification, deSpecification)
+		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Spec.Notation, logic.Spec.Specification, sortOrders[logic.Key.String()], ttNotation, ttSpecification, deSpecification, esSpecification)
 	}
 
 	err = dbExec(dbOrTx, queryBuilder.String(), args...)

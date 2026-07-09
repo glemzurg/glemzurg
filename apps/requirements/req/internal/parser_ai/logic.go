@@ -23,6 +23,7 @@ type inputLogic struct {
 	Notation           string `json:"notation,omitempty"`
 	Specification      string `json:"specification,omitempty"`
 	DestroyEvent       string `json:"destroy_event,omitempty"`
+	EndpointSelector   string `json:"endpoint_selector,omitempty"`
 }
 
 // logicSchema is the compiled JSON schema for logic objects.
@@ -157,6 +158,31 @@ func validateLogic(logic *inputLogic, filename string) error {
 			).WithField("target").WithHint("assessment/safety_rule/value types must not have a \"target\" field")
 		}
 	}
+	if err := validateAssociationClassFields(logic, filename); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func validateAssociationClassFields(logic *inputLogic, filename string) error {
+	hasSelector := strings.TrimSpace(logic.EndpointSelector) != ""
+	if !hasSelector {
+		return nil
+	}
+	if logic.Type != "state_change" {
+		return NewParseError(
+			ErrLogicAssocClassNotAllowed,
+			"endpoint_selector is only valid on state_change guarantees",
+			filename,
+		).WithField("endpoint_selector").WithHint("use type state_change for association-class reify")
+	}
+	if strings.TrimSpace(logic.Specification) == "" {
+		return NewParseError(
+			ErrLogicAssocClassSpecRequired,
+			"association-class reify requires a creation specification",
+			filename,
+		).WithField("specification").WithHint("add specification with the AC _new(...) call or set-map of _new")
+	}
 	return nil
 }

@@ -531,6 +531,11 @@ func (e *ActionExecutor) evaluateSingleActionGuarantee(
 	} else if handled {
 		return nil
 	}
+	if handled, err := e.tryQueueAssociationClassReifyGuarantee(ctx, instance, guar, bindings); err != nil {
+		return err
+	} else if handled {
+		return nil
+	}
 	if guar.Target == "" {
 		return fmt.Errorf("action %s guarantee[%d]: target must be set", actionName, index)
 	}

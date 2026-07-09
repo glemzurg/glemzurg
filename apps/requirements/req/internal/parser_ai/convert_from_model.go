@@ -627,6 +627,9 @@ func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
 	if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
 		result.DestroyEvent = logic.DestroyEventSpec.Specification
 	}
+	if strings.TrimSpace(logic.EndpointSelectorSpec.Specification) != "" {
+		result.EndpointSelector = logic.EndpointSelectorSpec.Specification
+	}
 	return result
 }
 

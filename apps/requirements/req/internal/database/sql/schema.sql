@@ -35,6 +35,7 @@ CREATE TABLE logic (
   target_type_notation notation DEFAULT NULL,
   target_type_specification text DEFAULT NULL,
   destroy_event_specification text DEFAULT NULL,
+  endpoint_selector_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, logic_key),
   CONSTRAINT fk_logic_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
@@ -51,6 +52,7 @@ COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
 COMMENT ON COLUMN logic.target_type_notation IS 'Optional notation for the declared type of the logic target (e.g., tla_plus).';
 COMMENT ON COLUMN logic.target_type_specification IS 'Optional type specification string for the logic target (e.g., Int, STRING).';
 COMMENT ON COLUMN logic.destroy_event_specification IS 'Optional peer destroy event call for destroy-type logic (e.g., _destroy(b)); uses logic.notation for notation.';
+COMMENT ON COLUMN logic.endpoint_selector_specification IS 'Far-side endpoint expression for association-class reify guarantees (target is AC class TLA name); uses logic.notation.';
 
 --------------------------------------------------------------
 

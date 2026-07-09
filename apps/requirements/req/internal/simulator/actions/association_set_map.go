@@ -95,10 +95,11 @@ func (e *ActionExecutor) queueAssociationSetMap(
 ) (bool, error) {
 	mapTarget, eventCall, err := e.resolveAssociationSetMapTarget(instance, target, setMap)
 	if err != nil {
-		if mapTarget == nil {
-			return false, nil
-		}
 		return false, err
+	}
+	if mapTarget == nil || eventCall == nil {
+		// Not an association set-map (e.g. endpoint image set-comprehension).
+		return false, nil
 	}
 
 	linked := linkedAssociationPeerEndpoints(e.bindingsBuilder.State(), instance.ID, mapTarget.assoc)

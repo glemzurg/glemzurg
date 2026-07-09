@@ -295,6 +295,26 @@ func (m *Model) validateClassAssociations(ctx *coreerr.ValidationContext) error 
 			return err
 		}
 	}
+	return m.validateUniqueAssociationClasses(ctx)
+}
+
+// validateUniqueAssociationClasses ensures each class is the association class of at most one association.
+func (m *Model) validateUniqueAssociationClasses(ctx *coreerr.ValidationContext) error {
+	seen := make(map[identity.Key]identity.Key) // AC class key → first association key
+	for assocKey, assoc := range m.GetClassAssociations() {
+		if assoc.AssociationClassKey == nil {
+			continue
+		}
+		acKey := *assoc.AssociationClassKey
+		if prev, ok := seen[acKey]; ok {
+			childCtx := ctx.Child("classAssociation", assocKey.String())
+			return coreerr.NewWithValues(childCtx, coreerr.AssocAssocclassDuplicate,
+				fmt.Sprintf("class %q is association class for both %q and %q; a class may reify only one association",
+					acKey.String(), prev.String(), assocKey.String()),
+				"AssociationClassKey", acKey.String(), "unique association")
+		}
+		seen[acKey] = assocKey
+	}
 	return nil
 }
 

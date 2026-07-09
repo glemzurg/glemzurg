@@ -130,7 +130,7 @@ func (s *Subdomain) validateClasses(ctx *coreerr.ValidationContext, refs ModelCr
 	}
 	for _, class := range s.Classes {
 		classCtx := ctx.Child("class", class.Key.String())
-		if err := class.ValidateWithParent(classCtx, &s.Key, refs.AllAssociations); err != nil {
+		if err := class.ValidateWithParent(classCtx, &s.Key, refs.AllAssociations, refs.AllClasses); err != nil {
 			return err
 		}
 		if err := class.ValidateReferences(classCtx, refs.Actors, localGeneralizations, allGeneralizations); err != nil {

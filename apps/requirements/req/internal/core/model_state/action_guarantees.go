@@ -32,7 +32,7 @@ func validateActionGuarantees(ctx *coreerr.ValidationContext, guarantees []model
 			deleteTargets[guar.Target] = true
 		case model_logic.LogicTypeStateChange:
 			if stateChangeTargets[guar.Target] {
-				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateTarget, fmt.Sprintf("guarantee %d: duplicate target %q — each attribute can only be set once per action", i, guar.Target), "Guarantees", guar.Target, "")
+				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateTarget, fmt.Sprintf("guarantee %d: duplicate target %q — each target can only be set once per action", i, guar.Target), "Guarantees", guar.Target, "")
 			}
 			stateChangeTargets[guar.Target] = true
 		}

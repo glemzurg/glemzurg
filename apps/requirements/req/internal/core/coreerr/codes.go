@@ -68,6 +68,9 @@ const (
 	LogicDestroyEventMustBeEmpty       Code = "LOGIC_DESTROY_EVENT_MUST_BE_EMPTY"       // Only destroy logic may carry destroy_event.
 	LogicPeerDestroyForbidden          Code = "LOGIC_PEER_DESTROY_FORBIDDEN"            // Peer _destroy must use guarantee type destroy, not inline in other logic.
 	LogicDestroyContextInvalid         Code = "LOGIC_DESTROY_CONTEXT_INVALID"           // Destroy logic may only appear in action guarantees.
+	LogicAssocClassContextInvalid      Code = "LOGIC_ASSOC_CLASS_CONTEXT_INVALID"       // endpoint_selector only on action state_change guarantees.
+	LogicAssocClassSpecRequired        Code = "LOGIC_ASSOC_CLASS_SPEC_REQUIRED"         // Association-class reify requires creation specification.
+	AssocAssocclassDuplicate           Code = "ASSOC_ASSOCCLASS_DUPLICATE"              // Same class used as association class on more than one association.
 
 	// ---------------------------------------------------------------
 	// GlobalFunction errors.

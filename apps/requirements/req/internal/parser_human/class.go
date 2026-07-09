@@ -1129,26 +1129,46 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		logic := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
-		if deleteEvent, _ := itemMap["destroy_event"].(string); strings.TrimSpace(deleteEvent) != "" {
-			destroyEventSpec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, deleteEvent, nil)
-			if err != nil {
-				return nil, errors.Wrapf(err, "%s[%d] destroy_event", field, i)
-			}
-			logic.SetDestroyEventSpec(destroyEventSpec)
-		}
-		if classInvariantOpts != nil {
-			if overAssociationKeyStr, _ := itemMap["over_association_key"].(string); overAssociationKeyStr != "" {
-				overKey, err := model_class.ResolveClassAssociationKeyFromRelative(classInvariantOpts.subdomainKey, classInvariantOpts.ownerClassKey, overAssociationKeyStr)
-				if err != nil {
-					return nil, errors.Wrapf(err, "%s[%d] over_association_key", field, i)
-				}
-				logic.SetOverAssociationKey(&overKey)
-			}
+		if err := applyOptionalLogicYAMLFields(&logic, itemMap, field, i, classInvariantOpts); err != nil {
+			return nil, err
 		}
 
 		logics = append(logics, logic)
 	}
 	return logics, nil
+}
+
+func applyOptionalLogicYAMLFields(
+	logic *model_logic.Logic,
+	itemMap map[string]any,
+	field string,
+	index int,
+	classInvariantOpts *classInvariantLogicOptions,
+) error {
+	if deleteEvent, _ := itemMap["destroy_event"].(string); strings.TrimSpace(deleteEvent) != "" {
+		destroyEventSpec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, deleteEvent, nil)
+		if err != nil {
+			return errors.Wrapf(err, "%s[%d] destroy_event", field, index)
+		}
+		logic.SetDestroyEventSpec(destroyEventSpec)
+	}
+	if endpointSelector, _ := itemMap["endpoint_selector"].(string); strings.TrimSpace(endpointSelector) != "" {
+		es, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, endpointSelector, nil)
+		if err != nil {
+			return errors.Wrapf(err, "%s[%d] endpoint_selector", field, index)
+		}
+		logic.SetEndpointSelectorSpec(es)
+	}
+	if classInvariantOpts != nil {
+		if overAssociationKeyStr, _ := itemMap["over_association_key"].(string); overAssociationKeyStr != "" {
+			overKey, err := model_class.ResolveClassAssociationKeyFromRelative(classInvariantOpts.subdomainKey, classInvariantOpts.ownerClassKey, overAssociationKeyStr)
+			if err != nil {
+				return errors.Wrapf(err, "%s[%d] over_association_key", field, index)
+			}
+			logic.SetOverAssociationKey(&overKey)
+		}
+	}
+	return nil
 }
 
 func transitionFromYamlData(lookups parseKeyLookups, classKey identity.Key, transitionAny any) (transition model_state.Transition, err error) {
@@ -1607,6 +1627,9 @@ func buildLogicMappingBuilder(logic model_logic.Logic, ownerClass *model_class.C
 	if logic.Type == model_logic.LogicTypeLet {
 		logicBuilder.AddField("type", "let")
 	}
+	if logic.Type == model_logic.LogicTypeDestroy {
+		logicBuilder.AddField("type", "destroy")
+	}
 	logicBuilder.AddField("details", logic.Description)
 	logicBuilder.AddField("target", logic.Target)
 	if ownerClass != nil && logic.OverAssociationKey != nil {
@@ -1614,7 +1637,13 @@ func buildLogicMappingBuilder(logic model_logic.Logic, ownerClass *model_class.C
 			logicBuilder.AddField("over_association_key", relative)
 		}
 	}
+	if strings.TrimSpace(logic.EndpointSelectorSpec.Specification) != "" {
+		logicBuilder.AddQuotedField("endpoint_selector", logic.EndpointSelectorSpec.Specification)
+	}
 	logicBuilder.AddQuotedField("specification", logic.Spec.Specification)
+	if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
+		logicBuilder.AddQuotedField("destroy_event", logic.DestroyEventSpec.Specification)
+	}
 	if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
 		logicBuilder.AddField("target_type_spec", logic.TargetTypeSpec.Specification)
 	}

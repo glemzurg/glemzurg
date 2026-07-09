@@ -94,6 +94,9 @@ func allCodeConstants() map[string]Code {
 		"LogicDestroyEventMustBeEmpty":       LogicDestroyEventMustBeEmpty,
 		"LogicPeerDestroyForbidden":          LogicPeerDestroyForbidden,
 		"LogicDestroyContextInvalid":         LogicDestroyContextInvalid,
+		"LogicAssocClassContextInvalid":      LogicAssocClassContextInvalid,
+		"LogicAssocClassSpecRequired":        LogicAssocClassSpecRequired,
+		"AssocAssocclassDuplicate":           AssocAssocclassDuplicate,
 
 		// GlobalFunction errors.
 		"GfuncKeyInvalid":       GfuncKeyInvalid,

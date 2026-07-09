@@ -46,6 +46,10 @@ type Logic struct {
 	// OverAssociationKey tags a class invariant as constraining an association; facts and docs
 	// render it as an association invariant while evaluation stays on the owning class.
 	OverAssociationKey *identity.Key
+	// EndpointSelectorSpec, when set on an action state_change, marks association-class reification:
+	// Target is the association class TLA name; Spec is AC creation (EventCall or set-map of EventCalls);
+	// EndpointSelector names the far-side endpoint (uses the set-map binder when Spec is a set-map).
+	EndpointSelectorSpec logic_spec.ExpressionSpec
 }
 
 // SetOverAssociationKey tags this logic as constraining the given class association.
@@ -105,7 +109,16 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 	if err := validateLogicDestroyFields(ctx, l); err != nil {
 		return err
 	}
-	// Validate the ExpressionSpec.
+	if err := validateLogicAssociationClassFields(ctx, l); err != nil {
+		return err
+	}
+	if err := l.validateAttachedSpecs(ctx); err != nil {
+		return err
+	}
+	return l.validateOverAssociationKey(ctx)
+}
+
+func (l *Logic) validateAttachedSpecs(ctx *coreerr.ValidationContext) error {
 	if err := l.Spec.Validate(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q spec: %s", l.Key.String(), err.Error()), "Spec")
 	}
@@ -114,21 +127,30 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 			return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q destroy_event: %s", l.Key.String(), err.Error()), "DestroyEventSpec")
 		}
 	}
-	// Validate TargetTypeSpec if present.
+	if IsAssociationClassReify(*l) {
+		if err := l.EndpointSelectorSpec.Validate(ctx.Child("endpoint_selector", "")); err != nil {
+			return coreerr.New(ctx, coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q endpoint_selector: %s", l.Key.String(), err.Error()), "EndpointSelectorSpec")
+		}
+	}
 	if l.TargetTypeSpec != nil {
 		if err := l.TargetTypeSpec.Validate(ctx); err != nil {
 			return coreerr.New(ctx, coreerr.LogicTargetTypespecInvalid, fmt.Sprintf("logic %q target type spec: %s", l.Key.String(), err.Error()), "TargetTypeSpec")
 		}
 	}
-	if l.OverAssociationKey != nil {
-		if err := l.OverAssociationKey.ValidateWithContext(ctx); err != nil {
-			return coreerr.New(ctx, coreerr.LogicOverAssociationKeyInvalid, fmt.Sprintf("logic %q over association key: %s", l.Key.String(), err.Error()), "OverAssociationKey")
-		}
-		if l.OverAssociationKey.KeyType != identity.KEY_TYPE_CLASS_ASSOCIATION {
-			return coreerr.NewWithValues(ctx, coreerr.LogicOverAssociationKeyTypeInvalid,
-				fmt.Sprintf("logic %q over association key has type %q", l.Key.String(), l.OverAssociationKey.KeyType),
-				"OverAssociationKey", l.OverAssociationKey.KeyType, identity.KEY_TYPE_CLASS_ASSOCIATION)
-		}
+	return nil
+}
+
+func (l *Logic) validateOverAssociationKey(ctx *coreerr.ValidationContext) error {
+	if l.OverAssociationKey == nil {
+		return nil
+	}
+	if err := l.OverAssociationKey.ValidateWithContext(ctx); err != nil {
+		return coreerr.New(ctx, coreerr.LogicOverAssociationKeyInvalid, fmt.Sprintf("logic %q over association key: %s", l.Key.String(), err.Error()), "OverAssociationKey")
+	}
+	if l.OverAssociationKey.KeyType != identity.KEY_TYPE_CLASS_ASSOCIATION {
+		return coreerr.NewWithValues(ctx, coreerr.LogicOverAssociationKeyTypeInvalid,
+			fmt.Sprintf("logic %q over association key has type %q", l.Key.String(), l.OverAssociationKey.KeyType),
+			"OverAssociationKey", l.OverAssociationKey.KeyType, identity.KEY_TYPE_CLASS_ASSOCIATION)
 	}
 	return nil
 }

@@ -478,6 +478,27 @@ func (c *ClassCatalog) AssociationByKey(assocKey identity.Key) (model_class.Asso
 	return model_class.Association{}, false
 }
 
+// OutgoingAssociationByAssociationClassTLAName finds the outgoing association whose
+// association class display name (spaces stripped) equals classTLAName.
+func (c *ClassCatalog) OutgoingAssociationByAssociationClassTLAName(
+	fromClassKey identity.Key,
+	classTLAName string,
+) (identity.Key, model_class.Association, bool) {
+	for _, ai := range c.GetAssociationsForClass(fromClassKey) {
+		if ai.Association.FromClassKey != fromClassKey || ai.Association.AssociationClassKey == nil {
+			continue
+		}
+		acClass, ok := c.PeerClass(*ai.Association.AssociationClassKey)
+		if !ok {
+			continue
+		}
+		if model_class.ClassTLAName(acClass.Name) == classTLAName {
+			return ai.Association.Key, ai.Association, true
+		}
+	}
+	return identity.Key{}, model_class.Association{}, false
+}
+
 // OutgoingAssociationByTLAField resolves an outgoing association by its TLA field name on fromClassKey.
 func (c *ClassCatalog) OutgoingAssociationByTLAField(
 	fromClassKey identity.Key,
