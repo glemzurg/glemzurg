@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -119,12 +120,9 @@ func (h *CreationChainHandler) createMandatoryInstance(
 	simState *state.SimulationState,
 	depth int,
 ) (*SimulationStep, invariants.ViolationErrors, error) {
-	params, err := actions.SampleEventPayload(*creationEvent, nil, h.paramBinder, nil, h.rng)
+	params, err := h.sampleCreationEventParams(toClassInfo, creationEvent)
 	if err != nil {
-		return nil, nil, fmt.Errorf(
-			"creation chain: event %s parameter sampling: %w",
-			creationEvent.Name, err,
-		)
+		return nil, nil, err
 	}
 
 	assocKey := assocInfo.Association.Key
@@ -277,12 +275,9 @@ func (h *CreationChainHandler) createPlainEndpointInstance(
 	simState *state.SimulationState,
 	depth int,
 ) (*SimulationStep, invariants.ViolationErrors, error) {
-	params, err := actions.SampleEventPayload(*creationEvent, nil, h.paramBinder, nil, h.rng)
+	params, err := h.sampleCreationEventParams(toClassInfo, creationEvent)
 	if err != nil {
-		return nil, nil, fmt.Errorf(
-			"creation chain: event %s parameter sampling: %w",
-			creationEvent.Name, err,
-		)
+		return nil, nil, err
 	}
 
 	result, err := h.actionExecutor.ExecuteTransition(
@@ -339,6 +334,26 @@ func (h *CreationChainHandler) createPlainEndpointInstance(
 	return step, step.Violations, nil
 }
 
+// sampleCreationEventParams samples creation-event parameters using the creation
+// transition action when present so typed action parameters (spans, etc.) apply.
+func (h *CreationChainHandler) sampleCreationEventParams(
+	classInfo *ClassInfo,
+	creationEvent *model_state.Event,
+) (map[string]object.Object, error) {
+	var actionPtr *model_state.Action
+	if action, found := h.catalog.GetActionForEvent(classInfo.ClassKey, creationEvent.Key, ""); found {
+		actionPtr = action
+	}
+	params, err := actions.SampleEventPayload(*creationEvent, actionPtr, h.paramBinder, nil, h.rng)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"creation chain: event %s parameter sampling: %w",
+			creationEvent.Name, err,
+		)
+	}
+	return params, nil
+}
+
 // instanceEndpointIDs holds the from and to endpoint instances for association-class materialization.
 type instanceEndpointIDs struct {
 	FromInstanceID state.InstanceID
@@ -353,12 +368,9 @@ func (h *CreationChainHandler) createAssociationClassInstance(
 	simState *state.SimulationState,
 	depth int,
 ) (*SimulationStep, invariants.ViolationErrors, error) {
-	params, err := actions.SampleEventPayload(*creationEvent, nil, h.paramBinder, nil, h.rng)
+	params, err := h.sampleCreationEventParams(acClassInfo, creationEvent)
 	if err != nil {
-		return nil, nil, fmt.Errorf(
-			"creation chain: event %s parameter sampling: %w",
-			creationEvent.Name, err,
-		)
+		return nil, nil, err
 	}
 
 	result, err := h.actionExecutor.ExecuteTransition(
