@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -9,38 +11,152 @@ func evalAssociationRelationFieldAccess(
 	field string,
 	bindings *Bindings,
 ) *EvalResult {
+	// Step 1: association-class member name → sole/binder scalar AC row, else set of all link rows.
 	if field == assocRel.LinkClassMember() {
-		return resolveAssociationClassLink(assocRel, bindings)
+		if sole := soleAssociationEndpoint(assocRel, bindings); sole != nil {
+			link, ok := assocRel.LinkForEndpoint(sole)
+			if !ok {
+				return NewEvalError("missing association-class row for endpoint")
+			}
+			return NewEvalResult(link)
+		}
+		return NewEvalResult(associationClassLinkSet(assocRel))
 	}
-	linkResult := resolveAssociationClassLink(assocRel, bindings)
-	if linkResult.IsError() {
-		return linkResult
+
+	// Step 2: project a field present on every endpoint (binder/sole → scalar).
+	if projected, ok, err := projectAssociationEndpointField(assocRel, field, bindings); ok {
+		return projected
+	} else if err != nil {
+		return err
 	}
-	return applyFieldChain(linkResult.Value, []string{field})
+
+	// Step 3: project a field present on every AC link row (binder/sole → scalar).
+	if projected, ok, err := projectAssociationLinkField(assocRel, field, bindings); ok {
+		return projected
+	} else if err != nil {
+		return err
+	}
+
+	// Step 4: clear failure.
+	return NewEvalError("%s", associationFieldProjectionError(assocRel, field))
 }
 
-// resolveAssociationClassLink returns the single association-class row for a host traversal.
-// With one endpoint it is unambiguous; with many, a uniquely bound local endpoint variable disambiguates.
-func resolveAssociationClassLink(assocRel *object.AssociationRelation, bindings *Bindings) *EvalResult {
-	endpointCount := assocRel.Endpoints().Size()
-	if endpointCount == 0 {
-		return NewEvalError("no association rows for association-class member %s", assocRel.LinkClassMember())
+// associationClassLinkSet returns all association-class rows as a set (empty if none).
+func associationClassLinkSet(assocRel *object.AssociationRelation) *object.Set {
+	set := object.NewSet()
+	for _, link := range assocRel.LinkByEndpoint() {
+		set.Add(link)
 	}
+	return set
+}
 
-	endpoint := soleAssociationEndpoint(assocRel, bindings)
-	if endpoint == nil {
-		return NewEvalError(
-			"association-class member %s requires exactly one association row; found %d",
-			assocRel.LinkClassMember(),
-			endpointCount,
-		)
+// projectAssociationEndpointField projects field over endpoints when every endpoint has it.
+// ok=false means "try next step"; err is a hard failure.
+func projectAssociationEndpointField(
+	assocRel *object.AssociationRelation,
+	field string,
+	bindings *Bindings,
+) (result *EvalResult, ok bool, err *EvalResult) {
+	endpoints := associationEndpointRecords(assocRel)
+	if len(endpoints) == 0 {
+		return nil, false, NewEvalError("no endpoints to project field %s on association navigation", field)
 	}
+	if !everyRecordHasField(endpoints, field) {
+		return nil, false, nil
+	}
+	if sole := soleAssociationEndpoint(assocRel, bindings); sole != nil {
+		return NewEvalResult(sole.Get(field)), true, nil
+	}
+	return NewEvalResult(projectRecordsField(endpoints, field)), true, nil
+}
 
-	link, ok := assocRel.LinkForEndpoint(endpoint)
-	if !ok {
-		return NewEvalError("missing association-class row for endpoint")
+// projectAssociationLinkField projects field over AC link rows when every link has it.
+func projectAssociationLinkField(
+	assocRel *object.AssociationRelation,
+	field string,
+	bindings *Bindings,
+) (result *EvalResult, ok bool, err *EvalResult) {
+	if assocRel.LinkClassMember() == "" {
+		return nil, false, nil
 	}
-	return NewEvalResult(link)
+	links := associationLinkRecords(assocRel)
+	if len(links) == 0 {
+		return nil, false, nil
+	}
+	if !everyRecordHasField(links, field) {
+		return nil, false, nil
+	}
+	if sole := soleAssociationEndpoint(assocRel, bindings); sole != nil {
+		link, found := assocRel.LinkForEndpoint(sole)
+		if !found {
+			return nil, false, NewEvalError("missing association-class row for endpoint")
+		}
+		return NewEvalResult(link.Get(field)), true, nil
+	}
+	return NewEvalResult(projectRecordsField(links, field)), true, nil
+}
+
+func associationEndpointRecords(assocRel *object.AssociationRelation) []*object.Record {
+	var records []*object.Record
+	for _, elem := range assocRel.Endpoints().Elements() {
+		rec, ok := elem.(*object.Record)
+		if !ok {
+			continue
+		}
+		records = append(records, rec)
+	}
+	return records
+}
+
+func associationLinkRecords(assocRel *object.AssociationRelation) []*object.Record {
+	links := make([]*object.Record, 0, len(assocRel.LinkByEndpoint()))
+	for _, link := range assocRel.LinkByEndpoint() {
+		links = append(links, link)
+	}
+	return links
+}
+
+func everyRecordHasField(records []*object.Record, field string) bool {
+	for _, rec := range records {
+		if !rec.Has(field) {
+			return false
+		}
+	}
+	return true
+}
+
+func projectRecordsField(records []*object.Record, field string) *object.Set {
+	set := object.NewSet()
+	for _, rec := range records {
+		set.Add(rec.Get(field))
+	}
+	return set
+}
+
+func associationFieldProjectionError(assocRel *object.AssociationRelation, field string) string {
+	endpoints := associationEndpointRecords(assocRel)
+	links := associationLinkRecords(assocRel)
+	endpointHas := 0
+	for _, ep := range endpoints {
+		if ep.Has(field) {
+			endpointHas++
+		}
+	}
+	linkHas := 0
+	for _, link := range links {
+		if link.Has(field) {
+			linkHas++
+		}
+	}
+	return fmt.Sprintf(
+		"cannot project field %s on association navigation (LinkClassMember=%q, endpoints=%d with field=%d, linkRows=%d with field=%d)",
+		field,
+		assocRel.LinkClassMember(),
+		len(endpoints),
+		endpointHas,
+		len(links),
+		linkHas,
+	)
 }
 
 func soleAssociationEndpoint(assocRel *object.AssociationRelation, bindings *Bindings) *object.Record {

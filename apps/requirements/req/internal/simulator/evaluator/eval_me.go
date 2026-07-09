@@ -689,6 +689,11 @@ func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 		return evalAssociationRelationFieldAccess(assocRel, n.Field, bindings)
 	}
 
+	// Set of records: map-project field across each element (OO sugar for multi AC chains).
+	if set, ok := baseResult.Value.(*object.Set); ok {
+		return projectSetOfRecordsField(set, n.Field)
+	}
+
 	record, ok := baseResult.Value.(*object.Record)
 	if !ok {
 		return NewEvalError("field access requires Record, got %s", baseResult.Value.Type())
@@ -704,6 +709,26 @@ func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 		return NewEvalError("field not found: %s", n.Field)
 	}
 	return NewEvalResult(value)
+}
+
+// projectSetOfRecordsField maps field access across a set of records.
+// Empty set → empty set. Missing field on any element → error.
+func projectSetOfRecordsField(set *object.Set, field string) *EvalResult {
+	if set.Size() == 0 {
+		return NewEvalResult(object.NewSet())
+	}
+	out := object.NewSet()
+	for _, elem := range set.Elements() {
+		record, ok := elem.(*object.Record)
+		if !ok {
+			return NewEvalError("field access on Set requires Record elements, got %s", elem.Type())
+		}
+		if !record.Has(field) {
+			return NewEvalError("field not found: %s", field)
+		}
+		out.Add(record.Get(field))
+	}
+	return NewEvalResult(out)
 }
 
 func evalMETupleIndex(n *me.TupleIndex, bindings *Bindings) *EvalResult {
@@ -1155,7 +1180,22 @@ func ObjectsEqual(left, right object.Object) bool {
 }
 
 // objectsEqual compares two objects for structural equality.
+// AssociationRelation and Set compare by endpoint set so assoc = {} and mixed
+// AR/Set equality treat the relation image as the set view (link rows ignored).
 func objectsEqual(left, right object.Object) bool {
+	if leftSet, leftOK := CoerceToSet(left); leftOK {
+		if rightSet, rightOK := CoerceToSet(right); rightOK {
+			// Both sides have a set view (Set and/or AssociationRelation).
+			// AR↔AR still needs full equality when both are association relations
+			// so differing link rows are not considered equal.
+			leftAR, leftIsAR := left.(*object.AssociationRelation)
+			rightAR, rightIsAR := right.(*object.AssociationRelation)
+			if leftIsAR && rightIsAR {
+				return leftAR.Equals(rightAR)
+			}
+			return leftSet.Equals(rightSet)
+		}
+	}
 	if left.Type() != right.Type() {
 		return false
 	}

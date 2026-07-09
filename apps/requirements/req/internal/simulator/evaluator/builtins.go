@@ -151,9 +151,10 @@ func builtinSetToBag(args []object.Object) *EvalResult {
 	if len(args) != 1 {
 		return NewEvalError("_Bags!SetToBag requires 1 argument, got %d", len(args))
 	}
-	set, ok := args[0].(*object.Set)
+	// Association navigations are relation images; CoerceToSet unwraps AssociationRelation endpoints.
+	set, ok := CoerceToSet(args[0])
 	if !ok {
-		return NewEvalError("_Bags!SetToBag requires Set, got %s", args[0].Type())
+		return NewEvalError("_Bags!SetToBag requires Set or AssociationRelation, got %s", args[0].Type())
 	}
 	bag := object.NewBag()
 	for _, elem := range set.Elements() {
@@ -193,16 +194,14 @@ func builtinBagCardinality(args []object.Object) *EvalResult {
 	if len(args) != 1 {
 		return NewEvalError("_Bags!BagCardinality requires 1 argument, got %d", len(args))
 	}
-	switch v := args[0].(type) {
-	case *object.Bag:
-		return NewEvalResult(object.NewNatural(int64(v.Size())))
-	case *object.Set:
-		return NewEvalResult(object.NewNatural(int64(v.Size())))
-	case *object.AssociationRelation:
-		return NewEvalResult(object.NewNatural(int64(v.Endpoints().Size())))
-	default:
-		return NewEvalError("_Bags!BagCardinality requires Bag or Set, got %s", args[0].Type())
+	if bag, ok := args[0].(*object.Bag); ok {
+		return NewEvalResult(object.NewNatural(int64(bag.Size())))
 	}
+	// Set and AssociationRelation (endpoint image) share one coercion path.
+	if set, ok := CoerceToSet(args[0]); ok {
+		return NewEvalResult(object.NewNatural(int64(set.Size())))
+	}
+	return NewEvalError("_Bags!BagCardinality requires Bag, Set, or AssociationRelation, got %s", args[0].Type())
 }
 
 func builtinBagIn(args []object.Object) *EvalResult {

@@ -17,7 +17,9 @@ func lookupRelation(classKey, fieldName string, relCtx *RelationContext) *Relati
 }
 
 // evalRelationTraversal evaluates a relation field access on a record.
-// It returns a Set of related records by querying the link table.
+// Plain associations return a Set of related endpoint records. Host associations
+// with an association class return AssociationRelation (endpoint image + link rows);
+// set/bag ops coerce that to the endpoint set via CoerceToSet.
 func evalRelationTraversal(record *object.Record, relInfo *RelationInfo, relCtx *RelationContext) *EvalResult {
 	if record == nil {
 		return NewEvalError("cannot traverse relation on nil record")
