@@ -7,7 +7,11 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
+
+const missingSpecDisplay = "???"
 
 func expressionSpecBoldDisplay(spec logic_spec.ExpressionSpec) string {
 	display := expressionSpecDisplay(spec)
@@ -19,7 +23,7 @@ func expressionSpecBoldDisplay(spec logic_spec.ExpressionSpec) string {
 
 func logicBoldSpecTextForClass(class model_class.Class, logic model_logic.Logic) string {
 	if logic.Target != "" {
-		spec := "???"
+		spec := missingSpecDisplay
 		if logic.Spec.Specification != "" {
 			spec = expressionSpecDisplayForClass(class, logic.Spec)
 		}
@@ -40,7 +44,7 @@ func logicBoldSpecTextForClass(class model_class.Class, logic model_logic.Logic)
 
 func logicBoldSpecText(logic model_logic.Logic) string {
 	if logic.Target != "" {
-		spec := "???"
+		spec := missingSpecDisplay
 		if logic.Spec.Specification != "" {
 			spec = expressionSpecDisplay(logic.Spec)
 		}
@@ -59,10 +63,30 @@ func logicBoldSpecText(logic model_logic.Logic) string {
 	return ""
 }
 
+// classLogicMarkdownSpecLinesFromTemplate is the template entry point (class, logic, reqs).
+func classLogicMarkdownSpecLinesFromTemplate(
+	class model_class.Class,
+	logic model_logic.Logic,
+	reqs *req_flat.Requirements,
+) string {
+	if reqs == nil {
+		return logicMarkdownSpecLinesForClass(class, logic, nil, nil)
+	}
+	return logicMarkdownSpecLinesForClass(class, logic, reqs.ClassAssociations, reqs.Classes)
+}
+
 // logicMarkdownSpecLinesForClass renders logic spec lines with self.<key> mapped to display TLA names.
-func logicMarkdownSpecLinesForClass(class model_class.Class, logic model_logic.Logic) string {
+// associations/classes resolve host association names for association-class reify selectors.
+func logicMarkdownSpecLinesForClass(
+	class model_class.Class,
+	logic model_logic.Logic,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) string {
 	var lines []string
-	if bold := logicBoldSpecTextForClass(class, logic); bold != "" {
+	if model_logic.IsAssociationClassReify(logic) {
+		lines = append(lines, associationClassReifyMarkdownLines(class, logic, associations, classes)...)
+	} else if bold := logicBoldSpecTextForClass(class, logic); bold != "" {
 		lines = append(lines, "    - "+bold)
 	}
 	if logic.Type == model_logic.LogicTypeDestroy {
@@ -78,10 +102,73 @@ func logicMarkdownSpecLinesForClass(class model_class.Class, logic model_logic.L
 	return strings.Join(lines, "\n")
 }
 
+// associationClassReifyMarkdownLines renders:
+//
+//   - **Adjusts selector: { r.account : r ∈ Amounts }**
+//   - **AccountBalanceChange' = «new»(r.amount)**
+func associationClassReifyMarkdownLines(
+	class model_class.Class,
+	logic model_logic.Logic,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) []string {
+	var lines []string
+	assocLabel := associationTLAFieldForACClassTarget(logic.Target, associations, classes)
+	if assocLabel == "" {
+		assocLabel = missingSpecDisplay
+	}
+	selectorSpec := missingSpecDisplay
+	if strings.TrimSpace(logic.EndpointSelectorSpec.Specification) != "" {
+		selectorSpec = expressionSpecDisplayForClass(class, logic.EndpointSelectorSpec)
+	}
+	lines = append(lines, "    - **"+assocLabel+" selector: "+selectorSpec+"**")
+
+	createSpec := missingSpecDisplay
+	if strings.TrimSpace(logic.Spec.Specification) != "" {
+		createSpec = expressionSpecDisplayForClass(class, logic.Spec)
+		createSpec = systemEventCallSpecDisplay(createSpec)
+	}
+	lines = append(lines, "    - **"+logic.Target+"' = "+createSpec+"**")
+	return lines
+}
+
+// associationTLAFieldForACClassTarget returns the host association TLA field name for an AC class target.
+func associationTLAFieldForACClassTarget(
+	acClassTLAName string,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) string {
+	for _, assoc := range associations {
+		if assoc.AssociationClassKey == nil {
+			continue
+		}
+		acClass, ok := classes[*assoc.AssociationClassKey]
+		if !ok {
+			continue
+		}
+		if model_class.ClassTLAName(acClass.Name) == acClassTLAName {
+			return model_class.AssociationTLAFieldName(assoc.Name)
+		}
+	}
+	return ""
+}
+
 // logicMarkdownSpecLines renders indented continuation lines for a logic item in list markdown.
 func logicMarkdownSpecLines(logic model_logic.Logic) string {
 	var lines []string
-	if bold := logicBoldSpecText(logic); bold != "" {
+	if model_logic.IsAssociationClassReify(logic) {
+		// Without association catalog, still show selector before AC assignment.
+		selectorSpec := missingSpecDisplay
+		if strings.TrimSpace(logic.EndpointSelectorSpec.Specification) != "" {
+			selectorSpec = expressionSpecDisplay(logic.EndpointSelectorSpec)
+		}
+		lines = append(lines, "    - **selector: "+selectorSpec+"**")
+		createSpec := missingSpecDisplay
+		if strings.TrimSpace(logic.Spec.Specification) != "" {
+			createSpec = systemEventCallSpecDisplay(expressionSpecDisplay(logic.Spec))
+		}
+		lines = append(lines, "    - **"+logic.Target+"' = "+createSpec+"**")
+	} else if bold := logicBoldSpecText(logic); bold != "" {
 		lines = append(lines, "    - "+bold)
 	}
 	if logic.Type == model_logic.LogicTypeDestroy {
@@ -151,7 +238,7 @@ func indentMarkdownBlock(block, indent string) string {
 }
 
 func appendClassLogicMarkdownChild(lines *[]string, class model_class.Class, logic model_logic.Logic, parentIndent string) {
-	if specLines := logicMarkdownSpecLinesForClass(class, logic); specLines != "" {
+	if specLines := logicMarkdownSpecLinesForClass(class, logic, nil, nil); specLines != "" {
 		*lines = append(*lines, indentMarkdownBlock(specLines, parentIndent))
 	}
 }

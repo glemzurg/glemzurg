@@ -47,8 +47,8 @@ type Logic struct {
 	// render it as an association invariant while evaluation stays on the owning class.
 	OverAssociationKey *identity.Key
 	// EndpointSelectorSpec, when set on an action state_change, marks association-class reification:
-	// Target is the association class TLA name; Spec is AC creation (EventCall or set-map of EventCalls);
-	// EndpointSelector names the far-side endpoint (uses the set-map binder when Spec is a set-map).
+	// Target is the association class TLA name; Spec is the AC creation EventCall only (_new(...)).
+	// EndpointSelector is LET-like: often a set-map { endpoint : r \in Domain } supplying binder and domain.
 	EndpointSelectorSpec logic_spec.ExpressionSpec
 }
 

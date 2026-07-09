@@ -26,11 +26,12 @@ func actionGuaranteeKey(t *testing.T) identity.Key {
 
 func TestValidateAssociationClassReifyValid(t *testing.T) {
 	tests := []struct {
-		name string
-		spec string
+		name     string
+		selector string
+		spec     string
 	}{
-		{name: "singleton new", spec: "_new(Amount)"},
-		{name: "set-map new", spec: `{ _new(r.amount) : r \in Amounts }`},
+		{name: "singleton", selector: "chosenAccount", spec: "_new(Amount)"},
+		{name: "selector set-map", selector: `{ r.account : r \in Amounts }`, spec: "_new(r.amount)"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -42,7 +43,7 @@ func TestValidateAssociationClassReifyValid(t *testing.T) {
 				logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: tc.spec},
 				nil,
 			)
-			logic.SetEndpointSelectorSpec(logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: "r.account"})
+			logic.SetEndpointSelectorSpec(logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: tc.selector})
 			require.NoError(t, logic.Validate(coreerr.NewContext("test", "")))
 			require.True(t, IsAssociationClassReify(logic))
 		})

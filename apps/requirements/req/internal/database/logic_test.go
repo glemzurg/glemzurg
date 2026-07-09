@@ -300,9 +300,9 @@ func (suite *LogicSuite) TestAddAssociationClassReify() {
 		Type:        model_logic.LogicTypeStateChange,
 		Description: "Create AC rows",
 		Target:      "AccountBalanceChange",
-		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ _new(r.amount) : r \in Amounts }`},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "_new(r.amount)"},
 	}
-	logicIn.SetEndpointSelectorSpec(logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "r.account"})
+	logicIn.SetEndpointSelectorSpec(logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ r.account : r \in Amounts }`})
 	err := AddLogic(suite.db, suite.model.Key, logicIn)
 	suite.Require().NoError(err)
 
@@ -313,8 +313,8 @@ func (suite *LogicSuite) TestAddAssociationClassReify() {
 		Type:                 model_logic.LogicTypeStateChange,
 		Description:          "Create AC rows",
 		Target:               "AccountBalanceChange",
-		Spec:                 logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ _new(r.amount) : r \in Amounts }`},
-		EndpointSelectorSpec: logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "r.account"},
+		Spec:                 logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "_new(r.amount)"},
+		EndpointSelectorSpec: logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ r.account : r \in Amounts }`},
 	}, logic)
 }
 

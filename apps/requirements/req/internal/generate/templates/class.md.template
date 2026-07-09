@@ -63,7 +63,7 @@ This is an actor:
 
 {{ range $plainInvariants -}}
 - {{ .Description }}
-{{ class_logic_markdown_spec_lines $.Class . }}
+{{ class_logic_markdown_spec_lines $.Class . $reqs }}
 {{ end }}
 {{- end }}
 
@@ -77,7 +77,7 @@ This is an actor:
 
 {{ range .Invariants -}}
 - {{ .Description }}
-{{ class_logic_markdown_spec_lines $.Class . }}
+{{ class_logic_markdown_spec_lines $.Class . $reqs }}
 {{ end }}
 {{ end }}
 {{ range $taggedAssocInvariants -}}
@@ -85,7 +85,7 @@ This is an actor:
 
 {{ range .Invariants -}}
 - {{ .Description }}
-{{ class_logic_markdown_spec_lines $.Class . }}
+{{ class_logic_markdown_spec_lines $.Class . $reqs }}
 {{ end }}
 {{ end }}
 {{- end }}
@@ -140,7 +140,7 @@ The guards for this class.
 
 {{ range .Class.Guards -}}
 - {{ .Logic.Description }}
-{{ class_logic_markdown_spec_lines $.Class .Logic }}
+{{ class_logic_markdown_spec_lines $.Class .Logic $reqs }}
 {{ end }}
 {{- end }}
 
@@ -174,7 +174,7 @@ Requires:
 
 {{ range $action.Requires -}}
 - {{ .Description }}
-{{ class_logic_markdown_spec_lines $.Class . }}
+{{ class_logic_markdown_spec_lines $.Class . $reqs }}
 {{ end }}
 
 {{- else -}}
@@ -193,7 +193,7 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ class_logic_markdown_spec_lines $.Class . }}
+{{ class_logic_markdown_spec_lines $.Class . $reqs }}
 {{ end }}
 
 {{- else -}}
@@ -205,7 +205,7 @@ Safety Rules:
 
 {{ range $action.SafetyRules -}}
 - {{ .Description }}
-{{ class_logic_markdown_spec_lines $.Class . }}
+{{ class_logic_markdown_spec_lines $.Class . $reqs }}
 {{ end }}
 {{ end -}}
 Triggered from:
@@ -251,7 +251,7 @@ Requires:
 
 {{ range $query.Requires -}}
 - {{ .Description }}
-{{ class_logic_markdown_spec_lines $.Class . }}
+{{ class_logic_markdown_spec_lines $.Class . $reqs }}
 {{ end }}
 
 {{- else -}}
@@ -269,7 +269,7 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ class_logic_markdown_spec_lines $.Class . }}
+{{ class_logic_markdown_spec_lines $.Class . $reqs }}
 {{ end }}
 
 {{- else -}}

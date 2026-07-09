@@ -251,18 +251,18 @@ func lowerDestroyGuaranteeEvent(guar *model_logic.Logic, ctx *LowerContext) erro
 	return lowerLogicSpec(&guar.DestroyEventSpec, deleteCtx)
 }
 
-// lowerAssociationClassReifyGuarantee lowers AC reify Spec and EndpointSelectorSpec.
-// When Spec is a set-map, the map binder is in scope for the endpoint selector.
+// lowerAssociationClassReifyGuarantee lowers endpoint_selector then Spec.
+// When endpoint_selector is a set-map (LET-like domain), its binder is in scope for Spec.
 func lowerAssociationClassReifyGuarantee(guar *model_logic.Logic, ctx *LowerContext) error {
-	if err := lowerLogicSpec(&guar.Spec, ctx); err != nil {
-		return fmt.Errorf("creation specification: %w", err)
+	if err := lowerLogicSpec(&guar.EndpointSelectorSpec, ctx); err != nil {
+		return fmt.Errorf("endpoint_selector: %w", err)
 	}
 	reifyCtx := ctx
-	if setMap, ok := guar.Spec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
+	if setMap, ok := guar.EndpointSelectorSpec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
 		reifyCtx = withLocalVar(ctx, setMap.Variable)
 	}
-	if err := lowerLogicSpec(&guar.EndpointSelectorSpec, reifyCtx); err != nil {
-		return fmt.Errorf("endpoint_selector: %w", err)
+	if err := lowerLogicSpec(&guar.Spec, reifyCtx); err != nil {
+		return fmt.Errorf("creation specification: %w", err)
 	}
 	return nil
 }

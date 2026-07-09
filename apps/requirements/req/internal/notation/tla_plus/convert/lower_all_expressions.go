@@ -148,16 +148,16 @@ func relowerActionExpressions(actKey identity.Key, action *model_state.Action, c
 	for i := range action.Guarantees {
 		guar := &action.Guarantees[i]
 		if model_logic.IsAssociationClassReify(*guar) {
-			if err := relowerSpec(&guar.Spec, actPF); err != nil {
-				return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
+			if err := relowerSpec(&guar.EndpointSelectorSpec, actPF); err != nil {
+				return fmt.Errorf("action %q guarantee %d endpoint_selector: %w", actKey.String(), i, err)
 			}
 			reifyPF := actPF
-			if setMap, ok := guar.Spec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
+			if setMap, ok := guar.EndpointSelectorSpec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
 				reifyCtx := withLocalVar(ContextWithParameters(classCtx, action.Parameters), setMap.Variable)
 				reifyPF = NewExpressionParseFunc(reifyCtx)
 			}
-			if err := relowerSpec(&guar.EndpointSelectorSpec, reifyPF); err != nil {
-				return fmt.Errorf("action %q guarantee %d endpoint_selector: %w", actKey.String(), i, err)
+			if err := relowerSpec(&guar.Spec, reifyPF); err != nil {
+				return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
 			}
 			continue
 		}
@@ -443,16 +443,16 @@ func relowerAssociationClassReifyStrict(
 	actPF StrictExpressionParseFunc,
 ) []error {
 	var errs []error
-	if err := relowerSpecStrict(&guar.Spec, actPF); err != nil {
-		errs = append(errs, fmt.Errorf("action %q guarantee %d: %w", actKey.String(), index, err))
+	if err := relowerSpecStrict(&guar.EndpointSelectorSpec, actPF); err != nil {
+		errs = append(errs, fmt.Errorf("action %q guarantee %d endpoint_selector: %w", actKey.String(), index, err))
 	}
 	reifyPF := actPF
-	if setMap, ok := guar.Spec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
+	if setMap, ok := guar.EndpointSelectorSpec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
 		reifyCtx := withLocalVar(actCtx, setMap.Variable)
 		reifyPF = NewExpressionParseFuncStrict(reifyCtx)
 	}
-	if err := relowerSpecStrict(&guar.EndpointSelectorSpec, reifyPF); err != nil {
-		errs = append(errs, fmt.Errorf("action %q guarantee %d endpoint_selector: %w", actKey.String(), index, err))
+	if err := relowerSpecStrict(&guar.Spec, reifyPF); err != nil {
+		errs = append(errs, fmt.Errorf("action %q guarantee %d: %w", actKey.String(), index, err))
 	}
 	return errs
 }

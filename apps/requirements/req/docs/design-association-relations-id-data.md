@@ -75,6 +75,28 @@ Authors almost always write the **navigable image** form (`self.Assoc`), not exp
 
 When an association has an **association class**, each linked pair is reified by **exactly one** association-class instance (one link row per pair). That row holds attributes that belong to the *relationship*, not only to either endpoint.
 
+**Action guarantees (authoring).** Creating association-class rows uses two related state_change items:
+
+1. **Relation image** (optional) — target is the association TLA field; RHS is the opposite-side set only.
+2. **Association-class reify** — target is the association-class TLA name; `endpoint_selector` is LET-like (often a set-map over a parameter domain); `specification` is only the AC creation call.
+
+Rendered in class markdown (selector bullet **before** the AC assignment):
+
+```text
+- **Adjusts selector: { r.account : r ∈ Amounts }**
+- **AccountBalanceChange' = «new»(r.amount)**
+```
+
+YAML:
+
+```yaml
+- target: AccountBalanceChange
+  endpoint_selector: '{ r.account : r \in Amounts }'
+  specification: '_new(r.amount)'
+```
+
+The selector supplies the domain binder (`r`) and far-side endpoint expression; the AC guarantee body does not restate the domain.
+
 ```text
 Order ──ShipsTo──► Address
            │
