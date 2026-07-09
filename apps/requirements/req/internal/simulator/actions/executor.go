@@ -126,10 +126,13 @@ type ActionExecutor struct {
 	peerCatalog        PeerCreationCatalog
 	rng                *rand.Rand
 
-	// deferMultiplicityInActionCheck skips implicit multiplicity checks inside
-	// checkAllInvariants while a transition is mid-flight; ExecuteTransition
-	// runs them after links and _state are fully applied.
-	deferMultiplicityInActionCheck bool
+	// worldStateDeferDepth skips world-state checks (model/index/association
+	// structural) while a step is mid-flight: transition action, nested peer
+	// transitions, entry/exit actions, and creation-chain nesting. Depth lets
+	// nested ExecuteTransition calls keep deferral active for the outer step.
+	// Callers that BeginWorldStateDeferral must run CheckWorldStateInvariants
+	// after nested work completes.
+	worldStateDeferDepth int
 
 	// classNameMap binds class display names to instance sets for action requires.
 	classNameMap map[identity.Key]string
@@ -247,20 +250,48 @@ func (e *ActionExecutor) applyPrimedAssignments(ctx *ExecutionContext) error {
 	return nil
 }
 
-// checkAllInvariants runs all post-condition and invariant checks and returns combined violations.
+// checkAllInvariants runs post-conditions and invariant checks after an action.
+// World-state checks are omitted while a step is mid-flight so nesting can finish first.
 func (e *ActionExecutor) checkAllInvariants(ctx *ExecutionContext) invariants.ViolationErrors {
 	var allViolations invariants.ViolationErrors
 
 	allViolations = append(allViolations, e.checkPostConditions(ctx)...)
 	allViolations = append(allViolations, e.checkSafetyRules(ctx)...)
 	allViolations = append(allViolations, e.checkDataTypeConstraints(ctx)...)
-	allViolations = append(allViolations, e.checkModelInvariants()...)
-	allViolations = append(allViolations, e.checkIndexUniqueness()...)
-	if !e.deferMultiplicityInActionCheck {
-		allViolations = append(allViolations, e.checkAssociationStructuralInvariants()...)
+	if !e.worldStateChecksDeferred() {
+		allViolations = append(allViolations, e.CheckWorldStateInvariants()...)
 	}
 
 	return allViolations
+}
+
+// BeginWorldStateDeferral postpones model/index/association structural checks until
+// EndWorldStateDeferral and CheckWorldStateInvariants run after nested work.
+func (e *ActionExecutor) BeginWorldStateDeferral() {
+	e.worldStateDeferDepth++
+}
+
+// EndWorldStateDeferral ends one BeginWorldStateDeferral scope.
+func (e *ActionExecutor) EndWorldStateDeferral() {
+	if e.worldStateDeferDepth > 0 {
+		e.worldStateDeferDepth--
+	}
+}
+
+func (e *ActionExecutor) worldStateChecksDeferred() bool {
+	return e.worldStateDeferDepth > 0
+}
+
+// CheckWorldStateInvariants evaluates model, index, and association structural
+// rules against the current simulation state. Call after _state is applied and
+// all nested peer/creation-chain work for the step has finished.
+// Class and attribute invariants are checked by the simulation engine after each step.
+func (e *ActionExecutor) CheckWorldStateInvariants() invariants.ViolationErrors {
+	var violations invariants.ViolationErrors
+	violations = append(violations, e.checkModelInvariants()...)
+	violations = append(violations, e.checkIndexUniqueness()...)
+	violations = append(violations, e.checkAssociationStructuralInvariants()...)
+	return violations
 }
 
 // checkPostConditions evaluates all deferred post-conditions from the execution context.
@@ -733,60 +764,116 @@ func (e *ActionExecutor) ExecuteTransition(
 ) (*TransitionResult, error) {
 	currentStateName := getInstanceCurrentState(instance)
 
-	// Step 1: Find candidate transitions
-	candidates := e.findCandidateTransitions(class, event, instance, currentStateName)
-	if len(candidates) == 0 {
-		return nil, fmt.Errorf("no transitions for event %s from state %s on class %s", event.Name, currentStateName, class.Name)
-	}
-
-	// Step 2: Evaluate guards to pick exactly one transition
-	chosen, err := e.evaluateGuards(candidates, class, instance, event, currentStateName)
+	chosen, err := e.selectTransition(class, event, instance, currentStateName)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 3: Handle creation (FromStateKey == nil)
 	var associationMaterialization *AssociationMaterialization
 	if chosen.FromStateKey == nil {
-		instance, err = e.handleCreation(class, instance, source.SourceAssocKey, source.SourceID, targetID)
+		instance, associationMaterialization, err = e.createTransitionInstance(class, instance, source, targetID)
 		if err != nil {
 			return nil, err
 		}
-		associationMaterialization = e.associationMaterializationForCreation(class, source, targetID)
 	}
 
-	// Step 4: Execute the action (if any). Multiplicity is deferred until after _state applies.
-	e.deferMultiplicityInActionCheck = true
-	actionResult, err := e.executeTransitionAction(chosen, class, instance, eventParams)
-	e.deferMultiplicityInActionCheck = false
+	actionResult, err := e.executeTransitionActionDeferred(chosen, class, instance, eventParams)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 5: Apply state transition
 	toStateName, err := e.applyStateTransition(chosen, class, instance)
 	if err != nil {
 		return nil, err
 	}
 
-	var violations invariants.ViolationErrors
-	if actionResult != nil {
-		violations = actionResult.Violations
+	return e.buildTransitionResult(transitionResultInput{
+		instance:                   instance,
+		currentStateName:           currentStateName,
+		toStateName:                toStateName,
+		event:                      event,
+		chosen:                     chosen,
+		associationMaterialization: associationMaterialization,
+		actionResult:               actionResult,
+	}), nil
+}
+
+func (e *ActionExecutor) selectTransition(
+	class model_class.Class,
+	event model_state.Event,
+	instance *state.ClassInstance,
+	currentStateName string,
+) (*model_state.Transition, error) {
+	candidates := e.findCandidateTransitions(class, event, instance, currentStateName)
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf(
+			"no transitions for event %s from state %s on class %s",
+			event.Name, currentStateName, class.Name,
+		)
 	}
-	violations = append(violations, e.checkAssociationStructuralInvariants()...)
+	return e.evaluateGuards(candidates, class, instance, event, currentStateName)
+}
+
+func (e *ActionExecutor) createTransitionInstance(
+	class model_class.Class,
+	instance *state.ClassInstance,
+	source CreationLinkSource,
+	targetID *state.InstanceID,
+) (*state.ClassInstance, *AssociationMaterialization, error) {
+	created, err := e.handleCreation(class, instance, source.SourceAssocKey, source.SourceID, targetID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return created, e.associationMaterializationForCreation(class, source, targetID), nil
+}
+
+// executeTransitionActionDeferred runs the transition action with world-state checks
+// postponed so nested peer transitions inside the action are not mid-checked.
+func (e *ActionExecutor) executeTransitionActionDeferred(
+	chosen *model_state.Transition,
+	class model_class.Class,
+	instance *state.ClassInstance,
+	eventParams map[string]object.Object,
+) (*ActionResult, error) {
+	e.BeginWorldStateDeferral()
+	actionResult, err := e.executeTransitionAction(chosen, class, instance, eventParams)
+	e.EndWorldStateDeferral()
+	return actionResult, err
+}
+
+type transitionResultInput struct {
+	instance                   *state.ClassInstance
+	currentStateName           string
+	toStateName                string
+	event                      model_state.Event
+	chosen                     *model_state.Transition
+	associationMaterialization *AssociationMaterialization
+	actionResult               *ActionResult
+}
+
+func (e *ActionExecutor) buildTransitionResult(in transitionResultInput) *TransitionResult {
+	var violations invariants.ViolationErrors
+	if in.actionResult != nil {
+		violations = in.actionResult.Violations
+	}
+	// Standalone transitions (no outer step deferral) check world state after _state.
+	// When a step executor has begun deferral, checks run only after full nesting.
+	if !e.worldStateChecksDeferred() {
+		violations = append(violations, e.CheckWorldStateInvariants()...)
+	}
 
 	return &TransitionResult{
-		InstanceID:                 instance.ID,
-		FromState:                  currentStateName,
-		ToState:                    toStateName,
-		EventKey:                   event.Key,
-		TransitionKey:              chosen.Key,
-		WasCreation:                chosen.FromStateKey == nil,
-		WasDestroy:                 chosen.ToStateKey == nil,
-		AssociationMaterialization: associationMaterialization,
-		ActionResult:               actionResult,
+		InstanceID:                 in.instance.ID,
+		FromState:                  in.currentStateName,
+		ToState:                    in.toStateName,
+		EventKey:                   in.event.Key,
+		TransitionKey:              in.chosen.Key,
+		WasCreation:                in.chosen.FromStateKey == nil,
+		WasDestroy:                 in.chosen.ToStateKey == nil,
+		AssociationMaterialization: in.associationMaterialization,
+		ActionResult:               in.actionResult,
 		Violations:                 violations,
-	}, nil
+	}
 }
 
 func (e *ActionExecutor) associationMaterializationForCreation(

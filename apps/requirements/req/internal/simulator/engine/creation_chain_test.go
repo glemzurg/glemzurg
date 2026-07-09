@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
@@ -123,6 +124,40 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 	// The Item should be linked to the Order.
 	links := simState.GetLinkedForward(result.InstanceID, tcm.assocKey)
 	s.Len(links, 1)
+}
+
+func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
+	tcm := buildOrderItemModel(true)
+	simState := state.NewSimulationState()
+	bb := state.NewBindingsBuilder(simState)
+	ge := actions.NewGuardEvaluator(bb)
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
+	catalog := NewClassCatalog(tcm.model)
+	multChecker := invariants.NewMultiplicityChecker(tcm.model)
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
+		Multiplicity: multChecker,
+	}, ge, catalog, rng)
+	handler := NewCreationChainHandler(catalog, ae, NewStateActionExecutor(ae), actions.NewParameterBinder(), rng)
+
+	orderClass, _ := testOrderClass()
+	event := orderClass.Events[mustKey("domain/d/subdomain/s/class/order/event/create")]
+
+	// Mid-step deferral: create Order without firing world-state checks yet.
+	ae.BeginWorldStateDeferral()
+	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, actions.CreationLinkSource{}, nil)
+	s.Require().NoError(err)
+	s.Empty(result.Violations.ByType(invariants.ViolationTypeMultiplicity),
+		"multiplicity must not fire before nested mandatory creates")
+
+	// After nesting, the mandatory Item link exists; world-state should pass.
+	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
+	s.Require().NoError(err)
+	s.Len(steps, 1)
+	ae.EndWorldStateDeferral()
+
+	afterNesting := ae.CheckWorldStateInvariants()
+	s.Empty(afterNesting.ByType(invariants.ViolationTypeMultiplicity),
+		"multiplicity should see nested links after creation chain")
 }
 
 func (s *CreationChainSuite) TestCascadeDepthLimitReturnsError() {

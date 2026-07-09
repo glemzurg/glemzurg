@@ -378,19 +378,16 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 			break
 		}
 
-		// Execute the step.
+		// Execute the step (association structural checks run after nested work inside the step).
 		stepResult, err := e.stepExecutor.Execute(pending, e.simState, step+1)
 		if err != nil {
 			return nil, fmt.Errorf("step %d execution error: %w", step+1, err)
 		}
 
-		// Run model-, class-, and attribute-level invariant checks after each step.
-		modelViolations := e.invariantChecker.CheckModelInvariants(e.simState, e.bindingsBuilder)
-		stepResult.Violations = append(stepResult.Violations, modelViolations...)
-		classViolations := e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)
-		stepResult.Violations = append(stepResult.Violations, classViolations...)
-		attrViolations := e.invariantChecker.CheckAttributeInvariants(e.simState, e.bindingsBuilder)
-		stepResult.Violations = append(stepResult.Violations, attrViolations...)
+		// Class/attribute invariants after the full step graph is built (including nesting).
+		// Model + association structural checks run in the step executor after nesting.
+		stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)...)
+		stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckAttributeInvariants(e.simState, e.bindingsBuilder)...)
 
 		result.Steps = append(result.Steps, stepResult)
 		result.StepsTaken++

@@ -118,6 +118,7 @@ func (e *StepExecutor) executeQuery(
 	step.QueryName = pending.Query.Name
 	step.QueryResult = result
 	step.Violations = append(step.Violations, result.Violations...)
+	step.Violations = append(step.Violations, e.actionExecutor.CheckWorldStateInvariants()...)
 	return step, nil
 }
 
@@ -154,6 +155,7 @@ func (e *StepExecutor) executeDerivedRead(
 	step.DerivedAttributeKey = pending.DerivedAttribute.Key
 	step.DerivedAttributeName = pending.DerivedAttribute.Name
 	step.DerivedReadValue = value
+	step.Violations = append(step.Violations, e.actionExecutor.CheckWorldStateInvariants()...)
 	return step, nil
 }
 
@@ -182,6 +184,7 @@ func (e *StepExecutor) executeDo(
 	step.ExecutedActionKeys = append(step.ExecutedActionKeys, pending.DoAction.Key)
 	step.DoActionResult = result
 	step.Violations = append(step.Violations, result.Violations...)
+	// World-state already included in the do action result when not deferred.
 	return step, nil
 }
 
@@ -209,6 +212,10 @@ func (e *StepExecutor) executeTransition(
 		return nil, fmt.Errorf("event %s parameter sampling: %w", pending.Event.Name, err)
 	}
 	step.Parameters = params
+
+	// World-state invariants wait until _state is set and peer/creation nesting finishes.
+	e.actionExecutor.BeginWorldStateDeferral()
+	defer e.actionExecutor.EndWorldStateDeferral()
 
 	// 2. Execute exit StateActions (if not creation).
 	if err := e.executeExitActions(pending, step); err != nil {
@@ -256,6 +263,9 @@ func (e *StepExecutor) executeTransition(
 	if err := e.handleCreationChain(result, simState, step); err != nil {
 		return nil, err
 	}
+
+	// 7. World-state checks see the post-transition graph after all nested work.
+	step.Violations = append(step.Violations, e.actionExecutor.CheckWorldStateInvariants()...)
 
 	return step, nil
 }

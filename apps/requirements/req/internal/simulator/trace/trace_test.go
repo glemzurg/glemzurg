@@ -2,6 +2,7 @@ package trace
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -284,6 +285,51 @@ func (s *TraceSuite) TestStepWithViolations() {
 	s.Len(tr.Steps, 1)
 	s.Len(tr.Steps[0].Violations, 1)
 	s.Equal("invariant failed: x > 0", tr.Steps[0].Violations[0])
+}
+
+func (s *TraceSuite) TestViolationsPrintAfterCascadedSteps() {
+	orderKey := mustKey("domain/d/subdomain/s/class/order")
+	itemKey := mustKey("domain/d/subdomain/s/class/item")
+
+	result := &engine.SimulationResult{
+		StepsTaken:        1,
+		TerminationReason: "violation",
+		Steps: []*engine.SimulationStep{
+			{
+				StepNumber: 2,
+				Kind:       engine.StepKindCreation,
+				ClassKey:   orderKey,
+				ClassName:  "Order",
+				InstanceID: 2,
+				ToState:    "Open",
+				EventName:  "_new",
+				CascadedSteps: []*engine.SimulationStep{
+					{
+						StepNumber: 0,
+						Kind:       engine.StepKindCreation,
+						ClassKey:   itemKey,
+						ClassName:  "Item",
+						InstanceID: 3,
+						ToState:    "Active",
+						EventName:  "_new",
+					},
+				},
+				Violations: invariants.ViolationErrors{
+					{
+						Type:    invariants.ViolationTypeMultiplicity,
+						Message: "multiplicity violation on instance 2",
+					},
+				},
+			},
+		},
+	}
+
+	text := FromResult(result).FormatText()
+	itemIdx := strings.Index(text, "CREATE Item#3")
+	violIdx := strings.Index(text, "VIOLATION: multiplicity violation on instance 2")
+	s.Require().GreaterOrEqual(itemIdx, 0)
+	s.Require().GreaterOrEqual(violIdx, 0)
+	s.Greater(violIdx, itemIdx, "violations must appear after nested cascaded work")
 }
 
 func (s *TraceSuite) TestStepWithParameters() {
