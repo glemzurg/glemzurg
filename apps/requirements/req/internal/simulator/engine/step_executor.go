@@ -381,8 +381,9 @@ func (e *StepExecutor) handleCreationChain(
 	if !result.WasCreation {
 		return nil
 	}
+	// Parent event params (e.g. Amounts) drive association-class cascade sampling.
 	cascadedSteps, cascadeViolations, err := e.chainHandler.HandleCreationChain(
-		result.InstanceID, simState, 0,
+		result.InstanceID, simState, 0, step.Parameters,
 	)
 	if err != nil {
 		return fmt.Errorf("creation chain error: %w", err)

@@ -92,7 +92,7 @@ func (s *CreationChainSuite) TestNoMandatoryAssociationsReturnsEmpty() {
 	s.Require().NoError(err)
 
 	// Handle creation chain — nothing should cascade.
-	steps, violations, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
+	steps, violations, err := handler.HandleCreationChain(result.InstanceID, simState, 0, nil)
 	s.Require().NoError(err)
 	s.Empty(steps)
 	s.Empty(violations)
@@ -112,7 +112,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 	s.True(result.WasCreation)
 
 	// Handle creation chain — should cascade and create an Item.
-	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
+	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0, nil)
 	s.Require().NoError(err)
 	s.Len(steps, 1)
 	s.Equal("Item", steps[0].ClassName)
@@ -150,7 +150,7 @@ func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 		"multiplicity must not fire before nested mandatory creates")
 
 	// After nesting, the mandatory Item link exists; world-state should pass.
-	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
+	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0, nil)
 	s.Require().NoError(err)
 	s.Len(steps, 1)
 	ae.EndWorldStateDeferral()
@@ -173,7 +173,7 @@ func (s *CreationChainSuite) TestCascadeDepthLimitReturnsError() {
 	s.Require().NoError(err)
 
 	// Simulate exceeding depth limit.
-	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, maxCascadeDepth+1)
+	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, maxCascadeDepth+1, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "max depth")
 }
@@ -188,7 +188,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationClassCreatesEndpointAndLink
 	result, err := ae.ExecuteTransition(partnerClass, partnerEvent, nil, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
-	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
+	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0, nil)
 	s.Require().NoError(err)
 	s.Require().Len(steps, 2)
 	s.Equal("Jurisdiction", steps[0].ClassName)
@@ -271,7 +271,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	s.Require().NoError(err)
 
 	// Handle chain — should fail because Item has no creation transition.
-	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, 0)
+	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, 0, nil)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "no creation transition")
 }

@@ -206,7 +206,7 @@ func (r *SurfaceReport) FormatText() string {
 			if ac.ActionName != "" {
 				line += fmt.Sprintf(" (action %s)", ac.ActionName)
 			}
-			line += fmt.Sprintf(" via %s (%s -> %s) when host endpoints exist\n",
+			line += fmt.Sprintf(" via %s (%s -> %s) on host association create only (not surface)\n",
 				ac.HostAssociation, ac.FromClassKey, ac.ToClassKey)
 			b.WriteString(line)
 		}

@@ -83,8 +83,7 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 					IsCreation: true,
 				})
 			}
-
-			eligible = append(eligible, s.collectAssociationClassCreations(classInfo, simState)...)
+			// Association-class _new is never surface: only cascade/peer association materialization.
 		}
 
 		instances := simState.InstancesByClass(classInfo.ClassKey)
@@ -195,57 +194,6 @@ func (s *ActionSelector) collectDerivedReadActions(
 		})
 	}
 	return eligible
-}
-
-func (s *ActionSelector) collectAssociationClassCreations(
-	classInfo *ClassInfo,
-	simState *state.SimulationState,
-) []PendingAction {
-	acInfo := s.catalog.LookupAssociationClass(classInfo.ClassKey)
-	if acInfo == nil || len(classInfo.CreationEvents) == 0 {
-		return nil
-	}
-
-	fromInstances := simState.InstancesByClass(acInfo.FromClassKey)
-	toInstances := simState.InstancesByClass(acInfo.ToClassKey)
-	sort.Slice(fromInstances, func(i, j int) bool { return fromInstances[i].ID < fromInstances[j].ID })
-	sort.Slice(toInstances, func(i, j int) bool { return toInstances[i].ID < toInstances[j].ID })
-	if len(fromInstances) == 0 || len(toInstances) == 0 {
-		return nil
-	}
-
-	creationEvent := classInfo.CreationEvents[0]
-	var eligible []PendingAction
-	hostAssocKey := acInfo.HostAssociation.Key
-
-	hostAssoc := acInfo.HostAssociation
-	for _, fromInst := range fromInstances {
-		for _, toInst := range toInstances {
-			fromID := fromInst.ID
-			toID := toInst.ID
-			if !s.pairAllowsAnotherLink(hostAssoc, simState, fromID, toID) {
-				continue
-			}
-			eligible = append(eligible, PendingAction{
-				Class:            classInfo,
-				Event:            &creationEvent,
-				Instance:         nil,
-				IsCreation:       true,
-				SourceAssocKey:   &hostAssocKey,
-				SourceInstanceID: &fromID,
-				TargetInstanceID: &toID,
-			})
-		}
-	}
-	return eligible
-}
-
-func (s *ActionSelector) pairAllowsAnotherLink(
-	hostAssoc model_class.Association,
-	simState *state.SimulationState,
-	fromID, toID state.InstanceID,
-) bool {
-	return simState.CountActivePairLinks(hostAssoc, fromID, toID) == 0
 }
 
 // getInstanceStateName extracts the current state name from an instance's _state attribute.
