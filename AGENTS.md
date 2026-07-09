@@ -96,13 +96,16 @@ Good (why): `// ⚠ must be parsed before ◆ so unfinished notes stay out of UM
 
 UML stereotypes in this repo use **guillemets** (`«»`), not ASCII angle brackets. When the user writes a stereotype as `<>`, `<<`, `<<>>`, or similar bracket shorthand, they mean the guillemet form — e.g. `<<association>>` → `«association»`, `<<actor>>` → `«actor»`. Rendered diagrams must show `«»`. Mermaid class diagrams encode stereotypes in source as `<<name>>` inside the class body; Mermaid draws them as `«name»` above the class title.
 
-## Model-agnostic Go
+## Model-agnostic code (always)
 
-Requirements tooling (`apps/requirements/req` and related packages) must not embed names, association labels, domain vocabulary, or other content from a specific model in production Go code.
+**Production code in this repo must always be model-agnostic.** It must not hardcode knowledge of any particular model (evenplay, a sandbox fixture domain, a partner name, wallet class names, association labels like `Adjusts`/`Amounts`, attribute spellings unique to one domain, and so on). Tools, parsers, simulators, generators, and shared libraries behave correctly for **any** model that parses and validates — they must not special-case one authored model.
 
-- Derive human-readable text from model data at runtime (association `name`, class `name`, multiplicity, `details`, and so on).
-- Do not hardcode model-specific strings in `switch` tables, constants, or formatters to special-case one domain.
-- Tests may use fixture models and sample paths; production code must behave correctly for any model that parses.
+This applies to Go under `apps/requirements/req` and to any other production code that consumes or walks models. Domain content lives in model files (`data_sandbox/model/…`, fixtures, samples); engine code reads it at runtime.
+
+- Derive names, labels, multiplicities, field lists, and human-readable text from model data (class `name`, association `name`, attribute keys, event parameter names, guarantees, and so on) — never from a fixed vocabulary of one domain.
+- Do not hardcode model-specific strings in `switch` tables, constants, cascade paths, formatters, or control flow to special-case one model.
+- Prefer generic mechanisms driven by model structure and authored guarantees (e.g. association bulk-create from a set-map over a parameter set) over embedding domain cascade rules in the engine.
+- **Tests and sample models are the exception:** `_test.go` files, fixtures, and sandbox models may use concrete domain names and paths. Production packages must still treat those only as examples of arbitrary valid models.
 
 ## Go `_test.go` files
 

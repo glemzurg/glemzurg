@@ -36,12 +36,16 @@ type DeferredPostCondition struct {
 	OriginalExpression string
 }
 
-// DeferredPeerCreation creates a peer instance for an association set-add guarantee.
+// DeferredPeerCreation creates a peer and/or association-class row for set-add / bulk-create.
 type DeferredPeerCreation struct {
 	FromInstanceID state.InstanceID
 	AssocKey       identity.Key
 	ToClassKey     identity.Key
-	Params         map[string]object.Object
+	// ToInstanceID, when set, links an existing to-endpoint (no new to-class create).
+	ToInstanceID *state.InstanceID
+	// Params are creation-event parameters for the to-class (plain set-add) or the
+	// association class when ToInstanceID is set / AC materialization carries them.
+	Params map[string]object.Object
 }
 
 // DeferredPeerUpdate fires a peer-class event on an existing association link target.

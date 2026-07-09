@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -168,6 +169,11 @@ func (e *ActionExecutor) applyAssociationClassPeerCreation(
 	pc DeferredPeerCreation,
 	assoc model_class.Association,
 ) error {
+	// Existing to-endpoint: only materialize the association-class row (params go to AC).
+	if pc.ToInstanceID != nil {
+		return e.materializeAssociationClassRow(ctx, pc, assoc, *pc.ToInstanceID, pc.Params)
+	}
+
 	toClass, creationEvent, err := e.resolvePeerCreationEvent(pc)
 	if err != nil {
 		return err
@@ -181,7 +187,8 @@ func (e *ActionExecutor) applyAssociationClassPeerCreation(
 		return nil
 	}
 	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, endpointResult)
-	return e.materializeAssociationClassRow(ctx, pc, assoc, endpointResult.InstanceID)
+	// AC row created without extra params when the event call targeted the to-class.
+	return e.materializeAssociationClassRow(ctx, pc, assoc, endpointResult.InstanceID, nil)
 }
 
 func (e *ActionExecutor) resolvePeerCreationEvent(pc DeferredPeerCreation) (model_class.Class, model_state.Event, error) {
@@ -206,6 +213,7 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	pc DeferredPeerCreation,
 	assoc model_class.Association,
 	targetID state.InstanceID,
+	acParams map[string]object.Object,
 ) error {
 	acClass, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey)
 	if !ok {
@@ -220,7 +228,7 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	assocKey := pc.AssocKey
 	fromID := pc.FromInstanceID
 	acResult, err := e.ExecuteTransition(
-		acClass, acCreationEvent, nil, nil,
+		acClass, acCreationEvent, nil, acParams,
 		CreationLinkSource{SourceAssocKey: &assocKey, SourceID: &fromID}, &targetID,
 	)
 	if err != nil {
@@ -228,6 +236,6 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 		e.recordPeerEventUnavailable(ctx, vctx, acClass, 0, acCreationEvent.Key, acCreationEvent.Name)
 		return nil
 	}
-	e.recordPeerTransition(ctx, acClass, acCreationEvent, nil, acResult)
+	e.recordPeerTransition(ctx, acClass, acCreationEvent, acParams, acResult)
 	return nil
 }

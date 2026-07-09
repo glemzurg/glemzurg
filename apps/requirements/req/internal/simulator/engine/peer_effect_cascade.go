@@ -53,7 +53,7 @@ func (e *StepExecutor) buildPeerEffectStep(
 
 	if peer.Result.WasCreation {
 		chainSteps, chainViolations, err := e.chainHandler.HandleCreationChain(
-			peer.Result.InstanceID, simState, depth+1, peer.Parameters,
+			peer.Result.InstanceID, simState, depth+1,
 		)
 		if err != nil {
 			return nil, err

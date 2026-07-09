@@ -381,14 +381,15 @@ func (e *StepExecutor) handleCreationChain(
 	if !result.WasCreation {
 		return nil
 	}
-	// Parent event params (e.g. Amounts) drive association-class cascade sampling.
 	cascadedSteps, cascadeViolations, err := e.chainHandler.HandleCreationChain(
-		result.InstanceID, simState, 0, step.Parameters,
+		result.InstanceID, simState, 0,
 	)
 	if err != nil {
 		return fmt.Errorf("creation chain error: %w", err)
 	}
-	step.CascadedSteps = cascadedSteps
+	// Append after peer-effect cascades so set-add / bulk-create steps stay in the tree
+	// (trace, liveness, and nested chain work all walk CascadedSteps).
+	step.CascadedSteps = append(step.CascadedSteps, cascadedSteps...)
 	step.Violations = append(step.Violations, cascadeViolations...)
 	return nil
 }

@@ -568,6 +568,9 @@ func (e *ActionExecutor) tryQueueAssociationGuaranteeExpr(
 	if handled, err := e.tryQueueAssociationAddOrUpdateGuarantee(ctx, instance, target, expr, bindings); err != nil || handled {
 		return handled, err
 	}
+	if handled, err := e.tryQueueAssociationBulkCreateFromSet(ctx, instance, target, expr, bindings); err != nil || handled {
+		return handled, err
+	}
 	if handled, err := e.tryQueueAssociationSetAddGuarantee(ctx, instance, target, expr, bindings); err != nil || handled {
 		return handled, err
 	}
