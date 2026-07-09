@@ -19,6 +19,7 @@ A bit of business logic.
 | target_type_notation | notation |  | true |  |  | Optional notation for the declared type of the logic target (e.g., tla_plus). |
 | target_type_specification | text |  | true |  |  | Optional type specification string for the logic target (e.g., Int, STRING). |
 | destroy_event_specification | text |  | true |  |  | Optional peer destroy event call for destroy-type logic (e.g., _destroy(b)); uses logic.notation for notation. |
+| endpoint_selector_specification | text |  | true |  |  | Far-side endpoint expression for association-class reify guarantees (target is AC class TLA name); uses logic.notation. |
 
 ## Constraints
 

@@ -5,7 +5,7 @@
 | Name | Columns | Comment | Type |
 | ---- | ------- | ------- | ---- |
 | [public.model](public.model.md) | 4 | A fully distinct semantic model, separate from all others. | BASE TABLE |
-| [public.logic](public.logic.md) | 11 | A bit of business logic. | BASE TABLE |
+| [public.logic](public.logic.md) | 12 | A bit of business logic. | BASE TABLE |
 | [public.invariant](public.invariant.md) | 2 | An invariant that is forever true in the model. | BASE TABLE |
 | [public.global_function](public.global_function.md) | 4 | A global function used to describe simulation and code generation. | BASE TABLE |
 | [public.named_set](public.named_set.md) | 8 | A reusable named set definition at the model level, referenced from behavioral logic via named_set_ref expressions. | BASE TABLE |

@@ -144,6 +144,12 @@
           "type": "text",
           "nullable": true,
           "comment": "Optional peer destroy event call for destroy-type logic (e.g., _destroy(b)); uses logic.notation for notation."
+        },
+        {
+          "name": "endpoint_selector_specification",
+          "type": "text",
+          "nullable": true,
+          "comment": "Far-side endpoint expression for association-class reify guarantees (target is AC class TLA name); uses logic.notation."
         }
       ],
       "indexes": [
