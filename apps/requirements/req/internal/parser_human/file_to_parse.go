@@ -16,6 +16,7 @@ const (
 	_EXT_DOMAIN         = ".domain"
 	_EXT_SUBDOMAIN      = ".subdomain"
 	_EXT_CLASS          = ".class"
+	_EXT_MARKED         = ".marked" // Subdomain-level list of marked class subkeys (under classes/).
 	_EXT_USE_CASE       = ".uc"
 )
 
@@ -32,6 +33,7 @@ var _extSortValue = map[string]int{
 	_EXT_SUBDOMAIN:      7, // Parse subdomains before their contents.
 	_EXT_GENERALIZATION: 6,
 	_EXT_CLASS:          5,
+	_EXT_MARKED:         4, // After classes so Marked can attach to already-loaded classes.
 	_EXT_USE_CASE:       3,
 }
 
@@ -152,7 +154,7 @@ func newFileToParse(modelPath, pathRel, pathAbs string) (toParse fileToParse, er
 		validation.Field(&toParse.ModelPath, validation.Required),
 		validation.Field(&toParse.PathRel, validation.Required),
 		validation.Field(&toParse.PathAbs, validation.Required),
-		validation.Field(&toParse.FileType, validation.Required, validation.In(_EXT_MODEL, _EXT_GENERALIZATION, _EXT_ACTOR, _EXT_DOMAIN, _EXT_SUBDOMAIN, _EXT_CLASS, _EXT_USE_CASE)),
+		validation.Field(&toParse.FileType, validation.Required, validation.In(_EXT_MODEL, _EXT_GENERALIZATION, _EXT_ACTOR, _EXT_DOMAIN, _EXT_SUBDOMAIN, _EXT_CLASS, _EXT_MARKED, _EXT_USE_CASE)),
 	)
 	if err != nil {
 		return fileToParse{}, errors.WithStack(err)

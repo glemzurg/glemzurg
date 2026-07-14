@@ -215,6 +215,14 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 				return errors.Wrapf(err, "failed to write class file: %s", class.Key.SubKey)
 			}
 		}
+
+		// Write this.marked when at least one class is marked (not part of .class files).
+		if markedContent := generateMarkedContent(subdomain.Classes); markedContent != "" {
+			markedPath := filepath.Join(classesDir, "this"+_EXT_MARKED)
+			if err := os.WriteFile(markedPath, []byte(markedContent), 0600); err != nil {
+				return errors.Wrap(err, "failed to write marked classes file")
+			}
+		}
 	}
 
 	// Write use cases and use case generalizations to use_cases/ directory if there are any.

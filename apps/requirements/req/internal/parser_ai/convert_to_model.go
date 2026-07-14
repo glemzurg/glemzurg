@@ -943,6 +943,7 @@ func convertClassToModel(keyStr string, class *inputClass, ctx subdomainConvCont
 		Details:         class.Details,
 		UnfinishedNotes: class.UnfinishedNotes,
 		UmlComment:      class.UMLComment,
+		Marked:          class.Marked,
 		Attributes:      nil,
 		States:          make(map[identity.Key]model_state.State),
 		Events:          make(map[identity.Key]model_state.Event),

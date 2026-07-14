@@ -22,6 +22,10 @@
       "type": "string",
       "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the class in generated UML diagrams. Use for diagram-specific clarifications that don't belong in the main description."
     },
+    "marked": {
+      "type": "boolean",
+      "description": "Optional authoring selection flag. When true, the class is marked in the model. Omitted or false means unmarked."
+    },
     "attributes": {
       "type": "array",
       "description": "Ordered list of class attributes; array order is declaration order and matches the core model. Each attribute key must be unique within the class and is referenced by indexes and other parts of the model. If validation fails: check that each attribute has valid 'key' and 'name' fields.",

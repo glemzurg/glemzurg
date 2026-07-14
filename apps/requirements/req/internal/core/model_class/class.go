@@ -19,6 +19,8 @@ type Class struct {
 	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
+	// Marked is an authoring/selection flag, not class body content; human models set it via a subdomain list file.
+	Marked bool
 	// Children
 	Invariants  []model_logic.Logic // Invariants that must be true for all objects of this class.
 	Attributes  []Attribute         // Class attributes in source order; keys are unique within the class.
@@ -142,6 +144,10 @@ func (c *Class) ValidateReferences(ctx *coreerr.ValidationContext, actors map[id
 	}
 
 	return nil
+}
+
+func (c *Class) SetMarked(marked bool) {
+	c.Marked = marked
 }
 
 func (c *Class) SetInvariants(invariants []model_logic.Logic) {

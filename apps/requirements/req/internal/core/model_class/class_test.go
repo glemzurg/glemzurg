@@ -143,7 +143,7 @@ func (suite *ClassSuite) TestNew() {
 	superclassOfKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
 	subclassOfKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2"))
 
-	// Test parameters are mapped correctly.
+	// Test parameters are mapped correctly; Marked defaults to false.
 	class := NewClass(key, ClassLinks{ActorKey: &actorKey, SuperclassOfKey: &superclassOfKey, SubclassOfKey: &subclassOfKey}, ClassDetails{Name: "Name", Details: "Details", UnfinishedNotes: "", UmlComment: "UmlComment"})
 	suite.Equal(Class{
 		Key:             key,
@@ -153,7 +153,13 @@ func (suite *ClassSuite) TestNew() {
 		SuperclassOfKey: &superclassOfKey,
 		SubclassOfKey:   &subclassOfKey,
 		UmlComment:      "UmlComment",
+		Marked:          false,
 	}, class)
+
+	class.SetMarked(true)
+	suite.True(class.Marked)
+	class.SetMarked(false)
+	suite.False(class.Marked)
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

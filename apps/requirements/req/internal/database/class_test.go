@@ -73,7 +73,8 @@ func (suite *ClassSuite) TestLoad() {
 				actor_key,
 				superclass_of_key,
 				subclass_of_key,
-				uml_comment
+				uml_comment,
+				marked
 			)
 		VALUES
 			(
@@ -86,7 +87,8 @@ func (suite *ClassSuite) TestLoad() {
 				'actor/actor_key',
 				'domain/domain_key/subdomain/subdomain_key/cgeneralization/generalization_key',
 				'domain/domain_key/subdomain/subdomain_key/cgeneralization/generalization_key_b',
-				'UmlComment'
+				'UmlComment',
+				true
 			)
 	`)
 	suite.Require().NoError(err)
@@ -103,6 +105,7 @@ func (suite *ClassSuite) TestLoad() {
 		SuperclassOfKey: &suite.generalization.Key,
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
+		Marked:          true,
 	}, class)
 }
 
@@ -116,6 +119,7 @@ func (suite *ClassSuite) TestAdd() {
 		SuperclassOfKey: &suite.generalization.Key,
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
+		Marked:          true,
 	})
 	suite.Require().NoError(err)
 
@@ -131,6 +135,7 @@ func (suite *ClassSuite) TestAdd() {
 		SuperclassOfKey: &suite.generalization.Key,
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
+		Marked:          true,
 	}, class)
 }
 
@@ -184,6 +189,7 @@ func (suite *ClassSuite) TestUpdate() {
 		SuperclassOfKey: &suite.generalizationB.Key,
 		SubclassOfKey:   &suite.generalization.Key,
 		UmlComment:      "UmlCommentX",
+		Marked:          true,
 	})
 	suite.Require().NoError(err)
 
@@ -199,6 +205,7 @@ func (suite *ClassSuite) TestUpdate() {
 		SuperclassOfKey: &suite.generalizationB.Key,
 		SubclassOfKey:   &suite.generalization.Key,
 		UmlComment:      "UmlCommentX",
+		Marked:          true,
 	}, class)
 }
 
@@ -274,6 +281,7 @@ func (suite *ClassSuite) TestQuery() {
 				SuperclassOfKey: &suite.generalizationB.Key,
 				SubclassOfKey:   &suite.generalization.Key,
 				UmlComment:      "UmlCommentX",
+				Marked:          true,
 			},
 			{
 				Key:             suite.classKey,
@@ -284,6 +292,7 @@ func (suite *ClassSuite) TestQuery() {
 				SuperclassOfKey: &suite.generalization.Key,
 				SubclassOfKey:   &suite.generalizationB.Key,
 				UmlComment:      "UmlComment",
+				Marked:          false,
 			},
 		},
 	})
@@ -302,6 +311,7 @@ func (suite *ClassSuite) TestQuery() {
 				SuperclassOfKey: &suite.generalization.Key,
 				SubclassOfKey:   &suite.generalizationB.Key,
 				UmlComment:      "UmlComment",
+				Marked:          false,
 			},
 			{
 				Key:             suite.classKeyB,
@@ -312,6 +322,7 @@ func (suite *ClassSuite) TestQuery() {
 				SuperclassOfKey: &suite.generalizationB.Key,
 				SubclassOfKey:   &suite.generalization.Key,
 				UmlComment:      "UmlCommentX",
+				Marked:          true,
 			},
 		},
 	}, classes)

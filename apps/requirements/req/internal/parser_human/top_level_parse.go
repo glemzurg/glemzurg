@@ -138,34 +138,63 @@ func parseAllFiles(modelKey string, filesToParse []fileToParse, ctx *parseContex
 		}
 		contents := string(contentBytes)
 
-		switch toParseFile.FileType {
-		case _EXT_MODEL:
-			model, err = parseModelFile(modelKey, toParseFile, contents)
-		case _EXT_ACTOR:
-			err = parseActorFile(&model, toParseFile, contents)
-		case _EXT_GENERALIZATION:
-			err = parseGeneralizationFile(&model, ctx, toParseFile, contents)
-		case _EXT_DOMAIN:
-			err = parseDomainFile(&model, ctx, toParseFile, contents)
-		case _EXT_SUBDOMAIN:
-			err = parseSubdomainFile(&model, ctx, toParseFile, contents)
-		case _EXT_CLASS:
-			var failure *ParseFailure
-			failure, err = parseClassFileResilient(&model, ctx, toParseFile, contents)
-			if failure != nil {
-				log.Printf("   parse failure: %s: %s", failure.Path, failure.Err)
-				failures = append(failures, *failure)
-			}
-		case _EXT_USE_CASE:
-			err = parseUseCaseFile(&model, ctx, toParseFile, contents)
-		default:
-			err = errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))
+		var failure *ParseFailure
+		model, failure, err = parseOneFile(modelKey, &model, ctx, toParseFile, contents)
+		if failure != nil {
+			log.Printf("   parse failure: %s: %s", failure.Path, failure.Err)
+			failures = append(failures, *failure)
 		}
 		if err != nil {
 			return core.Model{}, nil, err
 		}
 	}
 	return model, failures, nil
+}
+
+// parseOneFile dispatches a single file by extension into structure or content parsers.
+func parseOneFile(modelKey string, model *core.Model, ctx *parseContext, toParseFile fileToParse, contents string) (core.Model, *ParseFailure, error) {
+	switch toParseFile.FileType {
+	case _EXT_MODEL, _EXT_ACTOR, _EXT_GENERALIZATION, _EXT_DOMAIN, _EXT_SUBDOMAIN:
+		updated, err := parseStructureFile(modelKey, model, ctx, toParseFile, contents)
+		return updated, nil, err
+	case _EXT_CLASS, _EXT_MARKED, _EXT_USE_CASE:
+		failure, err := parseContentFile(model, ctx, toParseFile, contents)
+		return *model, failure, err
+	default:
+		return *model, nil, errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))
+	}
+}
+
+// parseStructureFile handles model, actors, generalizations, domains, and subdomains.
+func parseStructureFile(modelKey string, model *core.Model, ctx *parseContext, toParseFile fileToParse, contents string) (core.Model, error) {
+	switch toParseFile.FileType {
+	case _EXT_MODEL:
+		return parseModelFile(modelKey, toParseFile, contents)
+	case _EXT_ACTOR:
+		return *model, parseActorFile(model, toParseFile, contents)
+	case _EXT_GENERALIZATION:
+		return *model, parseGeneralizationFile(model, ctx, toParseFile, contents)
+	case _EXT_DOMAIN:
+		return *model, parseDomainFile(model, ctx, toParseFile, contents)
+	case _EXT_SUBDOMAIN:
+		return *model, parseSubdomainFile(model, ctx, toParseFile, contents)
+	default:
+		return *model, errors.WithStack(errors.Errorf(`not a structure filetype: '%s'`, toParseFile.FileType))
+	}
+}
+
+// parseContentFile handles classes, marked lists, and use cases under a subdomain.
+func parseContentFile(model *core.Model, ctx *parseContext, toParseFile fileToParse, contents string) (*ParseFailure, error) {
+	switch toParseFile.FileType {
+	case _EXT_CLASS:
+		return parseClassFileResilient(model, ctx, toParseFile, contents)
+	case _EXT_MARKED:
+		return nil, parseMarkedFile(model, ctx, toParseFile, contents)
+	case _EXT_USE_CASE:
+		return nil, parseUseCaseFile(model, ctx, toParseFile, contents)
+	default:
+		return nil, errors.WithStack(errors.Errorf(`not a content filetype: '%s'`, toParseFile.FileType))
+	}
 }
 
 // finalizeModel performs post-processing on the parsed model.
@@ -352,6 +381,28 @@ func parseSubdomainFile(model *core.Model, ctx *parseContext, toParseFile fileTo
 	domain.Subdomains[subdomain.Key] = subdomain
 	model.Domains[domainKey] = domain
 	ctx.subdomainKeysByPath[toParseFile.Domain+"/"+toParseFile.Subdomain] = subdomain.Key
+	return nil
+}
+
+// parseMarkedFile applies a classes/this.marked list onto already-loaded classes.
+func parseMarkedFile(model *core.Model, ctx *parseContext, toParseFile fileToParse, contents string) error {
+	entityDesc := "marked class list"
+	domain, subdomain, domainKey, subdomainKey, err := lookupSubdomain(model, ctx, toParseFile, entityDesc)
+	if err != nil {
+		return err
+	}
+
+	subKeys, err := parseMarkedClassSubKeys(toParseFile.PathRel, contents)
+	if err != nil {
+		return err
+	}
+
+	updated, err := applyMarkedClassSubKeys(subdomainKey, subdomain.Classes, subKeys, toParseFile.PathRel)
+	if err != nil {
+		return err
+	}
+	subdomain.Classes = updated
+	updateSubdomain(model, domainKey, subdomainKey, domain, subdomain)
 	return nil
 }
 

@@ -397,6 +397,7 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 		Details:         class.Details,
 		UnfinishedNotes: class.UnfinishedNotes,
 		UMLComment:      class.UmlComment,
+		Marked:          class.Marked,
 		Attributes:      nil,
 		Indexes:         [][]string{},
 		Actions:         make(map[string]*inputAction),

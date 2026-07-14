@@ -31,6 +31,7 @@ type inputClass struct {
 	UnfinishedNotes string           `json:"unfinished_notes,omitempty"`
 	ActorKey        string           `json:"actor_key,omitempty"`
 	UMLComment      string           `json:"uml_comment,omitempty"`
+	Marked          bool             `json:"marked,omitempty"`
 	Attributes      []inputAttribute `json:"attributes,omitempty"`
 	Indexes         [][]string       `json:"indexes,omitempty"`
 

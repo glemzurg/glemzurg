@@ -443,6 +443,7 @@ CREATE TABLE class (
   details text DEFAULT NULL,
   unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
+  marked boolean NOT NULL DEFAULT false,
   PRIMARY KEY (model_key, class_key),
   CONSTRAINT fk_class_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
   CONSTRAINT fk_class_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE,
@@ -462,6 +463,7 @@ COMMENT ON COLUMN class.subclass_of_key IS 'The generalization this class is a s
 COMMENT ON COLUMN class.details IS 'A summary description.';
 COMMENT ON COLUMN class.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN class.uml_comment IS 'A comment that appears in the diagrams.';
+COMMENT ON COLUMN class.marked IS 'Authoring selection flag; true when the class is marked in the model.';
 
 --------------------------------------------------------------
 

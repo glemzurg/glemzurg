@@ -432,6 +432,7 @@ Domain associations describe constraint relationships between domains (a problem
   "details": "Represents a customer's order for books.",
   "actor_key": "customer",
   "uml_comment": "Aggregate root",
+  "marked": true,
 
   "attributes": {
     "id": {
@@ -469,6 +470,7 @@ Domain associations describe constraint relationships between domains (a problem
 - `details` (optional): Markdown description
 - `actor_key` (optional): Actor name (scoped to model actors)
 - `uml_comment` (optional): Comment for UML diagrams
+- `marked` (optional): Authoring selection flag; omit or false when unmarked
 
 **Attribute Fields:**
 
