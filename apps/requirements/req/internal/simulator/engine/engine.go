@@ -97,7 +97,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
-	checkers, err := setupCheckers(activeModel)
+	checkers, err := setupCheckers(activeModel, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -208,11 +208,13 @@ type simulationCheckers struct {
 }
 
 // setupCheckers creates all invariant and constraint checkers.
-func setupCheckers(model *core.Model) (*simulationCheckers, error) {
+// evalCtx wires model global functions into class/model invariant evaluation.
+func setupCheckers(model *core.Model, evalCtx *evaluator.EvalContext) (*simulationCheckers, error) {
 	invariantChecker, err := invariants.NewInvariantChecker(model)
 	if err != nil {
 		return nil, fmt.Errorf("invariant checker setup: %w", err)
 	}
+	invariantChecker.SetEvalContext(evalCtx)
 
 	dataTypeChecker, _ := invariants.NewDataTypeChecker(model)
 

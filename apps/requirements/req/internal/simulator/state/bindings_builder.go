@@ -3,7 +3,6 @@ package state
 import (
 	"fmt"
 	"maps"
-	"math"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -106,7 +105,9 @@ func (b *BindingsBuilder) SetDerivedResolver(resolver DerivedAttributeResolver) 
 // Use this when evaluating a DerivationPolicy to avoid recursive derived resolution.
 func (b *BindingsBuilder) BuildForInstanceBase(instance *ClassInstance) *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
-	bindings.SetRelationContext(b.buildRelationContext())
+	relCtx := b.buildRelationContext()
+	bindings.SetRelationContext(relCtx)
+	b.aliasSelfForNavigation(relCtx, instance, instance.Attributes)
 	child := bindings.WithSelfAndClass(instance.Attributes, instance.ClassKey.String())
 	b.applyNamedSets(child)
 	return child
@@ -118,14 +119,33 @@ func (b *BindingsBuilder) BuildForInstanceBase(instance *ClassInstance) *evaluat
 // and injected into the self record.
 func (b *BindingsBuilder) BuildForInstance(instance *ClassInstance) *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
-	bindings.SetRelationContext(b.buildRelationContext())
+	relCtx := b.buildRelationContext()
+	bindings.SetRelationContext(relCtx)
 
 	attrs := b.resolveAttributes(instance)
+	b.aliasSelfForNavigation(relCtx, instance, attrs)
 
 	// Create a child scope with self set
 	child := bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
 	b.applyNamedSets(child)
 	return child
+}
+
+// aliasSelfForNavigation maps bare/derived self data to the engine instance id so
+// association lookup finds links registered on [id, data] endpoints.
+func (b *BindingsBuilder) aliasSelfForNavigation(
+	relCtx *evaluator.RelationContext,
+	instance *ClassInstance,
+	selfData *object.Record,
+) {
+	if relCtx == nil || instance == nil {
+		return
+	}
+	id := evaluator.ObjectID(instance.ID)
+	relCtx.EnsureInstance(id, instance.Attributes)
+	if selfData != nil && selfData != instance.Attributes {
+		relCtx.RegisterDataAlias(id, selfData)
+	}
 }
 
 // BuildForInstanceWithVariables creates bindings with "self" and additional variables.
@@ -148,10 +168,10 @@ func (b *BindingsBuilder) BuildForInstanceWithVariables(
 
 // Class extent elements bound into TLA as records [id |-> N, data |-> attrs].
 // id is the engine instance identity (number); data is the attribute record.
-// Association links use id; authors read attributes via x.data.field (or self as data in instance scope).
+// Association images use the same shape so multi-peer navigations do not collapse.
 const (
-	ClassExtentIDField   = "id"
-	ClassExtentDataField = "data"
+	ClassExtentIDField   = object.ExtentIDField
+	ClassExtentDataField = object.ExtentDataField
 )
 
 // BuildWithClassInstances creates bindings that include all instances of classes
@@ -184,47 +204,21 @@ func classInstanceExtentSet(instances []*ClassInstance) *object.Set {
 // ClassExtentElement builds one class-extent record [id |-> id, data |-> attrs].
 // data is a clone so evaluation cannot mutate persisted instance attributes through the extent.
 func ClassExtentElement(id InstanceID, attrs *object.Record) *object.Record {
-	data := attrs
-	if data != nil {
-		data = data.Clone().(*object.Record)
-	} else {
-		data = object.NewRecord()
-	}
-	return object.NewRecordFromFields(map[string]object.Object{
-		ClassExtentIDField:   object.NewNatural(instanceIDAsInt64(id)),
-		ClassExtentDataField: data,
-	})
+	return object.NewExtentElement(uint64(id), attrs)
 }
 
 // InstanceIDFromExtentElement returns the engine id from a class-extent [id, data] record.
 func InstanceIDFromExtentElement(elem *object.Record) (InstanceID, bool) {
-	if elem == nil {
+	id, ok := object.ExtentID(elem)
+	if !ok {
 		return 0, false
 	}
-	idVal := elem.Get(ClassExtentIDField)
-	if idVal == nil {
-		return 0, false
-	}
-	n, ok := idVal.(*object.Number)
-	if !ok || n.Sign() < 0 {
-		return 0, false
-	}
-	v := n.Rat().Num().Int64()
-	if v < 0 {
-		return 0, false
-	}
-	return InstanceID(uint64(v)), true
+	return InstanceID(id), true
 }
 
 // DataFromExtentElement returns the data record from a class-extent element, or elem itself if flat.
 func DataFromExtentElement(elem *object.Record) *object.Record {
-	if elem == nil {
-		return nil
-	}
-	if data, ok := elem.Get(ClassExtentDataField).(*object.Record); ok && data != nil {
-		return data
-	}
-	return elem
+	return object.ExtentData(elem)
 }
 
 // BuildWithClassInstancesForInstance combines BuildWithClassInstances and BuildForInstance.
@@ -280,39 +274,36 @@ func (b *BindingsBuilder) buildRelationContext() *evaluator.RelationContext {
 		b.relationCtx = evaluator.NewRelationContext()
 	}
 
+	// Rebuild runtime identity/link/AC state from engine InstanceIDs each time.
+	b.relationCtx.Clear()
 	b.syncLinks()
 	b.syncAssociationLinks()
 
 	return b.relationCtx
 }
 
-// syncLinks synchronizes links from simulation state to the relation context.
-// This ensures the evaluator sees the current link state.
+// syncLinks synchronizes plain (non-AC) association links into the relation context.
+// Endpoint images are [id, data] extent elements so structurally equal peers stay distinct.
 func (b *BindingsBuilder) syncLinks() {
-	// Clear existing links in relation context
-	b.relationCtx.Links().Clear()
-
-	// Copy links from simulation state
 	for _, instance := range b.state.AllInstances() {
 		objID := evaluator.ObjectID(instance.ID)
-
-		// Get all forward links from this instance
 		links := b.state.links.GetAllForward(objID)
 		for _, link := range links {
-			// We need to map InstanceIDs to record pointers for the relation context
 			fromInstance := b.state.GetInstance(InstanceID(link.FromID))
 			toInstance := b.state.GetInstance(InstanceID(link.ToID))
-
-			if fromInstance != nil && toInstance != nil {
-				b.relationCtx.CreateLink(link.AssociationKey, fromInstance.Attributes, toInstance.Attributes)
+			if fromInstance == nil || toInstance == nil {
+				continue
 			}
+			b.createExtentLink(
+				link.AssociationKey,
+				fromInstance,
+				toInstance,
+			)
 		}
 	}
 }
 
 func (b *BindingsBuilder) syncAssociationLinks() {
-	b.relationCtx.ClearAssociationClassRows()
-
 	for _, link := range b.state.AssociationLinks().AllLinks() {
 		fromInstance := b.state.GetInstance(link.FromEndpointID)
 		linkInstance := b.state.GetInstance(link.LinkInstanceID)
@@ -322,14 +313,34 @@ func (b *BindingsBuilder) syncAssociationLinks() {
 		}
 
 		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
-		b.relationCtx.CreateLink(hostKey, fromInstance.Attributes, toInstance.Attributes)
-		b.relationCtx.AddAssociationClassRow(
-			hostKey,
-			fromInstance.Attributes,
-			toInstance.Attributes,
-			linkInstance.Attributes,
-		)
+		fromExtent, toExtent := b.createExtentLink(hostKey, fromInstance, toInstance)
+		linkExtent := ClassExtentElement(linkInstance.ID, linkInstance.Attributes)
+		b.relationCtx.EnsureInstance(evaluator.ObjectID(linkInstance.ID), linkInstance.Attributes)
+		b.relationCtx.AddAssociationClassRow(hostKey, fromExtent, toExtent, linkExtent)
 	}
+}
+
+// createExtentLink registers a from→to association using engine ids and [id, data] endpoints.
+func (b *BindingsBuilder) createExtentLink(
+	assocKey evaluator.AssociationKey,
+	fromInstance, toInstance *ClassInstance,
+) (fromExtent, toExtent *object.Record) {
+	fromExtent = ClassExtentElement(fromInstance.ID, fromInstance.Attributes)
+	toExtent = ClassExtentElement(toInstance.ID, toInstance.Attributes)
+	b.relationCtx.CreateInstanceLink(
+		assocKey,
+		evaluator.InstanceEndpoint{
+			ID:     evaluator.ObjectID(fromInstance.ID),
+			Extent: fromExtent,
+			Data:   fromInstance.Attributes,
+		},
+		evaluator.InstanceEndpoint{
+			ID:     evaluator.ObjectID(toInstance.ID),
+			Extent: toExtent,
+			Data:   toInstance.Attributes,
+		},
+	)
+	return fromExtent, toExtent
 }
 
 // AddAssociationClassHost registers a host association materialized by association-class instances.
@@ -400,13 +411,4 @@ func (b *BindingsBuilder) ApplyPrimedBindings(
 	}
 
 	return nil
-}
-
-// instanceIDAsInt64 converts a simulation instance id for embedding in TLA records.
-// Instance ids are small sequential values; values above MaxInt64 are clamped.
-func instanceIDAsInt64(id InstanceID) int64 {
-	if id > math.MaxInt64 {
-		return math.MaxInt64
-	}
-	return int64(id)
 }

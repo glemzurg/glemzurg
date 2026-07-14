@@ -65,7 +65,11 @@ func projectAssociationEndpointField(
 		return nil, false, nil
 	}
 	if sole := soleAssociationEndpoint(assocRel, bindings); sole != nil {
-		return NewEvalResult(sole.Get(field)), true, nil
+		value, ok := object.RecordField(sole, field)
+		if !ok {
+			return nil, false, NewEvalError("field not found: %s", field)
+		}
+		return NewEvalResult(value), true, nil
 	}
 	return NewEvalResult(projectRecordsField(endpoints, field)), true, nil
 }
@@ -91,7 +95,11 @@ func projectAssociationLinkField(
 		if !found {
 			return nil, false, NewEvalError("missing association-class row for endpoint")
 		}
-		return NewEvalResult(link.Get(field)), true, nil
+		value, ok := object.RecordField(link, field)
+		if !ok {
+			return nil, false, NewEvalError("field not found: %s", field)
+		}
+		return NewEvalResult(value), true, nil
 	}
 	return NewEvalResult(projectRecordsField(links, field)), true, nil
 }
@@ -118,7 +126,7 @@ func associationLinkRecords(assocRel *object.AssociationRelation) []*object.Reco
 
 func everyRecordHasField(records []*object.Record, field string) bool {
 	for _, rec := range records {
-		if !rec.Has(field) {
+		if !object.RecordHasField(rec, field) {
 			return false
 		}
 	}
@@ -128,7 +136,11 @@ func everyRecordHasField(records []*object.Record, field string) bool {
 func projectRecordsField(records []*object.Record, field string) *object.Set {
 	set := object.NewSet()
 	for _, rec := range records {
-		set.Add(rec.Get(field))
+		value, ok := object.RecordField(rec, field)
+		if !ok {
+			continue
+		}
+		set.Add(value)
 	}
 	return set
 }
@@ -138,13 +150,13 @@ func associationFieldProjectionError(assocRel *object.AssociationRelation, field
 	links := associationLinkRecords(assocRel)
 	endpointHas := 0
 	for _, ep := range endpoints {
-		if ep.Has(field) {
+		if object.RecordHasField(ep, field) {
 			endpointHas++
 		}
 	}
 	linkHas := 0
 	for _, link := range links {
-		if link.Has(field) {
+		if object.RecordHasField(link, field) {
 			linkHas++
 		}
 	}

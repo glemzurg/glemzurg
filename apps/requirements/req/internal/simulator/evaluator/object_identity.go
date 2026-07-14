@@ -47,6 +47,37 @@ func (r *IdentityRegistry) GetOrAssign(record *object.Record) ObjectID {
 	return id
 }
 
+// RegisterVisible binds a fixed ObjectID to a TLA-visible record and optional aliases.
+// GetRecord returns visible; GetID succeeds for visible and every alias (e.g. bare
+// self data plus the [id, data] extent element for the same instance).
+func (r *IdentityRegistry) RegisterVisible(id ObjectID, visible *object.Record, aliases ...*object.Record) {
+	if id == 0 || visible == nil {
+		return
+	}
+	r.recordToID[visible] = id
+	r.idToRecord[id] = visible
+	for _, alias := range aliases {
+		if alias != nil {
+			r.recordToID[alias] = id
+		}
+	}
+	if id >= r.nextID {
+		r.nextID = id + 1
+	}
+}
+
+// RegisterAlias maps an additional record pointer to an existing ObjectID without
+// changing GetRecord. Used when self is a derived-attribute clone of instance data.
+func (r *IdentityRegistry) RegisterAlias(id ObjectID, alias *object.Record) {
+	if id == 0 || alias == nil {
+		return
+	}
+	if _, ok := r.idToRecord[id]; !ok {
+		return
+	}
+	r.recordToID[alias] = id
+}
+
 // GetID returns the ID for a record if it has been assigned.
 // Returns (0, false) if the record has no assigned ID.
 func (r *IdentityRegistry) GetID(record *object.Record) (ObjectID, bool) {

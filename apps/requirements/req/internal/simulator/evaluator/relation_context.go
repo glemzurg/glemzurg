@@ -199,10 +199,51 @@ func (c *RelationContext) GetRelation(classKey, fieldName string) *RelationInfo 
 
 // CreateLink creates a link between two records for the given association.
 // Both records will be assigned object IDs if they don't have them.
+// Prefer CreateInstanceLink when engine InstanceIDs and [id, data] extents are available.
 func (c *RelationContext) CreateLink(assocKey AssociationKey, from, to *object.Record) {
 	fromID := c.identities.GetOrAssign(from)
 	toID := c.identities.GetOrAssign(to)
 	_ = c.links.AddLink(assocKey, fromID, toID)
+}
+
+// InstanceEndpoint is one side of a host association for TLA navigation.
+// Extent is the [id, data] image element; Data is bare attributes (self alias).
+type InstanceEndpoint struct {
+	ID     ObjectID
+	Extent *object.Record
+	Data   *object.Record
+}
+
+// CreateInstanceLink registers a host association using engine instance IDs.
+// Extent records are returned by navigation; Data aliases keep self lookup working.
+func (c *RelationContext) CreateInstanceLink(
+	assocKey AssociationKey,
+	from, to InstanceEndpoint,
+) {
+	c.identities.RegisterVisible(from.ID, from.Extent, from.Data)
+	c.identities.RegisterVisible(to.ID, to.Extent, to.Data)
+	_ = c.links.AddLink(assocKey, from.ID, to.ID)
+}
+
+// RegisterDataAlias maps a bare or derived self record to an existing instance id.
+func (c *RelationContext) RegisterDataAlias(id ObjectID, data *object.Record) {
+	c.identities.RegisterAlias(id, data)
+}
+
+// EnsureInstance registers an instance so self can navigate even with no links yet.
+func (c *RelationContext) EnsureInstance(id ObjectID, data *object.Record) {
+	if id == 0 || data == nil {
+		return
+	}
+	if _, ok := c.identities.GetID(data); ok {
+		return
+	}
+	if existing := c.identities.GetRecord(id); existing != nil {
+		c.identities.RegisterAlias(id, data)
+		return
+	}
+	extent := object.NewExtentElement(uint64(id), data)
+	c.identities.RegisterVisible(id, extent, data)
 }
 
 // RemoveLink removes a link between two records for the given association.

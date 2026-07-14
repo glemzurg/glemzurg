@@ -704,8 +704,9 @@ func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 		return relResult
 	}
 
-	value := record.Get(n.Field)
-	if value == nil {
+	// Flat attribute access, with sugar: extent [id, data] projects into data.
+	value, ok := object.RecordField(record, n.Field)
+	if !ok {
 		return NewEvalError("field not found: %s", n.Field)
 	}
 	return NewEvalResult(value)
@@ -713,6 +714,7 @@ func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 
 // projectSetOfRecordsField maps field access across a set of records.
 // Empty set → empty set. Missing field on any element → error.
+// Extent elements project attribute fields through data.
 func projectSetOfRecordsField(set *object.Set, field string) *EvalResult {
 	if set.Size() == 0 {
 		return NewEvalResult(object.NewSet())
@@ -723,10 +725,11 @@ func projectSetOfRecordsField(set *object.Set, field string) *EvalResult {
 		if !ok {
 			return NewEvalError("field access on Set requires Record elements, got %s", elem.Type())
 		}
-		if !record.Has(field) {
+		value, ok := object.RecordField(record, field)
+		if !ok {
 			return NewEvalError("field not found: %s", field)
 		}
-		out.Add(record.Get(field))
+		out.Add(value)
 	}
 	return NewEvalResult(out)
 }
