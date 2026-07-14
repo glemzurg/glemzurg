@@ -472,7 +472,7 @@
 <!-- public.data_type&#45;&gt;public.model -->
 <g id="edge17" class="edge">
 <title>public.data_type:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M5250.03,-2402.11C5188.76,-2376.82 5262.34,-2105.82 5209.06,-2052.8 5127.29,-1971.45 5048.36,-2080.26 4952.06,-2016.8 4667.34,-1829.2 4628.06,-1662.37 4628.06,-1321.4 4628.06,-1321.4 4628.06,-1321.4 4628.06,-884.2 4628.06,-750.13 4568.88,-389.4 4648.06,-281.2 4699.22,-211.28 4928.93,-151 5015.57,-151"/>
+<path fill="none" stroke="black" d="M5250.03,-2402.11C5188.76,-2376.82 5262.34,-2105.82 5209.06,-2052.8 5127.29,-1971.45 5048.36,-2080.26 4952.06,-2016.8 4667.34,-1829.2 4628.06,-1662.37 4628.06,-1321.4 4628.06,-1321.4 4628.06,-1321.4 4628.06,-884.2 4628.06,-750.12 4569.83,-389.37 4649.06,-281.2 4700.13,-211.47 4929.14,-151 5015.57,-151"/>
 <polygon fill="black" stroke="black" points="5249.92,-2402.09 5258.92,-2408.36 5255.17,-2403.07 5259.42,-2403.88 5259.42,-2403.88 5259.42,-2403.88 5255.17,-2403.07 5260.58,-2399.52 5249.92,-2402.09"/>
 <text text-anchor="start" x="5267.08" y="-2414" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
@@ -679,76 +679,79 @@
 <!-- public.class -->
 <g id="node18" class="node">
 <title>public.class</title>
-<polygon fill="#efefef" stroke="none" points="5004.57,-1922.6 5004.57,-1958.2 5227.54,-1958.2 5227.54,-1922.6 5004.57,-1922.6"/>
-<polygon fill="none" stroke="black" points="5004.57,-1922.6 5004.57,-1958.2 5227.54,-1958.2 5227.54,-1922.6 5004.57,-1922.6"/>
-<text text-anchor="start" x="5011.57" y="-1936" font-family="Arial Bold" font-size="18.00">public.class</text>
-<text text-anchor="start" x="5096.05" y="-1936" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="5127.17" y="-1936" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1891.8 5004.57,-1922.6 5227.54,-1922.6 5227.54,-1891.8 5004.57,-1891.8"/>
-<text text-anchor="start" x="5011.57" y="-1904" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="5083.16" y="-1904" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1861 5004.57,-1891.8 5227.54,-1891.8 5227.54,-1861 5004.57,-1861"/>
-<text text-anchor="start" x="5011.57" y="-1873.2" font-family="Arial" font-size="14.00">class_key </text>
-<text text-anchor="start" x="5076.93" y="-1873.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1830.2 5004.57,-1861 5227.54,-1861 5227.54,-1830.2 5004.57,-1830.2"/>
-<text text-anchor="start" x="5011.57" y="-1842.4" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="5050.48" y="-1842.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1799.4 5004.57,-1830.2 5227.54,-1830.2 5227.54,-1799.4 5004.57,-1799.4"/>
-<text text-anchor="start" x="5011.57" y="-1811.6" font-family="Arial" font-size="14.00">subdomain_key </text>
-<text text-anchor="start" x="5113.52" y="-1811.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1768.6 5004.57,-1799.4 5227.54,-1799.4 5227.54,-1768.6 5004.57,-1768.6"/>
-<text text-anchor="start" x="5011.57" y="-1780.8" font-family="Arial" font-size="14.00">actor_key </text>
-<text text-anchor="start" x="5076.16" y="-1780.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1737.8 5004.57,-1768.6 5227.54,-1768.6 5227.54,-1737.8 5004.57,-1737.8"/>
-<text text-anchor="start" x="5011.57" y="-1750" font-family="Arial" font-size="14.00">superclass_of_key </text>
-<text text-anchor="start" x="5131.41" y="-1750" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1707 5004.57,-1737.8 5227.54,-1737.8 5227.54,-1707 5004.57,-1707"/>
-<text text-anchor="start" x="5011.57" y="-1719.2" font-family="Arial" font-size="14.00">subclass_of_key </text>
-<text text-anchor="start" x="5118.96" y="-1719.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1676.2 5004.57,-1707 5227.54,-1707 5227.54,-1676.2 5004.57,-1676.2"/>
-<text text-anchor="start" x="5011.57" y="-1688.4" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="5055.93" y="-1688.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1645.4 5004.57,-1676.2 5227.54,-1676.2 5227.54,-1645.4 5004.57,-1645.4"/>
-<text text-anchor="start" x="5011.57" y="-1657.6" font-family="Arial" font-size="14.00">unfinished_notes </text>
-<text text-anchor="start" x="5121.32" y="-1657.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5004.57,-1614.6 5004.57,-1645.4 5227.54,-1645.4 5227.54,-1614.6 5004.57,-1614.6"/>
-<text text-anchor="start" x="5011.57" y="-1626.8" font-family="Arial" font-size="14.00">uml_comment </text>
-<text text-anchor="start" x="5103.38" y="-1626.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="5004.57,-1938 5004.57,-1973.6 5227.54,-1973.6 5227.54,-1938 5004.57,-1938"/>
+<polygon fill="none" stroke="black" points="5004.57,-1938 5004.57,-1973.6 5227.54,-1973.6 5227.54,-1938 5004.57,-1938"/>
+<text text-anchor="start" x="5011.57" y="-1951.4" font-family="Arial Bold" font-size="18.00">public.class</text>
+<text text-anchor="start" x="5096.05" y="-1951.4" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="5127.17" y="-1951.4" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1907.2 5004.57,-1938 5227.54,-1938 5227.54,-1907.2 5004.57,-1907.2"/>
+<text text-anchor="start" x="5011.57" y="-1919.4" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="5083.16" y="-1919.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1876.4 5004.57,-1907.2 5227.54,-1907.2 5227.54,-1876.4 5004.57,-1876.4"/>
+<text text-anchor="start" x="5011.57" y="-1888.6" font-family="Arial" font-size="14.00">class_key </text>
+<text text-anchor="start" x="5076.93" y="-1888.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1845.6 5004.57,-1876.4 5227.54,-1876.4 5227.54,-1845.6 5004.57,-1845.6"/>
+<text text-anchor="start" x="5011.57" y="-1857.8" font-family="Arial" font-size="14.00">name </text>
+<text text-anchor="start" x="5050.48" y="-1857.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1814.8 5004.57,-1845.6 5227.54,-1845.6 5227.54,-1814.8 5004.57,-1814.8"/>
+<text text-anchor="start" x="5011.57" y="-1827" font-family="Arial" font-size="14.00">subdomain_key </text>
+<text text-anchor="start" x="5113.52" y="-1827" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1784 5004.57,-1814.8 5227.54,-1814.8 5227.54,-1784 5004.57,-1784"/>
+<text text-anchor="start" x="5011.57" y="-1796.2" font-family="Arial" font-size="14.00">actor_key </text>
+<text text-anchor="start" x="5076.16" y="-1796.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1753.2 5004.57,-1784 5227.54,-1784 5227.54,-1753.2 5004.57,-1753.2"/>
+<text text-anchor="start" x="5011.57" y="-1765.4" font-family="Arial" font-size="14.00">superclass_of_key </text>
+<text text-anchor="start" x="5131.41" y="-1765.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1722.4 5004.57,-1753.2 5227.54,-1753.2 5227.54,-1722.4 5004.57,-1722.4"/>
+<text text-anchor="start" x="5011.57" y="-1734.6" font-family="Arial" font-size="14.00">subclass_of_key </text>
+<text text-anchor="start" x="5118.96" y="-1734.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1691.6 5004.57,-1722.4 5227.54,-1722.4 5227.54,-1691.6 5004.57,-1691.6"/>
+<text text-anchor="start" x="5011.57" y="-1703.8" font-family="Arial" font-size="14.00">details </text>
+<text text-anchor="start" x="5055.93" y="-1703.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1660.8 5004.57,-1691.6 5227.54,-1691.6 5227.54,-1660.8 5004.57,-1660.8"/>
+<text text-anchor="start" x="5011.57" y="-1673" font-family="Arial" font-size="14.00">unfinished_notes </text>
+<text text-anchor="start" x="5121.32" y="-1673" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1630 5004.57,-1660.8 5227.54,-1660.8 5227.54,-1630 5004.57,-1630"/>
+<text text-anchor="start" x="5011.57" y="-1642.2" font-family="Arial" font-size="14.00">uml_comment </text>
+<text text-anchor="start" x="5103.38" y="-1642.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5004.57,-1599.2 5004.57,-1630 5227.54,-1630 5227.54,-1599.2 5004.57,-1599.2"/>
+<text text-anchor="start" x="5011.57" y="-1611.4" font-family="Arial" font-size="14.00">marked </text>
+<text text-anchor="start" x="5062.14" y="-1611.4" font-family="Arial" font-size="14.00" fill="#666666">[boolean]</text>
 </g>
 <!-- public.class&#45;&gt;public.model -->
 <g id="edge26" class="edge">
 <title>public.class:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M4993.27,-1907.07C4780.08,-1901.65 4759.07,-1726.49 4685.06,-1520 4650.24,-1422.89 4624.24,-380.69 4692.06,-281.2 4779.35,-153.13 4860.58,-151 5015.57,-151"/>
-<polygon fill="black" stroke="black" points="4993.24,-1907.07 5003.18,-1911.7 4998.57,-1907.14 5002.9,-1907.19 5002.9,-1907.19 5002.9,-1907.19 4998.57,-1907.14 5003.29,-1902.7 4993.24,-1907.07"/>
-<text text-anchor="start" x="4603.69" y="-1917.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M4993.35,-1922.47C4774.93,-1916.93 4758.86,-1732.24 4685.06,-1520 4650.93,-1421.87 4625.69,-378.56 4692.06,-281.2 4779.35,-153.13 4860.58,-151 5015.57,-151"/>
+<polygon fill="black" stroke="black" points="4993.24,-1922.47 5003.18,-1927.1 4998.57,-1922.54 5002.9,-1922.59 5002.9,-1922.59 5002.9,-1922.59 4998.57,-1922.54 5003.29,-1918.1 4993.24,-1922.47"/>
+<text text-anchor="start" x="4603.69" y="-1932.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.class&#45;&gt;public.subdomain -->
 <g id="edge27" class="edge">
 <title>public.class:model_key&#45;&gt;public.subdomain:model_key</title>
-<path fill="none" stroke="black" d="M5238.63,-1906.88C5373.22,-1898.04 5278.64,-1707.9 5227.54,-1571.4 5216.95,-1543.11 5193.6,-1548.31 5183.06,-1520 5121.1,-1353.75 5170.88,-1297.8 5183.06,-1120.8 5188.96,-1034.95 5123.51,-929 5209.57,-929"/>
-<polygon fill="black" stroke="black" points="5238.87,-1906.87 5228.73,-1902.69 5233.54,-1907.04 5229.21,-1907.18 5229.21,-1907.18 5229.21,-1907.18 5233.54,-1907.04 5229.02,-1911.69 5238.87,-1906.87"/>
-<text text-anchor="start" x="5235.54" y="-1917.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M5238.69,-1922.3C5387.46,-1913.2 5296.4,-1699.8 5227.54,-1556 5216.56,-1533.06 5194.01,-1542.95 5183.06,-1520 5106.65,-1359.87 5170.88,-1297.8 5183.06,-1120.8 5188.96,-1034.95 5123.51,-929 5209.57,-929"/>
+<polygon fill="black" stroke="black" points="5238.87,-1922.29 5228.74,-1918.09 5233.54,-1922.45 5229.21,-1922.58 5229.21,-1922.58 5229.21,-1922.58 5233.54,-1922.45 5229.01,-1927.09 5238.87,-1922.29"/>
+<text text-anchor="start" x="5235.54" y="-1932.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.class&#45;&gt;public.actor -->
 <g id="edge28" class="edge">
 <title>public.class:model_key&#45;&gt;public.actor:model_key</title>
-<path fill="none" stroke="black" d="M5238.83,-1907.1C5475.09,-1902.62 5527.85,-1742.87 5621.06,-1520 5689.51,-1356.32 5623.46,-1298.21 5621.06,-1120.8 5620.27,-1062.93 5561.2,-990.6 5619.08,-990.6"/>
-<polygon fill="black" stroke="black" points="5238.87,-1907.1 5228.83,-1902.7 5233.54,-1907.15 5229.21,-1907.19 5229.21,-1907.19 5229.21,-1907.19 5233.54,-1907.15 5228.92,-1911.7 5238.87,-1907.1"/>
-<text text-anchor="start" x="5235.54" y="-1891.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, actor_key) REFERENCES actor(model_key, actor_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M5238.68,-1922.5C5479.77,-1917.91 5528.18,-1748.32 5621.06,-1520 5687.91,-1355.66 5623.46,-1298.21 5621.06,-1120.8 5620.27,-1062.93 5561.2,-990.6 5619.08,-990.6"/>
+<polygon fill="black" stroke="black" points="5238.87,-1922.5 5228.83,-1918.1 5233.54,-1922.55 5229.21,-1922.59 5229.21,-1922.59 5229.21,-1922.59 5233.54,-1922.55 5228.92,-1927.1 5238.87,-1922.5"/>
+<text text-anchor="start" x="5235.54" y="-1906.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, actor_key) REFERENCES actor(model_key, actor_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.class&#45;&gt;public.class_generalization -->
 <g id="edge29" class="edge">
 <title>public.class:model_key&#45;&gt;public.class_generalization:model_key</title>
-<path fill="none" stroke="black" d="M5229.15,-1897.15C5229.59,-1828.01 5213.65,-1425.8 5234.1,-1425.8"/>
-<polygon fill="black" stroke="black" points="5229.16,-1896.88 5224.07,-1906.6 5228.84,-1902.21 5228.58,-1906.53 5228.58,-1906.53 5228.58,-1906.53 5228.84,-1902.21 5233.05,-1907.14 5229.16,-1896.88"/>
-<text text-anchor="start" x="4596.85" y="-1891.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, subclass_of_key) REFERENCES class_generalization(model_key, generalization_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M5229.23,-1912.22C5229.88,-1840.88 5213.26,-1425.8 5234.1,-1425.8"/>
+<polygon fill="black" stroke="black" points="5229.22,-1912.29 5224.07,-1921.97 5228.87,-1917.61 5228.58,-1921.93 5228.58,-1921.93 5228.58,-1921.93 5228.87,-1917.61 5233.05,-1922.56 5229.22,-1912.29"/>
+<text text-anchor="start" x="4596.85" y="-1906.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, subclass_of_key) REFERENCES class_generalization(model_key, generalization_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.class&#45;&gt;public.class_generalization -->
 <g id="edge30" class="edge">
 <title>public.class:model_key&#45;&gt;public.class_generalization:model_key</title>
-<path fill="none" stroke="black" d="M5233.25,-1897.79C5247.45,-1831.13 5230.38,-1432.65 5234,-1425.89"/>
-<polygon fill="black" stroke="black" points="5233.23,-1897.84 5224.88,-1904.95 5230.94,-1902.66 5229.09,-1906.57 5229.09,-1906.57 5229.09,-1906.57 5230.94,-1902.66 5233.01,-1908.8 5233.23,-1897.84"/>
-<text text-anchor="start" x="4588.22" y="-1917.18" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, superclass_of_key) REFERENCES class_generalization(model_key, generalization_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M5233.24,-1913.32C5247.82,-1845.85 5229.99,-1432.88 5233.99,-1425.89"/>
+<polygon fill="black" stroke="black" points="5233.27,-1913.26 5224.89,-1920.33 5230.97,-1918.07 5229.09,-1921.97 5229.09,-1921.97 5229.09,-1921.97 5230.97,-1918.07 5233.01,-1924.22 5233.27,-1913.26"/>
+<text text-anchor="start" x="5235.81" y="-1906.58" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, superclass_of_key) REFERENCES class_generalization(model_key, generalization_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.attribute -->
 <g id="node19" class="node">
@@ -809,7 +812,7 @@
 <!-- public.attribute&#45;&gt;public.class -->
 <g id="edge33" class="edge">
 <title>public.attribute:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M2124.33,-2945.29C2191.65,-2921.38 2142.15,-2653.64 2171.06,-2580.4 2275.17,-2316.58 2283.37,-2192.76 2530.06,-2052.8 2769.51,-1916.95 4728.26,-1907.2 5003.57,-1907.2"/>
+<path fill="none" stroke="black" d="M2124.33,-2945.29C2191.65,-2921.38 2142.15,-2653.64 2171.06,-2580.4 2275.17,-2316.58 2282.93,-2191.99 2530.06,-2052.8 2649.95,-1985.27 4865.96,-1922.6 5003.57,-1922.6"/>
 <polygon fill="black" stroke="black" points="2124.23,-2945.31 2113.63,-2942.51 2118.97,-2946.18 2114.69,-2946.89 2114.69,-2946.89 2114.69,-2946.89 2118.97,-2946.18 2115.1,-2951.38 2124.23,-2945.31"/>
 <text text-anchor="start" x="1619.68" y="-2931" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
@@ -837,7 +840,7 @@
 <!-- public.class_index&#45;&gt;public.class -->
 <g id="edge34" class="edge">
 <title>public.class_index:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M1392.87,-3382C1201.35,-3374.55 1245.78,-3155.89 1062.06,-3077.2 969.63,-3037.61 679.26,-3115.07 611.06,-3041.2 541.59,-2965.97 541.89,-2655.92 611.06,-2580.4 672.68,-2513.11 938.03,-2584.35 1020.06,-2544.4 1289.07,-2413.39 1207.78,-2176.9 1480.06,-2052.8 1579.2,-2007.61 2351.18,-2021.15 2460.06,-2016.8 3590.66,-1971.68 3872.07,-1907.2 5003.57,-1907.2"/>
+<path fill="none" stroke="black" d="M1392.87,-3382C1201.35,-3374.55 1245.78,-3155.89 1062.06,-3077.2 969.63,-3037.61 679.26,-3115.07 611.06,-3041.2 541.59,-2965.97 541.89,-2655.92 611.06,-2580.4 672.68,-2513.11 937.92,-2584.13 1020.06,-2544.4 1290.8,-2413.45 1211.07,-2176.82 1485.06,-2052.8 1583.82,-2008.1 2351.72,-2020.81 2460.06,-2016.8 3590.51,-1975 3872.34,-1922.6 5003.57,-1922.6"/>
 <polygon fill="black" stroke="black" points="1392.74,-3382 1402.65,-3386.69 1398.08,-3382.1 1402.41,-3382.19 1402.41,-3382.19 1402.41,-3382.19 1398.08,-3382.1 1402.83,-3377.69 1392.74,-3382"/>
 <text text-anchor="start" x="908.72" y="-3392.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
@@ -876,7 +879,7 @@
 <!-- public.class_invariant&#45;&gt;public.class -->
 <g id="edge37" class="edge">
 <title>public.class_invariant:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M1416.29,-2823.31C1508.82,-2813.86 1399.01,-2670.12 1457.06,-2580.4 1673.51,-2245.79 1806.4,-2185.82 2182.06,-2052.8 2330.01,-2000.41 4846.61,-1907.2 5003.57,-1907.2"/>
+<path fill="none" stroke="black" d="M1416.29,-2823.31C1508.81,-2813.86 1398.93,-2670.07 1457.06,-2580.4 1674.42,-2245.1 1807.89,-2184.79 2185.06,-2052.8 2333.01,-2001.02 4846.82,-1922.6 5003.57,-1922.6"/>
 <polygon fill="black" stroke="black" points="1416.35,-2823.31 1406.15,-2819.29 1411.02,-2823.56 1406.7,-2823.77 1406.7,-2823.77 1406.7,-2823.77 1411.02,-2823.56 1406.58,-2828.28 1416.35,-2823.31"/>
 <text text-anchor="start" x="911.67" y="-2833.8" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
@@ -967,21 +970,21 @@
 <!-- public.association&#45;&gt;public.class -->
 <g id="edge41" class="edge">
 <title>public.association:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M978.92,-2447.47C1030.16,-2415.32 943.98,-2109.01 1007.06,-2052.8 1036.82,-2026.27 2402.2,-2018.16 2442.06,-2016.8 3572.9,-1978.25 3854.07,-1907.2 5003.57,-1907.2"/>
+<path fill="none" stroke="black" d="M978.92,-2447.47C1030.16,-2415.32 943.98,-2109.01 1007.06,-2052.8 1036.82,-2026.27 2402.2,-2018.04 2442.06,-2016.8 3572.74,-1981.68 3854.34,-1922.6 5003.57,-1922.6"/>
 <polygon fill="black" stroke="black" points="979,-2447.45 968.16,-2445.77 973.86,-2448.87 969.68,-2450.02 969.68,-2450.02 969.68,-2450.02 973.86,-2448.87 970.56,-2454.45 979,-2447.45"/>
 <text text-anchor="start" x="976.04" y="-2434.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, association_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.association&#45;&gt;public.class -->
 <g id="edge42" class="edge">
 <title>public.association:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M979.29,-2448.46C1050.14,-2422.33 961.27,-2109.65 1025.06,-2052.8 1054.82,-2026.27 2420.2,-2018.16 2460.06,-2016.8 3590.76,-1978.26 3872,-1907.22 5003.16,-1907.2"/>
+<path fill="none" stroke="black" d="M979.29,-2448.46C1050.14,-2422.33 961.27,-2109.65 1025.06,-2052.8 1054.82,-2026.27 2420.2,-2018.04 2460.06,-2016.8 3590.6,-1981.69 3872.28,-1922.61 5003.16,-1922.6"/>
 <polygon fill="black" stroke="black" points="979.48,-2448.43 968.85,-2445.71 974.22,-2449.34 969.96,-2450.08 969.96,-2450.08 969.96,-2450.08 974.22,-2449.34 970.4,-2454.58 979.48,-2448.43"/>
 <text text-anchor="start" x="449.38" y="-2460.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, from_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.association&#45;&gt;public.class -->
 <g id="edge43" class="edge">
 <title>public.association:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M979.58,-2448.98C1069.42,-2426.8 978.81,-2110.05 1043.06,-2052.8 1072.82,-2026.27 2438.2,-2018.16 2478.06,-2016.8 3608.76,-1978.26 3890,-1907.22 5003.16,-1907.2"/>
+<path fill="none" stroke="black" d="M979.58,-2448.98C1069.42,-2426.8 978.81,-2110.05 1043.06,-2052.8 1072.82,-2026.27 2438.2,-2018.04 2478.06,-2016.8 3608.6,-1981.69 3890.28,-1922.61 5003.16,-1922.6"/>
 <polygon fill="black" stroke="black" points="979.61,-2448.97 969.15,-2445.69 974.31,-2449.61 970.01,-2450.12 970.01,-2450.12 970.01,-2450.12 974.31,-2449.61 970.22,-2454.63 979.61,-2448.97"/>
 <text text-anchor="start" x="461.09" y="-2434.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, to_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
@@ -1085,8 +1088,8 @@
 <!-- public.query&#45;&gt;public.class -->
 <g id="edge48" class="edge">
 <title>public.query:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M4831.64,-2340.25C4882.32,-2316.8 4846.04,-2108.23 4873.06,-2052.8 4911.12,-1974.68 4916.67,-1907.2 5003.57,-1907.2"/>
-<polygon fill="black" stroke="black" points="4831.65,-2340.25 4820.93,-2337.93 4826.43,-2341.36 4822.19,-2342.26 4822.19,-2342.26 4822.19,-2342.26 4826.43,-2341.36 4822.8,-2346.73 4831.65,-2340.25"/>
+<path fill="none" stroke="black" d="M4831.62,-2340.24C4882.14,-2316.71 4844.51,-2107.46 4873.06,-2052.8 4910.99,-1980.17 4921.64,-1922.6 5003.57,-1922.6"/>
+<polygon fill="black" stroke="black" points="4831.64,-2340.24 4820.92,-2337.93 4826.43,-2341.35 4822.19,-2342.26 4822.19,-2342.26 4822.19,-2342.26 4826.43,-2341.35 4822.8,-2346.73 4831.64,-2340.24"/>
 <text text-anchor="start" x="4327.18" y="-2352.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.query_parameter -->
@@ -1265,7 +1268,7 @@
 <!-- public.state&#45;&gt;public.class -->
 <g id="edge57" class="edge">
 <title>public.state:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M6011.34,-2869.55C5897.57,-2859.05 6046.62,-2665.86 5950.06,-2580.4 5850.15,-2491.99 5745.3,-2639.81 5652.06,-2544.4 5575.33,-2465.9 5670.41,-2140.24 5604.06,-2052.8 5495.85,-1910.2 5407.54,-1907.2 5228.54,-1907.2"/>
+<path fill="none" stroke="black" d="M6011.34,-2869.55C5897.57,-2859.05 6046.62,-2665.86 5950.06,-2580.4 5850.15,-2491.99 5745.88,-2639.24 5652.06,-2544.4 5574.76,-2466.27 5666.36,-2138.89 5598.06,-2052.8 5543.94,-1984.6 5315.6,-1922.6 5228.54,-1922.6"/>
 <polygon fill="black" stroke="black" points="6011.25,-2869.55 6021.04,-2874.48 6016.58,-2869.78 6020.9,-2869.97 6020.9,-2869.97 6020.9,-2869.97 6016.58,-2869.78 6021.43,-2865.49 6011.25,-2869.55"/>
 <text text-anchor="start" x="6028.57" y="-2880" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
@@ -1296,7 +1299,7 @@
 <!-- public.event&#45;&gt;public.class -->
 <g id="edge58" class="edge">
 <title>public.event:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M6375.23,-2854.11C6268.61,-2843.32 6410.18,-2658.08 6316.06,-2580.4 6208.59,-2491.71 5790.53,-2640.94 5690.06,-2544.4 5610.91,-2468.35 5709.77,-2139.19 5642.06,-2052.8 5581.96,-1976.12 5325.96,-1907.2 5228.54,-1907.2"/>
+<path fill="none" stroke="black" d="M6375.23,-2854.11C6268.61,-2843.32 6410.18,-2658.08 6316.06,-2580.4 6208.59,-2491.71 5790.82,-2640.64 5690.06,-2544.4 5610.63,-2468.54 5708.42,-2137.96 5639.06,-2052.8 5578.62,-1978.6 5324.24,-1922.6 5228.54,-1922.6"/>
 <polygon fill="black" stroke="black" points="6375.25,-2854.11 6385.03,-2859.08 6380.58,-2854.36 6384.91,-2854.57 6384.91,-2854.57 6384.91,-2854.57 6380.58,-2854.36 6385.46,-2850.09 6375.25,-2854.11"/>
 <text text-anchor="start" x="5891.22" y="-2864.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
@@ -1362,8 +1365,8 @@
 <!-- public.guard&#45;&gt;public.class -->
 <g id="edge61" class="edge">
 <title>public.guard:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M5642.44,-2832.24C5604.61,-2756.44 5595.39,-2086.32 5571.06,-2052.8 5473.86,-1918.95 5393.95,-1907.2 5228.54,-1907.2"/>
-<polygon fill="black" stroke="black" points="5642.18,-2831.98 5646.19,-2842.19 5645.99,-2835.71 5649.09,-2838.73 5649.09,-2838.73 5649.09,-2838.73 5645.99,-2835.71 5652.48,-2835.75 5642.18,-2831.98"/>
+<path fill="none" stroke="black" d="M5639.95,-2836C5566.45,-2784.22 5621.95,-2120.11 5571.06,-2052.8 5472.84,-1922.9 5391.4,-1922.6 5228.54,-1922.6"/>
+<polygon fill="black" stroke="black" points="5639.77,-2835.94 5647.84,-2843.36 5644.83,-2837.62 5648.94,-2838.99 5648.94,-2838.99 5648.94,-2838.99 5644.83,-2837.62 5650.68,-2834.82 5639.77,-2835.94"/>
 <text text-anchor="start" x="5656.57" y="-2849.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.action -->
@@ -1393,8 +1396,8 @@
 <!-- public.action&#45;&gt;public.class -->
 <g id="edge62" class="edge">
 <title>public.action:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M5168.14,-2341.77C5234.25,-2332.86 5185.99,-2232.13 5157.04,-2160.6 5120.27,-2069.79 5041.56,-2092.12 5004.57,-2001.4 4988.76,-1962.63 4961.7,-1907.2 5003.57,-1907.2"/>
-<polygon fill="black" stroke="black" points="5168.35,-2341.75 5158.09,-2337.89 5163.03,-2342.09 5158.7,-2342.36 5158.7,-2342.36 5158.7,-2342.36 5163.03,-2342.09 5158.65,-2346.87 5168.35,-2341.75"/>
+<path fill="none" stroke="black" d="M5168.15,-2341.76C5234.42,-2332.79 5187.8,-2231.37 5157.04,-2160.6 5119.9,-2075.18 5041.92,-2102.13 5004.57,-2016.8 4987.78,-1978.45 4961.7,-1922.6 5003.57,-1922.6"/>
+<polygon fill="black" stroke="black" points="5168.35,-2341.75 5158.09,-2337.89 5163.03,-2342.08 5158.7,-2342.36 5158.7,-2342.36 5158.7,-2342.36 5163.03,-2342.08 5158.65,-2346.87 5168.35,-2341.75"/>
 <text text-anchor="start" x="4914.36" y="-2326.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.action_parameter -->
@@ -1865,14 +1868,14 @@
 <title>public.use_case:model_key&#45;&gt;public.use_case_generalization:model_key</title>
 <path fill="none" stroke="black" d="M5888.79,-1922.3C5729.54,-1912.68 5787.06,-1677.04 5891.08,-1556 5959.21,-1476.72 6055.06,-1599.01 6123.5,-1520 6150.92,-1488.35 6166.37,-1425.8 6133.5,-1425.8"/>
 <polygon fill="black" stroke="black" points="5888.75,-1922.3 5898.61,-1927.09 5894.08,-1922.45 5898.41,-1922.58 5898.41,-1922.58 5898.41,-1922.58 5894.08,-1922.45 5898.88,-1918.09 5888.75,-1922.3"/>
-<text text-anchor="start" x="5247.37" y="-1932.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, subclass_of_key) REFERENCES use_case_generalization(model_key, generalization_key) ON DELETE CASCADE</text>
+<text text-anchor="start" x="5906.08" y="-1932.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, subclass_of_key) REFERENCES use_case_generalization(model_key, generalization_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.use_case&#45;&gt;public.use_case_generalization -->
 <g id="edge89" class="edge">
 <title>public.use_case:model_key&#45;&gt;public.use_case_generalization:model_key</title>
 <path fill="none" stroke="black" d="M5888.61,-1922.2C5747.88,-1911.28 5805.37,-1676.68 5909.08,-1556 5977.21,-1476.72 6073.06,-1599.01 6141.5,-1520 6168.86,-1488.42 6184.31,-1426.04 6133.8,-1425.8"/>
 <polygon fill="black" stroke="black" points="5888.3,-1922.19 5898.12,-1927.08 5893.64,-1922.4 5897.96,-1922.57 5897.96,-1922.57 5897.96,-1922.57 5893.64,-1922.4 5898.47,-1918.09 5888.3,-1922.19"/>
-<text text-anchor="start" x="5905.63" y="-1932.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, superclass_of_key) REFERENCES use_case_generalization(model_key, generalization_key) ON DELETE CASCADE</text>
+<text text-anchor="start" x="5905.63" y="-1906.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, superclass_of_key) REFERENCES use_case_generalization(model_key, generalization_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.use_case_actor -->
 <g id="node47" class="node">
@@ -1898,8 +1901,8 @@
 <!-- public.use_case_actor&#45;&gt;public.class -->
 <g id="edge90" class="edge">
 <title>public.use_case_actor:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M5764.36,-2326.54C5658.87,-2316.38 5799.72,-2141.79 5718.06,-2052.8 5641.32,-1969.18 5342.03,-1907.2 5228.54,-1907.2"/>
-<polygon fill="black" stroke="black" points="5764.27,-2326.53 5774.06,-2331.48 5769.6,-2326.77 5773.93,-2326.97 5773.93,-2326.97 5773.93,-2326.97 5769.6,-2326.77 5774.46,-2322.49 5764.27,-2326.53"/>
+<path fill="none" stroke="black" d="M5764.36,-2326.53C5658.94,-2316.31 5801.01,-2140.59 5718.06,-2052.8 5640.75,-1970.99 5341.1,-1922.6 5228.54,-1922.6"/>
+<polygon fill="black" stroke="black" points="5764.27,-2326.53 5774.06,-2331.48 5769.6,-2326.77 5773.93,-2326.97 5773.93,-2326.97 5773.93,-2326.97 5769.6,-2326.77 5774.47,-2322.49 5764.27,-2326.53"/>
 <text text-anchor="start" x="5280.79" y="-2311" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, actor_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.use_case_actor&#45;&gt;public.use_case -->
@@ -2031,7 +2034,7 @@
 <!-- public.scenario_object&#45;&gt;public.class -->
 <g id="edge97" class="edge">
 <title>public.scenario_object:model_key&#45;&gt;public.class:model_key</title>
-<path fill="none" stroke="black" d="M7569.62,-2914.21C7511.65,-2888.83 7582.08,-2627.71 7528.06,-2580.4 7452.6,-2514.32 5796.32,-2612.89 5723.06,-2544.4 5642.95,-2469.51 5748.42,-2138.55 5680.06,-2052.8 5614.34,-1970.37 5333.96,-1907.2 5228.54,-1907.2"/>
+<path fill="none" stroke="black" d="M7569.62,-2914.21C7511.65,-2888.83 7582.08,-2627.71 7528.06,-2580.4 7452.6,-2514.32 5796.39,-2612.82 5723.06,-2544.4 5642.86,-2469.58 5748.82,-2137.44 5679.06,-2052.8 5612.77,-1972.38 5332.75,-1922.6 5228.54,-1922.6"/>
 <polygon fill="black" stroke="black" points="7569.46,-2914.18 7578.38,-2920.55 7574.69,-2915.22 7578.93,-2916.07 7578.93,-2916.07 7578.93,-2916.07 7574.69,-2915.22 7580.14,-2911.72 7569.46,-2914.18"/>
 <text text-anchor="start" x="7586.59" y="-2926.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE</text>
 </g>

@@ -185,6 +185,7 @@ var _funcMap = template.FuncMap{
 		return classesMermaidNoteLine(mermaidNodeID("class", class.Key), class.UmlComment)
 	},
 	"classes_mermaid_association_link_note": classesMermaidAssociationLinkNote,
+	"classes_mermaid_class_box_style":       classesMermaidClassBoxStyle,
 	"classes_mermaid_focal_class_style":     func() string { return classesMermaidFocalClassStyle },
 	"has_mermaid_focal_class":               hasMermaidFocalClass,
 	"mermaid_focal_class_key":               mermaidFocalClassKey,
