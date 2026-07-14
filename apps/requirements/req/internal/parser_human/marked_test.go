@@ -1,6 +1,8 @@
 package parser_human
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -8,6 +10,11 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
 	"github.com/stretchr/testify/suite"
+)
+
+const (
+	t_MARKED_PATH_OK  = "test_files/marked"
+	t_MARKED_PATH_ERR = t_MARKED_PATH_OK + "/err"
 )
 
 func TestMarkedSuite(t *testing.T) {
@@ -18,45 +25,79 @@ type MarkedSuite struct {
 	suite.Suite
 }
 
-func (suite *MarkedSuite) TestParseMarkedClassSubKeys() {
+// TestParseMarkedFiles exercises this.marked fixtures: parse list, apply to classes, round-trip generate.
+func (suite *MarkedSuite) TestParseMarkedFiles() {
+	testDataFiles, err := t_ContentsForAllMdFiles(t_MARKED_PATH_OK)
+	suite.Require().NoError(err)
+
+	domainKey := helper.Must(identity.NewDomainKey("test_domain"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "test_subdomain"))
+
+	for _, testData := range testDataFiles {
+		testName := testData.Filename
+		suite.Run(testName, func() {
+			var expected []string
+			actual, err := parseMarkedClassSubKeys(testData.Filename, testData.Contents)
+			suite.Require().NoError(err, testName)
+
+			err = json.Unmarshal([]byte(testData.Json), &expected)
+			suite.Require().NoError(err, testName)
+			suite.Equal(expected, actual, testName)
+
+			// Build a class map covering listed keys so apply + generate can round-trip the file body.
+			classes := make(map[identity.Key]model_class.Class, len(actual)+1)
+			for _, subKey := range actual {
+				classKey := helper.Must(identity.NewClassKey(subdomainKey, subKey))
+				classes[classKey] = model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: subKey})
+			}
+			// Extra unmarked class must stay out of the generated list.
+			extraKey := helper.Must(identity.NewClassKey(subdomainKey, "unmarked_extra"))
+			classes[extraKey] = model_class.NewClass(extraKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Unmarked Extra"})
+
+			updated, err := applyMarkedClassSubKeys(subdomainKey, classes, actual, testData.Filename)
+			suite.Require().NoError(err, testName)
+			for _, subKey := range actual {
+				classKey := helper.Must(identity.NewClassKey(subdomainKey, subKey))
+				suite.True(updated[classKey].Marked, "%s: %s should be marked", testName, subKey)
+			}
+			suite.False(updated[extraKey].Marked, "%s: extra class must remain unmarked", testName)
+
+			generated := generateMarkedContent(updated)
+			suite.Equal(testData.Contents, strings.TrimSpace(generated), testName)
+		})
+	}
+}
+
+func (suite *MarkedSuite) TestParseMarkedFilesErr() {
+	testDataFiles, err := t_ContentsForAllMdFiles(t_MARKED_PATH_ERR)
+	suite.Require().NoError(err)
+
+	for _, testData := range testDataFiles {
+		testName := testData.Filename
+		// Error fixtures store the expected substring in the JSON string value.
+		var errstr string
+		err = json.Unmarshal([]byte(testData.Json), &errstr)
+		suite.Require().NoError(err, testName)
+
+		actual, err := parseMarkedClassSubKeys(testData.Filename, testData.Contents)
+		suite.Require().ErrorContains(err, errstr, testName)
+		suite.Nil(actual, testName)
+	}
+}
+
+func (suite *MarkedSuite) TestParseMarkedClassSubKeysEmpty() {
 	tests := []struct {
 		name     string
 		contents string
-		want     []string
-		wantErr  string
 	}{
-		{
-			name:     "empty file",
-			contents: "",
-			want:     nil,
-		},
-		{
-			name:     "whitespace only",
-			contents: "  \n  ",
-			want:     nil,
-		},
-		{
-			name: "list of subkeys",
-			contents: `- account
-- currency
-`,
-			want: []string{"account", "currency"},
-		},
-		{
-			name:     "invalid yaml",
-			contents: "not: a: list",
-			wantErr:  "failed to parse marked class list",
-		},
+		{name: "empty file", contents: ""},
+		{name: "whitespace only", contents: "  \n  "},
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
 			got, err := parseMarkedClassSubKeys("classes/this.marked", tc.contents)
-			if tc.wantErr != "" {
-				suite.Require().ErrorContains(err, tc.wantErr)
-				return
-			}
 			suite.Require().NoError(err)
-			suite.Equal(tc.want, got)
+			suite.Nil(got)
 		})
 	}
 }
