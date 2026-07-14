@@ -162,42 +162,42 @@ func TestParameterSimulationMarkdownLines(t *testing.T) {
 	actionKey := helper.Must(identity.NewActionKey(classKey, "initialize"))
 	paramKey := helper.Must(identity.NewParameterKey(actionKey, "amounts"))
 	reqKey := helper.Must(identity.NewParameterSimulationRequireKey(paramKey, "0"))
-	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey))
+	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey, "0"))
 
 	param := helper.Must(model_state.NewParameter(actionKey, "Amounts", "unordered of unconstrained", false))
+	specLogic := model_logic.NewLogic(
+		specKey,
+		model_logic.LogicTypeValue,
+		"",
+		"",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{}"},
+		nil,
+	)
 	param.SetSimulation(&model_state.ParameterSimulation{
 		Details: "Sample amounts.",
-		Requires: []model_logic.Logic{
-			model_logic.NewLogic(
-				reqKey,
-				model_logic.LogicTypeAssessment,
-				"Need accounts.",
-				"",
-				logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Account /= {}"},
-				nil,
-			),
-		},
-		Specification: func() *model_logic.Logic {
-			logic := model_logic.NewLogic(
-				specKey,
-				model_logic.LogicTypeValue,
-				"",
-				"",
-				logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{}"},
-				nil,
-			)
-			return &logic
-		}(),
+		Rules: []model_state.ParameterSimulationRule{{
+			Requires: []model_logic.Logic{
+				model_logic.NewLogic(
+					reqKey,
+					model_logic.LogicTypeAssessment,
+					"Need accounts.",
+					"",
+					logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Account /= {}"},
+					nil,
+				),
+			},
+			Specification: &specLogic,
+		}},
 	})
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Transaction"})
 
 	got := parameterSimulationMarkdownLines(class, param)
 	require.Contains(t, got, "    - Simulation:")
 	require.Contains(t, got, "Sample amounts.")
-	require.Contains(t, got, "        - Requires:")
+	require.Contains(t, got, "            - Requires:")
 	require.Contains(t, got, "Need accounts.")
 	require.Contains(t, got, "**Account /= {}**")
-	require.Contains(t, got, "        - Specification:\n            - **{}**")
+	require.Contains(t, got, "            - Specification:\n                - **{}**")
 }
 
 func TestDerivationPolicyMarkdownHTMLBoldsSpec(t *testing.T) {

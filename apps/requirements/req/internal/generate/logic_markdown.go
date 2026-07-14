@@ -254,26 +254,33 @@ func parameterSimulationMarkdownLines(class model_class.Class, param model_state
 	if details := strings.TrimSpace(sim.Details); details != "" {
 		lines = append(lines, "        - "+details)
 	}
-	if len(sim.Requires) > 0 {
-		lines = append(lines, "        - Requires:")
-		for _, req := range sim.Requires {
-			reqIndent := "            "
-			if desc := strings.TrimSpace(req.Description); desc != "" {
-				lines = append(lines, reqIndent+"- "+desc)
-				appendClassLogicMarkdownChild(&lines, class, req, reqIndent)
-				continue
-			}
-			appendClassLogicMarkdownChild(&lines, class, req, "        ")
+	for _, rule := range sim.Rules {
+		ruleHeader := "        - Rule:"
+		if desc := strings.TrimSpace(rule.Details); desc != "" {
+			ruleHeader = "        - " + desc
 		}
-	}
-	if sim.Specification != nil {
-		specHeaderIndent := "        "
-		if desc := strings.TrimSpace(sim.Specification.Description); desc != "" {
-			lines = append(lines, specHeaderIndent+"- "+desc)
-			appendClassLogicMarkdownChild(&lines, class, *sim.Specification, specHeaderIndent)
-		} else {
-			lines = append(lines, specHeaderIndent+"- Specification:")
-			appendClassLogicMarkdownChild(&lines, class, *sim.Specification, specHeaderIndent)
+		lines = append(lines, ruleHeader)
+		if len(rule.Requires) > 0 {
+			lines = append(lines, "            - Requires:")
+			for _, req := range rule.Requires {
+				reqIndent := "                "
+				if desc := strings.TrimSpace(req.Description); desc != "" {
+					lines = append(lines, reqIndent+"- "+desc)
+					appendClassLogicMarkdownChild(&lines, class, req, reqIndent)
+					continue
+				}
+				appendClassLogicMarkdownChild(&lines, class, req, "            ")
+			}
+		}
+		if rule.Specification != nil {
+			specHeaderIndent := "            "
+			if desc := strings.TrimSpace(rule.Specification.Description); desc != "" {
+				lines = append(lines, specHeaderIndent+"- "+desc)
+				appendClassLogicMarkdownChild(&lines, class, *rule.Specification, specHeaderIndent)
+			} else {
+				lines = append(lines, specHeaderIndent+"- Specification:")
+				appendClassLogicMarkdownChild(&lines, class, *rule.Specification, specHeaderIndent)
+			}
 		}
 	}
 	return strings.Join(lines, "\n")

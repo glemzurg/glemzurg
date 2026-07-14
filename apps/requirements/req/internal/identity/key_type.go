@@ -555,11 +555,18 @@ func NewParameterSimulationRequireKey(parameterKey Key, subKey string) (key Key,
 	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_SIMULATION_REQUIRE, subKey)
 }
 
-func NewParameterSimulationSpecKey(parameterKey Key) (key Key, err error) {
+// NewParameterSimulationSpecKey creates a simulation specification key for one rule.
+// subKey is the zero-based rule index (integer string), matching ParameterSimulation.Rules order.
+func NewParameterSimulationSpecKey(parameterKey Key, subKey string) (key Key, err error) {
 	if parameterKey.GetKeyType() != KEY_TYPE_PARAMETER {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'psimspec' key", parameterKey.GetKeyType())
 	}
-	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_SIMULATION_SPEC, "spec")
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("parameter simulation specification key must be a valid integer rule index")
+		}
+	}
+	return newKey(parameterKey.String(), KEY_TYPE_PARAMETER_SIMULATION_SPEC, subKey)
 }
 
 // DATA_TYPE_ROOT_SUBKEY is the sentinel subKey used for the data_type key that sits at

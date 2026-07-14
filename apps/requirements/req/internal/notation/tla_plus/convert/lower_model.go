@@ -187,6 +187,30 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 				return fmt.Errorf("parameter %q invariant %d: %w", action.Parameters[i].Name, j, err)
 			}
 		}
+		if err := lowerParameterSimulation(&action.Parameters[i], ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// lowerParameterSimulation lowers each rule's requires and specification.
+func lowerParameterSimulation(param *model_state.Parameter, ctx *LowerContext) error {
+	if param.Simulation == nil {
+		return nil
+	}
+	for r := range param.Simulation.Rules {
+		rule := &param.Simulation.Rules[r]
+		for j := range rule.Requires {
+			if err := lowerLogicSpec(&rule.Requires[j].Spec, ctx); err != nil {
+				return fmt.Errorf("parameter %q simulation rule %d require %d: %w", param.Name, r, j, err)
+			}
+		}
+		if rule.Specification != nil {
+			if err := lowerLogicSpec(&rule.Specification.Spec, ctx); err != nil {
+				return fmt.Errorf("parameter %q simulation rule %d specification: %w", param.Name, r, err)
+			}
+		}
 	}
 	return nil
 }

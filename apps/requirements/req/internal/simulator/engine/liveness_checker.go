@@ -292,7 +292,7 @@ func (lc *LivenessChecker) checkParameterSimulationCoverage(result *SimulationRe
 		actions := sortedClassActions(classInfo)
 		for _, action := range actions {
 			for _, param := range action.Parameters {
-				if param.Simulation == nil || param.Simulation.Specification == nil {
+				if !paramHasSimulationSpecification(param) {
 					continue
 				}
 				if used[param.Key] {
@@ -308,6 +308,18 @@ func (lc *LivenessChecker) checkParameterSimulationCoverage(result *SimulationRe
 		}
 	}
 	return violations
+}
+
+func paramHasSimulationSpecification(param model_state.Parameter) bool {
+	if param.Simulation == nil {
+		return false
+	}
+	for _, rule := range param.Simulation.Rules {
+		if rule.HasSpecification() {
+			return true
+		}
+	}
+	return false
 }
 
 func (lc *LivenessChecker) checkActionCoverage(result *SimulationResult) invariants.ViolationErrors {

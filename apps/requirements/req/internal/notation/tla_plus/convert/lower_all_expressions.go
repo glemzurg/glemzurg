@@ -208,14 +208,17 @@ func relowerParameterSimulation(ownerKey, ownerKind string, params []model_state
 		if params[i].Simulation == nil {
 			continue
 		}
-		for j := range params[i].Simulation.Requires {
-			if err := relowerSpec(&params[i].Simulation.Requires[j].Spec, pf); err != nil {
-				return fmt.Errorf("%s %q parameter %q simulation require %d: %w", ownerKind, ownerKey, params[i].Name, j, err)
+		for r := range params[i].Simulation.Rules {
+			rule := &params[i].Simulation.Rules[r]
+			for j := range rule.Requires {
+				if err := relowerSpec(&rule.Requires[j].Spec, pf); err != nil {
+					return fmt.Errorf("%s %q parameter %q simulation rule %d require %d: %w", ownerKind, ownerKey, params[i].Name, r, j, err)
+				}
 			}
-		}
-		if params[i].Simulation.Specification != nil {
-			if err := relowerSpec(&params[i].Simulation.Specification.Spec, pf); err != nil {
-				return fmt.Errorf("%s %q parameter %q simulation specification: %w", ownerKind, ownerKey, params[i].Name, err)
+			if rule.Specification != nil {
+				if err := relowerSpec(&rule.Specification.Spec, pf); err != nil {
+					return fmt.Errorf("%s %q parameter %q simulation rule %d specification: %w", ownerKind, ownerKey, params[i].Name, r, err)
+				}
 			}
 		}
 	}
@@ -229,14 +232,17 @@ func relowerParameterSimulationStrict(ownerKey, ownerKind string, params []model
 		if params[i].Simulation == nil {
 			continue
 		}
-		for j := range params[i].Simulation.Requires {
-			if err := relowerSpecStrict(&params[i].Simulation.Requires[j].Spec, pf); err != nil {
-				errs = append(errs, fmt.Errorf("%s %q parameter %q simulation require %d: %w", ownerKind, ownerKey, params[i].Name, j, err))
+		for r := range params[i].Simulation.Rules {
+			rule := &params[i].Simulation.Rules[r]
+			for j := range rule.Requires {
+				if err := relowerSpecStrict(&rule.Requires[j].Spec, pf); err != nil {
+					errs = append(errs, fmt.Errorf("%s %q parameter %q simulation rule %d require %d: %w", ownerKind, ownerKey, params[i].Name, r, j, err))
+				}
 			}
-		}
-		if params[i].Simulation.Specification != nil {
-			if err := relowerSpecStrict(&params[i].Simulation.Specification.Spec, pf); err != nil {
-				errs = append(errs, fmt.Errorf("%s %q parameter %q simulation specification: %w", ownerKind, ownerKey, params[i].Name, err))
+			if rule.Specification != nil {
+				if err := relowerSpecStrict(&rule.Specification.Spec, pf); err != nil {
+					errs = append(errs, fmt.Errorf("%s %q parameter %q simulation rule %d specification: %w", ownerKind, ownerKey, params[i].Name, r, err))
+				}
 			}
 		}
 	}

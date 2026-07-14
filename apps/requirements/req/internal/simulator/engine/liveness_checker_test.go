@@ -569,7 +569,7 @@ func livenessClassWithParameterSimulation() (model_class.Class, identity.Key) {
 	classKey := mustKey("domain/d/subdomain/s/class/transaction")
 	actionKey := mustKey("domain/d/subdomain/s/class/transaction/action/initialize")
 	paramKey := helper.Must(identity.NewParameterKey(actionKey, "amounts"))
-	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey))
+	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey, "0"))
 
 	specLogic := model_logic.NewLogic(
 		specKey,
@@ -581,7 +581,9 @@ func livenessClassWithParameterSimulation() (model_class.Class, identity.Key) {
 	)
 	param := helper.Must(model_state.NewParameter(actionKey, "Amounts", "unordered of unconstrained", false))
 	param.SetSimulation(&model_state.ParameterSimulation{
-		Specification: &specLogic,
+		Rules: []model_state.ParameterSimulationRule{{
+			Specification: &specLogic,
+		}},
 	})
 
 	action := model_state.NewAction(

@@ -23,23 +23,59 @@ func ActionHasParameterSimulation(action model_state.Action) bool {
 	return false
 }
 
-// ActionSimulationRequiresMet evaluates every simulation.requires on action parameters.
+// ActionSimulationRequiresMet reports whether every parameter with simulation rules has
+// at least one rule whose requires all hold (so the action is eligible for sampling).
 func ActionSimulationRequiresMet(
 	action model_state.Action,
 	bindings *evaluator.Bindings,
 ) (bool, error) {
 	for _, param := range action.Parameters {
-		if param.Simulation == nil {
+		if param.Simulation == nil || len(param.Simulation.Rules) == 0 {
 			continue
 		}
-		for _, req := range param.Simulation.Requires {
-			ok, err := evaluateSimulationAssessment(req, bindings)
-			if err != nil {
-				return false, fmt.Errorf("parameter %q simulation require: %w", param.Name, err)
-			}
-			if !ok {
-				return false, nil
-			}
+		eligible, err := EligibleSimulationRules(param, bindings)
+		if err != nil {
+			return false, fmt.Errorf("parameter %q simulation: %w", param.Name, err)
+		}
+		if len(eligible) == 0 {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+// EligibleSimulationRules returns rules that have a specification and whose requires all hold.
+func EligibleSimulationRules(
+	param model_state.Parameter,
+	bindings *evaluator.Bindings,
+) ([]model_state.ParameterSimulationRule, error) {
+	if param.Simulation == nil {
+		return nil, nil
+	}
+	var eligible []model_state.ParameterSimulationRule
+	for i, rule := range param.Simulation.Rules {
+		if !rule.HasSpecification() {
+			continue
+		}
+		ok, err := ruleRequiresMet(rule, bindings)
+		if err != nil {
+			return nil, fmt.Errorf("rule %d: %w", i, err)
+		}
+		if ok {
+			eligible = append(eligible, rule)
+		}
+	}
+	return eligible, nil
+}
+
+func ruleRequiresMet(rule model_state.ParameterSimulationRule, bindings *evaluator.Bindings) (bool, error) {
+	for _, req := range rule.Requires {
+		ok, err := evaluateSimulationAssessment(req, bindings)
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			return false, nil
 		}
 	}
 	return true, nil
@@ -60,16 +96,42 @@ func evaluateSimulationAssessment(req model_logic.Logic, bindings *evaluator.Bin
 	return isTrueBoolean(result.Value), nil
 }
 
-// EvaluateSimulationSpecification evaluates a parameter simulation.specification into a runtime value.
+// EvaluateSimulationSpecification evaluates a parameter's simulation into a runtime value.
+// Among eligible rules (requires satisfied), one is chosen uniformly at random.
 func EvaluateSimulationSpecification(
 	param model_state.Parameter,
 	bindings *evaluator.Bindings,
+	rng *rand.Rand,
 ) (object.Object, error) {
-	if param.Simulation == nil || param.Simulation.Specification == nil {
-		return nil, fmt.Errorf("parameter %q has no simulation specification", param.Name)
+	if param.Simulation == nil || len(param.Simulation.Rules) == 0 {
+		return nil, fmt.Errorf("parameter %q has no simulation rules", param.Name)
 	}
-	spec := param.Simulation.Specification
-	expr := spec.Spec.Expression
+	eligible, err := EligibleSimulationRules(param, bindings)
+	if err != nil {
+		return nil, err
+	}
+	if len(eligible) == 0 {
+		return nil, fmt.Errorf("parameter %q has no eligible simulation rules", param.Name)
+	}
+	rule := eligible[0]
+	if len(eligible) > 1 {
+		if rng == nil {
+			return nil, fmt.Errorf("parameter %q has multiple eligible simulation rules but no RNG", param.Name)
+		}
+		rule = eligible[rng.Intn(len(eligible))]
+	}
+	return evaluateRuleSpecification(param, rule, bindings)
+}
+
+func evaluateRuleSpecification(
+	param model_state.Parameter,
+	rule model_state.ParameterSimulationRule,
+	bindings *evaluator.Bindings,
+) (object.Object, error) {
+	if rule.Specification == nil {
+		return nil, fmt.Errorf("parameter %q simulation rule has no specification", param.Name)
+	}
+	expr := rule.Specification.Spec.Expression
 	if expr == nil {
 		return nil, fmt.Errorf("parameter %q simulation specification not lowered", param.Name)
 	}
@@ -111,8 +173,8 @@ func SampleSurfaceEventPayload(
 	result := make(map[string]object.Object)
 
 	for _, param := range matched {
-		if param.Simulation != nil && param.Simulation.Specification != nil {
-			value, err := EvaluateSimulationSpecification(param, ctx.Bindings)
+		if param.Simulation != nil && len(param.Simulation.Rules) > 0 {
+			value, err := EvaluateSimulationSpecification(param, ctx.Bindings, ctx.RNG)
 			if err != nil {
 				return nil, err
 			}
