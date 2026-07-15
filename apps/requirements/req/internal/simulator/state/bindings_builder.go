@@ -143,6 +143,7 @@ func (b *BindingsBuilder) aliasSelfForNavigation(
 	}
 	id := evaluator.ObjectID(instance.ID)
 	relCtx.EnsureInstance(id, instance.Attributes)
+	relCtx.RegisterClassKey(id, instance.ClassKey.String())
 	if selfData != nil && selfData != instance.Attributes {
 		relCtx.RegisterDataAlias(id, selfData)
 	}
@@ -276,10 +277,22 @@ func (b *BindingsBuilder) buildRelationContext() *evaluator.RelationContext {
 
 	// Rebuild runtime identity/link/AC state from engine InstanceIDs each time.
 	b.relationCtx.Clear()
+	// Register every live instance (and its class) so peer field navigation works
+	// for extent elements that are not yet endpoints of any association.
+	b.syncAllInstances()
 	b.syncLinks()
 	b.syncAssociationLinks()
 
 	return b.relationCtx
+}
+
+// syncAllInstances registers each instance's id, data, and class key for peer navigation.
+func (b *BindingsBuilder) syncAllInstances() {
+	for _, instance := range b.state.AllInstances() {
+		id := evaluator.ObjectID(instance.ID)
+		b.relationCtx.EnsureInstance(id, instance.Attributes)
+		b.relationCtx.RegisterClassKey(id, instance.ClassKey.String())
+	}
 }
 
 // syncLinks synchronizes plain (non-AC) association links into the relation context.
@@ -340,6 +353,8 @@ func (b *BindingsBuilder) createExtentLink(
 			Data:   toInstance.Attributes,
 		},
 	)
+	b.relationCtx.RegisterClassKey(evaluator.ObjectID(fromInstance.ID), fromInstance.ClassKey.String())
+	b.relationCtx.RegisterClassKey(evaluator.ObjectID(toInstance.ID), toInstance.ClassKey.String())
 	return fromExtent, toExtent
 }
 

@@ -18,6 +18,7 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
+	linkEnv setAddLinkEnv,
 ) (bool, error) {
 	assocRef, eventCall, ok := model_class.MatchAssociationSetAddExpr(expr)
 	if !ok {
@@ -46,6 +47,7 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 		AssocKey:       assocTarget.assoc.Key,
 		ToClassKey:     assocTarget.assoc.ToClassKey,
 		Params:         params,
+		ActionParams:   linkEnv.actionParams,
 	})
 	return true, nil
 }
@@ -161,7 +163,7 @@ func (e *ActionExecutor) applyPlainPeerCreation(
 		return nil
 	}
 	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, result)
-	return nil
+	return e.applyInferredSecondaryLinks(pc, result.InstanceID)
 }
 
 func (e *ActionExecutor) applyAssociationClassPeerCreation(
@@ -238,4 +240,72 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	}
 	e.recordPeerTransition(ctx, acClass, acCreationEvent, acParams, acResult)
 	return nil
+}
+
+// applyInferredSecondaryLinks analyzes set-add peer creation against action parameters
+// and the association graph. When a parameter is a live instance of class C and C has
+// exactly one outgoing association to the created peer class, the simulator also links
+// that parameter instance to the new peer. Pure runtime inference — not authored data.
+func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, newPeerID state.InstanceID) error {
+	if e.peerCatalog == nil || len(pc.ActionParams) == 0 {
+		return nil
+	}
+	simState := e.bindingsBuilder.State()
+	for _, paramVal := range pc.ActionParams {
+		fromID, ok := instanceIDFromObject(simState, paramVal)
+		if !ok {
+			continue
+		}
+		fromInst := simState.GetInstance(fromID)
+		if fromInst == nil {
+			continue
+		}
+		// Skip the primary set-add endpoint (already linked).
+		if fromID == pc.FromInstanceID {
+			continue
+		}
+		candidates := e.peerCatalog.OutgoingAssociationsTo(fromInst.ClassKey, pc.ToClassKey)
+		if len(candidates) != 1 {
+			// Zero or ambiguous associations: do not invent links.
+			continue
+		}
+		assoc := candidates[0]
+		if err := simState.AddLink(assoc.Key, fromID, newPeerID); err != nil {
+			return fmt.Errorf("inferred secondary link after set-add: %w", err)
+		}
+	}
+	return nil
+}
+
+func instanceIDFromObject(simState *state.SimulationState, val object.Object) (state.InstanceID, bool) {
+	rec, ok := val.(*object.Record)
+	if !ok || rec == nil {
+		return 0, false
+	}
+	if id, ok := state.InstanceIDFromExtentElement(rec); ok {
+		if simState.GetInstance(id) != nil {
+			return id, true
+		}
+	}
+	// Bare attribute records: match by pointer first (self), then unique structural equality.
+	// Structural equality alone is ambiguous when multiple instances share the same data shape
+	// (e.g. wallets that only store _state); refuse to guess among duplicates.
+	data := state.DataFromExtentElement(rec)
+	var (
+		found state.InstanceID
+		n     int
+	)
+	for _, inst := range simState.AllInstances() {
+		if inst.Attributes == rec || inst.Attributes == data {
+			return inst.ID, true
+		}
+		if (data != nil && inst.Attributes.Equals(data)) || inst.Attributes.Equals(rec) {
+			found = inst.ID
+			n++
+		}
+	}
+	if n == 1 {
+		return found, true
+	}
+	return 0, false
 }

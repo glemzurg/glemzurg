@@ -286,11 +286,18 @@ func (lc *LivenessChecker) checkParameterSimulationCoverage(result *SimulationRe
 	if result.SimulationCoverage != nil {
 		used = result.SimulationCoverage.UsedSimulationParams
 	}
+	// Only actions the surface can invoke with parameter sampling are required.
+	// Peer-only creation actions (e.g. Transaction.Initialize via wallet LedgerOf) sample
+	// no parameters; their simulation blocks are for optional standalone surfaces.
+	samplable := lc.surfaceSamplableActionKeys()
 
 	var violations invariants.ViolationErrors
 	for _, classInfo := range lc.catalog.AllScopedClasses() {
 		actions := sortedClassActions(classInfo)
 		for _, action := range actions {
+			if !samplable[action.Key] {
+				continue
+			}
 			for _, param := range action.Parameters {
 				if !paramHasSimulationSpecification(param) {
 					continue
@@ -308,6 +315,36 @@ func (lc *LivenessChecker) checkParameterSimulationCoverage(result *SimulationRe
 		}
 	}
 	return violations
+}
+
+// surfaceSamplableActionKeys returns actions reachable from surface event selection:
+// external creation events and non-creation transitions (existing-instance events).
+func (lc *LivenessChecker) surfaceSamplableActionKeys() map[identity.Key]bool {
+	out := make(map[identity.Key]bool)
+	if lc.catalog == nil {
+		return out
+	}
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
+		external := make(map[identity.Key]bool)
+		for _, ev := range lc.catalog.ExternalCreationEvents(classInfo.ClassKey) {
+			external[ev.Key] = true
+		}
+		for _, t := range classInfo.Class.Transitions {
+			if t.ActionKey == nil {
+				continue
+			}
+			if t.FromStateKey == nil {
+				// Creation: only when the catalog exposes it as external creation.
+				if external[t.EventKey] {
+					out[*t.ActionKey] = true
+				}
+				continue
+			}
+			// Existing-instance transitions are surface-selectable when the class is simulatable.
+			out[*t.ActionKey] = true
+		}
+	}
+	return out
 }
 
 func paramHasSimulationSpecification(param model_state.Parameter) bool {

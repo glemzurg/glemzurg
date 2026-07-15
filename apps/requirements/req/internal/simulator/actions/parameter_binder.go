@@ -77,33 +77,62 @@ func sampleParameterValue(param model_state.Parameter, rng *rand.Rand) object.Ob
 
 // generateRandomValue creates a random non-null value based on data type constraints.
 func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	if dataType == nil {
+		return randomDefaultNumber(rng)
+	}
+	if coll := generateRandomCollection(dataType, rng); coll != nil {
+		return coll
+	}
 	if values := model_data_type.EnumerationValues(dataType); len(values) > 0 {
 		return randomEnumerationValue(dataType, values, rng)
 	}
-
-	if dataType != nil && dataType.TypeSpec != nil {
-		switch strings.ToUpper(strings.TrimSpace(dataType.TypeSpec.Specification)) {
-		case "STRING":
-			return randomString(rng)
-		case "BOOLEAN":
-			if rng.Intn(2) == 0 {
-				return object.NewBoolean(false)
-			}
-			return object.NewBoolean(true)
-		}
+	if val, ok := generateFromTypeSpec(dataType, rng); ok {
+		return val
 	}
-
-	if dataType == nil || dataType.Atomic == nil {
-		// No type info — generate a default integer in [0, 99].
+	if dataType.Atomic == nil {
 		return randomDefaultNumber(rng)
 	}
+	return generateAtomicRandomValue(dataType, dataType.Atomic, rng)
+}
 
-	atomic := dataType.Atomic
+// generateRandomCollection samples set/tuple/record collections; nil when dataType is atomic.
+func generateRandomCollection(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	switch dataType.CollectionType {
+	case model_data_type.COLLECTION_TYPE_UNORDERED:
+		return randomUnorderedCollection(dataType, rng)
+	case model_data_type.COLLECTION_TYPE_ORDERED,
+		model_data_type.COLLECTION_TYPE_QUEUE,
+		model_data_type.COLLECTION_TYPE_STACK:
+		return randomOrderedCollection(dataType, rng)
+	case model_data_type.COLLECTION_TYPE_RECORD:
+		return randomRecordValue(dataType, rng)
+	default:
+		return nil
+	}
+}
 
+func generateFromTypeSpec(dataType *model_data_type.DataType, rng *rand.Rand) (object.Object, bool) {
+	if dataType.TypeSpec == nil {
+		return nil, false
+	}
+	switch strings.ToUpper(strings.TrimSpace(dataType.TypeSpec.Specification)) {
+	case "STRING":
+		return randomString(rng), true
+	case "BOOLEAN":
+		return object.NewBoolean(rng.Intn(2) != 0), true
+	default:
+		return nil, false
+	}
+}
+
+func generateAtomicRandomValue(
+	dataType *model_data_type.DataType,
+	atomic *model_data_type.Atomic,
+	rng *rand.Rand,
+) object.Object {
 	switch atomic.ConstraintType {
 	case model_data_type.CONSTRAINT_TYPE_SPAN:
 		return randomNumberInSpan(atomic.Span, rng)
-
 	case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
 		if len(atomic.Enums) == 0 {
 			return evaluator.EMPTY_SET
@@ -113,19 +142,124 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 			values[i] = enum.Value
 		}
 		return randomEnumerationValue(dataType, values, rng)
-
 	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
 		return randomString(rng)
-
 	case model_data_type.CONSTRAINT_TYPE_DATETIME:
 		return randomDateTimeValue(rng)
-
 	case model_data_type.CONSTRAINT_TYPE_REFERENCE, model_data_type.CONSTRAINT_TYPE_OBJECT:
 		return randomString(rng)
-
 	default:
 		return randomDefaultNumber(rng)
 	}
+}
+
+// collectionElementType is the type of one collection member.
+// Simple "unordered of enum/span" forms keep the element Atomic on the collection itself.
+func collectionElementType(dataType *model_data_type.DataType) *model_data_type.DataType {
+	if dataType == nil {
+		return nil
+	}
+	if dataType.ElementDataType != nil {
+		return dataType.ElementDataType
+	}
+	if dataType.Atomic != nil {
+		return &model_data_type.DataType{
+			CollectionType: model_data_type.COLLECTION_TYPE_ATOMIC,
+			Atomic:         dataType.Atomic,
+			TypeSpec:       dataType.TypeSpec,
+		}
+	}
+	return nil
+}
+
+func collectionSampleSize(dataType *model_data_type.DataType, uniqueCap int, rng *rand.Rand) int {
+	minN := 1
+	if dataType.CollectionMin != nil {
+		minN = *dataType.CollectionMin
+	}
+	maxN := minN + 2
+	if dataType.CollectionMax != nil {
+		maxN = *dataType.CollectionMax
+	}
+	if uniqueCap > 0 && maxN > uniqueCap {
+		maxN = uniqueCap
+	}
+	if maxN < minN {
+		maxN = minN
+	}
+	if maxN == minN {
+		return minN
+	}
+	return minN + rng.Intn(maxN-minN+1)
+}
+
+func randomUnorderedCollection(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	elemType := collectionElementType(dataType)
+	unique := dataType.CollectionUnique != nil && *dataType.CollectionUnique
+
+	// Unique finite enums: sample a non-empty subset (model-agnostic default).
+	if unique && elemType != nil {
+		if values := model_data_type.EnumerationValues(elemType); len(values) > 0 {
+			return randomUniqueEnumSubset(elemType, values, dataType, rng)
+		}
+	}
+
+	n := collectionSampleSize(dataType, 0, rng)
+	set := object.NewSet()
+	// Bound attempts so unique sampling cannot spin forever on a tiny domain.
+	for attempts := 0; set.Size() < n && attempts < n*8+8; attempts++ {
+		elem := generateRandomValue(elemType, rng)
+		if unique && set.Contains(elem) {
+			continue
+		}
+		set.Add(elem)
+	}
+	return set
+}
+
+func randomUniqueEnumSubset(
+	elemType *model_data_type.DataType,
+	values []string,
+	collType *model_data_type.DataType,
+	rng *rand.Rand,
+) object.Object {
+	n := min(max(collectionSampleSize(collType, len(values), rng), 1), len(values))
+	// Fisher–Yates partial shuffle for a uniform n-subset.
+	order := append([]string(nil), values...)
+	for i := range n {
+		j := i + rng.Intn(len(order)-i)
+		order[i], order[j] = order[j], order[i]
+	}
+	elems := make([]object.Object, 0, n)
+	for i := range n {
+		elems = append(elems, valueForEnumerationLiteral(elemType, order[i]))
+	}
+	return object.NewSetFromElements(elems)
+}
+
+func randomOrderedCollection(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	elemType := collectionElementType(dataType)
+	n := collectionSampleSize(dataType, 0, rng)
+	elems := make([]object.Object, 0, n)
+	seen := object.NewSet()
+	unique := dataType.CollectionUnique != nil && *dataType.CollectionUnique
+	for attempts := 0; len(elems) < n && attempts < n*8+8; attempts++ {
+		elem := generateRandomValue(elemType, rng)
+		if unique && seen.Contains(elem) {
+			continue
+		}
+		seen.Add(elem)
+		elems = append(elems, elem)
+	}
+	return object.NewTupleFromElements(elems)
+}
+
+func randomRecordValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	fields := make(map[string]object.Object, len(dataType.RecordFields))
+	for _, field := range dataType.RecordFields {
+		fields[field.Name] = generateRandomValue(field.FieldDataType, rng)
+	}
+	return object.NewRecordFromFields(fields)
 }
 
 func randomDefaultNumber(rng *rand.Rand) object.Object {

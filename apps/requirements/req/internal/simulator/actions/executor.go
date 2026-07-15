@@ -182,11 +182,10 @@ func (e *ActionExecutor) ExecuteAction(
 		action.Parameters, action.Key, action.Name, "action", instance.ID, instance.ClassKey,
 	)
 
-	// Phase A: Execute the action chain (collecting primed values and post-conditions)
-	if err := e.executeActionInContext(ctx, action, instance, parameters); err != nil {
+	// Phase A: requires + peer-effect guarantees (peer events that may create structure).
+	if err := e.executeActionInContext(ctx, action, instance, parameters, guaranteePhasePeer); err != nil {
 		return nil, err
 	}
-
 	if ctx.RequiresViolations().HasViolations() {
 		return &ActionResult{
 			InstanceID: instance.ID,
@@ -194,14 +193,10 @@ func (e *ActionExecutor) ExecuteAction(
 			Success:    false,
 		}, nil
 	}
-
-	// Phase B: Materialize association peer effects, then apply primed assignments.
-	if err := e.finalizeActionStateChanges(ctx); err != nil {
+	if err := e.runStatePhaseAndFinalize(ctx, action, instance, parameters); err != nil {
 		return nil, err
 	}
-
 	allViolations := e.collectActionViolations(ctx, paramViolations)
-
 	return &ActionResult{
 		InstanceID:        instance.ID,
 		PrimedAssignments: ctx.GetAllPrimedAssignments(),
@@ -209,6 +204,28 @@ func (e *ActionExecutor) ExecuteAction(
 		Violations:        allViolations,
 		Success:           !allViolations.HasViolations(),
 	}, nil
+}
+
+// runStatePhaseAndFinalize applies peer updates then state-phase guarantees and materialization.
+func (e *ActionExecutor) runStatePhaseAndFinalize(
+	ctx *ExecutionContext,
+	action model_state.Action,
+	instance *state.ClassInstance,
+	parameters map[string]object.Object,
+) error {
+	// Apply peer updates before state guarantees that depend on new structure.
+	if err := e.applyPeerUpdates(ctx); err != nil {
+		return err
+	}
+	ctx.ClearPeerUpdates()
+	bindings := e.buildRequiresBindings(instance, parameters)
+	if err := e.evaluateActionGuarantees(ctx, action, instance, bindings, parameters, guaranteePhaseState); err != nil {
+		return err
+	}
+	if err := e.collectActionSafetyRules(ctx, action, instance, bindings); err != nil {
+		return err
+	}
+	return e.finalizeActionStateChanges(ctx)
 }
 
 func (e *ActionExecutor) collectActionViolations(
@@ -222,6 +239,7 @@ func (e *ActionExecutor) collectActionViolations(
 
 func (e *ActionExecutor) finalizeActionStateChanges(ctx *ExecutionContext) error {
 	e.applyAssociationLinkRemovals(ctx)
+	// Peer updates already applied in ExecuteAction before state-phase guarantees.
 	if err := e.applyPeerUpdates(ctx); err != nil {
 		return err
 	}
@@ -230,6 +248,15 @@ func (e *ActionExecutor) finalizeActionStateChanges(ctx *ExecutionContext) error
 	}
 	return e.applyPrimedAssignments(ctx)
 }
+
+// guaranteePhase selects which guarantees run in each evaluation pass.
+type guaranteePhase int
+
+const (
+	guaranteePhasePeer  guaranteePhase = iota // peer-domain events + association set-map updates
+	guaranteePhaseState                       // set-add, bulk-create, AC reify, attribute primes
+	guaranteePhaseAll                         // nested/chained full evaluation (single pass)
+)
 
 // applyPrimedAssignments applies all primed assignments from the context to simulation state.
 func (e *ActionExecutor) applyPrimedAssignments(ctx *ExecutionContext) error {
@@ -427,11 +454,13 @@ func (e *ActionExecutor) buildRequiresBindings(
 
 // executeActionInContext runs a single action within an existing context.
 // This is called both for top-level actions and for chained actions.
+// phase controls which guarantees are evaluated (peer-only for top-level pass 1).
 func (e *ActionExecutor) executeActionInContext(
 	ctx *ExecutionContext,
 	action model_state.Action,
 	instance *state.ClassInstance,
 	parameters map[string]object.Object,
+	phase guaranteePhase,
 ) error {
 	if err := ctx.IncrementDepth(); err != nil {
 		return err
@@ -456,11 +485,14 @@ func (e *ActionExecutor) executeActionInContext(
 		return nil
 	}
 
-	if err := e.evaluateActionGuarantees(ctx, action, instance, bindings); err != nil {
+	if err := e.evaluateActionGuarantees(ctx, action, instance, bindings, parameters, phase); err != nil {
 		return err
 	}
 
-	return e.collectActionSafetyRules(ctx, action, instance, bindings)
+	if phase == guaranteePhaseAll {
+		return e.collectActionSafetyRules(ctx, action, instance, bindings)
+	}
+	return nil
 }
 
 // evaluateActionRequires evaluates the preconditions (Requires) for an action.
@@ -489,6 +521,8 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 	action model_state.Action,
 	instance *state.ClassInstance,
 	bindings *evaluator.Bindings,
+	actionParams map[string]object.Object,
+	phase guaranteePhase,
 ) error {
 	// Pass 1: Evaluate all let bindings in guarantees (in order).
 	if err := evalLetBindings(action.Guarantees, bindings, "action", action.Name, "guarantee"); err != nil {
@@ -499,66 +533,144 @@ func (e *ActionExecutor) evaluateActionGuarantees(
 		if guar.Type == model_logic.LogicTypeDestroy {
 			continue
 		}
-		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
+		if !guaranteeMatchesPhase(guar, phase) {
+			continue
+		}
+		env := actionGuaranteeEvalEnv{action: action, params: actionParams}
+		if err := e.evaluateSingleActionGuarantee(ctx, guaranteeEvalRef{actionName: action.Name, index: i}, instance, guar, bindings, env); err != nil {
 			return err
 		}
 	}
 	// Pass 3: Destroy guarantees fire peer _destroy for peers removed by state_change.
-	for i, guar := range action.Guarantees {
-		if guar.Type != model_logic.LogicTypeDestroy {
-			continue
-		}
-		if err := e.evaluateSingleActionGuarantee(ctx, action.Name, i, instance, guar, bindings); err != nil {
-			return err
+	if phase == guaranteePhaseState || phase == guaranteePhaseAll {
+		for i, guar := range action.Guarantees {
+			if guar.Type != model_logic.LogicTypeDestroy {
+				continue
+			}
+			env := actionGuaranteeEvalEnv{action: action, params: actionParams}
+			if err := e.evaluateSingleActionGuarantee(ctx, guaranteeEvalRef{actionName: action.Name, index: i}, instance, guar, bindings, env); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
+// guaranteeMatchesPhase reports whether guar should run in the given evaluation phase.
+// Peer phase: association set-map peer updates and peer-domain event set-maps.
+// State phase: set-add, bulk-create, AC reify, attribute primes (and everything else).
+func guaranteeMatchesPhase(guar model_logic.Logic, phase guaranteePhase) bool {
+	if phase == guaranteePhaseAll {
+		return true
+	}
+	isPeer := isPeerEffectGuarantee(guar)
+	if phase == guaranteePhasePeer {
+		return isPeer
+	}
+	return !isPeer
+}
+
+func isPeerEffectGuarantee(guar model_logic.Logic) bool {
+	if guar.Type == model_logic.LogicTypeLet || guar.Type == model_logic.LogicTypeDestroy {
+		return false
+	}
+	expr := guar.Spec.Expression
+	if expr == nil {
+		return false
+	}
+	// Association set-map peer update (not set-add).
+	if _, _, ok := model_class.MatchAssociationSetMapExpr(expr); ok {
+		return true
+	}
+	// Peer event over an arbitrary domain set of instances.
+	if _, _, ok := matchPeerDomainEventSetMap(expr); ok {
+		return true
+	}
+	return false
+}
+
+// guaranteeEvalRef identifies a guarantee within an action for error messages.
+type guaranteeEvalRef struct {
+	actionName string
+	index      int
+}
+
+// setAddLinkEnv carries set-add target and the owning action's parameters (for
+// post-create secondary-link inference from the association catalog).
+type setAddLinkEnv struct {
+	target       string
+	actionParams map[string]object.Object
+}
+
+// actionGuaranteeEvalEnv pairs the owning action with its bound parameter values.
+type actionGuaranteeEvalEnv struct {
+	action model_state.Action
+	params map[string]object.Object
+}
+
 func (e *ActionExecutor) evaluateSingleActionGuarantee(
 	ctx *ExecutionContext,
-	actionName string,
-	index int,
+	ref guaranteeEvalRef,
 	instance *state.ClassInstance,
 	guar model_logic.Logic,
 	bindings *evaluator.Bindings,
+	env actionGuaranteeEvalEnv,
 ) error {
 	if guar.Type == model_logic.LogicTypeLet {
 		return nil
 	}
-	if handled, err := e.tryQueueAssociationDestroyGuarantee(ctx, instance, guar, bindings); err != nil {
+	if handled, err := e.tryQueueEarlyAssociationGuarantees(ctx, instance, guar, bindings); err != nil || handled {
 		return err
-	} else if handled {
-		return nil
-	}
-	if handled, err := e.tryQueueAssociationClassReifyGuarantee(ctx, instance, guar, bindings); err != nil {
-		return err
-	} else if handled {
-		return nil
-	}
-	if guar.Target == "" {
-		return fmt.Errorf("action %s guarantee[%d]: target must be set", actionName, index)
 	}
 	expr := guar.Spec.Expression
 	if expr == nil {
-		return fmt.Errorf("action %s guarantee[%d]: expression not lowered", actionName, index)
+		return fmt.Errorf("action %s guarantee[%d]: expression not lowered", ref.actionName, ref.index)
 	}
-	if handled, err := e.tryQueueAssociationGuaranteeExpr(ctx, instance, guar.Target, expr, bindings); err != nil {
+	// Peer-domain set-maps may omit a self target (side-effect only).
+	if handled, err := e.tryQueuePeerDomainEventSetMap(ctx, instance, expr, bindings); err != nil || handled {
 		return err
-	} else if handled {
-		return nil
 	}
-	if handled, err := e.tryApplyAssociationStateChangeGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil {
+	if guar.Target == "" {
+		return fmt.Errorf("action %s guarantee[%d]: target must be set", ref.actionName, ref.index)
+	}
+	if handled, err := e.tryQueueAssociationGuaranteeExpr(ctx, instance, expr, bindings, setAddLinkEnv{
+		target:       guar.Target,
+		actionParams: env.params,
+	}); err != nil || handled {
 		return err
-	} else if handled {
-		return nil
+	}
+	return e.applyAttributePrimeGuarantee(ctx, ref, instance, guar, expr, bindings)
+}
+
+func (e *ActionExecutor) tryQueueEarlyAssociationGuarantees(
+	ctx *ExecutionContext,
+	instance *state.ClassInstance,
+	guar model_logic.Logic,
+	bindings *evaluator.Bindings,
+) (bool, error) {
+	if handled, err := e.tryQueueAssociationDestroyGuarantee(ctx, instance, guar, bindings); err != nil || handled {
+		return handled, err
+	}
+	return e.tryQueueAssociationClassReifyGuarantee(ctx, instance, guar, bindings)
+}
+
+func (e *ActionExecutor) applyAttributePrimeGuarantee(
+	ctx *ExecutionContext,
+	ref guaranteeEvalRef,
+	instance *state.ClassInstance,
+	guar model_logic.Logic,
+	expr me.Expression,
+	bindings *evaluator.Bindings,
+) error {
+	if handled, err := e.tryApplyAssociationStateChangeGuarantee(ctx, instance, guar.Target, expr, bindings); err != nil || handled {
+		return err
 	}
 	rhsValue := evaluator.Eval(expr, bindings)
 	if rhsValue.IsError() {
-		return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", actionName, index, rhsValue.Error.Inspect())
+		return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", ref.actionName, ref.index, rhsValue.Error.Inspect())
 	}
 	if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
-		return fmt.Errorf("action %s guarantee[%d]: %w", actionName, index, err)
+		return fmt.Errorf("action %s guarantee[%d]: %w", ref.actionName, ref.index, err)
 	}
 	return nil
 }
@@ -566,17 +678,18 @@ func (e *ActionExecutor) evaluateSingleActionGuarantee(
 func (e *ActionExecutor) tryQueueAssociationGuaranteeExpr(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
-	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
+	linkEnv setAddLinkEnv,
 ) (bool, error) {
+	target := linkEnv.target
 	if handled, err := e.tryQueueAssociationAddOrUpdateGuarantee(ctx, instance, target, expr, bindings); err != nil || handled {
 		return handled, err
 	}
 	if handled, err := e.tryQueueAssociationBulkCreateFromSet(ctx, instance, target, expr, bindings); err != nil || handled {
 		return handled, err
 	}
-	if handled, err := e.tryQueueAssociationSetAddGuarantee(ctx, instance, target, expr, bindings); err != nil || handled {
+	if handled, err := e.tryQueueAssociationSetAddGuarantee(ctx, instance, target, expr, bindings, linkEnv); err != nil || handled {
 		return handled, err
 	}
 	return e.tryQueueAssociationSetMapGuarantee(ctx, instance, target, expr, bindings)

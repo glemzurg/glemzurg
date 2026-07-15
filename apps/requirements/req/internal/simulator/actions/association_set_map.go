@@ -70,7 +70,7 @@ func (e *ActionExecutor) tryQueueAssociationAddOrUpdateGuarantee(
 				Elements: []me.Expression{createCall},
 			},
 		}
-		return e.tryQueueAssociationSetAddGuarantee(ctx, instance, target, setAddExpr, bindings)
+		return e.tryQueueAssociationSetAddGuarantee(ctx, instance, target, setAddExpr, bindings, setAddLinkEnv{})
 	}
 
 	ifte, ok := expr.(*me.IfThenElse)
@@ -101,12 +101,31 @@ func (e *ActionExecutor) queueAssociationSetMap(
 		// Not an association set-map (e.g. endpoint image set-comprehension).
 		return false, nil
 	}
-
 	linked := linkedAssociationPeerEndpoints(e.bindingsBuilder.State(), instance.ID, mapTarget.assoc)
 	if len(linked) == 0 {
 		return false, fmt.Errorf("association set-map guarantee on %q: association is empty", target)
 	}
+	event, ok, err := e.resolveSetMapPeerEvent(ctx, instance, target, mapTarget, eventCall)
+	if err != nil || !ok {
+		return ok, err
+	}
+	params, err := resolvePositionalEventCallParams(setMap.Variable, event.ParameterNames, eventCall, bindings)
+	if err != nil {
+		e.recordSetMapParamBindingError(ctx, instance, mapTarget, event, err)
+		return true, nil
+	}
+	params = reifyOwnerSelfParams(params, instance)
+	e.queueSetMapPeerUpdates(ctx, instance, mapTarget, event, params, linked)
+	return true, nil
+}
 
+func (e *ActionExecutor) resolveSetMapPeerEvent(
+	ctx *ExecutionContext,
+	instance *state.ClassInstance,
+	target string,
+	mapTarget *associationSetMapTarget,
+	eventCall *me.EventCall,
+) (model_state.Event, bool, error) {
 	event, ok := e.peerCatalog.PeerEvent(mapTarget.assoc.ToClassKey, eventCall.EventKey)
 	if !ok {
 		vctx := peerEventViolationContext{
@@ -115,23 +134,15 @@ func (e *ActionExecutor) queueAssociationSetMap(
 			AssociationName: mapTarget.assoc.Name,
 		}
 		e.recordPeerEventUnavailable(ctx, vctx, mapTarget.toClass, 0, eventCall.EventKey, eventCall.EventKey.SubKey)
-		return true, nil
+		return model_state.Event{}, true, nil
 	}
 	if model_state.IsSystemFinalEvent(event.Name) {
-		return false, fmt.Errorf(
+		return model_state.Event{}, false, fmt.Errorf(
 			"association set-map guarantee on %q: peer _destroy must use guarantee type destroy with destroy_event",
 			target,
 		)
 	}
-
-	params, err := resolvePositionalEventCallParams(setMap.Variable, event.ParameterNames, eventCall, bindings)
-	if err != nil {
-		e.recordSetMapParamBindingError(ctx, instance, mapTarget, event, err)
-		return true, nil
-	}
-
-	e.queueSetMapPeerUpdates(ctx, instance, mapTarget, event, params, linked)
-	return true, nil
+	return event, true, nil
 }
 
 func (e *ActionExecutor) resolveAssociationSetMapTarget(

@@ -666,10 +666,17 @@ func evalMENot(n *me.Not, bindings *Bindings) *EvalResult {
 
 // resolveFieldRelation checks if a field access is a relation traversal and evaluates it.
 // Returns nil if the field is not a relation.
+// Uses the live instance's class when record is a registered peer; otherwise self's class.
 func resolveFieldRelation(record *object.Record, field string, bindings *Bindings) *EvalResult {
-	classKey := bindings.SelfClassKey()
 	relCtx := bindings.RelationContext()
-	if classKey == "" || relCtx == nil {
+	if relCtx == nil {
+		return nil
+	}
+	classKey := bindings.SelfClassKey()
+	if peerClass, ok := relCtx.ClassKeyForRecord(record); ok && peerClass != "" {
+		classKey = peerClass
+	}
+	if classKey == "" {
 		return nil
 	}
 	relInfo := lookupRelation(classKey, field, relCtx)

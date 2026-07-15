@@ -3,6 +3,7 @@ package engine
 import (
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -515,6 +516,20 @@ func (c *ClassCatalog) OutgoingAssociationByTLAField(
 	return identity.Key{}, model_class.Association{}, false
 }
 
+// OutgoingAssociationsTo lists associations from fromClassKey whose to-class is toClassKey.
+func (c *ClassCatalog) OutgoingAssociationsTo(fromClassKey, toClassKey identity.Key) []model_class.Association {
+	var out []model_class.Association
+	for _, ai := range c.classAssocs[fromClassKey] {
+		if ai.FromClassKey != fromClassKey {
+			continue
+		}
+		if ai.Association.ToClassKey == toClassKey {
+			out = append(out, ai.Association)
+		}
+	}
+	return out
+}
+
 // PeerClass returns the class for peer creation via association set-add guarantees.
 func (c *ClassCatalog) PeerClass(classKey identity.Key) (model_class.Class, bool) {
 	info := c.classes[classKey]
@@ -695,11 +710,12 @@ func (c *ClassCatalog) hasSimulatableSender(senders []identity.Key) bool {
 	return false
 }
 
-// ClassNameMap returns class keys mapped to display names for simulation bindings.
+// ClassNameMap returns class keys mapped to TLA extent names for simulation bindings.
+// Spaces are stripped so "Account Definition" binds as AccountDefinition.
 func (c *ClassCatalog) ClassNameMap() map[identity.Key]string {
 	names := make(map[identity.Key]string, len(c.classes))
 	for classKey, info := range c.classes {
-		names[classKey] = info.Class.Name
+		names[classKey] = strings.ReplaceAll(info.Class.Name, " ", "")
 	}
 	return names
 }

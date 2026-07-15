@@ -570,6 +570,9 @@ func livenessClassWithParameterSimulation() (model_class.Class, identity.Key) {
 	actionKey := mustKey("domain/d/subdomain/s/class/transaction/action/initialize")
 	paramKey := helper.Must(identity.NewParameterKey(actionKey, "amounts"))
 	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey, "0"))
+	stateKey := mustKey("domain/d/subdomain/s/class/transaction/state/open")
+	eventKey := mustKey("domain/d/subdomain/s/class/transaction/event/post")
+	transKey := mustKey("domain/d/subdomain/s/class/transaction/transition/post")
 
 	specLogic := model_logic.NewLogic(
 		specKey,
@@ -594,6 +597,14 @@ func livenessClassWithParameterSimulation() (model_class.Class, identity.Key) {
 		nil,
 		[]model_state.Parameter{param},
 	)
+	// Non-creation transition so the action is surface-samplable for simulation liveness.
+	stateOpen := model_state.NewState(stateKey, "Open", "", "")
+	eventPost := model_state.NewEvent(eventKey, "Post", "", []string{"Amounts"})
+	trans := model_state.NewTransition(
+		transKey, eventKey,
+		model_state.TransitionStateKeys{FromStateKey: &stateKey, ToStateKey: &stateKey},
+		model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: &actionKey}, "",
+	)
 
 	class := model_class.NewClass(
 		classKey,
@@ -601,10 +612,10 @@ func livenessClassWithParameterSimulation() (model_class.Class, identity.Key) {
 		model_class.ClassDetails{Name: "Transaction", Details: "", UnfinishedNotes: "", UmlComment: ""},
 	)
 	class.SetActions(map[identity.Key]model_state.Action{actionKey: action})
-	class.SetEvents(map[identity.Key]model_state.Event{})
-	class.SetStates(map[identity.Key]model_state.State{})
+	class.SetEvents(map[identity.Key]model_state.Event{eventKey: eventPost})
+	class.SetStates(map[identity.Key]model_state.State{stateKey: stateOpen})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
 	class.SetQueries(map[identity.Key]model_state.Query{})
-	class.SetTransitions(map[identity.Key]model_state.Transition{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{transKey: trans})
 	return class, classKey
 }

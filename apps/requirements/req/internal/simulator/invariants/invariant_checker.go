@@ -2,6 +2,7 @@ package invariants
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -147,7 +148,7 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
-				checker.classNameMap[class.Key] = class.Name
+				checker.classNameMap[class.Key] = strings.ReplaceAll(class.Name, " ", "")
 				checker.classAttributes[class.Key] = class.Attributes
 				if err := checker.loadClassInvariants(class); err != nil {
 					return nil, err
