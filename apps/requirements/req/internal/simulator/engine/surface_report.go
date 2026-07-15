@@ -64,12 +64,17 @@ type SurfaceAssocCreateNote struct {
 }
 
 // BuildSurfaceReport enumerates scoped classes and surface-eligible events, actions, and queries.
+// Association-class roles are omitted: they are not independently selected for external
+// creation; when listed on the surface they only materialize via host association guarantees.
 func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
 	report := &SurfaceReport{
 		Classes: make([]SurfaceClassReport, 0, len(catalog.classes)),
 	}
 
 	for _, classInfo := range catalog.AllScopedClasses() {
+		if catalog.IsAssociationClass(classInfo.ClassKey) {
+			continue
+		}
 		report.Classes = append(report.Classes, buildSurfaceClassReport(catalog, classInfo))
 	}
 

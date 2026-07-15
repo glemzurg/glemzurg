@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -34,8 +35,17 @@ func (e *ActionExecutor) tryApplyAssociationStateChangeGuarantee(
 		return false, fmt.Errorf("association state_change on %q: expression must evaluate to a set", target)
 	}
 
-	removed := associationPeersRemovedFromSet(e.bindingsBuilder.State(), instance.ID, assoc, newSet)
+	simState := e.bindingsBuilder.State()
+	removed := associationPeersRemovedFromSet(simState, instance.ID, assoc, newSet)
 	ctx.SetAssociationRemovedPeers(instance.ID, assocKey, removed)
+
+	// Plain associations also establish missing links from the RHS set. Association-class
+	// hosts materialize rows via reify; their endpoint image is derived from those rows.
+	if assoc.AssociationClassKey == nil {
+		if err := e.addMissingPlainAssociationLinks(simState, instance.ID, assocKey, assoc, newSet); err != nil {
+			return true, fmt.Errorf("association state_change on %q: %w", target, err)
+		}
+	}
 	return true, nil
 }
 
@@ -61,6 +71,35 @@ func associationPeersRemovedFromSet(
 		removed = append(removed, peerID)
 	}
 	return removed
+}
+
+// addMissingPlainAssociationLinks links each RHS set element that identifies a live
+// to-endpoint not already linked from ownerID.
+func (e *ActionExecutor) addMissingPlainAssociationLinks(
+	simState *state.SimulationState,
+	ownerID state.InstanceID,
+	assocKey identity.Key,
+	assoc model_class.Association,
+	newSet *object.Set,
+) error {
+	linked := make(map[state.InstanceID]bool)
+	for _, peerID := range simState.GetLinkedForward(ownerID, assocKey) {
+		linked[peerID] = true
+	}
+	for _, elem := range newSet.Elements() {
+		peerID, ok := resolveToEndpointInstanceID(simState, assoc.ToClassKey, elem)
+		if !ok {
+			continue
+		}
+		if linked[peerID] {
+			continue
+		}
+		if err := simState.AddLink(assocKey, ownerID, peerID); err != nil {
+			return fmt.Errorf("link %s: %w", assoc.Name, err)
+		}
+		linked[peerID] = true
+	}
+	return nil
 }
 
 func (e *ActionExecutor) applyAssociationLinkRemovals(ctx *ExecutionContext) {

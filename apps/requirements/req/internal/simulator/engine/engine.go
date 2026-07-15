@@ -249,22 +249,21 @@ func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.B
 			LowerBound:  assoc.ToMultiplicity.LowerBound,
 			HigherBound: assoc.ToMultiplicity.HigherBound,
 		}
+		// Association-class host only when the AC class is on the surface; otherwise plain.
 		if assoc.AssociationClassKey != nil {
-			linkClassName := ""
 			if linkInfo := catalog.GetClassInfo(*assoc.AssociationClassKey); linkInfo != nil {
-				linkClassName = linkInfo.Class.Name
+				bindingsBuilder.AddAssociationClassHost(
+					assoc.Key,
+					assoc.Name,
+					evaluator.AssociationHostEndpoints{
+						FromClassKey: assoc.FromClassKey.String(),
+						ToClassKey:   assoc.ToClassKey.String(),
+					},
+					linkInfo.Class.Name,
+					evaluator.AssociationHostMultiplicities{From: fromMult, To: toMult},
+				)
+				continue
 			}
-			bindingsBuilder.AddAssociationClassHost(
-				assoc.Key,
-				assoc.Name,
-				evaluator.AssociationHostEndpoints{
-					FromClassKey: assoc.FromClassKey.String(),
-					ToClassKey:   assoc.ToClassKey.String(),
-				},
-				linkClassName,
-				evaluator.AssociationHostMultiplicities{From: fromMult, To: toMult},
-			)
-			continue
 		}
 		bindingsBuilder.AddAssociation(
 			assoc.Key,

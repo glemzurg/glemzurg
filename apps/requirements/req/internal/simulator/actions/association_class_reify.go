@@ -29,6 +29,8 @@ type associationClassReifyWork struct {
 }
 
 // tryQueueAssociationClassReifyGuarantee handles state_change with endpoint_selector set.
+// When the association class is outside the simulation surface, reify is a no-op: the host
+// association is plain and endpoint links come from the host field's state_change guarantee.
 func (e *ActionExecutor) tryQueueAssociationClassReifyGuarantee(
 	ctx *ExecutionContext,
 	instance *state.ClassInstance,
@@ -38,9 +40,13 @@ func (e *ActionExecutor) tryQueueAssociationClassReifyGuarantee(
 	if !model_logic.IsAssociationClassReify(guar) {
 		return false, nil
 	}
-	work, err := e.resolveAssociationClassReifyWork(instance, guar)
+	work, active, err := e.resolveAssociationClassReifyWork(instance, guar)
 	if err != nil {
 		return false, err
+	}
+	if !active {
+		// Association class not on surface — host association degraded to plain links.
+		return true, nil
 	}
 	if work.selectorMap != nil {
 		return true, e.queueSelectorMapAssociationClassReify(ctx, instance, work, bindings)
@@ -48,39 +54,39 @@ func (e *ActionExecutor) tryQueueAssociationClassReifyGuarantee(
 	return true, e.queueOneAssociationClassReify(ctx, instance, work, bindings)
 }
 
+// resolveAssociationClassReifyWork returns active=false when the association class is not
+// present (or not creatable) on the surface catalog — reify becomes a no-op.
 func (e *ActionExecutor) resolveAssociationClassReifyWork(
 	instance *state.ClassInstance,
 	guar model_logic.Logic,
-) (associationClassReifyWork, error) {
-	var empty associationClassReifyWork
+) (work associationClassReifyWork, active bool, err error) {
 	if e.peerCatalog == nil {
-		return empty, fmt.Errorf("association-class reify on %q: peer catalog not configured", guar.Target)
+		return work, false, fmt.Errorf("association-class reify on %q: peer catalog not configured", guar.Target)
 	}
 	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByAssociationClassTLAName(instance.ClassKey, guar.Target)
 	if !found {
-		return empty, fmt.Errorf(
-			"association-class reify on %q: no outgoing association with association class named %q",
-			guar.Target, guar.Target,
-		)
+		// Host association may be plain after surface strip of the association class.
+		return work, false, nil
 	}
 	if assoc.AssociationClassKey == nil {
-		return empty, fmt.Errorf("association-class reify on %q: association has no association class", guar.Target)
+		return work, false, fmt.Errorf("association-class reify on %q: association has no association class", guar.Target)
 	}
 	acCreationEvent, ok := e.peerCatalog.PeerCreationEvent(*assoc.AssociationClassKey)
 	if !ok {
-		return empty, fmt.Errorf("association-class reify on %q: association class has no creation event", guar.Target)
+		// Association class present as key but not creatable on this surface — skip reify.
+		return work, false, nil
 	}
 
 	eventCall, err := associationClassCreationEventCall(guar)
 	if err != nil {
-		return empty, fmt.Errorf("association-class reify on %q: %w", guar.Target, err)
+		return work, false, fmt.Errorf("association-class reify on %q: %w", guar.Target, err)
 	}
 	selectorExpr := guar.EndpointSelectorSpec.Expression
 	if selectorExpr == nil {
-		return empty, fmt.Errorf("association-class reify on %q: endpoint_selector not lowered", guar.Target)
+		return work, false, fmt.Errorf("association-class reify on %q: endpoint_selector not lowered", guar.Target)
 	}
 
-	work := associationClassReifyWork{
+	work = associationClassReifyWork{
 		target:          guar.Target,
 		assocKey:        assocKey,
 		assoc:           assoc,
@@ -93,11 +99,11 @@ func (e *ActionExecutor) resolveAssociationClassReifyWork(
 		work.selectorMap = setMap
 		work.endpointExpr = setMap.Transform
 		work.endpointBinder = setMap.Variable
-		return work, nil
+		return work, true, nil
 	}
 	// Singleton: endpoint_selector is a single peer expression.
 	work.endpointExpr = selectorExpr
-	return work, nil
+	return work, true, nil
 }
 
 func associationClassCreationEventCall(guar model_logic.Logic) (*me.EventCall, error) {

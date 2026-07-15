@@ -66,6 +66,9 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 	}
 
 	// 4. Resolve associations across the full surface class set.
+	// Association-class types are included only when explicitly listed — the surface
+	// is the intentional subset; host associations degrade to plain endpoint links
+	// when the association class is out of scope (no auto-pull).
 	resolveAssociations(model, resolved)
 
 	// 5. Scope invariants.
@@ -114,13 +117,15 @@ func collectIncludedClasses(spec *SurfaceSpecification, model *core.Model, resol
 }
 
 // resolveAssociations keeps only associations where both endpoints are in scope.
+// When the association class is not listed on the surface, the host association is
+// kept as a plain endpoint link (AssociationClassKey cleared) — never auto-included.
 func resolveAssociations(model *core.Model, resolved *ResolvedSurface) {
 	allAssocs := model.GetClassAssociations()
 	for assocKey, assoc := range allAssocs {
 		_, fromIn := resolved.Classes[assoc.FromClassKey]
 		_, toIn := resolved.Classes[assoc.ToClassKey]
 		if fromIn && toIn {
-			resolved.Associations[assocKey] = assoc
+			resolved.Associations[assocKey] = associationForSurface(assoc, resolved)
 		} else if fromIn || toIn {
 			resolved.Warnings = append(resolved.Warnings,
 				fmt.Sprintf("association %s dropped: one endpoint is outside the surface", assoc.Name))
@@ -134,26 +139,53 @@ func resolveAssociations(model *core.Model, resolved *ResolvedSurface) {
 	}
 }
 
+// associationForSurface returns assoc for the resolved surface. Out-of-scope
+// association classes are stripped so host reify becomes plain endpoint links.
+func associationForSurface(assoc model_class.Association, resolved *ResolvedSurface) model_class.Association {
+	if assoc.AssociationClassKey == nil {
+		return assoc
+	}
+	if _, acIn := resolved.Classes[*assoc.AssociationClassKey]; acIn {
+		return assoc
+	}
+	stripped := assoc
+	stripped.AssociationClassKey = nil
+	resolved.Warnings = append(resolved.Warnings,
+		fmt.Sprintf("association %s treated as plain links: association class %s is outside the surface",
+			assoc.Name, assoc.AssociationClassKey.String()))
+	return stripped
+}
+
 // scopeModelInvariants filters model invariants to those relevant to the resolved surface.
 func scopeModelInvariants(model *core.Model, resolved *ResolvedSurface) {
-	inScopeClassNames := make(map[string]bool, len(resolved.Classes))
-	for _, class := range resolved.Classes {
-		inScopeClassNames[class.Name] = true
-	}
-	allClassNames := make(map[string]bool)
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				allClassNames[class.Name] = true
-			}
-		}
-	}
+	inScopeClassNames, allClassNames := classNameSetsForScoping(model, resolved)
 	included, excluded := ScopeInvariantsWithAllClasses(model.Invariants, inScopeClassNames, allClassNames)
 	resolved.ModelInvariants = included
 	for _, inv := range excluded {
 		resolved.Warnings = append(resolved.Warnings,
 			fmt.Sprintf("invariant excluded (references out-of-scope class): %s", inv.Description))
 	}
+}
+
+// classNameSetsForScoping builds in-scope and full-model name sets for invariant
+// filtering. Both display names and ClassTLAName forms are included so field
+// navigations like AccountBalanceChange match out-of-scope association classes.
+func classNameSetsForScoping(model *core.Model, resolved *ResolvedSurface) (inScope, all map[string]bool) {
+	inScope = make(map[string]bool, len(resolved.Classes)*2)
+	for _, class := range resolved.Classes {
+		inScope[class.Name] = true
+		inScope[model_class.ClassTLAName(class.Name)] = true
+	}
+	all = make(map[string]bool)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				all[class.Name] = true
+				all[model_class.ClassTLAName(class.Name)] = true
+			}
+		}
+	}
+	return inScope, all
 }
 
 // addAllNonRealizedClasses adds all classes from non-realized domains.

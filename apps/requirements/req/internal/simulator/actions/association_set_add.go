@@ -136,10 +136,13 @@ func (e *ActionExecutor) applyPeerCreation(ctx *ExecutionContext, pc DeferredPee
 	if !found {
 		return fmt.Errorf("peer creation for association %s: association metadata not found", pc.AssocKey.String())
 	}
-	if assoc.AssociationClassKey == nil {
-		return e.applyPlainPeerCreation(ctx, pc, assoc)
+	// Association-class materialization only when the AC class is on the surface catalog.
+	if assoc.AssociationClassKey != nil {
+		if _, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey); ok {
+			return e.applyAssociationClassPeerCreation(ctx, pc, assoc)
+		}
 	}
-	return e.applyAssociationClassPeerCreation(ctx, pc, assoc)
+	return e.applyPlainPeerCreation(ctx, pc, assoc)
 }
 
 func (e *ActionExecutor) applyPlainPeerCreation(

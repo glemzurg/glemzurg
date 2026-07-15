@@ -823,6 +823,86 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_EmptyDomainsOmitted() {
 	s.True(foundPayment)
 }
 
+func (s *FilteredModelSuite) TestResolve_StripsAssociationClassWhenOutOfSurface() {
+	linkClassKey := mustKey("domain/d/subdomain/s/class/link_row")
+	linkClass := model_class.NewClass(
+		linkClassKey,
+		model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil},
+		model_class.ClassDetails{Name: "Link Row", Details: "", UnfinishedNotes: "", UmlComment: ""},
+	)
+	linkStateKey := mustKey("domain/d/subdomain/s/class/link_row/state/recorded")
+	linkEventKey := mustKey("domain/d/subdomain/s/class/link_row/event/create")
+	linkTransKey := mustKey("domain/d/subdomain/s/class/link_row/transition/create")
+	linkClass.States = map[identity.Key]model_state.State{
+		linkStateKey: model_state.NewState(linkStateKey, "Recorded", "", ""),
+	}
+	linkClass.Events = map[identity.Key]model_state.Event{
+		linkEventKey: model_state.NewEvent(linkEventKey, "create", "", nil),
+	}
+	linkClass.Transitions = map[identity.Key]model_state.Transition{
+		linkTransKey: model_state.NewTransition(
+			linkTransKey, linkEventKey,
+			model_state.TransitionStateKeys{FromStateKey: nil, ToStateKey: &linkStateKey},
+			model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: nil}, "",
+		),
+	}
+
+	assocKey := testAssocKey(orderClassKey, itemClassKey, "order_items")
+	hostAssoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "order_items", Details: ""},
+		model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
+		model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
+		model_class.AssociationOptions{AssociationClassKey: &linkClassKey, UmlComment: ""},
+	)
+
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		orderClassKey: makeOrderClass(),
+		itemClassKey:  makeItemClass(),
+		linkClassKey:  linkClass,
+	}
+	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
+		assocKey: hostAssoc,
+	}
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("m", core.ModelDetails{Name: "m", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	// Surface lists endpoints only — association class is intentionally omitted.
+	spec := &SurfaceSpecification{
+		IncludeClasses: []identity.Key{orderClassKey, itemClassKey},
+	}
+	resolved, err := Resolve(spec, &model)
+	s.Require().NoError(err)
+	s.NotContains(resolved.Classes, linkClassKey)
+
+	got, ok := resolved.Associations[assocKey]
+	s.Require().True(ok, "host association should stay when both endpoints are in scope")
+	s.Nil(got.AssociationClassKey, "out-of-surface association class must be stripped (plain links)")
+
+	foundWarning := false
+	for _, w := range resolved.Warnings {
+		if contains(w, "treated as plain links") {
+			foundWarning = true
+			break
+		}
+	}
+	s.True(foundWarning, "expected plain-links surface warning")
+
+	// When the association class is listed, keep the AC key.
+	specWithAC := &SurfaceSpecification{
+		IncludeClasses: []identity.Key{orderClassKey, itemClassKey, linkClassKey},
+	}
+	resolvedWithAC, err := Resolve(specWithAC, &model)
+	s.Require().NoError(err)
+	gotWithAC, ok := resolvedWithAC.Associations[assocKey]
+	s.Require().True(ok)
+	s.Require().NotNil(gotWithAC.AssociationClassKey)
+	s.Equal(linkClassKey, *gotWithAC.AssociationClassKey)
+}
+
 // ============================================================
 // Diagnostics Tests
 // ============================================================

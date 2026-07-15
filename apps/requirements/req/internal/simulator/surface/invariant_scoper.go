@@ -146,6 +146,10 @@ func walkIdentifiersCollection(expr me.Expression, result map[string]bool) bool 
 			walkIdentifiersIR(f.Value, result)
 		}
 	case *me.FieldAccess:
+		// Field names include association-class TLA navigations (e.g. AccountBalanceChange).
+		if e.Field != "" {
+			result[e.Field] = true
+		}
 		walkIdentifiersIR(e.Base, result)
 	case *me.TupleIndex:
 		walkBinaryIR(e.Tuple, e.Index, result)
