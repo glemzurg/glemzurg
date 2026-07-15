@@ -54,17 +54,24 @@ type ClassCatalog struct {
 	actionCalledBy    map[identity.Key][]identity.Key // action key → caller class keys
 	queryCalledBy     map[identity.Key][]identity.Key // query key → caller class keys
 	attributeCalledBy map[identity.Key][]identity.Key // derived attribute key → caller class keys
+
+	// Surface-unavailable derived attributes and queries (depend on out-of-scope classes).
+	surfaceUnavailableDerived map[identity.Key]surface.UnavailableMember
+	surfaceUnavailableQueries map[identity.Key]surface.UnavailableMember
+	surfaceUnavailableList    []surface.UnavailableMember
 }
 
 // NewClassCatalog builds a class catalog from the model.
 func NewClassCatalog(model *core.Model) *ClassCatalog {
 	catalog := &ClassCatalog{
-		classes:           make(map[identity.Key]*ClassInfo),
-		classAssocs:       make(map[identity.Key][]AssociationInfo),
-		eventSentBy:       make(map[identity.Key][]identity.Key),
-		actionCalledBy:    make(map[identity.Key][]identity.Key),
-		queryCalledBy:     make(map[identity.Key][]identity.Key),
-		attributeCalledBy: make(map[identity.Key][]identity.Key),
+		classes:                   make(map[identity.Key]*ClassInfo),
+		classAssocs:               make(map[identity.Key][]AssociationInfo),
+		eventSentBy:               make(map[identity.Key][]identity.Key),
+		actionCalledBy:            make(map[identity.Key][]identity.Key),
+		queryCalledBy:             make(map[identity.Key][]identity.Key),
+		attributeCalledBy:         make(map[identity.Key][]identity.Key),
+		surfaceUnavailableDerived: make(map[identity.Key]surface.UnavailableMember),
+		surfaceUnavailableQueries: make(map[identity.Key]surface.UnavailableMember),
 	}
 
 	// Walk all in-scope classes; stateless classes are liveness-only metadata.
@@ -80,6 +87,53 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 	catalog.buildAssociationInfo(model)
 
 	return catalog
+}
+
+// SetSurfaceUnavailableMembers records derived attributes and queries that depend on
+// out-of-scope classes. They are excluded from external surface selection; evaluation
+// produces a surface-out-of-scope violation when something calls them.
+func (c *ClassCatalog) SetSurfaceUnavailableMembers(members []surface.UnavailableMember) {
+	c.surfaceUnavailableDerived = make(map[identity.Key]surface.UnavailableMember)
+	c.surfaceUnavailableQueries = make(map[identity.Key]surface.UnavailableMember)
+	c.surfaceUnavailableList = append([]surface.UnavailableMember(nil), members...)
+	for _, m := range members {
+		switch m.Kind {
+		case surface.MemberDerived:
+			c.surfaceUnavailableDerived[m.MemberKey] = m
+		case surface.MemberQuery:
+			c.surfaceUnavailableQueries[m.MemberKey] = m
+		}
+	}
+}
+
+// SurfaceUnavailableMembers returns all members off the external surface due to scope.
+func (c *ClassCatalog) SurfaceUnavailableMembers() []surface.UnavailableMember {
+	return c.surfaceUnavailableList
+}
+
+// SurfaceUnavailableDerived returns unavailability metadata when the derived attribute
+// is off the surface for this run.
+func (c *ClassCatalog) SurfaceUnavailableDerived(attrKey identity.Key) (surface.UnavailableMember, bool) {
+	m, ok := c.surfaceUnavailableDerived[attrKey]
+	return m, ok
+}
+
+// SurfaceUnavailableQuery returns unavailability metadata when the query is off the surface.
+func (c *ClassCatalog) SurfaceUnavailableQuery(queryKey identity.Key) (surface.UnavailableMember, bool) {
+	m, ok := c.surfaceUnavailableQueries[queryKey]
+	return m, ok
+}
+
+// IsSurfaceUnavailableDerived reports whether a derived attribute is off the surface.
+func (c *ClassCatalog) IsSurfaceUnavailableDerived(attrKey identity.Key) bool {
+	_, ok := c.surfaceUnavailableDerived[attrKey]
+	return ok
+}
+
+// IsSurfaceUnavailableQuery reports whether a query is off the surface.
+func (c *ClassCatalog) IsSurfaceUnavailableQuery(queryKey identity.Key) bool {
+	_, ok := c.surfaceUnavailableQueries[queryKey]
+	return ok
 }
 
 // buildScopedClassInfo creates catalog metadata for any in-scope class.
@@ -634,6 +688,7 @@ func (c *ClassCatalog) ExternalStateEvents(classKey identity.Key, stateName stri
 
 // ExternalQueries returns queries eligible for top-level firing on existing instances.
 // A query is "internal" if its CalledBy list contains a simulatable in-scope class.
+// Queries that depend on out-of-scope classes are never external.
 func (c *ClassCatalog) ExternalQueries(classKey identity.Key) []model_state.Query {
 	info := c.classes[classKey]
 	if info == nil || len(info.Class.Queries) == 0 {
@@ -642,6 +697,9 @@ func (c *ClassCatalog) ExternalQueries(classKey identity.Key) []model_state.Quer
 
 	queries := make([]model_state.Query, 0, len(info.Class.Queries))
 	for _, query := range info.Class.Queries {
+		if c.IsSurfaceUnavailableQuery(query.Key) {
+			continue
+		}
 		if c.isQueryExternal(query) {
 			queries = append(queries, query)
 		}
@@ -673,6 +731,7 @@ func (c *ClassCatalog) isQueryExternal(query model_state.Query) bool {
 
 // ExternalDerivedAttributes returns derived attributes eligible for top-level reads.
 // A derived attribute is internal when a simulatable in-scope class references it in logic.
+// Derived attributes that depend on out-of-scope classes are never external.
 func (c *ClassCatalog) ExternalDerivedAttributes(classKey identity.Key) []model_class.Attribute {
 	info := c.classes[classKey]
 	if info == nil {
@@ -685,6 +744,9 @@ func (c *ClassCatalog) ExternalDerivedAttributes(classKey identity.Key) []model_
 			continue
 		}
 		if attr.DerivationPolicy.Spec.Expression == nil && attr.DerivationPolicy.Spec.Specification == "" {
+			continue
+		}
+		if c.IsSurfaceUnavailableDerived(attr.Key) {
 			continue
 		}
 		if c.isDerivedAttributeExternal(attr) {

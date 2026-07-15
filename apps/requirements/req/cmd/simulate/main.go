@@ -167,29 +167,19 @@ func loadModel(rootSource, modelName string, includeSubdomainPaths, includeClass
 		return nil, fmt.Errorf("model has %d parse failure(s); fix before simulating", len(failures))
 	}
 
-	active := &parsed
+	// Lower the full model before surface filtering. The engine applies the surface
+	// once and records derived/query members that depend on out-of-scope classes;
+	// those classes must still exist on the input model for dependency detection.
+	if err := convert.LowerModel(&parsed); err != nil {
+		return nil, err
+	}
+	// Resolve include paths early so invalid surface selectors fail before the run.
 	if hasSurfaceScope(includeSubdomainPaths, includeClassNames) {
-		surfaceSpec, specErr := buildSurfaceSpec(active, includeSubdomainPaths, includeClassNames)
-		if specErr != nil {
-			return nil, specErr
-		}
-		active, err = applySurfaceFilter(active, surfaceSpec)
-		if err != nil {
+		if _, err := buildSurfaceSpec(&parsed, includeSubdomainPaths, includeClassNames); err != nil {
 			return nil, err
 		}
 	}
-	if err := convert.LowerModel(active); err != nil {
-		return nil, err
-	}
-	return active, nil
-}
-
-func applySurfaceFilter(model *core.Model, surfaceSpec *surface.SurfaceSpecification) (*core.Model, error) {
-	resolved, err := surface.Resolve(surfaceSpec, model)
-	if err != nil {
-		return nil, err
-	}
-	return surface.BuildFilteredModel(model, resolved)
+	return &parsed, nil
 }
 
 func parseCommaSeparatedFlag(flagValue string) []string {

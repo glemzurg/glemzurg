@@ -80,13 +80,50 @@ type SimulationEngine struct {
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
 	rng := newSimulationRNG(config.RandomSeed)
 
-	activeModel, err := prepareActiveModel(model, config)
+	activeModel, unavailable, err := prepareActiveModel(model, config)
 	if err != nil {
 		return nil, err
 	}
 
 	catalog := setupClassCatalog(activeModel)
+	catalog.SetSurfaceUnavailableMembers(unavailable)
 
+	core, err := wireSimulationCore(activeModel, catalog, rng)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SimulationEngine{
+		config:              config,
+		simState:            core.simState,
+		bindingsBuilder:     core.bindingsBuilder,
+		catalog:             catalog,
+		stepExecutor:        core.stepExecutor,
+		selector:            core.selector,
+		invariantChecker:    core.checkers.invariantChecker,
+		dataTypeChecker:     core.checkers.dataTypeChecker,
+		livenessChecker:     core.livenessChecker,
+		stateMachineChecker: NewStateMachineChecker(catalog),
+		simulationCoverage:  core.simulationCoverage,
+	}, nil
+}
+
+// simulationCore holds wired runtime components after catalog setup.
+type simulationCore struct {
+	simState           *state.SimulationState
+	bindingsBuilder    *state.BindingsBuilder
+	stepExecutor       *StepExecutor
+	selector           *ActionSelector
+	checkers           *simulationCheckers
+	livenessChecker    *LivenessChecker
+	simulationCoverage *SimulationCoverageTracker
+}
+
+func wireSimulationCore(
+	activeModel *core.Model,
+	catalog *ClassCatalog,
+	rng *rand.Rand,
+) (*simulationCore, error) {
 	evalCtx, err := setupExpressionRegistry(activeModel)
 	if err != nil {
 		return nil, fmt.Errorf("expression registry setup: %w", err)
@@ -95,6 +132,9 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	simState, bindingsBuilder, derivedEval, err := setupState(activeModel, catalog, evalCtx)
 	if err != nil {
 		return nil, err
+	}
+	if derivedEval != nil {
+		derivedEval.SetCatalog(catalog)
 	}
 
 	checkers, err := setupCheckers(activeModel, evalCtx)
@@ -115,18 +155,14 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
-	return &SimulationEngine{
-		config:              config,
-		simState:            simState,
-		bindingsBuilder:     bindingsBuilder,
-		catalog:             catalog,
-		stepExecutor:        stepExecutor,
-		selector:            selector,
-		invariantChecker:    checkers.invariantChecker,
-		dataTypeChecker:     checkers.dataTypeChecker,
-		livenessChecker:     livenessChecker,
-		stateMachineChecker: NewStateMachineChecker(catalog),
-		simulationCoverage:  simulationCoverage,
+	return &simulationCore{
+		simState:           simState,
+		bindingsBuilder:    bindingsBuilder,
+		stepExecutor:       stepExecutor,
+		selector:           selector,
+		checkers:           checkers,
+		livenessChecker:    livenessChecker,
+		simulationCoverage: simulationCoverage,
 	}, nil
 }
 
@@ -134,15 +170,15 @@ func newSimulationRNG(seed int64) *rand.Rand {
 	return rand.New(rand.NewSource(seed)) //nolint:gosec // simulation uses deterministic seeded RNG
 }
 
-func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model, error) {
-	activeModel, err := resolveActiveModel(model, config)
+func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, error) {
+	activeModel, unavailable, err := resolveActiveModel(model, config)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err := validateSimulationModel(activeModel); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return activeModel, nil
+	return activeModel, unavailable, nil
 }
 
 func setupClassCatalog(activeModel *core.Model) *ClassCatalog {
@@ -153,19 +189,21 @@ func setupClassCatalog(activeModel *core.Model) *ClassCatalog {
 }
 
 // resolveActiveModel applies surface area filtering if configured.
-func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model, error) {
+// UnavailableMembers (derived/query depending on out-of-scope classes) are returned
+// for catalog wiring — they stay off the external surface.
+func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, error) {
 	if config.Surface == nil || config.Surface.IsEmpty() {
-		return model, nil
+		return model, nil, nil
 	}
 	resolved, err := surface.Resolve(config.Surface, model)
 	if err != nil {
-		return nil, fmt.Errorf("surface area resolution: %w", err)
+		return nil, nil, fmt.Errorf("surface area resolution: %w", err)
 	}
 	filtered, err := surface.BuildFilteredModel(model, resolved)
 	if err != nil {
-		return nil, fmt.Errorf("build filtered model: %w", err)
+		return nil, nil, fmt.Errorf("build filtered model: %w", err)
 	}
-	return filtered, nil
+	return filtered, resolved.UnavailableMembers, nil
 }
 
 // setupState creates simulation state and bindings builder, registers associations,

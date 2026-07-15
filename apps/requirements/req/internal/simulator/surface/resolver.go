@@ -27,6 +27,11 @@ type ResolvedSurface struct {
 	// ModelInvariants is a filtered copy of Model.Invariants.
 	ModelInvariants []model_logic.Logic
 
+	// UnavailableMembers are derived attributes and queries on surface classes that
+	// depend on out-of-scope classes (association pass-through). They stay off the
+	// external surface; evaluating them yields a surface-out-of-scope violation.
+	UnavailableMembers []UnavailableMember
+
 	// Warnings collects non-fatal issues found during resolution.
 	Warnings []string
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -103,6 +104,20 @@ func (e *StepExecutor) executeQuery(
 		return nil, fmt.Errorf("query is nil")
 	}
 
+	step.QueryKey = pending.Query.Key
+	step.QueryName = pending.Query.Name
+
+	// Query depends on out-of-scope association data — not surface-selected, but if
+	// something still invokes it, report a surface-out-of-scope violation.
+	if e.catalog != nil {
+		if unavail, ok := e.catalog.SurfaceUnavailableQuery(pending.Query.Key); ok {
+			step.Violations = append(step.Violations, invariants.NewSurfaceOutOfScopeViolation(
+				pending.Class.ClassKey, pending.Instance.ID, pending.Query.Name, unavail.Reason(),
+			))
+			return step, nil
+		}
+	}
+
 	params, err := e.sampleQueryParameters(pending)
 	if err != nil {
 		return nil, fmt.Errorf("query %s parameter sampling: %w", pending.Query.Name, err)
@@ -114,8 +129,6 @@ func (e *StepExecutor) executeQuery(
 		return nil, fmt.Errorf("query %s error: %w", pending.Query.Name, err)
 	}
 
-	step.QueryKey = pending.Query.Key
-	step.QueryName = pending.Query.Name
 	step.QueryResult = result
 	step.Violations = append(step.Violations, result.Violations...)
 	step.Violations = append(step.Violations, e.actionExecutor.CheckWorldStateInvariants()...)
@@ -142,18 +155,23 @@ func (e *StepExecutor) executeDerivedRead(
 		return nil, fmt.Errorf("derived attribute %s: evaluator not configured", pending.DerivedAttribute.Name)
 	}
 
-	derived, err := e.derivedEval.ResolveDerived(pending.Instance)
+	step.DerivedAttributeKey = pending.DerivedAttribute.Key
+	step.DerivedAttributeName = pending.DerivedAttribute.Name
+
+	value, violations, err := e.derivedEval.ResolveDerivedAttribute(
+		pending.Instance, pending.DerivedAttribute.Key, pending.DerivedAttribute.Name,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("derived attribute %s error: %w", pending.DerivedAttribute.Name, err)
 	}
-
-	value, ok := derived[pending.DerivedAttribute.Name]
-	if !ok || value == nil {
+	if len(violations) > 0 {
+		step.Violations = append(step.Violations, violations...)
+		return step, nil
+	}
+	if value == nil {
 		return nil, fmt.Errorf("derived attribute %s produced no value", pending.DerivedAttribute.Name)
 	}
 
-	step.DerivedAttributeKey = pending.DerivedAttribute.Key
-	step.DerivedAttributeName = pending.DerivedAttribute.Name
 	step.DerivedReadValue = value
 	step.Violations = append(step.Violations, e.actionExecutor.CheckWorldStateInvariants()...)
 	return step, nil

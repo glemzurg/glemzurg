@@ -12,6 +12,19 @@ import (
 // SurfaceReport describes every class and surface-eligible action/query before a run.
 type SurfaceReport struct {
 	Classes []SurfaceClassReport `json:"classes"`
+	// UnavailableMembers are derived attributes and queries kept off the surface
+	// because they depend on out-of-scope association data (pass-through pattern).
+	UnavailableMembers []SurfaceUnavailableMemberReport `json:"unavailable_members,omitempty"`
+}
+
+// SurfaceUnavailableMemberReport documents a derived attribute or query not on the surface.
+type SurfaceUnavailableMemberReport struct {
+	ClassKey       string   `json:"class_key"`
+	ClassName      string   `json:"class_name"`
+	Kind           string   `json:"kind"` // "derived" or "query"
+	MemberName     string   `json:"member_name"`
+	MissingClasses []string `json:"missing_classes,omitempty"`
+	Reason         string   `json:"reason"`
 }
 
 // SurfaceClassReport is one scoped class and its surface-level simulation entries.
@@ -66,6 +79,8 @@ type SurfaceAssocCreateNote struct {
 // BuildSurfaceReport enumerates scoped classes and surface-eligible events, actions, and queries.
 // Association-class roles are omitted: they are not independently selected for external
 // creation; when listed on the surface they only materialize via host association guarantees.
+// Derived attributes and queries that depend on out-of-scope classes appear under
+// UnavailableMembers (not as external surface steps).
 func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
 	report := &SurfaceReport{
 		Classes: make([]SurfaceClassReport, 0, len(catalog.classes)),
@@ -76,6 +91,17 @@ func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
 			continue
 		}
 		report.Classes = append(report.Classes, buildSurfaceClassReport(catalog, classInfo))
+	}
+
+	for _, m := range catalog.SurfaceUnavailableMembers() {
+		report.UnavailableMembers = append(report.UnavailableMembers, SurfaceUnavailableMemberReport{
+			ClassKey:       m.ClassKey.String(),
+			ClassName:      m.ClassName,
+			Kind:           string(m.Kind),
+			MemberName:     m.MemberName,
+			MissingClasses: append([]string(nil), m.MissingClasses...),
+			Reason:         m.Reason(),
+		})
 	}
 
 	return report
@@ -232,6 +258,13 @@ func (r *SurfaceReport) FormatText() string {
 
 		for _, attr := range classEntry.DerivedAttributes {
 			fmt.Fprintf(&b, "    derived: %s\n", attr.AttributeName)
+		}
+	}
+
+	if len(r.UnavailableMembers) > 0 {
+		b.WriteString("\n  off-surface (out-of-scope association data):\n")
+		for _, m := range r.UnavailableMembers {
+			fmt.Fprintf(&b, "    %s %s.%s — %s\n", m.Kind, m.ClassName, m.MemberName, m.Reason)
 		}
 	}
 

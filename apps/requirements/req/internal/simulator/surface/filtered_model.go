@@ -1,20 +1,20 @@
 package surface
 
 import (
-	"math/big"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // BuildFilteredModel creates a new Model containing only the classes,
 // associations, and invariants from the resolved surface. The original
 // model is not modified.
+//
+// Derived attributes and queries that depend on out-of-scope classes are kept
+// intact on the filtered model for traceability; the catalog marks them
+// surface-unavailable so they are not selected for external simulation steps
+// and evaluation produces a violation when something calls them.
 func BuildFilteredModel(original *core.Model, resolved *ResolvedSurface) (*core.Model, error) {
 	filtered := core.NewModel(original.Key, core.ModelDetails{
 		Name: original.Name, Details: original.Details,
@@ -61,81 +61,29 @@ func BuildFilteredModel(original *core.Model, resolved *ResolvedSurface) (*core.
 	// Preserve domain associations.
 	filtered.DomainAssociations = original.DomainAssociations
 
+	// Record derived/query members that depend on out-of-scope association data.
+	resolved.UnavailableMembers = CollectUnavailableMembers(original, resolved)
+
 	return &filtered, nil
 }
 
-// classWithScopedInvariants drops class invariants and attribute derivations that
-// reference out-of-scope classes (e.g. association-class navigations when that
-// class is not on the surface). Amount-bearing AC work is simply not simulated.
+// classWithScopedInvariants drops class invariants that reference out-of-scope classes.
+// Derived attributes and queries are not rewritten here — unavailability is tracked
+// separately so callers get a surface-out-of-scope violation instead of a silent stub.
 func classWithScopedInvariants(
 	class model_class.Class,
 	inScopeNames, allNames map[string]bool,
 ) model_class.Class {
-	out := class
-	changed := false
-
-	if len(class.Invariants) > 0 {
-		included, _ := ScopeInvariantsWithAllClasses(class.Invariants, inScopeNames, allNames)
-		if len(included) != len(class.Invariants) {
-			out.Invariants = included
-			changed = true
-		}
-	}
-
-	if scopedAttrs, attrChanged := attributesWithScopedDerivations(class.Attributes, inScopeNames, allNames); attrChanged {
-		out.Attributes = scopedAttrs
-		changed = true
-	}
-
-	if !changed {
+	if len(class.Invariants) == 0 {
 		return class
 	}
+	included, _ := ScopeInvariantsWithAllClasses(class.Invariants, inScopeNames, allNames)
+	if len(included) == len(class.Invariants) {
+		return class
+	}
+	out := class
+	out.Invariants = included
 	return out
-}
-
-// attributesWithScopedDerivations replaces derivations that reference out-of-scope
-// classes with a constant-zero value expression. The attribute stays derived (not a
-// write-liveness target) but does not require association-class data absent from the surface.
-func attributesWithScopedDerivations(
-	attrs []model_class.Attribute,
-	inScopeNames, allNames map[string]bool,
-) ([]model_class.Attribute, bool) {
-	if len(attrs) == 0 {
-		return attrs, false
-	}
-	changed := false
-	out := make([]model_class.Attribute, len(attrs))
-	copy(out, attrs)
-	for i := range out {
-		if out[i].DerivationPolicy == nil {
-			continue
-		}
-		included, excluded := ScopeInvariantsWithAllClasses(
-			[]model_logic.Logic{*out[i].DerivationPolicy}, inScopeNames, allNames,
-		)
-		if len(excluded) == 0 && len(included) == 1 {
-			continue
-		}
-		out[i].DerivationPolicy = inactiveSurfaceDerivation(*out[i].DerivationPolicy)
-		changed = true
-	}
-	if !changed {
-		return attrs, false
-	}
-	return out, true
-}
-
-// inactiveSurfaceDerivation keeps a value derivation that evaluates without out-of-scope
-// association-class members. Constant zero is the neutral stand-in for numeric ledgers.
-func inactiveSurfaceDerivation(original model_logic.Logic) *model_logic.Logic {
-	stub := original
-	stub.Description = "inactive on this surface (references out-of-scope class)"
-	stub.Spec = logic_spec.ExpressionSpec{
-		Notation:      model_logic.NotationTLAPlus,
-		Specification: "0",
-		Expression:    &me.IntLiteral{Value: big.NewInt(0)},
-	}
-	return &stub
 }
 
 // filterAssociations keeps only associations that are in the resolved set.

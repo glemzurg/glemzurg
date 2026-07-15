@@ -111,6 +111,10 @@ const (
 	// ViolationTypePeerEventUnavailable indicates an association guarantee sent an event
 	// the peer class cannot accept from its current state.
 	ViolationTypePeerEventUnavailable
+
+	// ViolationTypeSurfaceOutOfScope indicates a derived attribute or query was evaluated
+	// but depends on classes outside the simulation surface (association pass-through).
+	ViolationTypeSurfaceOutOfScope
 )
 
 var violationTypeNames = map[ViolationType]string{
@@ -146,6 +150,7 @@ var violationTypeNames = map[ViolationType]string{
 	ViolationTypeLivenessParameterSimulationNotUsed: "liveness_parameter_simulation_not_used",
 	ViolationTypeStateMachineIncomplete:             "state_machine_incomplete",
 	ViolationTypePeerEventUnavailable:               "peer_event_unavailable",
+	ViolationTypeSurfaceOutOfScope:                  "surface_out_of_scope",
 }
 
 // String returns a human-readable name for the violation type.
@@ -788,6 +793,23 @@ type PeerEventUnavailableParams struct {
 	EventKey        identity.Key
 	EventName       string
 	Message         string
+}
+
+// NewSurfaceOutOfScopeViolation creates a violation when a derived attribute or query
+// is evaluated but depends on classes outside the simulation surface.
+func NewSurfaceOutOfScopeViolation(
+	classKey identity.Key,
+	instanceID state.InstanceID,
+	memberName, reason string,
+) *ViolationError {
+	return &ViolationError{
+		Type:              ViolationTypeSurfaceOutOfScope,
+		Message:           fmt.Sprintf("surface out of scope: %s", reason),
+		InstanceID:        instanceID,
+		ClassKey:          classKey,
+		ActionOrQueryName: memberName,
+		AttributeName:     memberName,
+	}
 }
 
 // NewPeerEventUnavailableViolation creates a violation when an association guarantee

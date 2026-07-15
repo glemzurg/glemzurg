@@ -84,10 +84,14 @@ func walkIdentifiersLeaf(expr me.Expression, result map[string]bool) bool {
 	switch e := expr.(type) {
 	case *me.LocalVar:
 		result[e.Name] = true
-	case *me.AttributeRef, *me.SelfRef, *me.PriorFieldValue:
-		// No identifier names to collect.
+	case *me.ClassRef:
+		if e.Name != "" {
+			result[e.Name] = true
+		}
+	case *me.AttributeRef, *me.SelfRef, *me.PriorFieldValue, *me.AssociationRef:
+		// Keys are structural; names come from FieldAccess / ClassRef / LocalVar.
 	case *me.BoolLiteral, *me.IntLiteral, *me.RationalLiteral,
-		*me.StringLiteral, *me.SetConstant, *me.NamedSetRef, *me.ClassRef:
+		*me.StringLiteral, *me.SetConstant, *me.NamedSetRef:
 		// No expression children.
 	default:
 		return false
