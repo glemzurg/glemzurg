@@ -103,7 +103,8 @@ func (e *ActionExecutor) queueAssociationSetMap(
 	}
 	linked := linkedAssociationPeerEndpoints(e.bindingsBuilder.State(), instance.ID, mapTarget.assoc)
 	if len(linked) == 0 {
-		return false, fmt.Errorf("association set-map guarantee on %q: association is empty", target)
+		// No peers to update (e.g. cascade Delete on an empty Defines) — not an error.
+		return true, nil
 	}
 	event, ok, err := e.resolveSetMapPeerEvent(ctx, instance, target, mapTarget, eventCall)
 	if err != nil || !ok {
