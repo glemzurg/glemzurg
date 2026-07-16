@@ -94,7 +94,6 @@ func runSimulation(opts cliOptions) (hasViolations bool, err error) {
 	}
 
 	surfaceReport := eng.SurfaceReport()
-	reportSurfaceBeforeRun(surfaceReport, opts.quiet)
 
 	result, err := eng.Run()
 	if err != nil {
@@ -127,14 +126,6 @@ func newSimulationEngine(model *core.Model, opts cliOptions, seed int64) (*engin
 	return eng, nil
 }
 
-func reportSurfaceBeforeRun(surfaceReport *engine.SurfaceReport, quiet bool) {
-	if quiet {
-		return
-	}
-	log.Print(surfaceReport.FormatText())
-	log.Println()
-}
-
 func emitSimulationOutput(
 	opts cliOptions,
 	surfaceReport *engine.SurfaceReport,
@@ -146,7 +137,7 @@ func emitSimulationOutput(
 	case "json":
 		outputJSON(surfaceReport, simTrace, violationReport, opts.showTrace, opts.quiet)
 	default:
-		outputText(simTrace, violationReport, opts.showTrace, opts.quiet, seed)
+		outputText(surfaceReport, simTrace, violationReport, opts.showTrace, opts.quiet, seed)
 	}
 }
 
@@ -233,7 +224,14 @@ func shouldShowStepTrace(showTrace, quiet bool, hasViolations bool) bool {
 	return showTrace || !hasViolations
 }
 
-func outputText(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool, seed int64) {
+// outputText order: completion summary → step trace / final state → surface → violations.
+func outputText(
+	surfaceReport *engine.SurfaceReport,
+	simTrace *trace.SimulationTrace,
+	violationReport *report.ViolationReport,
+	showTrace, quiet bool,
+	seed int64,
+) {
 	if !quiet {
 		log.Printf("Simulation completed: %d steps, terminated: %s (seed: %d)\n",
 			simTrace.StepsTaken, simTrace.TerminationReason, seed)
@@ -244,16 +242,18 @@ func outputText(simTrace *trace.SimulationTrace, violationReport *report.Violati
 		log.Println()
 	}
 
+	if !quiet && surfaceReport != nil {
+		log.Print(surfaceReport.FormatText())
+		log.Println()
+	}
+
 	log.Print(violationReport.FormatText())
 }
 
 func outputJSON(surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
 	output := make(map[string]any)
 
-	if !quiet {
-		output["surface"] = surfaceReport
-	}
-
+	// JSON object key order is not guaranteed; include the same sections as text output.
 	if !quiet {
 		output["summary"] = map[string]any{
 			"steps_taken":        simTrace.StepsTaken,
@@ -263,6 +263,10 @@ func outputJSON(surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationT
 
 	if shouldShowStepTrace(showTrace, quiet, violationReport.HasViolations()) {
 		output["trace"] = simTrace
+	}
+
+	if !quiet && surfaceReport != nil {
+		output["surface"] = surfaceReport
 	}
 
 	output["violations"] = violationReport

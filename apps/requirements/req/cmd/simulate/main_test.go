@@ -69,13 +69,24 @@ func (s *OutputSuite) TestOutputTextCleanRunIncludesSteps() {
 	}
 	violationReport := report.FromViolations(nil)
 
-	outputText(simTrace, violationReport, false, false, 42)
+	surfaceReport := &engine.SurfaceReport{
+		Classes: []engine.SurfaceClassReport{
+			{ClassKey: "domain/finance/subdomain/wallet/class/partner", ClassName: "Partner", Role: "simulatable"},
+		},
+	}
+	outputText(surfaceReport, simTrace, violationReport, false, false, 42)
 
 	text := buf.String()
-	s.NotContains(text, "Simulation surface")
 	s.Contains(text, "Simulation completed: 1 steps")
 	s.Contains(text, "[1] Partner#1: active -> active")
+	s.Contains(text, "Simulation surface")
 	s.Contains(text, "No violations found.")
+	// Surface is after the step/state section and before violations.
+	stepIdx := strings.Index(text, "[1] Partner#1")
+	surfaceIdx := strings.Index(text, "Simulation surface")
+	violationsIdx := strings.Index(text, "No violations found.")
+	s.Greater(surfaceIdx, stepIdx)
+	s.Greater(violationsIdx, surfaceIdx)
 }
 
 func (s *OutputSuite) TestOutputTextViolationsHideStepsWithoutTrace() {
@@ -111,11 +122,20 @@ func (s *OutputSuite) TestOutputTextViolationsHideStepsWithoutTrace() {
 		},
 	}
 
-	outputText(simTrace, violationReport, false, false, 42)
+	surfaceReport := &engine.SurfaceReport{
+		Classes: []engine.SurfaceClassReport{
+			{ClassKey: "k", ClassName: "Partner", Role: "simulatable"},
+		},
+	}
+	outputText(surfaceReport, simTrace, violationReport, false, false, 42)
 
 	text := buf.String()
 	s.NotContains(text, "[1] CREATE Partner#1")
+	s.Contains(text, "Simulation surface")
 	s.Contains(text, "1 violations found")
+	surfaceIdx := strings.Index(text, "Simulation surface")
+	violationsIdx := strings.Index(text, "1 violations found")
+	s.Greater(violationsIdx, surfaceIdx)
 }
 
 func (s *OutputSuite) TestOutputJSONIncludesSurface() {
@@ -214,10 +234,6 @@ func (s *OutputSuite) TestOutputJSONViolationsIncludeTraceWithFlag() {
 func outputJSONTo(buf *bytes.Buffer, surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
 	output := make(map[string]any)
 
-	if !quiet && surfaceReport != nil {
-		output["surface"] = surfaceReport
-	}
-
 	if !quiet {
 		output["summary"] = map[string]any{
 			"steps_taken":        simTrace.StepsTaken,
@@ -227,6 +243,10 @@ func outputJSONTo(buf *bytes.Buffer, surfaceReport *engine.SurfaceReport, simTra
 
 	if shouldShowStepTrace(showTrace, quiet, violationReport.HasViolations()) {
 		output["trace"] = simTrace
+	}
+
+	if !quiet && surfaceReport != nil {
+		output["surface"] = surfaceReport
 	}
 
 	output["violations"] = violationReport

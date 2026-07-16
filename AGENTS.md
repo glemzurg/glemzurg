@@ -107,6 +107,36 @@ This applies to Go under `apps/requirements/req` and to any other production cod
 - Prefer generic mechanisms driven by model structure and authored guarantees (e.g. association bulk-create from a set-map over a parameter set) over embedding domain cascade rules in the engine.
 - **Tests and sample models are the exception:** `_test.go` files, fixtures, and sandbox models may use concrete domain names and paths. Production packages must still treat those only as examples of arbitrary valid models.
 
+## Simulation surface (what is being tested)
+
+The **simulation surface** is the set of **external drivers** the exercise simulator may choose at the top level. Its purpose is to tell a **human tester what is actually being exercised** on a given run—not to dump every class that happens to be loaded in scope.
+
+**Surface drivers (report these):**
+
+- External **creation events** (`_new` / «new» and other create transitions with no in-scope sender)
+- External **state-transition events** (and their actions) with no in-scope sender
+- Surface **do-actions** on a state
+- External **queries**
+- External **derived attributes** (readable at top level)
+
+**Not surface (do not list as drivers even if in the simulation):**
+
+- Classes (or events) that only participate as **peers**—created or updated by another class’s guarantees (e.g. association set-add/set-map, cascade Delete, association-class reify)
+- **Association classes** when they only materialize via a host association (even if included in the include-list so reify is enabled)
+- Classes that are in scope for liveness or cascade but have **no external events, queries, or derived attributes**
+- Derived attributes / queries that depend on **out-of-scope** classes (listed separately as off-surface, not as drivers)
+
+**Include-list vs surface report:** `-include-class` / sandbox `SIMULATE_CLASSES` (and subdomain includes) define **scope**—which classes may exist in the run. The surface **drivers** section is narrower: only hooks the selector can fire. Peer-only scoped classes still run (instances, links, invariants) but must not appear as empty driver rows.
+
+**Scope report (also shown to testers):** summarize participation separately from drivers.
+
+- If **every** class of a subdomain is in the run, list the **subdomain** path only (`finance/wallet`)—do not enumerate its classes.
+- If **only some** classes of a subdomain are in the run, list each **class** path (`finance/wallet/transaction`, …).
+
+**Output order (text CLI):** completion summary → step trace / final state → **simulation scope** → **simulation surface (drivers)** → violations.
+
+When changing surface reporting or selection, preserve this contract: scope shows what is loaded; surface shows what is driven at top level.
+
 ## Go `_test.go` files
 
 - Use the [testify](https://github.com/stretchr/testify) framework (`require` for fatal assertions, `assert` for non-fatal).

@@ -72,6 +72,9 @@ type SimulationEngine struct {
 	livenessChecker     *LivenessChecker
 	stateMachineChecker *StateMachineChecker
 	simulationCoverage  *SimulationCoverageTracker
+
+	// scopeEntries summarize which classes/subdomains participate (include-list scope).
+	scopeEntries []surface.ScopeEntry
 }
 
 // NewSimulationEngine creates and wires up all simulation components.
@@ -80,7 +83,7 @@ type SimulationEngine struct {
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
 	rng := newSimulationRNG(config.RandomSeed)
 
-	activeModel, unavailable, err := prepareActiveModel(model, config)
+	activeModel, unavailable, scopeEntries, err := prepareActiveModel(model, config)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +108,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		livenessChecker:     core.livenessChecker,
 		stateMachineChecker: NewStateMachineChecker(catalog),
 		simulationCoverage:  core.simulationCoverage,
+		scopeEntries:        scopeEntries,
 	}, nil
 }
 
@@ -170,15 +174,15 @@ func newSimulationRNG(seed int64) *rand.Rand {
 	return rand.New(rand.NewSource(seed)) //nolint:gosec // simulation uses deterministic seeded RNG
 }
 
-func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, error) {
-	activeModel, unavailable, err := resolveActiveModel(model, config)
+func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, []surface.ScopeEntry, error) {
+	activeModel, unavailable, scopeEntries, err := resolveActiveModel(model, config)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if err := validateSimulationModel(activeModel); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return activeModel, unavailable, nil
+	return activeModel, unavailable, scopeEntries, nil
 }
 
 func setupClassCatalog(activeModel *core.Model) *ClassCatalog {
@@ -191,19 +195,22 @@ func setupClassCatalog(activeModel *core.Model) *ClassCatalog {
 // resolveActiveModel applies surface area filtering if configured.
 // UnavailableMembers (derived/query depending on out-of-scope classes) are returned
 // for catalog wiring — they stay off the external surface.
-func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, error) {
+// ScopeEntries summarize included subdomains vs individual classes for tester reports.
+func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, []surface.ScopeEntry, error) {
 	if config.Surface == nil || config.Surface.IsEmpty() {
-		return model, nil, nil
+		scope := surface.BuildScopeEntries(model, surface.AllNonRealizedClasses(model))
+		return model, nil, scope, nil
 	}
 	resolved, err := surface.Resolve(config.Surface, model)
 	if err != nil {
-		return nil, nil, fmt.Errorf("surface area resolution: %w", err)
+		return nil, nil, nil, fmt.Errorf("surface area resolution: %w", err)
 	}
+	scope := surface.BuildScopeEntries(model, resolved.Classes)
 	filtered, err := surface.BuildFilteredModel(model, resolved)
 	if err != nil {
-		return nil, nil, fmt.Errorf("build filtered model: %w", err)
+		return nil, nil, nil, fmt.Errorf("build filtered model: %w", err)
 	}
-	return filtered, resolved.UnavailableMembers, nil
+	return filtered, resolved.UnavailableMembers, scope, nil
 }
 
 // setupState creates simulation state and bindings builder, registers associations,
@@ -465,7 +472,9 @@ func (e *SimulationEngine) State() *state.SimulationState {
 	return e.simState
 }
 
-// SurfaceReport returns the scoped classes and surface-eligible actions/queries for this run.
+// SurfaceReport returns simulation scope plus external drivers for this run.
 func (e *SimulationEngine) SurfaceReport() *SurfaceReport {
-	return BuildSurfaceReport(e.catalog)
+	report := BuildSurfaceReport(e.catalog)
+	report.Scope = append([]surface.ScopeEntry(nil), e.scopeEntries...)
+	return report
 }

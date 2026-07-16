@@ -7,10 +7,16 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
-// SurfaceReport describes every class and surface-eligible action/query before a run.
+// SurfaceReport catalogs simulation scope and external drivers for a run.
+// Scope is which classes/subdomains participate; Classes lists only top-level
+// drivers (events, do-actions, queries, derived attributes) for human testers.
 type SurfaceReport struct {
+	// Scope summarizes include-list participation: whole subdomains or individual classes.
+	Scope []surface.ScopeEntry `json:"scope,omitempty"`
+	// Classes lists only classes with external drivers (not peer-only scoped classes).
 	Classes []SurfaceClassReport `json:"classes"`
 	// UnavailableMembers are derived attributes and queries kept off the surface
 	// because they depend on out-of-scope association data (pass-through pattern).
@@ -76,11 +82,11 @@ type SurfaceAssocCreateNote struct {
 	ToClassKey      string `json:"to_class_key"`
 }
 
-// BuildSurfaceReport enumerates scoped classes and surface-eligible events, actions, and queries.
-// Association-class roles are omitted: they are not independently selected for external
-// creation; when listed on the surface they only materialize via host association guarantees.
-// Derived attributes and queries that depend on out-of-scope classes appear under
-// UnavailableMembers (not as external surface steps).
+// BuildSurfaceReport lists only classes that have at least one external driver
+// (creation/state event, do-action, query, or derived attribute). Peer-only classes,
+// association classes, and empty scoped classes are omitted so the report matches what
+// a human tester can treat as under test at the top level. Out-of-scope pass-through
+// derived/queries appear under UnavailableMembers, not as drivers.
 func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
 	report := &SurfaceReport{
 		Classes: make([]SurfaceClassReport, 0, len(catalog.classes)),
@@ -90,7 +96,11 @@ func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
 		if catalog.IsAssociationClass(classInfo.ClassKey) {
 			continue
 		}
-		report.Classes = append(report.Classes, buildSurfaceClassReport(catalog, classInfo))
+		entry := buildSurfaceClassReport(catalog, classInfo)
+		if !surfaceClassHasDrivers(entry) {
+			continue
+		}
+		report.Classes = append(report.Classes, entry)
 	}
 
 	for _, m := range catalog.SurfaceUnavailableMembers() {
@@ -107,6 +117,19 @@ func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
 	return report
 }
 
+// surfaceClassHasDrivers reports whether the class row lists any top-level selector hooks.
+func surfaceClassHasDrivers(entry SurfaceClassReport) bool {
+	if len(entry.CreationEvents) > 0 || len(entry.Queries) > 0 || len(entry.DerivedAttributes) > 0 {
+		return true
+	}
+	for _, st := range entry.States {
+		if len(st.Events) > 0 || len(st.DoActions) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func buildSurfaceClassReport(catalog *ClassCatalog, classInfo *ClassInfo) SurfaceClassReport {
 	entry := SurfaceClassReport{
 		ClassKey:  classInfo.ClassKey.String(),
@@ -115,15 +138,12 @@ func buildSurfaceClassReport(catalog *ClassCatalog, classInfo *ClassInfo) Surfac
 	}
 
 	if !classInfo.HasStates {
+		appendSurfaceReadEntries(catalog, classInfo.ClassKey, &entry)
 		return entry
 	}
 
 	for _, ev := range catalog.ExternalCreationEvents(classInfo.ClassKey) {
 		entry.CreationEvents = append(entry.CreationEvents, surfaceEventReport(catalog, classInfo.ClassKey, ev, ""))
-	}
-
-	if acNote := associationClassCreateNote(catalog, classInfo); acNote != nil {
-		entry.AssociationCreate = acNote
 	}
 
 	stateNames := sortedStateNames(classInfo)
@@ -195,69 +215,57 @@ func surfaceEventReport(
 	return report
 }
 
-func associationClassCreateNote(catalog *ClassCatalog, classInfo *ClassInfo) *SurfaceAssocCreateNote {
-	acInfo := catalog.LookupAssociationClass(classInfo.ClassKey)
-	if acInfo == nil || len(classInfo.CreationEvents) == 0 {
-		return nil
-	}
-
-	event := classInfo.CreationEvents[0]
-	note := &SurfaceAssocCreateNote{
-		EventName:       event.Name,
-		HostAssociation: acInfo.HostAssociation.Name,
-		FromClassKey:    acInfo.FromClassKey.String(),
-		ToClassKey:      acInfo.ToClassKey.String(),
-	}
-	if action, ok := catalog.GetActionForEvent(classInfo.ClassKey, event.Key, ""); ok && action != nil {
-		note.ActionName = action.Name
-	}
-	return note
-}
-
-// FormatText renders the surface report for CLI output before a simulation run.
+// FormatText renders scope (what is loaded) then surface drivers (what is tested at top level).
 func (r *SurfaceReport) FormatText() string {
-	if r == nil || len(r.Classes) == 0 {
-		return "Simulation surface\n\n  (empty)\n"
+	if r == nil {
+		return "Simulation scope\n\n  (empty)\n\nSimulation surface\n\n  (empty)\n"
 	}
 
 	var b strings.Builder
-	b.WriteString("Simulation surface\n")
-
-	for _, classEntry := range r.Classes {
-		fmt.Fprintf(&b, "\n  %s (%s)\n", classEntry.ClassKey, classEntry.ClassName)
-		fmt.Fprintf(&b, "    role: %s\n", surfaceRoleLabel(classEntry.Role))
-
-		for _, ev := range classEntry.CreationEvents {
-			b.WriteString(formatSurfaceEventLine("creation", ev))
-		}
-
-		if classEntry.AssociationCreate != nil {
-			ac := classEntry.AssociationCreate
-			line := fmt.Sprintf("    association creation: event %s", ac.EventName)
-			if ac.ActionName != "" {
-				line += fmt.Sprintf(" (action %s)", ac.ActionName)
-			}
-			line += fmt.Sprintf(" via %s (%s -> %s) on host association create only (not surface)\n",
-				ac.HostAssociation, ac.FromClassKey, ac.ToClassKey)
-			b.WriteString(line)
-		}
-
-		for _, stateEntry := range classEntry.States {
-			fmt.Fprintf(&b, "    state %s:\n", stateEntry.StateName)
-			for _, ev := range stateEntry.Events {
-				b.WriteString(formatSurfaceEventLine("      transition", ev))
-			}
-			for _, action := range stateEntry.DoActions {
-				fmt.Fprintf(&b, "      do-action: %s\n", action.ActionName)
+	b.WriteString("Simulation scope\n")
+	if len(r.Scope) == 0 {
+		b.WriteString("\n  (empty)\n")
+	} else {
+		for _, entry := range r.Scope {
+			switch entry.Kind {
+			case surface.ScopeSubdomain:
+				fmt.Fprintf(&b, "  subdomain %s\n", entry.Path)
+			case surface.ScopeClass:
+				fmt.Fprintf(&b, "  class %s\n", entry.Path)
+			default:
+				fmt.Fprintf(&b, "  %s\n", entry.Path)
 			}
 		}
+	}
 
-		for _, query := range classEntry.Queries {
-			fmt.Fprintf(&b, "    query: %s\n", query.QueryName)
-		}
+	b.WriteString("\nSimulation surface\n")
+	if len(r.Classes) == 0 {
+		b.WriteString("\n  (empty)\n")
+	} else {
+		for _, classEntry := range r.Classes {
+			fmt.Fprintf(&b, "\n  %s (%s)\n", classEntry.ClassKey, classEntry.ClassName)
 
-		for _, attr := range classEntry.DerivedAttributes {
-			fmt.Fprintf(&b, "    derived: %s\n", attr.AttributeName)
+			for _, ev := range classEntry.CreationEvents {
+				b.WriteString(formatSurfaceEventLine("creation", ev))
+			}
+
+			for _, stateEntry := range classEntry.States {
+				fmt.Fprintf(&b, "    state %s:\n", stateEntry.StateName)
+				for _, ev := range stateEntry.Events {
+					b.WriteString(formatSurfaceEventLine("      transition", ev))
+				}
+				for _, action := range stateEntry.DoActions {
+					fmt.Fprintf(&b, "      do-action: %s\n", action.ActionName)
+				}
+			}
+
+			for _, query := range classEntry.Queries {
+				fmt.Fprintf(&b, "    query: %s\n", query.QueryName)
+			}
+
+			for _, attr := range classEntry.DerivedAttributes {
+				fmt.Fprintf(&b, "    derived: %s\n", attr.AttributeName)
+			}
 		}
 	}
 
@@ -269,17 +277,6 @@ func (r *SurfaceReport) FormatText() string {
 	}
 
 	return b.String()
-}
-
-func surfaceRoleLabel(role string) string {
-	switch role {
-	case "liveness_only":
-		return "liveness only (no state machine)"
-	case "association_class":
-		return "association class"
-	default:
-		return "simulatable"
-	}
 }
 
 func formatSurfaceEventLine(prefix string, ev SurfaceEventReport) string {
