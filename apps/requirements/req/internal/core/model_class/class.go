@@ -273,6 +273,7 @@ func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAsso
 		attrSubKeys[attr.Key.SubKey] = true
 	}
 	assocTLAFields := OutgoingAssociationTLAFieldSet(c.Key, allAssociations)
+	reverseAssocTLAFields := IncomingAssociationReverseTLAFieldSet(c.Key, allAssociations)
 	assocClassTLANames := OutgoingAssociationClassTLANameSet(c.Key, allAssociations, allClasses)
 	for _, action := range c.Actions {
 		actionCtx := ctx.Child("action", action.Key.String())
@@ -293,7 +294,7 @@ func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAsso
 				}
 				continue
 			}
-			if attrSubKeys[guar.Target] || assocTLAFields[guar.Target] {
+			if attrSubKeys[guar.Target] || assocTLAFields[guar.Target] || reverseAssocTLAFields[guar.Target] {
 				continue
 			}
 			// Association-class reify: target is the AC class TLA name (unique host via single-AC rule).
@@ -301,7 +302,7 @@ func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAsso
 				continue
 			}
 			guarCtx := actionCtx.Child("guarantee", fmt.Sprintf("%d", i))
-			return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeInvalidTarget, fmt.Sprintf("action %q guarantee %d: target %q is not a valid attribute, outgoing association, or association class on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
+			return coreerr.NewWithValues(guarCtx, coreerr.ClassGuaranteeInvalidTarget, fmt.Sprintf("action %q guarantee %d: target %q is not a valid attribute, outgoing association, reverse association, or association class on class %q", action.Key.String(), i, guar.Target, c.Key.String()), "Guarantees", guar.Target, "")
 		}
 	}
 	return nil

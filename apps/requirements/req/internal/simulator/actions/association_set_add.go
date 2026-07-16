@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -245,16 +246,26 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	return nil
 }
 
-// applyInferredSecondaryLinks analyzes set-add peer creation against action parameters
-// and the association graph. When a parameter is a live instance of class C and C has
-// exactly one outgoing association to the created peer class, the simulator also links
-// that parameter instance to the new peer. Pure runtime inference — not authored data.
+// applyInferredSecondaryLinks analyzes set-add peer creation against action and
+// creation parameters and the association graph. When a parameter is a live instance
+// of class C and C has exactly one outgoing association to the created peer class,
+// the simulator also links that parameter instance to the new peer.
 func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, newPeerID state.InstanceID) error {
-	if e.peerCatalog == nil || len(pc.ActionParams) == 0 {
+	if e.peerCatalog == nil {
+		return nil
+	}
+	paramSources := make([]object.Object, 0, len(pc.ActionParams)+len(pc.Params))
+	for _, v := range pc.ActionParams {
+		paramSources = append(paramSources, v)
+	}
+	for _, v := range pc.Params {
+		paramSources = append(paramSources, v)
+	}
+	if len(paramSources) == 0 {
 		return nil
 	}
 	simState := e.bindingsBuilder.State()
-	for _, paramVal := range pc.ActionParams {
+	for _, paramVal := range paramSources {
 		fromID, ok := instanceIDFromObject(simState, paramVal)
 		if !ok {
 			continue
@@ -273,6 +284,10 @@ func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, ne
 			continue
 		}
 		assoc := candidates[0]
+		// Skip when already linked (e.g. creation action reverse state_change established it).
+		if slices.Contains(simState.GetLinkedForward(fromID, assoc.Key), newPeerID) {
+			continue
+		}
 		if err := simState.AddLink(assoc.Key, fromID, newPeerID); err != nil {
 			return fmt.Errorf("inferred secondary link after set-add: %w", err)
 		}

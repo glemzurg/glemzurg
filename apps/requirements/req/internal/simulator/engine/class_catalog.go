@@ -559,15 +559,28 @@ func (c *ClassCatalog) OutgoingAssociationByTLAField(
 	fromClassKey identity.Key,
 	tlaField string,
 ) (identity.Key, model_class.Association, bool) {
-	for _, ai := range c.classAssocs[fromClassKey] {
-		if ai.FromClassKey != fromClassKey {
-			continue
+	assocKey, assoc, reverse, found := c.AssociationByNavigableTLAField(fromClassKey, tlaField)
+	if !found || reverse {
+		return identity.Key{}, model_class.Association{}, false
+	}
+	return assocKey, assoc, true
+}
+
+// AssociationByNavigableTLAField resolves a forward (AssocName) or reverse (_AssocName)
+// field on classKey. reverse is true when classKey is the association to-endpoint.
+func (c *ClassCatalog) AssociationByNavigableTLAField(
+	classKey identity.Key,
+	tlaField string,
+) (identity.Key, model_class.Association, bool, bool) {
+	for _, ai := range c.classAssocs[classKey] {
+		if ai.FromClassKey == classKey && model_class.AssociationTLAFieldName(ai.Association.Name) == tlaField {
+			return ai.Association.Key, ai.Association, false, true
 		}
-		if model_class.AssociationTLAFieldName(ai.Association.Name) == tlaField {
-			return ai.Association.Key, ai.Association, true
+		if ai.ToClassKey == classKey && model_class.ReverseAssociationTLAFieldName(ai.Association.Name) == tlaField {
+			return ai.Association.Key, ai.Association, true, true
 		}
 	}
-	return identity.Key{}, model_class.Association{}, false
+	return identity.Key{}, model_class.Association{}, false, false
 }
 
 // OutgoingAssociationsTo lists associations from fromClassKey whose to-class is toClassKey.

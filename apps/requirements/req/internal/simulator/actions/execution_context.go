@@ -146,6 +146,8 @@ type ExecutionContext struct {
 type associationRemovalKey struct {
 	OwnerInstanceID state.InstanceID
 	AssocKey        identity.Key
+	// Reverse is true when the owner is the association to-endpoint (self._Assoc navigation).
+	Reverse bool
 }
 
 // NewExecutionContext creates a new top-level execution context.
@@ -305,12 +307,13 @@ func (ctx *ExecutionContext) RequiresViolations() invariants.ViolationErrors {
 func (ctx *ExecutionContext) SetAssociationRemovedPeers(
 	ownerInstanceID state.InstanceID,
 	assocKey identity.Key,
+	reverse bool,
 	peerIDs []state.InstanceID,
 ) {
 	if len(peerIDs) == 0 {
 		return
 	}
-	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
+	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey, Reverse: reverse}
 	if ctx.associationRemovedPeers == nil {
 		ctx.associationRemovedPeers = make(map[associationRemovalKey][]state.InstanceID)
 	}
