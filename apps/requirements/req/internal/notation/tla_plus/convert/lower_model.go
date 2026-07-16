@@ -3,6 +3,7 @@ package convert
 import (
 	"fmt"
 	"maps"
+	"sort"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -507,6 +508,10 @@ func BuildOutgoingAssociationFieldNameMap(classKey identity.Key, associations ma
 
 // BuildPeerEventNameMap maps peer-class event names reachable via outgoing associations
 // and via object-of action parameters (for peer-domain event set-maps).
+//
+// First registration wins. Outgoing association peers are registered before object-of
+// parameter peers so association set-maps / cascade Delete() keep the association peer's
+// event when an object parameter class reuses the same event name (e.g. Delete).
 func BuildPeerEventNameMap(
 	fromClassKey identity.Key,
 	associations map[identity.Key]model_class.Association,
@@ -516,38 +521,72 @@ func BuildPeerEventNameMap(
 		return nil
 	}
 	m := make(map[string]identity.Key)
-	addPeerClassEvents := func(peerClass model_class.Class) {
-		for _, event := range peerClass.Events {
-			m[event.Name] = event.Key
-			if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
-				m[model_state.SystemEventTLAName(event.Name)] = event.Key
-			}
-		}
-	}
-	for _, assoc := range associations {
-		if assoc.FromClassKey != fromClassKey {
-			continue
-		}
-		if peerClass, ok := classes[assoc.ToClassKey]; ok {
-			addPeerClassEvents(peerClass)
-		}
-	}
-	// Peer-domain events: actions may fire events on instances from object-of parameters.
-	if fromClass, ok := classes[fromClassKey]; ok {
-		for _, action := range fromClass.Actions {
-			for _, param := range action.Parameters {
-				for _, classKey := range objectOfClassKeysInDataType(param.DataType, classes) {
-					if peerClass, ok := classes[classKey]; ok {
-						addPeerClassEvents(peerClass)
-					}
-				}
-			}
-		}
-	}
+	addOutgoingAssociationPeerEvents(m, fromClassKey, associations, classes)
+	addObjectParamPeerEvents(m, fromClassKey, classes)
 	if len(m) == 0 {
 		return nil
 	}
 	return m
+}
+
+// registerPeerClassEvents adds peer event names only when not already present (first wins).
+func registerPeerClassEvents(m map[string]identity.Key, peerClass model_class.Class) {
+	for _, event := range peerClass.Events {
+		if _, exists := m[event.Name]; !exists {
+			m[event.Name] = event.Key
+		}
+		if !model_state.IsSystemCreationEvent(event.Name) && !model_state.IsSystemFinalEvent(event.Name) {
+			continue
+		}
+		sysName := model_state.SystemEventTLAName(event.Name)
+		if _, exists := m[sysName]; !exists {
+			m[sysName] = event.Key
+		}
+	}
+}
+
+func addOutgoingAssociationPeerEvents(
+	m map[string]identity.Key,
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) {
+	assocKeys := make([]identity.Key, 0, len(associations))
+	for k := range associations {
+		assocKeys = append(assocKeys, k)
+	}
+	sort.Slice(assocKeys, func(i, j int) bool {
+		return assocKeys[i].String() < assocKeys[j].String()
+	})
+	for _, assocKey := range assocKeys {
+		assoc := associations[assocKey]
+		if assoc.FromClassKey != fromClassKey {
+			continue
+		}
+		if peerClass, ok := classes[assoc.ToClassKey]; ok {
+			registerPeerClassEvents(m, peerClass)
+		}
+	}
+}
+
+func addObjectParamPeerEvents(
+	m map[string]identity.Key,
+	fromClassKey identity.Key,
+	classes map[identity.Key]model_class.Class,
+) {
+	fromClass, ok := classes[fromClassKey]
+	if !ok {
+		return
+	}
+	for _, action := range fromClass.Actions {
+		for _, param := range action.Parameters {
+			for _, classKey := range objectOfClassKeysInDataType(param.DataType, classes) {
+				if peerClass, ok := classes[classKey]; ok {
+					registerPeerClassEvents(m, peerClass)
+				}
+			}
+		}
+	}
 }
 
 // objectOfClassKeysInDataType collects class keys referenced by object-of atomics in a data type tree.
