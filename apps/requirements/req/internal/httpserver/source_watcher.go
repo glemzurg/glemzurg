@@ -21,8 +21,9 @@ const (
 	InputFormatAIJSON   = "ai/json"
 )
 
-// SourceExtensionsYAML defines file extensions for YAML format.
-var SourceExtensionsYAML = []string{".actor", ".class", ".domain", ".generalization", ".model", ".subdomain", ".uc"}
+// SourceExtensionsYAML defines file extensions for human model format.
+// .marked is included so marking classes for diagram emphasis reloads the HTTP UI.
+var SourceExtensionsYAML = []string{".actor", ".class", ".domain", ".generalization", ".marked", ".model", ".subdomain", ".uc"}
 
 // SourceExtensionsJSON defines file extensions for JSON format.
 var SourceExtensionsJSON = []string{".json"}
