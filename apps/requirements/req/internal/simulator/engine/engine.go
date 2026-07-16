@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
@@ -399,9 +400,37 @@ func buildActionExecutor(
 }
 
 // buildStepParameterGenerator creates surface and nested parameter generators from model named sets.
-func buildStepParameterGenerator(bindingsBuilder *state.BindingsBuilder) (*actions.ParameterBinder, *StepParameterGenerator) {
+func buildStepParameterGenerator(
+	bindingsBuilder *state.BindingsBuilder,
+	catalog *ClassCatalog,
+) (*actions.ParameterBinder, *StepParameterGenerator) {
 	paramBinder := actions.NewParameterBinder()
+	wireParameterLookups(paramBinder, bindingsBuilder, catalog)
 	paramSampler := actions.NewParameterSampler(paramBinder, bindingsBuilder.NamedSetValues())
+	wirePeerFieldDistinctLookup(paramSampler, bindingsBuilder)
+	return paramBinder, NewStepParameterGenerator(paramBinder, paramSampler)
+}
+
+func wireParameterLookups(
+	paramBinder *actions.ParameterBinder,
+	bindingsBuilder *state.BindingsBuilder,
+	catalog *ClassCatalog,
+) {
+	if paramBinder == nil || catalog == nil {
+		return
+	}
+	paramBinder.SetObjectInstanceLookup(func(objectClassRef string) []object.Object {
+		return objectInstancesForClassRef(bindingsBuilder.State(), catalog, objectClassRef)
+	})
+}
+
+func wirePeerFieldDistinctLookup(
+	paramSampler *actions.ParameterSampler,
+	bindingsBuilder *state.BindingsBuilder,
+) {
+	if paramSampler == nil {
+		return
+	}
 	paramSampler.SetPeerFieldDistinctLookup(func(classKey identity.Key, fieldSubKey string) []object.Object {
 		var values []object.Object
 		excludeID := paramSampler.PeerFieldDistinctExcludeInstanceID()
@@ -413,7 +442,46 @@ func buildStepParameterGenerator(bindingsBuilder *state.BindingsBuilder) (*actio
 		}
 		return values
 	})
-	return paramBinder, NewStepParameterGenerator(paramBinder, paramSampler)
+}
+
+// objectInstancesForClassRef returns extent elements for in-scope instances matching
+// an object-of class reference (subkey, display name, or TLA name).
+func objectInstancesForClassRef(
+	simState *state.SimulationState,
+	catalog *ClassCatalog,
+	objectClassRef string,
+) []object.Object {
+	if simState == nil || catalog == nil || objectClassRef == "" {
+		return nil
+	}
+	want := identity.NormalizeSubKey(objectClassRef)
+	var out []object.Object
+	for _, info := range catalog.AllScopedClasses() {
+		if !objectClassRefMatches(want, objectClassRef, info) {
+			continue
+		}
+		for _, inst := range simState.InstancesByClass(info.ClassKey) {
+			out = append(out, state.ClassExtentElement(inst.ID, inst.Attributes))
+		}
+		return out
+	}
+	return nil
+}
+
+func objectClassRefMatches(wantNorm, objectClassRef string, info *ClassInfo) bool {
+	if info == nil {
+		return false
+	}
+	if info.ClassKey.SubKey == objectClassRef || info.ClassKey.String() == objectClassRef {
+		return true
+	}
+	if identity.NormalizeSubKey(info.Class.Name) == wantNorm {
+		return true
+	}
+	if model_class.ClassTLAName(info.Class.Name) == objectClassRef {
+		return true
+	}
+	return identity.NormalizeSubKey(model_class.ClassTLAName(info.Class.Name)) == wantNorm
 }
 
 // buildStepExecutor creates the step executor, action selector, and liveness checker.
@@ -425,7 +493,7 @@ func buildStepExecutor(
 	rng *rand.Rand,
 	simulationCoverage *SimulationCoverageTracker,
 ) (*StepExecutor, *ActionSelector, *LivenessChecker) {
-	paramBinder, paramGen := buildStepParameterGenerator(bindingsBuilder)
+	paramBinder, paramGen := buildStepParameterGenerator(bindingsBuilder, catalog)
 	stateActionExec := NewStateActionExecutor(actionExecutor)
 	chainHandler := NewCreationChainHandler(catalog, actionExecutor, stateActionExec, paramBinder, rng)
 	stepExecutor := NewStepExecutor(StepExecutorDeps{

@@ -23,12 +23,27 @@ const (
 	spanDefaultHalfWidth = 100
 )
 
+// ObjectInstanceLookup returns live class-extent elements for an object-of class
+// reference (class subkey, display name, or TLA name). Empty means no instances
+// (or class out of scope) — object parameters then sample as empty set.
+type ObjectInstanceLookup func(objectClassRef string) []object.Object
+
 // ParameterBinder validates and generates parameter values for actions and queries.
-type ParameterBinder struct{}
+type ParameterBinder struct {
+	objectLookup ObjectInstanceLookup
+}
 
 // NewParameterBinder creates a new parameter binder.
 func NewParameterBinder() *ParameterBinder {
 	return &ParameterBinder{}
+}
+
+// SetObjectInstanceLookup supplies live instances for object-of parameter sampling.
+func (b *ParameterBinder) SetObjectInstanceLookup(lookup ObjectInstanceLookup) {
+	if b == nil {
+		return
+	}
+	b.objectLookup = lookup
 }
 
 // BindParameters validates that all required parameters are provided and returns
@@ -59,7 +74,7 @@ func (b *ParameterBinder) GenerateRandomParameters(
 	result := make(map[string]object.Object)
 
 	for _, paramDef := range paramDefs {
-		result[paramDef.Name] = sampleParameterValue(paramDef, rng)
+		result[paramDef.Name] = b.sampleParameterValue(paramDef, rng)
 	}
 
 	coerceSampledParameters(paramDefs, result)
@@ -68,19 +83,19 @@ func (b *ParameterBinder) GenerateRandomParameters(
 
 // sampleParameterValue generates a random value for one action/query parameter.
 // Nullable parameters may be NULL; non-nullable parameters never are.
-func sampleParameterValue(param model_state.Parameter, rng *rand.Rand) object.Object {
+func (b *ParameterBinder) sampleParameterValue(param model_state.Parameter, rng *rand.Rand) object.Object {
 	if param.Nullable && rng.Intn(nullableNullSampleDenom) == 0 {
 		return evaluator.EMPTY_SET
 	}
-	return generateRandomValue(param.DataType, rng)
+	return b.generateRandomValue(param.DataType, rng)
 }
 
 // generateRandomValue creates a random non-null value based on data type constraints.
-func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+func (b *ParameterBinder) generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
 	if dataType == nil {
 		return randomDefaultNumber(rng)
 	}
-	if coll := generateRandomCollection(dataType, rng); coll != nil {
+	if coll := b.generateRandomCollection(dataType, rng); coll != nil {
 		return coll
 	}
 	if values := model_data_type.EnumerationValues(dataType); len(values) > 0 {
@@ -92,11 +107,19 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 	if dataType.Atomic == nil {
 		return randomDefaultNumber(rng)
 	}
-	return generateAtomicRandomValue(dataType, dataType.Atomic, rng)
+	return b.generateAtomicRandomValue(dataType, dataType.Atomic, rng)
+}
+
+// generateRandomValue package helper for tests without a binder instance.
+func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	return (&ParameterBinder{}).generateRandomValue(dataType, rng)
 }
 
 // generateRandomCollection samples set/tuple/record collections; nil when dataType is atomic.
-func generateRandomCollection(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+// Nested collection elements use package generateRandomValue (no object lookup); object
+// parameters are almost always top-level action params sampled via sampleParameterValue.
+func (b *ParameterBinder) generateRandomCollection(dataType *model_data_type.DataType, rng *rand.Rand) object.Object {
+	_ = b
 	switch dataType.CollectionType {
 	case model_data_type.COLLECTION_TYPE_UNORDERED:
 		return randomUnorderedCollection(dataType, rng)
@@ -125,7 +148,7 @@ func generateFromTypeSpec(dataType *model_data_type.DataType, rng *rand.Rand) (o
 	}
 }
 
-func generateAtomicRandomValue(
+func (b *ParameterBinder) generateAtomicRandomValue(
 	dataType *model_data_type.DataType,
 	atomic *model_data_type.Atomic,
 	rng *rand.Rand,
@@ -147,12 +170,31 @@ func generateAtomicRandomValue(
 	case model_data_type.CONSTRAINT_TYPE_DATETIME:
 		return randomDateTimeValue(rng)
 	case model_data_type.CONSTRAINT_TYPE_REFERENCE, model_data_type.CONSTRAINT_TYPE_OBJECT:
-		// Object/reference parameters without simulation rules bind as empty set (NULL).
-		// Out-of-scope class extents are empty; in-scope picks use authored simulation rules.
-		return evaluator.EMPTY_SET
+		var lookup ObjectInstanceLookup
+		if b != nil {
+			lookup = b.objectLookup
+		}
+		return sampleObjectOrReferenceValue(atomic, rng, lookup)
 	default:
 		return randomDefaultNumber(rng)
 	}
+}
+
+// sampleObjectOrReferenceValue picks a live instance when the object class has
+// instances in scope; otherwise returns empty set (out-of-scope / no instances).
+func sampleObjectOrReferenceValue(
+	atomic *model_data_type.Atomic,
+	rng *rand.Rand,
+	lookup ObjectInstanceLookup,
+) object.Object {
+	if atomic != nil && atomic.ConstraintType == model_data_type.CONSTRAINT_TYPE_OBJECT &&
+		atomic.ObjectClassKey != nil && lookup != nil {
+		instances := lookup(*atomic.ObjectClassKey)
+		if len(instances) > 0 {
+			return instances[rng.Intn(len(instances))]
+		}
+	}
+	return evaluator.EMPTY_SET
 }
 
 // collectionElementType is the type of one collection member.
