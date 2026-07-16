@@ -162,35 +162,22 @@ func associationForSurface(assoc model_class.Association, resolved *ResolvedSurf
 }
 
 // scopeModelInvariants filters model invariants to those relevant to the resolved surface.
+// Uses association-aware dependency detection so navigations (not only bare class names)
+// pull in out-of-scope peers and exclude the invariant when any participant is missing.
 func scopeModelInvariants(model *core.Model, resolved *ResolvedSurface) {
-	inScopeClassNames, allClassNames := classNameSetsForScoping(model, resolved)
-	included, excluded := ScopeInvariantsWithAllClasses(model.Invariants, inScopeClassNames, allClassNames)
+	if len(model.Invariants) == 0 {
+		resolved.ModelInvariants = nil
+		return
+	}
+	scope := newSurfaceClassScope(model, resolved)
+	// Model invariants have no owning class; association reverse fields still resolve via nav maps.
+	var owner identity.Key
+	included, excluded := filterLogicsForSurface(model.Invariants, owner, scope)
 	resolved.ModelInvariants = included
 	for _, inv := range excluded {
 		resolved.Warnings = append(resolved.Warnings,
-			fmt.Sprintf("invariant excluded (references out-of-scope class): %s", inv.Description))
+			fmt.Sprintf("model invariant excluded (references out-of-scope class): %s", invDescription(inv)))
 	}
-}
-
-// classNameSetsForScoping builds in-scope and full-model name sets for invariant
-// filtering. Both display names and ClassTLAName forms are included so field
-// navigations like AccountBalanceChange match out-of-scope association classes.
-func classNameSetsForScoping(model *core.Model, resolved *ResolvedSurface) (inScope, all map[string]bool) {
-	inScope = make(map[string]bool, len(resolved.Classes)*2)
-	for _, class := range resolved.Classes {
-		inScope[class.Name] = true
-		inScope[model_class.ClassTLAName(class.Name)] = true
-	}
-	all = make(map[string]bool)
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				all[class.Name] = true
-				all[model_class.ClassTLAName(class.Name)] = true
-			}
-		}
-	}
-	return inScope, all
 }
 
 // addAllNonRealizedClasses adds all classes from non-realized domains.
