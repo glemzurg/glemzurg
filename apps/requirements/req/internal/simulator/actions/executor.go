@@ -153,8 +153,13 @@ func NewActionExecutor(
 	peerCatalog PeerCreationCatalog,
 	rng *rand.Rand,
 ) *ActionExecutor {
+	// Prefer peer catalog extents (includes out-of-scope empty class sets) when available.
 	var classNameMap map[identity.Key]string
-	if runtime.Checker != nil {
+	if src, ok := peerCatalog.(interface {
+		ClassNameMap() map[identity.Key]string
+	}); ok {
+		classNameMap = src.ClassNameMap()
+	} else if runtime.Checker != nil {
 		classNameMap = runtime.Checker.ClassNameMap()
 	}
 	return &ActionExecutor{

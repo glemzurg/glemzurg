@@ -88,14 +88,45 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
-	catalog := setupClassCatalog(activeModel)
-	catalog.SetSurfaceUnavailableMembers(unavailable)
-
+	catalog := setupCatalogForSurface(model, activeModel, config, unavailable)
 	core, err := wireSimulationCore(activeModel, catalog, rng)
 	if err != nil {
 		return nil, err
 	}
+	includeOutOfScopeExtents(core, catalog)
 
+	return newWiredSimulationEngine(config, catalog, core, scopeEntries), nil
+}
+
+// setupCatalogForSurface builds the scoped catalog and, when a surface is set,
+// registers full-model empty extents and boundary associations for OOS peers.
+func setupCatalogForSurface(
+	fullModel, activeModel *core.Model,
+	config SimulationConfig,
+	unavailable []surface.UnavailableMember,
+) *ClassCatalog {
+	catalog := setupClassCatalog(activeModel)
+	if config.Surface != nil && !config.Surface.IsEmpty() {
+		catalog.RegisterOutOfScopeMetadata(fullModel)
+	}
+	catalog.SetSurfaceUnavailableMembers(unavailable)
+	return catalog
+}
+
+// includeOutOfScopeExtents lets invariant evaluation bind empty sets for OOS class names.
+func includeOutOfScopeExtents(core *simulationCore, catalog *ClassCatalog) {
+	if core == nil || core.checkers == nil || core.checkers.invariantChecker == nil {
+		return
+	}
+	core.checkers.invariantChecker.IncludeClassExtents(catalog.ClassNameMap())
+}
+
+func newWiredSimulationEngine(
+	config SimulationConfig,
+	catalog *ClassCatalog,
+	core *simulationCore,
+	scopeEntries []surface.ScopeEntry,
+) *SimulationEngine {
 	return &SimulationEngine{
 		config:              config,
 		simState:            core.simState,
@@ -109,7 +140,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		stateMachineChecker: NewStateMachineChecker(catalog),
 		simulationCoverage:  core.simulationCoverage,
 		scopeEntries:        scopeEntries,
-	}, nil
+	}
 }
 
 // simulationCore holds wired runtime components after catalog setup.

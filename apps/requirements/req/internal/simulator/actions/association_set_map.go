@@ -97,8 +97,15 @@ func (e *ActionExecutor) queueAssociationSetMap(
 	if err != nil {
 		return false, err
 	}
-	if mapTarget == nil || eventCall == nil {
+	if mapTarget == nil {
+		if eventCall != nil {
+			// Set-map form matched but peer class is out of scope — ignore.
+			return true, nil
+		}
 		// Not an association set-map (e.g. endpoint image set-comprehension).
+		return false, nil
+	}
+	if eventCall == nil {
 		return false, nil
 	}
 	linked := linkedAssociationPeerEndpoints(e.bindingsBuilder.State(), instance.ID, mapTarget.assoc)
@@ -173,10 +180,8 @@ func (e *ActionExecutor) resolveAssociationSetMapTarget(
 	}
 	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
 	if !ok {
-		return nil, nil, fmt.Errorf(
-			"association set-map guarantee on %q: peer class %s not found",
-			target, assoc.ToClassKey.String(),
-		)
+		// Known association, peer class outside surface: no-op (eventCall non-nil signals handled).
+		return nil, eventCall, nil
 	}
 	return &associationSetMapTarget{assocKey: assocKey, assoc: assoc, toClass: toClass}, eventCall, nil
 }

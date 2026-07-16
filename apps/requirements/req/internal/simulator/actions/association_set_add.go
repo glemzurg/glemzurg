@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 
@@ -12,6 +13,10 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
+
+// errPeerClassOutOfScope means the association is known but its peer class is not on the surface.
+// Callers treat this as a successful no-op (empty-set / ignore-link default).
+var errPeerClassOutOfScope = errors.New("peer class out of simulation scope")
 
 func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	ctx *ExecutionContext,
@@ -26,6 +31,10 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 		return false, nil
 	}
 	assocTarget, err := e.resolveAssociationSetAddTarget(instance, target, assocRef)
+	if errors.Is(err, errPeerClassOutOfScope) {
+		// Out-of-scope peer class: association matched but peer is not on the surface.
+		return true, nil
+	}
 	if err != nil {
 		return false, err
 	}
@@ -81,10 +90,8 @@ func (e *ActionExecutor) resolveAssociationSetAddTarget(
 	}
 	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
 	if !ok {
-		return nil, fmt.Errorf(
-			"association set-add guarantee on %q: peer class %s not found",
-			target, assoc.ToClassKey.String(),
-		)
+		// Association is known but peer class is outside the simulation surface.
+		return nil, errPeerClassOutOfScope
 	}
 	return &associationSetAddTarget{assoc: assoc, toClass: toClass}, nil
 }

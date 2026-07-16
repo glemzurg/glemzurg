@@ -95,6 +95,22 @@ func (c *InvariantChecker) ClassNameMap() map[identity.Key]string {
 	return c.classNameMap
 }
 
+// IncludeClassExtents merges additional class extent names (e.g. out-of-scope classes
+// that bind as empty sets) into the checker’s class name map for evaluation bindings.
+func (c *InvariantChecker) IncludeClassExtents(names map[identity.Key]string) {
+	if c == nil || len(names) == 0 {
+		return
+	}
+	if c.classNameMap == nil {
+		c.classNameMap = make(map[identity.Key]string, len(names))
+	}
+	for k, v := range names {
+		if _, ok := c.classNameMap[k]; !ok {
+			c.classNameMap[k] = v
+		}
+	}
+}
+
 // SetEvalContext supplies the registry-backed context for global function calls.
 func (c *InvariantChecker) SetEvalContext(ctx *evaluator.EvalContext) {
 	c.evalCtx = ctx

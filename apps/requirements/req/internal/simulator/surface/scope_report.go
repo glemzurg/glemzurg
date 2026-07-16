@@ -1,6 +1,7 @@
 package surface
 
 import (
+	"maps"
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -90,9 +91,7 @@ func AllNonRealizedClasses(model *core.Model) map[identity.Key]model_class.Class
 			continue
 		}
 		for _, subdomain := range domain.Subdomains {
-			for classKey, class := range subdomain.Classes {
-				out[classKey] = class
-			}
+			maps.Copy(out, subdomain.Classes)
 		}
 	}
 	return out

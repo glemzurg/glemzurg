@@ -220,63 +220,72 @@ func (r *SurfaceReport) FormatText() string {
 	if r == nil {
 		return "Simulation scope\n\n  (empty)\n\nSimulation surface\n\n  (empty)\n"
 	}
-
 	var b strings.Builder
-	b.WriteString("Simulation scope\n")
-	if len(r.Scope) == 0 {
-		b.WriteString("\n  (empty)\n")
-	} else {
-		for _, entry := range r.Scope {
-			switch entry.Kind {
-			case surface.ScopeSubdomain:
-				fmt.Fprintf(&b, "  subdomain %s\n", entry.Path)
-			case surface.ScopeClass:
-				fmt.Fprintf(&b, "  class %s\n", entry.Path)
-			default:
-				fmt.Fprintf(&b, "  %s\n", entry.Path)
-			}
-		}
-	}
-
-	b.WriteString("\nSimulation surface\n")
-	if len(r.Classes) == 0 {
-		b.WriteString("\n  (empty)\n")
-	} else {
-		for _, classEntry := range r.Classes {
-			fmt.Fprintf(&b, "\n  %s (%s)\n", classEntry.ClassKey, classEntry.ClassName)
-
-			for _, ev := range classEntry.CreationEvents {
-				b.WriteString(formatSurfaceEventLine("creation", ev))
-			}
-
-			for _, stateEntry := range classEntry.States {
-				fmt.Fprintf(&b, "    state %s:\n", stateEntry.StateName)
-				for _, ev := range stateEntry.Events {
-					b.WriteString(formatSurfaceEventLine("      transition", ev))
-				}
-				for _, action := range stateEntry.DoActions {
-					fmt.Fprintf(&b, "      do-action: %s\n", action.ActionName)
-				}
-			}
-
-			for _, query := range classEntry.Queries {
-				fmt.Fprintf(&b, "    query: %s\n", query.QueryName)
-			}
-
-			for _, attr := range classEntry.DerivedAttributes {
-				fmt.Fprintf(&b, "    derived: %s\n", attr.AttributeName)
-			}
-		}
-	}
-
-	if len(r.UnavailableMembers) > 0 {
-		b.WriteString("\n  off-surface (out-of-scope association data):\n")
-		for _, m := range r.UnavailableMembers {
-			fmt.Fprintf(&b, "    %s %s.%s — %s\n", m.Kind, m.ClassName, m.MemberName, m.Reason)
-		}
-	}
-
+	writeSurfaceScopeSection(&b, r.Scope)
+	writeSurfaceDriversSection(&b, r.Classes)
+	writeSurfaceUnavailableSection(&b, r.UnavailableMembers)
 	return b.String()
+}
+
+func writeSurfaceScopeSection(b *strings.Builder, scope []surface.ScopeEntry) {
+	b.WriteString("Simulation scope\n")
+	if len(scope) == 0 {
+		b.WriteString("\n  (empty)\n")
+		return
+	}
+	for _, entry := range scope {
+		switch entry.Kind {
+		case surface.ScopeSubdomain:
+			fmt.Fprintf(b, "  subdomain %s\n", entry.Path)
+		case surface.ScopeClass:
+			fmt.Fprintf(b, "  class %s\n", entry.Path)
+		default:
+			fmt.Fprintf(b, "  %s\n", entry.Path)
+		}
+	}
+}
+
+func writeSurfaceDriversSection(b *strings.Builder, classes []SurfaceClassReport) {
+	b.WriteString("\nSimulation surface\n")
+	if len(classes) == 0 {
+		b.WriteString("\n  (empty)\n")
+		return
+	}
+	for _, classEntry := range classes {
+		writeSurfaceClassDrivers(b, classEntry)
+	}
+}
+
+func writeSurfaceClassDrivers(b *strings.Builder, classEntry SurfaceClassReport) {
+	fmt.Fprintf(b, "\n  %s (%s)\n", classEntry.ClassKey, classEntry.ClassName)
+	for _, ev := range classEntry.CreationEvents {
+		b.WriteString(formatSurfaceEventLine("creation", ev))
+	}
+	for _, stateEntry := range classEntry.States {
+		fmt.Fprintf(b, "    state %s:\n", stateEntry.StateName)
+		for _, ev := range stateEntry.Events {
+			b.WriteString(formatSurfaceEventLine("      transition", ev))
+		}
+		for _, action := range stateEntry.DoActions {
+			fmt.Fprintf(b, "      do-action: %s\n", action.ActionName)
+		}
+	}
+	for _, query := range classEntry.Queries {
+		fmt.Fprintf(b, "    query: %s\n", query.QueryName)
+	}
+	for _, attr := range classEntry.DerivedAttributes {
+		fmt.Fprintf(b, "    derived: %s\n", attr.AttributeName)
+	}
+}
+
+func writeSurfaceUnavailableSection(b *strings.Builder, members []SurfaceUnavailableMemberReport) {
+	if len(members) == 0 {
+		return
+	}
+	b.WriteString("\n  off-surface (out-of-scope association data):\n")
+	for _, m := range members {
+		fmt.Fprintf(b, "    %s %s.%s — %s\n", m.Kind, m.ClassName, m.MemberName, m.Reason)
+	}
 }
 
 func formatSurfaceEventLine(prefix string, ev SurfaceEventReport) string {

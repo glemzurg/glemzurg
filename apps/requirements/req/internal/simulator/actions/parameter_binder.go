@@ -147,7 +147,9 @@ func generateAtomicRandomValue(
 	case model_data_type.CONSTRAINT_TYPE_DATETIME:
 		return randomDateTimeValue(rng)
 	case model_data_type.CONSTRAINT_TYPE_REFERENCE, model_data_type.CONSTRAINT_TYPE_OBJECT:
-		return randomString(rng)
+		// Object/reference parameters without simulation rules bind as empty set (NULL).
+		// Out-of-scope class extents are empty; in-scope picks use authored simulation rules.
+		return evaluator.EMPTY_SET
 	default:
 		return randomDefaultNumber(rng)
 	}

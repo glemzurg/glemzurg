@@ -134,7 +134,8 @@ func recordPrimedWrites(classKey identity.Key, assignments map[state.InstanceID]
 }
 
 // checkAssociationCoverage verifies every in-scope association had at least
-// one link created during the simulation.
+// one link created during the simulation. Boundary associations (one endpoint
+// outside the surface) are ignored — they exist only so link guarantees no-op.
 func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) invariants.ViolationErrors {
 	if result.FinalState == nil {
 		return nil
@@ -147,6 +148,10 @@ func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) in
 
 	var violations invariants.ViolationErrors
 	for _, assocInfo := range lc.catalog.AllAssociations() {
+		// Both endpoints must be on the surface for association liveness to apply.
+		if !lc.catalog.IsClassInScope(assocInfo.FromClassKey) || !lc.catalog.IsClassInScope(assocInfo.ToClassKey) {
+			continue
+		}
 		assocKeyStr := evaluator.AssociationKey(assocInfo.Association.Key.String())
 		if !linkedAssocs[assocKeyStr] {
 			violations = append(violations, invariants.NewLivenessAssociationNotLinkedViolation(

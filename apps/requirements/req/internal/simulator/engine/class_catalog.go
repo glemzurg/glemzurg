@@ -1,9 +1,9 @@
 package engine
 
 import (
+	"maps"
 	"slices"
 	"sort"
-	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -47,6 +47,10 @@ type ClassCatalog struct {
 	associations []AssociationInfo
 	classAssocs  map[identity.Key][]AssociationInfo // classKey → associations involving it
 
+	// extentClassNames maps every full-model class key to its TLA extent name.
+	// Out-of-scope classes bind as empty sets so ClassRef never fails with "not found".
+	extentClassNames map[identity.Key]string
+
 	associationClasses map[identity.Key]*AssociationClassInfo
 
 	// Simulator-local SentBy/CalledBy data.
@@ -66,6 +70,7 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 	catalog := &ClassCatalog{
 		classes:                   make(map[identity.Key]*ClassInfo),
 		classAssocs:               make(map[identity.Key][]AssociationInfo),
+		extentClassNames:          make(map[identity.Key]string),
 		eventSentBy:               make(map[identity.Key][]identity.Key),
 		actionCalledBy:            make(map[identity.Key][]identity.Key),
 		queryCalledBy:             make(map[identity.Key][]identity.Key),
@@ -79,6 +84,7 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
 				catalog.classes[class.Key] = buildScopedClassInfo(class)
+				catalog.extentClassNames[class.Key] = model_class.ClassTLAName(class.Name)
 			}
 		}
 	}
@@ -87,6 +93,73 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 	catalog.buildAssociationInfo(model)
 
 	return catalog
+}
+
+// RegisterOutOfScopeMetadata records full-model class extents and boundary associations
+// so out-of-scope peers evaluate as empty sets and link guarantees can no-op.
+// Call with the unfiltered model after building the catalog from the surface-filtered model.
+// Model-agnostic: every class and association is treated the same way.
+func (c *ClassCatalog) RegisterOutOfScopeMetadata(fullModel *core.Model) {
+	if fullModel == nil {
+		return
+	}
+	for _, domain := range fullModel.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for classKey, class := range subdomain.Classes {
+				if _, ok := c.extentClassNames[classKey]; !ok {
+					c.extentClassNames[classKey] = model_class.ClassTLAName(class.Name)
+				}
+			}
+		}
+	}
+	c.addBoundaryAssociations(fullModel)
+}
+
+// addBoundaryAssociations registers associations with exactly one endpoint in scope.
+// They are not in the filtered model (multiplicity is not enforced across the boundary)
+// but catalog resolution still finds them so link guarantees no-op instead of hard-failing.
+func (c *ClassCatalog) addBoundaryAssociations(fullModel *core.Model) {
+	known := make(map[identity.Key]bool, len(c.associations))
+	for _, ai := range c.associations {
+		known[ai.Association.Key] = true
+	}
+	for _, assoc := range fullModel.GetClassAssociations() {
+		if known[assoc.Key] {
+			continue
+		}
+		_, fromIn := c.classes[assoc.FromClassKey]
+		_, toIn := c.classes[assoc.ToClassKey]
+		if fromIn == toIn {
+			// Both in scope already handled, or both out of scope (irrelevant to surface).
+			continue
+		}
+		// Boundary association: keep AC key only when the association class is in scope.
+		surfaceAssoc := assoc
+		if assoc.AssociationClassKey != nil {
+			if _, acIn := c.classes[*assoc.AssociationClassKey]; !acIn {
+				surfaceAssoc.AssociationClassKey = nil
+			}
+		}
+		c.addAssociationInfo(AssociationInfo{
+			Association:   surfaceAssoc,
+			FromClassKey:  assoc.FromClassKey,
+			ToClassKey:    assoc.ToClassKey,
+			MandatoryTo:   assoc.ToMultiplicity.LowerBound >= 1,
+			MandatoryFrom: assoc.FromMultiplicity.LowerBound >= 1,
+			MinTo:         assoc.ToMultiplicity.LowerBound,
+			MinFrom:       assoc.FromMultiplicity.LowerBound,
+		})
+		known[assoc.Key] = true
+	}
+	sort.Slice(c.associations, func(i, j int) bool {
+		return c.associations[i].Association.Key.String() < c.associations[j].Association.Key.String()
+	})
+}
+
+// IsClassInScope reports whether classKey is on the simulation surface (may hold instances).
+func (c *ClassCatalog) IsClassInScope(classKey identity.Key) bool {
+	_, ok := c.classes[classKey]
+	return ok
 }
 
 // SetSurfaceUnavailableMembers records derived attributes and queries that depend on
@@ -786,11 +859,14 @@ func (c *ClassCatalog) hasSimulatableSender(senders []identity.Key) bool {
 }
 
 // ClassNameMap returns class keys mapped to TLA extent names for simulation bindings.
+// Includes out-of-scope classes (empty extents) so ClassRef never errors with "not found".
 // Spaces are stripped so "Account Definition" binds as AccountDefinition.
 func (c *ClassCatalog) ClassNameMap() map[identity.Key]string {
-	names := make(map[identity.Key]string, len(c.classes))
+	names := make(map[identity.Key]string, len(c.extentClassNames)+len(c.classes))
+	maps.Copy(names, c.extentClassNames)
+	// Prefer live class display names when present (should match extent names).
 	for classKey, info := range c.classes {
-		names[classKey] = strings.ReplaceAll(info.Class.Name, " ", "")
+		names[classKey] = model_class.ClassTLAName(info.Class.Name)
 	}
 	return names
 }

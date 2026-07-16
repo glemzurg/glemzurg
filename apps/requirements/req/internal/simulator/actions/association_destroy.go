@@ -111,10 +111,8 @@ func (e *ActionExecutor) resolveDestroyGuaranteeTarget(
 	}
 	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
 	if !ok {
-		return nil, model_state.Event{}, false, fmt.Errorf(
-			"destroy guarantee on %q: peer class %s not found",
-			target, assoc.ToClassKey.String(),
-		)
+		// Peer class outside surface: no peers to destroy — no-op (eventFound=false, no error).
+		return &associationSetMapTarget{assocKey: assocKey, assoc: assoc}, model_state.Event{}, false, nil
 	}
 	event, ok := e.peerCatalog.PeerEvent(assoc.ToClassKey, eventCall.EventKey)
 	if !ok {
