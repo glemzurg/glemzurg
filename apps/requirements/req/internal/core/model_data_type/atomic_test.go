@@ -71,6 +71,19 @@ func TestParseAtomic(t *testing.T) {
 			errorMessage: "",
 		},
 		{
+			// Slash appears in human rules (e.g. "state/province"); Content must accept it.
+			name:  "ref of with slash in content",
+			input: "ref of ISO 3166-2 subdivision codes or ISO 3166-1 two-letter codes if no state/province.",
+			expected: &DataType{
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      t_StrPtr("ISO 3166-2 subdivision codes or ISO 3166-1 two-letter codes if no state/province."),
+				},
+			},
+			errorMessage: "",
+		},
+		{
 			name:  "reference",
 			input: "reference from listed somewhere else",
 			expected: &DataType{

@@ -1151,16 +1151,16 @@ var g = &grammar{
 		},
 		{
 			name: "Content",
-			pos:  position{line: 285, col: 1, offset: 7099},
+			pos:  position{line: 286, col: 1, offset: 7198},
 			expr: &actionExpr{
-				pos: position{line: 285, col: 12, offset: 7110},
+				pos: position{line: 286, col: 12, offset: 7209},
 				run: (*parser).callonContent1,
 				expr: &oneOrMoreExpr{
-					pos: position{line: 285, col: 12, offset: 7110},
+					pos: position{line: 286, col: 12, offset: 7209},
 					expr: &charClassMatcher{
-						pos:        position{line: 285, col: 12, offset: 7110},
-						val:        "[a-zA-Z0-9_.,#@!*=+ -]",
-						chars:      []rune{'_', '.', ',', '#', '@', '!', '*', '=', '+', ' ', '-'},
+						pos:        position{line: 286, col: 12, offset: 7209},
+						val:        "[a-zA-Z0-9_.,#@!*=+/ -]",
+						chars:      []rune{'_', '.', ',', '#', '@', '!', '*', '=', '+', '/', ' ', '-'},
 						ranges:     []rune{'a', 'z', 'A', 'Z', '0', '9'},
 						ignoreCase: false,
 						inverted:   false,
@@ -1170,11 +1170,11 @@ var g = &grammar{
 		},
 		{
 			name: "ws",
-			pos:  position{line: 289, col: 1, offset: 7168},
+			pos:  position{line: 290, col: 1, offset: 7268},
 			expr: &oneOrMoreExpr{
-				pos: position{line: 289, col: 7, offset: 7174},
+				pos: position{line: 290, col: 7, offset: 7274},
 				expr: &charClassMatcher{
-					pos:        position{line: 289, col: 7, offset: 7174},
+					pos:        position{line: 290, col: 7, offset: 7274},
 					val:        "[ ]",
 					chars:      []rune{' '},
 					ignoreCase: false,

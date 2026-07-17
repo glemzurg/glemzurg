@@ -282,7 +282,8 @@ UnconstrainedType <- "unconstrained" {
 }
 
 // Dash is last so the class is literal characters only; a mid-class dash would range '9'..'_' and swallow ';', ':', brackets, etc.
-Content <- [a-zA-Z0-9_.,#@!*=+ -]+ {
+// Slash allowed so human "ref of … state/province …" rules parse (not only words and spaces).
+Content <- [a-zA-Z0-9_.,#@!*=+/ -]+ {
 	return string(c.text), nil
 } 
 
