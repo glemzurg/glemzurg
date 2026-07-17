@@ -508,12 +508,13 @@ func buildStepExecutor(
 		BindingsBuilder:    bindingsBuilder,
 	})
 
-	return stepExecutor, NewActionSelector(catalog, derivedEval, bindingsBuilder, rng), NewLivenessChecker(catalog)
+	return stepExecutor, NewActionSelector(catalog, derivedEval, bindingsBuilder, paramGen.Sampler, rng), NewLivenessChecker(catalog)
 }
 
 // Run executes the simulation loop and returns the result.
 func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	result := &SimulationResult{}
+	domainExhaustedSkips := 0
 
 	for step := range e.config.MaxSteps {
 		// Pick the next action.
@@ -526,8 +527,19 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 		// Execute the step (association structural checks run after nested work inside the step).
 		stepResult, err := e.stepExecutor.Execute(pending, e.simState, step+1)
 		if err != nil {
+			// Domain exhausted after selection: skip and reselect (eligibility filter
+			// should prevent this; soft-skip avoids hard failure if state raced).
+			if isNamedSetDomainExhaustedError(err) {
+				domainExhaustedSkips++
+				if domainExhaustedSkips > e.config.MaxSteps {
+					result.TerminationReason = "deadlock"
+					break
+				}
+				continue
+			}
 			return nil, fmt.Errorf("step %d execution error: %w", step+1, err)
 		}
+		domainExhaustedSkips = 0
 
 		// Class/attribute invariants after the full step graph is built (including nesting).
 		// Model + association structural checks run in the step executor after nesting.

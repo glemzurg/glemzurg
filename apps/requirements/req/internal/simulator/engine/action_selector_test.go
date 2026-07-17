@@ -29,7 +29,7 @@ func (s *ActionSelectorSuite) TestCreationEligibleWhenNoInstancesExist() {
 
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, nil, nil, rng)
+	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
 	simState := state.NewSimulationState()
 
@@ -46,7 +46,7 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, nil, nil, rng)
+	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -105,7 +105,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, nil, nil, rng)
+	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
 	// No creation transitions and no instances → deadlock.
 	simState := state.NewSimulationState()
@@ -119,7 +119,7 @@ func (s *ActionSelectorSuite) TestCreationBlockedUntilObjectParamClassHasInstanc
 	ownerClass, ownerKey, peerClass, peerKey := ownerWithObjectParamPeer()
 	model := testModel(classEntry(ownerClass, ownerKey), classEntry(peerClass, peerKey))
 	catalog := NewClassCatalog(model)
-	selector := NewActionSelector(catalog, nil, state.NewBindingsBuilder(state.NewSimulationState()), rand.New(rand.NewSource(1))) //nolint:gosec
+	selector := NewActionSelector(catalog, nil, state.NewBindingsBuilder(state.NewSimulationState()), nil, rand.New(rand.NewSource(1))) //nolint:gosec
 
 	simState := state.NewSimulationState()
 
@@ -155,7 +155,7 @@ func (s *ActionSelectorSuite) TestCreationAllowedWhenObjectParamClassOutOfScope(
 	active := testModel(classEntry(ownerClass, ownerKey))
 	catalog := NewClassCatalog(active)
 	catalog.RegisterOutOfScopeMetadata(full)
-	selector := NewActionSelector(catalog, nil, nil, rand.New(rand.NewSource(1))) //nolint:gosec
+	selector := NewActionSelector(catalog, nil, nil, nil, rand.New(rand.NewSource(1))) //nolint:gosec
 
 	simState := state.NewSimulationState()
 	action, err := selector.SelectAction(simState)
@@ -250,7 +250,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleOnExistingInstances() {
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	selector := NewActionSelector(catalog, nil, nil, rng)
+	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()

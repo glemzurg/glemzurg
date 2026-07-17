@@ -331,18 +331,19 @@ func (s *ParameterSampler) sampleUntilRequiresSatisfied(
 	prep *parameterSamplingPrep,
 	rng *rand.Rand,
 ) (map[string]object.Object, error) {
+	if err := s.errIfNamedSetDomainExhausted(owner, paramDefs); err != nil {
+		return nil, err
+	}
+
 	var lastAttempt string
 	var lastRejectReason string
 
 	for range maxParameterSampleAttempts {
-		result := prep.generate(paramDefs, rng)
-		if s.generateOverride == nil {
-			applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName, s.peerFieldDistinctLookup)
-			if samplingPeerFieldDistinctConflict(result, prep.constraints, s.peerFieldDistinctLookup) {
-				lastAttempt = formatSampledParameters(result)
-				lastRejectReason = "peer field value already used by another instance"
-				continue
-			}
+		result, rejectReason := s.generateConstrainedSample(paramDefs, prep, rng)
+		if rejectReason != "" {
+			lastAttempt = formatSampledParameters(result)
+			lastRejectReason = rejectReason
+			continue
 		}
 		enforceParameterNullability(result, paramDefs, rng)
 		coerceSampledParameters(paramDefs, result)
@@ -364,6 +365,41 @@ func (s *ParameterSampler) sampleUntilRequiresSatisfied(
 		LastAttempt:      lastAttempt,
 		LastRejectReason: lastRejectReason,
 	}
+}
+
+func (s *ParameterSampler) errIfNamedSetDomainExhausted(
+	owner ParameterOwner,
+	paramDefs []model_state.Parameter,
+) error {
+	// Action selection should have excluded this already; fail closed if not.
+	ok, err := s.NamedSetSampleDomainsAvailable(owner, paramDefs)
+	if err != nil {
+		return err
+	}
+	if ok {
+		return nil
+	}
+	return &ParameterSampleExhaustedError{
+		Owner:            owner,
+		Attempts:         0,
+		LastRejectReason: "named-set sample domain empty (all allowed values already used)",
+	}
+}
+
+func (s *ParameterSampler) generateConstrainedSample(
+	paramDefs []model_state.Parameter,
+	prep *parameterSamplingPrep,
+	rng *rand.Rand,
+) (result map[string]object.Object, rejectReason string) {
+	result = prep.generate(paramDefs, rng)
+	if s.generateOverride != nil {
+		return result, ""
+	}
+	applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName, s.peerFieldDistinctLookup)
+	if samplingPeerFieldDistinctConflict(result, prep.constraints, s.peerFieldDistinctLookup) {
+		return result, "peer field value already used by another instance"
+	}
+	return result, ""
 }
 
 // SampleParameters generates values for paramDefs using effective requires constraints.

@@ -1,9 +1,11 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"sort"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -13,6 +15,19 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
+
+// isNamedSetDomainExhaustedError reports sampling failure because a required
+// named-set domain has no free values left.
+func isNamedSetDomainExhaustedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var exhausted *actions.ParameterSampleExhaustedError
+	if errors.As(err, &exhausted) {
+		return strings.Contains(exhausted.LastRejectReason, "named-set sample domain empty")
+	}
+	return strings.Contains(err.Error(), "named-set sample domain empty")
+}
 
 // PendingAction describes a single eligible simulation action.
 type PendingAction struct {
@@ -38,6 +53,7 @@ type ActionSelector struct {
 	catalog         *ClassCatalog
 	derivedEval     *DerivedAttributeEvaluator
 	bindingsBuilder *state.BindingsBuilder
+	paramSampler    *actions.ParameterSampler
 	rng             *rand.Rand
 }
 
@@ -46,12 +62,14 @@ func NewActionSelector(
 	catalog *ClassCatalog,
 	derivedEval *DerivedAttributeEvaluator,
 	bindingsBuilder *state.BindingsBuilder,
+	paramSampler *actions.ParameterSampler,
 	rng *rand.Rand,
 ) *ActionSelector {
 	return &ActionSelector{
 		catalog:         catalog,
 		derivedEval:     derivedEval,
 		bindingsBuilder: bindingsBuilder,
+		paramSampler:    paramSampler,
 		rng:             rng,
 	}
 }
@@ -62,13 +80,26 @@ func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*Pending
 	eligible := s.collectEligibleActions(simState)
 	eligible = s.filterByObjectParamAvailability(eligible, simState)
 	eligible = s.filterBySimulationRequires(eligible)
+	eligible = s.filterByNamedSetSampleDomains(eligible)
 
 	if len(eligible) == 0 {
 		return nil, fmt.Errorf("deadlock: no eligible actions")
 	}
 
-	chosen := eligible[s.rng.Intn(len(eligible))]
-	return &chosen, nil
+	// Prefer a pick that still has a free domain at selection time.
+	for range eligible {
+		idx := s.rng.Intn(len(eligible))
+		chosen := eligible[idx]
+		if s.namedSetSampleDomainsAvailable(chosen) {
+			return &chosen, nil
+		}
+		// Remove exhausted pick and continue.
+		eligible = append(eligible[:idx], eligible[idx+1:]...)
+		if len(eligible) == 0 {
+			break
+		}
+	}
+	return nil, fmt.Errorf("deadlock: no eligible actions")
 }
 
 // filterByObjectParamAvailability drops events/actions whose object-of parameters
@@ -277,6 +308,46 @@ func (s *ActionSelector) filterBySimulationRequires(eligible []PendingAction) []
 		filtered = append(filtered, pending)
 	}
 	return filtered
+}
+
+// filterByNamedSetSampleDomains drops actions whose requires need a named-set
+// sample domain that has no free values (e.g. every allowed code already used).
+func (s *ActionSelector) filterByNamedSetSampleDomains(eligible []PendingAction) []PendingAction {
+	if s.paramSampler == nil {
+		return eligible
+	}
+	filtered := make([]PendingAction, 0, len(eligible))
+	for _, pending := range eligible {
+		if pending.IsQuery || pending.IsDerivedRead {
+			filtered = append(filtered, pending)
+			continue
+		}
+		if s.namedSetSampleDomainsAvailable(pending) {
+			filtered = append(filtered, pending)
+		}
+	}
+	return filtered
+}
+
+func (s *ActionSelector) namedSetSampleDomainsAvailable(pending PendingAction) bool {
+	if s.paramSampler == nil {
+		return true
+	}
+	action := s.resolveSurfaceAction(pending)
+	if action == nil {
+		return true
+	}
+	params := action.Parameters
+	if pending.Instance != nil {
+		s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.ID)
+		defer s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(0)
+	}
+	owner := actions.ParameterOwnerFromAction(*action)
+	ok, err := s.paramSampler.NamedSetSampleDomainsAvailable(owner, params)
+	if err != nil {
+		return false
+	}
+	return ok
 }
 
 func (s *ActionSelector) resolveSurfaceAction(pending PendingAction) *model_state.Action {
