@@ -16,7 +16,10 @@ import (
 
 // derivedAttrInfo holds a pre-lowered DerivationPolicy expression for one attribute.
 type derivedAttrInfo struct {
-	attrKey    identity.Key
+	attrKey identity.Key
+	// attrSubKey is the storage / self.field key (attribute identity SubKey).
+	attrSubKey string
+	// attrName is the human-readable attribute name (errors and external reads).
 	attrName   string
 	expression me.Expression
 }
@@ -87,6 +90,7 @@ func NewDerivedAttributeEvaluator(
 
 					info := derivedAttrInfo{
 						attrKey:    attr.Key,
+						attrSubKey: attr.Key.SubKey,
 						attrName:   attr.Name,
 						expression: expr,
 					}
@@ -108,6 +112,7 @@ func (d *DerivedAttributeEvaluator) SetCatalog(catalog *ClassCatalog) {
 // ResolveDerived evaluates surface-available derived attributes for the given instance.
 // Surface-unavailable attributes (out-of-scope association deps) are skipped so
 // bindings inject only values that can be computed on this surface.
+// Keys in the returned map are attribute SubKeys so they match stored fields and self.field access.
 func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance) (map[string]object.Object, error) {
 	infos := d.byClass[instance.ClassKey]
 	if len(infos) == 0 {
@@ -126,7 +131,7 @@ func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance
 			return nil, err
 		}
 		if value != nil {
-			result[info.attrName] = value
+			result[info.attrSubKey] = value
 		}
 	}
 

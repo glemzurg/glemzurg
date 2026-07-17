@@ -234,6 +234,95 @@ func (s *InvariantsSuite) TestDataTypeCheckerRequiredAttribute() {
 	s.True(foundRequiredViolation, "Should detect missing required attribute 'status'")
 }
 
+// Test: DataTypeChecker skips derived attributes (virtual; not stored on the instance).
+func (s *InvariantsSuite) TestDataTypeCheckerSkipsDerivedAttributes() {
+	classKey := mustKey("domain/d/subdomain/s/class/jurisdiction")
+	codeKey := mustKey("domain/d/subdomain/s/class/jurisdiction/attribute/jurisdiction_code")
+	socialKey := mustKey("domain/d/subdomain/s/class/jurisdiction/attribute/social_only")
+
+	derivation := model_logic.NewLogic(
+		mustKey("invariant/derived_social"),
+		model_logic.LogicTypeValue,
+		"Social when global code.",
+		"",
+		helper.Must(logic_spec.NewExpressionSpec("tla_plus", `TRUE`, nil)),
+		nil,
+	)
+
+	unconstrained := &model_data_type.DataType{
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "unconstrained",
+		},
+	}
+	boolTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "BOOLEAN", nil))
+	stringTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "STRING", nil))
+
+	codeAttr := helper.Must(model_class.NewAttribute(
+		codeKey,
+		model_class.AttributeDetails{Name: "Jurisdiction Code", Details: ""},
+		"unconstrained",
+		nil,
+		false,
+		model_class.AttributeAnnotations{},
+	))
+	codeAttr.DataType = unconstrained
+	codeAttr.DataType.TypeSpec = &stringTypeSpec
+
+	socialAttr := helper.Must(model_class.NewAttribute(
+		socialKey,
+		model_class.AttributeDetails{Name: "Is Social Only", Details: ""},
+		"enum of TRUE, FALSE",
+		&derivation,
+		false,
+		model_class.AttributeAnnotations{},
+	))
+	socialAttr.DataType = &model_data_type.DataType{
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "unconstrained",
+		},
+	}
+	socialAttr.DataType.TypeSpec = &boolTypeSpec
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Jurisdiction", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes([]model_class.Attribute{codeAttr, socialAttr})
+	class.SetStates(map[identity.Key]model_state.State{})
+	class.SetEvents(map[identity.Key]model_state.Event{})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{})
+
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+
+	domainKey := mustKey("domain/d")
+	domain := model_domain.NewDomain(domainKey, "D", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := core.NewModel("jurisdiction_derived", core.ModelDetails{Name: "JurisdictionDerived", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	checker, setupViolations := NewDataTypeChecker(&model)
+	s.Require().NotNil(checker)
+	s.False(setupViolations.HasViolations())
+
+	simState := state.NewSimulationState()
+	attrs := object.NewRecord()
+	attrs.Set("jurisdiction_code", object.NewString("US-NY"))
+	// social_only deliberately absent from storage — derived, required in the model.
+	instance := simState.CreateInstance(classKey, attrs)
+
+	instanceViolations := checker.CheckInstance(instance)
+	for _, v := range instanceViolations {
+		s.NotEqual(ViolationTypeRequiredAttribute, v.Type,
+			"derived Is Social Only must not raise required_attribute when unset in storage")
+		s.NotEqual("Is Social Only", v.AttributeName)
+	}
+}
+
 // Test: DataTypeChecker validates span constraints.
 func (s *InvariantsSuite) TestDataTypeCheckerSpanConstraint() {
 	model := createTestModel()
