@@ -2,6 +2,7 @@ package invariants
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -48,6 +49,9 @@ type InvariantChecker struct {
 
 	// classAttributes maps class keys to attribute definitions for nullable checks.
 	classAttributes map[identity.Key][]model_class.Attribute
+
+	// evalCtx enables model global functions (_AmountsBag, etc.) during invariant eval.
+	evalCtx *evaluator.EvalContext
 }
 
 // parsedAttributeInvariantItem holds a pre-lowered attribute invariant with metadata.
@@ -91,6 +95,35 @@ func (c *InvariantChecker) ClassNameMap() map[identity.Key]string {
 	return c.classNameMap
 }
 
+// IncludeClassExtents merges additional class extent names (e.g. out-of-scope classes
+// that bind as empty sets) into the checker’s class name map for evaluation bindings.
+func (c *InvariantChecker) IncludeClassExtents(names map[identity.Key]string) {
+	if c == nil || len(names) == 0 {
+		return
+	}
+	if c.classNameMap == nil {
+		c.classNameMap = make(map[identity.Key]string, len(names))
+	}
+	for k, v := range names {
+		if _, ok := c.classNameMap[k]; !ok {
+			c.classNameMap[k] = v
+		}
+	}
+}
+
+// SetEvalContext supplies the registry-backed context for global function calls.
+func (c *InvariantChecker) SetEvalContext(ctx *evaluator.EvalContext) {
+	c.evalCtx = ctx
+}
+
+// evalExpr evaluates a lowered expression, using the registry context when set.
+func (c *InvariantChecker) evalExpr(expr me.Expression, bindings *evaluator.Bindings) *evaluator.EvalResult {
+	if c.evalCtx != nil {
+		return evaluator.EvalWithContext(expr, bindings, c.evalCtx)
+	}
+	return evaluator.Eval(expr, bindings)
+}
+
 // NewInvariantChecker creates a new invariant checker from a model.
 // The model's ExpressionSpec.Expression fields must be populated
 // (via parse functions passed to constructors).
@@ -131,7 +164,7 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
-				checker.classNameMap[class.Key] = class.Name
+				checker.classNameMap[class.Key] = strings.ReplaceAll(class.Name, " ", "")
 				checker.classAttributes[class.Key] = class.Attributes
 				if err := checker.loadClassInvariants(class); err != nil {
 					return nil, err
@@ -219,7 +252,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 		if !item.isLet {
 			continue
 		}
-		result := evaluator.Eval(item.expression, bindings)
+		result := c.evalExpr(item.expression, bindings)
 		if result.IsError() {
 			violations = append(violations, NewModelInvariantViolation(
 				item.originalIndex,
@@ -236,7 +269,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 		if item.isLet {
 			continue
 		}
-		result := evaluator.Eval(item.expression, bindings)
+		result := c.evalExpr(item.expression, bindings)
 
 		if result.Error != nil {
 			violations = append(violations, NewModelInvariantViolation(
@@ -296,7 +329,7 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 		if !item.isLet {
 			continue
 		}
-		result := evaluator.Eval(item.expression, bindings)
+		result := c.evalExpr(item.expression, bindings)
 		if result.IsError() {
 			violations = append(violations, NewClassInvariantViolation(
 				instance.ClassKey, instance.ID, item.originalIndex, item.spec,
@@ -311,7 +344,7 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 		if item.isLet {
 			continue
 		}
-		result := evaluator.Eval(item.expression, bindings)
+		result := c.evalExpr(item.expression, bindings)
 		if result.Error != nil {
 			violations = append(violations, NewClassInvariantViolation(
 				instance.ClassKey, instance.ID, item.originalIndex, item.spec,
@@ -349,7 +382,7 @@ func (c *InvariantChecker) CheckAttributeInvariants(
 			continue
 		}
 		nullableByFieldKey := attributeNullableByFieldKey(c.classAttributes[instance.ClassKey])
-		violations = append(violations, checkAttributeInvariantsForInstance(instance, items, nullableByFieldKey, bindingsBuilder)...)
+		violations = append(violations, c.checkAttributeInvariantsForInstance(instance, items, nullableByFieldKey, bindingsBuilder)...)
 	}
 
 	return violations
@@ -371,7 +404,7 @@ func skipNullableUnsetAttribute(
 	return nullableByFieldKey[attributeFieldKey] && object.IsNull(instance.GetAttribute(attributeFieldKey))
 }
 
-func checkAttributeInvariantsForInstance(
+func (c *InvariantChecker) checkAttributeInvariantsForInstance(
 	instance *state.ClassInstance,
 	items []parsedAttributeInvariantItem,
 	nullableByFieldKey map[string]bool,
@@ -384,25 +417,25 @@ func checkAttributeInvariantsForInstance(
 		if skipNullableUnsetAttribute(nullableByFieldKey, instance, item.attributeFieldKey) || !item.isLet {
 			continue
 		}
-		violations = append(violations, evalAttributeInvariantLet(instance, item, bindings)...)
+		violations = append(violations, c.evalAttributeInvariantLet(instance, item, bindings)...)
 	}
 
 	for _, item := range items {
 		if skipNullableUnsetAttribute(nullableByFieldKey, instance, item.attributeFieldKey) || item.isLet {
 			continue
 		}
-		violations = append(violations, evalAttributeInvariantAssessment(instance, item, bindings)...)
+		violations = append(violations, c.evalAttributeInvariantAssessment(instance, item, bindings)...)
 	}
 
 	return violations
 }
 
-func evalAttributeInvariantLet(
+func (c *InvariantChecker) evalAttributeInvariantLet(
 	instance *state.ClassInstance,
 	item parsedAttributeInvariantItem,
 	bindings *evaluator.Bindings,
 ) ViolationErrors {
-	result := evaluator.Eval(item.expression, bindings)
+	result := c.evalExpr(item.expression, bindings)
 	if result.IsError() {
 		return ViolationErrors{NewAttributeInvariantViolation(
 			instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
@@ -413,12 +446,12 @@ func evalAttributeInvariantLet(
 	return nil
 }
 
-func evalAttributeInvariantAssessment(
+func (c *InvariantChecker) evalAttributeInvariantAssessment(
 	instance *state.ClassInstance,
 	item parsedAttributeInvariantItem,
 	bindings *evaluator.Bindings,
 ) ViolationErrors {
-	result := evaluator.Eval(item.expression, bindings)
+	result := c.evalExpr(item.expression, bindings)
 	if result.Error != nil {
 		return ViolationErrors{NewAttributeInvariantViolation(
 			instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
@@ -467,7 +500,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 	}
 
 	for _, g := range guarantees {
-		result := evaluator.Eval(g.expression, bindings)
+		result := c.evalExpr(g.expression, bindings)
 
 		if result.Error != nil {
 			violations = append(violations, NewActionGuaranteeViolation(
@@ -529,7 +562,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 	}
 
 	for _, g := range guarantees {
-		result := evaluator.Eval(g.expression, bindings)
+		result := c.evalExpr(g.expression, bindings)
 
 		if result.Error != nil {
 			violations = append(violations, NewQueryGuaranteeViolation(

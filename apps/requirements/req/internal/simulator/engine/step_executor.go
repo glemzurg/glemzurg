@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -103,6 +104,20 @@ func (e *StepExecutor) executeQuery(
 		return nil, fmt.Errorf("query is nil")
 	}
 
+	step.QueryKey = pending.Query.Key
+	step.QueryName = pending.Query.Name
+
+	// Query depends on out-of-scope association data — not surface-selected, but if
+	// something still invokes it, report a surface-out-of-scope violation.
+	if e.catalog != nil {
+		if unavail, ok := e.catalog.SurfaceUnavailableQuery(pending.Query.Key); ok {
+			step.Violations = append(step.Violations, invariants.NewSurfaceOutOfScopeViolation(
+				pending.Class.ClassKey, pending.Instance.ID, pending.Query.Name, unavail.Reason(),
+			))
+			return step, nil
+		}
+	}
+
 	params, err := e.sampleQueryParameters(pending)
 	if err != nil {
 		return nil, fmt.Errorf("query %s parameter sampling: %w", pending.Query.Name, err)
@@ -114,10 +129,9 @@ func (e *StepExecutor) executeQuery(
 		return nil, fmt.Errorf("query %s error: %w", pending.Query.Name, err)
 	}
 
-	step.QueryKey = pending.Query.Key
-	step.QueryName = pending.Query.Name
 	step.QueryResult = result
 	step.Violations = append(step.Violations, result.Violations...)
+	step.Violations = append(step.Violations, e.actionExecutor.CheckWorldStateInvariants()...)
 	return step, nil
 }
 
@@ -141,19 +155,25 @@ func (e *StepExecutor) executeDerivedRead(
 		return nil, fmt.Errorf("derived attribute %s: evaluator not configured", pending.DerivedAttribute.Name)
 	}
 
-	derived, err := e.derivedEval.ResolveDerived(pending.Instance)
+	step.DerivedAttributeKey = pending.DerivedAttribute.Key
+	step.DerivedAttributeName = pending.DerivedAttribute.Name
+
+	value, violations, err := e.derivedEval.ResolveDerivedAttribute(
+		pending.Instance, pending.DerivedAttribute.Key, pending.DerivedAttribute.Name,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("derived attribute %s error: %w", pending.DerivedAttribute.Name, err)
 	}
-
-	value, ok := derived[pending.DerivedAttribute.Name]
-	if !ok || value == nil {
+	if len(violations) > 0 {
+		step.Violations = append(step.Violations, violations...)
+		return step, nil
+	}
+	if value == nil {
 		return nil, fmt.Errorf("derived attribute %s produced no value", pending.DerivedAttribute.Name)
 	}
 
-	step.DerivedAttributeKey = pending.DerivedAttribute.Key
-	step.DerivedAttributeName = pending.DerivedAttribute.Name
 	step.DerivedReadValue = value
+	step.Violations = append(step.Violations, e.actionExecutor.CheckWorldStateInvariants()...)
 	return step, nil
 }
 
@@ -182,6 +202,7 @@ func (e *StepExecutor) executeDo(
 	step.ExecutedActionKeys = append(step.ExecutedActionKeys, pending.DoAction.Key)
 	step.DoActionResult = result
 	step.Violations = append(step.Violations, result.Violations...)
+	// World-state already included in the do action result when not deferred.
 	return step, nil
 }
 
@@ -209,6 +230,10 @@ func (e *StepExecutor) executeTransition(
 		return nil, fmt.Errorf("event %s parameter sampling: %w", pending.Event.Name, err)
 	}
 	step.Parameters = params
+
+	// World-state invariants wait until _state is set and peer/creation nesting finishes.
+	e.actionExecutor.BeginWorldStateDeferral()
+	defer e.actionExecutor.EndWorldStateDeferral()
 
 	// 2. Execute exit StateActions (if not creation).
 	if err := e.executeExitActions(pending, step); err != nil {
@@ -256,6 +281,9 @@ func (e *StepExecutor) executeTransition(
 	if err := e.handleCreationChain(result, simState, step); err != nil {
 		return nil, err
 	}
+
+	// 7. World-state checks see the post-transition graph after all nested work.
+	step.Violations = append(step.Violations, e.actionExecutor.CheckWorldStateInvariants()...)
 
 	return step, nil
 }
@@ -377,7 +405,9 @@ func (e *StepExecutor) handleCreationChain(
 	if err != nil {
 		return fmt.Errorf("creation chain error: %w", err)
 	}
-	step.CascadedSteps = cascadedSteps
+	// Append after peer-effect cascades so set-add / bulk-create steps stay in the tree
+	// (trace, liveness, and nested chain work all walk CascadedSteps).
+	step.CascadedSteps = append(step.CascadedSteps, cascadedSteps...)
 	step.Violations = append(step.Violations, cascadeViolations...)
 	return nil
 }

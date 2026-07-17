@@ -41,8 +41,19 @@ classDiagram
 {{ classes_mermaid_class_note . -}}
 {{ end -}}
 {{ end -}}
-{{ if has_mermaid_focal_class .FocalClassKey -}}
-style {{ nodeid "class" (mermaid_focal_class_key .FocalClassKey) }} {{ classes_mermaid_focal_class_style }}
+{{ range .LocalClasses -}}
+{{ $boxStyle := classes_mermaid_class_box_style . $.FocalClassKey -}}
+{{ if $boxStyle -}}
+style {{ nodeid "class" .Key }} {{ $boxStyle }}
+{{ end -}}
+{{ end -}}
+{{ range .Namespaces -}}
+{{ range .Classes -}}
+{{ $boxStyle := classes_mermaid_class_box_style . $.FocalClassKey -}}
+{{ if $boxStyle -}}
+style {{ nodeid "class" .Key }} {{ $boxStyle }}
+{{ end -}}
+{{ end -}}
 {{ end -}}
 {{ range .Associations -}}
 {{ if render_association_link_node_mermaid . -}}

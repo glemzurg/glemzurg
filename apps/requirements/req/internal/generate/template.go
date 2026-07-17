@@ -162,7 +162,7 @@ var _funcMap = template.FuncMap{
 	"expression_spec_bold_display":              expressionSpecBoldDisplay,
 	"expression_spec_bold_indented_line":        expressionSpecBoldIndentedLine,
 	"logic_markdown_spec_lines":                 logicMarkdownSpecLines,
-	"class_logic_markdown_spec_lines":           logicMarkdownSpecLinesForClass,
+	"class_logic_markdown_spec_lines":           classLogicMarkdownSpecLinesFromTemplate,
 	"derivation_policy_markdown_html":           derivationPolicyMarkdownHTML,
 	"derivation_policy_markdown_html_for_class": derivationPolicyMarkdownHTMLForClass,
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
@@ -185,6 +185,7 @@ var _funcMap = template.FuncMap{
 		return classesMermaidNoteLine(mermaidNodeID("class", class.Key), class.UmlComment)
 	},
 	"classes_mermaid_association_link_note": classesMermaidAssociationLinkNote,
+	"classes_mermaid_class_box_style":       classesMermaidClassBoxStyle,
 	"classes_mermaid_focal_class_style":     func() string { return classesMermaidFocalClassStyle },
 	"has_mermaid_focal_class":               hasMermaidFocalClass,
 	"mermaid_focal_class_key":               mermaidFocalClassKey,

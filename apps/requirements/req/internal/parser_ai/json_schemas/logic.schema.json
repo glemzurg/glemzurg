@@ -41,6 +41,10 @@
     "destroy_event": {
       "type": "string",
       "description": "Required for 'destroy' type: peer destroy event call in the given notation (e.g., '_destroy(b)'). Must be omitted for all other types. Inline _destroy in specification is not allowed on non-destroy logic."
+    },
+    "endpoint_selector": {
+      "type": "string",
+      "description": "Required when association_class is true: TLA+ expression naming the far-side endpoint (e.g., 'r.account' or 'chosenAccount'). Must be omitted when association_class is false or absent."
     }
   },
   "required": ["type", "description", "notation"],

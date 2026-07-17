@@ -35,6 +35,7 @@ CREATE TABLE logic (
   target_type_notation notation DEFAULT NULL,
   target_type_specification text DEFAULT NULL,
   destroy_event_specification text DEFAULT NULL,
+  endpoint_selector_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, logic_key),
   CONSTRAINT fk_logic_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
@@ -51,6 +52,7 @@ COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
 COMMENT ON COLUMN logic.target_type_notation IS 'Optional notation for the declared type of the logic target (e.g., tla_plus).';
 COMMENT ON COLUMN logic.target_type_specification IS 'Optional type specification string for the logic target (e.g., Int, STRING).';
 COMMENT ON COLUMN logic.destroy_event_specification IS 'Optional peer destroy event call for destroy-type logic (e.g., _destroy(b)); uses logic.notation for notation.';
+COMMENT ON COLUMN logic.endpoint_selector_specification IS 'Far-side endpoint expression for association-class reify guarantees (target is AC class TLA name); uses logic.notation.';
 
 --------------------------------------------------------------
 
@@ -441,6 +443,7 @@ CREATE TABLE class (
   details text DEFAULT NULL,
   unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
+  marked boolean NOT NULL DEFAULT false,
   PRIMARY KEY (model_key, class_key),
   CONSTRAINT fk_class_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
   CONSTRAINT fk_class_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE,
@@ -460,6 +463,7 @@ COMMENT ON COLUMN class.subclass_of_key IS 'The generalization this class is a s
 COMMENT ON COLUMN class.details IS 'A summary description.';
 COMMENT ON COLUMN class.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN class.uml_comment IS 'A comment that appears in the diagrams.';
+COMMENT ON COLUMN class.marked IS 'Authoring selection flag; true when the class is marked in the model.';
 
 --------------------------------------------------------------
 
@@ -867,17 +871,19 @@ CREATE TABLE action_parameter_simulation_require (
   model_key text NOT NULL,
   action_key text NOT NULL,
   parameter_key text NOT NULL,
+  rule_index integer NOT NULL,
   logic_key text NOT NULL,
-  PRIMARY KEY (model_key, action_key, parameter_key, logic_key),
+  PRIMARY KEY (model_key, action_key, parameter_key, rule_index, logic_key),
   CONSTRAINT fk_action_param_sim_req_parameter FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter (model_key, action_key, parameter_key) ON DELETE CASCADE,
   CONSTRAINT fk_action_param_sim_req_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE action_parameter_simulation_require IS 'Simulator-only sampling preconditions for an action parameter.';
+COMMENT ON TABLE action_parameter_simulation_require IS 'Simulator-only sampling preconditions for one rule of an action parameter.';
 COMMENT ON COLUMN action_parameter_simulation_require.model_key IS 'The model this join row belongs to.';
 COMMENT ON COLUMN action_parameter_simulation_require.action_key IS 'The action that owns the parameter.';
 COMMENT ON COLUMN action_parameter_simulation_require.parameter_key IS 'The parameter subkey.';
-COMMENT ON COLUMN action_parameter_simulation_require.logic_key IS 'Assessment logic that must hold before the parameter may be sampled.';
+COMMENT ON COLUMN action_parameter_simulation_require.rule_index IS 'Zero-based index of the simulation rule this require belongs to.';
+COMMENT ON COLUMN action_parameter_simulation_require.logic_key IS 'Assessment logic that must hold before the rule may be sampled.';
 
 --------------------------------------------------------------
 
@@ -885,16 +891,18 @@ CREATE TABLE action_parameter_simulation_spec (
   model_key text NOT NULL,
   action_key text NOT NULL,
   parameter_key text NOT NULL,
+  rule_index integer NOT NULL,
   logic_key text NOT NULL,
-  PRIMARY KEY (model_key, action_key, parameter_key),
+  PRIMARY KEY (model_key, action_key, parameter_key, rule_index),
   CONSTRAINT fk_action_param_sim_spec_parameter FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter (model_key, action_key, parameter_key) ON DELETE CASCADE,
   CONSTRAINT fk_action_param_sim_spec_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE action_parameter_simulation_spec IS 'Simulator-only value expression for sampling an action parameter.';
+COMMENT ON TABLE action_parameter_simulation_spec IS 'Simulator-only value expression for one rule of an action parameter.';
 COMMENT ON COLUMN action_parameter_simulation_spec.model_key IS 'The model this join row belongs to.';
 COMMENT ON COLUMN action_parameter_simulation_spec.action_key IS 'The action that owns the parameter.';
 COMMENT ON COLUMN action_parameter_simulation_spec.parameter_key IS 'The parameter subkey.';
+COMMENT ON COLUMN action_parameter_simulation_spec.rule_index IS 'Zero-based index of the simulation rule this specification belongs to.';
 COMMENT ON COLUMN action_parameter_simulation_spec.logic_key IS 'Value logic that evaluates to the sampled parameter value.';
 
 --------------------------------------------------------------

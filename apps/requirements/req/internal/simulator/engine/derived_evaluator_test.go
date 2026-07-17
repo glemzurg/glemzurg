@@ -83,8 +83,9 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	s.Require().NoError(err)
 	s.NotNil(derived)
 
-	doublePriceVal, ok := derived["doublePrice"]
-	s.True(ok, "derived map should contain 'doublePrice'")
+	// Map keys are attribute SubKeys so self.field and storage keys align.
+	doublePriceVal, ok := derived["double_price"]
+	s.True(ok, "derived map should contain SubKey 'double_price'")
 	s.Equal("20", doublePriceVal.Inspect())
 }
 
@@ -190,11 +191,70 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 
 	bindings := bb.BuildForInstance(instance)
 
-	// The self record in bindings should include the derived "doublePrice" field.
+	// The self record in bindings should include the derived field under its SubKey.
 	selfRecord := bindings.Self()
 	s.NotNil(selfRecord, "bindings should have self set")
 
-	doublePriceVal := selfRecord.Get("doublePrice")
-	s.NotNil(doublePriceVal, "self should contain derived attribute 'doublePrice'")
+	doublePriceVal := selfRecord.Get("double_price")
+	s.NotNil(doublePriceVal, "self should contain derived attribute under SubKey 'double_price'")
 	s.Equal("10", doublePriceVal.Inspect())
+}
+
+// TestDerivedAttributeSubKeyWhenDisplayNameDiffers ensures ResolveDerived keys by
+// attribute SubKey even when the human-readable name differs (e.g. social_only).
+func (s *DerivedEvaluatorSuite) TestDerivedAttributeSubKeyWhenDisplayNameDiffers() {
+	classKey := mustKey("domain/d/subdomain/s/class/jurisdiction")
+	socialKey := mustKey("domain/d/subdomain/s/class/jurisdiction/attribute/social_only")
+
+	// Constant derivation: only the map key (SubKey vs display name) is under test.
+	derivationLogic := model_logic.NewLogic(
+		mustKey("invariant/14"),
+		model_logic.LogicTypeValue,
+		"Always social for this fixture.",
+		"",
+		productSpec(`TRUE`),
+		nil,
+	)
+
+	attrSocial := helper.Must(model_class.NewAttribute(
+		socialKey,
+		model_class.AttributeDetails{Name: "Is Social Only", Details: ""},
+		"",
+		&derivationLogic,
+		false,
+		model_class.AttributeAnnotations{},
+	))
+
+	class := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Jurisdiction", Details: "", UnfinishedNotes: "", UmlComment: ""})
+	class.SetAttributes([]model_class.Attribute{attrSocial})
+	class.SetStates(map[identity.Key]model_state.State{})
+	class.SetEvents(map[identity.Key]model_state.Event{})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{})
+
+	simState := state.NewSimulationState()
+	bindingsBuilder := state.NewBindingsBuilder(simState)
+	model := testModel(classEntry(class, classKey))
+
+	dae, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, nil)
+	s.Require().NoError(err)
+
+	instance := simState.CreateInstance(classKey, object.NewRecord())
+
+	derived, err := dae.ResolveDerived(instance)
+	s.Require().NoError(err)
+	s.Contains(derived, "social_only")
+	s.NotContains(derived, "Is Social Only")
+	boolVal, ok := derived["social_only"].(*object.Boolean)
+	s.Require().True(ok)
+	s.True(boolVal.Value())
+
+	bb := state.NewBindingsBuilder(simState)
+	bb.SetDerivedResolver(dae)
+	selfRecord := bb.BuildForInstance(instance).Self()
+	injected, ok := selfRecord.Get("social_only").(*object.Boolean)
+	s.Require().True(ok)
+	s.True(injected.Value())
 }

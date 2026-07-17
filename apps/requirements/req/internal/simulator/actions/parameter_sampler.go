@@ -80,13 +80,49 @@ type parameterConstraints struct {
 	nullableElseEquality          *nullableElseEqualityConstraint
 	nullableElseBooleanConstant   *nullableElseBooleanConstantConstraint
 	tupleInSet                    *tupleInSetConstraint
+	// paramInNamedSet is Param ∈ NamedSet (required membership, no null branch).
+	paramInNamedSet *paramInNamedSetConstraint
+	// paramInNamedSetMinusPeerField is Param ∈ (NamedSet \ { v.field : v ∈ Class }).
+	paramInNamedSetMinusPeerField *paramInNamedSetMinusPeerFieldConstraint
 	peerFieldDistinct             *peerFieldDistinctFromParamPattern
 	enumValues                    map[string][]string
+	// Partials from complementary _GZ!WhenNull / WhenNotNull pairs before coupling.
+	gzNullExclusion     *gzNullBranchExclusion
+	gzNullTupleFollower *gzNullBranchTupleFollower
+}
+
+// gzNullBranchExclusion is WhenNull(driver, follower ∉ namedSet) awaiting WhenNotNull equality.
+type gzNullBranchExclusion struct {
+	driverParam   string
+	followerParam string
+	setSubKey     string
+}
+
+// gzNullBranchTupleFollower is WhenNull(driver, follower = NULL) awaiting tuple membership.
+type gzNullBranchTupleFollower struct {
+	driverParam string
+	thenParam   string
 }
 
 type nullableElseMembershipConstraint struct {
 	paramName string
 	setSubKey string
+}
+
+// paramInNamedSetConstraint samples a parameter from a named set.
+type paramInNamedSetConstraint struct {
+	paramName string
+	setSubKey string
+}
+
+// paramInNamedSetMinusPeerFieldConstraint samples from a named set minus field values
+// already used by class instances (set-map over the class extent).
+type paramInNamedSetMinusPeerFieldConstraint struct {
+	paramName   string
+	setSubKey   string
+	classKey    identity.Key
+	className   string
+	fieldSubKey string
 }
 
 type nullableElseTupleConstraint struct {
@@ -259,6 +295,12 @@ func applyFollowOnParameterConstraints(
 	integratedPeerMembership := constraints.nullableElseMembership != nil &&
 		constraints.peerFieldDistinct != nil &&
 		constraints.peerFieldDistinct.ParamName == constraints.nullableElseMembership.paramName
+	// Set-minus-peer membership already excludes used field values.
+	integratedSetMinusPeer := constraints.paramInNamedSetMinusPeerField != nil
+	// Plain named-set membership + peer-distinct on the same param samples set \ used.
+	integratedPlainNamedSetPeer := constraints.paramInNamedSet != nil &&
+		constraints.peerFieldDistinct != nil &&
+		constraints.peerFieldDistinct.ParamName == constraints.paramInNamedSet.paramName
 
 	if constraints.nullableElseEquality != nil &&
 		constraints.nullableElseMirror == nil &&
@@ -271,6 +313,21 @@ func applyFollowOnParameterConstraints(
 		applyTupleInSet(result, constraints.tupleInSet, rng, namedSetValues)
 	}
 
+	switch {
+	case constraints.paramInNamedSetMinusPeerField != nil:
+		applyParamInNamedSetMinusPeerField(
+			result, constraints.paramInNamedSetMinusPeerField, rng, namedSetValues, peerFieldDistinctLookup,
+		)
+	case integratedPlainNamedSetPeer:
+		applyParamInNamedSetWithPeerDistinct(
+			result, constraints.paramInNamedSet, constraints.peerFieldDistinct, rng, namedSetValues, peerFieldDistinctLookup,
+		)
+	case constraints.paramInNamedSet != nil &&
+		!paramCoveredByCoupledNullableConstraint(constraints, constraints.paramInNamedSet.paramName):
+		// Plain named-set membership must not overwrite ISO/Abbr coupling (or similar) already applied.
+		applyParamInNamedSet(result, constraints.paramInNamedSet, rng, namedSetValues)
+	}
+
 	for paramName, values := range constraints.enumValues {
 		if len(values) == 0 {
 			continue
@@ -278,9 +335,92 @@ func applyFollowOnParameterConstraints(
 		result[paramName] = object.NewString(values[rng.Intn(len(values))])
 	}
 
-	if constraints.peerFieldDistinct != nil && !integratedPeerIsoAbbr && !integratedPeerMembership {
+	if constraints.peerFieldDistinct != nil &&
+		!integratedPeerIsoAbbr &&
+		!integratedPeerMembership &&
+		!integratedSetMinusPeer &&
+		!integratedPlainNamedSetPeer {
 		applyPeerFieldDistinct(result, constraints.peerFieldDistinct, rng, peerFieldDistinctLookup)
 	}
+}
+
+// paramCoveredByCoupledNullableConstraint reports whether a more specific coupling already
+// owns sampling for this parameter (so plain named-set membership must not overwrite it).
+func paramCoveredByCoupledNullableConstraint(constraints parameterConstraints, paramName string) bool {
+	if constraints.nullableElseMembership != nil && constraints.nullableElseMembership.paramName == paramName {
+		return true
+	}
+	if constraints.nullableElseExclusionEquality != nil &&
+		(constraints.nullableElseExclusionEquality.driverParam == paramName ||
+			constraints.nullableElseExclusionEquality.followerParam == paramName) {
+		return true
+	}
+	if constraints.nullableElseMirror != nil &&
+		(constraints.nullableElseMirror.driverParam == paramName ||
+			constraints.nullableElseMirror.followerParam == paramName) {
+		return true
+	}
+	if constraints.nullableElseEquality != nil &&
+		(constraints.nullableElseEquality.driverParam == paramName ||
+			constraints.nullableElseEquality.followerParam == paramName) {
+		return true
+	}
+	if constraints.paramInNamedSetMinusPeerField != nil &&
+		constraints.paramInNamedSetMinusPeerField.paramName == paramName {
+		return true
+	}
+	return false
+}
+
+func applyParamInNamedSet(
+	result map[string]object.Object,
+	constraint *paramInNamedSetConstraint,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+) {
+	value, ok := pickRandomValueFromNamedSetExcluding(constraint.setSubKey, namedSetValues, nil, rng)
+	if !ok {
+		return
+	}
+	result[constraint.paramName] = value.Clone()
+}
+
+func applyParamInNamedSetWithPeerDistinct(
+	result map[string]object.Object,
+	membership *paramInNamedSetConstraint,
+	peer *peerFieldDistinctFromParamPattern,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) {
+	used := peerUsedObjectKeys(peer, lookup)
+	value, ok := pickRandomValueFromNamedSetExcluding(membership.setSubKey, namedSetValues, used, rng)
+	if !ok {
+		return
+	}
+	result[membership.paramName] = value.Clone()
+}
+
+func applyParamInNamedSetMinusPeerField(
+	result map[string]object.Object,
+	constraint *paramInNamedSetMinusPeerFieldConstraint,
+	rng *rand.Rand,
+	namedSetValues map[string]object.Object,
+	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
+) {
+	// Peer used values come from the class field extent encoded in the set-map.
+	peer := &peerFieldDistinctFromParamPattern{
+		ClassKey:    constraint.classKey,
+		ClassName:   constraint.className,
+		FieldSubKey: constraint.fieldSubKey,
+		ParamName:   constraint.paramName,
+	}
+	used := peerUsedObjectKeys(peer, lookup)
+	value, ok := pickRandomValueFromNamedSetExcluding(constraint.setSubKey, namedSetValues, used, rng)
+	if !ok {
+		return
+	}
+	result[constraint.paramName] = value.Clone()
 }
 
 // applyNullableElseExclusionWithPeerDistinct samples ISO/Abbr coupling and peer-uniqueness together
@@ -463,7 +603,24 @@ func samplingPeerFieldDistinctConflict(
 	constraints parameterConstraints,
 	lookup func(classKey identity.Key, fieldSubKey string) []object.Object,
 ) bool {
-	if constraints.peerFieldDistinct == nil || lookup == nil {
+	if lookup == nil {
+		return false
+	}
+	if constraints.paramInNamedSetMinusPeerField != nil {
+		c := constraints.paramInNamedSetMinusPeerField
+		val, ok := result[c.paramName]
+		if !ok {
+			return false
+		}
+		peer := &peerFieldDistinctFromParamPattern{
+			ClassKey:    c.classKey,
+			ClassName:   c.className,
+			FieldSubKey: c.fieldSubKey,
+			ParamName:   c.paramName,
+		}
+		return peerUsedObjectKeys(peer, lookup)[distinctObjectKey(val)]
+	}
+	if constraints.peerFieldDistinct == nil {
 		return false
 	}
 	pattern := constraints.peerFieldDistinct

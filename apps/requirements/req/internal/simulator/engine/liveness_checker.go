@@ -134,7 +134,8 @@ func recordPrimedWrites(classKey identity.Key, assignments map[state.InstanceID]
 }
 
 // checkAssociationCoverage verifies every in-scope association had at least
-// one link created during the simulation.
+// one link created during the simulation. Boundary associations (one endpoint
+// outside the surface) are ignored — they exist only so link guarantees no-op.
 func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) invariants.ViolationErrors {
 	if result.FinalState == nil {
 		return nil
@@ -147,6 +148,10 @@ func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) in
 
 	var violations invariants.ViolationErrors
 	for _, assocInfo := range lc.catalog.AllAssociations() {
+		// Both endpoints must be on the surface for association liveness to apply.
+		if !lc.catalog.IsClassInScope(assocInfo.FromClassKey) || !lc.catalog.IsClassInScope(assocInfo.ToClassKey) {
+			continue
+		}
 		assocKeyStr := evaluator.AssociationKey(assocInfo.Association.Key.String())
 		if !linkedAssocs[assocKeyStr] {
 			violations = append(violations, invariants.NewLivenessAssociationNotLinkedViolation(
@@ -286,13 +291,20 @@ func (lc *LivenessChecker) checkParameterSimulationCoverage(result *SimulationRe
 	if result.SimulationCoverage != nil {
 		used = result.SimulationCoverage.UsedSimulationParams
 	}
+	// Only actions the surface can invoke with parameter sampling are required.
+	// Peer-only creation actions (e.g. Transaction.Initialize via wallet LedgerOf) sample
+	// no parameters; their simulation blocks are for optional standalone surfaces.
+	samplable := lc.surfaceSamplableActionKeys()
 
 	var violations invariants.ViolationErrors
 	for _, classInfo := range lc.catalog.AllScopedClasses() {
 		actions := sortedClassActions(classInfo)
 		for _, action := range actions {
+			if !samplable[action.Key] {
+				continue
+			}
 			for _, param := range action.Parameters {
-				if param.Simulation == nil || param.Simulation.Specification == nil {
+				if !paramHasSimulationSpecification(param) {
 					continue
 				}
 				if used[param.Key] {
@@ -308,6 +320,48 @@ func (lc *LivenessChecker) checkParameterSimulationCoverage(result *SimulationRe
 		}
 	}
 	return violations
+}
+
+// surfaceSamplableActionKeys returns actions reachable from surface event selection:
+// external creation events and non-creation transitions (existing-instance events).
+func (lc *LivenessChecker) surfaceSamplableActionKeys() map[identity.Key]bool {
+	out := make(map[identity.Key]bool)
+	if lc.catalog == nil {
+		return out
+	}
+	for _, classInfo := range lc.catalog.AllScopedClasses() {
+		external := make(map[identity.Key]bool)
+		for _, ev := range lc.catalog.ExternalCreationEvents(classInfo.ClassKey) {
+			external[ev.Key] = true
+		}
+		for _, t := range classInfo.Class.Transitions {
+			if t.ActionKey == nil {
+				continue
+			}
+			if t.FromStateKey == nil {
+				// Creation: only when the catalog exposes it as external creation.
+				if external[t.EventKey] {
+					out[*t.ActionKey] = true
+				}
+				continue
+			}
+			// Existing-instance transitions are surface-selectable when the class is simulatable.
+			out[*t.ActionKey] = true
+		}
+	}
+	return out
+}
+
+func paramHasSimulationSpecification(param model_state.Parameter) bool {
+	if param.Simulation == nil {
+		return false
+	}
+	for _, rule := range param.Simulation.Rules {
+		if rule.HasSpecification() {
+			return true
+		}
+	}
+	return false
 }
 
 func (lc *LivenessChecker) checkActionCoverage(result *SimulationResult) invariants.ViolationErrors {

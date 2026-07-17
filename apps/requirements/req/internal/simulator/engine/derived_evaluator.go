@@ -7,13 +7,19 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
 // derivedAttrInfo holds a pre-lowered DerivationPolicy expression for one attribute.
 type derivedAttrInfo struct {
+	attrKey identity.Key
+	// attrSubKey is the storage / self.field key (attribute identity SubKey).
+	attrSubKey string
+	// attrName is the human-readable attribute name (errors and external reads).
 	attrName   string
 	expression me.Expression
 }
@@ -25,11 +31,17 @@ type DerivedAttributeEvaluator struct {
 	// byClass maps class key -> list of derived attribute info for that class.
 	byClass map[identity.Key][]derivedAttrInfo
 
+	// byAttrKey indexes the same infos for single-attribute evaluation.
+	byAttrKey map[identity.Key]derivedAttrInfo
+
 	// bindingsBuilder supplies association-aware bindings for each evaluation.
 	bindingsBuilder *state.BindingsBuilder
 
 	// evalCtx enables model global functions during derived evaluation.
 	evalCtx *evaluator.EvalContext
+
+	// catalog reports surface-unavailable derived attributes (out-of-scope deps).
+	catalog *ClassCatalog
 }
 
 // NewDerivedAttributeEvaluator creates a new evaluator by scanning the model
@@ -45,6 +57,7 @@ func NewDerivedAttributeEvaluator(
 ) (*DerivedAttributeEvaluator, error) {
 	dae := &DerivedAttributeEvaluator{
 		byClass:         make(map[identity.Key][]derivedAttrInfo),
+		byAttrKey:       make(map[identity.Key]derivedAttrInfo),
 		bindingsBuilder: bindingsBuilder,
 		evalCtx:         evalCtx,
 	}
@@ -75,10 +88,14 @@ func NewDerivedAttributeEvaluator(
 						)
 					}
 
-					dae.byClass[class.Key] = append(dae.byClass[class.Key], derivedAttrInfo{
+					info := derivedAttrInfo{
+						attrKey:    attr.Key,
+						attrSubKey: attr.Key.SubKey,
 						attrName:   attr.Name,
 						expression: expr,
-					})
+					}
+					dae.byClass[class.Key] = append(dae.byClass[class.Key], info)
+					dae.byAttrKey[attr.Key] = info
 				}
 			}
 		}
@@ -87,8 +104,15 @@ func NewDerivedAttributeEvaluator(
 	return dae, nil
 }
 
-// ResolveDerived evaluates all derived attributes for the given instance.
-// Returns a map of attribute name -> computed value.
+// SetCatalog wires surface unavailability checks for derived evaluation.
+func (d *DerivedAttributeEvaluator) SetCatalog(catalog *ClassCatalog) {
+	d.catalog = catalog
+}
+
+// ResolveDerived evaluates surface-available derived attributes for the given instance.
+// Surface-unavailable attributes (out-of-scope association deps) are skipped so
+// bindings inject only values that can be computed on this surface.
+// Keys in the returned map are attribute SubKeys so they match stored fields and self.field access.
 func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance) (map[string]object.Object, error) {
 	infos := d.byClass[instance.ClassKey]
 	if len(infos) == 0 {
@@ -99,24 +123,86 @@ func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance
 
 	result := make(map[string]object.Object, len(infos))
 	for _, info := range infos {
-		var evalResult *evaluator.EvalResult
-		if d.evalCtx != nil {
-			evalResult = evaluator.EvalWithContext(info.expression, bindings, d.evalCtx)
-		} else {
-			evalResult = evaluator.Eval(info.expression, bindings)
+		if d.catalog != nil && d.catalog.IsSurfaceUnavailableDerived(info.attrKey) {
+			continue
 		}
-		if evalResult.IsError() {
-			return nil, fmt.Errorf(
-				"derived attribute %s evaluation error: %s",
-				info.attrName, evalResult.Error.Inspect(),
-			)
+		value, err := d.evalDerived(info, bindings)
+		if err != nil {
+			return nil, err
 		}
-		if evalResult.Value != nil {
-			result[info.attrName] = evalResult.Value
+		if value != nil {
+			result[info.attrSubKey] = value
 		}
 	}
 
 	return result, nil
+}
+
+// ResolveDerivedAttribute evaluates one derived attribute. When the attribute depends
+// on out-of-scope classes, returns a surface-out-of-scope violation (not a hard error).
+func (d *DerivedAttributeEvaluator) ResolveDerivedAttribute(
+	instance *state.ClassInstance,
+	attrKey identity.Key,
+	attrName string,
+) (object.Object, invariants.ViolationErrors, error) {
+	if d.catalog != nil {
+		if unavail, ok := d.catalog.SurfaceUnavailableDerived(attrKey); ok {
+			return nil, invariants.ViolationErrors{
+				invariants.NewSurfaceOutOfScopeViolation(
+					instance.ClassKey, instance.ID, attrName, unavail.Reason(),
+				),
+			}, nil
+		}
+	}
+
+	info, ok := d.byAttrKey[attrKey]
+	if !ok {
+		// Fall back to name match within the class (tests may use synthetic keys).
+		for _, candidate := range d.byClass[instance.ClassKey] {
+			if candidate.attrName == attrName {
+				info = candidate
+				ok = true
+				break
+			}
+		}
+	}
+	if !ok {
+		return nil, nil, fmt.Errorf("derived attribute %s not found on class", attrName)
+	}
+
+	bindings := d.bindingsBuilder.BuildForInstanceBase(instance)
+	value, err := d.evalDerived(info, bindings)
+	if err != nil {
+		return nil, nil, err
+	}
+	return value, nil, nil
+}
+
+// SurfaceUnavailableDerivedReason returns the unavailability reason when known.
+func (d *DerivedAttributeEvaluator) SurfaceUnavailableDerivedReason(attrKey identity.Key) (surface.UnavailableMember, bool) {
+	if d.catalog == nil {
+		return surface.UnavailableMember{}, false
+	}
+	return d.catalog.SurfaceUnavailableDerived(attrKey)
+}
+
+func (d *DerivedAttributeEvaluator) evalDerived(
+	info derivedAttrInfo,
+	bindings *evaluator.Bindings,
+) (object.Object, error) {
+	var evalResult *evaluator.EvalResult
+	if d.evalCtx != nil {
+		evalResult = evaluator.EvalWithContext(info.expression, bindings, d.evalCtx)
+	} else {
+		evalResult = evaluator.Eval(info.expression, bindings)
+	}
+	if evalResult.IsError() {
+		return nil, fmt.Errorf(
+			"derived attribute %s evaluation error: %s",
+			info.attrName, evalResult.Error.Inspect(),
+		)
+	}
+	return evalResult.Value, nil
 }
 
 // HasDerivedAttributes returns true if any class has derived attributes.

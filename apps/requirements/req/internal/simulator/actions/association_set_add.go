@@ -1,15 +1,22 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
+
+// errPeerClassOutOfScope means the association is known but its peer class is not on the surface.
+// Callers treat this as a successful no-op (empty-set / ignore-link default).
+var errPeerClassOutOfScope = errors.New("peer class out of simulation scope")
 
 func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	ctx *ExecutionContext,
@@ -17,12 +24,17 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
+	linkEnv setAddLinkEnv,
 ) (bool, error) {
 	assocRef, eventCall, ok := model_class.MatchAssociationSetAddExpr(expr)
 	if !ok {
 		return false, nil
 	}
 	assocTarget, err := e.resolveAssociationSetAddTarget(instance, target, assocRef)
+	if errors.Is(err, errPeerClassOutOfScope) {
+		// Out-of-scope peer class: association matched but peer is not on the surface.
+		return true, nil
+	}
 	if err != nil {
 		return false, err
 	}
@@ -45,6 +57,7 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 		AssocKey:       assocTarget.assoc.Key,
 		ToClassKey:     assocTarget.assoc.ToClassKey,
 		Params:         params,
+		ActionParams:   linkEnv.actionParams,
 	})
 	return true, nil
 }
@@ -77,10 +90,8 @@ func (e *ActionExecutor) resolveAssociationSetAddTarget(
 	}
 	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
 	if !ok {
-		return nil, fmt.Errorf(
-			"association set-add guarantee on %q: peer class %s not found",
-			target, assoc.ToClassKey.String(),
-		)
+		// Association is known but peer class is outside the simulation surface.
+		return nil, errPeerClassOutOfScope
 	}
 	return &associationSetAddTarget{assoc: assoc, toClass: toClass}, nil
 }
@@ -133,10 +144,13 @@ func (e *ActionExecutor) applyPeerCreation(ctx *ExecutionContext, pc DeferredPee
 	if !found {
 		return fmt.Errorf("peer creation for association %s: association metadata not found", pc.AssocKey.String())
 	}
-	if assoc.AssociationClassKey == nil {
-		return e.applyPlainPeerCreation(ctx, pc, assoc)
+	// Association-class materialization only when the AC class is on the surface catalog.
+	if assoc.AssociationClassKey != nil {
+		if _, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey); ok {
+			return e.applyAssociationClassPeerCreation(ctx, pc, assoc)
+		}
 	}
-	return e.applyAssociationClassPeerCreation(ctx, pc, assoc)
+	return e.applyPlainPeerCreation(ctx, pc, assoc)
 }
 
 func (e *ActionExecutor) applyPlainPeerCreation(
@@ -160,7 +174,7 @@ func (e *ActionExecutor) applyPlainPeerCreation(
 		return nil
 	}
 	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, result)
-	return nil
+	return e.applyInferredSecondaryLinks(pc, result.InstanceID)
 }
 
 func (e *ActionExecutor) applyAssociationClassPeerCreation(
@@ -168,6 +182,11 @@ func (e *ActionExecutor) applyAssociationClassPeerCreation(
 	pc DeferredPeerCreation,
 	assoc model_class.Association,
 ) error {
+	// Existing to-endpoint: only materialize the association-class row (params go to AC).
+	if pc.ToInstanceID != nil {
+		return e.materializeAssociationClassRow(ctx, pc, assoc, *pc.ToInstanceID, pc.Params)
+	}
+
 	toClass, creationEvent, err := e.resolvePeerCreationEvent(pc)
 	if err != nil {
 		return err
@@ -181,7 +200,8 @@ func (e *ActionExecutor) applyAssociationClassPeerCreation(
 		return nil
 	}
 	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, endpointResult)
-	return e.materializeAssociationClassRow(ctx, pc, assoc, endpointResult.InstanceID)
+	// AC row created without extra params when the event call targeted the to-class.
+	return e.materializeAssociationClassRow(ctx, pc, assoc, endpointResult.InstanceID, nil)
 }
 
 func (e *ActionExecutor) resolvePeerCreationEvent(pc DeferredPeerCreation) (model_class.Class, model_state.Event, error) {
@@ -206,6 +226,7 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	pc DeferredPeerCreation,
 	assoc model_class.Association,
 	targetID state.InstanceID,
+	acParams map[string]object.Object,
 ) error {
 	acClass, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey)
 	if !ok {
@@ -220,7 +241,7 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	assocKey := pc.AssocKey
 	fromID := pc.FromInstanceID
 	acResult, err := e.ExecuteTransition(
-		acClass, acCreationEvent, nil, nil,
+		acClass, acCreationEvent, nil, acParams,
 		CreationLinkSource{SourceAssocKey: &assocKey, SourceID: &fromID}, &targetID,
 	)
 	if err != nil {
@@ -228,6 +249,88 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 		e.recordPeerEventUnavailable(ctx, vctx, acClass, 0, acCreationEvent.Key, acCreationEvent.Name)
 		return nil
 	}
-	e.recordPeerTransition(ctx, acClass, acCreationEvent, nil, acResult)
+	e.recordPeerTransition(ctx, acClass, acCreationEvent, acParams, acResult)
 	return nil
+}
+
+// applyInferredSecondaryLinks analyzes set-add peer creation against action and
+// creation parameters and the association graph. When a parameter is a live instance
+// of class C and C has exactly one outgoing association to the created peer class,
+// the simulator also links that parameter instance to the new peer.
+func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, newPeerID state.InstanceID) error {
+	if e.peerCatalog == nil {
+		return nil
+	}
+	paramSources := make([]object.Object, 0, len(pc.ActionParams)+len(pc.Params))
+	for _, v := range pc.ActionParams {
+		paramSources = append(paramSources, v)
+	}
+	for _, v := range pc.Params {
+		paramSources = append(paramSources, v)
+	}
+	if len(paramSources) == 0 {
+		return nil
+	}
+	simState := e.bindingsBuilder.State()
+	for _, paramVal := range paramSources {
+		fromID, ok := instanceIDFromObject(simState, paramVal)
+		if !ok {
+			continue
+		}
+		fromInst := simState.GetInstance(fromID)
+		if fromInst == nil {
+			continue
+		}
+		// Skip the primary set-add endpoint (already linked).
+		if fromID == pc.FromInstanceID {
+			continue
+		}
+		candidates := e.peerCatalog.OutgoingAssociationsTo(fromInst.ClassKey, pc.ToClassKey)
+		if len(candidates) != 1 {
+			// Zero or ambiguous associations: do not invent links.
+			continue
+		}
+		assoc := candidates[0]
+		// Skip when already linked (e.g. creation action reverse state_change established it).
+		if slices.Contains(simState.GetLinkedForward(fromID, assoc.Key), newPeerID) {
+			continue
+		}
+		if err := simState.AddLink(assoc.Key, fromID, newPeerID); err != nil {
+			return fmt.Errorf("inferred secondary link after set-add: %w", err)
+		}
+	}
+	return nil
+}
+
+func instanceIDFromObject(simState *state.SimulationState, val object.Object) (state.InstanceID, bool) {
+	rec, ok := val.(*object.Record)
+	if !ok || rec == nil {
+		return 0, false
+	}
+	if id, ok := state.InstanceIDFromExtentElement(rec); ok {
+		if simState.GetInstance(id) != nil {
+			return id, true
+		}
+	}
+	// Bare attribute records: match by pointer first (self), then unique structural equality.
+	// Structural equality alone is ambiguous when multiple instances share the same data shape
+	// (e.g. wallets that only store _state); refuse to guess among duplicates.
+	data := state.DataFromExtentElement(rec)
+	var (
+		found state.InstanceID
+		n     int
+	)
+	for _, inst := range simState.AllInstances() {
+		if inst.Attributes == rec || inst.Attributes == data {
+			return inst.ID, true
+		}
+		if (data != nil && inst.Attributes.Equals(data)) || inst.Attributes.Equals(rec) {
+			found = inst.ID
+			n++
+		}
+	}
+	if n == 1 {
+		return found, true
+	}
+	return 0, false
 }

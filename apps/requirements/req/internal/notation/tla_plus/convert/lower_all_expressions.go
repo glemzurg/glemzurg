@@ -6,6 +6,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -144,7 +146,22 @@ func relowerActionExpressions(actKey identity.Key, action *model_state.Action, c
 		}
 	}
 	for i := range action.Guarantees {
-		if err := relowerSpec(&action.Guarantees[i].Spec, actPF); err != nil {
+		guar := &action.Guarantees[i]
+		if model_logic.IsAssociationClassReify(*guar) {
+			if err := relowerSpec(&guar.EndpointSelectorSpec, actPF); err != nil {
+				return fmt.Errorf("action %q guarantee %d endpoint_selector: %w", actKey.String(), i, err)
+			}
+			reifyPF := actPF
+			if setMap, ok := guar.EndpointSelectorSpec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
+				reifyCtx := withLocalVar(ContextWithParameters(classCtx, action.Parameters), setMap.Variable)
+				reifyPF = NewExpressionParseFunc(reifyCtx)
+			}
+			if err := relowerSpec(&guar.Spec, reifyPF); err != nil {
+				return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
+			}
+			continue
+		}
+		if err := relowerSpec(&guar.Spec, actPF); err != nil {
 			return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
 		}
 	}
@@ -191,14 +208,17 @@ func relowerParameterSimulation(ownerKey, ownerKind string, params []model_state
 		if params[i].Simulation == nil {
 			continue
 		}
-		for j := range params[i].Simulation.Requires {
-			if err := relowerSpec(&params[i].Simulation.Requires[j].Spec, pf); err != nil {
-				return fmt.Errorf("%s %q parameter %q simulation require %d: %w", ownerKind, ownerKey, params[i].Name, j, err)
+		for r := range params[i].Simulation.Rules {
+			rule := &params[i].Simulation.Rules[r]
+			for j := range rule.Requires {
+				if err := relowerSpec(&rule.Requires[j].Spec, pf); err != nil {
+					return fmt.Errorf("%s %q parameter %q simulation rule %d require %d: %w", ownerKind, ownerKey, params[i].Name, r, j, err)
+				}
 			}
-		}
-		if params[i].Simulation.Specification != nil {
-			if err := relowerSpec(&params[i].Simulation.Specification.Spec, pf); err != nil {
-				return fmt.Errorf("%s %q parameter %q simulation specification: %w", ownerKind, ownerKey, params[i].Name, err)
+			if rule.Specification != nil {
+				if err := relowerSpec(&rule.Specification.Spec, pf); err != nil {
+					return fmt.Errorf("%s %q parameter %q simulation rule %d specification: %w", ownerKind, ownerKey, params[i].Name, r, err)
+				}
 			}
 		}
 	}
@@ -212,14 +232,17 @@ func relowerParameterSimulationStrict(ownerKey, ownerKind string, params []model
 		if params[i].Simulation == nil {
 			continue
 		}
-		for j := range params[i].Simulation.Requires {
-			if err := relowerSpecStrict(&params[i].Simulation.Requires[j].Spec, pf); err != nil {
-				errs = append(errs, fmt.Errorf("%s %q parameter %q simulation require %d: %w", ownerKind, ownerKey, params[i].Name, j, err))
+		for r := range params[i].Simulation.Rules {
+			rule := &params[i].Simulation.Rules[r]
+			for j := range rule.Requires {
+				if err := relowerSpecStrict(&rule.Requires[j].Spec, pf); err != nil {
+					errs = append(errs, fmt.Errorf("%s %q parameter %q simulation rule %d require %d: %w", ownerKind, ownerKey, params[i].Name, r, j, err))
+				}
 			}
-		}
-		if params[i].Simulation.Specification != nil {
-			if err := relowerSpecStrict(&params[i].Simulation.Specification.Spec, pf); err != nil {
-				errs = append(errs, fmt.Errorf("%s %q parameter %q simulation specification: %w", ownerKind, ownerKey, params[i].Name, err))
+			if rule.Specification != nil {
+				if err := relowerSpecStrict(&rule.Specification.Spec, pf); err != nil {
+					errs = append(errs, fmt.Errorf("%s %q parameter %q simulation rule %d specification: %w", ownerKind, ownerKey, params[i].Name, r, err))
+				}
 			}
 		}
 	}
@@ -366,32 +389,76 @@ func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, n
 func lowerActionExpressionsStrict(class *model_class.Class, classCtx *LowerContext) []error {
 	var errs []error
 	for actKey, action := range class.Actions {
-		actCtx := ContextWithParameters(classCtx, action.Parameters)
-		actPF := NewExpressionParseFuncStrict(actCtx)
-		for i := range action.Requires {
-			if err := relowerSpecStrict(&action.Requires[i].Spec, actPF); err != nil {
-				errs = append(errs, fmt.Errorf("action %q require %d: %w", actKey.String(), i, err))
-			}
-		}
-		for i := range action.Guarantees {
-			if err := relowerSpecStrict(&action.Guarantees[i].Spec, actPF); err != nil {
-				errs = append(errs, fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err))
-			}
-		}
-		for i := range action.SafetyRules {
-			if err := relowerSpecStrict(&action.SafetyRules[i].Spec, actPF); err != nil {
-				errs = append(errs, fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err))
-			}
-		}
-		for i := range action.Parameters {
-			for j := range action.Parameters[i].Invariants {
-				if err := relowerSpecStrict(&action.Parameters[i].Invariants[j].Spec, actPF); err != nil {
-					errs = append(errs, fmt.Errorf("action %q parameter %q invariant %d: %w", actKey.String(), action.Parameters[i].Name, j, err))
-				}
-			}
-		}
-		errs = append(errs, relowerParameterSimulationStrict(actKey.String(), "action", action.Parameters, classCtx)...)
+		errs = append(errs, lowerOneActionExpressionsStrict(actKey, &action, classCtx)...)
 		class.Actions[actKey] = action
+	}
+	return errs
+}
+
+func lowerOneActionExpressionsStrict(actKey identity.Key, action *model_state.Action, classCtx *LowerContext) []error {
+	var errs []error
+	actCtx := ContextWithParameters(classCtx, action.Parameters)
+	actPF := NewExpressionParseFuncStrict(actCtx)
+	for i := range action.Requires {
+		if err := relowerSpecStrict(&action.Requires[i].Spec, actPF); err != nil {
+			errs = append(errs, fmt.Errorf("action %q require %d: %w", actKey.String(), i, err))
+		}
+	}
+	errs = append(errs, lowerActionGuaranteesStrict(actKey, action, actCtx, actPF)...)
+	for i := range action.SafetyRules {
+		if err := relowerSpecStrict(&action.SafetyRules[i].Spec, actPF); err != nil {
+			errs = append(errs, fmt.Errorf("action %q safety rule %d: %w", actKey.String(), i, err))
+		}
+	}
+	for i := range action.Parameters {
+		for j := range action.Parameters[i].Invariants {
+			if err := relowerSpecStrict(&action.Parameters[i].Invariants[j].Spec, actPF); err != nil {
+				errs = append(errs, fmt.Errorf("action %q parameter %q invariant %d: %w", actKey.String(), action.Parameters[i].Name, j, err))
+			}
+		}
+	}
+	errs = append(errs, relowerParameterSimulationStrict(actKey.String(), "action", action.Parameters, classCtx)...)
+	return errs
+}
+
+func lowerActionGuaranteesStrict(
+	actKey identity.Key,
+	action *model_state.Action,
+	actCtx *LowerContext,
+	actPF StrictExpressionParseFunc,
+) []error {
+	var errs []error
+	for i := range action.Guarantees {
+		guar := &action.Guarantees[i]
+		if model_logic.IsAssociationClassReify(*guar) {
+			errs = append(errs, relowerAssociationClassReifyStrict(actKey, i, guar, actCtx, actPF)...)
+			continue
+		}
+		if err := relowerSpecStrict(&guar.Spec, actPF); err != nil {
+			errs = append(errs, fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err))
+		}
+	}
+	return errs
+}
+
+func relowerAssociationClassReifyStrict(
+	actKey identity.Key,
+	index int,
+	guar *model_logic.Logic,
+	actCtx *LowerContext,
+	actPF StrictExpressionParseFunc,
+) []error {
+	var errs []error
+	if err := relowerSpecStrict(&guar.EndpointSelectorSpec, actPF); err != nil {
+		errs = append(errs, fmt.Errorf("action %q guarantee %d endpoint_selector: %w", actKey.String(), index, err))
+	}
+	reifyPF := actPF
+	if setMap, ok := guar.EndpointSelectorSpec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
+		reifyCtx := withLocalVar(actCtx, setMap.Variable)
+		reifyPF = NewExpressionParseFuncStrict(reifyCtx)
+	}
+	if err := relowerSpecStrict(&guar.Spec, reifyPF); err != nil {
+		errs = append(errs, fmt.Errorf("action %q guarantee %d: %w", actKey.String(), index, err))
 	}
 	return errs
 }

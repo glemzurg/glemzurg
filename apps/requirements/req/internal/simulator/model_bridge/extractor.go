@@ -86,9 +86,11 @@ func extractActionExpressions(action *model_state.Action) []ExtractedExpression 
 		if param.Simulation == nil {
 			continue
 		}
-		extra += len(param.Simulation.Requires)
-		if param.Simulation.Specification != nil {
-			extra++
+		for _, rule := range param.Simulation.Rules {
+			extra += len(rule.Requires)
+			if rule.Specification != nil {
+				extra++
+			}
 		}
 	}
 	expressions := make([]ExtractedExpression, 0, len(action.Requires)+len(action.Guarantees)+extra)
@@ -122,23 +124,27 @@ func extractActionExpressions(action *model_state.Action) []ExtractedExpression 
 			continue
 		}
 		paramKey := param.Key
-		for i, req := range param.Simulation.Requires {
-			expressions = append(expressions, ExtractedExpression{
-				Source:     SourceActionParameterSimulationRequire,
-				Expression: req.Spec.Expression,
-				ScopeKey:   &paramKey,
-				Name:       param.Name,
-				Index:      i,
-			})
-		}
-		if param.Simulation.Specification != nil {
-			expressions = append(expressions, ExtractedExpression{
-				Source:     SourceActionParameterSimulationSpec,
-				Expression: param.Simulation.Specification.Spec.Expression,
-				ScopeKey:   &paramKey,
-				Name:       param.Name,
-				Index:      0,
-			})
+		requireIndex := 0
+		for ruleIndex, rule := range param.Simulation.Rules {
+			for _, req := range rule.Requires {
+				expressions = append(expressions, ExtractedExpression{
+					Source:     SourceActionParameterSimulationRequire,
+					Expression: req.Spec.Expression,
+					ScopeKey:   &paramKey,
+					Name:       param.Name,
+					Index:      requireIndex,
+				})
+				requireIndex++
+			}
+			if rule.Specification != nil {
+				expressions = append(expressions, ExtractedExpression{
+					Source:     SourceActionParameterSimulationSpec,
+					Expression: rule.Specification.Spec.Expression,
+					ScopeKey:   &paramKey,
+					Name:       param.Name,
+					Index:      ruleIndex,
+				})
+			}
 		}
 	}
 

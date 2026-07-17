@@ -9,9 +9,32 @@ import (
 	"github.com/pkg/errors"
 )
 
-func scanActionParameterSimulationRequire(scanner Scanner, actionKeyPtr *identity.Key, parameterKeyPtr *string, logicKeyPtr *identity.Key) error {
+// SimulationRequireRow is one require join for a parameter simulation rule.
+type SimulationRequireRow struct {
+	ActionKey    identity.Key
+	ParameterKey string
+	RuleIndex    int
+	LogicKey     identity.Key
+}
+
+// SimulationSpecRow is one specification join for a parameter simulation rule.
+type SimulationSpecRow struct {
+	ActionKey    identity.Key
+	ParameterKey string
+	RuleIndex    int
+	LogicKey     identity.Key
+}
+
+func scanActionParameterSimulationRequire(
+	scanner Scanner,
+	actionKeyPtr *identity.Key,
+	parameterKeyPtr *string,
+	ruleIndexPtr *int,
+	logicKeyPtr *identity.Key,
+) error {
 	var actionKeyStr, parameterKeyStr, logicKeyStr string
-	if err := scanner.Scan(&actionKeyStr, &parameterKeyStr, &logicKeyStr); err != nil {
+	var ruleIndex int
+	if err := scanner.Scan(&actionKeyStr, &parameterKeyStr, &ruleIndex, &logicKeyStr); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			return ErrNotFound
 		}
@@ -23,33 +46,43 @@ func scanActionParameterSimulationRequire(scanner Scanner, actionKeyPtr *identit
 		return err
 	}
 	*parameterKeyPtr = parameterKeyStr
+	*ruleIndexPtr = ruleIndex
 	*logicKeyPtr, err = identity.ParseKey(logicKeyStr)
 	return err
 }
 
-func scanActionParameterSimulationSpec(scanner Scanner, actionKeyPtr *identity.Key, parameterKeyPtr *string, logicKeyPtr *identity.Key) error {
-	return scanActionParameterSimulationRequire(scanner, actionKeyPtr, parameterKeyPtr, logicKeyPtr)
+func scanActionParameterSimulationSpec(
+	scanner Scanner,
+	actionKeyPtr *identity.Key,
+	parameterKeyPtr *string,
+	ruleIndexPtr *int,
+	logicKeyPtr *identity.Key,
+) error {
+	return scanActionParameterSimulationRequire(scanner, actionKeyPtr, parameterKeyPtr, ruleIndexPtr, logicKeyPtr)
 }
 
-// QueryActionParameterSimulationRequires loads simulation require logic keys grouped by parameter key.
-func QueryActionParameterSimulationRequires(dbOrTx DbOrTx, modelKey string) (map[identity.Key][]identity.Key, error) {
-	result := make(map[identity.Key][]identity.Key)
+// QueryActionParameterSimulationRequires loads require rows ordered by rule then logic sort.
+func QueryActionParameterSimulationRequires(dbOrTx DbOrTx, modelKey string) ([]SimulationRequireRow, error) {
+	var rows []SimulationRequireRow
 	err := dbQuery(dbOrTx, func(scanner Scanner) error {
 		var actionKey identity.Key
 		var parameterSubKey string
+		var ruleIndex int
 		var logicKey identity.Key
-		if err := scanActionParameterSimulationRequire(scanner, &actionKey, &parameterSubKey, &logicKey); err != nil {
+		if err := scanActionParameterSimulationRequire(scanner, &actionKey, &parameterSubKey, &ruleIndex, &logicKey); err != nil {
 			return errors.WithStack(err)
 		}
-		paramKey, err := identity.NewParameterKey(actionKey, parameterSubKey)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		result[paramKey] = append(result[paramKey], logicKey)
+		rows = append(rows, SimulationRequireRow{
+			ActionKey:    actionKey,
+			ParameterKey: parameterSubKey,
+			RuleIndex:    ruleIndex,
+			LogicKey:     logicKey,
+		})
 		return nil
 	}, `SELECT
 			apsr.action_key,
 			apsr.parameter_key,
+			apsr.rule_index,
 			apsr.logic_key
 		FROM
 			action_parameter_simulation_require apsr
@@ -57,94 +90,81 @@ func QueryActionParameterSimulationRequires(dbOrTx DbOrTx, modelKey string) (map
 			logic l ON l.model_key = apsr.model_key AND l.logic_key = apsr.logic_key
 		WHERE
 			apsr.model_key = $1
-		ORDER BY apsr.action_key, apsr.parameter_key, l.sort_order, apsr.logic_key`, modelKey)
+		ORDER BY apsr.action_key, apsr.parameter_key, apsr.rule_index, l.sort_order, apsr.logic_key`, modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return result, nil
+	return rows, nil
 }
 
-// QueryActionParameterSimulationSpecs loads simulation specification logic keys by parameter key.
-func QueryActionParameterSimulationSpecs(dbOrTx DbOrTx, modelKey string) (map[identity.Key]identity.Key, error) {
-	result := make(map[identity.Key]identity.Key)
+// QueryActionParameterSimulationSpecs loads specification rows ordered by rule index.
+func QueryActionParameterSimulationSpecs(dbOrTx DbOrTx, modelKey string) ([]SimulationSpecRow, error) {
+	var rows []SimulationSpecRow
 	err := dbQuery(dbOrTx, func(scanner Scanner) error {
 		var actionKey identity.Key
 		var parameterSubKey string
+		var ruleIndex int
 		var logicKey identity.Key
-		if err := scanActionParameterSimulationSpec(scanner, &actionKey, &parameterSubKey, &logicKey); err != nil {
+		if err := scanActionParameterSimulationSpec(scanner, &actionKey, &parameterSubKey, &ruleIndex, &logicKey); err != nil {
 			return errors.WithStack(err)
 		}
-		paramKey, err := identity.NewParameterKey(actionKey, parameterSubKey)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		result[paramKey] = logicKey
+		rows = append(rows, SimulationSpecRow{
+			ActionKey:    actionKey,
+			ParameterKey: parameterSubKey,
+			RuleIndex:    ruleIndex,
+			LogicKey:     logicKey,
+		})
 		return nil
 	}, `SELECT
 			apss.action_key,
 			apss.parameter_key,
+			apss.rule_index,
 			apss.logic_key
 		FROM
 			action_parameter_simulation_spec apss
 		WHERE
 			apss.model_key = $1
-		ORDER BY apss.action_key, apss.parameter_key`, modelKey)
+		ORDER BY apss.action_key, apss.parameter_key, apss.rule_index`, modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return result, nil
+	return rows, nil
 }
 
 // AddActionParameterSimulationRequires inserts simulation require join rows.
-func AddActionParameterSimulationRequires(dbOrTx DbOrTx, modelKey string, requires map[identity.Key]map[string][]identity.Key) error {
-	totalRows := 0
-	for _, paramRequires := range requires {
-		for _, logicKeys := range paramRequires {
-			totalRows += len(logicKeys)
-		}
-	}
-	if totalRows == 0 {
+func AddActionParameterSimulationRequires(dbOrTx DbOrTx, modelKey string, rows []SimulationRequireRow) error {
+	if len(rows) == 0 {
 		return nil
 	}
 	var qb strings.Builder
-	qb.WriteString(`INSERT INTO action_parameter_simulation_require (model_key, action_key, parameter_key, logic_key) VALUES `)
-	args := make([]any, 0, totalRows*4)
-	i := 0
-	for actionKey, paramRequires := range requires {
-		for parameterKey, logicKeys := range paramRequires {
-			for _, logicKey := range logicKeys {
-				if i > 0 {
-					qb.WriteString(", ")
-				}
-				base := i * 4
-				fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
-				args = append(args, modelKey, actionKey.String(), parameterKey, logicKey.String())
-				i++
-			}
+	qb.WriteString(`INSERT INTO action_parameter_simulation_require (model_key, action_key, parameter_key, rule_index, logic_key) VALUES `)
+	args := make([]any, 0, len(rows)*5)
+	for i, row := range rows {
+		if i > 0 {
+			qb.WriteString(", ")
 		}
+		base := i * 5
+		fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+		args = append(args, modelKey, row.ActionKey.String(), row.ParameterKey, row.RuleIndex, row.LogicKey.String())
 	}
 	return errors.WithStack(dbExec(dbOrTx, qb.String(), args...))
 }
 
 // AddActionParameterSimulationSpecs inserts simulation specification join rows.
-func AddActionParameterSimulationSpecs(dbOrTx DbOrTx, modelKey string, specs map[identity.Key]map[string]identity.Key) error {
-	if len(specs) == 0 {
+func AddActionParameterSimulationSpecs(dbOrTx DbOrTx, modelKey string, rows []SimulationSpecRow) error {
+	if len(rows) == 0 {
 		return nil
 	}
 	var qb strings.Builder
-	qb.WriteString(`INSERT INTO action_parameter_simulation_spec (model_key, action_key, parameter_key, logic_key) VALUES `)
-	args := make([]any, 0, len(specs)*4)
-	i := 0
-	for actionKey, paramSpecs := range specs {
-		for parameterKey, logicKey := range paramSpecs {
-			if i > 0 {
-				qb.WriteString(", ")
-			}
-			base := i * 4
-			fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
-			args = append(args, modelKey, actionKey.String(), parameterKey, logicKey.String())
-			i++
+	qb.WriteString(`INSERT INTO action_parameter_simulation_spec (model_key, action_key, parameter_key, rule_index, logic_key) VALUES `)
+	args := make([]any, 0, len(rows)*5)
+	for i, row := range rows {
+		if i > 0 {
+			qb.WriteString(", ")
 		}
+		base := i * 5
+		fmt.Fprintf(&qb, "($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+		args = append(args, modelKey, row.ActionKey.String(), row.ParameterKey, row.RuleIndex, row.LogicKey.String())
 	}
 	return errors.WithStack(dbExec(dbOrTx, qb.String(), args...))
 }

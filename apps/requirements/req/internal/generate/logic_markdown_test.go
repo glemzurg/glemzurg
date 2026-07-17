@@ -66,8 +66,60 @@ func TestLogicMarkdownSpecLinesForClassRewritesSelfFields(t *testing.T) {
 		)),
 	})
 
-	got := logicMarkdownSpecLinesForClass(class, logic)
+	got := logicMarkdownSpecLinesForClass(class, logic, nil, nil)
 	require.Equal(t, "    - **self.Amount /= 0**", got)
+}
+
+func TestLogicMarkdownSpecLinesAssociationClassReify(t *testing.T) {
+	txKey := helper.Must(identity.NewClassKey(
+		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("finance")), "wallet")),
+		"transaction",
+	))
+	acKey := helper.Must(identity.NewClassKey(
+		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("finance")), "wallet")),
+		"account_balance_change",
+	))
+	acctKey := helper.Must(identity.NewClassKey(
+		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("finance")), "wallet")),
+		"account",
+	))
+	assocKey := helper.Must(identity.NewClassAssociationKey(
+		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("finance")), "wallet")),
+		txKey, acctKey, "adjusts",
+	))
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Adjusts", Details: ""},
+		model_class.AssociationEnd{ClassKey: txKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
+		model_class.AssociationEnd{ClassKey: acctKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))},
+		model_class.AssociationOptions{AssociationClassKey: &acKey},
+	)
+	acClass := model_class.NewClass(acKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Account Balance Change"})
+	txClass := model_class.NewClass(txKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Transaction"})
+
+	logic := model_logic.NewLogic(
+		identity.Key{},
+		model_logic.LogicTypeStateChange,
+		"The data for each Adjusts.",
+		"AccountBalanceChange",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "_new(r.amount)"},
+		nil,
+	)
+	logic.SetEndpointSelectorSpec(logic_spec.ExpressionSpec{
+		Notation:      model_logic.NotationTLAPlus,
+		Specification: `{ r.account : r \in Amounts }`,
+	})
+
+	got := logicMarkdownSpecLinesForClass(
+		txClass,
+		logic,
+		map[identity.Key]model_class.Association{assocKey: assoc},
+		map[identity.Key]model_class.Class{acKey: acClass},
+	)
+	require.Equal(t, strings.Join([]string{
+		`    - **Adjusts selector: { r.account : r \in Amounts }**`,
+		`    - **AccountBalanceChange' = «new»(r.amount)**`,
+	}, "\n"), got)
 }
 
 func TestLogicMarkdownSpecLinesBoldsLetBinding(t *testing.T) {
@@ -110,42 +162,42 @@ func TestParameterSimulationMarkdownLines(t *testing.T) {
 	actionKey := helper.Must(identity.NewActionKey(classKey, "initialize"))
 	paramKey := helper.Must(identity.NewParameterKey(actionKey, "amounts"))
 	reqKey := helper.Must(identity.NewParameterSimulationRequireKey(paramKey, "0"))
-	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey))
+	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey, "0"))
 
 	param := helper.Must(model_state.NewParameter(actionKey, "Amounts", "unordered of unconstrained", false))
+	specLogic := model_logic.NewLogic(
+		specKey,
+		model_logic.LogicTypeValue,
+		"",
+		"",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{}"},
+		nil,
+	)
 	param.SetSimulation(&model_state.ParameterSimulation{
 		Details: "Sample amounts.",
-		Requires: []model_logic.Logic{
-			model_logic.NewLogic(
-				reqKey,
-				model_logic.LogicTypeAssessment,
-				"Need accounts.",
-				"",
-				logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Account /= {}"},
-				nil,
-			),
-		},
-		Specification: func() *model_logic.Logic {
-			logic := model_logic.NewLogic(
-				specKey,
-				model_logic.LogicTypeValue,
-				"",
-				"",
-				logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{}"},
-				nil,
-			)
-			return &logic
-		}(),
+		Rules: []model_state.ParameterSimulationRule{{
+			Requires: []model_logic.Logic{
+				model_logic.NewLogic(
+					reqKey,
+					model_logic.LogicTypeAssessment,
+					"Need accounts.",
+					"",
+					logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Account /= {}"},
+					nil,
+				),
+			},
+			Specification: &specLogic,
+		}},
 	})
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Transaction"})
 
 	got := parameterSimulationMarkdownLines(class, param)
 	require.Contains(t, got, "    - Simulation:")
 	require.Contains(t, got, "Sample amounts.")
-	require.Contains(t, got, "        - Requires:")
+	require.Contains(t, got, "            - Requires:")
 	require.Contains(t, got, "Need accounts.")
 	require.Contains(t, got, "**Account /= {}**")
-	require.Contains(t, got, "        - Specification:\n            - **{}**")
+	require.Contains(t, got, "            - Specification:\n                - **{}**")
 }
 
 func TestDerivationPolicyMarkdownHTMLBoldsSpec(t *testing.T) {

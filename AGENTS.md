@@ -96,13 +96,46 @@ Good (why): `// ⚠ must be parsed before ◆ so unfinished notes stay out of UM
 
 UML stereotypes in this repo use **guillemets** (`«»`), not ASCII angle brackets. When the user writes a stereotype as `<>`, `<<`, `<<>>`, or similar bracket shorthand, they mean the guillemet form — e.g. `<<association>>` → `«association»`, `<<actor>>` → `«actor»`. Rendered diagrams must show `«»`. Mermaid class diagrams encode stereotypes in source as `<<name>>` inside the class body; Mermaid draws them as `«name»` above the class title.
 
-## Model-agnostic Go
+## Model-agnostic code (always)
 
-Requirements tooling (`apps/requirements/req` and related packages) must not embed names, association labels, domain vocabulary, or other content from a specific model in production Go code.
+**Production code in this repo must always be model-agnostic.** It must not hardcode knowledge of any particular model (evenplay, a sandbox fixture domain, a partner name, wallet class names, association labels like `Adjusts`/`Amounts`, attribute spellings unique to one domain, and so on). Tools, parsers, simulators, generators, and shared libraries behave correctly for **any** model that parses and validates — they must not special-case one authored model.
 
-- Derive human-readable text from model data at runtime (association `name`, class `name`, multiplicity, `details`, and so on).
-- Do not hardcode model-specific strings in `switch` tables, constants, or formatters to special-case one domain.
-- Tests may use fixture models and sample paths; production code must behave correctly for any model that parses.
+This applies to Go under `apps/requirements/req` and to any other production code that consumes or walks models. Domain content lives in model files (`data_sandbox/model/…`, fixtures, samples); engine code reads it at runtime.
+
+- Derive names, labels, multiplicities, field lists, and human-readable text from model data (class `name`, association `name`, attribute keys, event parameter names, guarantees, and so on) — never from a fixed vocabulary of one domain.
+- Do not hardcode model-specific strings in `switch` tables, constants, cascade paths, formatters, or control flow to special-case one model.
+- Prefer generic mechanisms driven by model structure and authored guarantees (e.g. association bulk-create from a set-map over a parameter set) over embedding domain cascade rules in the engine.
+- **Tests and sample models are the exception:** `_test.go` files, fixtures, and sandbox models may use concrete domain names and paths. Production packages must still treat those only as examples of arbitrary valid models.
+
+## Simulation surface (what is being tested)
+
+The **simulation surface** is the set of **external drivers** the exercise simulator may choose at the top level. Its purpose is to tell a **human tester what is actually being exercised** on a given run—not to dump every class that happens to be loaded in scope.
+
+**Surface drivers (report these):**
+
+- External **creation events** (`_new` / «new» and other create transitions with no in-scope sender)
+- External **state-transition events** (and their actions) with no in-scope sender
+- Surface **do-actions** on a state
+- External **queries**
+- External **derived attributes** (readable at top level)
+
+**Not surface (do not list as drivers even if in the simulation):**
+
+- Classes (or events) that only participate as **peers**—created or updated by another class’s guarantees (e.g. association set-add/set-map, cascade Delete, association-class reify)
+- **Association classes** when they only materialize via a host association (even if included in the include-list so reify is enabled)
+- Classes that are in scope for liveness or cascade but have **no external events, queries, or derived attributes**
+- Derived attributes / queries that depend on **out-of-scope** classes (listed separately as off-surface, not as drivers)
+
+**Include-list vs surface report:** `-include-class` / sandbox `SIMULATE_CLASSES` (and subdomain includes) define **scope**—which classes may exist in the run. The surface **drivers** section is narrower: only hooks the selector can fire. Peer-only scoped classes still run (instances, links, invariants) but must not appear as empty driver rows.
+
+**Scope report (also shown to testers):** summarize participation separately from drivers.
+
+- If **every** class of a subdomain is in the run, list the **subdomain** path only (`finance/wallet`)—do not enumerate its classes.
+- If **only some** classes of a subdomain are in the run, list each **class** path (`finance/wallet/transaction`, …).
+
+**Output order (text CLI):** completion summary → step trace / final state → **simulation scope** → **simulation surface (drivers)** → violations.
+
+When changing surface reporting or selection, preserve this contract: scope shows what is loaded; surface shows what is driven at top level.
 
 ## Go `_test.go` files
 

@@ -222,13 +222,17 @@ func collectParameterInvariantLogics(class model_class.Class, allLogics *[]model
 			}
 			*allLogics = append(*allLogics, param.Invariants...)
 			if param.Simulation != nil {
-				for i, req := range param.Simulation.Requires {
-					sortOrders[req.Key.String()] = i
-				}
-				*allLogics = append(*allLogics, param.Simulation.Requires...)
-				if param.Simulation.Specification != nil {
-					sortOrders[param.Simulation.Specification.Key.String()] = 0
-					*allLogics = append(*allLogics, *param.Simulation.Specification)
+				requireSort := 0
+				for ruleIndex, rule := range param.Simulation.Rules {
+					for _, req := range rule.Requires {
+						sortOrders[req.Key.String()] = requireSort
+						requireSort++
+						*allLogics = append(*allLogics, req)
+					}
+					if rule.Specification != nil {
+						sortOrders[rule.Specification.Key.String()] = ruleIndex
+						*allLogics = append(*allLogics, *rule.Specification)
+					}
 				}
 			}
 		}
@@ -658,8 +662,8 @@ func writeParameterInvariants(tx *sql.Tx, modelKey string,
 }
 
 func writeParameterSimulation(tx *sql.Tx, modelKey string, actionsMap map[identity.Key][]model_state.Action) error {
-	simRequires := make(map[identity.Key]map[string][]identity.Key)
-	simSpecs := make(map[identity.Key]map[string]identity.Key)
+	var simRequires []SimulationRequireRow
+	var simSpecs []SimulationSpecRow
 	for _, actionList := range actionsMap {
 		for _, action := range actionList {
 			for _, param := range action.Parameters {
@@ -667,17 +671,23 @@ func writeParameterSimulation(tx *sql.Tx, modelKey string, actionsMap map[identi
 					continue
 				}
 				subKey := param.Key.SubKey
-				for _, req := range param.Simulation.Requires {
-					if simRequires[action.Key] == nil {
-						simRequires[action.Key] = make(map[string][]identity.Key)
+				for ruleIndex, rule := range param.Simulation.Rules {
+					for _, req := range rule.Requires {
+						simRequires = append(simRequires, SimulationRequireRow{
+							ActionKey:    action.Key,
+							ParameterKey: subKey,
+							RuleIndex:    ruleIndex,
+							LogicKey:     req.Key,
+						})
 					}
-					simRequires[action.Key][subKey] = append(simRequires[action.Key][subKey], req.Key)
-				}
-				if param.Simulation.Specification != nil {
-					if simSpecs[action.Key] == nil {
-						simSpecs[action.Key] = make(map[string]identity.Key)
+					if rule.Specification != nil {
+						simSpecs = append(simSpecs, SimulationSpecRow{
+							ActionKey:    action.Key,
+							ParameterKey: subKey,
+							RuleIndex:    ruleIndex,
+							LogicKey:     rule.Specification.Key,
+						})
 					}
-					simSpecs[action.Key][subKey] = param.Simulation.Specification.Key
 				}
 			}
 		}
@@ -1034,8 +1044,8 @@ type readDomainStructure struct {
 	toAnchoredAssocKeyByLogic        map[identity.Key]identity.Key
 	attrInvariantsMap                map[identity.Key][]identity.Key
 	actionParamInvariantsMap         map[identity.Key][]identity.Key
-	actionParamSimulationRequiresMap map[identity.Key][]identity.Key
-	actionParamSimulationSpecsMap    map[identity.Key]identity.Key
+	actionParamSimulationRequireRows []SimulationRequireRow
+	actionParamSimulationSpecRows    []SimulationSpecRow
 	queryParamInvariantsMap          map[identity.Key][]identity.Key
 	attributesMap                    map[identity.Key][]model_class.Attribute
 	guardsMap                        map[identity.Key][]model_state.Guard
@@ -1211,12 +1221,12 @@ func queryClassParameterLogicLinks(tx *sql.Tx, modelKey string, ds *readDomainSt
 		return err
 	}
 
-	ds.actionParamSimulationRequiresMap, err = QueryActionParameterSimulationRequires(tx, modelKey)
+	ds.actionParamSimulationRequireRows, err = QueryActionParameterSimulationRequires(tx, modelKey)
 	if err != nil {
 		return err
 	}
 
-	ds.actionParamSimulationSpecsMap, err = QueryActionParameterSimulationSpecs(tx, modelKey)
+	ds.actionParamSimulationSpecRows, err = QueryActionParameterSimulationSpecs(tx, modelKey)
 	if err != nil {
 		return err
 	}
@@ -1580,7 +1590,7 @@ func stitchParameterData(ds *readDomainStructure, logicsByKey map[identity.Key]m
 
 	for classKey, actions := range ds.actionsMap {
 		for i := range actions {
-			stitchParameterExtras(&actions[i].Parameters, ds.dataTypes, ds.actionParamInvariantsMap, ds.actionParamSimulationRequiresMap, ds.actionParamSimulationSpecsMap, logicsByKey)
+			stitchParameterExtras(&actions[i].Parameters, ds.dataTypes, ds.actionParamInvariantsMap, ds.actionParamSimulationRequireRows, ds.actionParamSimulationSpecRows, logicsByKey)
 		}
 		ds.actionsMap[classKey] = actions
 	}
@@ -1590,8 +1600,8 @@ func stitchParameterExtras(
 	params *[]model_state.Parameter,
 	dataTypes map[string]model_data_type.DataType,
 	paramInvariantsMap map[identity.Key][]identity.Key,
-	paramSimulationRequiresMap map[identity.Key][]identity.Key,
-	paramSimulationSpecsMap map[identity.Key]identity.Key,
+	simRequireRows []SimulationRequireRow,
+	simSpecRows []SimulationSpecRow,
 	logicsByKey map[identity.Key]model_logic.Logic,
 ) {
 	stitchParameterDataTypes(*params, dataTypes)
@@ -1603,25 +1613,58 @@ func stitchParameterExtras(
 			}
 			(*params)[j].SetInvariants(invariants)
 		}
-		reqKeys, hasRequires := paramSimulationRequiresMap[param.Key]
-		specKey, hasSpec := paramSimulationSpecsMap[param.Key]
-		if hasRequires || hasSpec {
-			simulation := &model_state.ParameterSimulation{}
-			if hasRequires {
-				requires := make([]model_logic.Logic, len(reqKeys))
-				for k, key := range reqKeys {
-					requires[k] = logicsByKey[key]
-				}
-				simulation.Requires = requires
-			}
-			if hasSpec {
-				if spec, ok := logicsByKey[specKey]; ok {
-					simulation.Specification = &spec
-				}
-			}
+		if simulation := simulationFromRows(param, simRequireRows, simSpecRows, logicsByKey); simulation != nil {
 			(*params)[j].SetSimulation(simulation)
 		}
 	}
+}
+
+// simulationFromRows rebuilds ParameterSimulation.Rules from require/spec join rows for one parameter.
+func simulationFromRows(
+	param model_state.Parameter,
+	simRequireRows []SimulationRequireRow,
+	simSpecRows []SimulationSpecRow,
+	logicsByKey map[identity.Key]model_logic.Logic,
+) *model_state.ParameterSimulation {
+	maxRule := -1
+	requiresByRule := map[int][]model_logic.Logic{}
+	specByRule := map[int]model_logic.Logic{}
+	for _, row := range simRequireRows {
+		paramKey, err := identity.NewParameterKey(row.ActionKey, row.ParameterKey)
+		if err != nil || paramKey != param.Key {
+			continue
+		}
+		if logic, ok := logicsByKey[row.LogicKey]; ok {
+			requiresByRule[row.RuleIndex] = append(requiresByRule[row.RuleIndex], logic)
+			if row.RuleIndex > maxRule {
+				maxRule = row.RuleIndex
+			}
+		}
+	}
+	for _, row := range simSpecRows {
+		paramKey, err := identity.NewParameterKey(row.ActionKey, row.ParameterKey)
+		if err != nil || paramKey != param.Key {
+			continue
+		}
+		if logic, ok := logicsByKey[row.LogicKey]; ok {
+			specByRule[row.RuleIndex] = logic
+			if row.RuleIndex > maxRule {
+				maxRule = row.RuleIndex
+			}
+		}
+	}
+	if maxRule < 0 {
+		return nil
+	}
+	rules := make([]model_state.ParameterSimulationRule, maxRule+1)
+	for i := 0; i <= maxRule; i++ {
+		rules[i].Requires = requiresByRule[i]
+		if spec, ok := specByRule[i]; ok {
+			specCopy := spec
+			rules[i].Specification = &specCopy
+		}
+	}
+	return &model_state.ParameterSimulation{Rules: rules}
 }
 
 // stitchParameterDataTypes resolves data type references in a parameter slice.

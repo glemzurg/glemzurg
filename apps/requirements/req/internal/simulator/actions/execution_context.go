@@ -36,15 +36,23 @@ type DeferredPostCondition struct {
 	OriginalExpression string
 }
 
-// DeferredPeerCreation creates a peer instance for an association set-add guarantee.
+// DeferredPeerCreation creates a peer and/or association-class row for set-add / bulk-create.
 type DeferredPeerCreation struct {
 	FromInstanceID state.InstanceID
 	AssocKey       identity.Key
 	ToClassKey     identity.Key
-	Params         map[string]object.Object
+	// ToInstanceID, when set, links an existing to-endpoint (no new to-class create).
+	ToInstanceID *state.InstanceID
+	// Params are creation-event parameters for the to-class (plain set-add) or the
+	// association class when ToInstanceID is set / AC materialization carries them.
+	Params map[string]object.Object
+	// ActionParams are the owning action's parameters, used after set-add to infer
+	// secondary association links (parameter instance → new peer) from the catalog.
+	ActionParams map[string]object.Object
 }
 
 // DeferredPeerUpdate fires a peer-class event on an existing association link target.
+// AssocKey may be zero when the peer was selected from a non-association domain set.
 type DeferredPeerUpdate struct {
 	OwnerInstanceID state.InstanceID
 	AssocKey        identity.Key
@@ -138,6 +146,8 @@ type ExecutionContext struct {
 type associationRemovalKey struct {
 	OwnerInstanceID state.InstanceID
 	AssocKey        identity.Key
+	// Reverse is true when the owner is the association to-endpoint (self._Assoc navigation).
+	Reverse bool
 }
 
 // NewExecutionContext creates a new top-level execution context.
@@ -217,6 +227,11 @@ func (ctx *ExecutionContext) AddPeerUpdate(pu DeferredPeerUpdate) {
 }
 
 // GetPeerUpdates returns queued peer updates.
+// ClearPeerUpdates drops applied peer updates so later phases do not re-fire them.
+func (ctx *ExecutionContext) ClearPeerUpdates() {
+	ctx.peerUpdates = nil
+}
+
 func (ctx *ExecutionContext) GetPeerUpdates() []DeferredPeerUpdate {
 	return ctx.peerUpdates
 }
@@ -292,12 +307,13 @@ func (ctx *ExecutionContext) RequiresViolations() invariants.ViolationErrors {
 func (ctx *ExecutionContext) SetAssociationRemovedPeers(
 	ownerInstanceID state.InstanceID,
 	assocKey identity.Key,
+	reverse bool,
 	peerIDs []state.InstanceID,
 ) {
 	if len(peerIDs) == 0 {
 		return
 	}
-	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey}
+	key := associationRemovalKey{OwnerInstanceID: ownerInstanceID, AssocKey: assocKey, Reverse: reverse}
 	if ctx.associationRemovedPeers == nil {
 		ctx.associationRemovedPeers = make(map[associationRemovalKey][]state.InstanceID)
 	}

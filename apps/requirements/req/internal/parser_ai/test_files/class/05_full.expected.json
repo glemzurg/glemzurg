@@ -3,6 +3,7 @@
     "details": "Represents a customer's order with full lifecycle tracking",
     "actor_key": "customer",
     "uml_comment": "Core aggregate root",
+    "marked": true,
     "attributes": [
         {
             "name": "Order Number",

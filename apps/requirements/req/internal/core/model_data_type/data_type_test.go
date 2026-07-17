@@ -338,6 +338,20 @@ func TestNew(t *testing.T) {
 			},
 			errorMessage: "",
 		},
+		// Production path used by NewAttribute: full default parse of attribute rules text.
+		{
+			name:  "ref of with slash in content (jurisdiction-style rules)",
+			input: "ref of ISO 3166-2 subdivision codes or ISO 3166-1 two-letter codes if no state/province.",
+			expected: &DataType{
+				Key:            key,
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: CONSTRAINT_TYPE_REFERENCE,
+					Reference:      t_StrPtr("ISO 3166-2 subdivision codes or ISO 3166-1 two-letter codes if no state/province."),
+				},
+			},
+			errorMessage: "",
+		},
 	}
 
 	for _, tt := range tests {

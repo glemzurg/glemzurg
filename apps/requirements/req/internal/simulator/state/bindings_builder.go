@@ -105,7 +105,9 @@ func (b *BindingsBuilder) SetDerivedResolver(resolver DerivedAttributeResolver) 
 // Use this when evaluating a DerivationPolicy to avoid recursive derived resolution.
 func (b *BindingsBuilder) BuildForInstanceBase(instance *ClassInstance) *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
-	bindings.SetRelationContext(b.buildRelationContext())
+	relCtx := b.buildRelationContext()
+	bindings.SetRelationContext(relCtx)
+	b.aliasSelfForNavigation(relCtx, instance, instance.Attributes)
 	child := bindings.WithSelfAndClass(instance.Attributes, instance.ClassKey.String())
 	b.applyNamedSets(child)
 	return child
@@ -117,14 +119,34 @@ func (b *BindingsBuilder) BuildForInstanceBase(instance *ClassInstance) *evaluat
 // and injected into the self record.
 func (b *BindingsBuilder) BuildForInstance(instance *ClassInstance) *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
-	bindings.SetRelationContext(b.buildRelationContext())
+	relCtx := b.buildRelationContext()
+	bindings.SetRelationContext(relCtx)
 
 	attrs := b.resolveAttributes(instance)
+	b.aliasSelfForNavigation(relCtx, instance, attrs)
 
 	// Create a child scope with self set
 	child := bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
 	b.applyNamedSets(child)
 	return child
+}
+
+// aliasSelfForNavigation maps bare/derived self data to the engine instance id so
+// association lookup finds links registered on [id, data] endpoints.
+func (b *BindingsBuilder) aliasSelfForNavigation(
+	relCtx *evaluator.RelationContext,
+	instance *ClassInstance,
+	selfData *object.Record,
+) {
+	if relCtx == nil || instance == nil {
+		return
+	}
+	id := evaluator.ObjectID(instance.ID)
+	relCtx.EnsureInstance(id, instance.Attributes)
+	relCtx.RegisterClassKey(id, instance.ClassKey.String())
+	if selfData != nil && selfData != instance.Attributes {
+		relCtx.RegisterDataAlias(id, selfData)
+	}
 }
 
 // BuildForInstanceWithVariables creates bindings with "self" and additional variables.
@@ -145,32 +167,59 @@ func (b *BindingsBuilder) BuildForInstanceWithVariables(
 	return bindings
 }
 
+// Class extent elements bound into TLA as records [id |-> N, data |-> attrs].
+// id is the engine instance identity (number); data is the attribute record.
+// Association images use the same shape so multi-peer navigations do not collapse.
+const (
+	ClassExtentIDField   = object.ExtentIDField
+	ClassExtentDataField = object.ExtentDataField
+)
+
 // BuildWithClassInstances creates bindings that include all instances of classes
 // as sets accessible by class name. This enables expressions like "∀ o ∈ Orders : ...".
 func (b *BindingsBuilder) BuildWithClassInstances(classNameMap map[identity.Key]string) *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
 	bindings.SetRelationContext(b.buildRelationContext())
-
-	// Build sets for each class
-	for classKey, className := range classNameMap {
-		instances := b.state.InstancesByClass(classKey)
-
-		// Create a set of all instance attribute records
-		elements := make([]object.Object, len(instances))
-		for i, instance := range instances {
-			elements[i] = instance.Attributes
-		}
-
-		classSet := object.NewSet()
-		for _, elem := range elements {
-			classSet.Add(elem)
-		}
-
-		bindings.Set(className, classSet, evaluator.NamespaceGlobal)
-	}
-
+	b.bindClassInstanceSets(bindings, classNameMap)
 	b.applyNamedSets(bindings)
 	return bindings
+}
+
+// bindClassInstanceSets adds one set per class name. Each element is [id, data].
+func (b *BindingsBuilder) bindClassInstanceSets(bindings *evaluator.Bindings, classNameMap map[identity.Key]string) {
+	for classKey, className := range classNameMap {
+		bindings.Set(className, classInstanceExtentSet(b.state.InstancesByClass(classKey)), evaluator.NamespaceGlobal)
+	}
+}
+
+// classInstanceExtentSet builds the TLA class extent: a set of [id |-> id, data |-> attributes].
+// Distinct ids keep instances separate even when attribute data is identical.
+func classInstanceExtentSet(instances []*ClassInstance) *object.Set {
+	classSet := object.NewSet()
+	for _, instance := range instances {
+		classSet.Add(ClassExtentElement(instance.ID, instance.Attributes))
+	}
+	return classSet
+}
+
+// ClassExtentElement builds one class-extent record [id |-> id, data |-> attrs].
+// data is a clone so evaluation cannot mutate persisted instance attributes through the extent.
+func ClassExtentElement(id InstanceID, attrs *object.Record) *object.Record {
+	return object.NewExtentElement(uint64(id), attrs)
+}
+
+// InstanceIDFromExtentElement returns the engine id from a class-extent [id, data] record.
+func InstanceIDFromExtentElement(elem *object.Record) (InstanceID, bool) {
+	id, ok := object.ExtentID(elem)
+	if !ok {
+		return 0, false
+	}
+	return InstanceID(id), true
+}
+
+// DataFromExtentElement returns the data record from a class-extent element, or elem itself if flat.
+func DataFromExtentElement(elem *object.Record) *object.Record {
+	return object.ExtentData(elem)
 }
 
 // BuildWithClassInstancesForInstance combines BuildWithClassInstances and BuildForInstance.
@@ -226,39 +275,48 @@ func (b *BindingsBuilder) buildRelationContext() *evaluator.RelationContext {
 		b.relationCtx = evaluator.NewRelationContext()
 	}
 
+	// Rebuild runtime identity/link/AC state from engine InstanceIDs each time.
+	b.relationCtx.Clear()
+	// Register every live instance (and its class) so peer field navigation works
+	// for extent elements that are not yet endpoints of any association.
+	b.syncAllInstances()
 	b.syncLinks()
 	b.syncAssociationLinks()
 
 	return b.relationCtx
 }
 
-// syncLinks synchronizes links from simulation state to the relation context.
-// This ensures the evaluator sees the current link state.
-func (b *BindingsBuilder) syncLinks() {
-	// Clear existing links in relation context
-	b.relationCtx.Links().Clear()
+// syncAllInstances registers each instance's id, data, and class key for peer navigation.
+func (b *BindingsBuilder) syncAllInstances() {
+	for _, instance := range b.state.AllInstances() {
+		id := evaluator.ObjectID(instance.ID)
+		b.relationCtx.EnsureInstance(id, instance.Attributes)
+		b.relationCtx.RegisterClassKey(id, instance.ClassKey.String())
+	}
+}
 
-	// Copy links from simulation state
+// syncLinks synchronizes plain (non-AC) association links into the relation context.
+// Endpoint images are [id, data] extent elements so structurally equal peers stay distinct.
+func (b *BindingsBuilder) syncLinks() {
 	for _, instance := range b.state.AllInstances() {
 		objID := evaluator.ObjectID(instance.ID)
-
-		// Get all forward links from this instance
 		links := b.state.links.GetAllForward(objID)
 		for _, link := range links {
-			// We need to map InstanceIDs to record pointers for the relation context
 			fromInstance := b.state.GetInstance(InstanceID(link.FromID))
 			toInstance := b.state.GetInstance(InstanceID(link.ToID))
-
-			if fromInstance != nil && toInstance != nil {
-				b.relationCtx.CreateLink(link.AssociationKey, fromInstance.Attributes, toInstance.Attributes)
+			if fromInstance == nil || toInstance == nil {
+				continue
 			}
+			b.createExtentLink(
+				link.AssociationKey,
+				fromInstance,
+				toInstance,
+			)
 		}
 	}
 }
 
 func (b *BindingsBuilder) syncAssociationLinks() {
-	b.relationCtx.ClearAssociationClassRows()
-
 	for _, link := range b.state.AssociationLinks().AllLinks() {
 		fromInstance := b.state.GetInstance(link.FromEndpointID)
 		linkInstance := b.state.GetInstance(link.LinkInstanceID)
@@ -268,14 +326,36 @@ func (b *BindingsBuilder) syncAssociationLinks() {
 		}
 
 		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
-		b.relationCtx.CreateLink(hostKey, fromInstance.Attributes, toInstance.Attributes)
-		b.relationCtx.AddAssociationClassRow(
-			hostKey,
-			fromInstance.Attributes,
-			toInstance.Attributes,
-			linkInstance.Attributes,
-		)
+		fromExtent, toExtent := b.createExtentLink(hostKey, fromInstance, toInstance)
+		linkExtent := ClassExtentElement(linkInstance.ID, linkInstance.Attributes)
+		b.relationCtx.EnsureInstance(evaluator.ObjectID(linkInstance.ID), linkInstance.Attributes)
+		b.relationCtx.AddAssociationClassRow(hostKey, fromExtent, toExtent, linkExtent)
 	}
+}
+
+// createExtentLink registers a from→to association using engine ids and [id, data] endpoints.
+func (b *BindingsBuilder) createExtentLink(
+	assocKey evaluator.AssociationKey,
+	fromInstance, toInstance *ClassInstance,
+) (fromExtent, toExtent *object.Record) {
+	fromExtent = ClassExtentElement(fromInstance.ID, fromInstance.Attributes)
+	toExtent = ClassExtentElement(toInstance.ID, toInstance.Attributes)
+	b.relationCtx.CreateInstanceLink(
+		assocKey,
+		evaluator.InstanceEndpoint{
+			ID:     evaluator.ObjectID(fromInstance.ID),
+			Extent: fromExtent,
+			Data:   fromInstance.Attributes,
+		},
+		evaluator.InstanceEndpoint{
+			ID:     evaluator.ObjectID(toInstance.ID),
+			Extent: toExtent,
+			Data:   toInstance.Attributes,
+		},
+	)
+	b.relationCtx.RegisterClassKey(evaluator.ObjectID(fromInstance.ID), fromInstance.ClassKey.String())
+	b.relationCtx.RegisterClassKey(evaluator.ObjectID(toInstance.ID), toInstance.ClassKey.String())
+	return fromExtent, toExtent
 }
 
 // AddAssociationClassHost registers a host association materialized by association-class instances.

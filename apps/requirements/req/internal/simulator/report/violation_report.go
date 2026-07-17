@@ -69,8 +69,18 @@ func FromViolations(violations invariants.ViolationErrors) *ViolationReport {
 	if len(dataType) > 0 {
 		r.Categories = append(r.Categories, buildCategory("Data Type Violations", dataType))
 	}
+	// Non-liveness issues often stop the run early; liveness then reflects incomplete
+	// coverage rather than real gaps — report count only, not per-item details.
+	hasDataViolations := len(tla) > 0 || len(dataType) > 0 || len(other) > 0
 	if len(liveness) > 0 {
-		r.Categories = append(r.Categories, buildCategory("Liveness Violations", liveness))
+		if hasDataViolations {
+			r.Categories = append(r.Categories, ViolationCategory{
+				Name:  "Liveness Violations",
+				Count: len(liveness),
+			})
+		} else {
+			r.Categories = append(r.Categories, buildCategory("Liveness Violations", liveness))
+		}
 	}
 	if len(other) > 0 {
 		r.Categories = append(r.Categories, buildCategory("Other Violations", other))
@@ -98,6 +108,12 @@ func (r *ViolationReport) FormatText() string {
 
 	for _, cat := range r.Categories {
 		fmt.Fprintf(&b, "%s (%d):\n", cat.Name, cat.Count)
+		if len(cat.Violations) == 0 {
+			// Count-only category (e.g. liveness after early stop on data violations).
+			fmt.Fprintln(&b, "  (details omitted)")
+			fmt.Fprintln(&b)
+			continue
+		}
 		for _, v := range cat.Violations {
 			fmt.Fprintf(&b, "  - [%s] %s\n", v.Type, v.Message)
 		}

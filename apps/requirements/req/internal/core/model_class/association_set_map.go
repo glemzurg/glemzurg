@@ -65,12 +65,20 @@ func IsAssociationAddOrUpdateSpecification(specification string) bool {
 }
 
 // AssociationSetMapEventKey returns the peer event key referenced by a set-map guarantee expression.
+// Accepts both bare association domains ({ Event : r \in Assoc }) and filtered/peer domains
+// ({ Event : r \in { x \in Assoc : pred } }) so SentBy/caller metadata tracks cascade events.
 func AssociationSetMapEventKey(expr me.Expression) (identity.Key, bool) {
 	if expr == nil {
 		return identity.Key{}, false
 	}
 	if _, eventCall, ok := MatchAssociationSetMapExpr(expr); ok {
 		return eventCall.EventKey, true
+	}
+	// Filtered or peer-domain set-map: Set is not a bare AssociationRef.
+	if setMap, ok := expr.(*me.SetMap); ok {
+		if eventCall, ok := setMap.Transform.(*me.EventCall); ok {
+			return eventCall.EventKey, true
+		}
 	}
 	if _, _, updateCall, ok := MatchAssociationAddOrUpdateExpr(expr); ok {
 		return updateCall.EventKey, true
@@ -85,6 +93,7 @@ func isAssociationSetMapSpecification(specification string) bool {
 	if isAssociationSetAddSpecification(specification) {
 		return false
 	}
-	lower := strings.ToLower(specification)
-	return strings.Contains(lower, `\in`) && strings.Contains(specification, ":")
+	// Accept both TLA+ ASCII `\in` and the Unicode membership sign used after normalize/raise.
+	hasIn := strings.Contains(specification, `\in`) || strings.Contains(specification, "∈")
+	return hasIn && strings.Contains(specification, ":")
 }

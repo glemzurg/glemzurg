@@ -42,6 +42,27 @@ lacks exercised logic. Only simulatable classes participate in the run itself.
 A clean simulation run is rare for a partially modeled subdomain. Treat liveness
 output as a coverage map for what to model or wire next.
 
+## Class extents in TLA+ (id vs data)
+
+Keep **representation** and **author-facing access** distinct:
+
+| | |
+|--|--|
+| **Internal** | Instances are id → attribute data; associations link id → id |
+| **Class name in TLA** (e.g. `Account`) | A **set of ordinary records** `[id |-> N, data |-> attrs]` — not a special Map type |
+| **`self` on a live instance** | The **data** record only (`self.amount`), so instance specs stay flat |
+
+Patterns:
+
+```tla
+_FiniteSets!Cardinality(Account) >= 3
+CHOOSE a \in Account : TRUE          \* a = [id |-> …, data |-> …]
+a.id
+a.data._state
+```
+
+See `docs/design-association-relations-id-data.md` for associations and Approach A quantifiers over navigations.
+
 ## CLI
 
 See `cmd/simulate` and `scripts/simulate.sh` for `-include-subdomain`,

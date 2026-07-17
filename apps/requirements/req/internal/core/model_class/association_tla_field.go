@@ -12,6 +12,12 @@ func AssociationTLAFieldName(associationName string) string {
 	return strings.ReplaceAll(strings.TrimSpace(associationName), " ", "")
 }
 
+// ClassTLAName is the TLA+ identifier for a class (display name with spaces removed).
+// Used as guarantee targets for association-class reification.
+func ClassTLAName(className string) string {
+	return AssociationTLAFieldName(className)
+}
+
 // OutgoingAssociationTLAFieldSet returns TLA field names for associations whose from-class is classKey.
 func OutgoingAssociationTLAFieldSet(classKey identity.Key, associations map[identity.Key]Association) map[string]bool {
 	if len(associations) == 0 {
@@ -27,4 +33,55 @@ func OutgoingAssociationTLAFieldSet(classKey identity.Key, associations map[iden
 		return nil
 	}
 	return fields
+}
+
+// ReverseAssociationTLAFieldName is the reverse navigation field on the to-class
+// (leading underscore + AssociationTLAFieldName).
+func ReverseAssociationTLAFieldName(associationName string) string {
+	return "_" + AssociationTLAFieldName(associationName)
+}
+
+// IncomingAssociationReverseTLAFieldSet returns reverse TLA field names for associations
+// whose to-class is classKey (navigable as self._AssocName).
+func IncomingAssociationReverseTLAFieldSet(classKey identity.Key, associations map[identity.Key]Association) map[string]bool {
+	if len(associations) == 0 {
+		return nil
+	}
+	fields := make(map[string]bool)
+	for _, assoc := range associations {
+		if assoc.ToClassKey == classKey {
+			fields[ReverseAssociationTLAFieldName(assoc.Name)] = true
+		}
+	}
+	if len(fields) == 0 {
+		return nil
+	}
+	return fields
+}
+
+// OutgoingAssociationClassTLANameSet returns ClassTLAName values for association classes
+// on associations whose from-class is classKey. classes maps class keys to display names.
+func OutgoingAssociationClassTLANameSet(
+	classKey identity.Key,
+	associations map[identity.Key]Association,
+	classes map[identity.Key]Class,
+) map[string]bool {
+	if len(associations) == 0 || len(classes) == 0 {
+		return nil
+	}
+	names := make(map[string]bool)
+	for _, assoc := range associations {
+		if assoc.FromClassKey != classKey || assoc.AssociationClassKey == nil {
+			continue
+		}
+		acClass, ok := classes[*assoc.AssociationClassKey]
+		if !ok {
+			continue
+		}
+		names[ClassTLAName(acClass.Name)] = true
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	return names
 }

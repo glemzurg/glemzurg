@@ -151,6 +151,8 @@ const (
 	ErrLogicTypeRequired           = 14008
 	ErrLogicDestroyEventRequired   = 14009
 	ErrLogicDestroyEventNotAllowed = 14010
+	ErrLogicAssocClassNotAllowed   = 14011
+	ErrLogicAssocClassSpecRequired = 14014
 
 	// Parameter errors (15xxx).
 	ErrParamNameRequired    = 15001

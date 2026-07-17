@@ -73,6 +73,8 @@ func (c *DataTypeChecker) UnparsedAttributeDefinitionViolations() ViolationError
 }
 
 // CheckInstance validates all attribute values on an instance against their data type constraints.
+// Attributes with a DerivationPolicy are virtual: their values are computed on demand and are not
+// stored on the instance, so storage-based required/type checks do not apply to them.
 func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) ViolationErrors {
 	var violations ViolationErrors
 
@@ -83,6 +85,12 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 	}
 
 	for fieldKey, attrDef := range attrs {
+		// Derived attributes live outside instance storage; do not treat missing
+		// storage as a required-attribute failure or type mismatch.
+		if attrDef.DerivationPolicy != nil {
+			continue
+		}
+
 		value := instance.GetAttribute(fieldKey)
 
 		// Check required (non-nullable) constraint

@@ -88,6 +88,33 @@ func (suite *FileToParseSuite) TestNew() {
 				Subdomain: "subdomain_b",
 			},
 		},
+		// Marked list under default subdomain classes/.
+		{
+			modelPath: "path/model",
+			pathRel:   "domain_a/classes/this.marked",
+			pathAbs:   "/home/path/model/domain_a/classes/this.marked",
+			toParse: fileToParse{
+				ModelPath: "path/model",
+				PathRel:   "domain_a/classes/this.marked",
+				PathAbs:   "/home/path/model/domain_a/classes/this.marked",
+				FileType:  ".marked",
+				Domain:    "domain_a",
+			},
+		},
+		// Marked list under explicit subdomain classes/.
+		{
+			modelPath: "path/model",
+			pathRel:   "domain_a/subdomain_b/classes/this.marked",
+			pathAbs:   "/home/path/model/domain_a/subdomain_b/classes/this.marked",
+			toParse: fileToParse{
+				ModelPath: "path/model",
+				PathRel:   "domain_a/subdomain_b/classes/this.marked",
+				PathAbs:   "/home/path/model/domain_a/subdomain_b/classes/this.marked",
+				FileType:  ".marked",
+				Domain:    "domain_a",
+				Subdomain: "subdomain_b",
+			},
+		},
 		// Class in explicit subdomain.
 		{
 			modelPath: "path/model",

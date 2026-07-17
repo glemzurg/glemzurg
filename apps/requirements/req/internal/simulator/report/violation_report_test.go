@@ -118,11 +118,67 @@ func (s *ViolationReportSuite) TestMixedViolations() {
 	s.Equal(1, names["Liveness Violations"])
 	s.Equal(1, names["Other Violations"])
 
+	// Liveness is count-only when data violations are present (early-stop noise).
+	var livenessCat *ViolationCategory
+	for i := range report.Categories {
+		if report.Categories[i].Name == "Liveness Violations" {
+			livenessCat = &report.Categories[i]
+			break
+		}
+	}
+	s.Require().NotNil(livenessCat)
+	s.Equal(1, livenessCat.Count)
+	s.Empty(livenessCat.Violations)
+
 	s.Contains(report.Summary, "4 violations found")
 	s.Contains(report.Summary, "1 TLA+")
 	s.Contains(report.Summary, "1 data type")
 	s.Contains(report.Summary, "1 liveness")
 	s.Contains(report.Summary, "1 other")
+}
+
+func (s *ViolationReportSuite) TestLivenessDetailsOmittedWhenDataViolationsPresent() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	violations := invariants.ViolationErrors{
+		invariants.NewMultiplicityViolation(invariants.MultiplicityViolationParams{
+			InstanceID:      1,
+			ClassKey:        classKey,
+			AssociationName: "items",
+			Direction:       "to",
+			ActualCount:     0,
+			RequiredMin:     1,
+			RequiredMax:     10,
+			Message:         "too few",
+		}),
+		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
+		invariants.NewLivenessEventNotSentViolation(classKey, "Order", "close"),
+	}
+
+	report := FromViolations(violations)
+	text := report.FormatText()
+
+	s.Contains(report.Summary, "2 liveness")
+	s.Contains(text, "Liveness Violations (2)")
+	s.Contains(text, "(details omitted)")
+	s.NotContains(text, "liveness: class Order was never instantiated")
+	s.NotContains(text, "liveness: event close")
+	// Data/other details still shown.
+	s.Contains(text, "Other Violations (1)")
+}
+
+func (s *ViolationReportSuite) TestLivenessDetailsShownWhenOnlyLiveness() {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	violations := invariants.ViolationErrors{
+		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
+	}
+
+	report := FromViolations(violations)
+	text := report.FormatText()
+
+	s.Require().Len(report.Categories, 1)
+	s.Len(report.Categories[0].Violations, 1)
+	s.Contains(text, "liveness: class Order was never instantiated")
+	s.NotContains(text, "(details omitted)")
 }
 
 func (s *ViolationReportSuite) TestFormatTextEmpty() {

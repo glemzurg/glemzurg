@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -435,4 +436,72 @@ func getClassFromModel(model *core.Model) model_class.Class {
 		}
 	}
 	panic("no class found in model")
+}
+
+func (s *LowerModelTestSuite) TestBuildPeerEventNameMap_AssociationWinsOverObjectParam() {
+	domainKey := mustKey(identity.NewDomainKey("d"))
+	subKey := mustKey(identity.NewSubdomainKey(domainKey, "s"))
+	ownerKey := mustKey(identity.NewClassKey(subKey, "owner"))
+	accountKey := mustKey(identity.NewClassKey(subKey, "account"))
+	defKey := mustKey(identity.NewClassKey(subKey, "wallet_def"))
+
+	accountDelete := mustKey(identity.NewEventKey(accountKey, "delete"))
+	defDelete := mustKey(identity.NewEventKey(defKey, "delete"))
+
+	accountClass := model_class.NewClass(accountKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Account"})
+	accountClass.SetEvents(map[identity.Key]model_state.Event{
+		accountDelete: model_state.NewEvent(accountDelete, "Delete", "", nil),
+	})
+	defClass := model_class.NewClass(defKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Wallet Def"})
+	defClass.SetEvents(map[identity.Key]model_state.Event{
+		defDelete: model_state.NewEvent(defDelete, "Delete", "", nil),
+	})
+	ownerClass := model_class.NewClass(ownerKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Owner"})
+	actionKey := mustKey(identity.NewActionKey(ownerKey, "init"))
+	// Object-of parameter peer that also declares Delete (would overwrite association peer if last-wins).
+	param, err := model_state.NewParameter(actionKey, "WalletDefinition", "object of wallet_def", false)
+	s.Require().NoError(err)
+	objKey := "wallet_def"
+	param.DataType = &model_data_type.DataType{
+		CollectionType: model_data_type.COLLECTION_TYPE_ATOMIC,
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: model_data_type.CONSTRAINT_TYPE_OBJECT,
+			ObjectClassKey: &objKey,
+		},
+	}
+	ownerClass.SetActions(map[identity.Key]model_state.Action{
+		actionKey: model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Initialize"}, nil, nil, nil, []model_state.Parameter{param}),
+	})
+
+	assocKey := mustKey(identity.NewClassAssociationKey(subKey, ownerKey, accountKey, "defines"))
+	fromMult := must(model_class.NewMultiplicity("1"))
+	toMult := must(model_class.NewMultiplicity("any"))
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Defines"},
+		model_class.AssociationEnd{ClassKey: ownerKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: accountKey, Multiplicity: toMult},
+		model_class.AssociationOptions{},
+	)
+
+	classes := map[identity.Key]model_class.Class{
+		ownerKey:   ownerClass,
+		accountKey: accountClass,
+		defKey:     defClass,
+	}
+	associations := map[identity.Key]model_class.Association{assocKey: assoc}
+
+	// Run several times: first-wins must be stable and prefer association peer.
+	for i := range 20 {
+		m := BuildPeerEventNameMap(ownerKey, associations, classes)
+		s.Require().NotNil(m)
+		s.Equal(accountDelete, m["Delete"], "iteration %d: association peer Delete must win over object-param peer", i)
+	}
+}
+
+func must[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return v
 }

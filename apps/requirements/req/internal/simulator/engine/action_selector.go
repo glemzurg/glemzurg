@@ -1,17 +1,33 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"sort"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
+
+// isNamedSetDomainExhaustedError reports sampling failure because a required
+// named-set domain has no free values left.
+func isNamedSetDomainExhaustedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var exhausted *actions.ParameterSampleExhaustedError
+	if errors.As(err, &exhausted) {
+		return strings.Contains(exhausted.LastRejectReason, "named-set sample domain empty")
+	}
+	return strings.Contains(err.Error(), "named-set sample domain empty")
+}
 
 // PendingAction describes a single eligible simulation action.
 type PendingAction struct {
@@ -37,6 +53,7 @@ type ActionSelector struct {
 	catalog         *ClassCatalog
 	derivedEval     *DerivedAttributeEvaluator
 	bindingsBuilder *state.BindingsBuilder
+	paramSampler    *actions.ParameterSampler
 	rng             *rand.Rand
 }
 
@@ -45,12 +62,14 @@ func NewActionSelector(
 	catalog *ClassCatalog,
 	derivedEval *DerivedAttributeEvaluator,
 	bindingsBuilder *state.BindingsBuilder,
+	paramSampler *actions.ParameterSampler,
 	rng *rand.Rand,
 ) *ActionSelector {
 	return &ActionSelector{
 		catalog:         catalog,
 		derivedEval:     derivedEval,
 		bindingsBuilder: bindingsBuilder,
+		paramSampler:    paramSampler,
 		rng:             rng,
 	}
 }
@@ -58,14 +77,144 @@ func NewActionSelector(
 // SelectAction picks a random eligible action from all classes and instances.
 // Returns error if no actions are available (deadlock).
 func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*PendingAction, error) {
-	eligible := s.filterBySimulationRequires(s.collectEligibleActions(simState))
+	eligible := s.collectEligibleActions(simState)
+	eligible = s.filterByObjectParamAvailability(eligible, simState)
+	eligible = s.filterBySimulationRequires(eligible)
+	eligible = s.filterByNamedSetSampleDomains(eligible)
 
 	if len(eligible) == 0 {
 		return nil, fmt.Errorf("deadlock: no eligible actions")
 	}
 
-	chosen := eligible[s.rng.Intn(len(eligible))]
-	return &chosen, nil
+	// Prefer a pick that still has a free domain at selection time.
+	for range eligible {
+		idx := s.rng.Intn(len(eligible))
+		chosen := eligible[idx]
+		if s.namedSetSampleDomainsAvailable(chosen) {
+			return &chosen, nil
+		}
+		// Remove exhausted pick and continue.
+		eligible = append(eligible[:idx], eligible[idx+1:]...)
+		if len(eligible) == 0 {
+			break
+		}
+	}
+	return nil, fmt.Errorf("deadlock: no eligible actions")
+}
+
+// filterByObjectParamAvailability drops events/actions whose object-of parameters
+// name an in-scope class that has no instances yet. Out-of-scope object classes
+// always pass (sampled as empty set). Model-agnostic.
+func (s *ActionSelector) filterByObjectParamAvailability(
+	eligible []PendingAction,
+	simState *state.SimulationState,
+) []PendingAction {
+	if s.catalog == nil || simState == nil {
+		return eligible
+	}
+	filtered := make([]PendingAction, 0, len(eligible))
+	for _, pending := range eligible {
+		if s.objectParamsHaveInstances(pending, simState) {
+			filtered = append(filtered, pending)
+		}
+	}
+	return filtered
+}
+
+func (s *ActionSelector) objectParamsHaveInstances(
+	pending PendingAction,
+	simState *state.SimulationState,
+) bool {
+	for _, classKey := range s.requiredObjectParamClasses(pending) {
+		if !s.catalog.IsClassInScope(classKey) {
+			continue
+		}
+		if len(simState.InstancesByClass(classKey)) == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// requiredObjectParamClasses lists class keys referenced by object-of parameters
+// on the pending surface action or query.
+func (s *ActionSelector) requiredObjectParamClasses(pending PendingAction) []identity.Key {
+	var params []model_state.Parameter
+	switch {
+	case pending.IsQuery && pending.Query != nil:
+		params = pending.Query.Parameters
+	case pending.IsDo && pending.DoAction != nil:
+		params = pending.DoAction.Parameters
+	default:
+		action := s.resolveSurfaceAction(pending)
+		if action == nil {
+			return nil
+		}
+		params = action.Parameters
+		if pending.Event != nil && len(pending.Event.ParameterNames) > 0 {
+			params = actions.MatchActionParametersByEventNames(pending.Event.ParameterNames, action)
+		}
+	}
+	var keys []identity.Key
+	seen := make(map[identity.Key]bool)
+	for _, param := range params {
+		for _, classKey := range objectClassKeysFromDataType(param.DataType, s.catalog) {
+			if seen[classKey] {
+				continue
+			}
+			seen[classKey] = true
+			keys = append(keys, classKey)
+		}
+	}
+	return keys
+}
+
+// objectClassKeysFromDataType collects in-catalog class keys referenced by object-of
+// constraints anywhere in a parameter data type tree.
+func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *ClassCatalog) []identity.Key {
+	if dt == nil || catalog == nil {
+		return nil
+	}
+	var keys []identity.Key
+	if dt.Atomic != nil &&
+		dt.Atomic.ConstraintType == model_data_type.CONSTRAINT_TYPE_OBJECT &&
+		dt.Atomic.ObjectClassKey != nil {
+		if classKey, ok := resolveObjectClassRef(*dt.Atomic.ObjectClassKey, catalog); ok {
+			keys = append(keys, classKey)
+		}
+	}
+	if dt.ElementDataType != nil {
+		keys = append(keys, objectClassKeysFromDataType(dt.ElementDataType, catalog)...)
+	}
+	for i := range dt.RecordFields {
+		keys = append(keys, objectClassKeysFromDataType(dt.RecordFields[i].FieldDataType, catalog)...)
+	}
+	return keys
+}
+
+// resolveObjectClassRef maps an object-of class reference to a catalog class key.
+// Prefers in-scope classes; falls back to full extent names (out-of-scope) so callers
+// can still distinguish "known but OOS" (allow empty) from "unknown".
+func resolveObjectClassRef(objectClassRef string, catalog *ClassCatalog) (identity.Key, bool) {
+	if catalog == nil || objectClassRef == "" {
+		return identity.Key{}, false
+	}
+	want := identity.NormalizeSubKey(objectClassRef)
+	for _, info := range catalog.AllScopedClasses() {
+		if objectClassRefMatches(want, objectClassRef, info) {
+			return info.ClassKey, true
+		}
+	}
+	// Known only as out-of-scope extent: still return a key so OOS path can skip the gate.
+	for classKey, tlaName := range catalog.ClassNameMap() {
+		if classKey.SubKey == objectClassRef || classKey.String() == objectClassRef {
+			return classKey, true
+		}
+		if identity.NormalizeSubKey(tlaName) == want || tlaName == objectClassRef {
+			return classKey, true
+		}
+	}
+	return identity.Key{}, false
 }
 
 // collectEligibleActions builds the list of all eligible actions across all classes.
@@ -83,8 +232,7 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 					IsCreation: true,
 				})
 			}
-
-			eligible = append(eligible, s.collectAssociationClassCreations(classInfo, simState)...)
+			// Association-class _new is never surface: only cascade/peer association materialization.
 		}
 
 		instances := simState.InstancesByClass(classInfo.ClassKey)
@@ -162,6 +310,46 @@ func (s *ActionSelector) filterBySimulationRequires(eligible []PendingAction) []
 	return filtered
 }
 
+// filterByNamedSetSampleDomains drops actions whose requires need a named-set
+// sample domain that has no free values (e.g. every allowed code already used).
+func (s *ActionSelector) filterByNamedSetSampleDomains(eligible []PendingAction) []PendingAction {
+	if s.paramSampler == nil {
+		return eligible
+	}
+	filtered := make([]PendingAction, 0, len(eligible))
+	for _, pending := range eligible {
+		if pending.IsQuery || pending.IsDerivedRead {
+			filtered = append(filtered, pending)
+			continue
+		}
+		if s.namedSetSampleDomainsAvailable(pending) {
+			filtered = append(filtered, pending)
+		}
+	}
+	return filtered
+}
+
+func (s *ActionSelector) namedSetSampleDomainsAvailable(pending PendingAction) bool {
+	if s.paramSampler == nil {
+		return true
+	}
+	action := s.resolveSurfaceAction(pending)
+	if action == nil {
+		return true
+	}
+	params := action.Parameters
+	if pending.Instance != nil {
+		s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.ID)
+		defer s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(0)
+	}
+	owner := actions.ParameterOwnerFromAction(*action)
+	ok, err := s.paramSampler.NamedSetSampleDomainsAvailable(owner, params)
+	if err != nil {
+		return false
+	}
+	return ok
+}
+
 func (s *ActionSelector) resolveSurfaceAction(pending PendingAction) *model_state.Action {
 	if pending.DoAction != nil {
 		return pending.DoAction
@@ -195,57 +383,6 @@ func (s *ActionSelector) collectDerivedReadActions(
 		})
 	}
 	return eligible
-}
-
-func (s *ActionSelector) collectAssociationClassCreations(
-	classInfo *ClassInfo,
-	simState *state.SimulationState,
-) []PendingAction {
-	acInfo := s.catalog.LookupAssociationClass(classInfo.ClassKey)
-	if acInfo == nil || len(classInfo.CreationEvents) == 0 {
-		return nil
-	}
-
-	fromInstances := simState.InstancesByClass(acInfo.FromClassKey)
-	toInstances := simState.InstancesByClass(acInfo.ToClassKey)
-	sort.Slice(fromInstances, func(i, j int) bool { return fromInstances[i].ID < fromInstances[j].ID })
-	sort.Slice(toInstances, func(i, j int) bool { return toInstances[i].ID < toInstances[j].ID })
-	if len(fromInstances) == 0 || len(toInstances) == 0 {
-		return nil
-	}
-
-	creationEvent := classInfo.CreationEvents[0]
-	var eligible []PendingAction
-	hostAssocKey := acInfo.HostAssociation.Key
-
-	hostAssoc := acInfo.HostAssociation
-	for _, fromInst := range fromInstances {
-		for _, toInst := range toInstances {
-			fromID := fromInst.ID
-			toID := toInst.ID
-			if !s.pairAllowsAnotherLink(hostAssoc, simState, fromID, toID) {
-				continue
-			}
-			eligible = append(eligible, PendingAction{
-				Class:            classInfo,
-				Event:            &creationEvent,
-				Instance:         nil,
-				IsCreation:       true,
-				SourceAssocKey:   &hostAssocKey,
-				SourceInstanceID: &fromID,
-				TargetInstanceID: &toID,
-			})
-		}
-	}
-	return eligible
-}
-
-func (s *ActionSelector) pairAllowsAnotherLink(
-	hostAssoc model_class.Association,
-	simState *state.SimulationState,
-	fromID, toID state.InstanceID,
-) bool {
-	return simState.CountActivePairLinks(hostAssoc, fromID, toID) == 0
 }
 
 // getInstanceStateName extracts the current state name from an instance's _state attribute.

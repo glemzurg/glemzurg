@@ -666,10 +666,17 @@ func evalMENot(n *me.Not, bindings *Bindings) *EvalResult {
 
 // resolveFieldRelation checks if a field access is a relation traversal and evaluates it.
 // Returns nil if the field is not a relation.
+// Uses the live instance's class when record is a registered peer; otherwise self's class.
 func resolveFieldRelation(record *object.Record, field string, bindings *Bindings) *EvalResult {
-	classKey := bindings.SelfClassKey()
 	relCtx := bindings.RelationContext()
-	if classKey == "" || relCtx == nil {
+	if relCtx == nil {
+		return nil
+	}
+	classKey := bindings.SelfClassKey()
+	if peerClass, ok := relCtx.ClassKeyForRecord(record); ok && peerClass != "" {
+		classKey = peerClass
+	}
+	if classKey == "" {
 		return nil
 	}
 	relInfo := lookupRelation(classKey, field, relCtx)
@@ -689,6 +696,11 @@ func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 		return evalAssociationRelationFieldAccess(assocRel, n.Field, bindings)
 	}
 
+	// Set of records: map-project field across each element (OO sugar for multi AC chains).
+	if set, ok := baseResult.Value.(*object.Set); ok {
+		return projectSetOfRecordsField(set, n.Field)
+	}
+
 	record, ok := baseResult.Value.(*object.Record)
 	if !ok {
 		return NewEvalError("field access requires Record, got %s", baseResult.Value.Type())
@@ -699,11 +711,34 @@ func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 		return relResult
 	}
 
-	value := record.Get(n.Field)
-	if value == nil {
+	// Flat attribute access, with sugar: extent [id, data] projects into data.
+	value, ok := object.RecordField(record, n.Field)
+	if !ok {
 		return NewEvalError("field not found: %s", n.Field)
 	}
 	return NewEvalResult(value)
+}
+
+// projectSetOfRecordsField maps field access across a set of records.
+// Empty set → empty set. Missing field on any element → error.
+// Extent elements project attribute fields through data.
+func projectSetOfRecordsField(set *object.Set, field string) *EvalResult {
+	if set.Size() == 0 {
+		return NewEvalResult(object.NewSet())
+	}
+	out := object.NewSet()
+	for _, elem := range set.Elements() {
+		record, ok := elem.(*object.Record)
+		if !ok {
+			return NewEvalError("field access on Set requires Record elements, got %s", elem.Type())
+		}
+		value, ok := object.RecordField(record, field)
+		if !ok {
+			return NewEvalError("field not found: %s", field)
+		}
+		out.Add(value)
+	}
+	return NewEvalResult(out)
 }
 
 func evalMETupleIndex(n *me.TupleIndex, bindings *Bindings) *EvalResult {
@@ -1075,6 +1110,11 @@ func evalMESetFilter(n *me.SetFilter, bindings *Bindings) *EvalResult {
 // ============================================================
 
 func evalMEBuiltinCall(n *me.BuiltinCall, bindings *Bindings) *EvalResult {
+	// Simulator-only null-branch sugar: short-circuit like IF so unused branch is not evaluated.
+	if n.Module == ModuleGZ {
+		return evalGZBuiltinCall(n, bindings)
+	}
+
 	args := make([]object.Object, len(n.Args))
 	for i, argExpr := range n.Args {
 		result := Eval(argExpr, bindings)
@@ -1097,6 +1137,59 @@ func evalMEBuiltinCall(n *me.BuiltinCall, bindings *Bindings) *EvalResult {
 		return NewEvalError("unknown builtin: %s", fullName)
 	}
 	return fn(args)
+}
+
+// evalGZBuiltinCall implements _GZ!WhenNotNull / WhenNull / WhenNullElse.
+// Semantics match IF id = NULL THEN … ELSE … without eager evaluation of the unused arm.
+func evalGZBuiltinCall(n *me.BuiltinCall, bindings *Bindings) *EvalResult {
+	switch n.Function {
+	case GZWhenNotNull:
+		if len(n.Args) != 2 {
+			return NewEvalError("_GZ!WhenNotNull requires 2 arguments, got %d", len(n.Args))
+		}
+		isNull, err := evalIsNullDriver(n.Args[0], bindings)
+		if err != nil {
+			return err
+		}
+		if isNull {
+			return NewEvalResult(nativeBoolToBoolean(true))
+		}
+		return Eval(n.Args[1], bindings)
+	case GZWhenNull:
+		if len(n.Args) != 2 {
+			return NewEvalError("_GZ!WhenNull requires 2 arguments, got %d", len(n.Args))
+		}
+		isNull, err := evalIsNullDriver(n.Args[0], bindings)
+		if err != nil {
+			return err
+		}
+		if isNull {
+			return Eval(n.Args[1], bindings)
+		}
+		return NewEvalResult(nativeBoolToBoolean(true))
+	case GZWhenNullElse:
+		if len(n.Args) != 3 {
+			return NewEvalError("_GZ!WhenNullElse requires 3 arguments, got %d", len(n.Args))
+		}
+		isNull, err := evalIsNullDriver(n.Args[0], bindings)
+		if err != nil {
+			return err
+		}
+		if isNull {
+			return Eval(n.Args[1], bindings)
+		}
+		return Eval(n.Args[2], bindings)
+	default:
+		return NewEvalError("unknown _GZ operator: %s", n.Function)
+	}
+}
+
+func evalIsNullDriver(driver me.Expression, bindings *Bindings) (bool, *EvalResult) {
+	result := Eval(driver, bindings)
+	if result.IsError() {
+		return false, result
+	}
+	return object.IsNull(result.Value), nil
 }
 
 func evalMEGlobalCall(n *me.GlobalCall, bindings *Bindings) *EvalResult {
@@ -1155,7 +1248,22 @@ func ObjectsEqual(left, right object.Object) bool {
 }
 
 // objectsEqual compares two objects for structural equality.
+// AssociationRelation and Set compare by endpoint set so assoc = {} and mixed
+// AR/Set equality treat the relation image as the set view (link rows ignored).
 func objectsEqual(left, right object.Object) bool {
+	if leftSet, leftOK := CoerceToSet(left); leftOK {
+		if rightSet, rightOK := CoerceToSet(right); rightOK {
+			// Both sides have a set view (Set and/or AssociationRelation).
+			// AR↔AR still needs full equality when both are association relations
+			// so differing link rows are not considered equal.
+			leftAR, leftIsAR := left.(*object.AssociationRelation)
+			rightAR, rightIsAR := right.(*object.AssociationRelation)
+			if leftIsAR && rightIsAR {
+				return leftAR.Equals(rightAR)
+			}
+			return leftSet.Equals(rightSet)
+		}
+	}
 	if left.Type() != right.Type() {
 		return false
 	}

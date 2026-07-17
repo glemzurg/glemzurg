@@ -63,7 +63,7 @@ func TestParameterSimulationDisplayInMarkdown(t *testing.T) {
 	actionKey := helper.Must(identity.NewActionKey(classKey, "initialize"))
 	paramKey := helper.Must(identity.NewParameterKey(actionKey, "amounts"))
 	reqKey := helper.Must(identity.NewParameterSimulationRequireKey(paramKey, "0"))
-	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey))
+	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey, "0"))
 
 	amountsParam, err := model_state.NewParameter(actionKey, "Amounts", "unordered of unconstrained", false)
 	require.NoError(t, err)
@@ -92,9 +92,11 @@ func TestParameterSimulationDisplayInMarkdown(t *testing.T) {
 		nil,
 	)
 	amountsParam.SetSimulation(&model_state.ParameterSimulation{
-		Details:       "Sample one balance change on an existing account using penny-grid amounts.",
-		Requires:      []model_logic.Logic{reqLogic},
-		Specification: &specLogic,
+		Details: "Sample one balance change on an existing account using penny-grid amounts.",
+		Rules: []model_state.ParameterSimulationRule{{
+			Requires:      []model_logic.Logic{reqLogic},
+			Specification: &specLogic,
+		}},
 	})
 
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Transaction"})
@@ -122,10 +124,10 @@ func TestParameterSimulationDisplayInMarkdown(t *testing.T) {
 	require.Contains(t, contents, "- *Amounts.*")
 	require.Contains(t, contents, "    - Simulation:")
 	require.Contains(t, contents, "Sample one balance change on an existing account using penny-grid amounts.")
-	require.Contains(t, contents, "        - Requires:")
+	require.Contains(t, contents, "            - Requires:")
 	require.Contains(t, contents, "At least one account must exist before creating a transaction.")
 	require.Contains(t, contents, "**Account /= {}**")
-	require.Contains(t, contents, "        - Specification:\n            - **LET ac == CHOOSE a \\in Account : TRUE IN {[account |-> ac, amount |-> 100]}**")
+	require.Contains(t, contents, "            - Specification:\n                - **LET ac == CHOOSE a \\in Account : TRUE IN {[account |-> ac, amount |-> 100]}**")
 }
 
 func TestNullableQueryParameterDisplayInMarkdown(t *testing.T) {

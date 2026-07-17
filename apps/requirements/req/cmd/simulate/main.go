@@ -94,7 +94,6 @@ func runSimulation(opts cliOptions) (hasViolations bool, err error) {
 	}
 
 	surfaceReport := eng.SurfaceReport()
-	reportSurfaceBeforeRun(surfaceReport, opts.quiet)
 
 	result, err := eng.Run()
 	if err != nil {
@@ -127,14 +126,6 @@ func newSimulationEngine(model *core.Model, opts cliOptions, seed int64) (*engin
 	return eng, nil
 }
 
-func reportSurfaceBeforeRun(surfaceReport *engine.SurfaceReport, quiet bool) {
-	if quiet {
-		return
-	}
-	log.Print(surfaceReport.FormatText())
-	log.Println()
-}
-
 func emitSimulationOutput(
 	opts cliOptions,
 	surfaceReport *engine.SurfaceReport,
@@ -146,7 +137,7 @@ func emitSimulationOutput(
 	case "json":
 		outputJSON(surfaceReport, simTrace, violationReport, opts.showTrace, opts.quiet)
 	default:
-		outputText(simTrace, violationReport, opts.showTrace, opts.quiet, seed)
+		outputText(surfaceReport, simTrace, violationReport, opts.showTrace, opts.quiet, seed)
 	}
 }
 
@@ -167,29 +158,19 @@ func loadModel(rootSource, modelName string, includeSubdomainPaths, includeClass
 		return nil, fmt.Errorf("model has %d parse failure(s); fix before simulating", len(failures))
 	}
 
-	active := &parsed
+	// Lower the full model before surface filtering. The engine applies the surface
+	// once and records derived/query members that depend on out-of-scope classes;
+	// those classes must still exist on the input model for dependency detection.
+	if err := convert.LowerModel(&parsed); err != nil {
+		return nil, err
+	}
+	// Resolve include paths early so invalid surface selectors fail before the run.
 	if hasSurfaceScope(includeSubdomainPaths, includeClassNames) {
-		surfaceSpec, specErr := buildSurfaceSpec(active, includeSubdomainPaths, includeClassNames)
-		if specErr != nil {
-			return nil, specErr
-		}
-		active, err = applySurfaceFilter(active, surfaceSpec)
-		if err != nil {
+		if _, err := buildSurfaceSpec(&parsed, includeSubdomainPaths, includeClassNames); err != nil {
 			return nil, err
 		}
 	}
-	if err := convert.LowerModel(active); err != nil {
-		return nil, err
-	}
-	return active, nil
-}
-
-func applySurfaceFilter(model *core.Model, surfaceSpec *surface.SurfaceSpecification) (*core.Model, error) {
-	resolved, err := surface.Resolve(surfaceSpec, model)
-	if err != nil {
-		return nil, err
-	}
-	return surface.BuildFilteredModel(model, resolved)
+	return &parsed, nil
 }
 
 func parseCommaSeparatedFlag(flagValue string) []string {
@@ -243,7 +224,14 @@ func shouldShowStepTrace(showTrace, quiet bool, hasViolations bool) bool {
 	return showTrace || !hasViolations
 }
 
-func outputText(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool, seed int64) {
+// outputText order: completion summary → step trace / final state → surface → violations.
+func outputText(
+	surfaceReport *engine.SurfaceReport,
+	simTrace *trace.SimulationTrace,
+	violationReport *report.ViolationReport,
+	showTrace, quiet bool,
+	seed int64,
+) {
 	if !quiet {
 		log.Printf("Simulation completed: %d steps, terminated: %s (seed: %d)\n",
 			simTrace.StepsTaken, simTrace.TerminationReason, seed)
@@ -254,16 +242,18 @@ func outputText(simTrace *trace.SimulationTrace, violationReport *report.Violati
 		log.Println()
 	}
 
+	if !quiet && surfaceReport != nil {
+		log.Print(surfaceReport.FormatText())
+		log.Println()
+	}
+
 	log.Print(violationReport.FormatText())
 }
 
 func outputJSON(surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
 	output := make(map[string]any)
 
-	if !quiet {
-		output["surface"] = surfaceReport
-	}
-
+	// JSON object key order is not guaranteed; include the same sections as text output.
 	if !quiet {
 		output["summary"] = map[string]any{
 			"steps_taken":        simTrace.StepsTaken,
@@ -273,6 +263,10 @@ func outputJSON(surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationT
 
 	if shouldShowStepTrace(showTrace, quiet, violationReport.HasViolations()) {
 		output["trace"] = simTrace
+	}
+
+	if !quiet && surfaceReport != nil {
+		output["surface"] = surfaceReport
 	}
 
 	output["violations"] = violationReport

@@ -18,12 +18,14 @@ A set of objects that share the same semantics.
 | details | text |  | true |  |  | A summary description. |
 | unfinished_notes | text |  | true |  |  | Scratch notes not yet placed in final requirement locations. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
+| marked | boolean | false | false |  |  | Authoring selection flag; true when the class is marked in the model. |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
 | class_class_key_not_null | n | NOT NULL class_key |
+| class_marked_not_null | n | NOT NULL marked |
 | class_model_key_not_null | n | NOT NULL model_key |
 | class_name_not_null | n | NOT NULL name |
 | class_subdomain_key_not_null | n | NOT NULL subdomain_key |

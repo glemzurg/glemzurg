@@ -1,6 +1,7 @@
 package parser_human
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -584,26 +585,103 @@ func parameterSimulationFromYamlMap(paramKey identity.Key, paramMap map[string]a
 	if detailsAny, ok := simulationMap["details"].(string); ok {
 		details = detailsAny
 	}
-	requires, err := logicListFromYamlData(simulationMap, "requires", model_logic.LogicTypeAssessment, paramKey, identity.NewParameterSimulationRequireKey, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "simulation requires")
-	}
-	specification, err := parameterSimulationSpecFromYamlMap(paramKey, simulationMap)
+	rules, err := parameterSimulationRulesFromYamlMap(paramKey, simulationMap)
 	if err != nil {
 		return nil, err
 	}
-	if details == "" && len(requires) == 0 && specification == nil {
+	if details == "" && len(rules) == 0 {
 		return nil, nil //nolint:nilnil // empty simulation block is treated as absent
 	}
 	return &model_state.ParameterSimulation{
-		Details:       details,
-		Requires:      requires,
-		Specification: specification,
+		Details: details,
+		Rules:   rules,
 	}, nil
 }
 
-func parameterSimulationSpecFromYamlMap(paramKey identity.Key, simulationMap map[string]any) (*model_logic.Logic, error) {
-	specAny, found := simulationMap["specification"]
+// parameterSimulationRulesFromYamlMap reads simulation.rules (list of require+spec pairings).
+// A legacy single requires+specification block (no rules key) is accepted as one rule.
+func parameterSimulationRulesFromYamlMap(paramKey identity.Key, simulationMap map[string]any) ([]model_state.ParameterSimulationRule, error) {
+	if rulesAny, found := simulationMap["rules"]; found {
+		rulesList, ok := rulesAny.([]any)
+		if !ok {
+			return nil, errors.Errorf("parameter simulation rules must be a sequence")
+		}
+		rules := make([]model_state.ParameterSimulationRule, 0, len(rulesList))
+		requireIndex := 0
+		for i, item := range rulesList {
+			ruleMap, ok := item.(map[string]any)
+			if !ok {
+				return nil, errors.Errorf("parameter simulation rules[%d] must be a mapping", i)
+			}
+			rule, nextRequireIndex, err := parameterSimulationRuleFromYamlMap(paramKey, i, requireIndex, ruleMap)
+			if err != nil {
+				return nil, errors.Wrapf(err, "simulation rules[%d]", i)
+			}
+			requireIndex = nextRequireIndex
+			rules = append(rules, rule)
+		}
+		return rules, nil
+	}
+	// Legacy shape: top-level requires + specification as a single rule.
+	if _, hasReq := simulationMap["requires"]; !hasReq {
+		if _, hasSpec := simulationMap["specification"]; !hasSpec {
+			return nil, nil
+		}
+	}
+	rule, _, err := parameterSimulationRuleFromYamlMap(paramKey, 0, 0, simulationMap)
+	if err != nil {
+		return nil, err
+	}
+	return []model_state.ParameterSimulationRule{rule}, nil
+}
+
+func parameterSimulationRuleFromYamlMap(
+	paramKey identity.Key,
+	ruleIndex int,
+	requireStartIndex int,
+	ruleMap map[string]any,
+) (model_state.ParameterSimulationRule, int, error) {
+	var empty model_state.ParameterSimulationRule
+	ruleDetails := ""
+	if detailsAny, ok := ruleMap["details"].(string); ok {
+		ruleDetails = detailsAny
+	}
+	// Requires use a flat integer index across all rules so identity keys stay unique under the parameter.
+	requires, nextIndex, err := simulationRequiresFromYamlData(paramKey, requireStartIndex, ruleMap)
+	if err != nil {
+		return empty, requireStartIndex, errors.Wrap(err, "requires")
+	}
+	specification, err := parameterSimulationSpecFromYamlMap(paramKey, ruleIndex, ruleMap)
+	if err != nil {
+		return empty, requireStartIndex, err
+	}
+	return model_state.ParameterSimulationRule{
+		Details:       ruleDetails,
+		Requires:      requires,
+		Specification: specification,
+	}, nextIndex, nil
+}
+
+// simulationRequiresFromYamlData parses requires with sequential keys starting at startIndex.
+func simulationRequiresFromYamlData(paramKey identity.Key, startIndex int, data map[string]any) ([]model_logic.Logic, int, error) {
+	if _, found := data["requires"]; !found {
+		return nil, startIndex, nil
+	}
+	offset := startIndex
+	newKey := func(parent identity.Key, _ string) (identity.Key, error) {
+		key, err := identity.NewParameterSimulationRequireKey(parent, strconv.Itoa(offset))
+		offset++
+		return key, err
+	}
+	requires, err := logicListFromYamlData(data, "requires", model_logic.LogicTypeAssessment, paramKey, newKey, nil)
+	if err != nil {
+		return nil, startIndex, err
+	}
+	return requires, offset, nil
+}
+
+func parameterSimulationSpecFromYamlMap(paramKey identity.Key, ruleIndex int, ruleMap map[string]any) (*model_logic.Logic, error) {
+	specAny, found := ruleMap["specification"]
 	if !found {
 		return nil, nil //nolint:nilnil // specification is optional until sampling runs
 	}
@@ -611,7 +689,7 @@ func parameterSimulationSpecFromYamlMap(paramKey identity.Key, simulationMap map
 	if !ok {
 		return nil, errors.Errorf("parameter simulation specification must be a string")
 	}
-	specKey, err := identity.NewParameterSimulationSpecKey(paramKey)
+	specKey, err := identity.NewParameterSimulationSpecKey(paramKey, fmt.Sprintf("%d", ruleIndex))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -1129,26 +1207,46 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		logic := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
-		if deleteEvent, _ := itemMap["destroy_event"].(string); strings.TrimSpace(deleteEvent) != "" {
-			destroyEventSpec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, deleteEvent, nil)
-			if err != nil {
-				return nil, errors.Wrapf(err, "%s[%d] destroy_event", field, i)
-			}
-			logic.SetDestroyEventSpec(destroyEventSpec)
-		}
-		if classInvariantOpts != nil {
-			if overAssociationKeyStr, _ := itemMap["over_association_key"].(string); overAssociationKeyStr != "" {
-				overKey, err := model_class.ResolveClassAssociationKeyFromRelative(classInvariantOpts.subdomainKey, classInvariantOpts.ownerClassKey, overAssociationKeyStr)
-				if err != nil {
-					return nil, errors.Wrapf(err, "%s[%d] over_association_key", field, i)
-				}
-				logic.SetOverAssociationKey(&overKey)
-			}
+		if err := applyOptionalLogicYAMLFields(&logic, itemMap, field, i, classInvariantOpts); err != nil {
+			return nil, err
 		}
 
 		logics = append(logics, logic)
 	}
 	return logics, nil
+}
+
+func applyOptionalLogicYAMLFields(
+	logic *model_logic.Logic,
+	itemMap map[string]any,
+	field string,
+	index int,
+	classInvariantOpts *classInvariantLogicOptions,
+) error {
+	if deleteEvent, _ := itemMap["destroy_event"].(string); strings.TrimSpace(deleteEvent) != "" {
+		destroyEventSpec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, deleteEvent, nil)
+		if err != nil {
+			return errors.Wrapf(err, "%s[%d] destroy_event", field, index)
+		}
+		logic.SetDestroyEventSpec(destroyEventSpec)
+	}
+	if endpointSelector, _ := itemMap["endpoint_selector"].(string); strings.TrimSpace(endpointSelector) != "" {
+		es, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, endpointSelector, nil)
+		if err != nil {
+			return errors.Wrapf(err, "%s[%d] endpoint_selector", field, index)
+		}
+		logic.SetEndpointSelectorSpec(es)
+	}
+	if classInvariantOpts != nil {
+		if overAssociationKeyStr, _ := itemMap["over_association_key"].(string); overAssociationKeyStr != "" {
+			overKey, err := model_class.ResolveClassAssociationKeyFromRelative(classInvariantOpts.subdomainKey, classInvariantOpts.ownerClassKey, overAssociationKeyStr)
+			if err != nil {
+				return errors.Wrapf(err, "%s[%d] over_association_key", field, index)
+			}
+			logic.SetOverAssociationKey(&overKey)
+		}
+	}
+	return nil
 }
 
 func transitionFromYamlData(lookups parseKeyLookups, classKey identity.Key, transitionAny any) (transition model_state.Transition, err error) {
@@ -1563,9 +1661,20 @@ func generateParameterSimulation(builder *YamlBuilder, simulation *model_state.P
 	if simulation.Details != "" {
 		simBuilder.AddField("details", simulation.Details)
 	}
-	generateLogicSequence(simBuilder, "requires", simulation.Requires)
-	if simulation.Specification != nil && simulation.Specification.Spec.Specification != "" {
-		simBuilder.AddField("specification", simulation.Specification.Spec.Specification)
+	if len(simulation.Rules) > 0 {
+		ruleBuilders := make([]*YamlBuilder, 0, len(simulation.Rules))
+		for _, rule := range simulation.Rules {
+			ruleBuilder := NewYamlBuilder()
+			if rule.Details != "" {
+				ruleBuilder.AddField("details", rule.Details)
+			}
+			generateLogicSequence(ruleBuilder, "requires", rule.Requires)
+			if rule.Specification != nil && rule.Specification.Spec.Specification != "" {
+				ruleBuilder.AddField("specification", rule.Specification.Spec.Specification)
+			}
+			ruleBuilders = append(ruleBuilders, ruleBuilder)
+		}
+		simBuilder.AddSequenceOfMappings("rules", ruleBuilders)
 	}
 	builder.AddMappingField("simulation", simBuilder)
 }
@@ -1607,6 +1716,9 @@ func buildLogicMappingBuilder(logic model_logic.Logic, ownerClass *model_class.C
 	if logic.Type == model_logic.LogicTypeLet {
 		logicBuilder.AddField("type", "let")
 	}
+	if logic.Type == model_logic.LogicTypeDestroy {
+		logicBuilder.AddField("type", "destroy")
+	}
 	logicBuilder.AddField("details", logic.Description)
 	logicBuilder.AddField("target", logic.Target)
 	if ownerClass != nil && logic.OverAssociationKey != nil {
@@ -1614,7 +1726,13 @@ func buildLogicMappingBuilder(logic model_logic.Logic, ownerClass *model_class.C
 			logicBuilder.AddField("over_association_key", relative)
 		}
 	}
+	if strings.TrimSpace(logic.EndpointSelectorSpec.Specification) != "" {
+		logicBuilder.AddQuotedField("endpoint_selector", logic.EndpointSelectorSpec.Specification)
+	}
 	logicBuilder.AddQuotedField("specification", logic.Spec.Specification)
+	if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
+		logicBuilder.AddQuotedField("destroy_event", logic.DestroyEventSpec.Specification)
+	}
 	if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
 		logicBuilder.AddField("target_type_spec", logic.TargetTypeSpec.Specification)
 	}

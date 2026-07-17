@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"maps"
 	"slices"
 	"sort"
 
@@ -46,6 +47,10 @@ type ClassCatalog struct {
 	associations []AssociationInfo
 	classAssocs  map[identity.Key][]AssociationInfo // classKey → associations involving it
 
+	// extentClassNames maps every full-model class key to its TLA extent name.
+	// Out-of-scope classes bind as empty sets so ClassRef never fails with "not found".
+	extentClassNames map[identity.Key]string
+
 	associationClasses map[identity.Key]*AssociationClassInfo
 
 	// Simulator-local SentBy/CalledBy data.
@@ -53,17 +58,25 @@ type ClassCatalog struct {
 	actionCalledBy    map[identity.Key][]identity.Key // action key → caller class keys
 	queryCalledBy     map[identity.Key][]identity.Key // query key → caller class keys
 	attributeCalledBy map[identity.Key][]identity.Key // derived attribute key → caller class keys
+
+	// Surface-unavailable derived attributes and queries (depend on out-of-scope classes).
+	surfaceUnavailableDerived map[identity.Key]surface.UnavailableMember
+	surfaceUnavailableQueries map[identity.Key]surface.UnavailableMember
+	surfaceUnavailableList    []surface.UnavailableMember
 }
 
 // NewClassCatalog builds a class catalog from the model.
 func NewClassCatalog(model *core.Model) *ClassCatalog {
 	catalog := &ClassCatalog{
-		classes:           make(map[identity.Key]*ClassInfo),
-		classAssocs:       make(map[identity.Key][]AssociationInfo),
-		eventSentBy:       make(map[identity.Key][]identity.Key),
-		actionCalledBy:    make(map[identity.Key][]identity.Key),
-		queryCalledBy:     make(map[identity.Key][]identity.Key),
-		attributeCalledBy: make(map[identity.Key][]identity.Key),
+		classes:                   make(map[identity.Key]*ClassInfo),
+		classAssocs:               make(map[identity.Key][]AssociationInfo),
+		extentClassNames:          make(map[identity.Key]string),
+		eventSentBy:               make(map[identity.Key][]identity.Key),
+		actionCalledBy:            make(map[identity.Key][]identity.Key),
+		queryCalledBy:             make(map[identity.Key][]identity.Key),
+		attributeCalledBy:         make(map[identity.Key][]identity.Key),
+		surfaceUnavailableDerived: make(map[identity.Key]surface.UnavailableMember),
+		surfaceUnavailableQueries: make(map[identity.Key]surface.UnavailableMember),
 	}
 
 	// Walk all in-scope classes; stateless classes are liveness-only metadata.
@@ -71,6 +84,7 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
 				catalog.classes[class.Key] = buildScopedClassInfo(class)
+				catalog.extentClassNames[class.Key] = model_class.ClassTLAName(class.Name)
 			}
 		}
 	}
@@ -79,6 +93,120 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 	catalog.buildAssociationInfo(model)
 
 	return catalog
+}
+
+// RegisterOutOfScopeMetadata records full-model class extents and boundary associations
+// so out-of-scope peers evaluate as empty sets and link guarantees can no-op.
+// Call with the unfiltered model after building the catalog from the surface-filtered model.
+// Model-agnostic: every class and association is treated the same way.
+func (c *ClassCatalog) RegisterOutOfScopeMetadata(fullModel *core.Model) {
+	if fullModel == nil {
+		return
+	}
+	for _, domain := range fullModel.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for classKey, class := range subdomain.Classes {
+				if _, ok := c.extentClassNames[classKey]; !ok {
+					c.extentClassNames[classKey] = model_class.ClassTLAName(class.Name)
+				}
+			}
+		}
+	}
+	c.addBoundaryAssociations(fullModel)
+}
+
+// addBoundaryAssociations registers associations with exactly one endpoint in scope.
+// They are not in the filtered model (multiplicity is not enforced across the boundary)
+// but catalog resolution still finds them so link guarantees no-op instead of hard-failing.
+func (c *ClassCatalog) addBoundaryAssociations(fullModel *core.Model) {
+	known := make(map[identity.Key]bool, len(c.associations))
+	for _, ai := range c.associations {
+		known[ai.Association.Key] = true
+	}
+	for _, assoc := range fullModel.GetClassAssociations() {
+		if known[assoc.Key] {
+			continue
+		}
+		_, fromIn := c.classes[assoc.FromClassKey]
+		_, toIn := c.classes[assoc.ToClassKey]
+		if fromIn == toIn {
+			// Both in scope already handled, or both out of scope (irrelevant to surface).
+			continue
+		}
+		// Boundary association: keep AC key only when the association class is in scope.
+		surfaceAssoc := assoc
+		if assoc.AssociationClassKey != nil {
+			if _, acIn := c.classes[*assoc.AssociationClassKey]; !acIn {
+				surfaceAssoc.AssociationClassKey = nil
+			}
+		}
+		c.addAssociationInfo(AssociationInfo{
+			Association:   surfaceAssoc,
+			FromClassKey:  assoc.FromClassKey,
+			ToClassKey:    assoc.ToClassKey,
+			MandatoryTo:   assoc.ToMultiplicity.LowerBound >= 1,
+			MandatoryFrom: assoc.FromMultiplicity.LowerBound >= 1,
+			MinTo:         assoc.ToMultiplicity.LowerBound,
+			MinFrom:       assoc.FromMultiplicity.LowerBound,
+		})
+		known[assoc.Key] = true
+	}
+	sort.Slice(c.associations, func(i, j int) bool {
+		return c.associations[i].Association.Key.String() < c.associations[j].Association.Key.String()
+	})
+}
+
+// IsClassInScope reports whether classKey is on the simulation surface (may hold instances).
+func (c *ClassCatalog) IsClassInScope(classKey identity.Key) bool {
+	_, ok := c.classes[classKey]
+	return ok
+}
+
+// SetSurfaceUnavailableMembers records derived attributes and queries that depend on
+// out-of-scope classes. They are excluded from external surface selection; evaluation
+// produces a surface-out-of-scope violation when something calls them.
+func (c *ClassCatalog) SetSurfaceUnavailableMembers(members []surface.UnavailableMember) {
+	c.surfaceUnavailableDerived = make(map[identity.Key]surface.UnavailableMember)
+	c.surfaceUnavailableQueries = make(map[identity.Key]surface.UnavailableMember)
+	c.surfaceUnavailableList = append([]surface.UnavailableMember(nil), members...)
+	for _, m := range members {
+		switch m.Kind {
+		case surface.MemberDerived:
+			c.surfaceUnavailableDerived[m.MemberKey] = m
+		case surface.MemberQuery:
+			c.surfaceUnavailableQueries[m.MemberKey] = m
+		}
+	}
+}
+
+// SurfaceUnavailableMembers returns all members off the external surface due to scope.
+func (c *ClassCatalog) SurfaceUnavailableMembers() []surface.UnavailableMember {
+	return c.surfaceUnavailableList
+}
+
+// SurfaceUnavailableDerived returns unavailability metadata when the derived attribute
+// is off the surface for this run.
+func (c *ClassCatalog) SurfaceUnavailableDerived(attrKey identity.Key) (surface.UnavailableMember, bool) {
+	m, ok := c.surfaceUnavailableDerived[attrKey]
+	return m, ok
+}
+
+// SurfaceUnavailableQuery returns unavailability metadata when the query is off the surface.
+func (c *ClassCatalog) SurfaceUnavailableQuery(queryKey identity.Key) (surface.UnavailableMember, bool) {
+	m, ok := c.surfaceUnavailableQueries[queryKey]
+	return m, ok
+}
+
+// IsSurfaceUnavailableDerived reports whether a derived attribute is off the surface.
+func (c *ClassCatalog) IsSurfaceUnavailableDerived(attrKey identity.Key) bool {
+	_, ok := c.surfaceUnavailableDerived[attrKey]
+	return ok
+}
+
+// IsSurfaceUnavailableQuery reports whether a query is off the surface.
+func (c *ClassCatalog) IsSurfaceUnavailableQuery(queryKey identity.Key) bool {
+	_, ok := c.surfaceUnavailableQueries[queryKey]
+	return ok
 }
 
 // buildScopedClassInfo creates catalog metadata for any in-scope class.
@@ -478,20 +606,68 @@ func (c *ClassCatalog) AssociationByKey(assocKey identity.Key) (model_class.Asso
 	return model_class.Association{}, false
 }
 
+// OutgoingAssociationByAssociationClassTLAName finds the outgoing association whose
+// association class display name (spaces stripped) equals classTLAName.
+func (c *ClassCatalog) OutgoingAssociationByAssociationClassTLAName(
+	fromClassKey identity.Key,
+	classTLAName string,
+) (identity.Key, model_class.Association, bool) {
+	for _, ai := range c.GetAssociationsForClass(fromClassKey) {
+		if ai.Association.FromClassKey != fromClassKey || ai.Association.AssociationClassKey == nil {
+			continue
+		}
+		acClass, ok := c.PeerClass(*ai.Association.AssociationClassKey)
+		if !ok {
+			continue
+		}
+		if model_class.ClassTLAName(acClass.Name) == classTLAName {
+			return ai.Association.Key, ai.Association, true
+		}
+	}
+	return identity.Key{}, model_class.Association{}, false
+}
+
 // OutgoingAssociationByTLAField resolves an outgoing association by its TLA field name on fromClassKey.
 func (c *ClassCatalog) OutgoingAssociationByTLAField(
 	fromClassKey identity.Key,
 	tlaField string,
 ) (identity.Key, model_class.Association, bool) {
+	assocKey, assoc, reverse, found := c.AssociationByNavigableTLAField(fromClassKey, tlaField)
+	if !found || reverse {
+		return identity.Key{}, model_class.Association{}, false
+	}
+	return assocKey, assoc, true
+}
+
+// AssociationByNavigableTLAField resolves a forward (AssocName) or reverse (_AssocName)
+// field on classKey. reverse is true when classKey is the association to-endpoint.
+func (c *ClassCatalog) AssociationByNavigableTLAField(
+	classKey identity.Key,
+	tlaField string,
+) (identity.Key, model_class.Association, bool, bool) {
+	for _, ai := range c.classAssocs[classKey] {
+		if ai.FromClassKey == classKey && model_class.AssociationTLAFieldName(ai.Association.Name) == tlaField {
+			return ai.Association.Key, ai.Association, false, true
+		}
+		if ai.ToClassKey == classKey && model_class.ReverseAssociationTLAFieldName(ai.Association.Name) == tlaField {
+			return ai.Association.Key, ai.Association, true, true
+		}
+	}
+	return identity.Key{}, model_class.Association{}, false, false
+}
+
+// OutgoingAssociationsTo lists associations from fromClassKey whose to-class is toClassKey.
+func (c *ClassCatalog) OutgoingAssociationsTo(fromClassKey, toClassKey identity.Key) []model_class.Association {
+	var out []model_class.Association
 	for _, ai := range c.classAssocs[fromClassKey] {
 		if ai.FromClassKey != fromClassKey {
 			continue
 		}
-		if model_class.AssociationTLAFieldName(ai.Association.Name) == tlaField {
-			return ai.Association.Key, ai.Association, true
+		if ai.Association.ToClassKey == toClassKey {
+			out = append(out, ai.Association)
 		}
 	}
-	return identity.Key{}, model_class.Association{}, false
+	return out
 }
 
 // PeerClass returns the class for peer creation via association set-add guarantees.
@@ -598,6 +774,7 @@ func (c *ClassCatalog) ExternalStateEvents(classKey identity.Key, stateName stri
 
 // ExternalQueries returns queries eligible for top-level firing on existing instances.
 // A query is "internal" if its CalledBy list contains a simulatable in-scope class.
+// Queries that depend on out-of-scope classes are never external.
 func (c *ClassCatalog) ExternalQueries(classKey identity.Key) []model_state.Query {
 	info := c.classes[classKey]
 	if info == nil || len(info.Class.Queries) == 0 {
@@ -606,6 +783,9 @@ func (c *ClassCatalog) ExternalQueries(classKey identity.Key) []model_state.Quer
 
 	queries := make([]model_state.Query, 0, len(info.Class.Queries))
 	for _, query := range info.Class.Queries {
+		if c.IsSurfaceUnavailableQuery(query.Key) {
+			continue
+		}
 		if c.isQueryExternal(query) {
 			queries = append(queries, query)
 		}
@@ -637,6 +817,7 @@ func (c *ClassCatalog) isQueryExternal(query model_state.Query) bool {
 
 // ExternalDerivedAttributes returns derived attributes eligible for top-level reads.
 // A derived attribute is internal when a simulatable in-scope class references it in logic.
+// Derived attributes that depend on out-of-scope classes are never external.
 func (c *ClassCatalog) ExternalDerivedAttributes(classKey identity.Key) []model_class.Attribute {
 	info := c.classes[classKey]
 	if info == nil {
@@ -649,6 +830,9 @@ func (c *ClassCatalog) ExternalDerivedAttributes(classKey identity.Key) []model_
 			continue
 		}
 		if attr.DerivationPolicy.Spec.Expression == nil && attr.DerivationPolicy.Spec.Specification == "" {
+			continue
+		}
+		if c.IsSurfaceUnavailableDerived(attr.Key) {
 			continue
 		}
 		if c.isDerivedAttributeExternal(attr) {
@@ -674,11 +858,15 @@ func (c *ClassCatalog) hasSimulatableSender(senders []identity.Key) bool {
 	return false
 }
 
-// ClassNameMap returns class keys mapped to display names for simulation bindings.
+// ClassNameMap returns class keys mapped to TLA extent names for simulation bindings.
+// Includes out-of-scope classes (empty extents) so ClassRef never errors with "not found".
+// Spaces are stripped so "Account Definition" binds as AccountDefinition.
 func (c *ClassCatalog) ClassNameMap() map[identity.Key]string {
-	names := make(map[identity.Key]string, len(c.classes))
+	names := make(map[identity.Key]string, len(c.extentClassNames)+len(c.classes))
+	maps.Copy(names, c.extentClassNames)
+	// Prefer live class display names when present (should match extent names).
 	for classKey, info := range c.classes {
-		names[classKey] = info.Class.Name
+		names[classKey] = model_class.ClassTLAName(info.Class.Name)
 	}
 	return names
 }

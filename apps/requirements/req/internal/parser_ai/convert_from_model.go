@@ -397,6 +397,7 @@ func convertClassFromModel(class *model_class.Class) *inputClass {
 		Details:         class.Details,
 		UnfinishedNotes: class.UnfinishedNotes,
 		UMLComment:      class.UmlComment,
+		Marked:          class.Marked,
 		Attributes:      nil,
 		Indexes:         [][]string{},
 		Actions:         make(map[string]*inputAction),
@@ -626,6 +627,9 @@ func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
 	}
 	if strings.TrimSpace(logic.DestroyEventSpec.Specification) != "" {
 		result.DestroyEvent = logic.DestroyEventSpec.Specification
+	}
+	if strings.TrimSpace(logic.EndpointSelectorSpec.Specification) != "" {
+		result.EndpointSelector = logic.EndpointSelectorSpec.Specification
 	}
 	return result
 }

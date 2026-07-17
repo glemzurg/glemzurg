@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"slices"
 	"sort"
 	"strings"
 
@@ -330,18 +331,19 @@ func (s *ParameterSampler) sampleUntilRequiresSatisfied(
 	prep *parameterSamplingPrep,
 	rng *rand.Rand,
 ) (map[string]object.Object, error) {
+	if err := s.errIfNamedSetDomainExhausted(owner, paramDefs); err != nil {
+		return nil, err
+	}
+
 	var lastAttempt string
 	var lastRejectReason string
 
 	for range maxParameterSampleAttempts {
-		result := prep.generate(paramDefs, rng)
-		if s.generateOverride == nil {
-			applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName, s.peerFieldDistinctLookup)
-			if samplingPeerFieldDistinctConflict(result, prep.constraints, s.peerFieldDistinctLookup) {
-				lastAttempt = formatSampledParameters(result)
-				lastRejectReason = "peer field value already used by another instance"
-				continue
-			}
+		result, rejectReason := s.generateConstrainedSample(paramDefs, prep, rng)
+		if rejectReason != "" {
+			lastAttempt = formatSampledParameters(result)
+			lastRejectReason = rejectReason
+			continue
 		}
 		enforceParameterNullability(result, paramDefs, rng)
 		coerceSampledParameters(paramDefs, result)
@@ -363,6 +365,41 @@ func (s *ParameterSampler) sampleUntilRequiresSatisfied(
 		LastAttempt:      lastAttempt,
 		LastRejectReason: lastRejectReason,
 	}
+}
+
+func (s *ParameterSampler) errIfNamedSetDomainExhausted(
+	owner ParameterOwner,
+	paramDefs []model_state.Parameter,
+) error {
+	// Action selection should have excluded this already; fail closed if not.
+	ok, err := s.NamedSetSampleDomainsAvailable(owner, paramDefs)
+	if err != nil {
+		return err
+	}
+	if ok {
+		return nil
+	}
+	return &ParameterSampleExhaustedError{
+		Owner:            owner,
+		Attempts:         0,
+		LastRejectReason: "named-set sample domain empty (all allowed values already used)",
+	}
+}
+
+func (s *ParameterSampler) generateConstrainedSample(
+	paramDefs []model_state.Parameter,
+	prep *parameterSamplingPrep,
+	rng *rand.Rand,
+) (result map[string]object.Object, rejectReason string) {
+	result = prep.generate(paramDefs, rng)
+	if s.generateOverride != nil {
+		return result, ""
+	}
+	applyParameterConstraints(result, prep.constraints, rng, s.namedSetValues, prep.nullableByName, s.peerFieldDistinctLookup)
+	if samplingPeerFieldDistinctConflict(result, prep.constraints, s.peerFieldDistinctLookup) {
+		return result, "peer field value already used by another instance"
+	}
+	return result, ""
 }
 
 // SampleParameters generates values for paramDefs using effective requires constraints.
@@ -477,12 +514,41 @@ func logicsReferencingOnlySampledParams(
 		if logic.Type != model_logic.LogicTypeAssessment || !logic.Spec.ParseOk() {
 			continue
 		}
+		// Class extents are not bound during parameter sampling; structural constraints
+		// (e.g. set-minus peer field) already drive generation for those requires.
+		if expressionReferencesClassExtent(logic.Spec.Expression) {
+			continue
+		}
 		if !expressionReferencesOnlyParams(logic.Spec.Expression, sampledNames) {
 			continue
 		}
 		filtered = append(filtered, logic)
 	}
 	return filtered
+}
+
+func expressionReferencesClassExtent(expr me.Expression) bool {
+	if expr == nil {
+		return false
+	}
+	if _, ok := expr.(*me.ClassRef); ok {
+		return true
+	}
+	if slices.ContainsFunc(expressionChildNodes(expr), expressionReferencesClassExtent) {
+		return true
+	}
+	// Membership set side is not walked by expressionChildNodes (element only);
+	// set-minus used-codes and peer quantifiers live there.
+	if membership, ok := expr.(*me.Membership); ok {
+		return expressionReferencesClassExtent(membership.Set)
+	}
+	if setMap, ok := expr.(*me.SetMap); ok {
+		return expressionReferencesClassExtent(setMap.Set) || expressionReferencesClassExtent(setMap.Transform)
+	}
+	if setFilter, ok := expr.(*me.SetFilter); ok {
+		return expressionReferencesClassExtent(setFilter.Set) || expressionReferencesClassExtent(setFilter.Predicate)
+	}
+	return false
 }
 
 func expressionReferencesOnlyParams(expr me.Expression, paramNames map[string]bool) bool {
@@ -601,6 +667,12 @@ func paramsCoveredByConstraints(logics []model_logic.Logic) map[string]bool {
 	}
 	if constraints.nullableElseMembership != nil {
 		covered[constraints.nullableElseMembership.paramName] = true
+	}
+	if constraints.paramInNamedSetMinusPeerField != nil {
+		covered[constraints.paramInNamedSetMinusPeerField.paramName] = true
+	}
+	if constraints.paramInNamedSet != nil {
+		covered[constraints.paramInNamedSet.paramName] = true
 	}
 	if constraints.nullableElseMirror != nil {
 		covered[constraints.nullableElseMirror.driverParam] = true
@@ -791,7 +863,7 @@ func enumMembershipSpecification(
 	if !nullable {
 		return membership
 	}
-	return fmt.Sprintf(`IF %s = NULL THEN TRUE ELSE %s`, paramName, membership)
+	return fmt.Sprintf(`_GZ!WhenNotNull(%s, %s)`, paramName, membership)
 }
 
 func formatTLAPlusStringSet(values []string) string {

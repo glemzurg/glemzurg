@@ -570,3 +570,197 @@ func peerEffectAction(ownerKey identity.Key, target string, expr me.Expression) 
 	topoff := peerEffectParamWithNatTypeSpec(actionKey, "TopoffBalance")
 	return model_state.NewAction(actionKey, model_state.ActionDetails{Name: "PeerEffect", Details: ""}, nil, []model_logic.Logic{logic}, nil, []model_state.Parameter{minBal, topoff})
 }
+
+// dualLinkFixture models definition.Defines→account and wallet.IsSubdividedInto→account.
+type dualLinkFixture struct {
+	model         *core.Model
+	defKey        identity.Key
+	walletKey     identity.Key
+	accountKey    identity.Key
+	definesKey    identity.Key
+	subdividesKey identity.Key
+}
+
+func buildDualLinkFixture() dualLinkFixture {
+	defClass, defKey := simpleCreateClass("definition", "Definition")
+	walletClass, walletKey := simpleCreateClass("wallet", "Wallet")
+	accountClass, accountKey := simpleCreateClass("account", "Account")
+
+	// Account needs _new creation event for PeerCreationEvent + set-add matching.
+	// simpleCreateClass already has create from initial.
+
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity("any"))
+	definesKey := testAssocKey(defKey, accountKey, "Defines")
+	defines := model_class.NewAssociation(
+		definesKey,
+		model_class.AssociationDetails{Name: "Defines", Details: ""},
+		model_class.AssociationEnd{ClassKey: defKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: accountKey, Multiplicity: toMult},
+		model_class.AssociationOptions{},
+	)
+	subdividesKey := testAssocKey(walletKey, accountKey, "Is Subdivided Into")
+	subdivides := model_class.NewAssociation(
+		subdividesKey,
+		model_class.AssociationDetails{Name: "Is Subdivided Into", Details: ""},
+		model_class.AssociationEnd{ClassKey: walletKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: accountKey, Multiplicity: toMult},
+		model_class.AssociationOptions{},
+	)
+
+	model := testModel(
+		classEntry(defClass, defKey),
+		classEntry(walletClass, walletKey),
+		classEntry(accountClass, accountKey),
+	)
+	model.ClassAssociations = map[identity.Key]model_class.Association{
+		definesKey:    defines,
+		subdividesKey: subdivides,
+	}
+	return dualLinkFixture{
+		model: model, defKey: defKey, walletKey: walletKey, accountKey: accountKey,
+		definesKey: definesKey, subdividesKey: subdividesKey,
+	}
+}
+
+func (s *AssociationPeerEffectsSuite) TestSetAddInfersSecondaryAssociationFromParam() {
+	fix := buildDualLinkFixture()
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+
+	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
+	walletInst := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+
+	// Set-add under Defines with Wallet param; wallet has unique outgoing assoc to account.
+	action := peerSetAddWithObjectParam(
+		fix.defKey, fix.definesKey, fix.accountKey, "Defines", "Wallet",
+	)
+	walletObj := state.ClassExtentElement(walletInst.ID, walletInst.Attributes)
+	result, err := ae.ExecuteAction(action, defInst, map[string]object.Object{
+		"Wallet": walletObj,
+	})
+	s.Require().NoError(err)
+	s.True(result.Success)
+	s.Empty(result.Violations)
+
+	defLinks := simState.GetLinkedForward(defInst.ID, fix.definesKey)
+	s.Require().Len(defLinks, 1)
+	accountID := defLinks[0]
+	walletLinks := simState.GetLinkedForward(walletInst.ID, fix.subdividesKey)
+	s.Require().Len(walletLinks, 1)
+	s.Equal(accountID, walletLinks[0])
+}
+
+func peerSetAddWithObjectParam(
+	ownerKey, assocKey, peerClassKey identity.Key,
+	assocTLAField, paramName string,
+) model_state.Action {
+	newEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameNew))
+	expr := &me.SetOp{
+		Op:   me.SetUnion,
+		Left: &me.AssociationRef{AssociationKey: assocKey},
+		Right: &me.SetLiteral{
+			Elements: []me.Expression{&me.EventCall{EventKey: newEventKey}},
+		},
+	}
+	actionKey := helper.Must(identity.NewActionKey(ownerKey, "instantiate"))
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
+	logic := model_logic.NewLogic(
+		guaranteeKey, model_logic.LogicTypeStateChange, "", assocTLAField,
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil,
+	)
+	logic.Spec.Expression = expr
+	param := helper.Must(model_state.NewParameter(actionKey, paramName, "object of wallet", false))
+	ts := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "Wallet", nil))
+	param.DataType.TypeSpec = &ts
+	return model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "Instantiate", Details: ""},
+		nil,
+		[]model_logic.Logic{logic},
+		nil,
+		[]model_state.Parameter{param},
+	)
+}
+
+func (s *AssociationPeerEffectsSuite) TestPeerDomainEventSetMapFiresPeerAction() {
+	fix := buildDualLinkFixture()
+	// Add Instantiate event+action on definition that only records a primed no-op attribute-free success.
+	defClass := fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.defKey]
+	stateActiveKey := mustKey("domain/d/subdomain/s/class/definition/state/active")
+	eventKey := helper.Must(identity.NewEventKey(fix.defKey, "InstantiateAccount"))
+	actionKey := helper.Must(identity.NewActionKey(fix.defKey, "InstantiateAccount"))
+	transKey := helper.Must(identity.NewTransitionKey(fix.defKey, "active", "InstantiateAccount", "", "InstantiateAccount", ""))
+
+	event := model_state.NewEvent(eventKey, "InstantiateAccount", "", []string{"Wallet"})
+	// Minimal action with empty guarantees (success).
+	action := model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "InstantiateAccount", Details: ""},
+		nil, nil, nil,
+		[]model_state.Parameter{
+			paramWithTypeSpec(actionKey, "Wallet", "object of wallet", "Wallet"),
+		},
+	)
+	trans := model_state.NewTransition(
+		transKey, eventKey,
+		model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey},
+		model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: &actionKey}, "",
+	)
+	defClass.SetEvents(appendEvent(defClass.Events, eventKey, event))
+	defClass.SetActions(map[identity.Key]model_state.Action{actionKey: action})
+	defClass.SetTransitions(appendTransition(defClass.Transitions, transKey, trans))
+	fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.defKey] = defClass
+
+	// Wallet action: peer-domain set-map over a parameter set of definitions.
+	walletActionKey := helper.Must(identity.NewActionKey(fix.walletKey, "apply"))
+	walletGuarKey := helper.Must(identity.NewActionGuaranteeKey(walletActionKey, "0"))
+	// { InstantiateAccount(self) : d \in Definitions } as lowered AST.
+	setMapExpr := &me.SetMap{
+		Variable: "d",
+		Set:      &me.LocalVar{Name: "Definitions"},
+		Transform: &me.EventCall{
+			EventKey: eventKey,
+			Args:     []me.Expression{&me.SelfRef{}},
+		},
+	}
+	walletLogic := model_logic.NewLogic(
+		walletGuarKey, model_logic.LogicTypeStateChange, "", "",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ InstantiateAccount(self) : d \\in Definitions }"}, nil,
+	)
+	walletLogic.Spec.Expression = setMapExpr
+	walletAction := model_state.NewAction(
+		walletActionKey,
+		model_state.ActionDetails{Name: "Apply", Details: ""},
+		nil,
+		[]model_logic.Logic{walletLogic},
+		nil,
+		[]model_state.Parameter{
+			paramWithTypeSpec(walletActionKey, "Definitions", "unique unordered of object of definition", "SUBSET Definition"),
+		},
+	)
+
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+	walletInst := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
+	defExtent := state.ClassExtentElement(defInst.ID, defInst.Attributes)
+	defs := object.NewSetFromElements([]object.Object{defExtent})
+
+	result, err := ae.ExecuteAction(walletAction, walletInst, map[string]object.Object{
+		"Definitions": defs,
+	})
+	s.Require().NoError(err)
+	s.True(result.Success)
+	s.Require().NotEmpty(result.PeerTransitions)
+	s.Equal("InstantiateAccount", result.PeerTransitions[0].EventName)
+	s.Equal(defInst.ID, result.PeerTransitions[0].Result.InstanceID)
+}
+
+func paramWithTypeSpec(actionKey identity.Key, name, rules, typeSpec string) model_state.Parameter {
+	param := helper.Must(model_state.NewParameter(actionKey, name, rules, false))
+	ts := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, typeSpec, nil))
+	if param.DataType == nil {
+		param.DataType = &model_data_type.DataType{CollectionType: "atomic"}
+	}
+	param.DataType.TypeSpec = &ts
+	return param
+}

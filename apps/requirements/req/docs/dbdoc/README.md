@@ -5,7 +5,7 @@
 | Name | Columns | Comment | Type |
 | ---- | ------- | ------- | ---- |
 | [public.model](public.model.md) | 4 | A fully distinct semantic model, separate from all others. | BASE TABLE |
-| [public.logic](public.logic.md) | 11 | A bit of business logic. | BASE TABLE |
+| [public.logic](public.logic.md) | 12 | A bit of business logic. | BASE TABLE |
 | [public.invariant](public.invariant.md) | 2 | An invariant that is forever true in the model. | BASE TABLE |
 | [public.global_function](public.global_function.md) | 4 | A global function used to describe simulation and code generation. | BASE TABLE |
 | [public.named_set](public.named_set.md) | 8 | A reusable named set definition at the model level, referenced from behavioral logic via named_set_ref expressions. | BASE TABLE |
@@ -21,7 +21,7 @@
 | [public.data_type_atomic_span](public.data_type_atomic_span.md) | 10 | The definition of a span for an atomic data type. | BASE TABLE |
 | [public.data_type_field](public.data_type_field.md) | 4 | A field of a record data type. | BASE TABLE |
 | [public.class_generalization](public.class_generalization.md) | 9 | A relationship between classes indicating super classes and subclasses. | BASE TABLE |
-| [public.class](public.class.md) | 10 | A set of objects that share the same semantics. | BASE TABLE |
+| [public.class](public.class.md) | 11 | A set of objects that share the same semantics. | BASE TABLE |
 | [public.attribute](public.attribute.md) | 11 | An attribute of a class. | BASE TABLE |
 | [public.class_index](public.class_index.md) | 4 | A unique identity for a class, may be multiple attributes together for the identity. | BASE TABLE |
 | [public.class_invariant](public.class_invariant.md) | 3 | An invariant that is forever true objects of a class. | BASE TABLE |

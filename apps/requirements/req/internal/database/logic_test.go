@@ -294,6 +294,30 @@ func (suite *LogicSuite) TestAddDeleteType() {
 	}, logic)
 }
 
+func (suite *LogicSuite) TestAddAssociationClassReify() {
+	logicIn := model_logic.Logic{
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeStateChange,
+		Description: "Create AC rows",
+		Target:      "AccountBalanceChange",
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "_new(r.amount)"},
+	}
+	logicIn.SetEndpointSelectorSpec(logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ r.account : r \in Amounts }`})
+	err := AddLogic(suite.db, suite.model.Key, logicIn)
+	suite.Require().NoError(err)
+
+	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
+	suite.Require().NoError(err)
+	suite.Equal(model_logic.Logic{
+		Key:                  suite.logicKey,
+		Type:                 model_logic.LogicTypeStateChange,
+		Description:          "Create AC rows",
+		Target:               "AccountBalanceChange",
+		Spec:                 logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "_new(r.amount)"},
+		EndpointSelectorSpec: logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{ r.account : r \in Amounts }`},
+	}, logic)
+}
+
 func (suite *LogicSuite) TestAddWithTargetTypeSpec() {
 	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "STRING"}
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{

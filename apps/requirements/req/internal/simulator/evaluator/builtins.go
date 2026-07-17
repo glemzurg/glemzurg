@@ -6,10 +6,19 @@ import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ob
 // Args are pre-evaluated object.Object values.
 type BuiltinFn func(args []object.Object) *EvalResult
 
+// Simulator-only _GZ module (not community TLA+). Null-branch sugar is evaluated
+// with short-circuit in evalMEBuiltinCall rather than via this table.
+const (
+	ModuleGZ       = "_GZ"
+	GZWhenNotNull  = "WhenNotNull"
+	GZWhenNull     = "WhenNull"
+	GZWhenNullElse = "WhenNullElse"
+)
+
 // builtins maps function names to their implementations.
 // Names follow _Module!Function syntax to avoid collision with user-defined names.
-// Each _Module prefix must match a real TLA+ standard module; only operators from
-// that module's official definition belong here — not arbitrary convenience helpers.
+// Most _Module prefixes mirror real TLA+ / community modules. Exceptions are engine
+// sugar: _Stack, _Queue, and _GZ (null-branch invariants / synthesis hooks).
 var builtins = map[string]BuiltinFn{
 	// Sequences (_Seq module)
 	"_Seq!Head":   builtinSeqHead,
@@ -25,12 +34,15 @@ var builtins = map[string]BuiltinFn{
 	"_Queue!Enqueue": builtinQueueEnqueue,
 	"_Queue!Dequeue": builtinQueueDequeue,
 
-	// Bags
+	// Bags (CommunityModules Bags — bag arguments only except SetToBag)
 	"_Bags!SetToBag":       builtinSetToBag,
 	"_Bags!BagToSet":       builtinBagToSet,
 	"_Bags!CopiesIn":       builtinCopiesIn,
 	"_Bags!BagIn":          builtinBagIn,
 	"_Bags!BagCardinality": builtinBagCardinality,
+
+	// FiniteSets (standard TLA+ FiniteSets module)
+	"_FiniteSets!Cardinality": builtinFiniteSetsCardinality,
 }
 
 // LookupBuiltin returns the builtin function for the given name.
@@ -151,7 +163,11 @@ func builtinSetToBag(args []object.Object) *EvalResult {
 	if len(args) != 1 {
 		return NewEvalError("_Bags!SetToBag requires 1 argument, got %d", len(args))
 	}
-	set, ok := args[0].(*object.Set)
+	// Set or association navigation (relation image). Bags must not be passed here.
+	if _, isBag := args[0].(*object.Bag); isBag {
+		return NewEvalError("_Bags!SetToBag requires Set, got Bag (already a bag)")
+	}
+	set, ok := CoerceToSet(args[0])
 	if !ok {
 		return NewEvalError("_Bags!SetToBag requires Set, got %s", args[0].Type())
 	}
@@ -193,16 +209,12 @@ func builtinBagCardinality(args []object.Object) *EvalResult {
 	if len(args) != 1 {
 		return NewEvalError("_Bags!BagCardinality requires 1 argument, got %d", len(args))
 	}
-	switch v := args[0].(type) {
-	case *object.Bag:
-		return NewEvalResult(object.NewNatural(int64(v.Size())))
-	case *object.Set:
-		return NewEvalResult(object.NewNatural(int64(v.Size())))
-	case *object.AssociationRelation:
-		return NewEvalResult(object.NewNatural(int64(v.Endpoints().Size())))
-	default:
-		return NewEvalError("_Bags!BagCardinality requires Bag or Set, got %s", args[0].Type())
+	bag, ok := args[0].(*object.Bag)
+	if !ok {
+		// Sets and association images must use SetToBag first (or FiniteSets!Cardinality for set size).
+		return NewEvalError("_Bags!BagCardinality requires Bag, got %s (use _Bags!SetToBag for sets, or _FiniteSets!Cardinality)", args[0].Type())
 	}
+	return NewEvalResult(object.NewNatural(int64(bag.Size())))
 }
 
 func builtinBagIn(args []object.Object) *EvalResult {
@@ -215,4 +227,22 @@ func builtinBagIn(args []object.Object) *EvalResult {
 	}
 	contains := bag.Contains(args[0])
 	return NewEvalResult(nativeBoolToBoolean(contains))
+}
+
+// === FiniteSets Builtins ===
+
+// builtinFiniteSetsCardinality is FiniteSets!Cardinality: size of a finite set.
+// Association navigations coerce to their endpoint set (relation image).
+func builtinFiniteSetsCardinality(args []object.Object) *EvalResult {
+	if len(args) != 1 {
+		return NewEvalError("_FiniteSets!Cardinality requires 1 argument, got %d", len(args))
+	}
+	if _, isBag := args[0].(*object.Bag); isBag {
+		return NewEvalError("_FiniteSets!Cardinality requires Set, got Bag (use _Bags!BagCardinality)")
+	}
+	set, ok := CoerceToSet(args[0])
+	if !ok {
+		return NewEvalError("_FiniteSets!Cardinality requires Set, got %s", args[0].Type())
+	}
+	return NewEvalResult(object.NewNatural(int64(set.Size())))
 }

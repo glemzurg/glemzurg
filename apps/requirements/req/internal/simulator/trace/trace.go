@@ -313,11 +313,12 @@ func writeStep(b *strings.Builder, step TraceStep, indent string) {
 			mat.ToClassName, mat.ToInstanceID,
 		)
 	}
-	for _, v := range step.Violations {
-		fmt.Fprintf(b, "%s  VIOLATION: %s\n", indent, v)
-	}
+	// Nested work first so post-nesting world-state violations appear after the cascade.
 	for _, cs := range step.CascadedSteps {
 		writeStep(b, cs, indent+"  ")
+	}
+	for _, v := range step.Violations {
+		fmt.Fprintf(b, "%s  VIOLATION: %s\n", indent, v)
 	}
 }
 

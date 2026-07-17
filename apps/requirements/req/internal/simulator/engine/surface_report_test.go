@@ -12,6 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -42,11 +43,11 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsClassesEventsQueriesAndD
 	catalog := NewClassCatalog(model)
 	report := BuildSurfaceReport(catalog)
 
-	s.Require().Len(report.Classes, 2)
+	// Item has no external drivers (mandatory peer of Order); surface lists drivers only.
+	s.Require().Len(report.Classes, 1)
 
 	orderEntry := findSurfaceClass(report, orderKey.String())
 	s.Require().NotNil(orderEntry)
-	s.Equal("simulatable", orderEntry.Role)
 	s.Require().Len(orderEntry.CreationEvents, 1)
 	s.Equal("create", orderEntry.CreationEvents[0].EventName)
 	s.Require().Len(orderEntry.States, 1)
@@ -57,12 +58,10 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsClassesEventsQueriesAndD
 	s.Require().Len(orderEntry.Queries, 1)
 	s.Equal("balance", orderEntry.Queries[0].QueryName)
 
-	itemEntry := findSurfaceClass(report, itemKey.String())
-	s.Require().NotNil(itemEntry)
-	s.Empty(itemEntry.CreationEvents, "mandatory association target excludes external creation")
+	s.Nil(findSurfaceClass(report, itemKey.String()), "peer-only class must not appear on the surface report")
 }
 
-func (s *SurfaceReportSuite) TestBuildSurfaceReportIncludesLivenessOnlyClasses() {
+func (s *SurfaceReportSuite) TestBuildSurfaceReportOmitsClassesWithNoExternalDrivers() {
 	classKey := mustKey("domain/d/subdomain/s/class/simple")
 	simpleClass := model_class.NewClass(classKey, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Simple", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	simpleClass.SetAttributes(nil)
@@ -76,8 +75,8 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportIncludesLivenessOnlyClasses()
 	catalog := NewClassCatalog(testModel(classEntry(simpleClass, classKey)))
 	report := BuildSurfaceReport(catalog)
 
-	s.Require().Len(report.Classes, 1)
-	s.Equal("liveness_only", report.Classes[0].Role)
+	s.Empty(report.Classes, "liveness-only / peer-only classes are not surface drivers")
+	s.Contains(report.FormatText(), "(empty)")
 }
 
 func (s *SurfaceReportSuite) TestBuildSurfaceReportListsExternalDerivedAttributes() {
@@ -164,7 +163,24 @@ func findSurfaceClass(report *SurfaceReport, classKey string) *SurfaceClassRepor
 
 func TestFormatTextEmptySurface(t *testing.T) {
 	text := (&SurfaceReport{}).FormatText()
-	if !strings.Contains(text, "(empty)") {
-		t.Fatalf("expected empty surface marker, got: %q", text)
+	if !strings.Contains(text, "Simulation scope") || !strings.Contains(text, "Simulation surface") {
+		t.Fatalf("expected scope and surface sections, got: %q", text)
 	}
+	if !strings.Contains(text, "(empty)") {
+		t.Fatalf("expected empty markers, got: %q", text)
+	}
+}
+
+func (s *SurfaceReportSuite) TestFormatTextIncludesScopeBeforeSurface() {
+	orderClass, orderKey := testOrderClass()
+	catalog := NewClassCatalog(testModel(classEntry(orderClass, orderKey)))
+	report := BuildSurfaceReport(catalog)
+	report.Scope = []surface.ScopeEntry{
+		{Kind: surface.ScopeClass, Path: "d/s/order"},
+	}
+	text := report.FormatText()
+	s.Contains(text, "Simulation scope")
+	s.Contains(text, "class d/s/order")
+	s.Contains(text, "Simulation surface")
+	s.Greater(strings.Index(text, "Simulation surface"), strings.Index(text, "Simulation scope"))
 }

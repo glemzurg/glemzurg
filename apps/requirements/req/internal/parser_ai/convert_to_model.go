@@ -943,6 +943,7 @@ func convertClassToModel(keyStr string, class *inputClass, ctx subdomainConvCont
 		Details:         class.Details,
 		UnfinishedNotes: class.UnfinishedNotes,
 		UmlComment:      class.UMLComment,
+		Marked:          class.Marked,
 		Attributes:      nil,
 		States:          make(map[identity.Key]model_state.State),
 		Events:          make(map[identity.Key]model_state.Event),
@@ -1517,6 +1518,13 @@ func convertLogicToModel(input *inputLogic, logicType string, logicKey identity.
 			return model_logic.Logic{}, fmt.Errorf("failed to create destroy_event spec: %w", err)
 		}
 		logic.SetDestroyEventSpec(destroyEventSpec)
+	}
+	if strings.TrimSpace(input.EndpointSelector) != "" {
+		es, err := logic_spec.NewExpressionSpec(input.Notation, input.EndpointSelector, nil)
+		if err != nil {
+			return model_logic.Logic{}, fmt.Errorf("failed to create endpoint_selector spec: %w", err)
+		}
+		logic.SetEndpointSelectorSpec(es)
 	}
 	return logic, nil
 }

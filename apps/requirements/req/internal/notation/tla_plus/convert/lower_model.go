@@ -3,9 +3,12 @@ package convert
 import (
 	"fmt"
 	"maps"
+	"sort"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
@@ -161,6 +164,12 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 	for i := range action.Guarantees {
 		guar := &action.Guarantees[i]
 		guarCtx := lowerContextWithPriorLetGuarantees(ctx, action.Guarantees[:i])
+		if model_logic.IsAssociationClassReify(*guar) {
+			if err := lowerAssociationClassReifyGuarantee(guar, guarCtx); err != nil {
+				return fmt.Errorf("guarantee %d: %w", i, err)
+			}
+			continue
+		}
 		if err := lowerLogicSpec(&guar.Spec, guarCtx); err != nil {
 			return fmt.Errorf("guarantee %d: %w", i, err)
 		}
@@ -179,6 +188,30 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 		for j := range action.Parameters[i].Invariants {
 			if err := lowerLogicSpec(&action.Parameters[i].Invariants[j].Spec, ctx); err != nil {
 				return fmt.Errorf("parameter %q invariant %d: %w", action.Parameters[i].Name, j, err)
+			}
+		}
+		if err := lowerParameterSimulation(&action.Parameters[i], ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// lowerParameterSimulation lowers each rule's requires and specification.
+func lowerParameterSimulation(param *model_state.Parameter, ctx *LowerContext) error {
+	if param.Simulation == nil {
+		return nil
+	}
+	for r := range param.Simulation.Rules {
+		rule := &param.Simulation.Rules[r]
+		for j := range rule.Requires {
+			if err := lowerLogicSpec(&rule.Requires[j].Spec, ctx); err != nil {
+				return fmt.Errorf("parameter %q simulation rule %d require %d: %w", param.Name, r, j, err)
+			}
+		}
+		if rule.Specification != nil {
+			if err := lowerLogicSpec(&rule.Specification.Spec, ctx); err != nil {
+				return fmt.Errorf("parameter %q simulation rule %d specification: %w", param.Name, r, err)
 			}
 		}
 	}
@@ -243,6 +276,22 @@ func lowerDestroyGuaranteeEvent(guar *model_logic.Logic, ctx *LowerContext) erro
 		deleteCtx = withLocalVar(deleteCtx, boundVar)
 	}
 	return lowerLogicSpec(&guar.DestroyEventSpec, deleteCtx)
+}
+
+// lowerAssociationClassReifyGuarantee lowers endpoint_selector then Spec.
+// When endpoint_selector is a set-map (LET-like domain), its binder is in scope for Spec.
+func lowerAssociationClassReifyGuarantee(guar *model_logic.Logic, ctx *LowerContext) error {
+	if err := lowerLogicSpec(&guar.EndpointSelectorSpec, ctx); err != nil {
+		return fmt.Errorf("endpoint_selector: %w", err)
+	}
+	reifyCtx := ctx
+	if setMap, ok := guar.EndpointSelectorSpec.Expression.(*me.SetMap); ok && setMap.Variable != "" {
+		reifyCtx = withLocalVar(ctx, setMap.Variable)
+	}
+	if err := lowerLogicSpec(&guar.Spec, reifyCtx); err != nil {
+		return fmt.Errorf("creation specification: %w", err)
+	}
+	return nil
 }
 
 // destroyEventBoundVariable returns the first destroy_event call argument name.
@@ -411,8 +460,32 @@ func NewClassLowerContext(
 		PeerEventNames:   BuildPeerEventNameMap(class.Key, associations, classes),
 		GlobalFunctions:  globalFunctions,
 		NamedSets:        namedSets,
+		ClassNames:       BuildClassNamesForLower(classes),
 		AllActions:       allActions,
 	}
+}
+
+// BuildClassNamesForLower maps TLA-friendly class names to keys for quantifier domains.
+// Both the display name and the space-stripped form resolve (e.g. "Account Definition" and AccountDefinition).
+func BuildClassNamesForLower(classes map[identity.Key]model_class.Class) map[string]identity.Key {
+	if len(classes) == 0 {
+		return nil
+	}
+	m := make(map[string]identity.Key, len(classes)*2)
+	for key, class := range classes {
+		if class.Name != "" {
+			m[class.Name] = key
+			compact := strings.ReplaceAll(class.Name, " ", "")
+			if compact != class.Name {
+				m[compact] = key
+			}
+		}
+		if key.SubKey != "" {
+			// PascalCase of subkey is not automatic; subkey alone is rarely used in TLA.
+			_ = key
+		}
+	}
+	return m
 }
 
 // BuildOutgoingAssociationFieldNameMap maps TLA field names to association keys for from-class links.
@@ -433,35 +506,110 @@ func BuildOutgoingAssociationFieldNameMap(classKey identity.Key, associations ma
 	return m
 }
 
-// BuildPeerEventNameMap maps peer-class event names reachable via outgoing associations.
+// BuildPeerEventNameMap maps peer-class event names reachable via outgoing associations
+// and via object-of action parameters (for peer-domain event set-maps).
+//
+// First registration wins. Outgoing association peers are registered before object-of
+// parameter peers so association set-maps / cascade Delete() keep the association peer's
+// event when an object parameter class reuses the same event name (e.g. Delete).
 func BuildPeerEventNameMap(
 	fromClassKey identity.Key,
 	associations map[identity.Key]model_class.Association,
 	classes map[identity.Key]model_class.Class,
 ) map[string]identity.Key {
-	if len(associations) == 0 || len(classes) == 0 {
+	if len(classes) == 0 {
 		return nil
 	}
 	m := make(map[string]identity.Key)
-	for _, assoc := range associations {
-		if assoc.FromClassKey != fromClassKey {
-			continue
-		}
-		peerClass, ok := classes[assoc.ToClassKey]
-		if !ok {
-			continue
-		}
-		for _, event := range peerClass.Events {
-			m[event.Name] = event.Key
-			if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
-				m[model_state.SystemEventTLAName(event.Name)] = event.Key
-			}
-		}
-	}
+	addOutgoingAssociationPeerEvents(m, fromClassKey, associations, classes)
+	addObjectParamPeerEvents(m, fromClassKey, classes)
 	if len(m) == 0 {
 		return nil
 	}
 	return m
+}
+
+// registerPeerClassEvents adds peer event names only when not already present (first wins).
+func registerPeerClassEvents(m map[string]identity.Key, peerClass model_class.Class) {
+	for _, event := range peerClass.Events {
+		if _, exists := m[event.Name]; !exists {
+			m[event.Name] = event.Key
+		}
+		if !model_state.IsSystemCreationEvent(event.Name) && !model_state.IsSystemFinalEvent(event.Name) {
+			continue
+		}
+		sysName := model_state.SystemEventTLAName(event.Name)
+		if _, exists := m[sysName]; !exists {
+			m[sysName] = event.Key
+		}
+	}
+}
+
+func addOutgoingAssociationPeerEvents(
+	m map[string]identity.Key,
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) {
+	assocKeys := make([]identity.Key, 0, len(associations))
+	for k := range associations {
+		assocKeys = append(assocKeys, k)
+	}
+	sort.Slice(assocKeys, func(i, j int) bool {
+		return assocKeys[i].String() < assocKeys[j].String()
+	})
+	for _, assocKey := range assocKeys {
+		assoc := associations[assocKey]
+		if assoc.FromClassKey != fromClassKey {
+			continue
+		}
+		if peerClass, ok := classes[assoc.ToClassKey]; ok {
+			registerPeerClassEvents(m, peerClass)
+		}
+	}
+}
+
+func addObjectParamPeerEvents(
+	m map[string]identity.Key,
+	fromClassKey identity.Key,
+	classes map[identity.Key]model_class.Class,
+) {
+	fromClass, ok := classes[fromClassKey]
+	if !ok {
+		return
+	}
+	for _, action := range fromClass.Actions {
+		for _, param := range action.Parameters {
+			for _, classKey := range objectOfClassKeysInDataType(param.DataType, classes) {
+				if peerClass, ok := classes[classKey]; ok {
+					registerPeerClassEvents(m, peerClass)
+				}
+			}
+		}
+	}
+}
+
+// objectOfClassKeysInDataType collects class keys referenced by object-of atomics in a data type tree.
+func objectOfClassKeysInDataType(dt *model_data_type.DataType, classes map[identity.Key]model_class.Class) []identity.Key {
+	if dt == nil {
+		return nil
+	}
+	var keys []identity.Key
+	if dt.Atomic != nil && dt.Atomic.ObjectClassKey != nil {
+		want := *dt.Atomic.ObjectClassKey
+		for ck, c := range classes {
+			if ck.SubKey == want || ck.String() == want || c.Name == want || identity.NormalizeSubKey(c.Name) == want {
+				keys = append(keys, ck)
+			}
+		}
+	}
+	if dt.ElementDataType != nil {
+		keys = append(keys, objectOfClassKeysInDataType(dt.ElementDataType, classes)...)
+	}
+	for i := range dt.RecordFields {
+		keys = append(keys, objectOfClassKeysInDataType(dt.RecordFields[i].FieldDataType, classes)...)
+	}
+	return keys
 }
 
 // BuildPeerEventRaiseNameMap maps peer-class event keys to their declared names.

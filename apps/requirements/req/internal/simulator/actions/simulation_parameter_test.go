@@ -29,7 +29,7 @@ func (s *SimulationParameterSuite) actionWithSimulation() model_state.Action {
 	actionKey := helper.Must(identity.NewActionKey(classKey, "initialize"))
 	paramKey := helper.Must(identity.NewParameterKey(actionKey, "amounts"))
 	reqKey := helper.Must(identity.NewParameterSimulationRequireKey(paramKey, "0"))
-	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey))
+	specKey := helper.Must(identity.NewParameterSimulationSpecKey(paramKey, "0"))
 
 	reqLogic := model_logic.NewLogic(
 		reqKey,
@@ -57,8 +57,10 @@ func (s *SimulationParameterSuite) actionWithSimulation() model_state.Action {
 	)
 	param := helper.Must(model_state.NewParameter(actionKey, "Amounts", "unordered of unconstrained", false))
 	param.SetSimulation(&model_state.ParameterSimulation{
-		Requires:      []model_logic.Logic{reqLogic},
-		Specification: &specLogic,
+		Rules: []model_state.ParameterSimulationRule{{
+			Requires:      []model_logic.Logic{reqLogic},
+			Specification: &specLogic,
+		}},
 	})
 	return model_state.NewAction(
 		actionKey,
@@ -94,7 +96,7 @@ func (s *SimulationParameterSuite) TestActionSimulationRequiresMet() {
 
 func (s *SimulationParameterSuite) TestEvaluateSimulationSpecification() {
 	action := s.actionWithSimulation()
-	value, err := EvaluateSimulationSpecification(action.Parameters[0], evaluator.NewBindings())
+	value, err := EvaluateSimulationSpecification(action.Parameters[0], evaluator.NewBindings(), nil)
 	s.Require().NoError(err)
 	s.NotNil(value)
 }
