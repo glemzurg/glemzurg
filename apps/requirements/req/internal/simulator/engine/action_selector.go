@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
@@ -58,7 +59,9 @@ func NewActionSelector(
 // SelectAction picks a random eligible action from all classes and instances.
 // Returns error if no actions are available (deadlock).
 func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*PendingAction, error) {
-	eligible := s.filterBySimulationRequires(s.collectEligibleActions(simState))
+	eligible := s.collectEligibleActions(simState)
+	eligible = s.filterByObjectParamAvailability(eligible, simState)
+	eligible = s.filterBySimulationRequires(eligible)
 
 	if len(eligible) == 0 {
 		return nil, fmt.Errorf("deadlock: no eligible actions")
@@ -66,6 +69,121 @@ func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*Pending
 
 	chosen := eligible[s.rng.Intn(len(eligible))]
 	return &chosen, nil
+}
+
+// filterByObjectParamAvailability drops events/actions whose object-of parameters
+// name an in-scope class that has no instances yet. Out-of-scope object classes
+// always pass (sampled as empty set). Model-agnostic.
+func (s *ActionSelector) filterByObjectParamAvailability(
+	eligible []PendingAction,
+	simState *state.SimulationState,
+) []PendingAction {
+	if s.catalog == nil || simState == nil {
+		return eligible
+	}
+	filtered := make([]PendingAction, 0, len(eligible))
+	for _, pending := range eligible {
+		if s.objectParamsHaveInstances(pending, simState) {
+			filtered = append(filtered, pending)
+		}
+	}
+	return filtered
+}
+
+func (s *ActionSelector) objectParamsHaveInstances(
+	pending PendingAction,
+	simState *state.SimulationState,
+) bool {
+	for _, classKey := range s.requiredObjectParamClasses(pending) {
+		if !s.catalog.IsClassInScope(classKey) {
+			continue
+		}
+		if len(simState.InstancesByClass(classKey)) == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// requiredObjectParamClasses lists class keys referenced by object-of parameters
+// on the pending surface action or query.
+func (s *ActionSelector) requiredObjectParamClasses(pending PendingAction) []identity.Key {
+	var params []model_state.Parameter
+	switch {
+	case pending.IsQuery && pending.Query != nil:
+		params = pending.Query.Parameters
+	case pending.IsDo && pending.DoAction != nil:
+		params = pending.DoAction.Parameters
+	default:
+		action := s.resolveSurfaceAction(pending)
+		if action == nil {
+			return nil
+		}
+		params = action.Parameters
+		if pending.Event != nil && len(pending.Event.ParameterNames) > 0 {
+			params = actions.MatchActionParametersByEventNames(pending.Event.ParameterNames, action)
+		}
+	}
+	var keys []identity.Key
+	seen := make(map[identity.Key]bool)
+	for _, param := range params {
+		for _, classKey := range objectClassKeysFromDataType(param.DataType, s.catalog) {
+			if seen[classKey] {
+				continue
+			}
+			seen[classKey] = true
+			keys = append(keys, classKey)
+		}
+	}
+	return keys
+}
+
+// objectClassKeysFromDataType collects in-catalog class keys referenced by object-of
+// constraints anywhere in a parameter data type tree.
+func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *ClassCatalog) []identity.Key {
+	if dt == nil || catalog == nil {
+		return nil
+	}
+	var keys []identity.Key
+	if dt.Atomic != nil &&
+		dt.Atomic.ConstraintType == model_data_type.CONSTRAINT_TYPE_OBJECT &&
+		dt.Atomic.ObjectClassKey != nil {
+		if classKey, ok := resolveObjectClassRef(*dt.Atomic.ObjectClassKey, catalog); ok {
+			keys = append(keys, classKey)
+		}
+	}
+	if dt.ElementDataType != nil {
+		keys = append(keys, objectClassKeysFromDataType(dt.ElementDataType, catalog)...)
+	}
+	for i := range dt.RecordFields {
+		keys = append(keys, objectClassKeysFromDataType(dt.RecordFields[i].FieldDataType, catalog)...)
+	}
+	return keys
+}
+
+// resolveObjectClassRef maps an object-of class reference to a catalog class key.
+// Prefers in-scope classes; falls back to full extent names (out-of-scope) so callers
+// can still distinguish "known but OOS" (allow empty) from "unknown".
+func resolveObjectClassRef(objectClassRef string, catalog *ClassCatalog) (identity.Key, bool) {
+	if catalog == nil || objectClassRef == "" {
+		return identity.Key{}, false
+	}
+	want := identity.NormalizeSubKey(objectClassRef)
+	for _, info := range catalog.AllScopedClasses() {
+		if objectClassRefMatches(want, objectClassRef, info) {
+			return info.ClassKey, true
+		}
+	}
+	// Known only as out-of-scope extent: still return a key so OOS path can skip the gate.
+	for classKey, tlaName := range catalog.ClassNameMap() {
+		if classKey.SubKey == objectClassRef || classKey.String() == objectClassRef {
+			return classKey, true
+		}
+		if identity.NormalizeSubKey(tlaName) == want || tlaName == objectClassRef {
+			return classKey, true
+		}
+	}
+	return identity.Key{}, false
 }
 
 // collectEligibleActions builds the list of all eligible actions across all classes.

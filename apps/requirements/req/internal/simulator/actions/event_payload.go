@@ -51,6 +51,15 @@ func (b *ParameterBinder) GenerateEventOnlyParameterValue(rng *rand.Rand) object
 	return randomString(rng)
 }
 
+// MatchActionParametersByEventNames returns action parameters whose names match
+// the event's parameter name list (order preserved, unique by normalized name).
+func MatchActionParametersByEventNames(
+	eventNames []string,
+	action *model_state.Action,
+) []model_state.Parameter {
+	return matchActionParametersByEventNames(eventNames, action)
+}
+
 func matchActionParametersByEventNames(
 	eventNames []string,
 	action *model_state.Action,

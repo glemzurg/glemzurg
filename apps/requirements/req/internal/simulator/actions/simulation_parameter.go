@@ -173,8 +173,17 @@ func SampleSurfaceEventPayload(
 	result := make(map[string]object.Object)
 
 	for _, param := range matched {
+		// Prior samples are visible so later rules can depend on earlier parameters
+		// (e.g. SocialOnly conditioned on JurisdictionCode).
+		sampleBindings := ctx.Bindings
+		if len(result) > 0 && ctx.Bindings != nil {
+			sampleBindings = evaluator.NewEnclosedBindings(ctx.Bindings)
+			for name, val := range result {
+				sampleBindings.Set(name, val, evaluator.NamespaceLocal)
+			}
+		}
 		if param.Simulation != nil && len(param.Simulation.Rules) > 0 {
-			value, err := EvaluateSimulationSpecification(param, ctx.Bindings, ctx.RNG)
+			value, err := EvaluateSimulationSpecification(param, sampleBindings, ctx.RNG)
 			if err != nil {
 				return nil, err
 			}
