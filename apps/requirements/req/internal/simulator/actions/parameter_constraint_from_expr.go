@@ -244,6 +244,23 @@ func tryExtractMembershipConstraint(node *me.Membership, constraints *parameterC
 		return
 	}
 
+	if pattern, ok := detectParamInNamedSetMinusPeerField(node); ok {
+		if constraints.paramInNamedSetMinusPeerField == nil {
+			constraints.paramInNamedSetMinusPeerField = &pattern
+		}
+		return
+	}
+
+	if paramName, setSubKey, ok := paramMembershipInNamedSet(node); ok {
+		if constraints.paramInNamedSet == nil {
+			constraints.paramInNamedSet = &paramInNamedSetConstraint{
+				paramName: paramName,
+				setSubKey: setSubKey,
+			}
+		}
+		return
+	}
+
 	if paramName, values, ok := paramInStringEnum(node); ok {
 		constraints.enumValues[paramName] = values
 		return
@@ -252,6 +269,50 @@ func tryExtractMembershipConstraint(node *me.Membership, constraints *parameterC
 	if paramName, ok := paramInBooleanSet(node); ok {
 		constraints.enumValues[paramName] = booleanTLAEnumValues
 	}
+}
+
+// detectParamInNamedSetMinusPeerField matches
+// Param ∈ (NamedSet \ { v.field : v ∈ Class }).
+func detectParamInNamedSetMinusPeerField(node *me.Membership) (paramInNamedSetMinusPeerFieldConstraint, bool) {
+	empty := paramInNamedSetMinusPeerFieldConstraint{}
+	if node == nil || node.Negated {
+		return empty, false
+	}
+	localVar, ok := node.Element.(*me.LocalVar)
+	if !ok {
+		return empty, false
+	}
+	setOp, ok := node.Set.(*me.SetOp)
+	if !ok || setOp.Op != me.SetDifference {
+		return empty, false
+	}
+	namedSet, ok := setOp.Left.(*me.NamedSetRef)
+	if !ok {
+		return empty, false
+	}
+	setMap, ok := setOp.Right.(*me.SetMap)
+	if !ok {
+		return empty, false
+	}
+	classRef, ok := setMap.Set.(*me.ClassRef)
+	if !ok {
+		return empty, false
+	}
+	fieldAccess, ok := setMap.Transform.(*me.FieldAccess)
+	if !ok {
+		return empty, false
+	}
+	baseVar, ok := fieldAccess.Base.(*me.LocalVar)
+	if !ok || baseVar.Name != setMap.Variable {
+		return empty, false
+	}
+	return paramInNamedSetMinusPeerFieldConstraint{
+		paramName:   localVar.Name,
+		setSubKey:   namedSet.SetKey.SubKey,
+		classKey:    classRef.ClassKey,
+		className:   classRef.Name,
+		fieldSubKey: fieldAccess.Field,
+	}, true
 }
 
 func nullCompareParam(expr me.Expression) (string, bool) {

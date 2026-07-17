@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"slices"
 	"sort"
 	"strings"
 
@@ -477,12 +478,41 @@ func logicsReferencingOnlySampledParams(
 		if logic.Type != model_logic.LogicTypeAssessment || !logic.Spec.ParseOk() {
 			continue
 		}
+		// Class extents are not bound during parameter sampling; structural constraints
+		// (e.g. set-minus peer field) already drive generation for those requires.
+		if expressionReferencesClassExtent(logic.Spec.Expression) {
+			continue
+		}
 		if !expressionReferencesOnlyParams(logic.Spec.Expression, sampledNames) {
 			continue
 		}
 		filtered = append(filtered, logic)
 	}
 	return filtered
+}
+
+func expressionReferencesClassExtent(expr me.Expression) bool {
+	if expr == nil {
+		return false
+	}
+	if _, ok := expr.(*me.ClassRef); ok {
+		return true
+	}
+	if slices.ContainsFunc(expressionChildNodes(expr), expressionReferencesClassExtent) {
+		return true
+	}
+	// Membership set side is not walked by expressionChildNodes (element only);
+	// set-minus used-codes and peer quantifiers live there.
+	if membership, ok := expr.(*me.Membership); ok {
+		return expressionReferencesClassExtent(membership.Set)
+	}
+	if setMap, ok := expr.(*me.SetMap); ok {
+		return expressionReferencesClassExtent(setMap.Set) || expressionReferencesClassExtent(setMap.Transform)
+	}
+	if setFilter, ok := expr.(*me.SetFilter); ok {
+		return expressionReferencesClassExtent(setFilter.Set) || expressionReferencesClassExtent(setFilter.Predicate)
+	}
+	return false
 }
 
 func expressionReferencesOnlyParams(expr me.Expression, paramNames map[string]bool) bool {
@@ -601,6 +631,12 @@ func paramsCoveredByConstraints(logics []model_logic.Logic) map[string]bool {
 	}
 	if constraints.nullableElseMembership != nil {
 		covered[constraints.nullableElseMembership.paramName] = true
+	}
+	if constraints.paramInNamedSetMinusPeerField != nil {
+		covered[constraints.paramInNamedSetMinusPeerField.paramName] = true
+	}
+	if constraints.paramInNamedSet != nil {
+		covered[constraints.paramInNamedSet.paramName] = true
 	}
 	if constraints.nullableElseMirror != nil {
 		covered[constraints.nullableElseMirror.driverParam] = true
