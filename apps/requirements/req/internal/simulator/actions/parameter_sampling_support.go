@@ -232,8 +232,11 @@ func expressionSupportsParamSampling(expr me.Expression) bool {
 	}
 
 	switch node := expr.(type) {
+	case *me.BuiltinCall:
+		return gzBuiltinSupportsParamSampling(node)
 	case *me.IfThenElse:
-		return ifThenElseSupportsParamSampling(node)
+		// Raw IF no longer drives parameter synthesis (use _GZ!When* instead).
+		return false
 	case *me.Membership:
 		return membershipSupportsParamSampling(node)
 	case *me.BinaryLogic:
@@ -246,13 +249,64 @@ func expressionSupportsParamSampling(expr me.Expression) bool {
 	}
 }
 
-func ifThenElseSupportsParamSampling(node *me.IfThenElse) bool {
-	return isNullableElseTuplePattern(node) ||
-		isNullableElseMirrorPattern(node) ||
-		isNullableElseExclusionEqualityPattern(node) ||
-		isNullableElseMembershipPattern(node) ||
-		isNullableElseEqualityPattern(node) ||
-		isNullableElseBooleanConstantPattern(node)
+func gzBuiltinSupportsParamSampling(call *me.BuiltinCall) bool {
+	if call == nil || call.Module != gzModuleName {
+		// Non-_GZ builtins that reference params are not a sampling strategy.
+		return false
+	}
+	switch call.Function {
+	case gzFnWhenNotNull, gzFnWhenNull:
+		if len(call.Args) != 2 {
+			return false
+		}
+		if _, ok := gzDriverName(call.Args[0]); !ok {
+			return false
+		}
+		return expressionSupportsParamSampling(call.Args[1]) || expressionLeafSupportsParamSampling(call.Args[1]) ||
+			gzEquationSupportsSampling(call.Args[1])
+	case gzFnWhenNullElse:
+		if len(call.Args) != 3 {
+			return false
+		}
+		if _, ok := gzDriverName(call.Args[0]); !ok {
+			return false
+		}
+		return gzEquationSupportsSampling(call.Args[1]) && gzEquationSupportsSampling(call.Args[2])
+	default:
+		return false
+	}
+}
+
+// gzEquationSupportsSampling reports whether a _GZ arm is a known synthesizable shape or TRUE.
+func gzEquationSupportsSampling(expr me.Expression) bool {
+	if expr == nil || isTrueLiteral(expr) {
+		return true
+	}
+	if _, ok := nullCompareParam(expr); ok {
+		return true
+	}
+	if _, _, ok := paramCompareBoolLiteral(expr); ok {
+		return true
+	}
+	if _, _, ok := paramEquality(expr); ok {
+		return true
+	}
+	if m, ok := expr.(*me.Membership); ok {
+		return membershipSupportsParamSampling(m) || membershipSupportsNegatedNamedSet(m)
+	}
+	if and, ok := expr.(*me.BinaryLogic); ok && and.Op == me.LogicAnd {
+		return gzEquationSupportsSampling(and.Left) && gzEquationSupportsSampling(and.Right)
+	}
+	// Compare / other leaves used in assessments.
+	return expressionLeafSupportsParamSampling(expr) || expressionSupportsParamSampling(expr)
+}
+
+func membershipSupportsNegatedNamedSet(node *me.Membership) bool {
+	if node == nil || !node.Negated {
+		return false
+	}
+	_, _, ok := paramMembershipInNamedSet(node)
+	return ok
 }
 
 func membershipSupportsParamSampling(node *me.Membership) bool {
@@ -281,80 +335,4 @@ func expressionLeafSupportsParamSampling(expr me.Expression) bool {
 	default:
 		return false
 	}
-}
-
-func isNullableElseMembershipPattern(node *me.IfThenElse) bool {
-	paramName, ok := nullCompareParam(node.Condition)
-	if !ok || !isTrueLiteral(node.Then) {
-		return false
-	}
-	membership, ok := node.Else.(*me.Membership)
-	if !ok || membership.Negated {
-		return false
-	}
-	memberParam, _, ok := paramMembershipInNamedSet(membership)
-	return ok && memberParam == paramName
-}
-
-func isNullableElseExclusionEqualityPattern(node *me.IfThenElse) bool {
-	driver, ok := nullCompareParam(node.Condition)
-	if !ok {
-		return false
-	}
-	follower, _, thenOk := paramNotMembershipInNamedSet(node.Then)
-	if !thenOk {
-		return false
-	}
-	eqDriver, eqFollower, elseOk := paramEquality(node.Else)
-	return elseOk && eqDriver == driver && eqFollower == follower
-}
-
-func isNullableElseEqualityPattern(node *me.IfThenElse) bool {
-	driver, ok := nullCompareParam(node.Condition)
-	if !ok || !isTrueLiteral(node.Then) {
-		return false
-	}
-	eqDriver, _, ok := paramEquality(node.Else)
-	return ok && eqDriver == driver
-}
-
-func isNullableElseBooleanConstantPattern(node *me.IfThenElse) bool {
-	driver, ok := nullCompareParam(node.Condition)
-	if !ok || !isTrueLiteral(node.Else) {
-		return false
-	}
-	_, _, ok = paramCompareBoolLiteral(node.Then)
-	return ok && driver != ""
-}
-
-func isNullableElseMirrorPattern(node *me.IfThenElse) bool {
-	driver, ok := nullCompareParam(node.Condition)
-	if !ok || !isTrueLiteral(node.Then) {
-		return false
-	}
-	membership, equality, ok := mirrorElseMembershipAndEquality(node.Else)
-	if !ok {
-		return false
-	}
-	memberParam, _, ok := paramMembershipInNamedSet(membership)
-	if !ok || memberParam != driver {
-		return false
-	}
-	eqDriver, _, ok := paramEquality(equality)
-	return ok && eqDriver == driver
-}
-
-func isNullableElseTuplePattern(node *me.IfThenElse) bool {
-	if _, ok := nullCompareParam(node.Condition); !ok {
-		return false
-	}
-	if _, ok := nullCompareParam(node.Then); !ok {
-		return false
-	}
-	membership, ok := node.Else.(*me.Membership)
-	if !ok || membership.Negated {
-		return false
-	}
-	_, _, ok = tupleMembershipInNamedSet(membership)
-	return ok
 }

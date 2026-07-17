@@ -6,10 +6,19 @@ import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ob
 // Args are pre-evaluated object.Object values.
 type BuiltinFn func(args []object.Object) *EvalResult
 
+// Simulator-only _GZ module (not community TLA+). Null-branch sugar is evaluated
+// with short-circuit in evalMEBuiltinCall rather than via this table.
+const (
+	ModuleGZ       = "_GZ"
+	GZWhenNotNull  = "WhenNotNull"
+	GZWhenNull     = "WhenNull"
+	GZWhenNullElse = "WhenNullElse"
+)
+
 // builtins maps function names to their implementations.
 // Names follow _Module!Function syntax to avoid collision with user-defined names.
-// Each _Module prefix must match a real TLA+ standard module; only operators from
-// that module's official definition belong here — not arbitrary convenience helpers.
+// Most _Module prefixes mirror real TLA+ / community modules. Exceptions are engine
+// sugar: _Stack, _Queue, and _GZ (null-branch invariants / synthesis hooks).
 var builtins = map[string]BuiltinFn{
 	// Sequences (_Seq module)
 	"_Seq!Head":   builtinSeqHead,

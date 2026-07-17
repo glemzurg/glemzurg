@@ -45,23 +45,265 @@ func mergeConstraintsFromExpr(expr me.Expression, constraints *parameterConstrai
 	}
 
 	switch node := expr.(type) {
+	case *me.BuiltinCall:
+		// Null-branch synthesis is driven only by _GZ sugar; raw IF no longer synthesizes.
+		tryExtractGZConstraints(node, constraints)
 	case *me.IfThenElse:
-		tryExtractNullableElseTuple(node, constraints)
-		tryExtractNullableElseExclusionEquality(node, constraints)
-		tryExtractNullableElseMirror(node, constraints)
-		tryExtractNullableElseMembership(node, constraints)
-		tryExtractNullableElseEquality(node, constraints)
-		tryExtractNullableElseBooleanConstant(node, constraints)
-		mergeConstraintsFromExpr(node.Then, constraints)
-		mergeConstraintsFromExpr(node.Else, constraints)
+		// Assessment still runs IF; sampling constraints are not inferred from IF shapes.
+		return
 	case *me.Membership:
 		tryExtractMembershipConstraint(node, constraints)
 	case *me.BinaryLogic:
 		mergeConstraintsFromExpr(node.Left, constraints)
 		mergeConstraintsFromExpr(node.Right, constraints)
+		tryCoupleComplementaryGZConstraints(constraints)
 	case *me.Quantifier:
 		tryExtractPeerFieldDistinctFromParam(node, constraints)
 	}
+}
+
+// tryExtractGZConstraints maps _GZ!WhenNotNull / WhenNull / WhenNullElse onto sampling constraints.
+func tryExtractGZConstraints(call *me.BuiltinCall, constraints *parameterConstraints) {
+	if call == nil || call.Module != gzModuleName {
+		return
+	}
+	switch call.Function {
+	case gzFnWhenNotNull:
+		if len(call.Args) != 2 {
+			return
+		}
+		driver, ok := gzDriverName(call.Args[0])
+		if !ok {
+			return
+		}
+		extractWhenNotNullEquation(driver, call.Args[1], constraints)
+	case gzFnWhenNull:
+		if len(call.Args) != 2 {
+			return
+		}
+		driver, ok := gzDriverName(call.Args[0])
+		if !ok {
+			return
+		}
+		extractWhenNullEquation(driver, call.Args[1], constraints)
+	case gzFnWhenNullElse:
+		if len(call.Args) != 3 {
+			return
+		}
+		driver, ok := gzDriverName(call.Args[0])
+		if !ok {
+			return
+		}
+		extractWhenNullElseEquations(driver, call.Args[1], call.Args[2], constraints)
+	}
+}
+
+func extractWhenNotNullEquation(driver string, eq me.Expression, constraints *parameterConstraints) {
+	if tryExtractMirrorFromEquation(driver, eq, constraints) {
+		return
+	}
+	if m, ok := eq.(*me.Membership); ok && !m.Negated {
+		if paramName, setSubKey, ok := paramMembershipInNamedSet(m); ok && paramName == driver {
+			if constraints.nullableElseMembership == nil {
+				constraints.nullableElseMembership = &nullableElseMembershipConstraint{
+					paramName: paramName,
+					setSubKey: setSubKey,
+				}
+			}
+			return
+		}
+		// Non-nullable-style membership still useful under WhenNotNull (nullable driver).
+		tryExtractMembershipConstraint(m, constraints)
+		return
+	}
+	if eqDriver, follower, ok := paramEquality(eq); ok && eqDriver == driver {
+		if constraints.nullableElseEquality == nil {
+			constraints.nullableElseEquality = &nullableElseEqualityConstraint{
+				driverParam:   driver,
+				followerParam: follower,
+			}
+		}
+		return
+	}
+	// Auto-wrapped parameter invariants may nest peer-distinct quantifiers under WhenNotNull.
+	if q, ok := eq.(*me.Quantifier); ok {
+		tryExtractPeerFieldDistinctFromParam(q, constraints)
+		return
+	}
+	// AND of synthesizable arms (e.g. membership ∧ peer-distinct) inside WhenNotNull.
+	if and, ok := eq.(*me.BinaryLogic); ok && and.Op == me.LogicAnd {
+		extractWhenNotNullEquation(driver, and.Left, constraints)
+		extractWhenNotNullEquation(driver, and.Right, constraints)
+	}
+}
+
+func extractWhenNullEquation(driver string, eq me.Expression, constraints *parameterConstraints) {
+	if follower, value, ok := paramCompareBoolLiteral(eq); ok {
+		if constraints.nullableElseBooleanConstant == nil {
+			constraints.nullableElseBooleanConstant = &nullableElseBooleanConstantConstraint{
+				driverParam:   driver,
+				followerParam: follower,
+				value:         value,
+			}
+		}
+		return
+	}
+	// Partial for complementary pairing: follower ∉ named set when driver is null.
+	if follower, setSubKey, ok := paramNotMembershipInNamedSet(eq); ok {
+		if constraints.gzNullExclusion == nil {
+			constraints.gzNullExclusion = &gzNullBranchExclusion{
+				driverParam:   driver,
+				followerParam: follower,
+				setSubKey:     setSubKey,
+			}
+		}
+		return
+	}
+	// Partial for tuple: follower = NULL when driver is null.
+	if thenParam, ok := nullCompareParam(eq); ok {
+		if constraints.gzNullTupleFollower == nil {
+			constraints.gzNullTupleFollower = &gzNullBranchTupleFollower{
+				driverParam: driver,
+				thenParam:   thenParam,
+			}
+		}
+	}
+}
+
+func extractWhenNullElseEquations(driver string, nullEq, setEq me.Expression, constraints *parameterConstraints) {
+	// Exclusion equality: IF D=NULL THEN F∉S ELSE D=F
+	if follower, setSubKey, thenOk := paramNotMembershipInNamedSet(nullEq); thenOk {
+		eqDriver, eqFollower, elseOk := paramEquality(setEq)
+		if elseOk && eqDriver == driver && eqFollower == follower {
+			if constraints.nullableElseExclusionEquality == nil {
+				constraints.nullableElseExclusionEquality = &nullableElseExclusionEqualityConstraint{
+					driverParam:   driver,
+					followerParam: follower,
+					setSubKey:     setSubKey,
+				}
+			}
+			return
+		}
+	}
+
+	// Tuple: IF C=NULL THEN T=NULL ELSE <<…>> ∈ S
+	if thenParam, thenOk := nullCompareParam(nullEq); thenOk {
+		if membership, ok := setEq.(*me.Membership); ok && !membership.Negated {
+			paramNames, setSubKey, ok := tupleMembershipInNamedSet(membership)
+			if ok {
+				if constraints.nullableElseTuple == nil {
+					constraints.nullableElseTuple = &nullableElseTupleConstraint{
+						conditionParam: driver,
+						thenParam:      thenParam,
+						paramNames:     paramNames,
+						setSubKey:      setSubKey,
+					}
+				}
+				return
+			}
+		}
+	}
+
+	// Boolean when null, true when set: IF D=NULL THEN F=c ELSE TRUE
+	if isTrueLiteral(setEq) {
+		extractWhenNullEquation(driver, nullEq, constraints)
+		return
+	}
+
+	// Vacuous null arm: IF D=NULL THEN TRUE ELSE eq  ≡ WhenNotNull
+	if isTrueLiteral(nullEq) {
+		extractWhenNotNullEquation(driver, setEq, constraints)
+		return
+	}
+
+	// Fall back: extract each arm independently then couple.
+	extractWhenNullEquation(driver, nullEq, constraints)
+	extractWhenNotNullEquation(driver, setEq, constraints)
+	tryCoupleComplementaryGZConstraints(constraints)
+}
+
+func tryExtractMirrorFromEquation(driver string, eq me.Expression, constraints *parameterConstraints) bool {
+	membership, equality, ok := mirrorElseMembershipAndEquality(eq)
+	if !ok {
+		return false
+	}
+	memberParam, setSubKey, ok := paramMembershipInNamedSet(membership)
+	if !ok || memberParam != driver {
+		return false
+	}
+	eqDriver, follower, ok := paramEquality(equality)
+	if !ok || eqDriver != driver {
+		return false
+	}
+	if constraints.nullableElseMirror == nil {
+		constraints.nullableElseMirror = &nullableElseMirrorConstraint{
+			driverParam:   driver,
+			followerParam: follower,
+			setSubKey:     setSubKey,
+		}
+	}
+	return true
+}
+
+// tryCoupleComplementaryGZConstraints rebuilds exclusion/tuple constraints from
+// complementary WhenNull + WhenNotNull partials (or WhenNullElse fall-back pieces).
+func tryCoupleComplementaryGZConstraints(constraints *parameterConstraints) {
+	if constraints.nullableElseExclusionEquality == nil &&
+		constraints.gzNullExclusion != nil &&
+		constraints.nullableElseEquality != nil &&
+		constraints.gzNullExclusion.driverParam == constraints.nullableElseEquality.driverParam &&
+		constraints.gzNullExclusion.followerParam == constraints.nullableElseEquality.followerParam {
+		constraints.nullableElseExclusionEquality = &nullableElseExclusionEqualityConstraint{
+			driverParam:   constraints.gzNullExclusion.driverParam,
+			followerParam: constraints.gzNullExclusion.followerParam,
+			setSubKey:     constraints.gzNullExclusion.setSubKey,
+		}
+		constraints.gzNullExclusion = nil
+		constraints.nullableElseEquality = nil
+	}
+
+	if constraints.nullableElseTuple == nil &&
+		constraints.gzNullTupleFollower != nil &&
+		constraints.tupleInSet != nil &&
+		len(constraints.tupleInSet.paramNames) > 0 {
+		// Driver should be first tuple element for jurisdiction-style tuples.
+		driver := constraints.gzNullTupleFollower.driverParam
+		if constraints.tupleInSet.paramNames[0] == driver {
+			constraints.nullableElseTuple = &nullableElseTupleConstraint{
+				conditionParam: driver,
+				thenParam:      constraints.gzNullTupleFollower.thenParam,
+				paramNames:     constraints.tupleInSet.paramNames,
+				setSubKey:      constraints.tupleInSet.setSubKey,
+			}
+			constraints.gzNullTupleFollower = nil
+			constraints.tupleInSet = nil
+		}
+	}
+}
+
+const (
+	gzModuleName     = "_GZ"
+	gzFnWhenNotNull  = "WhenNotNull"
+	gzFnWhenNull     = "WhenNull"
+	gzFnWhenNullElse = "WhenNullElse"
+)
+
+// gzDriverName returns the synthesis key for a _GZ driver argument.
+// Accepts bare params (LocalVar) and field paths (self.field / FieldAccess).
+func gzDriverName(expr me.Expression) (string, bool) {
+	if expr == nil {
+		return "", false
+	}
+	if localVar, ok := expr.(*me.LocalVar); ok {
+		return localVar.Name, true
+	}
+	if attr, ok := expr.(*me.AttributeRef); ok {
+		return attr.AttributeKey.SubKey, true
+	}
+	if fa, ok := expr.(*me.FieldAccess); ok {
+		return fa.Field, true
+	}
+	return "", false
 }
 
 func tryExtractPeerFieldDistinctFromParam(node *me.Quantifier, constraints *parameterConstraints) {
@@ -70,162 +312,6 @@ func tryExtractPeerFieldDistinctFromParam(node *me.Quantifier, constraints *para
 	}
 	if pattern, ok := detectPeerFieldDistinctFromParam(node); ok {
 		constraints.peerFieldDistinct = &pattern
-	}
-}
-
-func tryExtractNullableElseMirror(node *me.IfThenElse, constraints *parameterConstraints) {
-	if constraints.nullableElseMirror != nil {
-		return
-	}
-
-	driver, condOk := nullCompareParam(node.Condition)
-	if !condOk || !isTrueLiteral(node.Then) {
-		return
-	}
-
-	membership, equality, ok := mirrorElseMembershipAndEquality(node.Else)
-	if !ok {
-		return
-	}
-
-	memberParam, setSubKey, ok := paramMembershipInNamedSet(membership)
-	if !ok || memberParam != driver {
-		return
-	}
-	eqDriver, follower, ok := paramEquality(equality)
-	if !ok || eqDriver != driver {
-		return
-	}
-
-	constraints.nullableElseMirror = &nullableElseMirrorConstraint{
-		driverParam:   driver,
-		followerParam: follower,
-		setSubKey:     setSubKey,
-	}
-}
-
-func tryExtractNullableElseExclusionEquality(node *me.IfThenElse, constraints *parameterConstraints) {
-	if constraints.nullableElseExclusionEquality != nil {
-		return
-	}
-
-	driver, condOk := nullCompareParam(node.Condition)
-	if !condOk {
-		return
-	}
-
-	follower, setSubKey, thenOk := paramNotMembershipInNamedSet(node.Then)
-	if !thenOk {
-		return
-	}
-
-	eqDriver, eqFollower, elseOk := paramEquality(node.Else)
-	if !elseOk || eqDriver != driver || eqFollower != follower {
-		return
-	}
-
-	constraints.nullableElseExclusionEquality = &nullableElseExclusionEqualityConstraint{
-		driverParam:   driver,
-		followerParam: follower,
-		setSubKey:     setSubKey,
-	}
-}
-
-func tryExtractNullableElseEquality(node *me.IfThenElse, constraints *parameterConstraints) {
-	if constraints.nullableElseEquality != nil {
-		return
-	}
-
-	driver, condOk := nullCompareParam(node.Condition)
-	if !condOk || !isTrueLiteral(node.Then) {
-		return
-	}
-
-	eqDriver, follower, ok := paramEquality(node.Else)
-	if !ok || eqDriver != driver {
-		return
-	}
-
-	constraints.nullableElseEquality = &nullableElseEqualityConstraint{
-		driverParam:   driver,
-		followerParam: follower,
-	}
-}
-
-func tryExtractNullableElseBooleanConstant(node *me.IfThenElse, constraints *parameterConstraints) {
-	if constraints.nullableElseBooleanConstant != nil {
-		return
-	}
-
-	driver, condOk := nullCompareParam(node.Condition)
-	if !condOk || !isTrueLiteral(node.Else) {
-		return
-	}
-
-	follower, value, ok := paramCompareBoolLiteral(node.Then)
-	if !ok {
-		return
-	}
-
-	constraints.nullableElseBooleanConstant = &nullableElseBooleanConstantConstraint{
-		driverParam:   driver,
-		followerParam: follower,
-		value:         value,
-	}
-}
-
-func tryExtractNullableElseMembership(node *me.IfThenElse, constraints *parameterConstraints) {
-	if constraints.nullableElseMembership != nil {
-		return
-	}
-
-	paramName, condOk := nullCompareParam(node.Condition)
-	if !condOk || !isTrueLiteral(node.Then) {
-		return
-	}
-
-	membership, ok := node.Else.(*me.Membership)
-	if !ok || membership.Negated {
-		return
-	}
-
-	memberParam, setSubKey, ok := paramMembershipInNamedSet(membership)
-	if !ok || memberParam != paramName {
-		return
-	}
-
-	constraints.nullableElseMembership = &nullableElseMembershipConstraint{
-		paramName: paramName,
-		setSubKey: setSubKey,
-	}
-}
-
-func tryExtractNullableElseTuple(node *me.IfThenElse, constraints *parameterConstraints) {
-	if constraints.nullableElseTuple != nil {
-		return
-	}
-
-	conditionParam, condOk := nullCompareParam(node.Condition)
-	thenParam, thenOk := nullCompareParam(node.Then)
-	if !condOk || !thenOk {
-		return
-	}
-
-	membership, ok := node.Else.(*me.Membership)
-	if !ok || membership.Negated {
-		return
-	}
-
-	paramNames, setSubKey, ok := tupleMembershipInNamedSet(membership)
-	if !ok {
-		return
-	}
-
-	constraints.nullableElseTuple = &nullableElseTupleConstraint{
-		conditionParam: conditionParam,
-		thenParam:      thenParam,
-		paramNames:     paramNames,
-		setSubKey:      setSubKey,
 	}
 }
 

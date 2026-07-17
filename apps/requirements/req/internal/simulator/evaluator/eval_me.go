@@ -1110,6 +1110,11 @@ func evalMESetFilter(n *me.SetFilter, bindings *Bindings) *EvalResult {
 // ============================================================
 
 func evalMEBuiltinCall(n *me.BuiltinCall, bindings *Bindings) *EvalResult {
+	// Simulator-only null-branch sugar: short-circuit like IF so unused branch is not evaluated.
+	if n.Module == ModuleGZ {
+		return evalGZBuiltinCall(n, bindings)
+	}
+
 	args := make([]object.Object, len(n.Args))
 	for i, argExpr := range n.Args {
 		result := Eval(argExpr, bindings)
@@ -1132,6 +1137,59 @@ func evalMEBuiltinCall(n *me.BuiltinCall, bindings *Bindings) *EvalResult {
 		return NewEvalError("unknown builtin: %s", fullName)
 	}
 	return fn(args)
+}
+
+// evalGZBuiltinCall implements _GZ!WhenNotNull / WhenNull / WhenNullElse.
+// Semantics match IF id = NULL THEN … ELSE … without eager evaluation of the unused arm.
+func evalGZBuiltinCall(n *me.BuiltinCall, bindings *Bindings) *EvalResult {
+	switch n.Function {
+	case GZWhenNotNull:
+		if len(n.Args) != 2 {
+			return NewEvalError("_GZ!WhenNotNull requires 2 arguments, got %d", len(n.Args))
+		}
+		isNull, err := evalIsNullDriver(n.Args[0], bindings)
+		if err != nil {
+			return err
+		}
+		if isNull {
+			return NewEvalResult(nativeBoolToBoolean(true))
+		}
+		return Eval(n.Args[1], bindings)
+	case GZWhenNull:
+		if len(n.Args) != 2 {
+			return NewEvalError("_GZ!WhenNull requires 2 arguments, got %d", len(n.Args))
+		}
+		isNull, err := evalIsNullDriver(n.Args[0], bindings)
+		if err != nil {
+			return err
+		}
+		if isNull {
+			return Eval(n.Args[1], bindings)
+		}
+		return NewEvalResult(nativeBoolToBoolean(true))
+	case GZWhenNullElse:
+		if len(n.Args) != 3 {
+			return NewEvalError("_GZ!WhenNullElse requires 3 arguments, got %d", len(n.Args))
+		}
+		isNull, err := evalIsNullDriver(n.Args[0], bindings)
+		if err != nil {
+			return err
+		}
+		if isNull {
+			return Eval(n.Args[1], bindings)
+		}
+		return Eval(n.Args[2], bindings)
+	default:
+		return NewEvalError("unknown _GZ operator: %s", n.Function)
+	}
+}
+
+func evalIsNullDriver(driver me.Expression, bindings *Bindings) (bool, *EvalResult) {
+	result := Eval(driver, bindings)
+	if result.IsError() {
+		return false, result
+	}
+	return object.IsNull(result.Value), nil
 }
 
 func evalMEGlobalCall(n *me.GlobalCall, bindings *Bindings) *EvalResult {

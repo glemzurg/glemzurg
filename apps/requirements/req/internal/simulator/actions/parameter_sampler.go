@@ -86,6 +86,22 @@ type parameterConstraints struct {
 	paramInNamedSetMinusPeerField *paramInNamedSetMinusPeerFieldConstraint
 	peerFieldDistinct             *peerFieldDistinctFromParamPattern
 	enumValues                    map[string][]string
+	// Partials from complementary _GZ!WhenNull / WhenNotNull pairs before coupling.
+	gzNullExclusion     *gzNullBranchExclusion
+	gzNullTupleFollower *gzNullBranchTupleFollower
+}
+
+// gzNullBranchExclusion is WhenNull(driver, follower ∉ namedSet) awaiting WhenNotNull equality.
+type gzNullBranchExclusion struct {
+	driverParam   string
+	followerParam string
+	setSubKey     string
+}
+
+// gzNullBranchTupleFollower is WhenNull(driver, follower = NULL) awaiting tuple membership.
+type gzNullBranchTupleFollower struct {
+	driverParam string
+	thenParam   string
 }
 
 type nullableElseMembershipConstraint struct {

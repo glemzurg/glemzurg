@@ -59,7 +59,7 @@ func (s *ParameterSamplerSuite) jurisdictionAction() model_state.Action {
 		model_logic.LogicTypeAssessment,
 		"Valid jurisdiction pair when country is provided.",
 		"",
-		jurisdictionRequireSpec(`IF CountryCode = NULL THEN StateCode = NULL ELSE <<CountryCode, StateCode>> \in _JurisdictionCodes`),
+		jurisdictionRequireSpec(`_GZ!WhenNullElse(CountryCode, StateCode = NULL, <<CountryCode, StateCode>> \in _JurisdictionCodes)`),
 		nil,
 	)
 	return model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Add", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
@@ -81,7 +81,7 @@ func (s *ParameterSamplerSuite) TestExtractNullableElseTupleConstraint() {
 			model_logic.LogicTypeAssessment,
 			"Valid jurisdiction pair when country is provided.",
 			"",
-			jurisdictionRequireSpec(`IF CountryCode = NULL THEN StateCode = NULL ELSE <<CountryCode, StateCode>> \in _JurisdictionCodes`),
+			jurisdictionRequireSpec(`_GZ!WhenNullElse(CountryCode, StateCode = NULL, <<CountryCode, StateCode>> \in _JurisdictionCodes)`),
 			nil,
 		),
 	})
@@ -97,7 +97,7 @@ func (s *ParameterSamplerSuite) TestExtractLoweredNullableElseTupleConstraint() 
 			model_logic.LogicTypeAssessment,
 			"Valid jurisdiction pair when country is provided.",
 			"",
-			jurisdictionRequireSpec(`IF CountryCode = {} THEN StateCode = {} ELSE ⟨CountryCode, StateCode⟩ ∈ _JurisdictionCodes`),
+			jurisdictionRequireSpec(`_GZ!WhenNullElse(CountryCode, StateCode = {}, <<CountryCode, StateCode>> \in _JurisdictionCodes)`),
 			nil,
 		),
 	})
@@ -275,7 +275,7 @@ func (s *ParameterSamplerSuite) jurisdictionUpdateAction() model_state.Action {
 		model_logic.LogicTypeAssessment,
 		"Valid jurisdiction pair when country is provided.",
 		"",
-		jurisdictionRequireSpec(`IF CountryCode = NULL THEN StateCode = NULL ELSE <<CountryCode, StateCode>> \in _JurisdictionCodes`),
+		jurisdictionRequireSpec(`_GZ!WhenNullElse(CountryCode, StateCode = NULL, <<CountryCode, StateCode>> \in _JurisdictionCodes)`),
 		nil,
 	)
 	return model_state.NewAction(actionKey, model_state.ActionDetails{Name: "Update", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
@@ -390,7 +390,7 @@ func currencyRequireSpec() logic_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `IF ISO = NULL THEN TRUE ELSE ISO \in _Iso4217Codes`, pf))
+	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `_GZ!WhenNotNull(ISO, ISO \in _Iso4217Codes)`, pf))
 }
 
 func (s *ParameterSamplerSuite) iso4217NamedSet() map[string]object.Object {
@@ -454,7 +454,7 @@ func currencyIsoAbbrRequireSpec() logic_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `IF ISO = NULL THEN Abbr \notin _Iso4217Codes ELSE ISO = Abbr`, pf))
+	return helper.Must(logic_spec.NewExpressionSpec("tla_plus", `_GZ!WhenNullElse(ISO, Abbr \notin _Iso4217Codes, ISO = Abbr)`, pf))
 }
 
 func (s *ParameterSamplerSuite) TestExtractNullableElseExclusionEqualityConstraint() {
@@ -791,7 +791,7 @@ func (s *ParameterSamplerSuite) TestSampleJurisdictionCodeWithPeerDistinctAvoids
 				model_logic.LogicTypeAssessment,
 				"Allowed jurisdiction code.",
 				"",
-				jurisdictionCodeRequireSpec(`IF JurisdictionCode = NULL THEN TRUE ELSE JurisdictionCode \in _JurisdictionCodes`),
+				jurisdictionCodeRequireSpec(`_GZ!WhenNotNull(JurisdictionCode, JurisdictionCode \in _JurisdictionCodes)`),
 				nil,
 			),
 			model_logic.NewLogic(
@@ -801,7 +801,7 @@ func (s *ParameterSamplerSuite) TestSampleJurisdictionCodeWithPeerDistinctAvoids
 				"",
 				helper.Must(logic_spec.NewExpressionSpec(
 					"tla_plus",
-					`IF JurisdictionCode = NULL THEN SocialOnly = TRUE ELSE TRUE`,
+					`_GZ!WhenNull(JurisdictionCode, SocialOnly = TRUE)`,
 					convert.NewExpressionParseFunc(&convert.LowerContext{
 						ClassKey:   classKey,
 						Parameters: map[string]bool{"JurisdictionCode": true, "SocialOnly": true},
@@ -861,7 +861,7 @@ func (s *ParameterSamplerSuite) TestSampleJurisdictionCodeWithPeerDistinctAvoids
 				model_logic.LogicTypeAssessment,
 				"Allowed jurisdiction code.",
 				"",
-				jurisdictionCodeRequireSpec(`IF JurisdictionCode = NULL THEN TRUE ELSE JurisdictionCode \in _JurisdictionCodes`),
+				jurisdictionCodeRequireSpec(`_GZ!WhenNotNull(JurisdictionCode, JurisdictionCode \in _JurisdictionCodes)`),
 				nil,
 			),
 			model_logic.NewLogic(
@@ -871,7 +871,7 @@ func (s *ParameterSamplerSuite) TestSampleJurisdictionCodeWithPeerDistinctAvoids
 				"",
 				helper.Must(logic_spec.NewExpressionSpec(
 					"tla_plus",
-					`IF JurisdictionCode = NULL THEN SocialOnly = TRUE ELSE TRUE`,
+					`_GZ!WhenNull(JurisdictionCode, SocialOnly = TRUE)`,
 					convert.NewExpressionParseFunc(&convert.LowerContext{
 						ClassKey:   classKey,
 						Parameters: map[string]bool{"JurisdictionCode": true, "SocialOnly": true},
@@ -927,7 +927,7 @@ func (s *ParameterSamplerSuite) TestSampleJurisdictionUpdateAvoidsPeerTuple() {
 				model_logic.LogicTypeAssessment,
 				"Allowed jurisdiction code.",
 				"",
-				jurisdictionCodeRequireSpec(`IF JurisdictionCode = NULL THEN TRUE ELSE JurisdictionCode \in _JurisdictionCodes`),
+				jurisdictionCodeRequireSpec(`_GZ!WhenNotNull(JurisdictionCode, JurisdictionCode \in _JurisdictionCodes)`),
 				nil,
 			),
 			model_logic.NewLogic(
@@ -937,7 +937,7 @@ func (s *ParameterSamplerSuite) TestSampleJurisdictionUpdateAvoidsPeerTuple() {
 				"",
 				helper.Must(logic_spec.NewExpressionSpec(
 					"tla_plus",
-					`IF JurisdictionCode = NULL THEN SocialOnly = TRUE ELSE TRUE`,
+					`_GZ!WhenNull(JurisdictionCode, SocialOnly = TRUE)`,
 					convert.NewExpressionParseFunc(&convert.LowerContext{
 						ClassKey:   classKey,
 						Parameters: map[string]bool{"JurisdictionCode": true, "SocialOnly": true},

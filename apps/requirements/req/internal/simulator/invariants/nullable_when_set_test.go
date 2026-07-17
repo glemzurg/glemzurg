@@ -19,10 +19,16 @@ func TestNullableWhenSetSuite(t *testing.T) {
 }
 
 func (s *NullableWhenSetSuite) TestNullableWhenSetSpecification() {
-	s.Equal("IF ISO = NULL THEN TRUE ELSE ISO \\in _Iso4217Codes", NullableWhenSetSpecification("ISO", "ISO \\in _Iso4217Codes"))
+	s.Equal("_GZ!WhenNotNull(ISO, ISO \\in _Iso4217Codes)", NullableWhenSetSpecification("ISO", "ISO \\in _Iso4217Codes"))
 }
 
 func (s *NullableWhenSetSuite) TestLogicSpecHasNullableWhenUnsetGuardDetectsAuthorGuard() {
+	pf := convert.NewExpressionParseFunc(nil)
+	spec := helper.Must(logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "_GZ!WhenNotNull(accountId, accountId > 0)", pf))
+	s.True(LogicSpecHasNullableWhenUnsetGuard(spec))
+}
+
+func (s *NullableWhenSetSuite) TestLogicSpecHasNullableWhenUnsetGuardDetectsLegacyIF() {
 	pf := convert.NewExpressionParseFunc(nil)
 	spec := helper.Must(logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, "IF accountId = NULL THEN TRUE ELSE accountId > 0", pf))
 	s.True(LogicSpecHasNullableWhenUnsetGuard(spec))

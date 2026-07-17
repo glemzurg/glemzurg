@@ -863,7 +863,7 @@ func enumMembershipSpecification(
 	if !nullable {
 		return membership
 	}
-	return fmt.Sprintf(`IF %s = NULL THEN TRUE ELSE %s`, paramName, membership)
+	return fmt.Sprintf(`_GZ!WhenNotNull(%s, %s)`, paramName, membership)
 }
 
 func formatTLAPlusStringSet(values []string) string {

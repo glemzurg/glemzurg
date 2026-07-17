@@ -201,7 +201,7 @@ func (s *ParameterSamplerSuite) TestSamplingLogicsWrapsNullableParameterInvarian
 		}
 	}
 	s.Require().NotNil(wrapped)
-	s.Contains(wrapped.Spec.Specification, "IF ISO = NULL THEN TRUE ELSE")
+	s.Contains(wrapped.Spec.Specification, "_GZ!WhenNotNull(ISO,")
 }
 
 func (s *ParameterSamplerSuite) TestAssessParameterInvariantSkipsWhenNullableAndUnset() {

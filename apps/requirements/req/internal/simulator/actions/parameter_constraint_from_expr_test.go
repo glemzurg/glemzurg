@@ -31,7 +31,7 @@ func TestExtractNullableElseBooleanConstantConstraint(t *testing.T) {
 		"",
 		helper.Must(logic_spec.NewExpressionSpec(
 			"tla_plus",
-			`IF JurisdictionCode = NULL THEN SocialOnly = TRUE ELSE TRUE`,
+			`_GZ!WhenNull(JurisdictionCode, SocialOnly = TRUE)`,
 			pf,
 		)),
 		nil,

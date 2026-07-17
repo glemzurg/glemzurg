@@ -7,14 +7,26 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 )
 
+// Simulator-only null-branch sugar (must match evaluator.ModuleGZ / GZWhen*).
+const (
+	gzModule       = "_GZ"
+	gzWhenNotNull  = "WhenNotNull"
+	gzWhenNull     = "WhenNull"
+	gzWhenNullElse = "WhenNullElse"
+)
+
 // NullableWhenSetSpecification wraps inner so NULL/absent is valid and inner applies only when set.
 // Used for nullable attribute and parameter invariants; not for requires or class invariants.
 func NullableWhenSetSpecification(subject, inner string) string {
-	return "IF " + subject + " = NULL THEN TRUE ELSE " + inner
+	return "_GZ!WhenNotNull(" + subject + ", " + inner + ")"
 }
 
 // LogicHasNullableWhenUnsetGuard reports whether expr already treats NULL/absent as vacuously true.
 func LogicHasNullableWhenUnsetGuard(expr me.Expression) bool {
+	if call, ok := expr.(*me.BuiltinCall); ok {
+		return isGZWhenNotNull(call)
+	}
+	// Legacy IF form still counts as an author-written guard (no double-wrap).
 	ifte, ok := expr.(*me.IfThenElse)
 	if !ok {
 		return false
@@ -29,6 +41,9 @@ func LogicSpecHasNullableWhenUnsetGuard(spec logic_spec.ExpressionSpec) bool {
 		return true
 	}
 	upper := strings.ToUpper(spec.Specification)
+	if strings.Contains(upper, "_GZ!WHENNOTNULL") {
+		return true
+	}
 	return strings.Contains(upper, "= NULL THEN TRUE")
 }
 
@@ -56,17 +71,20 @@ func isTrueLiteral(expr me.Expression) bool {
 	return ok && literal.Value
 }
 
+func isGZWhenNotNull(call *me.BuiltinCall) bool {
+	return call != nil && call.Module == gzModule && call.Function == gzWhenNotNull && len(call.Args) == 2
+}
+
 // WrapNullableWhenSetExpression wraps inner so NULL/absent is valid and inner applies only when set.
 // Reuses the already-lowered inner tree so sampling does not need to re-parse named set references.
 func WrapNullableWhenSetExpression(paramName string, inner me.Expression) me.Expression {
-	return &me.IfThenElse{
-		Condition: &me.Compare{
-			Op:    me.CompareEq,
-			Left:  &me.LocalVar{Name: paramName},
-			Right: &me.SetLiteral{Elements: nil},
+	return &me.BuiltinCall{
+		Module:   gzModule,
+		Function: gzWhenNotNull,
+		Args: []me.Expression{
+			&me.LocalVar{Name: paramName},
+			inner,
 		},
-		Then: &me.BoolLiteral{Value: true},
-		Else: inner,
 	}
 }
 
