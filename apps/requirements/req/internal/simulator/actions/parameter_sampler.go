@@ -6,8 +6,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 const maxNotInNamedSetAttempts = 10
@@ -20,7 +20,7 @@ type ParameterSampler struct {
 	// peerFieldDistinctLookup returns field values already used by class instances.
 	peerFieldDistinctLookup func(classKey identity.Key, fieldSubKey string) []object.Object
 	// peerFieldDistinctExcludeInstanceID skips one instance during peer lookup (the update target).
-	peerFieldDistinctExcludeInstanceID state.InstanceID
+	peerFieldDistinctExcludeInstanceID instance.ID
 	// generateOverride is set only by tests to force deterministic parameter draws.
 	generateOverride func(paramDefs []model_state.Parameter, rng *rand.Rand) map[string]object.Object
 }
@@ -42,12 +42,12 @@ func (s *ParameterSampler) SetPeerFieldDistinctLookup(
 
 // SetPeerFieldDistinctExcludeInstanceID configures peer lookup to skip one instance,
 // typically the instance being updated so its current field value stays available.
-func (s *ParameterSampler) SetPeerFieldDistinctExcludeInstanceID(id state.InstanceID) {
+func (s *ParameterSampler) SetPeerFieldDistinctExcludeInstanceID(id instance.ID) {
 	s.peerFieldDistinctExcludeInstanceID = id
 }
 
 // PeerFieldDistinctExcludeInstanceID returns the instance excluded from peer lookup.
-func (s *ParameterSampler) PeerFieldDistinctExcludeInstanceID() state.InstanceID {
+func (s *ParameterSampler) PeerFieldDistinctExcludeInstanceID() instance.ID {
 	return s.peerFieldDistinctExcludeInstanceID
 }
 

@@ -11,9 +11,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -90,7 +90,7 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 }
 
 // makeCreationStep creates a SimulationStep representing a creation event.
-func makeCreationStep(classKey identity.Key, className string, instanceID state.InstanceID) *SimulationStep {
+func makeCreationStep(classKey identity.Key, className string, instanceID instance.ID) *SimulationStep {
 	return &SimulationStep{
 		Kind:       StepKindCreation,
 		ClassKey:   classKey,
@@ -100,7 +100,7 @@ func makeCreationStep(classKey identity.Key, className string, instanceID state.
 }
 
 // makeStepWithWrite creates a step with a primed assignment (attribute write).
-func makeStepWithWrite(classKey identity.Key, className string, instanceID state.InstanceID, attrName string, value object.Object) *SimulationStep {
+func makeStepWithWrite(classKey identity.Key, className string, instanceID instance.ID, attrName string, value object.Object) *SimulationStep {
 	return &SimulationStep{
 		Kind:      StepKindCreation,
 		ClassKey:  classKey,
@@ -109,7 +109,7 @@ func makeStepWithWrite(classKey identity.Key, className string, instanceID state
 			InstanceID: instanceID,
 			ActionResult: &actions.ActionResult{
 				InstanceID: instanceID,
-				PrimedAssignments: map[state.InstanceID]map[string]object.Object{
+				PrimedAssignments: map[instance.ID]map[string]object.Object{
 					instanceID: {attrName: value},
 				},
 			},
@@ -118,14 +118,14 @@ func makeStepWithWrite(classKey identity.Key, className string, instanceID state
 }
 
 // makeDoStepWithWrite creates a step with a DoActionResult primed assignment.
-func makeDoStepWithWrite(classKey identity.Key, className string, instanceID state.InstanceID, attrName string, value object.Object) *SimulationStep {
+func makeDoStepWithWrite(classKey identity.Key, className string, instanceID instance.ID, attrName string, value object.Object) *SimulationStep {
 	return &SimulationStep{
 		Kind:      StepKindNormal,
 		ClassKey:  classKey,
 		ClassName: className,
 		DoActionResult: &actions.ActionResult{
 			InstanceID: instanceID,
-			PrimedAssignments: map[state.InstanceID]map[string]object.Object{
+			PrimedAssignments: map[instance.ID]map[string]object.Object{
 				instanceID: {attrName: value},
 			},
 		},
@@ -133,8 +133,8 @@ func makeDoStepWithWrite(classKey identity.Key, className string, instanceID sta
 }
 
 // makeFinalState creates a SimulationState for test results.
-func makeFinalState() *state.SimulationState {
-	return state.NewSimulationState()
+func makeFinalState() *instance.State {
+	return instance.NewState()
 }
 
 // --- Tests ---

@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -32,7 +33,7 @@ func matchPeerDomainEventSetMap(expr me.Expression) (*me.SetMap, *me.EventCall, 
 // tryQueuePeerDomainEventSetMap queues peer updates for each instance in an evaluated domain set.
 func (e *ActionExecutor) tryQueuePeerDomainEventSetMap(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
 ) (bool, error) {
@@ -88,7 +89,7 @@ type peerDomainEventWork struct {
 
 func (e *ActionExecutor) queuePeerDomainUpdates(
 	ctx *ExecutionContext,
-	owner *state.ClassInstance,
+	owner *instance.Instance,
 	work peerDomainEventWork,
 	domainSet *object.Set,
 	bindings *evaluator.Bindings,
@@ -106,7 +107,7 @@ func (e *ActionExecutor) queuePeerDomainUpdates(
 
 func (e *ActionExecutor) queueOnePeerDomainUpdate(
 	ctx *ExecutionContext,
-	owner *state.ClassInstance,
+	owner *instance.Instance,
 	work peerDomainEventWork,
 	elem object.Object,
 	bindings *evaluator.Bindings,
@@ -144,7 +145,7 @@ func (e *ActionExecutor) bindPeerDomainEventParams(
 	work peerDomainEventWork,
 	elem object.Object,
 	bindings *evaluator.Bindings,
-	owner *state.ClassInstance,
+	owner *instance.Instance,
 ) (map[string]object.Object, bool) {
 	child := evaluator.NewEnclosedBindings(bindings)
 	if work.setMap.Variable != "" {
@@ -162,7 +163,7 @@ func (e *ActionExecutor) bindPeerDomainEventParams(
 // with [id, data] extent elements so later identity-sensitive work sees the owner id.
 func reifyOwnerSelfParams(
 	params map[string]object.Object,
-	owner *state.ClassInstance,
+	owner *instance.Instance,
 ) map[string]object.Object {
 	if owner == nil || len(params) == 0 {
 		return params

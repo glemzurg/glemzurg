@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -20,7 +21,7 @@ var errPeerClassOutOfScope = errors.New("peer class out of simulation scope")
 
 func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
@@ -68,7 +69,7 @@ type associationSetAddTarget struct {
 }
 
 func (e *ActionExecutor) resolveAssociationSetAddTarget(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	assocRef *me.AssociationRef,
 ) (*associationSetAddTarget, error) {
@@ -98,7 +99,7 @@ func (e *ActionExecutor) resolveAssociationSetAddTarget(
 
 func (e *ActionExecutor) validateSetAddPeerEvents(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target *associationSetAddTarget,
 	eventCall *me.EventCall,
 ) bool {
@@ -225,7 +226,7 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	ctx *ExecutionContext,
 	pc DeferredPeerCreation,
 	assoc model_class.Association,
-	targetID state.InstanceID,
+	targetID instance.ID,
 	acParams map[string]object.Object,
 ) error {
 	acClass, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey)
@@ -257,7 +258,7 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 // creation parameters and the association graph. When a parameter is a live instance
 // of class C and C has exactly one outgoing association to the created peer class,
 // the simulator also links that parameter instance to the new peer.
-func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, newPeerID state.InstanceID) error {
+func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, newPeerID instance.ID) error {
 	if e.peerCatalog == nil {
 		return nil
 	}
@@ -302,7 +303,7 @@ func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, ne
 	return nil
 }
 
-func instanceIDFromObject(simState *state.SimulationState, val object.Object) (state.InstanceID, bool) {
+func instanceIDFromObject(simState *instance.State, val object.Object) (instance.ID, bool) {
 	rec, ok := val.(*object.Record)
 	if !ok || rec == nil {
 		return 0, false
@@ -317,7 +318,7 @@ func instanceIDFromObject(simState *state.SimulationState, val object.Object) (s
 	// (e.g. wallets that only store _state); refuse to guess among duplicates.
 	data := state.DataFromExtentElement(rec)
 	var (
-		found state.InstanceID
+		found instance.ID
 		n     int
 	)
 	for _, inst := range simState.AllInstances() {

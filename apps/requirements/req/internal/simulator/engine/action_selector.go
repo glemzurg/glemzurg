@@ -12,6 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -36,7 +37,7 @@ type PendingAction struct {
 	Query            *model_state.Query     // Non-nil for query invocations.
 	DerivedAttribute *model_class.Attribute // Non-nil for derived attribute reads.
 	DoAction         *model_state.Action    // Non-nil for "do" state actions.
-	Instance         *state.ClassInstance   // nil for creation.
+	Instance         *instance.Instance     // nil for creation.
 	IsCreation       bool
 	IsQuery          bool
 	IsDerivedRead    bool // True when this reads an external derived attribute.
@@ -44,8 +45,8 @@ type PendingAction struct {
 
 	// Association-class Add binds both host-association endpoints.
 	SourceAssocKey   *identity.Key
-	SourceInstanceID *state.InstanceID
-	TargetInstanceID *state.InstanceID
+	SourceInstanceID *instance.ID
+	TargetInstanceID *instance.ID
 }
 
 // ActionSelector randomly selects the next simulation action.
@@ -76,7 +77,7 @@ func NewActionSelector(
 
 // SelectAction picks a random eligible action from all classes and instances.
 // Returns error if no actions are available (deadlock).
-func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*PendingAction, error) {
+func (s *ActionSelector) SelectAction(simState *instance.State) (*PendingAction, error) {
 	eligible := s.collectEligibleActions(simState)
 	eligible = s.filterByObjectParamAvailability(eligible, simState)
 	eligible = s.filterBySimulationRequires(eligible)
@@ -107,7 +108,7 @@ func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*Pending
 // always pass (sampled as empty set). Model-agnostic.
 func (s *ActionSelector) filterByObjectParamAvailability(
 	eligible []PendingAction,
-	simState *state.SimulationState,
+	simState *instance.State,
 ) []PendingAction {
 	if s.catalog == nil || simState == nil {
 		return eligible
@@ -123,7 +124,7 @@ func (s *ActionSelector) filterByObjectParamAvailability(
 
 func (s *ActionSelector) objectParamsHaveInstances(
 	pending PendingAction,
-	simState *state.SimulationState,
+	simState *instance.State,
 ) bool {
 	for _, classKey := range s.requiredObjectParamClasses(pending) {
 		if !s.catalog.IsClassInScope(classKey) {
@@ -218,7 +219,7 @@ func resolveObjectClassRef(objectClassRef string, catalog *ClassCatalog) (identi
 }
 
 // collectEligibleActions builds the list of all eligible actions across all classes.
-func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState) []PendingAction {
+func (s *ActionSelector) collectEligibleActions(simState *instance.State) []PendingAction {
 	var eligible []PendingAction
 
 	for _, classInfo := range s.catalog.AllSimulatableClasses() {
@@ -370,7 +371,7 @@ func (s *ActionSelector) resolveSurfaceAction(pending PendingAction) *model_stat
 
 func (s *ActionSelector) collectDerivedReadActions(
 	classInfo *ClassInfo,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 ) []PendingAction {
 	externalDerived := s.catalog.ExternalDerivedAttributes(classInfo.ClassKey)
 	var eligible []PendingAction
@@ -386,7 +387,7 @@ func (s *ActionSelector) collectDerivedReadActions(
 }
 
 // getInstanceStateName extracts the current state name from an instance's _state attribute.
-func getInstanceStateName(instance *state.ClassInstance) string {
+func getInstanceStateName(instance *instance.Instance) string {
 	stateAttr := instance.GetAttribute("_state")
 	if stateAttr == nil {
 		return ""

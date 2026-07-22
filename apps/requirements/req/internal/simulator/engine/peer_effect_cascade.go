@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 func (e *StepExecutor) appendAssociationPeerCascades(
 	step *SimulationStep,
 	transitionResult *actions.TransitionResult,
-	simState *state.SimulationState,
+	simState *instance.State,
 ) error {
 	if step == nil || transitionResult == nil || transitionResult.ActionResult == nil {
 		return nil
@@ -28,7 +28,7 @@ func (e *StepExecutor) appendAssociationPeerCascades(
 
 func (e *StepExecutor) buildPeerEffectStep(
 	peer actions.PeerTransitionRecord,
-	simState *state.SimulationState,
+	simState *instance.State,
 	depth int,
 ) (*SimulationStep, error) {
 	if depth > maxCascadeDepth {

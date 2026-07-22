@@ -11,6 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -23,10 +24,10 @@ const _EXPRESSION_RETURNED_NIL = "expression returned nil"
 // ActionResult holds the result of executing an action.
 type ActionResult struct {
 	// InstanceID is the primary instance the action was executed on.
-	InstanceID state.InstanceID
+	InstanceID instance.ID
 
 	// PrimedAssignments contains all state changes grouped by instance ID.
-	PrimedAssignments map[state.InstanceID]map[string]object.Object
+	PrimedAssignments map[instance.ID]map[string]object.Object
 
 	// PeerTransitions records peer-class events fired by association set-add/set-map guarantees.
 	PeerTransitions []PeerTransitionRecord
@@ -41,7 +42,7 @@ type ActionResult struct {
 // QueryResult holds the result of executing a query.
 type QueryResult struct {
 	// InstanceID is the instance the query was executed on.
-	InstanceID state.InstanceID
+	InstanceID instance.ID
 
 	// Outputs contains the query's output values from primed assignments (e.g., result' = ...).
 	Outputs map[string]object.Object
@@ -61,14 +62,14 @@ type AssociationMaterialization struct {
 	FromClassKey        identity.Key
 	ToClassName         string
 	ToClassKey          identity.Key
-	FromInstanceID      state.InstanceID
-	ToInstanceID        state.InstanceID
+	FromInstanceID      instance.ID
+	ToInstanceID        instance.ID
 }
 
 // TransitionResult holds the result of executing a state machine transition.
 type TransitionResult struct {
 	// InstanceID is the instance that transitioned.
-	InstanceID state.InstanceID
+	InstanceID instance.ID
 
 	// FromState is the name of the state before the transition (empty for creation).
 	FromState string
@@ -179,7 +180,7 @@ func NewActionExecutor(
 // then applies all primed assignments and checks all invariants.
 func (e *ActionExecutor) ExecuteAction(
 	action model_state.Action,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	parameters map[string]object.Object,
 ) (*ActionResult, error) {
 	ctx := NewExecutionContext()
@@ -215,7 +216,7 @@ func (e *ActionExecutor) ExecuteAction(
 func (e *ActionExecutor) runStatePhaseAndFinalize(
 	ctx *ExecutionContext,
 	action model_state.Action,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	parameters map[string]object.Object,
 ) error {
 	// Apply peer updates before state guarantees that depend on new structure.
@@ -446,7 +447,7 @@ func (e *ActionExecutor) checkAssociationStructuralInvariants() invariants.Viola
 }
 
 func (e *ActionExecutor) buildRequiresBindings(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	parameters map[string]object.Object,
 ) *evaluator.Bindings {
 	if len(e.classNameMap) == 0 {
@@ -463,7 +464,7 @@ func (e *ActionExecutor) buildRequiresBindings(
 func (e *ActionExecutor) executeActionInContext(
 	ctx *ExecutionContext,
 	action model_state.Action,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	parameters map[string]object.Object,
 	phase guaranteePhase,
 ) error {
@@ -503,7 +504,7 @@ func (e *ActionExecutor) executeActionInContext(
 // evaluateActionRequires evaluates the preconditions (Requires) for an action.
 func (e *ActionExecutor) evaluateActionRequires(
 	action model_state.Action,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	bindings *evaluator.Bindings,
 ) (invariants.ViolationErrors, error) {
 	owner := ParameterOwnerFromAction(action)
@@ -524,7 +525,7 @@ func (e *ActionExecutor) evaluateActionRequires(
 func (e *ActionExecutor) evaluateActionGuarantees(
 	ctx *ExecutionContext,
 	action model_state.Action,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	bindings *evaluator.Bindings,
 	actionParams map[string]object.Object,
 	phase guaranteePhase,
@@ -616,7 +617,7 @@ type actionGuaranteeEvalEnv struct {
 func (e *ActionExecutor) evaluateSingleActionGuarantee(
 	ctx *ExecutionContext,
 	ref guaranteeEvalRef,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	guar model_logic.Logic,
 	bindings *evaluator.Bindings,
 	env actionGuaranteeEvalEnv,
@@ -649,7 +650,7 @@ func (e *ActionExecutor) evaluateSingleActionGuarantee(
 
 func (e *ActionExecutor) tryQueueEarlyAssociationGuarantees(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	guar model_logic.Logic,
 	bindings *evaluator.Bindings,
 ) (bool, error) {
@@ -662,7 +663,7 @@ func (e *ActionExecutor) tryQueueEarlyAssociationGuarantees(
 func (e *ActionExecutor) applyAttributePrimeGuarantee(
 	ctx *ExecutionContext,
 	ref guaranteeEvalRef,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	guar model_logic.Logic,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
@@ -682,7 +683,7 @@ func (e *ActionExecutor) applyAttributePrimeGuarantee(
 
 func (e *ActionExecutor) tryQueueAssociationGuaranteeExpr(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
 	linkEnv setAddLinkEnv,
@@ -704,7 +705,7 @@ func (e *ActionExecutor) tryQueueAssociationGuaranteeExpr(
 func (e *ActionExecutor) collectActionSafetyRules(
 	ctx *ExecutionContext,
 	action model_state.Action,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	bindings *evaluator.Bindings,
 ) error {
 	// Pass 1: Evaluate all let bindings in safety rules and capture them.
@@ -783,7 +784,7 @@ func evalLetBindings(logics []model_logic.Logic, bindings *evaluator.Bindings, o
 // Query primed assignments produce output values, not state changes.
 func (e *ActionExecutor) ExecuteQuery(
 	query model_state.Query,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	parameters map[string]object.Object,
 ) (*QueryResult, error) {
 	ctx := NewExecutionContext()
@@ -812,7 +813,7 @@ func (e *ActionExecutor) ExecuteQuery(
 func (e *ActionExecutor) executeQueryInContext(
 	ctx *ExecutionContext,
 	query model_state.Query,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	parameters map[string]object.Object,
 ) (map[string]object.Object, error) {
 	if err := ctx.IncrementDepth(); err != nil {
@@ -874,7 +875,7 @@ func evaluateQueryGuarantees(query model_state.Query, bindings *evaluator.Bindin
 // CreationLinkSource holds the association and parent instance for object creation linking.
 type CreationLinkSource struct {
 	SourceAssocKey *identity.Key
-	SourceID       *state.InstanceID
+	SourceID       *instance.ID
 }
 
 // ExecuteTransition handles an event arriving at an instance.
@@ -883,10 +884,10 @@ type CreationLinkSource struct {
 func (e *ActionExecutor) ExecuteTransition(
 	class model_class.Class,
 	event model_state.Event,
-	instance *state.ClassInstance, // nil for creation (from initial state)
+	instance *instance.Instance, // nil for creation (from initial state)
 	eventParams map[string]object.Object,
 	source CreationLinkSource,
-	targetID *state.InstanceID,
+	targetID *instance.ID,
 ) (*TransitionResult, error) {
 	currentStateName := getInstanceCurrentState(instance)
 
@@ -927,7 +928,7 @@ func (e *ActionExecutor) ExecuteTransition(
 func (e *ActionExecutor) selectTransition(
 	class model_class.Class,
 	event model_state.Event,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	currentStateName string,
 ) (*model_state.Transition, error) {
 	candidates := e.findCandidateTransitions(class, event, instance, currentStateName)
@@ -942,10 +943,10 @@ func (e *ActionExecutor) selectTransition(
 
 func (e *ActionExecutor) createTransitionInstance(
 	class model_class.Class,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	source CreationLinkSource,
-	targetID *state.InstanceID,
-) (*state.ClassInstance, *AssociationMaterialization, error) {
+	targetID *instance.ID,
+) (*instance.Instance, *AssociationMaterialization, error) {
 	created, err := e.handleCreation(class, instance, source.SourceAssocKey, source.SourceID, targetID)
 	if err != nil {
 		return nil, nil, err
@@ -958,7 +959,7 @@ func (e *ActionExecutor) createTransitionInstance(
 func (e *ActionExecutor) executeTransitionActionDeferred(
 	chosen *model_state.Transition,
 	class model_class.Class,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	eventParams map[string]object.Object,
 ) (*ActionResult, error) {
 	e.BeginWorldStateDeferral()
@@ -968,7 +969,7 @@ func (e *ActionExecutor) executeTransitionActionDeferred(
 }
 
 type transitionResultInput struct {
-	instance                   *state.ClassInstance
+	instance                   *instance.Instance
 	currentStateName           string
 	toStateName                string
 	event                      model_state.Event
@@ -1005,7 +1006,7 @@ func (e *ActionExecutor) buildTransitionResult(in transitionResultInput) *Transi
 func (e *ActionExecutor) associationMaterializationForCreation(
 	class model_class.Class,
 	source CreationLinkSource,
-	targetID *state.InstanceID,
+	targetID *instance.ID,
 ) *AssociationMaterialization {
 	if e.peerCatalog == nil || !e.peerCatalog.IsAssociationClass(class.Key) {
 		return nil
@@ -1032,7 +1033,7 @@ func (e *ActionExecutor) associationMaterializationForCreation(
 }
 
 // getInstanceCurrentState extracts the current state name from an instance.
-func getInstanceCurrentState(instance *state.ClassInstance) string {
+func getInstanceCurrentState(instance *instance.Instance) string {
 	if instance == nil {
 		return ""
 	}
@@ -1050,7 +1051,7 @@ func getInstanceCurrentState(instance *state.ClassInstance) string {
 func (e *ActionExecutor) findCandidateTransitions(
 	class model_class.Class,
 	event model_state.Event,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	currentStateName string,
 ) []model_state.Transition {
 	var candidates []model_state.Transition
@@ -1080,7 +1081,7 @@ func (e *ActionExecutor) findCandidateTransitions(
 func (e *ActionExecutor) evaluateGuards(
 	candidates []model_state.Transition,
 	class model_class.Class,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	event model_state.Event,
 	currentStateName string,
 ) (*model_state.Transition, error) {
@@ -1119,11 +1120,11 @@ func (e *ActionExecutor) evaluateGuards(
 // handleCreation creates a new instance for a creation transition.
 func (e *ActionExecutor) handleCreation(
 	class model_class.Class,
-	_ *state.ClassInstance,
+	_ *instance.Instance,
 	sourceAssocKey *identity.Key,
-	sourceID *state.InstanceID,
-	targetID *state.InstanceID,
-) (*state.ClassInstance, error) {
+	sourceID *instance.ID,
+	targetID *instance.ID,
+) (*instance.Instance, error) {
 	if e.peerCatalog != nil && e.peerCatalog.IsAssociationClass(class.Key) {
 		return e.handleAssociationClassCreation(class, sourceID, targetID)
 	}
@@ -1144,7 +1145,7 @@ func (e *ActionExecutor) handleCreation(
 
 func (e *ActionExecutor) creationAttributes(
 	class model_class.Class,
-	simState *state.SimulationState,
+	simState *instance.State,
 ) (*object.Record, error) {
 	newAttrs := object.NewRecord()
 	if e.structuralCheckers == nil || e.structuralCheckers.Index == nil || e.rng == nil {
@@ -1164,10 +1165,10 @@ func (e *ActionExecutor) creationAttributes(
 }
 
 func (e *ActionExecutor) linkPlainCreationOverAssociation(
-	simState *state.SimulationState,
+	simState *instance.State,
 	sourceAssocKey *identity.Key,
-	sourceID *state.InstanceID,
-	newInstanceID state.InstanceID,
+	sourceID *instance.ID,
+	newInstanceID instance.ID,
 ) error {
 	if sourceAssocKey == nil || sourceID == nil {
 		return nil
@@ -1186,9 +1187,9 @@ func (e *ActionExecutor) linkPlainCreationOverAssociation(
 
 func (e *ActionExecutor) handleAssociationClassCreation(
 	class model_class.Class,
-	sourceID *state.InstanceID,
-	targetID *state.InstanceID,
-) (*state.ClassInstance, error) {
+	sourceID *instance.ID,
+	targetID *instance.ID,
+) (*instance.Instance, error) {
 	if sourceID == nil || targetID == nil {
 		return nil, fmt.Errorf(
 			"association class %s Add requires both endpoint instances",
@@ -1233,7 +1234,7 @@ func (e *ActionExecutor) handleAssociationClassCreation(
 func (e *ActionExecutor) executeTransitionAction(
 	chosen *model_state.Transition,
 	class model_class.Class,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	eventParams map[string]object.Object,
 ) (*ActionResult, error) {
 	if chosen.ActionKey == nil {
@@ -1254,7 +1255,7 @@ func (e *ActionExecutor) executeTransitionAction(
 func (e *ActionExecutor) applyStateTransition(
 	chosen *model_state.Transition,
 	class model_class.Class,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 ) (string, error) {
 	simState := e.bindingsBuilder.State()
 

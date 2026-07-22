@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/require"
@@ -63,7 +64,7 @@ func TestDiscoverToEndpointFromRow(t *testing.T) {
 		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")),
 		"account",
 	))
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Exists"))
 	inst := simState.CreateInstance(classKey, attrs)

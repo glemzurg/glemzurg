@@ -8,8 +8,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // IndexDefinition describes one composite index for a class.
@@ -90,7 +90,7 @@ func NewIndexUniquenessChecker(model *core.Model) *IndexUniquenessChecker {
 }
 
 // CheckState validates all instances in a simulation state for index uniqueness.
-func (c *IndexUniquenessChecker) CheckState(simState *state.SimulationState) ViolationErrors {
+func (c *IndexUniquenessChecker) CheckState(simState *instance.State) ViolationErrors {
 	var violations ViolationErrors
 
 	for classKey, indexInfo := range c.classIndexes {
@@ -107,13 +107,13 @@ func (c *IndexUniquenessChecker) CheckState(simState *state.SimulationState) Vio
 // CheckClassInstances checks index uniqueness for instances of a single class.
 func (c *IndexUniquenessChecker) CheckClassInstances(
 	classKey identity.Key,
-	instances []*state.ClassInstance,
+	instances []*instance.Instance,
 	indexInfo *ClassIndexInfo,
 ) ViolationErrors {
 	var violations ViolationErrors
 
 	for _, indexDef := range indexInfo.Indexes {
-		seen := make(map[string]state.InstanceID)
+		seen := make(map[string]instance.ID)
 
 		for _, instance := range instances {
 			getter := func(name string) object.Object {

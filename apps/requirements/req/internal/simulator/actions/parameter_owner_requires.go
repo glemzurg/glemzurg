@@ -16,10 +16,10 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 const (
@@ -248,7 +248,7 @@ func assessOneLogic(
 // ParameterInvariantViolations converts parameter invariant assessment failures into violations.
 func (o ParameterOwner) ParameterInvariantViolations(
 	failures []RequireAssessmentFailure,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 ) invariants.ViolationErrors {
 	var violations invariants.ViolationErrors
 	for _, failure := range failures {
@@ -262,7 +262,7 @@ func (o ParameterOwner) ParameterInvariantViolations(
 // ActionRequiresViolations converts assessment failures into action-require violations.
 func (o ParameterOwner) ActionRequiresViolations(
 	failures []RequireAssessmentFailure,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 ) invariants.ViolationErrors {
 	var violations invariants.ViolationErrors
 	for _, failure := range failures {

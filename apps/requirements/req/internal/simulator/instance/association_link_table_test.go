@@ -1,4 +1,4 @@
-package state
+package instance
 
 import (
 	"testing"
@@ -21,11 +21,11 @@ func TestAssociationLinkTableIndexesByEndpoints(t *testing.T) {
 
 	fromLinks := table.LinksFromEndpoint(hostKey, 1)
 	require.Len(t, fromLinks, 1)
-	require.Equal(t, InstanceID(3), fromLinks[0].LinkInstanceID)
+	require.Equal(t, ID(3), fromLinks[0].LinkInstanceID)
 
 	toLinks := table.LinksToEndpoint(hostKey, 2)
 	require.Len(t, toLinks, 1)
-	require.Equal(t, InstanceID(3), toLinks[0].LinkInstanceID)
+	require.Equal(t, ID(3), toLinks[0].LinkInstanceID)
 
 	got, ok := table.LinkByInstance(3)
 	require.True(t, ok)

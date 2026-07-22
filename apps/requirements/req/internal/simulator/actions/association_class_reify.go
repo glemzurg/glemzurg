@@ -9,8 +9,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // associationClassReifyWork holds resolved association-class reify targets for one guarantee.
@@ -33,7 +33,7 @@ type associationClassReifyWork struct {
 // association is plain and endpoint links come from the host field's state_change guarantee.
 func (e *ActionExecutor) tryQueueAssociationClassReifyGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	guar model_logic.Logic,
 	bindings *evaluator.Bindings,
 ) (bool, error) {
@@ -57,7 +57,7 @@ func (e *ActionExecutor) tryQueueAssociationClassReifyGuarantee(
 // resolveAssociationClassReifyWork returns active=false when the association class is not
 // present (or not creatable) on the surface catalog — reify becomes a no-op.
 func (e *ActionExecutor) resolveAssociationClassReifyWork(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	guar model_logic.Logic,
 ) (work associationClassReifyWork, active bool, err error) {
 	if e.peerCatalog == nil {
@@ -123,7 +123,7 @@ func associationClassCreationEventCall(guar model_logic.Logic) (*me.EventCall, e
 
 func (e *ActionExecutor) queueSelectorMapAssociationClassReify(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	work associationClassReifyWork,
 	bindings *evaluator.Bindings,
 ) error {
@@ -147,7 +147,7 @@ func (e *ActionExecutor) queueSelectorMapAssociationClassReify(
 
 func (e *ActionExecutor) queueOneAssociationClassReify(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	work associationClassReifyWork,
 	bindings *evaluator.Bindings,
 ) error {
@@ -178,10 +178,10 @@ func (e *ActionExecutor) queueOneAssociationClassReify(
 
 // resolveToEndpointInstanceID resolves a to-side value to a live instance id.
 func resolveToEndpointInstanceID(
-	simState *state.SimulationState,
+	simState *instance.State,
 	toClassKey identity.Key,
 	val object.Object,
-) (state.InstanceID, bool) {
+) (instance.ID, bool) {
 	rec, ok := val.(*object.Record)
 	if !ok {
 		return 0, false

@@ -1,3 +1,6 @@
+// Package state adapts [instance.State] into evaluator bindings and TLA extents.
+// Mutable run state lives in simulator/instance; this package builds expression
+// bindings on top of that world.
 package state
 
 import (
@@ -7,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -15,13 +19,13 @@ import (
 type DerivedAttributeResolver interface {
 	// ResolveDerived evaluates all derived attributes for the given instance
 	// and returns a map of attribute name -> computed value.
-	ResolveDerived(instance *ClassInstance) (map[string]object.Object, error)
+	ResolveDerived(inst *instance.Instance) (map[string]object.Object, error)
 }
 
 // BindingsBuilder creates evaluator.Bindings from simulation state.
 // It adapts the simulation state into the format expected by the evaluator.
 type BindingsBuilder struct {
-	state *SimulationState
+	state *instance.State
 
 	// relationContext is shared across all bindings created by this builder
 	relationCtx *evaluator.RelationContext
@@ -34,18 +38,18 @@ type BindingsBuilder struct {
 }
 
 // NewBindingsBuilder creates a new bindings builder for the given simulation state.
-func NewBindingsBuilder(state *SimulationState) *BindingsBuilder {
+func NewBindingsBuilder(simState *instance.State) *BindingsBuilder {
 	return &BindingsBuilder{
-		state:       state,
+		state:       simState,
 		relationCtx: evaluator.NewRelationContext(),
 	}
 }
 
 // NewBindingsBuilderWithRelations creates a bindings builder with a pre-configured
 // relation context containing association metadata.
-func NewBindingsBuilderWithRelations(state *SimulationState, relationCtx *evaluator.RelationContext) *BindingsBuilder {
+func NewBindingsBuilderWithRelations(simState *instance.State, relationCtx *evaluator.RelationContext) *BindingsBuilder {
 	return &BindingsBuilder{
-		state:       state,
+		state:       simState,
 		relationCtx: relationCtx,
 	}
 }
@@ -300,7 +304,7 @@ func (b *BindingsBuilder) syncAllInstances() {
 func (b *BindingsBuilder) syncLinks() {
 	for _, instance := range b.state.AllInstances() {
 		objID := evaluator.ObjectID(instance.ID)
-		links := b.state.links.GetAllForward(objID)
+		links := b.state.Links().GetAllForward(objID)
 		for _, link := range links {
 			fromInstance := b.state.GetInstance(InstanceID(link.FromID))
 			toInstance := b.state.GetInstance(InstanceID(link.ToID))

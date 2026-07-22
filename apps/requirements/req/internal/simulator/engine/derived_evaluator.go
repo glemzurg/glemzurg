@@ -7,6 +7,7 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -113,7 +114,7 @@ func (d *DerivedAttributeEvaluator) SetCatalog(catalog *ClassCatalog) {
 // Surface-unavailable attributes (out-of-scope association deps) are skipped so
 // bindings inject only values that can be computed on this surface.
 // Keys in the returned map are attribute SubKeys so they match stored fields and self.field access.
-func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance) (map[string]object.Object, error) {
+func (d *DerivedAttributeEvaluator) ResolveDerived(instance *instance.Instance) (map[string]object.Object, error) {
 	infos := d.byClass[instance.ClassKey]
 	if len(infos) == 0 {
 		return make(map[string]object.Object), nil
@@ -141,7 +142,7 @@ func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance
 // ResolveDerivedAttribute evaluates one derived attribute. When the attribute depends
 // on out-of-scope classes, returns a surface-out-of-scope violation (not a hard error).
 func (d *DerivedAttributeEvaluator) ResolveDerivedAttribute(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	attrKey identity.Key,
 	attrName string,
 ) (object.Object, invariants.ViolationErrors, error) {

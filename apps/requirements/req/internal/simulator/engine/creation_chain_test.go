@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -33,8 +34,8 @@ type testChainModel struct {
 // buildChainTestComponents builds all components needed for creation chain tests.
 func buildChainTestComponents(
 	tcm *testChainModel,
-) (*CreationChainHandler, *state.SimulationState, *actions.ActionExecutor) {
-	simState := state.NewSimulationState()
+) (*CreationChainHandler, *instance.State, *actions.ActionExecutor) {
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
@@ -128,7 +129,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 
 func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 	tcm := buildOrderItemModel(true)
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
@@ -201,8 +202,8 @@ func (s *CreationChainSuite) TestMandatoryAssociationClassCreatesEndpointAndLink
 	s.Len(links, 1)
 }
 
-func buildAssociationClassChainComponents(tcm *acTestModel) (*CreationChainHandler, *state.SimulationState, *actions.ActionExecutor) {
-	simState := state.NewSimulationState()
+func buildAssociationClassChainComponents(tcm *acTestModel) (*CreationChainHandler, *instance.State, *actions.ActionExecutor) {
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(NewClassCatalog(tcm.model), bb)
 	ge := actions.NewGuardEvaluator(bb)
@@ -254,7 +255,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 		assocKey: assoc,
 	}
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests

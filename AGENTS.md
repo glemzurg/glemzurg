@@ -137,6 +137,31 @@ The **simulation surface** is the set of **external drivers** the exercise simul
 
 When changing surface reporting or selection, preserve this contract: scope shows what is loaded; surface shows what is driven at top level.
 
+## Simulator `instance` package
+
+`apps/requirements/req/internal/simulator/instance` holds **all mutable state for one simulation run**: class instances, binary association links, association-class host rows, state-machine positions, and identity mappings used with that world.
+
+**Boundary**
+
+- Own: create/update/delete instances, association links, SM current state, clone of the run world.
+- Do not own: action execution, expression evaluation, model loading, surface selection, or TLA bindings construction (`state.BindingsBuilder` adapts `instance.State` into evaluator bindings).
+- Production callers depend on this package for run data; this package must not import `engine`, `actions`, `invariants`, or `trace`.
+
+**API discipline**
+
+- Prefer a small exported protocol (`State`, `Instance`, `ID`, association types and methods). Keep maps, locks, and ID counters unexported.
+- Construct instances through `State` methods in production code (aligns with [Go constructors](#go-constructors)).
+- Godoc on the package and exported types is the contract; do not grow hidden public side doors without documenting them as temporary.
+
+**Joint test curation (AI + human)**
+
+Unit tests for this package are **jointly written and curated by AI and human** maintainers.
+
+- AI may draft and extend tests when implementing the package.
+- A human reviews, edits, and owns the suite’s intent (coverage gaps, naming, fragile cases, intentional non-coverage).
+- A green AI-only test pass is not “test design done” for this package — human curation is part of done for test changes here.
+- Prefer protocol-level tests of the exported API over white-box tests of unexported maps/locks unless a bug requires it.
+
 ## Go `_test.go` files
 
 - Use the [testify](https://github.com/stretchr/testify) framework (`require` for fatal assertions, `assert` for non-fatal).

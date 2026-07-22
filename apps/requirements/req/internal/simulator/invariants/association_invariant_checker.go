@@ -9,6 +9,7 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -79,7 +80,7 @@ func parseAssociationInvariantItems(assoc model_class.Association) ([]parsedAsso
 
 // CheckState validates association invariants for every from-class instance.
 func (c *AssociationInvariantChecker) CheckState(
-	simState *state.SimulationState,
+	simState *instance.State,
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
 	var violations ViolationErrors
@@ -91,7 +92,7 @@ func (c *AssociationInvariantChecker) CheckState(
 
 // CheckInstance validates association invariants for one from-class anchor instance.
 func (c *AssociationInvariantChecker) CheckInstance(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
 	items, ok := c.byFromClass[instance.ClassKey]
@@ -120,7 +121,7 @@ func (c *AssociationInvariantChecker) CheckInstance(
 }
 
 func evalAssociationInvariantLet(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	item parsedAssociationInvariantItem,
 	bindings *evaluator.Bindings,
 ) ViolationErrors {
@@ -136,7 +137,7 @@ func evalAssociationInvariantLet(
 }
 
 func evalAssociationInvariantAssessment(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	item parsedAssociationInvariantItem,
 	bindings *evaluator.Bindings,
 ) ViolationErrors {

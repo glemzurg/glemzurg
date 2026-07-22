@@ -6,9 +6,9 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // generateIndexSafeValues populates attrs with random values for indexed attributes
@@ -18,7 +18,7 @@ import (
 func generateIndexSafeValues(
 	attrs *object.Record,
 	indexInfo *invariants.ClassIndexInfo,
-	existingInstances []*state.ClassInstance,
+	existingInstances []*instance.Instance,
 	rng *rand.Rand,
 ) error {
 	for _, indexDef := range indexInfo.Indexes {

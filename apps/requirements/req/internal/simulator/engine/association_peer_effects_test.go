@@ -16,6 +16,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -134,8 +135,8 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow
 	s.Nil(simState.GetInstance(addResult.InstanceID))
 }
 
-func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*state.SimulationState, *actions.ActionExecutor) {
-	simState := state.NewSimulationState()
+func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*instance.State, *actions.ActionExecutor) {
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(model)
 	registerCatalogAssociations(catalog, bb)
@@ -146,10 +147,10 @@ func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model)
 }
 
 func (s *AssociationPeerEffectsSuite) createPeerEffectInstance(
-	simState *state.SimulationState,
+	simState *instance.State,
 	classKey identity.Key,
 	stateName string,
-) *state.ClassInstance {
+) *instance.Instance {
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString(stateName))
 	return simState.CreateInstance(classKey, attrs)

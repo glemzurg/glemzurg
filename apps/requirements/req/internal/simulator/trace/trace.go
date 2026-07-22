@@ -11,8 +11,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // SimulationTrace is the top-level serializable trace of a simulation run.
@@ -196,7 +196,7 @@ func convertAssociationMaterialization(mat *actions.AssociationMaterialization) 
 }
 
 // buildFinalState creates a FinalState snapshot from SimulationState.
-func buildFinalState(simState *state.SimulationState, catalog *engine.ClassCatalog) *FinalState {
+func buildFinalState(simState *instance.State, catalog *engine.ClassCatalog) *FinalState {
 	instances := simState.AllInstances()
 
 	// Sort by ID for deterministic output.
@@ -229,8 +229,8 @@ func buildFinalState(simState *state.SimulationState, catalog *engine.ClassCatal
 }
 
 func associationEndpointsForInstance(
-	inst *state.ClassInstance,
-	simState *state.SimulationState,
+	inst *instance.Instance,
+	simState *instance.State,
 	catalog *engine.ClassCatalog,
 ) *AssociationMaterializationTrace {
 	if catalog == nil || !catalog.IsAssociationClass(inst.ClassKey) {
@@ -257,7 +257,7 @@ func associationEndpointsForInstance(
 }
 
 // extractAssignments gets the primed assignments for the primary instance.
-func extractAssignments(instanceID state.InstanceID, assignments map[state.InstanceID]map[string]object.Object) map[string]string {
+func extractAssignments(instanceID instance.ID, assignments map[instance.ID]map[string]object.Object) map[string]string {
 	fields, ok := assignments[instanceID]
 	if !ok || len(fields) == 0 {
 		return nil

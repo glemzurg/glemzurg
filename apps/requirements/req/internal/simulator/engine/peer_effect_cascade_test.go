@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/require"
 )
 
@@ -72,15 +72,15 @@ func TestPeerEffectCascade_RecursivePeerTransitions(t *testing.T) {
 	chainHandler := NewCreationChainHandler(catalog, nil, nil, nil, nil)
 	exec := NewStepExecutor(StepExecutorDeps{ChainHandler: chainHandler, Catalog: catalog})
 
-	require.NoError(t, exec.appendAssociationPeerCascades(parentStep, parentResult, state.NewSimulationState()))
+	require.NoError(t, exec.appendAssociationPeerCascades(parentStep, parentResult, instance.NewState()))
 
 	require.Len(t, parentStep.CascadedSteps, 1)
 	updateStep := parentStep.CascadedSteps[0]
 	require.Equal(t, "Update", updateStep.EventName)
-	require.Equal(t, state.InstanceID(12), updateStep.InstanceID)
+	require.Equal(t, instance.ID(12), updateStep.InstanceID)
 
 	require.Len(t, updateStep.CascadedSteps, 1)
 	grandStep := updateStep.CascadedSteps[0]
 	require.Equal(t, "Grandchild", grandStep.ClassName)
-	require.Equal(t, state.InstanceID(99), grandStep.InstanceID)
+	require.Equal(t, instance.ID(99), grandStep.InstanceID)
 }

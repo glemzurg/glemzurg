@@ -4,7 +4,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 // AssociationInstancePairChecker validates that each association has at most one
@@ -40,7 +40,7 @@ func NewAssociationInstancePairChecker(model *core.Model) *AssociationInstancePa
 }
 
 // CheckState validates instance-pair uniqueness across all associations.
-func (c *AssociationInstancePairChecker) CheckState(simState *state.SimulationState) ViolationErrors {
+func (c *AssociationInstancePairChecker) CheckState(simState *instance.State) ViolationErrors {
 	var violations ViolationErrors
 	for _, assoc := range c.associations {
 		violations = append(violations, c.checkAssociation(simState, assoc)...)
@@ -49,7 +49,7 @@ func (c *AssociationInstancePairChecker) CheckState(simState *state.SimulationSt
 }
 
 func (c *AssociationInstancePairChecker) checkAssociation(
-	simState *state.SimulationState,
+	simState *instance.State,
 	assoc model_class.Association,
 ) ViolationErrors {
 	links := collectAssociationLinks(simState, assoc)

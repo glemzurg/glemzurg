@@ -8,8 +8,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // _BOUND_TYPE_UNCONSTRAINED is the span bound type indicating no constraint.
@@ -75,7 +75,7 @@ func (c *DataTypeChecker) UnparsedAttributeDefinitionViolations() ViolationError
 // CheckInstance validates all attribute values on an instance against their data type constraints.
 // Attributes with a DerivationPolicy are virtual: their values are computed on demand and are not
 // stored on the instance, so storage-based required/type checks do not apply to them.
-func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) ViolationErrors {
+func (c *DataTypeChecker) CheckInstance(instance *instance.Instance) ViolationErrors {
 	var violations ViolationErrors
 
 	attrs, ok := c.classAttributes[instance.ClassKey]
@@ -128,7 +128,7 @@ func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) Violation
 
 // checkDataTypeConstraints validates a value against its data type constraints.
 func (c *DataTypeChecker) checkDataTypeConstraints(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -159,7 +159,7 @@ func (c *DataTypeChecker) checkDataTypeConstraints(
 
 // checkCollectionSize validates collection size against min/max constraints.
 func (c *DataTypeChecker) checkCollectionSize(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -227,7 +227,7 @@ func (c *DataTypeChecker) checkCollectionSize(
 
 // checkAtomicConstraints validates value against atomic type constraints (span, enumeration).
 func (c *DataTypeChecker) checkAtomicConstraints(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -270,7 +270,7 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 
 // checkDateTimeConstraint validates an integer timestamp against the datetime Nat range.
 func checkDateTimeConstraint(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -296,7 +296,7 @@ func checkDateTimeConstraint(
 
 // checkSpanConstraint validates a numeric value against a span (range) constraint.
 func (c *DataTypeChecker) checkSpanConstraint(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -448,7 +448,7 @@ func (c *DataTypeChecker) AttributeDef(classKey identity.Key, fieldSubKey string
 
 // checkEnumConstraint validates a value against enumeration constraint.
 func (c *DataTypeChecker) checkEnumConstraint(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -508,7 +508,7 @@ func (c *DataTypeChecker) checkEnumConstraint(
 }
 
 // CheckState validates all instances in a simulation state.
-func (c *DataTypeChecker) CheckState(simState *state.SimulationState) ViolationErrors {
+func (c *DataTypeChecker) CheckState(simState *instance.State) ViolationErrors {
 	var violations ViolationErrors
 
 	for _, instance := range simState.AllInstances() {

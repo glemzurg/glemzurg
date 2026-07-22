@@ -1,4 +1,4 @@
-package state
+package instance
 
 import (
 	"fmt"
@@ -10,24 +10,25 @@ import (
 // AssociationLink materializes one host association row via its association-class instance.
 type AssociationLink struct {
 	HostAssocKey   identity.Key
-	FromEndpointID InstanceID
-	ToEndpointID   InstanceID
-	LinkInstanceID InstanceID
+	FromEndpointID ID
+	ToEndpointID   ID
+	LinkInstanceID ID
 }
 
-// AssociationLinkTable stores reified host-association rows keyed by association class instances.
+// AssociationLinkTable stores reified host-association rows keyed by association-class instances.
+// Prefer mutating through [State] methods; the table is exposed for migration-era call sites.
 type AssociationLinkTable struct {
-	byHostFrom map[evaluator.AssociationKey]map[InstanceID][]AssociationLink
-	byHostTo   map[evaluator.AssociationKey]map[InstanceID][]AssociationLink
-	byInstance map[InstanceID]AssociationLink
+	byHostFrom map[evaluator.AssociationKey]map[ID][]AssociationLink
+	byHostTo   map[evaluator.AssociationKey]map[ID][]AssociationLink
+	byInstance map[ID]AssociationLink
 }
 
 // NewAssociationLinkTable creates an empty association link table.
 func NewAssociationLinkTable() *AssociationLinkTable {
 	return &AssociationLinkTable{
-		byHostFrom: make(map[evaluator.AssociationKey]map[InstanceID][]AssociationLink),
-		byHostTo:   make(map[evaluator.AssociationKey]map[InstanceID][]AssociationLink),
-		byInstance: make(map[InstanceID]AssociationLink),
+		byHostFrom: make(map[evaluator.AssociationKey]map[ID][]AssociationLink),
+		byHostTo:   make(map[evaluator.AssociationKey]map[ID][]AssociationLink),
+		byInstance: make(map[ID]AssociationLink),
 	}
 }
 
@@ -44,12 +45,12 @@ func (t *AssociationLinkTable) AddLink(link AssociationLink) error {
 	}
 
 	if t.byHostFrom[hostKey] == nil {
-		t.byHostFrom[hostKey] = make(map[InstanceID][]AssociationLink)
+		t.byHostFrom[hostKey] = make(map[ID][]AssociationLink)
 	}
 	t.byHostFrom[hostKey][link.FromEndpointID] = append(t.byHostFrom[hostKey][link.FromEndpointID], link)
 
 	if t.byHostTo[hostKey] == nil {
-		t.byHostTo[hostKey] = make(map[InstanceID][]AssociationLink)
+		t.byHostTo[hostKey] = make(map[ID][]AssociationLink)
 	}
 	t.byHostTo[hostKey][link.ToEndpointID] = append(t.byHostTo[hostKey][link.ToEndpointID], link)
 
@@ -63,12 +64,12 @@ func (t *AssociationLinkTable) AppendLinkWithoutValidation(link AssociationLink)
 	hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
 
 	if t.byHostFrom[hostKey] == nil {
-		t.byHostFrom[hostKey] = make(map[InstanceID][]AssociationLink)
+		t.byHostFrom[hostKey] = make(map[ID][]AssociationLink)
 	}
 	t.byHostFrom[hostKey][link.FromEndpointID] = append(t.byHostFrom[hostKey][link.FromEndpointID], link)
 
 	if t.byHostTo[hostKey] == nil {
-		t.byHostTo[hostKey] = make(map[InstanceID][]AssociationLink)
+		t.byHostTo[hostKey] = make(map[ID][]AssociationLink)
 	}
 	t.byHostTo[hostKey][link.ToEndpointID] = append(t.byHostTo[hostKey][link.ToEndpointID], link)
 
@@ -77,8 +78,8 @@ func (t *AssociationLinkTable) AppendLinkWithoutValidation(link AssociationLink)
 
 func (t *AssociationLinkTable) hasEndpointPair(
 	hostKey evaluator.AssociationKey,
-	fromID InstanceID,
-	toID InstanceID,
+	fromID ID,
+	toID ID,
 ) bool {
 	byFrom, ok := t.byHostFrom[hostKey]
 	if !ok {
@@ -93,7 +94,7 @@ func (t *AssociationLinkTable) hasEndpointPair(
 }
 
 // LinksFromEndpoint returns materialized rows for a from-endpoint under the host association.
-func (t *AssociationLinkTable) LinksFromEndpoint(hostAssocKey identity.Key, fromID InstanceID) []AssociationLink {
+func (t *AssociationLinkTable) LinksFromEndpoint(hostAssocKey identity.Key, fromID ID) []AssociationLink {
 	hostKey := evaluator.AssociationKey(hostAssocKey.String())
 	if byFrom, ok := t.byHostFrom[hostKey]; ok {
 		return append([]AssociationLink(nil), byFrom[fromID]...)
@@ -102,7 +103,7 @@ func (t *AssociationLinkTable) LinksFromEndpoint(hostAssocKey identity.Key, from
 }
 
 // LinksToEndpoint returns materialized rows for a to-endpoint under the host association.
-func (t *AssociationLinkTable) LinksToEndpoint(hostAssocKey identity.Key, toID InstanceID) []AssociationLink {
+func (t *AssociationLinkTable) LinksToEndpoint(hostAssocKey identity.Key, toID ID) []AssociationLink {
 	hostKey := evaluator.AssociationKey(hostAssocKey.String())
 	if byTo, ok := t.byHostTo[hostKey]; ok {
 		return append([]AssociationLink(nil), byTo[toID]...)
@@ -111,13 +112,13 @@ func (t *AssociationLinkTable) LinksToEndpoint(hostAssocKey identity.Key, toID I
 }
 
 // LinkByInstance returns the row materialized by the given association-class instance.
-func (t *AssociationLinkTable) LinkByInstance(linkInstanceID InstanceID) (AssociationLink, bool) {
+func (t *AssociationLinkTable) LinkByInstance(linkInstanceID ID) (AssociationLink, bool) {
 	link, ok := t.byInstance[linkInstanceID]
 	return link, ok
 }
 
 // RemoveInstance drops every row touching the instance as endpoint or link instance.
-func (t *AssociationLinkTable) RemoveInstance(id InstanceID) {
+func (t *AssociationLinkTable) RemoveInstance(id ID) {
 	var toRemove []AssociationLink
 	for _, link := range t.byInstance {
 		if link.LinkInstanceID == id || link.FromEndpointID == id || link.ToEndpointID == id {
@@ -147,7 +148,7 @@ func (t *AssociationLinkTable) removeLink(link AssociationLink) {
 	delete(t.byInstance, link.LinkInstanceID)
 }
 
-func filterAssociationLinks(links []AssociationLink, linkInstanceID InstanceID) []AssociationLink {
+func filterAssociationLinks(links []AssociationLink, linkInstanceID ID) []AssociationLink {
 	filtered := links[:0]
 	for _, link := range links {
 		if link.LinkInstanceID != linkInstanceID {

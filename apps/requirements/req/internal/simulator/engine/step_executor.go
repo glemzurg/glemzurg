@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -68,7 +69,7 @@ func NewStepExecutor(deps StepExecutorDeps) *StepExecutor {
 // Execute runs a single simulation step for the given pending action.
 func (e *StepExecutor) Execute(
 	pending *PendingAction,
-	simState *state.SimulationState,
+	simState *instance.State,
 	stepNumber int,
 ) (*SimulationStep, error) {
 	if pending.IsQuery {
@@ -209,7 +210,7 @@ func (e *StepExecutor) executeDo(
 // executeTransition handles event-triggered transitions (creation, normal, deletion).
 func (e *StepExecutor) executeTransition(
 	pending *PendingAction,
-	simState *state.SimulationState,
+	simState *instance.State,
 	stepNumber int,
 ) (*SimulationStep, error) {
 	if pending.Event == nil {
@@ -365,7 +366,7 @@ func (e *StepExecutor) executeExitActions(pending *PendingAction, step *Simulati
 func (e *StepExecutor) executeEntryActions(
 	pending *PendingAction,
 	result *actions.TransitionResult,
-	simState *state.SimulationState,
+	simState *instance.State,
 	step *SimulationStep,
 ) error {
 	if result.WasDestroy || result.ToState == "" {
@@ -393,7 +394,7 @@ func (e *StepExecutor) executeEntryActions(
 // handleCreationChain handles cascaded creation steps for a creation transition.
 func (e *StepExecutor) handleCreationChain(
 	result *actions.TransitionResult,
-	simState *state.SimulationState,
+	simState *instance.State,
 	step *SimulationStep,
 ) error {
 	if !result.WasCreation {
@@ -413,7 +414,7 @@ func (e *StepExecutor) handleCreationChain(
 }
 
 // getCurrentStateKey looks up the instance's current state key from its _state attribute.
-func getCurrentStateKey(instance *state.ClassInstance, classInfo *ClassInfo) *identity.Key {
+func getCurrentStateKey(instance *instance.Instance, classInfo *ClassInfo) *identity.Key {
 	stateName := getInstanceStateName(instance)
 	if stateName == "" {
 		return nil

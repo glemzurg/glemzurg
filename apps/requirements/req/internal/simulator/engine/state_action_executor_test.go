@@ -11,6 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func TestStateActionExecutorSuite(t *testing.T) {
 }
 
 // buildStateActionTestExecutor creates an ActionExecutor suitable for state action tests.
-func buildStateActionTestExecutor(simState *state.SimulationState) *actions.ActionExecutor {
+func buildStateActionTestExecutor(simState *instance.State) *actions.ActionExecutor {
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	return actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, nil, nil)
@@ -79,7 +80,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 	class = lowerClass(class, classKey)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("exit_count", object.NewInteger(0))
 	attrs.Set("_state", object.NewString("Open"))
@@ -126,7 +127,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 	class = lowerClass(class, classKey)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("entry_count", object.NewInteger(0))
 	attrs.Set("_state", object.NewString("Open"))
@@ -160,7 +161,7 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -186,7 +187,7 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	instance := simState.CreateInstance(classKey, attrs)
 

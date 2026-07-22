@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -47,7 +48,7 @@ type SimulationResult struct {
 	TerminationReason string
 
 	// FinalState is the simulation state when the run ended.
-	FinalState *state.SimulationState
+	FinalState *instance.State
 
 	// Catalog holds scoped class metadata for trace rendering (association-class endpoints).
 	Catalog *ClassCatalog
@@ -61,7 +62,7 @@ type SimulationEngine struct {
 	config SimulationConfig
 
 	// Core state
-	simState        *state.SimulationState
+	simState        *instance.State
 	bindingsBuilder *state.BindingsBuilder
 
 	// Components
@@ -146,7 +147,7 @@ func newWiredSimulationEngine(
 
 // simulationCore holds wired runtime components after catalog setup.
 type simulationCore struct {
-	simState           *state.SimulationState
+	simState           *instance.State
 	bindingsBuilder    *state.BindingsBuilder
 	stepExecutor       *StepExecutor
 	selector           *ActionSelector
@@ -251,8 +252,8 @@ func setupState(
 	model *core.Model,
 	catalog *ClassCatalog,
 	evalCtx *evaluator.EvalContext,
-) (*state.SimulationState, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
-	simState := state.NewSimulationState()
+) (*instance.State, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
+	simState := instance.NewState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
 	registerCatalogAssociations(catalog, bindingsBuilder)
@@ -447,7 +448,7 @@ func wirePeerFieldDistinctLookup(
 // objectInstancesForClassRef returns extent elements for in-scope instances matching
 // an object-of class reference (subkey, display name, or TLA name).
 func objectInstancesForClassRef(
-	simState *state.SimulationState,
+	simState *instance.State,
 	catalog *ClassCatalog,
 	objectClassRef string,
 ) []object.Object {
@@ -579,7 +580,7 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 }
 
 // State returns the current simulation state (useful for testing).
-func (e *SimulationEngine) State() *state.SimulationState {
+func (e *SimulationEngine) State() *instance.State {
 	return e.simState
 }
 

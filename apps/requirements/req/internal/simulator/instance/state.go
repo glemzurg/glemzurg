@@ -1,6 +1,4 @@
-// Package state provides runtime state management for TLA+ simulation.
-// It tracks class instances, association links, and state machine states.
-package state
+package instance
 
 import (
 	"fmt"
@@ -13,19 +11,12 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
-// InstanceID uniquely identifies a class instance within a simulation.
-type InstanceID uint64
-
-// SimulationState holds the complete runtime state for a simulation.
-// It tracks:
-//   - All class instances with their current attribute values
-//   - Association links between instances
-//   - Current state machine states for each instance
-type SimulationState struct {
+// State is the mutable world for one simulation run: instances, association
+// links, state-machine positions, and identity mappings.
+type State struct {
 	mu sync.RWMutex
 
-	// instances maps instance IDs to class instances
-	instances map[InstanceID]*ClassInstance
+	instances map[ID]*Instance
 
 	// links tracks binary association relationships between instances.
 	links *evaluator.LinkTable
@@ -33,56 +24,53 @@ type SimulationState struct {
 	// associationLinks tracks host associations materialized by association-class instances.
 	associationLinks *AssociationLinkTable
 
-	// stateMachineStates maps instance IDs to their current state machine state
-	// The value is the identity.Key of the current state
-	stateMachineStates map[InstanceID]identity.Key
+	// stateMachineStates maps instance IDs to their current state machine state key.
+	stateMachineStates map[ID]identity.Key
 
-	// nextID is the next available instance ID
-	nextID InstanceID
+	nextID ID
 
-	// identityRegistry maps between object.Record pointers and ObjectIDs
-	// This allows the evaluator to track relationships
+	// identityRegistry maps between object.Record pointers and evaluator ObjectIDs.
 	identityRegistry *evaluator.IdentityRegistry
 }
 
-// NewSimulationState creates a new empty simulation state.
-func NewSimulationState() *SimulationState {
-	return &SimulationState{
-		instances:          make(map[InstanceID]*ClassInstance),
+// NewState creates a new empty simulation state.
+func NewState() *State {
+	return &State{
+		instances:          make(map[ID]*Instance),
 		links:              evaluator.NewLinkTable(),
 		associationLinks:   NewAssociationLinkTable(),
-		stateMachineStates: make(map[InstanceID]identity.Key),
+		stateMachineStates: make(map[ID]identity.Key),
 		nextID:             1, // Start at 1 so 0 can indicate "no instance"
 		identityRegistry:   evaluator.NewIdentityRegistry(),
 	}
 }
 
 // CreateInstance creates a new class instance with the given attributes.
-// Returns the newly created instance.
-func (s *SimulationState) CreateInstance(classKey identity.Key, attributes *object.Record) *ClassInstance {
+// Returns the newly created instance. Attribute data is cloned into the store.
+func (s *State) CreateInstance(classKey identity.Key, attributes *object.Record) *Instance {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	id := s.nextID
 	s.nextID++
 
-	instance := &ClassInstance{
+	inst := &Instance{
 		ID:         id,
 		ClassKey:   classKey,
 		Attributes: attributes.Clone().(*object.Record),
 	}
 
-	s.instances[id] = instance
+	s.instances[id] = inst
 
-	// Register with identity registry for evaluator integration
-	s.identityRegistry.GetOrAssign(instance.Attributes)
+	// Register with identity registry for evaluator integration.
+	s.identityRegistry.GetOrAssign(inst.Attributes)
 
-	return instance
+	return inst
 }
 
 // GetInstance retrieves an instance by ID.
-// Returns nil if the instance doesn't exist.
-func (s *SimulationState) GetInstance(id InstanceID) *ClassInstance {
+// Returns nil if the instance does not exist.
+func (s *State) GetInstance(id ID) *Instance {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -90,114 +78,104 @@ func (s *SimulationState) GetInstance(id InstanceID) *ClassInstance {
 }
 
 // UpdateInstance updates an instance's attributes.
-// Returns an error if the instance doesn't exist.
-func (s *SimulationState) UpdateInstance(id InstanceID, attributes *object.Record) error {
+// Returns an error if the instance does not exist.
+func (s *State) UpdateInstance(id ID, attributes *object.Record) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	instance, ok := s.instances[id]
+	inst, ok := s.instances[id]
 	if !ok {
 		return fmt.Errorf("instance %d not found", id)
 	}
 
-	instance.Attributes = attributes.Clone().(*object.Record)
+	inst.Attributes = attributes.Clone().(*object.Record)
 	return nil
 }
 
 // UpdateInstanceField updates a single field on an instance.
-// Returns an error if the instance doesn't exist.
-func (s *SimulationState) UpdateInstanceField(id InstanceID, fieldName string, value object.Object) error {
+// Returns an error if the instance does not exist.
+func (s *State) UpdateInstanceField(id ID, fieldName string, value object.Object) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	instance, ok := s.instances[id]
+	inst, ok := s.instances[id]
 	if !ok {
 		return fmt.Errorf("instance %d not found", id)
 	}
 
-	instance.Attributes.Set(fieldName, value)
+	inst.Attributes.Set(fieldName, value)
 	return nil
 }
 
-// DeleteInstance removes an instance and all its links.
-// Returns an error if the instance doesn't exist.
-func (s *SimulationState) DeleteInstance(id InstanceID) error {
+// DeleteInstance removes an instance and all its links and state-machine entry.
+// Returns an error if the instance does not exist.
+func (s *State) DeleteInstance(id ID) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	instance, ok := s.instances[id]
+	inst, ok := s.instances[id]
 	if !ok {
 		return fmt.Errorf("instance %d not found", id)
 	}
 
-	// Remove all links involving this instance
 	s.removeAllLinks(id)
 	s.associationLinks.RemoveInstance(id)
-
-	// Remove from state machine states
 	delete(s.stateMachineStates, id)
-
-	// Remove the instance
 	delete(s.instances, id)
 
-	// Note: We don't remove from identityRegistry to avoid ID reuse issues
-	_ = instance
+	// Keep identity registry entries to avoid ID reuse issues.
+	_ = inst
 	return nil
 }
 
-// removeAllLinks removes all links to/from an instance (must be called with lock held).
-func (s *SimulationState) removeAllLinks(id InstanceID) {
+// removeAllLinks removes all binary links to/from an instance (lock must be held).
+func (s *State) removeAllLinks(id ID) {
 	objID := evaluator.ObjectID(id)
 
-	// Get and remove all forward links
-	forwardLinks := s.links.GetAllForward(objID)
-	for _, link := range forwardLinks {
+	for _, link := range s.links.GetAllForward(objID) {
 		s.links.RemoveLink(link.AssociationKey, link.FromID, link.ToID)
 	}
-
-	// Get and remove all reverse links
-	reverseLinks := s.links.GetAllReverse(objID)
-	for _, link := range reverseLinks {
+	for _, link := range s.links.GetAllReverse(objID) {
 		s.links.RemoveLink(link.AssociationKey, link.FromID, link.ToID)
 	}
 }
 
 // InstanceCount returns the number of instances.
-func (s *SimulationState) InstanceCount() int {
+func (s *State) InstanceCount() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.instances)
 }
 
 // AllInstances returns all instances.
-func (s *SimulationState) AllInstances() []*ClassInstance {
+func (s *State) AllInstances() []*Instance {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	instances := make([]*ClassInstance, 0, len(s.instances))
-	for _, instance := range s.instances {
-		instances = append(instances, instance)
+	out := make([]*Instance, 0, len(s.instances))
+	for _, inst := range s.instances {
+		out = append(out, inst)
 	}
-	return instances
+	return out
 }
 
 // InstancesByClass returns all instances of a specific class.
-func (s *SimulationState) InstancesByClass(classKey identity.Key) []*ClassInstance {
+func (s *State) InstancesByClass(classKey identity.Key) []*Instance {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var instances []*ClassInstance
-	for _, instance := range s.instances {
-		if instance.ClassKey == classKey {
-			instances = append(instances, instance)
+	var out []*Instance
+	for _, inst := range s.instances {
+		if inst.ClassKey == classKey {
+			out = append(out, inst)
 		}
 	}
-	return instances
+	return out
 }
 
 // AddLink creates a link between two instances for an association.
 // Returns an error when the association already links the instance pair.
-func (s *SimulationState) AddLink(assocKey identity.Key, fromID, toID InstanceID) error {
+func (s *State) AddLink(assocKey identity.Key, fromID, toID ID) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -210,7 +188,7 @@ func (s *SimulationState) AddLink(assocKey identity.Key, fromID, toID InstanceID
 
 // RemoveLink removes a link between two instances.
 // Returns true if a link was removed.
-func (s *SimulationState) RemoveLink(assocKey identity.Key, fromID, toID InstanceID) bool {
+func (s *State) RemoveLink(assocKey identity.Key, fromID, toID ID) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -223,7 +201,7 @@ func (s *SimulationState) RemoveLink(assocKey identity.Key, fromID, toID Instanc
 
 // GetLinkedForward returns instance IDs linked FROM the given instance
 // for a specific association.
-func (s *SimulationState) GetLinkedForward(fromID InstanceID, assocKey identity.Key) []InstanceID {
+func (s *State) GetLinkedForward(fromID ID, assocKey identity.Key) []ID {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -232,16 +210,16 @@ func (s *SimulationState) GetLinkedForward(fromID InstanceID, assocKey identity.
 		evaluator.AssociationKey(assocKey.String()),
 	)
 
-	ids := make([]InstanceID, len(objIDs))
+	ids := make([]ID, len(objIDs))
 	for i, objID := range objIDs {
-		ids[i] = InstanceID(objID)
+		ids[i] = ID(objID)
 	}
 	return ids
 }
 
 // GetLinkedReverse returns instance IDs linked TO the given instance
 // for a specific association.
-func (s *SimulationState) GetLinkedReverse(toID InstanceID, assocKey identity.Key) []InstanceID {
+func (s *State) GetLinkedReverse(toID ID, assocKey identity.Key) []ID {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -250,18 +228,18 @@ func (s *SimulationState) GetLinkedReverse(toID InstanceID, assocKey identity.Ke
 		evaluator.AssociationKey(assocKey.String()),
 	)
 
-	ids := make([]InstanceID, len(objIDs))
+	ids := make([]ID, len(objIDs))
 	for i, objID := range objIDs {
-		ids[i] = InstanceID(objID)
+		ids[i] = ID(objID)
 	}
 	return ids
 }
 
 // CountActivePairLinks counts links for one association between a from/to instance pair.
 // Only instances still present in simulation state count; Final transitions remove rows entirely.
-func (s *SimulationState) CountActivePairLinks(
+func (s *State) CountActivePairLinks(
 	assoc model_class.Association,
-	fromID, toID InstanceID,
+	fromID, toID ID,
 ) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -287,26 +265,26 @@ func (s *SimulationState) CountActivePairLinks(
 	)
 }
 
-// LinkCount returns the total number of links.
-func (s *SimulationState) LinkCount() int {
+// LinkCount returns the total number of binary links.
+func (s *State) LinkCount() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.links.Count()
 }
 
-// Links returns the underlying link table.
-// Use with caution - this exposes internal state.
-func (s *SimulationState) Links() *evaluator.LinkTable {
+// Links returns the underlying binary link table.
+// Migration-era escape hatch; prefer State navigation methods when possible.
+func (s *State) Links() *evaluator.LinkTable {
 	return s.links
 }
 
 // AddAssociationLink materializes one host association row via an association-class instance.
 // Returns an error when the host association already links the endpoint pair.
-func (s *SimulationState) AddAssociationLink(
+func (s *State) AddAssociationLink(
 	hostAssocKey identity.Key,
-	fromEndpointID InstanceID,
-	toEndpointID InstanceID,
-	linkInstanceID InstanceID,
+	fromEndpointID ID,
+	toEndpointID ID,
+	linkInstanceID ID,
 ) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -320,33 +298,34 @@ func (s *SimulationState) AddAssociationLink(
 }
 
 // AssociationLinksFromEndpoint returns materialized host rows from a from-endpoint.
-func (s *SimulationState) AssociationLinksFromEndpoint(hostAssocKey identity.Key, fromID InstanceID) []AssociationLink {
+func (s *State) AssociationLinksFromEndpoint(hostAssocKey identity.Key, fromID ID) []AssociationLink {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.associationLinks.LinksFromEndpoint(hostAssocKey, fromID)
 }
 
 // AssociationLinksToEndpoint returns materialized host rows to a to-endpoint.
-func (s *SimulationState) AssociationLinksToEndpoint(hostAssocKey identity.Key, toID InstanceID) []AssociationLink {
+func (s *State) AssociationLinksToEndpoint(hostAssocKey identity.Key, toID ID) []AssociationLink {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.associationLinks.LinksToEndpoint(hostAssocKey, toID)
 }
 
 // AssociationLinkByInstance returns the host row for an association-class instance.
-func (s *SimulationState) AssociationLinkByInstance(linkInstanceID InstanceID) (AssociationLink, bool) {
+func (s *State) AssociationLinkByInstance(linkInstanceID ID) (AssociationLink, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.associationLinks.LinkByInstance(linkInstanceID)
 }
 
 // AssociationLinks returns the underlying association link table.
-func (s *SimulationState) AssociationLinks() *AssociationLinkTable {
+// Migration-era escape hatch; prefer State association methods when possible.
+func (s *State) AssociationLinks() *AssociationLinkTable {
 	return s.associationLinks
 }
 
 // SetStateMachineState sets the current state machine state for an instance.
-func (s *SimulationState) SetStateMachineState(id InstanceID, stateKey identity.Key) error {
+func (s *State) SetStateMachineState(id ID, stateKey identity.Key) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -360,16 +339,16 @@ func (s *SimulationState) SetStateMachineState(id InstanceID, stateKey identity.
 
 // GetStateMachineState returns the current state machine state for an instance.
 // Returns the zero value if the instance has no state machine state set.
-func (s *SimulationState) GetStateMachineState(id InstanceID) (identity.Key, bool) {
+func (s *State) GetStateMachineState(id ID) (identity.Key, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	state, ok := s.stateMachineStates[id]
-	return state, ok
+	stateKey, ok := s.stateMachineStates[id]
+	return stateKey, ok
 }
 
 // ClearStateMachineState removes the state machine state for an instance.
-func (s *SimulationState) ClearStateMachineState(id InstanceID) {
+func (s *State) ClearStateMachineState(id ID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -377,31 +356,27 @@ func (s *SimulationState) ClearStateMachineState(id InstanceID) {
 }
 
 // IdentityRegistry returns the identity registry for evaluator integration.
-func (s *SimulationState) IdentityRegistry() *evaluator.IdentityRegistry {
+func (s *State) IdentityRegistry() *evaluator.IdentityRegistry {
 	return s.identityRegistry
 }
 
 // Clone creates a deep copy of the simulation state.
-func (s *SimulationState) Clone() *SimulationState {
+func (s *State) Clone() *State {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	clone := NewSimulationState()
+	clone := NewState()
 	clone.nextID = s.nextID
 
-	// Clone instances
-	for id, instance := range s.instances {
-		clone.instances[id] = instance.Clone()
+	for id, inst := range s.instances {
+		clone.instances[id] = inst.Clone()
 	}
 
-	// Clone state machine states
 	maps.Copy(clone.stateMachineStates, s.stateMachineStates)
 
-	// Clone links by copying each link
-	for _, instance := range s.instances {
-		objID := evaluator.ObjectID(instance.ID)
-		links := s.links.GetAllForward(objID)
-		for _, link := range links {
+	for _, inst := range s.instances {
+		objID := evaluator.ObjectID(inst.ID)
+		for _, link := range s.links.GetAllForward(objID) {
 			if err := clone.links.AddLink(link.AssociationKey, link.FromID, link.ToID); err != nil {
 				panic(fmt.Sprintf("clone link table: %v", err))
 			}

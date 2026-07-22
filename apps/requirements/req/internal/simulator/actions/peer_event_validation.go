@@ -6,19 +6,19 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 type peerEventViolationContext struct {
-	OwnerInstanceID state.InstanceID
+	OwnerInstanceID instance.ID
 	OwnerClassKey   identity.Key
 	AssociationName string
 }
 
 func (e *ActionExecutor) peerEventAvailable(
 	class model_class.Class,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	eventKey identity.Key,
 ) bool {
 	if e.peerCatalog == nil {
@@ -55,7 +55,7 @@ func (e *ActionExecutor) recordPeerEventUnavailable(
 	ctx *ExecutionContext,
 	vctx peerEventViolationContext,
 	peerClass model_class.Class,
-	peerInstanceID state.InstanceID,
+	peerInstanceID instance.ID,
 	eventKey identity.Key,
 	eventName string,
 ) {
@@ -65,7 +65,7 @@ func (e *ActionExecutor) recordPeerEventUnavailable(
 func (e *ActionExecutor) peerEventUnavailableViolation(
 	vctx peerEventViolationContext,
 	peerClass model_class.Class,
-	peerInstanceID state.InstanceID,
+	peerInstanceID instance.ID,
 	eventKey identity.Key,
 	eventName string,
 ) *invariants.ViolationError {
@@ -103,7 +103,7 @@ func (e *ActionExecutor) peerEventUnavailableViolation(
 	})
 }
 
-func (e *ActionExecutor) ownerViolationContext(ownerInstanceID state.InstanceID, fallbackClassKey identity.Key, assocName string) peerEventViolationContext {
+func (e *ActionExecutor) ownerViolationContext(ownerInstanceID instance.ID, fallbackClassKey identity.Key, assocName string) peerEventViolationContext {
 	ownerClassKey := fallbackClassKey
 	if owner := e.bindingsBuilder.State().GetInstance(ownerInstanceID); owner != nil {
 		ownerClassKey = owner.ClassKey

@@ -8,9 +8,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 const maxCascadeDepth = 20
@@ -46,8 +46,8 @@ func NewCreationChainHandler(
 // HandleCreationChain fires creation events on mandatory associated classes
 // when action guarantees have not already satisfied the multiplicity.
 func (h *CreationChainHandler) HandleCreationChain(
-	createdInstanceID state.InstanceID,
-	simState *state.SimulationState,
+	createdInstanceID instance.ID,
+	simState *instance.State,
 	depth int,
 ) ([]*SimulationStep, invariants.ViolationErrors, error) {
 	if depth > maxCascadeDepth {
@@ -122,9 +122,9 @@ func (h *CreationChainHandler) HandleCreationChain(
 }
 
 func activeOutboundLinkCount(
-	simState *state.SimulationState,
+	simState *instance.State,
 	assocInfo AssociationInfo,
-	fromID state.InstanceID,
+	fromID instance.ID,
 ) uint {
 	assoc := assocInfo.Association
 	if assoc.AssociationClassKey != nil {
@@ -137,8 +137,8 @@ func (h *CreationChainHandler) createMandatoryInstance(
 	toClassInfo *ClassInfo,
 	creationEvent *model_state.Event,
 	assocInfo AssociationInfo,
-	createdInstanceID state.InstanceID,
-	simState *state.SimulationState,
+	createdInstanceID instance.ID,
+	simState *instance.State,
 	depth int,
 ) (*SimulationStep, invariants.ViolationErrors, error) {
 	params, err := h.sampleCreationEventParams(toClassInfo, creationEvent)
@@ -208,8 +208,8 @@ type acCascadeInput struct {
 	acClassInfo    *ClassInfo
 	creationEvent  *model_state.Event
 	assocInfo      AssociationInfo
-	fromInstanceID state.InstanceID
-	simState       *state.SimulationState
+	fromInstanceID instance.ID
+	simState       *instance.State
 	depth          int
 }
 
@@ -278,9 +278,9 @@ func (h *CreationChainHandler) ensureActiveToEndpointInstances(
 	creationEvent *model_state.Event,
 	toClassKey identity.Key,
 	minCount uint,
-	simState *state.SimulationState,
+	simState *instance.State,
 	depth int,
-) ([]*SimulationStep, invariants.ViolationErrors, []*state.ClassInstance, error) {
+) ([]*SimulationStep, invariants.ViolationErrors, []*instance.Instance, error) {
 	var steps []*SimulationStep
 	var violations invariants.ViolationErrors
 
@@ -302,7 +302,7 @@ func (h *CreationChainHandler) ensureActiveToEndpointInstances(
 func (h *CreationChainHandler) createPlainEndpointInstance(
 	toClassInfo *ClassInfo,
 	creationEvent *model_state.Event,
-	simState *state.SimulationState,
+	simState *instance.State,
 	depth int,
 ) (*SimulationStep, invariants.ViolationErrors, error) {
 	params, err := h.sampleCreationEventParams(toClassInfo, creationEvent)
@@ -386,8 +386,8 @@ func (h *CreationChainHandler) sampleCreationEventParams(
 
 // instanceEndpointIDs holds the from and to endpoint instances for association-class materialization.
 type instanceEndpointIDs struct {
-	FromInstanceID state.InstanceID
-	ToInstanceID   state.InstanceID
+	FromInstanceID instance.ID
+	ToInstanceID   instance.ID
 }
 
 // acCreateInput groups one association-class instance creation.
@@ -396,7 +396,7 @@ type acCreateInput struct {
 	creationEvent *model_state.Event
 	hostAssocKey  identity.Key
 	endpoints     instanceEndpointIDs
-	simState      *state.SimulationState
+	simState      *instance.State
 	depth         int
 	paramOverride map[string]object.Object
 }
@@ -469,9 +469,9 @@ func (h *CreationChainHandler) createAssociationClassInstance(
 }
 
 func (h *CreationChainHandler) activeToEndpointInstances(
-	simState *state.SimulationState,
+	simState *instance.State,
 	classKey identity.Key,
-) []*state.ClassInstance {
+) []*instance.Instance {
 	return simState.InstancesByClass(classKey)
 }
 

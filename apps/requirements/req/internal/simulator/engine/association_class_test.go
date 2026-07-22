@@ -11,6 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -158,7 +159,7 @@ func (s *AssociationClassSuite) TestCatalogIndexesAssociationClass() {
 
 func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	tcm := buildAssociationClassTestModel()
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(tcm.model)
 	registerCatalogAssociations(catalog, bb)
@@ -209,7 +210,7 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 
 func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationClass() {
 	tcm := buildAssociationClassTestModel()
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(tcm.model)
 	ge := actions.NewGuardEvaluator(bb)
@@ -239,7 +240,7 @@ func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationC
 
 func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 	tcm := buildAssociationClassTestModel()
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(tcm.model)
 	ge := actions.NewGuardEvaluator(bb)
@@ -258,7 +259,7 @@ func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 
 func (s *AssociationClassSuite) TestDeleteToNamedStateStillCountsAsLink() {
 	tcm := buildAssociationClassTestModel()
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(tcm.model)
 	registerCatalogAssociations(catalog, bb)

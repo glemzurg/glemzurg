@@ -8,8 +8,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // --- Helpers for building test models with indexes ---
@@ -57,7 +57,7 @@ func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
 	checker := NewIndexUniquenessChecker(model)
 	s.False(checker.HasIndexes())
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	violations := checker.CheckState(simState)
 	s.False(violations.HasViolations())
 }
@@ -69,7 +69,7 @@ func (s *InvariantsSuite) TestIndexCheckerSingleAttrNoConflict() {
 	checker := NewIndexUniquenessChecker(model)
 	s.True(checker.HasIndexes())
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	attrs1 := object.NewRecord()
 	attrs1.Set("tail_number", object.NewInteger(100))
@@ -89,7 +89,7 @@ func (s *InvariantsSuite) TestIndexCheckerSingleAttrConflict() {
 
 	checker := NewIndexUniquenessChecker(model)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	attrs1 := object.NewRecord()
 	attrs1.Set("tail_number", object.NewInteger(100))
@@ -115,7 +115,7 @@ func (s *InvariantsSuite) TestIndexCheckerCompositeNoConflict() {
 
 	checker := NewIndexUniquenessChecker(model)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Same email, different tenant — no conflict
 	attrs1 := object.NewRecord()
@@ -140,7 +140,7 @@ func (s *InvariantsSuite) TestIndexCheckerCompositeConflict() {
 
 	checker := NewIndexUniquenessChecker(model)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Same (email, tenant) tuple — conflict!
 	attrs1 := object.NewRecord()
@@ -168,7 +168,7 @@ func (s *InvariantsSuite) TestIndexCheckerMultipleIndexes() {
 
 	checker := NewIndexUniquenessChecker(model)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Index 1 OK (different tail_numbers), Index 2 violated (same callsign)
 	attrs1 := object.NewRecord()
@@ -194,7 +194,7 @@ func (s *InvariantsSuite) TestIndexCheckerNilValuesDuplicate() {
 
 	checker := NewIndexUniquenessChecker(model)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Unset and explicit simulator NULL share the same index slot.
 	attrs1 := object.NewRecord()
@@ -221,7 +221,7 @@ func (s *InvariantsSuite) TestIndexCheckerNullableIndexAllowsOneNullAndDistinctV
 	))
 	model, classKey := indexTestModel([]model_class.Attribute{codeAttr})
 	checker := NewIndexUniquenessChecker(model)
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	nullJurisdiction := object.NewRecord()
 	nullJurisdiction.Set("jurisdiction_code", object.Null())
@@ -249,7 +249,7 @@ func (s *InvariantsSuite) TestIndexCheckerNullableIndexRejectsSecondNull() {
 	))
 	model, classKey := indexTestModel([]model_class.Attribute{codeAttr})
 	checker := NewIndexUniquenessChecker(model)
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	first := object.NewRecord()
 	first.Set("jurisdiction_code", object.Null())
@@ -286,7 +286,7 @@ func (s *InvariantsSuite) TestIndexCheckerUsesAttributeFieldKeyNotDisplayName() 
 	s.Require().Len(info.Indexes, 1)
 	s.Equal([]string{"abbr"}, info.Indexes[0].AttrNames)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("abbr", object.NewString("USD"))
 	simState.CreateInstance(classKey, attrs)
@@ -306,7 +306,7 @@ func (s *InvariantsSuite) TestIndexCheckerMixedTypesNotEqual() {
 
 	checker := NewIndexUniquenessChecker(model)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	attrs1 := object.NewRecord()
 	attrs1.Set("id", object.NewInteger(42))

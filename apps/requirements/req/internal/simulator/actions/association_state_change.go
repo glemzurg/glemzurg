@@ -7,13 +7,13 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 func (e *ActionExecutor) tryApplyAssociationStateChangeGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
@@ -63,8 +63,8 @@ func (e *ActionExecutor) tryApplyAssociationStateChangeGuarantee(
 
 // plainAssocLinkWork is the context for establishing plain association links from a state_change RHS set.
 type plainAssocLinkWork struct {
-	simState     *state.SimulationState
-	ownerID      state.InstanceID
+	simState     *instance.State
+	ownerID      instance.ID
 	assocKey     identity.Key
 	assoc        model_class.Association
 	reverse      bool
@@ -73,18 +73,18 @@ type plainAssocLinkWork struct {
 }
 
 func associationPeersRemovedFromSet(
-	simState *state.SimulationState,
-	ownerID state.InstanceID,
+	simState *instance.State,
+	ownerID instance.ID,
 	assoc model_class.Association,
 	reverse bool,
 	peerClassKey identity.Key,
 	newSet *object.Set,
-) []state.InstanceID {
+) []instance.ID {
 	linked := linkedPeersForDirection(simState, ownerID, assoc, reverse)
 	if len(linked) == 0 {
 		return nil
 	}
-	var removed []state.InstanceID
+	var removed []instance.ID
 	for _, peerID := range linked {
 		if peerInRHSSet(simState, peerClassKey, peerID, newSet) {
 			continue
@@ -95,9 +95,9 @@ func associationPeersRemovedFromSet(
 }
 
 func peerInRHSSet(
-	simState *state.SimulationState,
+	simState *instance.State,
 	peerClassKey identity.Key,
-	peerID state.InstanceID,
+	peerID instance.ID,
 	newSet *object.Set,
 ) bool {
 	peerInstance := simState.GetInstance(peerID)
@@ -116,11 +116,11 @@ func peerInRHSSet(
 }
 
 func linkedPeersForDirection(
-	simState *state.SimulationState,
-	ownerID state.InstanceID,
+	simState *instance.State,
+	ownerID instance.ID,
 	assoc model_class.Association,
 	reverse bool,
-) []state.InstanceID {
+) []instance.ID {
 	if reverse {
 		// Owner is the to-endpoint; peers are from-endpoints.
 		return simState.GetLinkedReverse(ownerID, assoc.Key)
@@ -131,7 +131,7 @@ func linkedPeersForDirection(
 // addMissingPlainAssociationLinks links each RHS set element that identifies a live peer.
 // Forward: owner is from-end, peers are to-end. Reverse: owner is to-end, peers are from-end.
 func (e *ActionExecutor) addMissingPlainAssociationLinks(work plainAssocLinkWork) error {
-	linked := make(map[state.InstanceID]bool)
+	linked := make(map[instance.ID]bool)
 	for _, peerID := range linkedPeersForDirection(work.simState, work.ownerID, work.assoc, work.reverse) {
 		linked[peerID] = true
 	}

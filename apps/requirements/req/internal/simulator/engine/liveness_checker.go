@@ -7,9 +7,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // LivenessChecker performs post-simulation coverage analysis across the whole
@@ -122,7 +122,7 @@ func collectWrittenAttributes(steps []*SimulationStep, out map[identity.Key]map[
 }
 
 // recordPrimedWrites records attribute subKeys from primed assignments for a class.
-func recordPrimedWrites(classKey identity.Key, assignments map[state.InstanceID]map[string]object.Object, out map[identity.Key]map[string]bool) {
+func recordPrimedWrites(classKey identity.Key, assignments map[instance.ID]map[string]object.Object, out map[identity.Key]map[string]bool) {
 	for _, fields := range assignments {
 		for fieldName := range fields {
 			if out[classKey] == nil {

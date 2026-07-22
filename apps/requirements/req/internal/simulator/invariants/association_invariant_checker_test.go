@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -50,7 +51,7 @@ func (s *AssociationInvariantCheckerSuite) buildChecker() (*AssociationInvariant
 func (s *AssociationInvariantCheckerSuite) TestPassesWhenInvariantHolds() {
 	checker, partnerKey, jurisdictionKey, assocKey := s.buildChecker()
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	j1 := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	j1.Attributes.Set("Code", object.NewString("US"))
@@ -88,7 +89,7 @@ func (s *AssociationInvariantCheckerSuite) TestFailsWhenAssessmentIsFalse() {
 	checker, err := NewAssociationInvariantChecker(model)
 	s.Require().NoError(err)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	simState.CreateInstance(partnerKey, object.NewRecord())
 
 	bb := state.NewBindingsBuilder(simState)

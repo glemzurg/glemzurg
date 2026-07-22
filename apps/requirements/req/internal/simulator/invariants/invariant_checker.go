@@ -10,6 +10,7 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -240,7 +241,7 @@ func (c *InvariantChecker) loadAttributeInvariants(class model_class.Class) erro
 // CheckModelInvariants evaluates all model-level invariants against the current state.
 // Returns violations for any invariant that evaluates to FALSE.
 func (c *InvariantChecker) CheckModelInvariants(
-	_ *state.SimulationState,
+	_ *instance.State,
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
 	var violations ViolationErrors
@@ -301,7 +302,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 
 // CheckClassInvariants evaluates class-level invariants for every instance in state.
 func (c *InvariantChecker) CheckClassInvariants(
-	simState *state.SimulationState,
+	simState *instance.State,
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
 	var violations ViolationErrors
@@ -318,7 +319,7 @@ func (c *InvariantChecker) CheckClassInvariants(
 }
 
 func (c *InvariantChecker) checkClassInvariantsForInstance(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	items []parsedClassInvariantItem,
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
@@ -371,7 +372,7 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 // CheckAttributeInvariants evaluates attribute invariants for every instance in state.
 // Nullable attributes with no value skip invariant checks.
 func (c *InvariantChecker) CheckAttributeInvariants(
-	simState *state.SimulationState,
+	simState *instance.State,
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
 	var violations ViolationErrors
@@ -398,14 +399,14 @@ func attributeNullableByFieldKey(attrs []model_class.Attribute) map[string]bool 
 
 func skipNullableUnsetAttribute(
 	nullableByFieldKey map[string]bool,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	attributeFieldKey string,
 ) bool {
 	return nullableByFieldKey[attributeFieldKey] && object.IsNull(instance.GetAttribute(attributeFieldKey))
 }
 
 func (c *InvariantChecker) checkAttributeInvariantsForInstance(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	items []parsedAttributeInvariantItem,
 	nullableByFieldKey map[string]bool,
 	bindingsBuilder *state.BindingsBuilder,
@@ -431,7 +432,7 @@ func (c *InvariantChecker) checkAttributeInvariantsForInstance(
 }
 
 func (c *InvariantChecker) evalAttributeInvariantLet(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	item parsedAttributeInvariantItem,
 	bindings *evaluator.Bindings,
 ) ViolationErrors {
@@ -447,7 +448,7 @@ func (c *InvariantChecker) evalAttributeInvariantLet(
 }
 
 func (c *InvariantChecker) evalAttributeInvariantAssessment(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	item parsedAttributeInvariantItem,
 	bindings *evaluator.Bindings,
 ) ViolationErrors {
@@ -480,7 +481,7 @@ func invariantAssessmentFailureMessage(value object.Object) string {
 func (c *InvariantChecker) CheckActionPostConditions(
 	actionKey identity.Key,
 	actionName string,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	bindingsBuilder *state.BindingsBuilder,
 	additionalBindings map[string]object.Object,
 ) ViolationErrors {
@@ -542,7 +543,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 func (c *InvariantChecker) CheckQueryPostConditions(
 	queryKey identity.Key,
 	queryName string,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	bindingsBuilder *state.BindingsBuilder,
 	additionalBindings map[string]object.Object,
 ) ViolationErrors {
@@ -604,7 +605,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 //
 // This is typically called after each state change.
 func (c *InvariantChecker) CheckAllInvariants(
-	simState *state.SimulationState,
+	simState *instance.State,
 	bindingsBuilder *state.BindingsBuilder,
 	dataTypeChecker *DataTypeChecker,
 	indexChecker *IndexUniquenessChecker,

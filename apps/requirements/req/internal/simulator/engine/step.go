@@ -3,9 +3,9 @@ package engine
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // StepKind describes the type of simulation step.
@@ -55,7 +55,7 @@ type SimulationStep struct {
 	EventName string
 
 	// InstanceID is the instance that was acted upon (assigned after creation).
-	InstanceID state.InstanceID
+	InstanceID instance.ID
 
 	// FromState is the state name before the transition (empty for creation).
 	FromState string

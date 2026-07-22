@@ -8,9 +8,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 type associationSetMapTarget struct {
@@ -21,7 +21,7 @@ type associationSetMapTarget struct {
 
 func (e *ActionExecutor) tryQueueAssociationSetMapGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
@@ -35,7 +35,7 @@ func (e *ActionExecutor) tryQueueAssociationSetMapGuarantee(
 
 func (e *ActionExecutor) tryQueueAssociationAddOrUpdateGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
@@ -88,7 +88,7 @@ func (e *ActionExecutor) tryQueueAssociationAddOrUpdateGuarantee(
 
 func (e *ActionExecutor) queueAssociationSetMap(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	setMap *me.SetMap,
 	bindings *evaluator.Bindings,
@@ -129,7 +129,7 @@ func (e *ActionExecutor) queueAssociationSetMap(
 
 func (e *ActionExecutor) resolveSetMapPeerEvent(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	mapTarget *associationSetMapTarget,
 	eventCall *me.EventCall,
@@ -154,7 +154,7 @@ func (e *ActionExecutor) resolveSetMapPeerEvent(
 }
 
 func (e *ActionExecutor) resolveAssociationSetMapTarget(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	setMap *me.SetMap,
 ) (*associationSetMapTarget, *me.EventCall, error) {
@@ -188,11 +188,11 @@ func (e *ActionExecutor) resolveAssociationSetMapTarget(
 
 func (e *ActionExecutor) queueSetMapPeerUpdates(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	mapTarget *associationSetMapTarget,
 	event model_state.Event,
 	params map[string]object.Object,
-	linked []state.InstanceID,
+	linked []instance.ID,
 ) {
 	vctx := peerEventViolationContext{
 		OwnerInstanceID: instance.ID,
@@ -224,7 +224,7 @@ func (e *ActionExecutor) queueSetMapPeerUpdates(
 
 func (e *ActionExecutor) recordSetMapParamBindingError(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	mapTarget *associationSetMapTarget,
 	event model_state.Event,
 	err error,
@@ -290,7 +290,7 @@ func (e *ActionExecutor) executePeerUpdateTransition(
 	pu DeferredPeerUpdate,
 	toClass model_class.Class,
 	event model_state.Event,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 ) error {
 	result, err := e.ExecuteTransition(toClass, event, instance, pu.Params, CreationLinkSource{}, nil)
 	if err != nil {
@@ -345,7 +345,7 @@ type associationClassDestroyWork struct {
 	toClass        model_class.Class
 	assoc          model_class.Association
 	acClass        model_class.Class
-	linkInstanceID state.InstanceID
+	linkInstanceID instance.ID
 }
 
 func (e *ActionExecutor) fireAssociationClassDestroy(
@@ -353,7 +353,7 @@ func (e *ActionExecutor) fireAssociationClassDestroy(
 	pu DeferredPeerUpdate,
 	toClass model_class.Class,
 	assoc model_class.Association,
-	link state.AssociationLink,
+	link instance.AssociationLink,
 ) error {
 	acClass, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey)
 	if !ok {
@@ -388,7 +388,7 @@ func (e *ActionExecutor) executeAssociationClassDestroy(
 	ctx *ExecutionContext,
 	work associationClassDestroyWork,
 	deleteEvent model_state.Event,
-	acInstance *state.ClassInstance,
+	acInstance *instance.Instance,
 ) error {
 	if !e.peerEventAvailable(work.acClass, acInstance, deleteEvent.Key) {
 		work.recordUnavailable(ctx, e, deleteEvent.Key, deleteEvent.Name)

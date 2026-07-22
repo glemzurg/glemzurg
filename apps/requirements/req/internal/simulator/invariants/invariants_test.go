@@ -13,6 +13,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -211,7 +212,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerRequiredAttribute() {
 	s.False(violations.HasViolations())
 
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Create an instance without status (which is required)
 	// Not setting status means Get("status") returns nil
@@ -309,7 +310,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSkipsDerivedAttributes() {
 	s.Require().NotNil(checker)
 	s.False(setupViolations.HasViolations())
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("jurisdiction_code", object.NewString("US-NY"))
 	// social_only deliberately absent from storage — derived, required in the model.
@@ -331,7 +332,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanConstraint() {
 	s.False(violations.HasViolations())
 
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Create an instance with amount outside the allowed range
 	attrs := object.NewRecord()
@@ -361,7 +362,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerEnumConstraint() {
 	s.False(violations.HasViolations())
 
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Create an instance with status not in the enumeration
 	attrs := object.NewRecord()
@@ -391,7 +392,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerValidInstance() {
 	s.False(violations.HasViolations())
 
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Create a valid instance
 	attrs := object.NewRecord()
@@ -434,7 +435,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerMissingAttributeTypeSpec() {
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("abbr", object.NewString("USD"))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -465,7 +466,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerUnparsedAttributeOnInstance() {
 	checker, setupViolations := NewDataTypeChecker(&model)
 	s.Require().Len(setupViolations, 1)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("bad", object.NewString("value"))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -564,7 +565,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDateTimeTypeSpecMismatch() {
 	checker, setupViolations := NewDataTypeChecker(&model)
 	s.Empty(setupViolations)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("when", object.NewNatural(42))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -596,7 +597,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDateTimeConstraint() {
 	checker, setupViolations := NewDataTypeChecker(&model)
 	s.Empty(setupViolations)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("when", object.NewNatural(42))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -623,7 +624,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerNullableAttribute() {
 	s.False(violations.HasViolations())
 
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Create an instance with nil name (which is nullable - OK)
 	attrs := object.NewRecord()
@@ -722,7 +723,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 	checker, err := NewInvariantChecker(model)
 	s.Require().NoError(err)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
 	violations := checker.CheckModelInvariants(simState, bindingsBuilder)
@@ -740,7 +741,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	checker, err := NewInvariantChecker(&model)
 	s.Require().NoError(err)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
 	violations := checker.CheckModelInvariants(simState, bindingsBuilder)
@@ -779,7 +780,7 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 	s.False(dtViolations.HasViolations())
 
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Create an invalid instance
 	attrs := object.NewRecord()
@@ -847,7 +848,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	// Test value at lower bound (should fail with open)
 	attrs1 := object.NewRecord()
@@ -915,7 +916,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerUsesAttributeFieldKey() {
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	attrs := object.NewRecord()
 	attrs.Set("name", object.NewString("UK"))
 	attrs.Set("social_only", object.NewBoolean(false))
@@ -966,7 +967,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerNormalizesEmptyStringToNull() {
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 
 	emptyNameAttrs := object.NewRecord()
 	emptyNameAttrs.Set("name", object.NewString(""))
@@ -1037,7 +1038,7 @@ func (s *InvariantsSuite) TestCheckAttributeInvariantSkipsWhenNullableAndUnset()
 	checker, err := NewInvariantChecker(&model)
 	s.Require().NoError(err)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	unsetAttrs := object.NewRecord()
 	unsetAttrs.Set("status", object.NewString("active"))
 	unsetAttrs.Set("amount", object.NewInteger(1))
@@ -1051,7 +1052,7 @@ func (s *InvariantsSuite) TestCheckAttributeInvariantSkipsWhenNullableAndUnset()
 	violatingAttrs.Set("status", object.NewString("active"))
 	violatingAttrs.Set("amount", object.NewInteger(1))
 	violatingAttrs.Set("score", object.NewInteger(0))
-	simState2 := state.NewSimulationState()
+	simState2 := instance.NewState()
 	simState2.CreateInstance(classKey, violatingAttrs)
 
 	violations = checker.CheckAttributeInvariants(simState2, state.NewBindingsBuilder(simState2))

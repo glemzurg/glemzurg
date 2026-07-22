@@ -8,8 +8,8 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 type destroyGuaranteeWork struct {
@@ -17,12 +17,12 @@ type destroyGuaranteeWork struct {
 	selection *me.SetFilter
 	eventCall *me.EventCall
 	event     model_state.Event
-	linked    []state.InstanceID
+	linked    []instance.ID
 }
 
 func (e *ActionExecutor) tryQueueAssociationDestroyGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	guar model_logic.Logic,
 	bindings *evaluator.Bindings,
 ) (bool, error) {
@@ -41,7 +41,7 @@ func (e *ActionExecutor) tryQueueAssociationDestroyGuarantee(
 
 func (e *ActionExecutor) prepareDestroyGuaranteeWork(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	guar model_logic.Logic,
 	bindings *evaluator.Bindings,
 ) (*destroyGuaranteeWork, bool, error) {
@@ -88,7 +88,7 @@ func (e *ActionExecutor) prepareDestroyGuaranteeWork(
 }
 
 func (e *ActionExecutor) resolveDestroyGuaranteeTarget(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	assocRef *me.AssociationRef,
 	eventCall *me.EventCall,
@@ -123,7 +123,7 @@ func (e *ActionExecutor) resolveDestroyGuaranteeTarget(
 
 func (e *ActionExecutor) queueDestroyGuaranteePeers(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	work *destroyGuaranteeWork,
 	bindings *evaluator.Bindings,
 ) {
@@ -139,11 +139,11 @@ func (e *ActionExecutor) queueDestroyGuaranteePeers(
 
 func (e *ActionExecutor) queueDestroyGuaranteePeer(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	work *destroyGuaranteeWork,
 	bindings *evaluator.Bindings,
-	peerID state.InstanceID,
-	peerInstance *state.ClassInstance,
+	peerID instance.ID,
+	peerInstance *instance.Instance,
 ) {
 	if !destroyGuaranteeSelectsPeer(work.selection, peerInstance.Attributes, bindings) {
 		return
@@ -168,7 +168,7 @@ type destroyGuaranteeUnavailableWork struct {
 	mapTarget *associationSetMapTarget
 	selection *me.SetFilter
 	eventCall *me.EventCall
-	removed   []state.InstanceID
+	removed   []instance.ID
 	bindings  *evaluator.Bindings
 }
 
@@ -177,7 +177,7 @@ type destroyGuaranteeUnavailableWork struct {
 // links for those peers are retained until _destroy succeeds.
 func (e *ActionExecutor) recordDestroyGuaranteeUnavailable(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	work destroyGuaranteeUnavailableWork,
 ) {
 	simState := e.bindingsBuilder.State()
@@ -230,11 +230,11 @@ func destroyGuaranteeSelectsPeer(
 
 func (e *ActionExecutor) queueDestroyPeerUpdate(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	mapTarget *associationSetMapTarget,
 	event model_state.Event,
 	params map[string]object.Object,
-	peerID state.InstanceID,
+	peerID instance.ID,
 ) {
 	vctx := peerEventViolationContext{
 		OwnerInstanceID: instance.ID,

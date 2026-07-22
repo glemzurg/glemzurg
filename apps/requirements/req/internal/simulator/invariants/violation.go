@@ -8,7 +8,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 // ViolationType indicates what kind of invariant was violated.
@@ -171,7 +171,7 @@ type ViolationError struct {
 
 	// InstanceID is the ID of the instance where the violation occurred.
 	// Zero for model-level violations.
-	InstanceID state.InstanceID
+	InstanceID instance.ID
 
 	// ClassKey identifies the class of the instance (if applicable).
 	ClassKey identity.Key
@@ -219,7 +219,7 @@ func NewModelInvariantViolation(index int, expression string, message string) *V
 // NewClassInvariantViolation creates a violation for a failed class-level invariant.
 func NewClassInvariantViolation(
 	classKey identity.Key,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	index int,
 	expression string,
 	message string,
@@ -237,7 +237,7 @@ func NewClassInvariantViolation(
 // NewAttributeInvariantViolation creates a violation for a failed attribute invariant.
 func NewAttributeInvariantViolation(
 	classKey identity.Key,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	attributeName string,
 	invariantIndex int,
 	expression string,
@@ -258,7 +258,7 @@ func NewAttributeInvariantViolation(
 func NewAssociationInvariantViolation(
 	associationKey identity.Key,
 	associationName string,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	invariantIndex int,
 	expression string,
 	message string,
@@ -280,7 +280,7 @@ func NewParameterInvariantViolation(
 	ownerName string,
 	invariantIndex int,
 	expression string,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	message string,
 ) *ViolationError {
 	return &ViolationError{
@@ -300,7 +300,7 @@ func NewActionRequiresViolation(
 	actionName string,
 	requireIndex int,
 	expression string,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	message string,
 ) *ViolationError {
 	return &ViolationError{
@@ -320,7 +320,7 @@ func NewActionGuaranteeViolation(
 	actionName string,
 	guaranteeIndex int,
 	expression string,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	message string,
 ) *ViolationError {
 	return &ViolationError{
@@ -340,7 +340,7 @@ func NewQueryGuaranteeViolation(
 	queryName string,
 	guaranteeIndex int,
 	expression string,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	message string,
 ) *ViolationError {
 	return &ViolationError{
@@ -356,7 +356,7 @@ func NewQueryGuaranteeViolation(
 
 // NewRequiredAttributeViolation creates a violation for a missing required attribute.
 func NewRequiredAttributeViolation(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attributeName string,
 ) *ViolationError {
@@ -371,7 +371,7 @@ func NewRequiredAttributeViolation(
 
 // NewSpanConstraintViolation creates a violation for a value outside its allowed range.
 func NewSpanConstraintViolation(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attributeName string,
 	actualValue string,
@@ -390,7 +390,7 @@ func NewSpanConstraintViolation(
 
 // NewEnumConstraintViolation creates a violation for a value not in the allowed enumeration.
 func NewEnumConstraintViolation(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attributeName string,
 	actualValue string,
@@ -409,7 +409,7 @@ func NewEnumConstraintViolation(
 
 // NewCollectionSizeViolation creates a violation for a collection with invalid size.
 func NewCollectionSizeViolation(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attributeName string,
 	actualSize int,
@@ -453,7 +453,7 @@ func NewUnparsedDataTypeViolation(classKey identity.Key, attributeName string, d
 // NewUnparsedAttributeDataTypeViolation creates an instance-level violation for an attribute
 // value whose data type rules did not parse.
 func NewUnparsedAttributeDataTypeViolation(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attributeName string,
 	dataTypeRules string,
@@ -481,7 +481,7 @@ func NewUnparsedParameterDataTypeViolation(
 	sourceKind string,
 	parameterName string,
 	dataTypeRules string,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 ) *ViolationError {
 	return &ViolationError{
@@ -503,7 +503,7 @@ func NewMissingParameterTypeSpecViolation(
 	sourceName string,
 	sourceKind string,
 	parameterName string,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 ) *ViolationError {
 	return &ViolationError{
@@ -520,7 +520,7 @@ func NewMissingParameterTypeSpecViolation(
 // NewMissingAttributeTypeSpecViolation creates a violation when an instance holds a value
 // for an attribute that declares no TLA+ type_spec.
 func NewMissingAttributeTypeSpecViolation(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attributeName string,
 ) *ViolationError {
@@ -535,7 +535,7 @@ func NewMissingAttributeTypeSpecViolation(
 
 // NewDateTimeTypeSpecMismatchAttributeViolation reports a datetime attribute whose type_spec is not Nat.
 func NewDateTimeTypeSpecMismatchAttributeViolation(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attributeName string,
 	actualTypeSpec string,
@@ -557,7 +557,7 @@ type DateTimeTypeSpecMismatchParameterParams struct {
 	SourceKind     string
 	ParameterName  string
 	ActualTypeSpec string
-	InstanceID     state.InstanceID
+	InstanceID     instance.ID
 	ClassKey       identity.Key
 }
 
@@ -578,7 +578,7 @@ func NewDateTimeTypeSpecMismatchParameterViolation(params DateTimeTypeSpecMismat
 
 // NewDateTimeConstraintViolation creates a violation for a datetime value outside [1, 100000000].
 func NewDateTimeConstraintViolation(
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	classKey identity.Key,
 	attributeName string,
 	actualValue string,
@@ -597,8 +597,8 @@ func NewDateTimeConstraintViolation(
 
 // NewIndexUniquenessViolation creates a violation for duplicate index tuples.
 func NewIndexUniquenessViolation(
-	instanceID state.InstanceID,
-	conflictingInstanceID state.InstanceID,
+	instanceID instance.ID,
+	conflictingInstanceID instance.ID,
 	classKey identity.Key,
 	indexNum uint,
 	attrNames []string,
@@ -618,7 +618,7 @@ func NewSafetyRuleViolation(
 	actionName string,
 	ruleIndex int,
 	expression string,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	message string,
 ) *ViolationError {
 	return &ViolationError{
@@ -634,7 +634,7 @@ func NewSafetyRuleViolation(
 
 // MultiplicityViolationParams holds the parameters for creating a multiplicity violation.
 type MultiplicityViolationParams struct {
-	InstanceID      state.InstanceID
+	InstanceID      instance.ID
 	ClassKey        identity.Key
 	AssociationName string
 	Direction       string
@@ -657,8 +657,8 @@ func NewMultiplicityViolation(params MultiplicityViolationParams) *ViolationErro
 // AssociationUniquenessViolationParams holds parameters for a per-pair association uniqueness failure.
 type AssociationUniquenessViolationParams struct {
 	AssociationName string
-	FromInstanceID  state.InstanceID
-	ToInstanceID    state.InstanceID
+	FromInstanceID  instance.ID
+	ToInstanceID    instance.ID
 	ActualCount     int
 	RequiredMin     uint
 	RequiredMax     uint
@@ -683,8 +683,8 @@ func NewAssociationUniquenessViolation(params AssociationUniquenessViolationPara
 // AssociationDuplicateLinkViolationParams holds parameters for a duplicate instance-pair link failure.
 type AssociationDuplicateLinkViolationParams struct {
 	AssociationName string
-	FromInstanceID  state.InstanceID
-	ToInstanceID    state.InstanceID
+	FromInstanceID  instance.ID
+	ToInstanceID    instance.ID
 	ActualCount     int
 }
 
@@ -786,10 +786,10 @@ func NewLivenessParameterSimulationNotUsedViolation(
 // PeerEventUnavailableParams holds parameters for a peer event unavailable violation.
 type PeerEventUnavailableParams struct {
 	OwnerClassKey   identity.Key
-	OwnerInstanceID state.InstanceID
+	OwnerInstanceID instance.ID
 	AssociationName string
 	PeerClassKey    identity.Key
-	PeerInstanceID  state.InstanceID
+	PeerInstanceID  instance.ID
 	EventKey        identity.Key
 	EventName       string
 	Message         string
@@ -799,7 +799,7 @@ type PeerEventUnavailableParams struct {
 // is evaluated but depends on classes outside the simulation surface.
 func NewSurfaceOutOfScopeViolation(
 	classKey identity.Key,
-	instanceID state.InstanceID,
+	instanceID instance.ID,
 	memberName, reason string,
 ) *ViolationError {
 	return &ViolationError{

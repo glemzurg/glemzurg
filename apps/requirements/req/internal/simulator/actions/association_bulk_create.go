@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -29,7 +30,7 @@ import (
 // class creation event is used for materialization when the call is a system creation.
 func (e *ActionExecutor) tryQueueAssociationBulkCreateFromSet(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
@@ -58,7 +59,7 @@ type associationBulkCreatePlan struct {
 }
 
 func (e *ActionExecutor) matchAssociationBulkCreate(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 ) (associationBulkCreatePlan, bool) {
@@ -111,16 +112,16 @@ func evalBulkCreateDomain(
 // bulkCreateQueueEnv holds fixed context while iterating domain rows.
 type bulkCreateQueueEnv struct {
 	ctx      *ExecutionContext
-	instance *state.ClassInstance
+	instance *instance.Instance
 	target   string
 	plan     associationBulkCreatePlan
-	simState *state.SimulationState
+	simState *instance.State
 	bindings *evaluator.Bindings
 }
 
 func (e *ActionExecutor) queueBulkCreatePeerCreations(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	plan associationBulkCreatePlan,
 	domainSet *object.Set,
@@ -187,10 +188,10 @@ func isSystemCreationEventCall(eventCall *me.EventCall) bool {
 // discoverToEndpointFromRow finds a live to-class instance referenced by a bulk-create row.
 // Prefers class-extent elements [id |-> N, data |-> …]; falls back to structural data match.
 func discoverToEndpointFromRow(
-	simState *state.SimulationState,
+	simState *instance.State,
 	toClassKey identity.Key,
 	row *object.Record,
-) (state.InstanceID, bool) {
+) (instance.ID, bool) {
 	if id, ok := liveInstanceIDFromExtent(simState, toClassKey, row); ok {
 		return id, true
 	}
@@ -211,10 +212,10 @@ func discoverToEndpointFromRow(
 }
 
 func liveInstanceIDFromExtent(
-	simState *state.SimulationState,
+	simState *instance.State,
 	toClassKey identity.Key,
 	rec *object.Record,
-) (state.InstanceID, bool) {
+) (instance.ID, bool) {
 	id, ok := state.InstanceIDFromExtentElement(rec)
 	if !ok {
 		return 0, false
@@ -227,10 +228,10 @@ func liveInstanceIDFromExtent(
 }
 
 func matchLiveInstanceByData(
-	simState *state.SimulationState,
+	simState *instance.State,
 	toClassKey identity.Key,
 	rec *object.Record,
-) (state.InstanceID, bool) {
+) (instance.ID, bool) {
 	data := state.DataFromExtentElement(rec)
 	for _, inst := range simState.InstancesByClass(toClassKey) {
 		if inst.Attributes == rec || inst.Attributes == data ||

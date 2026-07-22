@@ -8,7 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 type associationUniquenessBinding struct {
@@ -54,7 +54,7 @@ func NewAssociationUniquenessChecker(model *core.Model) *AssociationUniquenessCh
 }
 
 // CheckState validates all association uniqueness rules.
-func (c *AssociationUniquenessChecker) CheckState(simState *state.SimulationState) ViolationErrors {
+func (c *AssociationUniquenessChecker) CheckState(simState *instance.State) ViolationErrors {
 	var violations ViolationErrors
 	for _, binding := range c.bindings {
 		violations = append(violations, c.checkBinding(simState, binding)...)
@@ -63,7 +63,7 @@ func (c *AssociationUniquenessChecker) CheckState(simState *state.SimulationStat
 }
 
 func (c *AssociationUniquenessChecker) checkBinding(
-	simState *state.SimulationState,
+	simState *instance.State,
 	binding associationUniquenessBinding,
 ) ViolationErrors {
 	links := collectAssociationLinks(simState, binding.association)
@@ -108,12 +108,12 @@ func (c *AssociationUniquenessChecker) checkBinding(
 }
 
 type associationLinkEndpoints struct {
-	fromID state.InstanceID
-	toID   state.InstanceID
+	fromID instance.ID
+	toID   instance.ID
 }
 
 func collectAssociationLinks(
-	simState *state.SimulationState,
+	simState *instance.State,
 	assoc model_class.Association,
 ) []associationLinkEndpoints {
 	if assoc.AssociationClassKey != nil {
@@ -142,7 +142,7 @@ func collectAssociationLinks(
 			}
 			links = append(links, associationLinkEndpoints{
 				fromID: inst.ID,
-				toID:   state.InstanceID(link.ToID),
+				toID:   instance.ID(link.ToID),
 			})
 		}
 	}
@@ -163,7 +163,7 @@ func associationUniquenessPartitionKey(uniqueness model_class.AssociationUniquen
 }
 
 func associationUniquenessTupleKey(
-	fromInst, toInst *state.ClassInstance,
+	fromInst, toInst *instance.Instance,
 	uniqueness model_class.AssociationUniqueness,
 ) string {
 	parts := make([]string, 0, len(uniqueness.FromAttributeKeys)+len(uniqueness.ToAttributeKeys))

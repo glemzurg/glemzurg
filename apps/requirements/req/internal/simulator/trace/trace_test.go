@@ -13,9 +13,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -108,7 +108,7 @@ func (s *TraceSuite) TestNormalTransitionStep() {
 					ToState:    "Closed",
 					ActionResult: &actions.ActionResult{
 						InstanceID: 1,
-						PrimedAssignments: map[state.InstanceID]map[string]object.Object{
+						PrimedAssignments: map[instance.ID]map[string]object.Object{
 							1: {
 								"amount": object.NewInteger(42),
 							},
@@ -145,7 +145,7 @@ func (s *TraceSuite) TestDoActionStep() {
 				InstanceID: 1,
 				DoActionResult: &actions.ActionResult{
 					InstanceID: 1,
-					PrimedAssignments: map[state.InstanceID]map[string]object.Object{
+					PrimedAssignments: map[instance.ID]map[string]object.Object{
 						1: {
 							"counter": object.NewInteger(5),
 						},
@@ -360,7 +360,7 @@ func (s *TraceSuite) TestStepWithParameters() {
 }
 
 func (s *TraceSuite) TestFinalState() {
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 
 	attrs := object.NewRecord()
@@ -420,7 +420,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 
 	catalog := engine.NewClassCatalog(&model)
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState()
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	jurisdiction := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	linkInst := simState.CreateInstance(linkDefKey, object.NewRecord())
