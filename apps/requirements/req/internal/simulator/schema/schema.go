@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"slices"
+	"maps"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -18,39 +18,24 @@ import (
 // Schema is immutable for the run: do not mutate the underlying model after
 // NewFromModel, or indexes will disagree with the model.
 //
+// Class and association values are [model_class.Class] and
+// [model_class.Association] from the model tree — not parallel schema DTOs.
+//
 // Construct via [NewEmpty] or [NewFromModel].
 type Schema struct {
 	// model is the authoritative static model for this run (may be nil for empty schema).
 	model *core.Model
 
-	// Indexed views derived once from model for hot lookups.
-	classes      map[identity.Key]Class
-	associations map[identity.Key]Association
-}
-
-// Class is a run-facing view of one in-scope class (not the full model_class.Class).
-type Class struct {
-	Key        identity.Key
-	Name       string
-	Attributes []model_class.Attribute
-}
-
-// Association is a run-facing view of one class association.
-type Association struct {
-	Key                 identity.Key
-	Name                string
-	FromClassKey        identity.Key
-	ToClassKey          identity.Key
-	AssociationClassKey *identity.Key
-	FromMultiplicity    model_class.Multiplicity
-	ToMultiplicity      model_class.Multiplicity
+	// Indexed views of model types for hot lookups (same values as in model).
+	classes      map[identity.Key]model_class.Class
+	associations map[identity.Key]model_class.Association
 }
 
 // NewEmpty returns a schema with no model (tests / bootstrap).
 func NewEmpty() *Schema {
 	return &Schema{
-		classes:      make(map[identity.Key]Class),
-		associations: make(map[identity.Key]Association),
+		classes:      make(map[identity.Key]model_class.Class),
+		associations: make(map[identity.Key]model_class.Association),
 	}
 }
 
@@ -69,40 +54,18 @@ func NewFromModel(model *core.Model) *Schema {
 
 // reindex rebuilds lookup maps from the owned model.
 func (s *Schema) reindex() {
-	s.classes = make(map[identity.Key]Class)
-	s.associations = make(map[identity.Key]Association)
+	s.classes = make(map[identity.Key]model_class.Class)
+	s.associations = make(map[identity.Key]model_class.Association)
 	if s.model == nil {
 		return
 	}
 
 	for _, domain := range s.model.Domains {
 		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				s.classes[class.Key] = Class{
-					Key:        class.Key,
-					Name:       class.Name,
-					Attributes: slices.Clone(class.Attributes),
-				}
-			}
+			maps.Copy(s.classes, subdomain.Classes)
 		}
 	}
-
-	for _, assoc := range s.model.GetClassAssociations() {
-		var acKey *identity.Key
-		if assoc.AssociationClassKey != nil {
-			k := *assoc.AssociationClassKey
-			acKey = &k
-		}
-		s.associations[assoc.Key] = Association{
-			Key:                 assoc.Key,
-			Name:                assoc.Name,
-			FromClassKey:        assoc.FromClassKey,
-			ToClassKey:          assoc.ToClassKey,
-			AssociationClassKey: acKey,
-			FromMultiplicity:    assoc.FromMultiplicity,
-			ToMultiplicity:      assoc.ToMultiplicity,
-		}
-	}
+	maps.Copy(s.associations, s.model.GetClassAssociations())
 }
 
 // CoreModel returns the owned model for this run.
@@ -130,28 +93,13 @@ func (s *Schema) IsClassInScope(classKey identity.Key) bool {
 	return ok
 }
 
-// Class returns a run-facing view of a class.
-func (s *Schema) Class(classKey identity.Key) (Class, bool) {
+// Class returns the model class for classKey, if present on the owned model.
+func (s *Schema) Class(classKey identity.Key) (model_class.Class, bool) {
 	if s == nil {
-		return Class{}, false
+		return model_class.Class{}, false
 	}
 	c, ok := s.classes[classKey]
 	return c, ok
-}
-
-// ModelClass returns the full model class for classKey, if present on the owned model.
-func (s *Schema) ModelClass(classKey identity.Key) (model_class.Class, bool) {
-	if s == nil || s.model == nil {
-		return model_class.Class{}, false
-	}
-	for _, domain := range s.model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			if class, ok := subdomain.Classes[classKey]; ok {
-				return class, true
-			}
-		}
-	}
-	return model_class.Class{}, false
 }
 
 // Attributes returns the attribute definitions for a class, or nil if unknown.
@@ -175,22 +123,12 @@ func (s *Schema) ClassKeys() []identity.Key {
 	return keys
 }
 
-// Association returns a run-facing view of an association.
-func (s *Schema) Association(assocKey identity.Key) (Association, bool) {
+// Association returns the model association for assocKey, if present.
+func (s *Schema) Association(assocKey identity.Key) (model_class.Association, bool) {
 	if s == nil {
-		return Association{}, false
-	}
-	a, ok := s.associations[assocKey]
-	return a, ok
-}
-
-// ModelAssociation returns the full model association if present.
-func (s *Schema) ModelAssociation(assocKey identity.Key) (model_class.Association, bool) {
-	if s == nil || s.model == nil {
 		return model_class.Association{}, false
 	}
-	assocs := s.model.GetClassAssociations()
-	a, ok := assocs[assocKey]
+	a, ok := s.associations[assocKey]
 	return a, ok
 }
 

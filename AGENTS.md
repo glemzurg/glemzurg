@@ -139,7 +139,7 @@ When changing surface reporting or selection, preserve this contract: scope show
 
 ## Simulator `schema` package (sole model home for a run)
 
-`apps/requirements/req/internal/simulator/schema` is the **sole home of model facts for one simulation run**. It owns the (typically surface-filtered) `*core.Model` and run-facing indexes (classes in scope, attributes, associations).
+`apps/requirements/req/internal/simulator/schema` is the **sole home of model facts for one simulation run**. It owns the (typically surface-filtered) `*core.Model` and indexes into model tree types (`model_class.Class`, `model_class.Association`, …)—not parallel schema DTOs for those concepts.
 
 **Data-flow gate**
 

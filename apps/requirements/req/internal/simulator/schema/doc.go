@@ -8,6 +8,9 @@
 // for the same run. Components either call Schema methods or, during migration,
 // [Schema.CoreModel] to build run-local structures — then drop the model pointer.
 //
+// Lookups return model tree types ([model_class.Class], [model_class.Association],
+// …), not parallel schema DTOs.
+//
 // [instance.State] holds *Schema for static lookups; mutable world state stays in
 // instance. Do not mutate the model after NewFromModel.
 package schema

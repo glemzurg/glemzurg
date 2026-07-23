@@ -31,6 +31,7 @@ func (s *SchemaTestSuite) TestNewFromModel_Nil() {
 	sch := NewFromModel(nil)
 	s.NotNil(sch)
 	s.Empty(sch.ClassKeys())
+	s.Nil(sch.CoreModel())
 }
 
 func (s *SchemaTestSuite) TestNewFromModel_ClassesAttributesAssociations() {
@@ -47,10 +48,6 @@ func (s *SchemaTestSuite) TestNewFromModel_ClassesAttributesAssociations() {
 	s.Equal("Order", order.Name)
 	s.Require().Len(order.Attributes, 1)
 	s.Equal(attrKey, order.Attributes[0].Key)
-
-	fullClass, ok := sch.ModelClass(orderKey)
-	s.True(ok)
-	s.Equal("Order", fullClass.Name)
 
 	attrs := sch.Attributes(orderKey)
 	s.Require().Len(attrs, 1)
