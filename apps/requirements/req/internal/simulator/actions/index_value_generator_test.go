@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"math/rand"
 	"strings"
 
@@ -114,7 +115,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesSpanUnique() {
 	})
 
 	// Create an existing instance with id=42
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	existAttrs := object.NewRecord()
 	existAttrs.Set("id", object.NewInteger(42))
 	simState.CreateInstance(classKey, existAttrs)
@@ -144,7 +145,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumUnique() {
 	})
 
 	// Existing instances have "red" and "green"
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	a1 := object.NewRecord()
 	a1.Set("color", object.NewString("red"))
 	simState.CreateInstance(classKey, a1)
@@ -181,7 +182,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumExhausted() {
 	})
 
 	// Both values already taken
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	a1 := object.NewRecord()
 	a1.Set("color", object.NewString("red"))
 	simState.CreateInstance(classKey, a1)
@@ -216,7 +217,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesComposite() {
 	})
 
 	// One existing tuple: (a@b.com, acme)
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	a1 := object.NewRecord()
 	a1.Set("email", object.NewString("a@b.com"))
 	a1.Set("tenant", object.NewString("acme"))
@@ -251,7 +252,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesPresetAttribute() {
 	})
 
 	// Existing: (a@b.com, acme)
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	a1 := object.NewRecord()
 	a1.Set("email", object.NewString("a@b.com"))
 	a1.Set("tenant", object.NewString("acme"))

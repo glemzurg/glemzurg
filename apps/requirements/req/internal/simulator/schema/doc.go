@@ -2,7 +2,7 @@
 //
 // Data-flow gate:
 //
-//	core.Model ──NewFromModel──► *Schema ──► instance.State, engine, checkers, …
+//	*core.Model ──NewFromModel──► *Schema ──► instance.State, engine, checkers, …
 //
 // After construction, the running simulator must not carry a separate *core.Model
 // for the same run. Components either call Schema methods or, during migration,

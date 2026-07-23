@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -67,7 +68,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
@@ -110,7 +111,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
@@ -142,7 +143,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
@@ -174,7 +175,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
@@ -235,7 +236,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeSubKeyWhenDisplayNameDiffers
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 

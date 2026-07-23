@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -64,7 +65,7 @@ func TestDiscoverToEndpointFromRow(t *testing.T) {
 		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")),
 		"account",
 	))
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Exists"))
 	inst := simState.CreateInstance(classKey, attrs)

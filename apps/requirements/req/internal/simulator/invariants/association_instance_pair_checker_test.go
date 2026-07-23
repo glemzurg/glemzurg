@@ -1,6 +1,7 @@
 package invariants
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -50,7 +51,7 @@ func (s *AssociationInstancePairCheckerSuite) TestDistinctPairsNoViolation() {
 	model, assocKey, orderKey, itemKey := s.buildPlainAssociationModel()
 	checker := NewAssociationInstancePairChecker(model)
 
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item1 := simState.CreateInstance(itemKey, object.NewRecord())
 	item2 := simState.CreateInstance(itemKey, object.NewRecord())
@@ -65,7 +66,7 @@ func (s *AssociationInstancePairCheckerSuite) TestDuplicatePairReportsViolation(
 	model, assocKey, orderKey, itemKey := s.buildPlainAssociationModel()
 	checker := NewAssociationInstancePairChecker(model)
 
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
 	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
@@ -86,7 +87,7 @@ func (s *AssociationInstancePairCheckerSuite) TestAssociationClassDuplicatePairR
 	model, assocKey, fromKey, toKey, acKey := associationUniquenessSuiteModelWithoutUniqueness()
 	checker := NewAssociationInstancePairChecker(model)
 
-	simState := instance.NewState(nil)
+	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 	fromInst := simState.CreateInstance(fromKey, object.NewRecord())
 	toInst := simState.CreateInstance(toKey, object.NewRecord())
 	link1 := simState.CreateInstance(acKey, object.NewRecord())

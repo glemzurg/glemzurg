@@ -20,18 +20,16 @@ func TestSchemaSuite(t *testing.T) {
 	suite.Run(t, new(SchemaTestSuite))
 }
 
-func (s *SchemaTestSuite) TestNewEmpty() {
-	sch := NewEmpty()
-	s.False(sch.IsClassInScope(identity.Key{}))
-	s.Empty(sch.ClassKeys())
-	s.Empty(sch.AssociationKeys())
+func (s *SchemaTestSuite) TestNewFromModel_RequiresModel() {
+	s.Panics(func() { NewFromModel(nil) })
 }
 
-func (s *SchemaTestSuite) TestNewFromModel_Nil() {
-	sch := NewFromModel(nil)
-	s.NotNil(sch)
+func (s *SchemaTestSuite) TestNewFromModel_EmptyModel() {
+	sch := NewFromModel(EmptyModel())
+	s.NotNil(sch.CoreModel())
 	s.Empty(sch.ClassKeys())
-	s.Nil(sch.CoreModel())
+	s.Empty(sch.AssociationKeys())
+	s.False(sch.IsClassInScope(identity.Key{}))
 }
 
 func (s *SchemaTestSuite) TestNewFromModel_ClassesAttributesAssociations() {

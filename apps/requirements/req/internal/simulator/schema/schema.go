@@ -21,9 +21,9 @@ import (
 // Class and association values are [model_class.Class] and
 // [model_class.Association] from the model tree — not parallel schema DTOs.
 //
-// Construct via [NewEmpty] or [NewFromModel].
+// Construct via [NewFromModel] only.
 type Schema struct {
-	// model is the authoritative static model for this run (may be nil for empty schema).
+	// model is the authoritative static model for this run (always non-nil after NewFromModel).
 	model *core.Model
 
 	// Indexed views of model types for hot lookups (same values as in model).
@@ -31,23 +31,19 @@ type Schema struct {
 	associations map[identity.Key]model_class.Association
 }
 
-// NewEmpty returns a schema with no model (tests / bootstrap).
-func NewEmpty() *Schema {
-	return &Schema{
+// NewFromModel takes ownership of model as the sole static model for a run.
+// model must be non-nil. Typically pass the surface-filtered active model.
+// The caller must not mutate model afterward and must not retain a separate
+// model pointer for simulator use.
+func NewFromModel(model *core.Model) *Schema {
+	if model == nil {
+		panic("schema.NewFromModel: model is required")
+	}
+	sch := &Schema{
+		model:        model,
 		classes:      make(map[identity.Key]model_class.Class),
 		associations: make(map[identity.Key]model_class.Association),
 	}
-}
-
-// NewFromModel takes ownership of model as the sole static model for a run.
-// Typically pass the surface-filtered active model. The caller must not mutate
-// model afterward and must not retain a separate model pointer for simulator use.
-func NewFromModel(model *core.Model) *Schema {
-	sch := NewEmpty()
-	if model == nil {
-		return sch
-	}
-	sch.model = model
 	sch.reindex()
 	return sch
 }
@@ -56,16 +52,19 @@ func NewFromModel(model *core.Model) *Schema {
 func (s *Schema) reindex() {
 	s.classes = make(map[identity.Key]model_class.Class)
 	s.associations = make(map[identity.Key]model_class.Association)
-	if s.model == nil {
-		return
-	}
-
 	for _, domain := range s.model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			maps.Copy(s.classes, subdomain.Classes)
 		}
 	}
 	maps.Copy(s.associations, s.model.GetClassAssociations())
+}
+
+// EmptyModel returns a new empty *core.Model (no domains/classes) for building a
+// Schema when tests need instance.State without surface content.
+func EmptyModel() *core.Model {
+	m := core.NewModel("empty", core.ModelDetails{Name: "empty", Details: ""}, "", nil, nil, nil)
+	return &m
 }
 
 // CoreModel returns the owned model for this run.

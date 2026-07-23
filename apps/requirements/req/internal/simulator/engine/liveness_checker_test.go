@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -134,7 +135,7 @@ func makeDoStepWithWrite(classKey identity.Key, className string, instanceID ins
 
 // makeFinalState creates a SimulationState for test results.
 func makeFinalState() *instance.State {
-	return instance.NewState(nil)
+	return instance.NewState(schema.NewFromModel(schema.EmptyModel()))
 }
 
 // --- Tests ---
