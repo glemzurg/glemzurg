@@ -137,16 +137,22 @@ The **simulation surface** is the set of **external drivers** the exercise simul
 
 When changing surface reporting or selection, preserve this contract: scope shows what is loaded; surface shows what is driven at top level.
 
-## Simulator `schema` package
+## Simulator `schema` package (sole model home for a run)
 
-`apps/requirements/req/internal/simulator/schema` holds **immutable surface metadata for one simulation run**: which classes are in scope, their attributes, and association structure.
+`apps/requirements/req/internal/simulator/schema` is the **sole home of model facts for one simulation run**. It owns the (typically surface-filtered) `*core.Model` and run-facing indexes (classes in scope, attributes, associations).
 
-**Boundary**
+**Data-flow gate**
 
-- Own: static facts derived from the (typically surface-filtered) model before the run starts.
-- Do not own: live instances, links, state-machine positions, or any data that changes during the run (that is `instance`).
-- Built once via `schema.NewFromModel`; do not mutate after construction.
-- `instance.State` holds a `*schema.Schema` pointer for lookups; clones share the same schema.
+```text
+core.Model  ──schema.NewFromModel──►  *schema.Schema  ──►  instance / engine / checkers / bindings
+```
+
+- **Intake:** `*core.Model` may be used only to build `*schema.Schema` (and one-shot surface resolution before that).
+- **Run:** simulator components must not hold a second authoritative `*core.Model` for the same run. Prefer Schema methods. During migration, `Schema.CoreModel()` is the only legitimate model pointer—use it to construct catalog/checkers, then drop it.
+- Do not mutate the model after `NewFromModel`.
+- Do not own: live instances, links, SM positions (`instance`).
+
+**Why:** clear gates so static rules cannot drift across parallel model copies (schema vs catalog vs checkers each re-walking a free model pointer).
 
 ## Simulator `instance` package
 
@@ -155,7 +161,7 @@ When changing surface reporting or selection, preserve this contract: scope show
 **Boundary**
 
 - Own: create/update/delete instances, association links, SM current state, clone of the run world.
-- Read static facts through the attached `*schema.Schema` (class attributes, in-scope classes, associations).
+- Read static model facts only through the attached `*schema.Schema` (never a free `*core.Model`).
 - Do not own: action execution, expression evaluation, model loading, surface selection, or TLA bindings construction (`state.BindingsBuilder` adapts `instance.State` into evaluator bindings).
 - Production callers depend on this package for run data; this package must not import `engine`, `actions`, `invariants`, or `trace`.
 

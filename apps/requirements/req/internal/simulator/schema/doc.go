@@ -1,9 +1,13 @@
-// Package schema holds the immutable description of a simulation surface for one run.
+// Package schema is the sole home of model facts for one simulation run.
 //
-// It captures non-changing facts used while the simulator executes: which classes
-// are in scope, their attributes, and association structure. [instance.State]
-// holds a *Schema pointer for lookups and never mutates it.
+// Data-flow gate:
 //
-// Schema is built once from the (typically surface-filtered) model before the run
-// starts. Mutable run data lives in simulator/instance, not here.
+//	core.Model ──NewFromModel──► *Schema ──► instance.State, engine, checkers, …
+//
+// After construction, the running simulator must not carry a separate *core.Model
+// for the same run. Components either call Schema methods or, during migration,
+// [Schema.CoreModel] to build run-local structures — then drop the model pointer.
+//
+// [instance.State] holds *Schema for static lookups; mutable world state stays in
+// instance. Do not mutate the model after NewFromModel.
 package schema

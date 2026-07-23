@@ -83,6 +83,9 @@ type SimulationEngine struct {
 // NewSimulationEngine creates and wires up all simulation components.
 // The model must have its ExpressionSpec.Expression fields already populated
 // (e.g., via parse functions passed to ExpressionSpec constructors).
+//
+// Data-flow gate: model is used only for surface resolution and schema.NewFromModel.
+// After that, the run is driven from *schema.Schema (and components built from it).
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
 	rng := newSimulationRNG(config.RandomSeed)
 
@@ -91,8 +94,11 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
-	catalog := setupCatalogForSurface(model, activeModel, config, unavailable)
-	core, err := wireSimulationCore(activeModel, catalog, rng)
+	// Sole model home for this run: active (filtered) model is owned by schema.
+	sch := schema.NewFromModel(activeModel)
+
+	catalog := setupCatalogForSurface(model, sch, config, unavailable)
+	core, err := wireSimulationCore(sch, catalog, rng)
 	if err != nil {
 		return nil, err
 	}
@@ -101,14 +107,16 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	return newWiredSimulationEngine(config, catalog, core, scopeEntries), nil
 }
 
-// setupCatalogForSurface builds the scoped catalog and, when a surface is set,
-// registers full-model empty extents and boundary associations for OOS peers.
+// setupCatalogForSurface builds the scoped catalog from schema and, when a surface
+// is set, registers full-model empty extents and boundary associations for OOS peers.
+// fullModel is only for out-of-scope metadata (not retained on the engine).
 func setupCatalogForSurface(
-	fullModel, activeModel *core.Model,
+	fullModel *core.Model,
+	sch *schema.Schema,
 	config SimulationConfig,
 	unavailable []surface.UnavailableMember,
 ) *ClassCatalog {
-	catalog := setupClassCatalog(activeModel)
+	catalog := setupClassCatalog(sch)
 	if config.Surface != nil && !config.Surface.IsEmpty() {
 		catalog.RegisterOutOfScopeMetadata(fullModel)
 	}
@@ -158,16 +166,20 @@ type simulationCore struct {
 }
 
 func wireSimulationCore(
-	activeModel *core.Model,
+	sch *schema.Schema,
 	catalog *ClassCatalog,
 	rng *rand.Rand,
 ) (*simulationCore, error) {
-	evalCtx, err := setupExpressionRegistry(activeModel)
+	// Migration: expression registry, checkers, and derived eval still read
+	// sch.CoreModel() until they accept *schema.Schema directly.
+	model := sch.CoreModel()
+
+	evalCtx, err := setupExpressionRegistry(model)
 	if err != nil {
 		return nil, fmt.Errorf("expression registry setup: %w", err)
 	}
 
-	simState, bindingsBuilder, derivedEval, err := setupState(activeModel, catalog, evalCtx)
+	simState, bindingsBuilder, derivedEval, err := setupState(sch, catalog, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +187,7 @@ func wireSimulationCore(
 		derivedEval.SetCatalog(catalog)
 	}
 
-	checkers, err := setupCheckers(activeModel, evalCtx)
+	checkers, err := setupCheckers(model, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -219,10 +231,11 @@ func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model
 	return activeModel, unavailable, scopeEntries, nil
 }
 
-func setupClassCatalog(activeModel *core.Model) *ClassCatalog {
-	catalog := NewClassCatalog(activeModel)
-	PopulateCallerDataFromModel(activeModel, catalog)
-	PopulateDerivedAttributeCallersFromModel(activeModel, catalog)
+func setupClassCatalog(sch *schema.Schema) *ClassCatalog {
+	model := sch.CoreModel()
+	catalog := NewClassCatalog(model)
+	PopulateCallerDataFromModel(model, catalog)
+	PopulateDerivedAttributeCallersFromModel(model, catalog)
 	return catalog
 }
 
@@ -248,18 +261,19 @@ func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model
 }
 
 // setupState creates simulation state and bindings builder, registers associations,
-// and sets up derived attribute evaluation.
+// and sets up derived attribute evaluation. sch is the sole static model for the run.
 func setupState(
-	model *core.Model,
+	sch *schema.Schema,
 	catalog *ClassCatalog,
 	evalCtx *evaluator.EvalContext,
 ) (*instance.State, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
-	simState := instance.NewState(schema.NewFromModel(model))
+	simState := instance.NewState(sch)
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
 	registerCatalogAssociations(catalog, bindingsBuilder)
 
-	// Set up derived attribute evaluation (on-demand computation).
+	// Migration: derived eval still takes *core.Model via CoreModel().
+	model := sch.CoreModel()
 	derivedEval, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, evalCtx)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("derived attribute setup: %w", err)

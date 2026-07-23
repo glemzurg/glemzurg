@@ -38,6 +38,7 @@ func (s *SchemaTestSuite) TestNewFromModel_ClassesAttributesAssociations() {
 
 	sch := NewFromModel(model)
 
+	s.Same(model, sch.CoreModel())
 	s.True(sch.IsClassInScope(orderKey))
 	s.True(sch.IsClassInScope(lineKey))
 
@@ -46,6 +47,10 @@ func (s *SchemaTestSuite) TestNewFromModel_ClassesAttributesAssociations() {
 	s.Equal("Order", order.Name)
 	s.Require().Len(order.Attributes, 1)
 	s.Equal(attrKey, order.Attributes[0].Key)
+
+	fullClass, ok := sch.ModelClass(orderKey)
+	s.True(ok)
+	s.Equal("Order", fullClass.Name)
 
 	attrs := sch.Attributes(orderKey)
 	s.Require().Len(attrs, 1)
