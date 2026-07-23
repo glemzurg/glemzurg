@@ -160,7 +160,7 @@ func (s *AssociationClassSuite) TestCatalogIndexesAssociationClass() {
 
 func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(tcm.model)
 	registerCatalogAssociations(catalog, bb)
@@ -211,7 +211,7 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 
 func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationClass() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(tcm.model)
 	ge := actions.NewGuardEvaluator(bb)
@@ -241,7 +241,7 @@ func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationC
 
 func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(tcm.model)
 	ge := actions.NewGuardEvaluator(bb)
@@ -260,7 +260,7 @@ func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 
 func (s *AssociationClassSuite) TestDeleteToNamedStateStillCountsAsLink() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(tcm.model)
 	registerCatalogAssociations(catalog, bb)

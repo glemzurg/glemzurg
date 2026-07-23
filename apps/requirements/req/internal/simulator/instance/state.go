@@ -40,7 +40,7 @@ type State struct {
 }
 
 // NewState creates a new empty simulation state.
-// sch is required (use schema.NewFromModel); it is the sole static model for the run.
+// sch is required (use schema.New); it is the sole static model for the run.
 func NewState(sch *schema.Schema) *State {
 	if sch == nil {
 		panic("instance.NewState: schema is required")

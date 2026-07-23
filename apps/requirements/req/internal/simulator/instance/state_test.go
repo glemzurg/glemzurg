@@ -18,7 +18,7 @@ func TestStateSuite(t *testing.T) {
 }
 
 func (s *StateTestSuite) TestCreateInstance() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	classKey := s.createClassKey("orders", "management", "order")
 	attrs := object.NewRecordFromFields(map[string]object.Object{
@@ -37,13 +37,13 @@ func (s *StateTestSuite) TestCreateInstance() {
 }
 
 func (s *StateTestSuite) TestSchemaSharedAcrossClone() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 	cloned := st.Clone()
 	s.Same(st.Schema(), cloned.Schema())
 }
 
 func (s *StateTestSuite) TestCreateMultipleInstances() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	classKey := s.createClassKey("orders", "management", "order")
 	attrs1 := object.NewRecordFromFields(map[string]object.Object{
@@ -62,7 +62,7 @@ func (s *StateTestSuite) TestCreateMultipleInstances() {
 }
 
 func (s *StateTestSuite) TestGetInstance() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	classKey := s.createClassKey("orders", "management", "order")
 	attrs := object.NewRecordFromFields(map[string]object.Object{
@@ -80,7 +80,7 @@ func (s *StateTestSuite) TestGetInstance() {
 }
 
 func (s *StateTestSuite) TestUpdateInstance() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	classKey := s.createClassKey("orders", "management", "order")
 	attrs := object.NewRecordFromFields(map[string]object.Object{
@@ -100,7 +100,7 @@ func (s *StateTestSuite) TestUpdateInstance() {
 }
 
 func (s *StateTestSuite) TestUpdateInstanceField() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	classKey := s.createClassKey("orders", "management", "order")
 	attrs := object.NewRecordFromFields(map[string]object.Object{
@@ -119,7 +119,7 @@ func (s *StateTestSuite) TestUpdateInstanceField() {
 }
 
 func (s *StateTestSuite) TestDeleteInstance() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	classKey := s.createClassKey("orders", "management", "order")
 	attrs := object.NewRecordFromFields(map[string]object.Object{
@@ -138,7 +138,7 @@ func (s *StateTestSuite) TestDeleteInstance() {
 }
 
 func (s *StateTestSuite) TestInstancesByClass() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
@@ -155,7 +155,7 @@ func (s *StateTestSuite) TestInstancesByClass() {
 }
 
 func (s *StateTestSuite) TestForEachInstanceAndClassQueries() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
@@ -177,7 +177,7 @@ func (s *StateTestSuite) TestForEachInstanceAndClassQueries() {
 }
 
 func (s *StateTestSuite) TestLookupIDByRecord() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 	classKey := s.createClassKey("orders", "management", "order")
 	attrs := object.NewRecordFromFields(map[string]object.Object{
 		"status": object.NewString("pending"),
@@ -195,7 +195,7 @@ func (s *StateTestSuite) TestLookupIDByRecord() {
 }
 
 func (s *StateTestSuite) TestSnapshot() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 	classKey := s.createClassKey("orders", "management", "order")
 	inst := st.CreateInstance(classKey, object.NewRecordFromFields(map[string]object.Object{
 		"status": object.NewString("open"),
@@ -211,7 +211,7 @@ func (s *StateTestSuite) TestSnapshot() {
 }
 
 func (s *StateTestSuite) TestForEachBinaryLinkOfAssociation() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
 	assocKey := s.createAssociationKey()
@@ -228,7 +228,7 @@ func (s *StateTestSuite) TestForEachBinaryLinkOfAssociation() {
 }
 
 func (s *StateTestSuite) TestAddLink() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
@@ -243,7 +243,7 @@ func (s *StateTestSuite) TestAddLink() {
 }
 
 func (s *StateTestSuite) TestAddLink_RejectsDuplicatePair() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
@@ -259,7 +259,7 @@ func (s *StateTestSuite) TestAddLink_RejectsDuplicatePair() {
 }
 
 func (s *StateTestSuite) TestRemoveLink() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
@@ -280,7 +280,7 @@ func (s *StateTestSuite) TestRemoveLink() {
 }
 
 func (s *StateTestSuite) TestGetLinkedForward() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
@@ -300,7 +300,7 @@ func (s *StateTestSuite) TestGetLinkedForward() {
 }
 
 func (s *StateTestSuite) TestGetLinkedReverse() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
@@ -317,7 +317,7 @@ func (s *StateTestSuite) TestGetLinkedReverse() {
 }
 
 func (s *StateTestSuite) TestDeleteInstanceRemovesLinks() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
@@ -335,7 +335,7 @@ func (s *StateTestSuite) TestDeleteInstanceRemovesLinks() {
 }
 
 func (s *StateTestSuite) TestSetStateMachineState() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	classKey := s.createClassKey("orders", "management", "order")
 	stateKey := s.createStateKey("orders", "management", "order", "pending")
@@ -351,7 +351,7 @@ func (s *StateTestSuite) TestSetStateMachineState() {
 }
 
 func (s *StateTestSuite) TestClearStateMachineState() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	classKey := s.createClassKey("orders", "management", "order")
 	stateKey := s.createStateKey("orders", "management", "order", "pending")
@@ -367,7 +367,7 @@ func (s *StateTestSuite) TestClearStateMachineState() {
 }
 
 func (s *StateTestSuite) TestClone() {
-	st := NewState(schema.NewFromModel(schema.EmptyModel()))
+	st := NewState(schema.New(schema.EmptyModel()))
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")

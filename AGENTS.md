@@ -144,12 +144,12 @@ When changing surface reporting or selection, preserve this contract: scope show
 **Data-flow gate**
 
 ```text
-core.Model  ──schema.NewFromModel──►  *schema.Schema  ──►  instance / engine / checkers / bindings
+core.Model  ──schema.New──►  *schema.Schema  ──►  instance / engine / checkers / bindings
 ```
 
 - **Intake:** `*core.Model` may be used only to build `*schema.Schema` (and one-shot surface resolution before that).
 - **Run:** simulator components must not hold a second authoritative `*core.Model` for the same run. Prefer Schema methods. During migration, `Schema.CoreModel()` is the only legitimate model pointer—use it to construct catalog/checkers, then drop it.
-- Do not mutate the model after `NewFromModel`.
+- Do not mutate the model after `New`.
 - Do not own: live instances, links, SM positions (`instance`).
 
 **Why:** clear gates so static rules cannot drift across parallel model copies (schema vs catalog vs checkers each re-walking a free model pointer).

@@ -11,19 +11,19 @@ import (
 // Schema is the sole home of model facts for one simulation run.
 //
 // Construction is the intake gate: pass a (typically surface-filtered) *core.Model
-// into [NewFromModel]. After that, the running simulator must obtain model data
+// into [New]. After that, the running simulator must obtain model data
 // only through Schema (or components built from Schema). Do not keep a second
 // *core.Model pointer for the same run.
 //
 // Schema is immutable for the run: do not mutate the underlying model after
-// NewFromModel, or indexes will disagree with the model.
+// New, or indexes will disagree with the model.
 //
 // Class and association values are [model_class.Class] and
 // [model_class.Association] from the model tree — not parallel schema DTOs.
 //
-// Construct via [NewFromModel] only.
+// Construct via [New] only.
 type Schema struct {
-	// model is the authoritative static model for this run (always non-nil after NewFromModel).
+	// model is the authoritative static model for this run (always non-nil after New).
 	model *core.Model
 
 	// Indexed views of model types for hot lookups (same values as in model).
@@ -31,13 +31,13 @@ type Schema struct {
 	associations map[identity.Key]model_class.Association
 }
 
-// NewFromModel takes ownership of model as the sole static model for a run.
+// New takes ownership of model as the sole static model for a run.
 // model must be non-nil. Typically pass the surface-filtered active model.
 // The caller must not mutate model afterward and must not retain a separate
 // model pointer for simulator use.
-func NewFromModel(model *core.Model) *Schema {
+func New(model *core.Model) *Schema {
 	if model == nil {
-		panic("schema.NewFromModel: model is required")
+		panic("schema.New: model is required")
 	}
 	sch := &Schema{
 		model:        model,

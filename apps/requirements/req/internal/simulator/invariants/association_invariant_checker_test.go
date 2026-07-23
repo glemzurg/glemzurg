@@ -52,7 +52,7 @@ func (s *AssociationInvariantCheckerSuite) buildChecker() (*AssociationInvariant
 func (s *AssociationInvariantCheckerSuite) TestPassesWhenInvariantHolds() {
 	checker, partnerKey, jurisdictionKey, assocKey := s.buildChecker()
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	j1 := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	j1.Attributes.Set("Code", object.NewString("US"))
@@ -90,7 +90,7 @@ func (s *AssociationInvariantCheckerSuite) TestFailsWhenAssessmentIsFalse() {
 	checker, err := NewAssociationInvariantChecker(model)
 	s.Require().NoError(err)
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	simState.CreateInstance(partnerKey, object.NewRecord())
 
 	bb := state.NewBindingsBuilder(simState)

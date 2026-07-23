@@ -36,7 +36,7 @@ type testChainModel struct {
 func buildChainTestComponents(
 	tcm *testChainModel,
 ) (*CreationChainHandler, *instance.State, *actions.ActionExecutor) {
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
@@ -130,7 +130,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 
 func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 	tcm := buildOrderItemModel(true)
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
@@ -204,7 +204,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationClassCreatesEndpointAndLink
 }
 
 func buildAssociationClassChainComponents(tcm *acTestModel) (*CreationChainHandler, *instance.State, *actions.ActionExecutor) {
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(NewClassCatalog(tcm.model), bb)
 	ge := actions.NewGuardEvaluator(bb)
@@ -256,7 +256,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 		assocKey: assoc,
 	}
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests

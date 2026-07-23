@@ -68,7 +68,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
@@ -111,7 +111,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
@@ -143,7 +143,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
@@ -175,7 +175,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
@@ -236,7 +236,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeSubKeyWhenDisplayNameDiffers
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 

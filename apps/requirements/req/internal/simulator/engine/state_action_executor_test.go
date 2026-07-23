@@ -81,7 +81,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 	class = lowerClass(class, classKey)
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	attrs := object.NewRecord()
 	attrs.Set("exit_count", object.NewInteger(0))
 	attrs.Set("_state", object.NewString("Open"))
@@ -128,7 +128,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 	class = lowerClass(class, classKey)
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	attrs := object.NewRecord()
 	attrs.Set("entry_count", object.NewInteger(0))
 	attrs.Set("_state", object.NewString("Open"))
@@ -162,7 +162,7 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -188,7 +188,7 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	attrs := object.NewRecord()
 	instance := simState.CreateInstance(classKey, attrs)
 

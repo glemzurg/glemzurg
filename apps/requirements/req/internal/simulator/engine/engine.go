@@ -84,7 +84,7 @@ type SimulationEngine struct {
 // The model must have its ExpressionSpec.Expression fields already populated
 // (e.g., via parse functions passed to ExpressionSpec constructors).
 //
-// Data-flow gate: model is used only for surface resolution and schema.NewFromModel.
+// Data-flow gate: model is used only for surface resolution and schema.New.
 // After that, the run is driven from *schema.Schema (and components built from it).
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
 	rng := newSimulationRNG(config.RandomSeed)
@@ -95,7 +95,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	}
 
 	// Sole model home for this run: active (filtered) model is owned by schema.
-	sch := schema.NewFromModel(activeModel)
+	sch := schema.New(activeModel)
 
 	catalog := setupCatalogForSurface(model, sch, config, unavailable)
 	core, err := wireSimulationCore(sch, catalog, rng)

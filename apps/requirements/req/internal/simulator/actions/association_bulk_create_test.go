@@ -65,7 +65,7 @@ func TestDiscoverToEndpointFromRow(t *testing.T) {
 		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")),
 		"account",
 	))
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Exists"))
 	inst := simState.CreateInstance(classKey, attrs)

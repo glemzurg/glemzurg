@@ -361,7 +361,7 @@ func (s *TraceSuite) TestStepWithParameters() {
 }
 
 func (s *TraceSuite) TestFinalState() {
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 
 	attrs := object.NewRecord()
@@ -421,7 +421,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 
 	catalog := engine.NewClassCatalog(&model)
 
-	simState := instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	jurisdiction := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	linkInst := simState.CreateInstance(linkDefKey, object.NewRecord())

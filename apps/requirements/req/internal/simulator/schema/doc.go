@@ -2,7 +2,7 @@
 //
 // Data-flow gate:
 //
-//	*core.Model ──NewFromModel──► *Schema ──► instance.State, engine, checkers, …
+//	*core.Model ──New──► *Schema ──► instance.State, engine, checkers, …
 //
 // After construction, the running simulator must not carry a separate *core.Model
 // for the same run. Components either call Schema methods or, during migration,
@@ -12,5 +12,5 @@
 // …), not parallel schema DTOs.
 //
 // [instance.State] holds *Schema for static lookups; mutable world state stays in
-// instance. Do not mutate the model after NewFromModel.
+// instance. Do not mutate the model after New.
 package schema

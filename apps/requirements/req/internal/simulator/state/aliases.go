@@ -25,9 +25,9 @@ type AssociationLink = instance.AssociationLink
 type AssociationLinkTable = instance.AssociationLinkTable
 
 // NewSimulationState creates a new empty simulation state with a schema from an empty model.
-// Prefer instance.NewState(schema.NewFromModel(...)) when surface metadata is available.
+// Prefer instance.NewState(schema.New(...)) when surface metadata is available.
 func NewSimulationState() *SimulationState {
-	return instance.NewState(schema.NewFromModel(schema.EmptyModel()))
+	return instance.NewState(schema.New(schema.EmptyModel()))
 }
 
 // NewAssociationLinkTable creates an empty association link table.

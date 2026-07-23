@@ -20,22 +20,22 @@ func TestSchemaSuite(t *testing.T) {
 	suite.Run(t, new(SchemaTestSuite))
 }
 
-func (s *SchemaTestSuite) TestNewFromModel_RequiresModel() {
-	s.Panics(func() { NewFromModel(nil) })
+func (s *SchemaTestSuite) TestNew_RequiresModel() {
+	s.Panics(func() { New(nil) })
 }
 
-func (s *SchemaTestSuite) TestNewFromModel_EmptyModel() {
-	sch := NewFromModel(EmptyModel())
+func (s *SchemaTestSuite) TestNew_EmptyModel() {
+	sch := New(EmptyModel())
 	s.NotNil(sch.CoreModel())
 	s.Empty(sch.ClassKeys())
 	s.Empty(sch.AssociationKeys())
 	s.False(sch.IsClassInScope(identity.Key{}))
 }
 
-func (s *SchemaTestSuite) TestNewFromModel_ClassesAttributesAssociations() {
+func (s *SchemaTestSuite) TestNew_ClassesAttributesAssociations() {
 	model, orderKey, lineKey, assocKey, attrKey := s.sampleModel()
 
-	sch := NewFromModel(model)
+	sch := New(model)
 
 	s.Same(model, sch.CoreModel())
 	s.True(sch.IsClassInScope(orderKey))
