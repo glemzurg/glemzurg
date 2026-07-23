@@ -197,39 +197,28 @@ func convertAssociationMaterialization(mat *actions.AssociationMaterialization) 
 
 // buildFinalState creates a FinalState snapshot from SimulationState.
 func buildFinalState(simState *instance.State, catalog *engine.ClassCatalog) *FinalState {
-	instances := simState.AllInstances()
-
-	// Sort by ID for deterministic output.
-	sort.Slice(instances, func(i, j int) bool {
-		return instances[i].ID < instances[j].ID
-	})
-
+	snap := simState.Snapshot()
 	fs := &FinalState{
-		InstanceCount: len(instances),
-		LinkCount:     simState.LinkCount(),
+		InstanceCount: snap.InstanceCount,
+		LinkCount:     snap.LinkCount,
+		Instances:     make([]InstanceState, 0, len(snap.Instances)),
 	}
 
-	for _, inst := range instances {
+	for _, inst := range snap.Instances {
 		is := InstanceState{
 			InstanceID: uint64(inst.ID),
 			ClassKey:   inst.ClassKey.String(),
-			Attributes: make(map[string]string),
+			Attributes: inst.Attributes,
+			Endpoints:  associationEndpointsForSnapshot(inst, simState, catalog),
 		}
-		for _, name := range inst.AttributeNames() {
-			val := inst.GetAttribute(name)
-			if val != nil {
-				is.Attributes[name] = val.Inspect()
-			}
-		}
-		is.Endpoints = associationEndpointsForInstance(inst, simState, catalog)
 		fs.Instances = append(fs.Instances, is)
 	}
 
 	return fs
 }
 
-func associationEndpointsForInstance(
-	inst *instance.Instance,
+func associationEndpointsForSnapshot(
+	inst instance.SnapshotInstance,
 	simState *instance.State,
 	catalog *engine.ClassCatalog,
 ) *AssociationMaterializationTrace {

@@ -146,6 +146,79 @@ func (s *StateTestSuite) TestInstancesByClass() {
 	s.Len(lines, 1)
 }
 
+func (s *StateTestSuite) TestForEachInstanceAndClassQueries() {
+	st := NewState()
+
+	orderKey := s.createClassKey("orders", "management", "order")
+	lineKey := s.createClassKey("orders", "management", "line")
+
+	st.CreateInstance(orderKey, object.NewRecord())
+	st.CreateInstance(orderKey, object.NewRecord())
+	st.CreateInstance(lineKey, object.NewRecord())
+
+	var all int
+	st.ForEachInstance(func(*Instance) { all++ })
+	s.Equal(3, all)
+
+	var orders int
+	st.ForEachInstanceOfClass(orderKey, func(*Instance) { orders++ })
+	s.Equal(2, orders)
+	s.Equal(2, st.CountByClass(orderKey))
+	s.True(st.HasInstanceOfClass(orderKey))
+	s.False(st.HasInstanceOfClass(s.createClassKey("orders", "management", "missing")))
+}
+
+func (s *StateTestSuite) TestLookupIDByRecord() {
+	st := NewState()
+	classKey := s.createClassKey("orders", "management", "order")
+	attrs := object.NewRecordFromFields(map[string]object.Object{
+		"status": object.NewString("pending"),
+	})
+	inst := st.CreateInstance(classKey, attrs)
+
+	id, ok := st.LookupIDByRecord(inst.Attributes)
+	s.True(ok)
+	s.Equal(inst.ID, id)
+
+	extent := object.NewExtentElement(uint64(inst.ID), inst.Attributes)
+	id, ok = st.LookupIDByRecord(extent)
+	s.True(ok)
+	s.Equal(inst.ID, id)
+}
+
+func (s *StateTestSuite) TestSnapshot() {
+	st := NewState()
+	classKey := s.createClassKey("orders", "management", "order")
+	inst := st.CreateInstance(classKey, object.NewRecordFromFields(map[string]object.Object{
+		"status": object.NewString("open"),
+	}))
+
+	snap := st.Snapshot()
+	s.Equal(1, snap.InstanceCount)
+	s.Equal(0, snap.LinkCount)
+	s.Require().Len(snap.Instances, 1)
+	s.Equal(inst.ID, snap.Instances[0].ID)
+	s.Equal(classKey, snap.Instances[0].ClassKey)
+	s.Equal(object.NewString("open").Inspect(), snap.Instances[0].Attributes["status"])
+}
+
+func (s *StateTestSuite) TestForEachBinaryLinkOfAssociation() {
+	st := NewState()
+	orderKey := s.createClassKey("orders", "management", "order")
+	lineKey := s.createClassKey("orders", "management", "line")
+	assocKey := s.createAssociationKey()
+
+	order := st.CreateInstance(orderKey, object.NewRecord())
+	line := st.CreateInstance(lineKey, object.NewRecord())
+	s.Require().NoError(st.AddLink(assocKey, order.ID, line.ID))
+
+	var pairs [][2]ID
+	st.ForEachBinaryLinkOfAssociation(assocKey, func(fromID, toID ID) {
+		pairs = append(pairs, [2]ID{fromID, toID})
+	})
+	s.Equal([][2]ID{{order.ID, line.ID}}, pairs)
+}
+
 func (s *StateTestSuite) TestAddLink() {
 	st := NewState()
 

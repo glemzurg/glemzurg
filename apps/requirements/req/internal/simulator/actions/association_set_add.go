@@ -12,7 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // errPeerClassOutOfScope means the association is known but its peer class is not on the surface.
@@ -308,30 +307,5 @@ func instanceIDFromObject(simState *instance.State, val object.Object) (instance
 	if !ok || rec == nil {
 		return 0, false
 	}
-	if id, ok := state.InstanceIDFromExtentElement(rec); ok {
-		if simState.GetInstance(id) != nil {
-			return id, true
-		}
-	}
-	// Bare attribute records: match by pointer first (self), then unique structural equality.
-	// Structural equality alone is ambiguous when multiple instances share the same data shape
-	// (e.g. wallets that only store _state); refuse to guess among duplicates.
-	data := state.DataFromExtentElement(rec)
-	var (
-		found instance.ID
-		n     int
-	)
-	for _, inst := range simState.AllInstances() {
-		if inst.Attributes == rec || inst.Attributes == data {
-			return inst.ID, true
-		}
-		if (data != nil && inst.Attributes.Equals(data)) || inst.Attributes.Equals(rec) {
-			found = inst.ID
-			n++
-		}
-	}
-	if n == 1 {
-		return found, true
-	}
-	return 0, false
+	return simState.LookupIDByRecord(rec)
 }

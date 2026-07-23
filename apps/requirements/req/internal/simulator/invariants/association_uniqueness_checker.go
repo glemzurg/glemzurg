@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
@@ -116,36 +115,23 @@ func collectAssociationLinks(
 	simState *instance.State,
 	assoc model_class.Association,
 ) []associationLinkEndpoints {
+	var links []associationLinkEndpoints
 	if assoc.AssociationClassKey != nil {
-		var links []associationLinkEndpoints
-		for _, link := range simState.AssociationLinks().AllLinks() {
-			if link.HostAssocKey != assoc.Key {
-				continue
-			}
+		simState.ForEachAssociationLinkOfHost(assoc.Key, func(link instance.AssociationLink) {
 			links = append(links, associationLinkEndpoints{
 				fromID: link.FromEndpointID,
 				toID:   link.ToEndpointID,
 			})
-		}
+		})
 		return links
 	}
 
-	assocKey := evaluator.AssociationKey(assoc.Key.String())
-	var links []associationLinkEndpoints
-	for _, inst := range simState.AllInstances() {
-		if inst.ClassKey != assoc.FromClassKey {
-			continue
-		}
-		for _, link := range simState.Links().GetAllForward(evaluator.ObjectID(inst.ID)) {
-			if link.AssociationKey != assocKey {
-				continue
-			}
-			links = append(links, associationLinkEndpoints{
-				fromID: inst.ID,
-				toID:   instance.ID(link.ToID),
-			})
-		}
-	}
+	simState.ForEachBinaryLinkOfAssociation(assoc.Key, func(fromID, toID instance.ID) {
+		links = append(links, associationLinkEndpoints{
+			fromID: fromID,
+			toID:   toID,
+		})
+	})
 	return links
 }
 

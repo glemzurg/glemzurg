@@ -60,9 +60,9 @@ func NewMultiplicityChecker(model *core.Model) *MultiplicityChecker {
 // CheckState validates all association multiplicities across every live instance.
 func (c *MultiplicityChecker) CheckState(simState *instance.State) ViolationErrors {
 	var violations ViolationErrors
-	for _, instance := range simState.AllInstances() {
-		violations = append(violations, c.CheckInstance(instance, simState)...)
-	}
+	simState.ForEachInstance(func(inst *instance.Instance) {
+		violations = append(violations, c.CheckInstance(inst, simState)...)
+	})
 	return violations
 }
 

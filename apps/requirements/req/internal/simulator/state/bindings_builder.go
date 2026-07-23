@@ -281,85 +281,11 @@ func (b *BindingsBuilder) buildRelationContext() *evaluator.RelationContext {
 
 	// Rebuild runtime identity/link/AC state from engine InstanceIDs each time.
 	b.relationCtx.Clear()
-	// Register every live instance (and its class) so peer field navigation works
-	// for extent elements that are not yet endpoints of any association.
-	b.syncAllInstances()
-	b.syncLinks()
-	b.syncAssociationLinks()
+	// Project live instances and links so peer navigation works even before an
+	// object is an association endpoint.
+	b.state.ProjectToRelationContext(b.relationCtx)
 
 	return b.relationCtx
-}
-
-// syncAllInstances registers each instance's id, data, and class key for peer navigation.
-func (b *BindingsBuilder) syncAllInstances() {
-	for _, instance := range b.state.AllInstances() {
-		id := evaluator.ObjectID(instance.ID)
-		b.relationCtx.EnsureInstance(id, instance.Attributes)
-		b.relationCtx.RegisterClassKey(id, instance.ClassKey.String())
-	}
-}
-
-// syncLinks synchronizes plain (non-AC) association links into the relation context.
-// Endpoint images are [id, data] extent elements so structurally equal peers stay distinct.
-func (b *BindingsBuilder) syncLinks() {
-	for _, instance := range b.state.AllInstances() {
-		objID := evaluator.ObjectID(instance.ID)
-		links := b.state.Links().GetAllForward(objID)
-		for _, link := range links {
-			fromInstance := b.state.GetInstance(InstanceID(link.FromID))
-			toInstance := b.state.GetInstance(InstanceID(link.ToID))
-			if fromInstance == nil || toInstance == nil {
-				continue
-			}
-			b.createExtentLink(
-				link.AssociationKey,
-				fromInstance,
-				toInstance,
-			)
-		}
-	}
-}
-
-func (b *BindingsBuilder) syncAssociationLinks() {
-	for _, link := range b.state.AssociationLinks().AllLinks() {
-		fromInstance := b.state.GetInstance(link.FromEndpointID)
-		linkInstance := b.state.GetInstance(link.LinkInstanceID)
-		toInstance := b.state.GetInstance(link.ToEndpointID)
-		if fromInstance == nil || linkInstance == nil || toInstance == nil {
-			continue
-		}
-
-		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
-		fromExtent, toExtent := b.createExtentLink(hostKey, fromInstance, toInstance)
-		linkExtent := ClassExtentElement(linkInstance.ID, linkInstance.Attributes)
-		b.relationCtx.EnsureInstance(evaluator.ObjectID(linkInstance.ID), linkInstance.Attributes)
-		b.relationCtx.AddAssociationClassRow(hostKey, fromExtent, toExtent, linkExtent)
-	}
-}
-
-// createExtentLink registers a from→to association using engine ids and [id, data] endpoints.
-func (b *BindingsBuilder) createExtentLink(
-	assocKey evaluator.AssociationKey,
-	fromInstance, toInstance *ClassInstance,
-) (fromExtent, toExtent *object.Record) {
-	fromExtent = ClassExtentElement(fromInstance.ID, fromInstance.Attributes)
-	toExtent = ClassExtentElement(toInstance.ID, toInstance.Attributes)
-	b.relationCtx.CreateInstanceLink(
-		assocKey,
-		evaluator.InstanceEndpoint{
-			ID:     evaluator.ObjectID(fromInstance.ID),
-			Extent: fromExtent,
-			Data:   fromInstance.Attributes,
-		},
-		evaluator.InstanceEndpoint{
-			ID:     evaluator.ObjectID(toInstance.ID),
-			Extent: toExtent,
-			Data:   toInstance.Attributes,
-		},
-	)
-	b.relationCtx.RegisterClassKey(evaluator.ObjectID(fromInstance.ID), fromInstance.ClassKey.String())
-	b.relationCtx.RegisterClassKey(evaluator.ObjectID(toInstance.ID), toInstance.ClassKey.String())
-	return fromExtent, toExtent
 }
 
 // AddAssociationClassHost registers a host association materialized by association-class instances.

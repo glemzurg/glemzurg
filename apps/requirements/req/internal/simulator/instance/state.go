@@ -147,18 +147,6 @@ func (s *State) InstanceCount() int {
 	return len(s.instances)
 }
 
-// AllInstances returns all instances.
-func (s *State) AllInstances() []*Instance {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	out := make([]*Instance, 0, len(s.instances))
-	for _, inst := range s.instances {
-		out = append(out, inst)
-	}
-	return out
-}
-
 // InstancesByClass returns all instances of a specific class.
 func (s *State) InstancesByClass(classKey identity.Key) []*Instance {
 	s.mu.RLock()

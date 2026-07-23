@@ -5,6 +5,7 @@
 // world consistent. Action execution, expression evaluation, model loading, and
 // TLA binding construction live in other packages and call into this one.
 //
-// The exported types and methods are the protocol callers may rely on. Storage
-// maps, locks, and ID counters are unexported implementation details.
+// Callers iterate and query through protocol methods (ForEach*, Lookup*,
+// ProjectToRelationContext, Snapshot) rather than dumping the full instance map.
+// Storage maps, locks, and ID counters are unexported implementation details.
 package instance

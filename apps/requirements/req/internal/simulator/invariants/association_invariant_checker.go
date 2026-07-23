@@ -84,9 +84,9 @@ func (c *AssociationInvariantChecker) CheckState(
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
 	var violations ViolationErrors
-	for _, instance := range simState.AllInstances() {
-		violations = append(violations, c.CheckInstance(instance, bindingsBuilder)...)
-	}
+	simState.ForEachInstance(func(inst *instance.Instance) {
+		violations = append(violations, c.CheckInstance(inst, bindingsBuilder)...)
+	})
 	return violations
 }
 

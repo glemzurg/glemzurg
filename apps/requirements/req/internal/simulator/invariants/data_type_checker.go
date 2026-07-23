@@ -511,10 +511,9 @@ func (c *DataTypeChecker) checkEnumConstraint(
 func (c *DataTypeChecker) CheckState(simState *instance.State) ViolationErrors {
 	var violations ViolationErrors
 
-	for _, instance := range simState.AllInstances() {
-		instanceViolations := c.CheckInstance(instance)
-		violations = append(violations, instanceViolations...)
-	}
+	simState.ForEachInstance(func(inst *instance.Instance) {
+		violations = append(violations, c.CheckInstance(inst)...)
+	})
 
 	return violations
 }

@@ -307,13 +307,13 @@ func (c *InvariantChecker) CheckClassInvariants(
 ) ViolationErrors {
 	var violations ViolationErrors
 
-	for _, instance := range simState.AllInstances() {
-		items, ok := c.parsedClassInvariants[instance.ClassKey]
+	simState.ForEachInstance(func(inst *instance.Instance) {
+		items, ok := c.parsedClassInvariants[inst.ClassKey]
 		if !ok {
-			continue
+			return
 		}
-		violations = append(violations, c.checkClassInvariantsForInstance(instance, items, bindingsBuilder)...)
-	}
+		violations = append(violations, c.checkClassInvariantsForInstance(inst, items, bindingsBuilder)...)
+	})
 
 	return violations
 }
@@ -377,14 +377,14 @@ func (c *InvariantChecker) CheckAttributeInvariants(
 ) ViolationErrors {
 	var violations ViolationErrors
 
-	for _, instance := range simState.AllInstances() {
-		items, ok := c.parsedAttributeInvariants[instance.ClassKey]
+	simState.ForEachInstance(func(inst *instance.Instance) {
+		items, ok := c.parsedAttributeInvariants[inst.ClassKey]
 		if !ok {
-			continue
+			return
 		}
-		nullableByFieldKey := attributeNullableByFieldKey(c.classAttributes[instance.ClassKey])
-		violations = append(violations, c.checkAttributeInvariantsForInstance(instance, items, nullableByFieldKey, bindingsBuilder)...)
-	}
+		nullableByFieldKey := attributeNullableByFieldKey(c.classAttributes[inst.ClassKey])
+		violations = append(violations, c.checkAttributeInvariantsForInstance(inst, items, nullableByFieldKey, bindingsBuilder)...)
+	})
 
 	return violations
 }

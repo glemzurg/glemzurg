@@ -302,7 +302,5 @@ func (s *OutOfScopeProtocolSuite) TestEngineWithSurface_RunsWithOutOfScopePeerCl
 	result, err := eng.Run()
 	s.Require().NoError(err)
 	s.NotNil(result)
-	for _, inst := range result.FinalState.AllInstances() {
-		s.NotEqual(peerKey, inst.ClassKey)
-	}
+	s.False(result.FinalState.HasInstanceOfClass(peerKey))
 }
