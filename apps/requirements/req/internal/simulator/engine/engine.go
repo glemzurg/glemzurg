@@ -170,11 +170,7 @@ func wireSimulationCore(
 	catalog *ClassCatalog,
 	rng *rand.Rand,
 ) (*simulationCore, error) {
-	// Migration: expression registry, checkers, and derived eval still read
-	// sch.CoreModel() until they accept *schema.Schema directly.
-	model := sch.CoreModel()
-
-	evalCtx, err := setupExpressionRegistry(model)
+	evalCtx, err := sch.NewEvalContext()
 	if err != nil {
 		return nil, fmt.Errorf("expression registry setup: %w", err)
 	}
@@ -187,7 +183,7 @@ func wireSimulationCore(
 		derivedEval.SetCatalog(catalog)
 	}
 
-	checkers, err := setupCheckers(model, evalCtx)
+	checkers, err := setupCheckers(sch, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -232,10 +228,9 @@ func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model
 }
 
 func setupClassCatalog(sch *schema.Schema) *ClassCatalog {
-	model := sch.CoreModel()
-	catalog := NewClassCatalog(model)
-	PopulateCallerDataFromModel(model, catalog)
-	PopulateDerivedAttributeCallersFromModel(model, catalog)
+	catalog := NewClassCatalog(sch)
+	PopulateCallerDataFromSchema(sch, catalog)
+	PopulateDerivedAttributeCallersFromSchema(sch, catalog)
 	return catalog
 }
 
@@ -272,9 +267,7 @@ func setupState(
 
 	registerCatalogAssociations(catalog, bindingsBuilder)
 
-	// Migration: derived eval still takes *core.Model via CoreModel().
-	model := sch.CoreModel()
-	derivedEval, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, evalCtx)
+	derivedEval, err := NewDerivedAttributeEvaluator(sch, bindingsBuilder, evalCtx)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("derived attribute setup: %w", err)
 	}
@@ -282,7 +275,7 @@ func setupState(
 		bindingsBuilder.SetDerivedResolver(derivedEval)
 	}
 
-	if err := bindingsBuilder.RegisterNamedSets(model); err != nil {
+	if err := bindingsBuilder.RegisterNamedSets(sch); err != nil {
 		return nil, nil, nil, fmt.Errorf("named set setup: %w", err)
 	}
 
@@ -300,22 +293,20 @@ type simulationCheckers struct {
 	associationInvChecker    *invariants.AssociationInvariantChecker
 }
 
-// setupCheckers creates all invariant and constraint checkers.
-// evalCtx wires model global functions into class/model invariant evaluation.
-func setupCheckers(model *core.Model, evalCtx *evaluator.EvalContext) (*simulationCheckers, error) {
-	invariantChecker, err := invariants.NewInvariantChecker(model)
+// setupCheckers constructs constraint checkers from schema (no *core.Model).
+func setupCheckers(sch *schema.Schema, evalCtx *evaluator.EvalContext) (*simulationCheckers, error) {
+	invariantChecker, err := invariants.NewInvariantChecker(sch)
 	if err != nil {
 		return nil, fmt.Errorf("invariant checker setup: %w", err)
 	}
 	invariantChecker.SetEvalContext(evalCtx)
 
-	dataTypeChecker, _ := invariants.NewDataTypeChecker(model)
-
-	indexChecker := invariants.NewIndexUniquenessChecker(model)
-	multChecker := invariants.NewMultiplicityChecker(model)
-	assocInstancePairChecker := invariants.NewAssociationInstancePairChecker(model)
-	assocUniquenessChecker := invariants.NewAssociationUniquenessChecker(model)
-	associationInvChecker, err := invariants.NewAssociationInvariantChecker(model)
+	dataTypeChecker, _ := invariants.NewDataTypeChecker(sch)
+	indexChecker := invariants.NewIndexUniquenessChecker(sch)
+	multChecker := invariants.NewMultiplicityChecker(sch)
+	assocInstancePairChecker := invariants.NewAssociationInstancePairChecker(sch)
+	assocUniquenessChecker := invariants.NewAssociationUniquenessChecker(sch)
+	associationInvChecker, err := invariants.NewAssociationInvariantChecker(sch)
 	if err != nil {
 		return nil, fmt.Errorf("association invariant checker setup: %w", err)
 	}

@@ -1,10 +1,9 @@
 package invariants
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // AssociationInstancePairChecker validates that each association has at most one
@@ -13,28 +12,16 @@ type AssociationInstancePairChecker struct {
 	associations []model_class.Association
 }
 
-// NewAssociationInstancePairChecker builds instance-pair uniqueness metadata from the model.
-func NewAssociationInstancePairChecker(model *core.Model) *AssociationInstancePairChecker {
+// NewAssociationInstancePairChecker builds instance-pair uniqueness metadata from schema.
+func NewAssociationInstancePairChecker(sch *schema.Schema) *AssociationInstancePairChecker {
 	checker := &AssociationInstancePairChecker{}
 
-	classes := make(map[identity.Key]model_class.Class)
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				classes[class.Key] = class
-			}
-		}
-	}
-
-	for _, assoc := range model.GetClassAssociations() {
-		if _, ok := classes[assoc.FromClassKey]; !ok {
-			continue
-		}
-		if _, ok := classes[assoc.ToClassKey]; !ok {
-			continue
+	sch.ForEachAssociation(func(assoc model_class.Association) {
+		if !sch.IsClassInScope(assoc.FromClassKey) || !sch.IsClassInScope(assoc.ToClassKey) {
+			return
 		}
 		checker.associations = append(checker.associations, assoc)
-	}
+	})
 
 	return checker
 }

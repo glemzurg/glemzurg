@@ -139,7 +139,7 @@ func simpleCreateClass(subKey, name string) (model_class.Class, identity.Key) {
 
 func (s *AssociationClassSuite) TestCatalogIndexesAssociationClass() {
 	tcm := buildAssociationClassTestModel()
-	catalog := NewClassCatalog(tcm.model)
+	catalog := NewClassCatalog(schema.New(tcm.model))
 
 	s.True(catalog.IsAssociationClass(tcm.linkDefKey))
 	s.True(catalog.IsAssociationClassHost(tcm.hostAssocKey))
@@ -162,13 +162,13 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	tcm := buildAssociationClassTestModel()
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
-	catalog := NewClassCatalog(tcm.model)
+	catalog := NewClassCatalog(schema.New(tcm.model))
 	registerCatalogAssociations(catalog, bb)
 
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
 	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
-		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
+		Multiplicity: invariants.NewMultiplicityChecker(schema.New(tcm.model)),
 	}, ge, catalog, rng)
 
 	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
@@ -213,11 +213,11 @@ func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationC
 	tcm := buildAssociationClassTestModel()
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
-	catalog := NewClassCatalog(tcm.model)
+	catalog := NewClassCatalog(schema.New(tcm.model))
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
 	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
-		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
+		Multiplicity: invariants.NewMultiplicityChecker(schema.New(tcm.model)),
 	}, ge, catalog, rng)
 
 	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
@@ -243,11 +243,11 @@ func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 	tcm := buildAssociationClassTestModel()
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
-	catalog := NewClassCatalog(tcm.model)
+	catalog := NewClassCatalog(schema.New(tcm.model))
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
 	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
-		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
+		Multiplicity: invariants.NewMultiplicityChecker(schema.New(tcm.model)),
 	}, ge, catalog, rng)
 
 	linkDefClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.linkDefKey]
@@ -262,13 +262,13 @@ func (s *AssociationClassSuite) TestDeleteToNamedStateStillCountsAsLink() {
 	tcm := buildAssociationClassTestModel()
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
-	catalog := NewClassCatalog(tcm.model)
+	catalog := NewClassCatalog(schema.New(tcm.model))
 	registerCatalogAssociations(catalog, bb)
 
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
 	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
-		Multiplicity: invariants.NewMultiplicityChecker(tcm.model),
+		Multiplicity: invariants.NewMultiplicityChecker(schema.New(tcm.model)),
 	}, ge, catalog, rng)
 
 	linkDefClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.linkDefKey]
@@ -331,7 +331,7 @@ func (s *AssociationClassSuite) TestSimulationRunsAssociationClassScenario() {
 	walkSteps(result.Steps)
 	s.True(foundAdd, "simulation should exercise AC Add with bound endpoints")
 
-	acInfo := NewClassCatalog(tcm.model).LookupAssociationClass(tcm.linkDefKey)
+	acInfo := NewClassCatalog(schema.New(tcm.model)).LookupAssociationClass(tcm.linkDefKey)
 	s.Require().NotNil(acInfo)
 	linkedHosts := result.FinalState.AssociationLinks().AllHostAssociationKeys()
 	s.True(linkedHosts[evaluator.AssociationKey(acInfo.HostAssociation.Key.String())])

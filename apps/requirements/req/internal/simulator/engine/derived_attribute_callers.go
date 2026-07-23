@@ -1,40 +1,37 @@
 package engine
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
-// PopulateDerivedAttributeCallersFromModel records which classes reference each
+// PopulateDerivedAttributeCallersFromSchema records which classes reference each
 // derived attribute in lowered logic. External derived attributes (no simulatable
 // in-scope caller) belong on the simulation surface, like queries.
-func PopulateDerivedAttributeCallersFromModel(model *core.Model, catalog *ClassCatalog) {
-	derivedKeys := buildDerivedAttributeKeyIndex(model)
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				recordClassDerivedAttributeCallers(class, derivedKeys, catalog)
-			}
-		}
-	}
+func PopulateDerivedAttributeCallersFromSchema(sch *schema.Schema, catalog *ClassCatalog) {
+	derivedKeys := buildDerivedAttributeKeyIndex(sch)
+	sch.ForEachClass(func(class model_class.Class) {
+		recordClassDerivedAttributeCallers(class, derivedKeys, catalog)
+	})
 }
 
-func buildDerivedAttributeKeyIndex(model *core.Model) map[identity.Key]bool {
+// PopulateDerivedAttributeCallersFromModel is an alias for schema-based population.
+func PopulateDerivedAttributeCallersFromModel(sch *schema.Schema, catalog *ClassCatalog) {
+	PopulateDerivedAttributeCallersFromSchema(sch, catalog)
+}
+
+func buildDerivedAttributeKeyIndex(sch *schema.Schema) map[identity.Key]bool {
 	derivedKeys := make(map[identity.Key]bool)
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				for _, attr := range class.Attributes {
-					if attr.DerivationPolicy != nil {
-						derivedKeys[attr.Key] = true
-					}
-				}
+	sch.ForEachClass(func(class model_class.Class) {
+		for _, attr := range class.Attributes {
+			if attr.DerivationPolicy != nil {
+				derivedKeys[attr.Key] = true
 			}
 		}
-	}
+	})
 	return derivedKeys
 }
 

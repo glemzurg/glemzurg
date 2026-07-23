@@ -1,9 +1,9 @@
 package engine
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // AssociationClassInfo holds native host-association metadata for one association-class role.
@@ -14,22 +14,22 @@ type AssociationClassInfo struct {
 	ToClassKey          identity.Key
 }
 
-func buildAssociationClassIndex(model *core.Model, scopedClasses map[identity.Key]*ClassInfo) map[identity.Key]*AssociationClassInfo {
+func buildAssociationClassIndex(sch *schema.Schema, scopedClasses map[identity.Key]*ClassInfo) map[identity.Key]*AssociationClassInfo {
 	index := make(map[identity.Key]*AssociationClassInfo)
 
-	for _, assoc := range model.GetClassAssociations() {
+	sch.ForEachAssociation(func(assoc model_class.Association) {
 		if assoc.AssociationClassKey == nil {
-			continue
+			return
 		}
 		acKey := *assoc.AssociationClassKey
 		if _, inScope := scopedClasses[acKey]; !inScope {
-			continue
+			return
 		}
 		if _, fromIn := scopedClasses[assoc.FromClassKey]; !fromIn {
-			continue
+			return
 		}
 		if _, toIn := scopedClasses[assoc.ToClassKey]; !toIn {
-			continue
+			return
 		}
 
 		index[acKey] = &AssociationClassInfo{
@@ -38,7 +38,7 @@ func buildAssociationClassIndex(model *core.Model, scopedClasses map[identity.Ke
 			FromClassKey:        assoc.FromClassKey,
 			ToClassKey:          assoc.ToClassKey,
 		}
-	}
+	})
 
 	return index
 }

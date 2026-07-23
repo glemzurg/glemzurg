@@ -148,7 +148,7 @@ core.Model  ──schema.New──►  *schema.Schema  ──►  instance / eng
 ```
 
 - **Intake:** `*core.Model` may be used only to build `*schema.Schema` (and one-shot surface resolution before that).
-- **Run:** simulator components must not hold a second authoritative `*core.Model` for the same run. Prefer Schema methods. During migration, `Schema.CoreModel()` is the only legitimate model pointer—use it to construct catalog/checkers, then drop it.
+- **Run:** no free `*core.Model` for the active surface. Use Schema methods and objects built from schema (class catalog, checkers, eval context, derived index, named sets). The model pointer is private to schema.
 - Do not mutate the model after `New`.
 - Do not own: live instances, links, SM positions (`instance`).
 

@@ -61,7 +61,7 @@ func (s *OutOfScopeProtocolSuite) TestRegisterOutOfScopeMetadata_EmptyExtentName
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
 	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(active)
+	catalog := NewClassCatalog(schema.New(active))
 	s.NotContains(catalog.ClassNameMap(), itemKey)
 
 	catalog.RegisterOutOfScopeMetadata(full)
@@ -78,7 +78,7 @@ func (s *OutOfScopeProtocolSuite) TestRegisterOutOfScopeMetadata_BoundaryAssocia
 	full.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
 	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(active)
+	catalog := NewClassCatalog(schema.New(active))
 	_, _, foundBefore := catalog.OutgoingAssociationByTLAField(orderKey, "Lines")
 	s.False(foundBefore)
 
@@ -97,7 +97,7 @@ func (s *OutOfScopeProtocolSuite) TestClassExtentBinding_OutOfScopeIsEmptySet() 
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
 	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(active)
+	catalog := NewClassCatalog(schema.New(active))
 	catalog.RegisterOutOfScopeMetadata(full)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
@@ -153,7 +153,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	// Item uses create event name "create" (testItemClass), not _new — set-add matches PeerCreationEvent.
 	// Use EventNameNew only if peer has that event. testItemClass has "create" as creation event.
 	// MatchAssociationSetAddExpr needs EventCall with peer creation event key.
-	createEvent, ok := NewClassCatalog(testModel(classEntry(itemClass, itemKey))).GetCreationEvent(itemKey)
+	createEvent, ok := NewClassCatalog(schema.New(testModel(classEntry(itemClass, itemKey)))).GetCreationEvent(itemKey)
 	s.Require().True(ok)
 	expr := &me.SetOp{
 		Op:   me.SetUnion,
@@ -183,7 +183,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	)
 
 	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(active)
+	catalog := NewClassCatalog(schema.New(active))
 	catalog.RegisterOutOfScopeMetadata(full)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
@@ -247,7 +247,7 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 	)
 
 	active := testModel(classEntry(itemClass, itemKey))
-	catalog := NewClassCatalog(active)
+	catalog := NewClassCatalog(schema.New(active))
 	catalog.RegisterOutOfScopeMetadata(full)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))

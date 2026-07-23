@@ -3,7 +3,6 @@ package invariants
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -11,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -29,23 +29,28 @@ type AssociationInvariantChecker struct {
 	byFromClass map[identity.Key][]parsedAssociationInvariantItem
 }
 
-// NewAssociationInvariantChecker builds association invariant metadata from the model.
-func NewAssociationInvariantChecker(model *core.Model) (*AssociationInvariantChecker, error) {
+// NewAssociationInvariantChecker builds association invariant metadata from schema.
+func NewAssociationInvariantChecker(sch *schema.Schema) (*AssociationInvariantChecker, error) {
 	checker := &AssociationInvariantChecker{
 		byFromClass: make(map[identity.Key][]parsedAssociationInvariantItem),
 	}
 
-	for _, assoc := range model.GetClassAssociations() {
-		if len(assoc.Invariants) == 0 {
-			continue
+	var parseErr error
+	sch.ForEachAssociation(func(assoc model_class.Association) {
+		if parseErr != nil || len(assoc.Invariants) == 0 {
+			return
 		}
 		items, err := parseAssociationInvariantItems(assoc)
 		if err != nil {
-			return nil, err
+			parseErr = err
+			return
 		}
 		if len(items) > 0 {
 			checker.byFromClass[assoc.FromClassKey] = append(checker.byFromClass[assoc.FromClassKey], items...)
 		}
+	})
+	if parseErr != nil {
+		return nil, parseErr
 	}
 
 	return checker, nil

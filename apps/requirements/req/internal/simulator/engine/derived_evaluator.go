@@ -3,7 +3,7 @@ package engine
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
@@ -11,6 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
@@ -51,11 +52,7 @@ type DerivedAttributeEvaluator struct {
 // Returns an error if:
 //   - any DerivationPolicy expression is not parsed (ParseOk() == false)
 //   - any DerivationPolicy expression contains primed variables
-func NewDerivedAttributeEvaluator(
-	model *core.Model,
-	bindingsBuilder *state.BindingsBuilder,
-	evalCtx *evaluator.EvalContext,
-) (*DerivedAttributeEvaluator, error) {
+func NewDerivedAttributeEvaluator(sch *schema.Schema, bindingsBuilder *state.BindingsBuilder, evalCtx *evaluator.EvalContext) (*DerivedAttributeEvaluator, error) {
 	dae := &DerivedAttributeEvaluator{
 		byClass:         make(map[identity.Key][]derivedAttrInfo),
 		byAttrKey:       make(map[identity.Key]derivedAttrInfo),
@@ -63,43 +60,48 @@ func NewDerivedAttributeEvaluator(
 		evalCtx:         evalCtx,
 	}
 
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				for _, attr := range class.Attributes {
-					if attr.DerivationPolicy == nil {
-						continue
-					}
-
-					expr := attr.DerivationPolicy.Spec.Expression
-					if expr == nil {
-						if attr.DerivationPolicy.Spec.Specification == "" {
-							continue // Skip empty specs
-						}
-						return nil, fmt.Errorf(
-							"class %s attribute %s DerivationPolicy: expression not lowered",
-							class.Name, attr.Name,
-						)
-					}
-
-					if model_bridge.ContainsAnyPrimedME(expr) {
-						return nil, fmt.Errorf(
-							"class %s attribute %s DerivationPolicy must not contain primed variables",
-							class.Name, attr.Name,
-						)
-					}
-
-					info := derivedAttrInfo{
-						attrKey:    attr.Key,
-						attrSubKey: attr.Key.SubKey,
-						attrName:   attr.Name,
-						expression: expr,
-					}
-					dae.byClass[class.Key] = append(dae.byClass[class.Key], info)
-					dae.byAttrKey[attr.Key] = info
-				}
-			}
+	var buildErr error
+	sch.ForEachClass(func(class model_class.Class) {
+		if buildErr != nil {
+			return
 		}
+		for _, attr := range class.Attributes {
+			if attr.DerivationPolicy == nil {
+				continue
+			}
+
+			expr := attr.DerivationPolicy.Spec.Expression
+			if expr == nil {
+				if attr.DerivationPolicy.Spec.Specification == "" {
+					continue // Skip empty specs
+				}
+				buildErr = fmt.Errorf(
+					"class %s attribute %s DerivationPolicy: expression not lowered",
+					class.Name, attr.Name,
+				)
+				return
+			}
+
+			if model_bridge.ContainsAnyPrimedME(expr) {
+				buildErr = fmt.Errorf(
+					"class %s attribute %s DerivationPolicy must not contain primed variables",
+					class.Name, attr.Name,
+				)
+				return
+			}
+
+			info := derivedAttrInfo{
+				attrKey:    attr.Key,
+				attrSubKey: attr.Key.SubKey,
+				attrName:   attr.Name,
+				expression: expr,
+			}
+			dae.byClass[class.Key] = append(dae.byClass[class.Key], info)
+			dae.byAttrKey[attr.Key] = info
+		}
+	})
+	if buildErr != nil {
+		return nil, buildErr
 	}
 
 	return dae, nil

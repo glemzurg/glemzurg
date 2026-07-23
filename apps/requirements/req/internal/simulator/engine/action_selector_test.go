@@ -29,7 +29,7 @@ func (s *ActionSelectorSuite) TestCreationEligibleWhenNoInstancesExist() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := NewClassCatalog(schema.New(model))
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
@@ -46,7 +46,7 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := NewClassCatalog(schema.New(model))
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
@@ -105,7 +105,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	})
 
 	model := testModel(classEntry(class, classKey))
-	catalog := NewClassCatalog(model)
+	catalog := NewClassCatalog(schema.New(model))
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
@@ -120,7 +120,7 @@ func (s *ActionSelectorSuite) TestCreationBlockedUntilObjectParamClassHasInstanc
 	// Owner._new(Peer) requires an in-scope Peer instance before Owner creation is eligible.
 	ownerClass, ownerKey, peerClass, peerKey := ownerWithObjectParamPeer()
 	model := testModel(classEntry(ownerClass, ownerKey), classEntry(peerClass, peerKey))
-	catalog := NewClassCatalog(model)
+	catalog := NewClassCatalog(schema.New(model))
 	selector := NewActionSelector(catalog, nil, state.NewBindingsBuilder(instance.NewState(schema.New(schema.EmptyModel()))), nil, rand.New(rand.NewSource(1))) //nolint:gosec
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
@@ -155,7 +155,7 @@ func (s *ActionSelectorSuite) TestCreationAllowedWhenObjectParamClassOutOfScope(
 	ownerClass, ownerKey, peerClass, peerKey := ownerWithObjectParamPeer()
 	full := testModel(classEntry(ownerClass, ownerKey), classEntry(peerClass, peerKey))
 	active := testModel(classEntry(ownerClass, ownerKey))
-	catalog := NewClassCatalog(active)
+	catalog := NewClassCatalog(schema.New(active))
 	catalog.RegisterOutOfScopeMetadata(full)
 	selector := NewActionSelector(catalog, nil, nil, nil, rand.New(rand.NewSource(1))) //nolint:gosec
 
@@ -250,7 +250,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleOnExistingInstances() {
 	})
 
 	model := testModel(classEntry(class, classKey))
-	catalog := NewClassCatalog(model)
+	catalog := NewClassCatalog(schema.New(model))
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 

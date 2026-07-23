@@ -63,7 +63,7 @@ func (s *AssociationUniquenessCheckerSuite) buildModel() (*core.Model, identity.
 
 func (s *AssociationUniquenessCheckerSuite) TestDistinctCodesNoViolation() {
 	model, assocKey, fromKey, toKey, acKey := s.buildModel()
-	checker := NewAssociationUniquenessChecker(model)
+	checker := NewAssociationUniquenessChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	fromInst := simState.CreateInstance(fromKey, object.NewRecord())
@@ -84,7 +84,7 @@ func (s *AssociationUniquenessCheckerSuite) TestDistinctCodesNoViolation() {
 
 func (s *AssociationUniquenessCheckerSuite) TestDuplicateCodeReportsViolation() {
 	model, assocKey, fromKey, toKey, acKey := s.buildModel()
-	checker := NewAssociationUniquenessChecker(model)
+	checker := NewAssociationUniquenessChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	fromInst := simState.CreateInstance(fromKey, object.NewRecord())
@@ -106,7 +106,7 @@ func (s *AssociationUniquenessCheckerSuite) TestDuplicateCodeReportsViolation() 
 
 func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDistinctNoViolation() {
 	model, assocKey, orderKey, customerKey := associationUniquenessPlainToOnlyModel()
-	checker := NewAssociationUniquenessChecker(model)
+	checker := NewAssociationUniquenessChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	order := simState.CreateInstance(orderKey, object.NewRecord())
@@ -124,7 +124,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDistinctNoViolation()
 
 func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDuplicateReportsViolation() {
 	model, assocKey, orderKey, customerKey := associationUniquenessPlainToOnlyModel()
-	checker := NewAssociationUniquenessChecker(model)
+	checker := NewAssociationUniquenessChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	order := simState.CreateInstance(orderKey, object.NewRecord())
@@ -144,7 +144,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDuplicateReportsViola
 
 func (s *AssociationUniquenessCheckerSuite) TestPlainFromOnlyDistinctNoViolation() {
 	model, assocKey, productKey, shelfKey := associationUniquenessPlainFromOnlyModel()
-	checker := NewAssociationUniquenessChecker(model)
+	checker := NewAssociationUniquenessChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	product1 := simState.CreateInstance(productKey, object.NewRecordFromFields(map[string]object.Object{
@@ -163,7 +163,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainFromOnlyDistinctNoViolation
 
 func (s *AssociationUniquenessCheckerSuite) TestPlainFromOnlyDuplicateReportsViolation() {
 	model, assocKey, productKey, shelfKey := associationUniquenessPlainFromOnlyModel()
-	checker := NewAssociationUniquenessChecker(model)
+	checker := NewAssociationUniquenessChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	product1 := simState.CreateInstance(productKey, object.NewRecordFromFields(map[string]object.Object{
@@ -183,7 +183,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainFromOnlyDuplicateReportsVio
 
 func (s *AssociationUniquenessCheckerSuite) TestPlainBothSidesDistinctNoViolation() {
 	model, assocKey, orderKey, shipmentKey := associationUniquenessPlainBothSidesModel()
-	checker := NewAssociationUniquenessChecker(model)
+	checker := NewAssociationUniquenessChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	order1 := simState.CreateInstance(orderKey, object.NewRecordFromFields(map[string]object.Object{
@@ -206,7 +206,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainBothSidesDistinctNoViolatio
 
 func (s *AssociationUniquenessCheckerSuite) TestPlainBothSidesDuplicateReportsViolation() {
 	model, assocKey, orderKey, shipmentKey := associationUniquenessPlainBothSidesModel()
-	checker := NewAssociationUniquenessChecker(model)
+	checker := NewAssociationUniquenessChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	order1 := simState.CreateInstance(orderKey, object.NewRecordFromFields(map[string]object.Object{

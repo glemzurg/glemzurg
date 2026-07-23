@@ -3,10 +3,10 @@ package invariants
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // associationBinding holds one association edge as seen from a participating class.
@@ -21,27 +21,15 @@ type MultiplicityChecker struct {
 	classAssocs map[identity.Key][]associationBinding
 }
 
-// NewMultiplicityChecker builds association multiplicity metadata from the model.
-func NewMultiplicityChecker(model *core.Model) *MultiplicityChecker {
+// NewMultiplicityChecker builds association multiplicity metadata from schema.
+func NewMultiplicityChecker(sch *schema.Schema) *MultiplicityChecker {
 	checker := &MultiplicityChecker{
 		classAssocs: make(map[identity.Key][]associationBinding),
 	}
 
-	classes := make(map[identity.Key]model_class.Class)
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				classes[class.Key] = class
-			}
-		}
-	}
-
-	for _, assoc := range model.GetClassAssociations() {
-		if _, ok := classes[assoc.FromClassKey]; !ok {
-			continue
-		}
-		if _, ok := classes[assoc.ToClassKey]; !ok {
-			continue
+	sch.ForEachAssociation(func(assoc model_class.Association) {
+		if !sch.IsClassInScope(assoc.FromClassKey) || !sch.IsClassInScope(assoc.ToClassKey) {
+			return
 		}
 		binding := associationBinding{
 			association:  assoc,
@@ -52,7 +40,7 @@ func NewMultiplicityChecker(model *core.Model) *MultiplicityChecker {
 		if assoc.FromClassKey != assoc.ToClassKey {
 			checker.classAssocs[assoc.ToClassKey] = append(checker.classAssocs[assoc.ToClassKey], binding)
 		}
-	}
+	})
 
 	return checker
 }

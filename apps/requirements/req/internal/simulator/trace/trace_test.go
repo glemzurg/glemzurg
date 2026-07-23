@@ -419,7 +419,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 	model.ClassAssociations = map[identity.Key]model_class.Association{hostAssocKey: hostAssoc}
 
-	catalog := engine.NewClassCatalog(&model)
+	catalog := engine.NewClassCatalog(schema.New(&model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())

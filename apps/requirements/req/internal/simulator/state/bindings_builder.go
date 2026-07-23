@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // DerivedAttributeResolver computes derived attribute values for an instance.
@@ -65,14 +65,15 @@ func (b *BindingsBuilder) NamedSetValues() map[string]object.Object {
 }
 
 // RegisterNamedSets evaluates and caches model-level named sets for expression lookup.
-func (b *BindingsBuilder) RegisterNamedSets(model *core.Model) error {
+func (b *BindingsBuilder) RegisterNamedSets(sch *schema.Schema) error {
 	b.namedSetValues = make(map[string]object.Object)
-	if len(model.NamedSets) == 0 {
+	namedSets := sch.NamedSets()
+	if len(namedSets) == 0 {
 		return nil
 	}
 
 	evalBindings := evaluator.NewBindings()
-	for _, ns := range model.NamedSets {
+	for _, ns := range namedSets {
 		if ns.Spec.Expression == nil {
 			return fmt.Errorf("named set %q has no lowered expression", ns.Name)
 		}

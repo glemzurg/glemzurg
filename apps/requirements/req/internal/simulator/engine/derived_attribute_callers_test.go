@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"math/big"
 	"testing"
 
@@ -80,8 +81,8 @@ func TestExternalDerivedAttributes_ExcludesSimulatableCaller(t *testing.T) {
 	ledgerClass.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	model := testModel(classEntry(accountClass, accountKey), classEntry(ledgerClass, ledgerKey))
-	catalog := NewClassCatalog(model)
-	PopulateDerivedAttributeCallersFromModel(model, catalog)
+	catalog := NewClassCatalog(schema.New(model))
+	PopulateDerivedAttributeCallersFromSchema(schema.New(model), catalog)
 
 	ext := catalog.ExternalDerivedAttributes(accountKey)
 	assert.Empty(t, ext, "balance referenced by simulatable ledger class should be internal")
@@ -133,8 +134,8 @@ func TestExternalDerivedAttributes_IncludesUncalledDerivedAttribute(t *testing.T
 	})
 
 	model := testModel(classEntry(accountClass, accountKey))
-	catalog := NewClassCatalog(model)
-	PopulateDerivedAttributeCallersFromModel(model, catalog)
+	catalog := NewClassCatalog(schema.New(model))
+	PopulateDerivedAttributeCallersFromSchema(schema.New(model), catalog)
 
 	ext := catalog.ExternalDerivedAttributes(accountKey)
 	require.Len(t, ext, 1)

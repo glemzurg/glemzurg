@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // _BOUND_TYPE_UNCONSTRAINED is the span bound type indicating no constraint.
@@ -35,33 +35,28 @@ type DataTypeChecker struct {
 	unparsedAttributeDefs ViolationErrors
 }
 
-// NewDataTypeChecker creates a new data type checker from a model.
-func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
+// NewDataTypeChecker creates a new data type checker from schema.
+func NewDataTypeChecker(sch *schema.Schema) (*DataTypeChecker, ViolationErrors) {
 	checker := &DataTypeChecker{
 		classAttributes: make(map[identity.Key]map[string]*model_class.Attribute),
 	}
 
-	// Iterate through all domains, subdomains, and classes to collect attributes
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				attrMap := make(map[string]*model_class.Attribute)
+	sch.ForEachClass(func(class model_class.Class) {
+		attrMap := make(map[string]*model_class.Attribute)
 
-				for _, attr := range class.Attributes {
-					attrCopy := attr // Make a copy to get a stable pointer
-					attrMap[attr.Key.SubKey] = &attrCopy
+		for _, attr := range class.Attributes {
+			attrCopy := attr // Make a copy to get a stable pointer
+			attrMap[attr.Key.SubKey] = &attrCopy
 
-					if attr.DataType == nil {
-						checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
-							NewUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
-						)
-					}
-				}
-
-				checker.classAttributes[class.Key] = attrMap
+			if attr.DataType == nil {
+				checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
+					NewUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
+				)
 			}
 		}
-	}
+
+		checker.classAttributes[class.Key] = attrMap
+	})
 
 	return checker, checker.unparsedAttributeDefs
 }

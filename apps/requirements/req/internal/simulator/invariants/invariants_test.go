@@ -197,7 +197,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, violations := NewDataTypeChecker(&model)
+	checker, violations := NewDataTypeChecker(schema.New(&model))
 	s.NotNil(checker)
 	s.True(violations.HasViolations())
 	s.Len(violations, 1)
@@ -208,7 +208,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 // Test: DataTypeChecker validates required attributes.
 func (s *InvariantsSuite) TestDataTypeCheckerRequiredAttribute() {
 	model := createTestModel()
-	checker, violations := NewDataTypeChecker(model)
+	checker, violations := NewDataTypeChecker(schema.New(model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -307,7 +307,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSkipsDerivedAttributes() {
 	model := core.NewModel("jurisdiction_derived", core.ModelDetails{Name: "JurisdictionDerived", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, setupViolations := NewDataTypeChecker(&model)
+	checker, setupViolations := NewDataTypeChecker(schema.New(&model))
 	s.Require().NotNil(checker)
 	s.False(setupViolations.HasViolations())
 
@@ -328,7 +328,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSkipsDerivedAttributes() {
 // Test: DataTypeChecker validates span constraints.
 func (s *InvariantsSuite) TestDataTypeCheckerSpanConstraint() {
 	model := createTestModel()
-	checker, violations := NewDataTypeChecker(model)
+	checker, violations := NewDataTypeChecker(schema.New(model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -358,7 +358,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanConstraint() {
 // Test: DataTypeChecker validates enumeration constraints.
 func (s *InvariantsSuite) TestDataTypeCheckerEnumConstraint() {
 	model := createTestModel()
-	checker, violations := NewDataTypeChecker(model)
+	checker, violations := NewDataTypeChecker(schema.New(model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -388,7 +388,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerEnumConstraint() {
 // Test: DataTypeChecker passes for valid instance.
 func (s *InvariantsSuite) TestDataTypeCheckerValidInstance() {
 	model := createTestModel()
-	checker, violations := NewDataTypeChecker(model)
+	checker, violations := NewDataTypeChecker(schema.New(model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -432,7 +432,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerMissingAttributeTypeSpec() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, violations := NewDataTypeChecker(&model)
+	checker, violations := NewDataTypeChecker(schema.New(&model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -464,7 +464,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerUnparsedAttributeOnInstance() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, setupViolations := NewDataTypeChecker(&model)
+	checker, setupViolations := NewDataTypeChecker(schema.New(&model))
 	s.Require().Len(setupViolations, 1)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
@@ -563,7 +563,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDateTimeTypeSpecMismatch() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, setupViolations := NewDataTypeChecker(&model)
+	checker, setupViolations := NewDataTypeChecker(schema.New(&model))
 	s.Empty(setupViolations)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
@@ -595,7 +595,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDateTimeConstraint() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, setupViolations := NewDataTypeChecker(&model)
+	checker, setupViolations := NewDataTypeChecker(schema.New(&model))
 	s.Empty(setupViolations)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
@@ -620,7 +620,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDateTimeConstraint() {
 // Test: DataTypeChecker handles nullable attributes correctly.
 func (s *InvariantsSuite) TestDataTypeCheckerNullableAttribute() {
 	model := createTestModel()
-	checker, violations := NewDataTypeChecker(model)
+	checker, violations := NewDataTypeChecker(schema.New(model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -712,7 +712,7 @@ func (s *InvariantsSuite) TestViolationErrorsFiltering() {
 // Test: InvariantChecker creation.
 func (s *InvariantsSuite) TestInvariantCheckerCreation() {
 	model := createTestModel()
-	checker, err := NewInvariantChecker(model)
+	checker, err := NewInvariantChecker(schema.New(model))
 	s.Require().NoError(err)
 	s.NotNil(checker)
 	s.Equal(1, checker.GetModelInvariantCount())
@@ -721,7 +721,7 @@ func (s *InvariantsSuite) TestInvariantCheckerCreation() {
 // Test: InvariantChecker model invariant that passes.
 func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 	model := createTestModel()
-	checker, err := NewInvariantChecker(model)
+	checker, err := NewInvariantChecker(schema.New(model))
 	s.Require().NoError(err)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
@@ -739,7 +739,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", invariants, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
-	checker, err := NewInvariantChecker(&model)
+	checker, err := NewInvariantChecker(schema.New(&model))
 	s.Require().NoError(err)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
@@ -764,7 +764,7 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
 	// The checker should handle nil Expression (skip unparsed invariants).
-	checker, err := NewInvariantChecker(&model)
+	checker, err := NewInvariantChecker(schema.New(&model))
 	s.Require().NoError(err)
 	s.Equal(0, checker.GetModelInvariantCount()) // Unparsed invariants are not counted.
 }
@@ -774,10 +774,10 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 	model := createTestModel()
 
 	// Update model invariant to check something real (already parsed via parsedSpec in createTestModel).
-	invChecker, err := NewInvariantChecker(model)
+	invChecker, err := NewInvariantChecker(schema.New(model))
 	s.Require().NoError(err)
 
-	dtChecker, dtViolations := NewDataTypeChecker(model)
+	dtChecker, dtViolations := NewDataTypeChecker(schema.New(model))
 	s.False(dtViolations.HasViolations())
 
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
@@ -845,7 +845,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, violations := NewDataTypeChecker(&model)
+	checker, violations := NewDataTypeChecker(schema.New(&model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -913,7 +913,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerUsesAttributeFieldKey() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, violations := NewDataTypeChecker(&model)
+	checker, violations := NewDataTypeChecker(schema.New(&model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -964,7 +964,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerNormalizesEmptyStringToNull() {
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, violations := NewDataTypeChecker(&model)
+	checker, violations := NewDataTypeChecker(schema.New(&model))
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -1036,7 +1036,7 @@ func (s *InvariantsSuite) TestCheckAttributeInvariantSkipsWhenNullableAndUnset()
 	model := core.NewModel("test", core.ModelDetails{Name: "Test", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, err := NewInvariantChecker(&model)
+	checker, err := NewInvariantChecker(schema.New(&model))
 	s.Require().NoError(err)
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))

@@ -1414,7 +1414,7 @@ func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	bb := state.NewBindingsBuilder(simState)
-	multChecker := invariants.NewMultiplicityChecker(model)
+	multChecker := invariants.NewMultiplicityChecker(schema.New(model))
 	ge := NewGuardEvaluator(bb)
 	exec := NewActionExecutor(bb, InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
 		Multiplicity: multChecker,

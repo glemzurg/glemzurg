@@ -49,7 +49,7 @@ func (s *AssociationInstancePairCheckerSuite) buildPlainAssociationModel() (*cor
 
 func (s *AssociationInstancePairCheckerSuite) TestDistinctPairsNoViolation() {
 	model, assocKey, orderKey, itemKey := s.buildPlainAssociationModel()
-	checker := NewAssociationInstancePairChecker(model)
+	checker := NewAssociationInstancePairChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	order := simState.CreateInstance(orderKey, object.NewRecord())
@@ -64,7 +64,7 @@ func (s *AssociationInstancePairCheckerSuite) TestDistinctPairsNoViolation() {
 
 func (s *AssociationInstancePairCheckerSuite) TestDuplicatePairReportsViolation() {
 	model, assocKey, orderKey, itemKey := s.buildPlainAssociationModel()
-	checker := NewAssociationInstancePairChecker(model)
+	checker := NewAssociationInstancePairChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	order := simState.CreateInstance(orderKey, object.NewRecord())
@@ -85,7 +85,7 @@ func (s *AssociationInstancePairCheckerSuite) TestDuplicatePairReportsViolation(
 
 func (s *AssociationInstancePairCheckerSuite) TestAssociationClassDuplicatePairReportsViolation() {
 	model, assocKey, fromKey, toKey, acKey := associationUniquenessSuiteModelWithoutUniqueness()
-	checker := NewAssociationInstancePairChecker(model)
+	checker := NewAssociationInstancePairChecker(schema.New(model))
 
 	simState := instance.NewState(schema.New(schema.EmptyModel()))
 	fromInst := simState.CreateInstance(fromKey, object.NewRecord())

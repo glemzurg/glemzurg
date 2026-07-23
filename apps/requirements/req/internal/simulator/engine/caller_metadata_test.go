@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -69,8 +70,8 @@ func TestPopulateCallerDataFromModel_UseCaseEventSender(t *testing.T) {
 		domainKey: domain,
 	}
 
-	catalog := NewClassCatalog(&model)
-	PopulateCallerDataFromModel(&model, catalog)
+	catalog := NewClassCatalog(schema.New(&model))
+	PopulateCallerDataFromModel(schema.New(&model), catalog)
 
 	cd := catalog.CallerData()
 	require.Contains(t, cd.EventSentBy, eventKey)
@@ -79,8 +80,8 @@ func TestPopulateCallerDataFromModel_UseCaseEventSender(t *testing.T) {
 
 func TestPopulateCallerData_MandatoryAssociationClassDoesNotSendToEndpointCreation(t *testing.T) {
 	tcm := buildAssociationClassTestModel()
-	catalog := NewClassCatalog(tcm.model)
-	PopulateCallerDataFromModel(tcm.model, catalog)
+	catalog := NewClassCatalog(schema.New(tcm.model))
+	PopulateCallerDataFromSchema(schema.New(tcm.model), catalog)
 
 	jurisdictionCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")
 	cd := catalog.CallerData()
@@ -93,7 +94,7 @@ func TestExternalCreationEvents_FiltersSimulatableSender(t *testing.T) {
 	itemClass, itemKey := testItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := NewClassCatalog(schema.New(model))
 	createEventKey := mustKey("domain/d/subdomain/s/class/item/event/create")
 	catalog.SetEventSentBy(createEventKey, []identity.Key{orderKey})
 
@@ -178,8 +179,8 @@ func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {
 	model := core.NewModel("fixture-model", core.ModelDetails{Name: "Fixture Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	catalog := NewClassCatalog(&model)
-	PopulateCallerDataFromModel(&model, catalog)
+	catalog := NewClassCatalog(schema.New(&model))
+	PopulateCallerDataFromModel(schema.New(&model), catalog)
 
 	cd := catalog.CallerData()
 	require.Contains(t, cd.EventSentBy, eventNewTo)

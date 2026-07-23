@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
@@ -65,8 +66,8 @@ type ClassCatalog struct {
 	surfaceUnavailableList    []surface.UnavailableMember
 }
 
-// NewClassCatalog builds a class catalog from the model.
-func NewClassCatalog(model *core.Model) *ClassCatalog {
+// NewClassCatalog builds a class catalog from schema (in-scope model surface).
+func NewClassCatalog(sch *schema.Schema) *ClassCatalog {
 	catalog := &ClassCatalog{
 		classes:                   make(map[identity.Key]*ClassInfo),
 		classAssocs:               make(map[identity.Key][]AssociationInfo),
@@ -80,17 +81,13 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 	}
 
 	// Walk all in-scope classes; stateless classes are liveness-only metadata.
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				catalog.classes[class.Key] = buildScopedClassInfo(class)
-				catalog.extentClassNames[class.Key] = model_class.ClassTLAName(class.Name)
-			}
-		}
-	}
+	sch.ForEachClass(func(class model_class.Class) {
+		catalog.classes[class.Key] = buildScopedClassInfo(class)
+		catalog.extentClassNames[class.Key] = model_class.ClassTLAName(class.Name)
+	})
 
-	catalog.associationClasses = buildAssociationClassIndex(model, catalog.classes)
-	catalog.buildAssociationInfo(model)
+	catalog.associationClasses = buildAssociationClassIndex(sch, catalog.classes)
+	catalog.buildAssociationInfo(sch)
 
 	return catalog
 }
@@ -332,15 +329,14 @@ func buildDoActions(class model_class.Class, s model_state.State) []model_state.
 	return doActions
 }
 
-// buildAssociationInfo builds association metadata from the model.
-func (c *ClassCatalog) buildAssociationInfo(model *core.Model) {
-	allAssocs := model.GetClassAssociations()
-	for _, assoc := range allAssocs {
+// buildAssociationInfo builds association metadata from schema.
+func (c *ClassCatalog) buildAssociationInfo(sch *schema.Schema) {
+	sch.ForEachAssociation(func(assoc model_class.Association) {
 		if _, fromIn := c.classes[assoc.FromClassKey]; !fromIn {
-			continue
+			return
 		}
 		if _, toIn := c.classes[assoc.ToClassKey]; !toIn {
-			continue
+			return
 		}
 		ai := AssociationInfo{
 			Association:   assoc,
@@ -352,7 +348,7 @@ func (c *ClassCatalog) buildAssociationInfo(model *core.Model) {
 			MinFrom:       assoc.FromMultiplicity.LowerBound,
 		}
 		c.addAssociationInfo(ai)
-	}
+	})
 
 	// Sort associations for determinism.
 	sort.Slice(c.associations, func(i, j int) bool {

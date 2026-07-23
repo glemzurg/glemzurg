@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 type associationUniquenessBinding struct {
@@ -20,34 +19,22 @@ type AssociationUniquenessChecker struct {
 	bindings []associationUniquenessBinding
 }
 
-// NewAssociationUniquenessChecker builds association uniqueness metadata from the model.
-func NewAssociationUniquenessChecker(model *core.Model) *AssociationUniquenessChecker {
+// NewAssociationUniquenessChecker builds association uniqueness metadata from schema.
+func NewAssociationUniquenessChecker(sch *schema.Schema) *AssociationUniquenessChecker {
 	checker := &AssociationUniquenessChecker{}
 
-	classes := make(map[identity.Key]model_class.Class)
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				classes[class.Key] = class
-			}
-		}
-	}
-
-	for _, assoc := range model.GetClassAssociations() {
+	sch.ForEachAssociation(func(assoc model_class.Association) {
 		if assoc.Uniqueness == nil {
-			continue
+			return
 		}
-		if _, ok := classes[assoc.FromClassKey]; !ok {
-			continue
-		}
-		if _, ok := classes[assoc.ToClassKey]; !ok {
-			continue
+		if !sch.IsClassInScope(assoc.FromClassKey) || !sch.IsClassInScope(assoc.ToClassKey) {
+			return
 		}
 		checker.bindings = append(checker.bindings, associationUniquenessBinding{
 			association: assoc,
 			uniqueness:  *assoc.Uniqueness,
 		})
-	}
+	})
 
 	return checker
 }

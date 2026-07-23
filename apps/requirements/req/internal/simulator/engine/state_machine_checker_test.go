@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -22,7 +23,7 @@ func (s *StateMachineCheckerSuite) TestNoStateMachine_NoViolation() {
 	classKey := mustKey("domain/d/subdomain/s/class/empty")
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Empty", Details: ""})
 
-	catalog := NewClassCatalog(testModel(classEntry(class, classKey)))
+	catalog := NewClassCatalog(schema.New(testModel(classEntry(class, classKey))))
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
@@ -42,7 +43,7 @@ func (s *StateMachineCheckerSuite) TestStateMachineWithoutNewEvent_Violation() {
 		eventCreateKey: model_state.NewEvent(eventCreateKey, "create", "", nil),
 	})
 
-	catalog := NewClassCatalog(testModel(classEntry(class, classKey)))
+	catalog := NewClassCatalog(schema.New(testModel(classEntry(class, classKey))))
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
@@ -66,7 +67,7 @@ func (s *StateMachineCheckerSuite) TestStateMachineWithNewEvent_NoViolation() {
 		eventNewKey: model_state.NewEvent(eventNewKey, model_state.EventNameNew, "", nil),
 	})
 
-	catalog := NewClassCatalog(testModel(classEntry(class, classKey)))
+	catalog := NewClassCatalog(schema.New(testModel(classEntry(class, classKey))))
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
@@ -93,7 +94,7 @@ func (s *StateMachineCheckerSuite) TestTransitionsOnlyWithoutNewEvent_Violation(
 		),
 	})
 
-	catalog := NewClassCatalog(testModel(classEntry(class, classKey)))
+	catalog := NewClassCatalog(schema.New(testModel(classEntry(class, classKey))))
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
@@ -116,7 +117,7 @@ func (s *StateMachineCheckerSuite) TestMultipleClasses_OnlyIncompleteReported() 
 	})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
-	catalog := NewClassCatalog(model)
+	catalog := NewClassCatalog(schema.New(model))
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()

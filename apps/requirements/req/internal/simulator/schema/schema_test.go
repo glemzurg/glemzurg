@@ -26,7 +26,7 @@ func (s *SchemaTestSuite) TestNew_RequiresModel() {
 
 func (s *SchemaTestSuite) TestNew_EmptyModel() {
 	sch := New(EmptyModel())
-	s.NotNil(sch.CoreModel())
+	s.NotNil(sch)
 	s.Empty(sch.ClassKeys())
 	s.Empty(sch.AssociationKeys())
 	s.False(sch.IsClassInScope(identity.Key{}))
@@ -37,7 +37,6 @@ func (s *SchemaTestSuite) TestNew_ClassesAttributesAssociations() {
 
 	sch := New(model)
 
-	s.Same(model, sch.CoreModel())
 	s.True(sch.IsClassInScope(orderKey))
 	s.True(sch.IsClassInScope(lineKey))
 

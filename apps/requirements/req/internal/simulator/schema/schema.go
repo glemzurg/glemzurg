@@ -67,22 +67,6 @@ func EmptyModel() *core.Model {
 	return &m
 }
 
-// CoreModel returns the owned model for this run.
-//
-// This is the only legitimate *core.Model for simulator components during a run.
-// Prefer Schema methods (Class, Association, …) when they cover the need.
-// Callers must not mutate the returned model.
-//
-// Migration note: catalog, checkers, and expression setup still consume CoreModel
-// until they are rewritten against Schema-only APIs. New code should not store the
-// pointer beyond the construction of those components.
-func (s *Schema) CoreModel() *core.Model {
-	if s == nil {
-		return nil
-	}
-	return s.model
-}
-
 // IsClassInScope reports whether classKey is registered on this schema.
 func (s *Schema) IsClassInScope(classKey identity.Key) bool {
 	if s == nil {

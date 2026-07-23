@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -13,6 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -27,9 +27,6 @@ const _EXPRESSION_RETURNED_NIL = "expression returned nil"
 //   - Action post-condition guarantees
 //   - Query post-condition guarantees
 type InvariantChecker struct {
-	// model is the requirements model containing invariant definitions
-	model *core.Model
-
 	// parsedInvariantItems caches pre-lowered model invariant items (both let and assessment).
 	parsedInvariantItems []parsedInvariantItem
 
@@ -125,13 +122,12 @@ func (c *InvariantChecker) evalExpr(expr me.Expression, bindings *evaluator.Bind
 	return evaluator.Eval(expr, bindings)
 }
 
-// NewInvariantChecker creates a new invariant checker from a model.
-// The model's ExpressionSpec.Expression fields must be populated
-// (via parse functions passed to constructors).
-func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
+// NewInvariantChecker creates a new invariant checker from schema.
+// ExpressionSpec.Expression fields on the owned model must be populated.
+func NewInvariantChecker(sch *schema.Schema) (*InvariantChecker, error) {
+	modelInvariants := sch.ModelInvariants()
 	checker := &InvariantChecker{
-		model:                     model,
-		parsedInvariantItems:      make([]parsedInvariantItem, 0, len(model.Invariants)),
+		parsedInvariantItems:      make([]parsedInvariantItem, 0, len(modelInvariants)),
 		parsedClassInvariants:     make(map[identity.Key][]parsedClassInvariantItem),
 		parsedAttributeInvariants: make(map[identity.Key][]parsedAttributeInvariantItem),
 		actionPostConditions:      make(map[identity.Key][]parsedGuarantee),
@@ -142,7 +138,7 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 
 	// Load model invariants from pre-parsed expressions.
 	// Invariants with nil Expression (unparsed or empty) are silently skipped.
-	for i, inv := range model.Invariants {
+	for i, inv := range modelInvariants {
 		expr := inv.Spec.Expression
 		if expr == nil {
 			continue // Skip unparsed or empty specs
@@ -162,19 +158,23 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 	}
 
 	// Iterate through all classes to collect class names and class invariants.
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				checker.classNameMap[class.Key] = strings.ReplaceAll(class.Name, " ", "")
-				checker.classAttributes[class.Key] = class.Attributes
-				if err := checker.loadClassInvariants(class); err != nil {
-					return nil, err
-				}
-				if err := checker.loadAttributeInvariants(class); err != nil {
-					return nil, err
-				}
-			}
+	var loadErr error
+	sch.ForEachClass(func(class model_class.Class) {
+		if loadErr != nil {
+			return
 		}
+		checker.classNameMap[class.Key] = strings.ReplaceAll(class.Name, " ", "")
+		checker.classAttributes[class.Key] = class.Attributes
+		if err := checker.loadClassInvariants(class); err != nil {
+			loadErr = err
+			return
+		}
+		if err := checker.loadAttributeInvariants(class); err != nil {
+			loadErr = err
+		}
+	})
+	if loadErr != nil {
+		return nil, loadErr
 	}
 
 	return checker, nil

@@ -1,27 +1,29 @@
 package engine
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
-// PopulateCallerDataFromModel records SentBy/CalledBy metadata from use-case
+// PopulateCallerDataFromSchema records SentBy/CalledBy metadata from use-case
 // scenarios and mandatory association creation chains.
-func PopulateCallerDataFromModel(model *core.Model, catalog *ClassCatalog) {
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, useCase := range subdomain.UseCases {
-				populateCallerDataFromUseCase(useCase, catalog)
-			}
-		}
-	}
+func PopulateCallerDataFromSchema(sch *schema.Schema, catalog *ClassCatalog) {
+	sch.ForEachUseCase(func(useCase model_use_case.UseCase) {
+		populateCallerDataFromUseCase(useCase, catalog)
+	})
 	populateMandatoryAssociationSenders(catalog)
-	populateAssociationSetAddSenders(model, catalog)
-	populateAssociationSetMapSenders(model, catalog)
+	populateAssociationSetAddSenders(sch, catalog)
+	populateAssociationSetMapSenders(sch, catalog)
+}
+
+// PopulateCallerDataFromModel is kept as a test helper name alias.
+// Prefer PopulateCallerDataFromSchema.
+func PopulateCallerDataFromModel(sch *schema.Schema, catalog *ClassCatalog) {
+	PopulateCallerDataFromSchema(sch, catalog)
 }
 
 func populateCallerDataFromUseCase(useCase model_use_case.UseCase, catalog *ClassCatalog) {
@@ -87,15 +89,11 @@ func recordScenarioQueryCaller(
 	catalog.addQueryCaller(*step.QueryKey, obj.ClassKey)
 }
 
-func populateAssociationSetAddSenders(model *core.Model, catalog *ClassCatalog) {
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			assocByKey := subdomain.ClassAssociations
-			for _, class := range subdomain.Classes {
-				recordAssociationSetAddSenders(class, assocByKey, catalog)
-			}
-		}
-	}
+func populateAssociationSetAddSenders(sch *schema.Schema, catalog *ClassCatalog) {
+	assocByKey := associationMapFromSchema(sch)
+	sch.ForEachClass(func(class model_class.Class) {
+		recordAssociationSetAddSenders(class, assocByKey, catalog)
+	})
 }
 
 func recordAssociationSetAddSenders(class model_class.Class, associations map[identity.Key]model_class.Association, catalog *ClassCatalog) {
@@ -122,15 +120,19 @@ func recordAssociationSetAddSenders(class model_class.Class, associations map[id
 	}
 }
 
-func populateAssociationSetMapSenders(model *core.Model, catalog *ClassCatalog) {
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			assocByKey := subdomain.ClassAssociations
-			for _, class := range subdomain.Classes {
-				recordAssociationSetMapSenders(class, assocByKey, catalog)
-			}
-		}
-	}
+func populateAssociationSetMapSenders(sch *schema.Schema, catalog *ClassCatalog) {
+	assocByKey := associationMapFromSchema(sch)
+	sch.ForEachClass(func(class model_class.Class) {
+		recordAssociationSetMapSenders(class, assocByKey, catalog)
+	})
+}
+
+func associationMapFromSchema(sch *schema.Schema) map[identity.Key]model_class.Association {
+	out := make(map[identity.Key]model_class.Association)
+	sch.ForEachAssociation(func(assoc model_class.Association) {
+		out[assoc.Key] = assoc
+	})
+	return out
 }
 
 func recordAssociationSetMapSenders(class model_class.Class, associations map[identity.Key]model_class.Association, catalog *ClassCatalog) {
