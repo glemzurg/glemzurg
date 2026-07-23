@@ -137,6 +137,17 @@ The **simulation surface** is the set of **external drivers** the exercise simul
 
 When changing surface reporting or selection, preserve this contract: scope shows what is loaded; surface shows what is driven at top level.
 
+## Simulator `schema` package
+
+`apps/requirements/req/internal/simulator/schema` holds **immutable surface metadata for one simulation run**: which classes are in scope, their attributes, and association structure.
+
+**Boundary**
+
+- Own: static facts derived from the (typically surface-filtered) model before the run starts.
+- Do not own: live instances, links, state-machine positions, or any data that changes during the run (that is `instance`).
+- Built once via `schema.NewFromModel`; do not mutate after construction.
+- `instance.State` holds a `*schema.Schema` pointer for lookups; clones share the same schema.
+
 ## Simulator `instance` package
 
 `apps/requirements/req/internal/simulator/instance` holds **all mutable state for one simulation run**: class instances, binary association links, association-class host rows, state-machine positions, and identity mappings used with that world.
@@ -144,13 +155,14 @@ When changing surface reporting or selection, preserve this contract: scope show
 **Boundary**
 
 - Own: create/update/delete instances, association links, SM current state, clone of the run world.
+- Read static facts through the attached `*schema.Schema` (class attributes, in-scope classes, associations).
 - Do not own: action execution, expression evaluation, model loading, surface selection, or TLA bindings construction (`state.BindingsBuilder` adapts `instance.State` into evaluator bindings).
 - Production callers depend on this package for run data; this package must not import `engine`, `actions`, `invariants`, or `trace`.
 
 **API discipline**
 
 - Prefer a small exported protocol (`State`, `Instance`, `ID`, association types and methods). Keep maps, locks, and ID counters unexported.
-- Construct instances through `State` methods in production code (aligns with [Go constructors](#go-constructors)).
+- Construct via `NewState(sch *schema.Schema)` and `State` methods in production code (aligns with [Go constructors](#go-constructors)).
 - Godoc on the package and exported types is the contract; do not grow hidden public side doors without documenting them as temporary.
 
 **Joint test curation (AI + human)**
@@ -161,6 +173,8 @@ Unit tests for this package are **jointly written and curated by AI and human** 
 - A human reviews, edits, and owns the suite’s intent (coverage gaps, naming, fragile cases, intentional non-coverage).
 - A green AI-only test pass is not “test design done” for this package — human curation is part of done for test changes here.
 - Prefer protocol-level tests of the exported API over white-box tests of unexported maps/locks unless a bug requires it.
+
+Unit tests for `schema` follow the same joint AI/human curation expectation when the suite grows beyond bootstrap coverage.
 
 ## Go `_test.go` files
 

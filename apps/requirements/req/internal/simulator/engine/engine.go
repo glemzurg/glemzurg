@@ -12,6 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
@@ -253,7 +254,7 @@ func setupState(
 	catalog *ClassCatalog,
 	evalCtx *evaluator.EvalContext,
 ) (*instance.State, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
-	simState := instance.NewState()
+	simState := instance.NewState(schema.NewFromModel(model))
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
 	registerCatalogAssociations(catalog, bindingsBuilder)

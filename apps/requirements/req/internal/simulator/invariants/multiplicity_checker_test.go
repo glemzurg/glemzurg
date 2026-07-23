@@ -38,7 +38,7 @@ func (s *MultiplicityCheckerSuite) TestValidMultiplicities() {
 
 	checker := NewMultiplicityChecker(model)
 
-	simState := instance.NewState()
+	simState := instance.NewState(nil)
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
 	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
@@ -63,7 +63,7 @@ func (s *MultiplicityCheckerSuite) TestLowerBoundViolation() {
 
 	checker := NewMultiplicityChecker(model)
 
-	simState := instance.NewState()
+	simState := instance.NewState(nil)
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
 	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
@@ -89,7 +89,7 @@ func (s *MultiplicityCheckerSuite) TestUpperBoundViolation() {
 
 	checker := NewMultiplicityChecker(model)
 
-	simState := instance.NewState()
+	simState := instance.NewState(nil)
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item1 := simState.CreateInstance(itemKey, object.NewRecord())
 	item2 := simState.CreateInstance(itemKey, object.NewRecord())
@@ -117,7 +117,7 @@ func (s *MultiplicityCheckerSuite) TestOptionalAssociationNeverViolated() {
 
 	checker := NewMultiplicityChecker(model)
 
-	simState := instance.NewState()
+	simState := instance.NewState(nil)
 	simState.CreateInstance(orderKey, object.NewRecord())
 	simState.CreateInstance(itemKey, object.NewRecord())
 

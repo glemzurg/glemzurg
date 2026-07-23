@@ -9,12 +9,18 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // State is the mutable world for one simulation run: instances, association
 // links, state-machine positions, and identity mappings.
+// Static surface metadata is read through sch (never mutated here).
 type State struct {
 	mu sync.RWMutex
+
+	// sch is immutable run metadata (classes in scope, attributes, associations).
+	// Shared across clones of this state for the same run.
+	sch *schema.Schema
 
 	instances map[ID]*Instance
 
@@ -34,8 +40,13 @@ type State struct {
 }
 
 // NewState creates a new empty simulation state.
-func NewState() *State {
+// sch holds non-changing surface metadata for the run; nil is treated as [schema.NewEmpty].
+func NewState(sch *schema.Schema) *State {
+	if sch == nil {
+		sch = schema.NewEmpty()
+	}
 	return &State{
+		sch:                sch,
 		instances:          make(map[ID]*Instance),
 		links:              evaluator.NewLinkTable(),
 		associationLinks:   NewAssociationLinkTable(),
@@ -43,6 +54,11 @@ func NewState() *State {
 		nextID:             1, // Start at 1 so 0 can indicate "no instance"
 		identityRegistry:   evaluator.NewIdentityRegistry(),
 	}
+}
+
+// Schema returns the immutable surface metadata for this run.
+func (s *State) Schema() *schema.Schema {
+	return s.sch
 }
 
 // CreateInstance creates a new class instance with the given attributes.
@@ -349,11 +365,12 @@ func (s *State) IdentityRegistry() *evaluator.IdentityRegistry {
 }
 
 // Clone creates a deep copy of the simulation state.
+// The schema pointer is shared (schema is immutable for the run).
 func (s *State) Clone() *State {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	clone := NewState()
+	clone := NewState(s.sch)
 	clone.nextID = s.nextID
 
 	for id, inst := range s.instances {

@@ -136,7 +136,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow
 }
 
 func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*instance.State, *actions.ActionExecutor) {
-	simState := instance.NewState()
+	simState := instance.NewState(nil)
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(model)
 	registerCatalogAssociations(catalog, bb)
