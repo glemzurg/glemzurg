@@ -1,8 +1,9 @@
 package engine
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
@@ -73,7 +74,7 @@ func TestPeerEffectCascade_RecursivePeerTransitions(t *testing.T) {
 	chainHandler := NewCreationChainHandler(catalog, nil, nil, nil, nil)
 	exec := NewStepExecutor(StepExecutorDeps{ChainHandler: chainHandler, Catalog: catalog})
 
-	require.NoError(t, exec.appendAssociationPeerCascades(parentStep, parentResult, instance.NewState(schema.New(schema.EmptyModel()))))
+	require.NoError(t, exec.appendAssociationPeerCascades(parentStep, parentResult, instance.NewState(emptySchema())))
 
 	require.Len(t, parentStep.CascadedSteps, 1)
 	updateStep := parentStep.CascadedSteps[0]

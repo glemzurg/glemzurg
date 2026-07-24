@@ -2,9 +2,10 @@ package trace
 
 import (
 	"encoding/json"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"strings"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -361,7 +362,7 @@ func (s *TraceSuite) TestStepWithParameters() {
 }
 
 func (s *TraceSuite) TestFinalState() {
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 
 	attrs := object.NewRecord()
@@ -421,7 +422,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 
 	catalog := engine.NewClassCatalog(schema.New(&model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	jurisdiction := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	linkInst := simState.CreateInstance(linkDefKey, object.NewRecord())

@@ -1,8 +1,9 @@
 package invariants
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -39,7 +40,7 @@ func (s *MultiplicityCheckerSuite) TestValidMultiplicities() {
 
 	checker := NewMultiplicityChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
 	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
@@ -64,7 +65,7 @@ func (s *MultiplicityCheckerSuite) TestLowerBoundViolation() {
 
 	checker := NewMultiplicityChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
 	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
@@ -90,7 +91,7 @@ func (s *MultiplicityCheckerSuite) TestUpperBoundViolation() {
 
 	checker := NewMultiplicityChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item1 := simState.CreateInstance(itemKey, object.NewRecord())
 	item2 := simState.CreateInstance(itemKey, object.NewRecord())
@@ -118,7 +119,7 @@ func (s *MultiplicityCheckerSuite) TestOptionalAssociationNeverViolated() {
 
 	checker := NewMultiplicityChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	simState.CreateInstance(orderKey, object.NewRecord())
 	simState.CreateInstance(itemKey, object.NewRecord())
 

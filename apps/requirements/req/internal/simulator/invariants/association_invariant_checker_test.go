@@ -1,8 +1,9 @@
 package invariants
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
@@ -52,7 +53,7 @@ func (s *AssociationInvariantCheckerSuite) buildChecker() (*AssociationInvariant
 func (s *AssociationInvariantCheckerSuite) TestPassesWhenInvariantHolds() {
 	checker, partnerKey, jurisdictionKey, assocKey := s.buildChecker()
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	j1 := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	j1.Attributes.Set("Code", object.NewString("US"))
@@ -90,7 +91,7 @@ func (s *AssociationInvariantCheckerSuite) TestFailsWhenAssessmentIsFalse() {
 	checker, err := NewAssociationInvariantChecker(schema.New(model))
 	s.Require().NoError(err)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	simState.CreateInstance(partnerKey, object.NewRecord())
 
 	bb := state.NewBindingsBuilder(simState)

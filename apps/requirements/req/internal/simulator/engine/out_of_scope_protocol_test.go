@@ -1,9 +1,10 @@
 package engine
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"math/rand"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -100,7 +101,7 @@ func (s *OutOfScopeProtocolSuite) TestClassExtentBinding_OutOfScopeIsEmptySet() 
 	catalog := NewClassCatalog(schema.New(active))
 	catalog.RegisterOutOfScopeMetadata(full)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	_ = simState.CreateInstance(orderKey, object.NewRecord())
 
@@ -186,7 +187,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	catalog := NewClassCatalog(schema.New(active))
 	catalog.RegisterOutOfScopeMetadata(full)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(catalog, bb)
 	orderInst := simState.CreateInstance(orderKey, object.NewRecord())
@@ -250,7 +251,7 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 	catalog := NewClassCatalog(schema.New(active))
 	catalog.RegisterOutOfScopeMetadata(full)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(catalog, bb)
 	itemInst := simState.CreateInstance(itemKey, object.NewRecord())

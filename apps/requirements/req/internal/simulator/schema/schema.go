@@ -60,13 +60,6 @@ func (s *Schema) reindex() {
 	maps.Copy(s.associations, s.model.GetClassAssociations())
 }
 
-// EmptyModel returns a new empty *core.Model (no domains/classes) for building a
-// Schema when tests need instance.State without surface content.
-func EmptyModel() *core.Model {
-	m := core.NewModel("empty", core.ModelDetails{Name: "empty", Details: ""}, "", nil, nil, nil)
-	return &m
-}
-
 // IsClassInScope reports whether classKey is registered on this schema.
 func (s *Schema) IsClassInScope(classKey identity.Key) bool {
 	if s == nil {

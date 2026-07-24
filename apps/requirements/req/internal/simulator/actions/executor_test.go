@@ -1,11 +1,12 @@
 package actions
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"math"
 	"math/big"
 	"math/rand"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -251,7 +252,7 @@ func (s *ActionsSuite) TestExecuteActionWithPrimedAssignment() {
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "increment", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("count", object.NewInteger(10))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -286,7 +287,7 @@ func (s *ActionsSuite) TestExecuteActionPreconditionPasses() {
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "close", Details: ""}, []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("status", object.NewString("open"))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -319,7 +320,7 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "close", Details: ""}, []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("status", object.NewString("closed")) // already closed
 	instance := simState.CreateInstance(classKey, attrs)
@@ -348,7 +349,7 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "set_amount", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, nil, actionParams)
 	action = lowerAction(action, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("amount", object.NewInteger(0))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -374,7 +375,7 @@ func (s *ActionsSuite) TestExecuteActionReportsUnparsedParameterDataType() {
 	param.DataType = nil
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "set_amount", Details: ""}, nil, nil, nil, []model_state.Parameter{param})
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	instance := simState.CreateInstance(classKey, object.NewRecord())
 	exec := buildTestExecutor(simState)
 
@@ -395,7 +396,7 @@ func (s *ActionsSuite) TestExecuteActionReportsMissingParameterTypeSpec() {
 	}
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "set_amount", Details: ""}, nil, nil, nil, actionParams)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	instance := simState.CreateInstance(classKey, object.NewRecord())
 	exec := buildTestExecutor(simState)
 
@@ -426,7 +427,7 @@ func (s *ActionsSuite) TestExecuteQueryReturnsOutput() {
 	query := model_state.NewQuery(queryKey, "get_total", "", nil, []model_logic.Logic{guaranteeLogic}, nil)
 	query = lowerQuery(query, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("amount", object.NewInteger(50))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -448,7 +449,7 @@ func (s *ActionsSuite) TestExecuteQueryReportsMissingParameterTypeSpec() {
 	}
 	query := model_state.NewQuery(queryKey, "filter", "", nil, nil, queryParams)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	instance := simState.CreateInstance(classKey, object.NewRecord())
 	exec := buildTestExecutor(simState)
 
@@ -475,7 +476,7 @@ func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {
 	query := model_state.NewQuery(queryKey, "get_total", "", nil, []model_logic.Logic{guaranteeLogic}, nil)
 	query = lowerQuery(query, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("amount", object.NewInteger(50))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -508,7 +509,7 @@ func (s *ActionsSuite) TestExecuteQueryPreconditionFails() {
 	query := model_state.NewQuery(queryKey, "get_total", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil)
 	query = lowerQuery(query, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("amount", object.NewInteger(50))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -537,7 +538,7 @@ func (s *ActionsSuite) TestGuardEvaluatorAllTrue() {
 	guard := model_state.NewGuard(guardKey, "is_open", guardLogic)
 	guard = lowerGuard(guard, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("status", object.NewString("open"))
 	attrs.Set("amount", object.NewInteger(100))
@@ -564,7 +565,7 @@ func (s *ActionsSuite) TestGuardEvaluatorOneFalse() {
 	guard := model_state.NewGuard(guardKey, "is_open", guardLogic)
 	guard = lowerGuard(guard, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("status", object.NewString("closed")) // guard fails here
 	attrs.Set("amount", object.NewInteger(100))
@@ -586,7 +587,7 @@ func (s *ActionsSuite) TestExecuteTransitionNormal() {
 	class, classKey := testOrderClass()
 	class = lowerClass(class, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("amount", object.NewInteger(100))
 	attrs.Set("_state", object.NewString("Open"))
@@ -645,7 +646,7 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 		transKey: transition,
 	})
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	exec := buildTestExecutor(simState)
 
 	eventObj := class.Events[eventCreateKey]
@@ -687,7 +688,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 		transKey: transition,
 	})
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -709,7 +710,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 func (s *ActionsSuite) TestExecuteTransitionNoMatchingTransition() {
 	class, classKey := testOrderClass()
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Closed")) // No transition from Closed
 	instance := simState.CreateInstance(classKey, attrs)
@@ -782,7 +783,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	})
 	class = lowerClass(class, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	// Case 1: High value order -> should go to Approved
 	attrs := object.NewRecord()
@@ -853,7 +854,7 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	})
 	class = lowerClass(class, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -900,7 +901,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	})
 	class = lowerClass(class, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -1232,7 +1233,7 @@ func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "BadRequires", Details: ""}, []model_logic.Logic{requireLogic}, nil, nil, nil)
 	action = lowerAction(action, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -1257,7 +1258,7 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "BadSafety", Details: ""}, nil, nil, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -1291,7 +1292,7 @@ func (s *ActionsSuite) TestActionSafetyRulesPass() {
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "GoodAction", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -1322,7 +1323,7 @@ func (s *ActionsSuite) TestActionSafetyRuleViolation() {
 	action := model_state.NewAction(actionKey, model_state.ActionDetails{Name: "ViolatingAction", Details: ""}, nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -1353,7 +1354,7 @@ func (s *ActionsSuite) TestGuardRejectsPrimedVariables() {
 	guard := model_state.NewGuard(guardKey, "BadGuard", guardLogic)
 	guard = lowerGuard(guard, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -1388,7 +1389,7 @@ func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 	query := model_state.NewQuery(queryKey, "BadQuery", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil)
 	query = lowerQuery(query, classKey)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
@@ -1412,7 +1413,7 @@ func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
 	model := multiplicityTestModel(orderClass, orderKey, itemClass, itemKey)
 	model.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	multChecker := invariants.NewMultiplicityChecker(schema.New(model))
 	ge := NewGuardEvaluator(bb)

@@ -25,7 +25,7 @@ func (s *SchemaTestSuite) TestNew_RequiresModel() {
 }
 
 func (s *SchemaTestSuite) TestNew_EmptyModel() {
-	sch := New(EmptyModel())
+	sch := New(emptyModel())
 	s.NotNil(sch)
 	s.Empty(sch.ClassKeys())
 	s.Empty(sch.AssociationKeys())

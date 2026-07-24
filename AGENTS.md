@@ -188,6 +188,14 @@ Unit tests for `schema` follow the same joint AI/human curation expectation when
 - Prefer table-driven tests. Each row is a named case (`name string` field) and the test body uses `t.Run(tc.name, ...)`.
 - Use table-driven tests even for two cases when more cases are likely to be added.
 
+### No test-only code in production logic files
+
+**Do not put test-only helpers, fixtures, or convenience constructors in non-`_test.go` (logic) source files.**
+
+- Anything used only by tests (e.g. empty models, blank schemas, fixture builders, “for tests only” constructors) belongs in `*_test.go` in the same package, or in a clearly test-scoped helper package that production code never imports.
+- Production `.go` files must stay free of symbols that exist solely so tests can avoid setup.
+- If production needs a real constructor, it must be a legitimate runtime API—not a test shortcut.
+
 ## Complexity linter (`go-complexity-lint`)
 
 These rules apply on the **build-gate closing bead** (see [Quality gate](#quality-gate-appsrequirementsreqbuildsh)) when `./apps/requirements/req/build.sh` reports `go-complexity-lint` findings. They govern how that bead fixes parameter-count and other complexity metrics — not how feature or staging beads shape code before the gate runs.

@@ -1,8 +1,9 @@
 package invariants
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -65,7 +66,7 @@ func (s *AssociationUniquenessCheckerSuite) TestDistinctCodesNoViolation() {
 	model, assocKey, fromKey, toKey, acKey := s.buildModel()
 	checker := NewAssociationUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	fromInst := simState.CreateInstance(fromKey, object.NewRecord())
 	toInst1 := simState.CreateInstance(toKey, object.NewRecordFromFields(map[string]object.Object{
 		"jurisdiction_code": object.NewString("US-NJ"),
@@ -86,7 +87,7 @@ func (s *AssociationUniquenessCheckerSuite) TestDuplicateCodeReportsViolation() 
 	model, assocKey, fromKey, toKey, acKey := s.buildModel()
 	checker := NewAssociationUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	fromInst := simState.CreateInstance(fromKey, object.NewRecord())
 	toInst1 := simState.CreateInstance(toKey, object.NewRecordFromFields(map[string]object.Object{
 		"jurisdiction_code": object.NewString("US-NJ"),
@@ -108,7 +109,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDistinctNoViolation()
 	model, assocKey, orderKey, customerKey := associationUniquenessPlainToOnlyModel()
 	checker := NewAssociationUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	customer1 := simState.CreateInstance(customerKey, object.NewRecordFromFields(map[string]object.Object{
 		"customer_code": object.NewString("C-100"),
@@ -126,7 +127,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDuplicateReportsViola
 	model, assocKey, orderKey, customerKey := associationUniquenessPlainToOnlyModel()
 	checker := NewAssociationUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	customer1 := simState.CreateInstance(customerKey, object.NewRecordFromFields(map[string]object.Object{
 		"customer_code": object.NewString("C-100"),
@@ -146,7 +147,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainFromOnlyDistinctNoViolation
 	model, assocKey, productKey, shelfKey := associationUniquenessPlainFromOnlyModel()
 	checker := NewAssociationUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	product1 := simState.CreateInstance(productKey, object.NewRecordFromFields(map[string]object.Object{
 		"name": object.NewString("Widget"),
 	}))
@@ -165,7 +166,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainFromOnlyDuplicateReportsVio
 	model, assocKey, productKey, shelfKey := associationUniquenessPlainFromOnlyModel()
 	checker := NewAssociationUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	product1 := simState.CreateInstance(productKey, object.NewRecordFromFields(map[string]object.Object{
 		"name": object.NewString("Widget"),
 	}))
@@ -185,7 +186,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainBothSidesDistinctNoViolatio
 	model, assocKey, orderKey, shipmentKey := associationUniquenessPlainBothSidesModel()
 	checker := NewAssociationUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	order1 := simState.CreateInstance(orderKey, object.NewRecordFromFields(map[string]object.Object{
 		"order_date": object.NewString("2026-01-01"),
 	}))
@@ -208,7 +209,7 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainBothSidesDuplicateReportsVi
 	model, assocKey, orderKey, shipmentKey := associationUniquenessPlainBothSidesModel()
 	checker := NewAssociationUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	order1 := simState.CreateInstance(orderKey, object.NewRecordFromFields(map[string]object.Object{
 		"order_date": object.NewString("2026-01-01"),
 	}))

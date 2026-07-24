@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
@@ -24,10 +25,11 @@ type AssociationLink = instance.AssociationLink
 // AssociationLinkTable indexes association-class host rows.
 type AssociationLinkTable = instance.AssociationLinkTable
 
-// NewSimulationState creates a new empty simulation state with a schema from an empty model.
-// Prefer instance.NewState(schema.New(...)) when surface metadata is available.
+// NewSimulationState creates a simulation state with a schema over an empty model.
+// Prefer instance.NewState(schema.New(model)) when surface metadata is available.
 func NewSimulationState() *SimulationState {
-	return instance.NewState(schema.New(schema.EmptyModel()))
+	m := core.NewModel("empty", core.ModelDetails{Name: "empty", Details: ""}, "", nil, nil, nil)
+	return instance.NewState(schema.New(&m))
 }
 
 // NewAssociationLinkTable creates an empty association link table.

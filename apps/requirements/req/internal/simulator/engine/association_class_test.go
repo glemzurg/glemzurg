@@ -1,9 +1,10 @@
 package engine
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"math/rand"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -160,7 +161,7 @@ func (s *AssociationClassSuite) TestCatalogIndexesAssociationClass() {
 
 func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(schema.New(tcm.model))
 	registerCatalogAssociations(catalog, bb)
@@ -211,7 +212,7 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 
 func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationClass() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(schema.New(tcm.model))
 	ge := actions.NewGuardEvaluator(bb)
@@ -241,7 +242,7 @@ func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationC
 
 func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(schema.New(tcm.model))
 	ge := actions.NewGuardEvaluator(bb)
@@ -260,7 +261,7 @@ func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 
 func (s *AssociationClassSuite) TestDeleteToNamedStateStillCountsAsLink() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(schema.New(tcm.model))
 	registerCatalogAssociations(catalog, bb)

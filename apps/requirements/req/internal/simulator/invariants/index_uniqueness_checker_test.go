@@ -1,8 +1,9 @@
 package invariants
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -58,7 +59,7 @@ func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
 	checker := NewIndexUniquenessChecker(schema.New(model))
 	s.False(checker.HasIndexes())
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	violations := checker.CheckState(simState)
 	s.False(violations.HasViolations())
 }
@@ -70,7 +71,7 @@ func (s *InvariantsSuite) TestIndexCheckerSingleAttrNoConflict() {
 	checker := NewIndexUniquenessChecker(schema.New(model))
 	s.True(checker.HasIndexes())
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	attrs1 := object.NewRecord()
 	attrs1.Set("tail_number", object.NewInteger(100))
@@ -90,7 +91,7 @@ func (s *InvariantsSuite) TestIndexCheckerSingleAttrConflict() {
 
 	checker := NewIndexUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	attrs1 := object.NewRecord()
 	attrs1.Set("tail_number", object.NewInteger(100))
@@ -116,7 +117,7 @@ func (s *InvariantsSuite) TestIndexCheckerCompositeNoConflict() {
 
 	checker := NewIndexUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	// Same email, different tenant — no conflict
 	attrs1 := object.NewRecord()
@@ -141,7 +142,7 @@ func (s *InvariantsSuite) TestIndexCheckerCompositeConflict() {
 
 	checker := NewIndexUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	// Same (email, tenant) tuple — conflict!
 	attrs1 := object.NewRecord()
@@ -169,7 +170,7 @@ func (s *InvariantsSuite) TestIndexCheckerMultipleIndexes() {
 
 	checker := NewIndexUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	// Index 1 OK (different tail_numbers), Index 2 violated (same callsign)
 	attrs1 := object.NewRecord()
@@ -195,7 +196,7 @@ func (s *InvariantsSuite) TestIndexCheckerNilValuesDuplicate() {
 
 	checker := NewIndexUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	// Unset and explicit simulator NULL share the same index slot.
 	attrs1 := object.NewRecord()
@@ -222,7 +223,7 @@ func (s *InvariantsSuite) TestIndexCheckerNullableIndexAllowsOneNullAndDistinctV
 	))
 	model, classKey := indexTestModel([]model_class.Attribute{codeAttr})
 	checker := NewIndexUniquenessChecker(schema.New(model))
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	nullJurisdiction := object.NewRecord()
 	nullJurisdiction.Set("jurisdiction_code", object.Null())
@@ -250,7 +251,7 @@ func (s *InvariantsSuite) TestIndexCheckerNullableIndexRejectsSecondNull() {
 	))
 	model, classKey := indexTestModel([]model_class.Attribute{codeAttr})
 	checker := NewIndexUniquenessChecker(schema.New(model))
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	first := object.NewRecord()
 	first.Set("jurisdiction_code", object.Null())
@@ -287,7 +288,7 @@ func (s *InvariantsSuite) TestIndexCheckerUsesAttributeFieldKeyNotDisplayName() 
 	s.Require().Len(info.Indexes, 1)
 	s.Equal([]string{"abbr"}, info.Indexes[0].AttrNames)
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("abbr", object.NewString("USD"))
 	simState.CreateInstance(classKey, attrs)
@@ -307,7 +308,7 @@ func (s *InvariantsSuite) TestIndexCheckerMixedTypesNotEqual() {
 
 	checker := NewIndexUniquenessChecker(schema.New(model))
 
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 
 	attrs1 := object.NewRecord()
 	attrs1.Set("id", object.NewInteger(42))

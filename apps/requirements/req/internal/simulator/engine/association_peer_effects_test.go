@@ -2,10 +2,11 @@ package engine
 
 import (
 	"fmt"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"maps"
 	"math/rand"
 	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -137,7 +138,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow
 }
 
 func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*instance.State, *actions.ActionExecutor) {
-	simState := instance.NewState(schema.New(schema.EmptyModel()))
+	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := NewClassCatalog(schema.New(model))
 	registerCatalogAssociations(catalog, bb)
