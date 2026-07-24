@@ -27,8 +27,8 @@ func (s *SchemaTestSuite) TestNew_RequiresModel() {
 func (s *SchemaTestSuite) TestNew_EmptyModel() {
 	sch := New(emptyModel())
 	s.NotNil(sch)
-	s.Empty(sch.ClassKeys())
-	s.Empty(sch.AssociationKeys())
+	s.Empty(sch.classKeys())
+	s.Empty(sch.associationKeys())
 	s.False(sch.IsClassInScope(identity.Key{}))
 }
 
@@ -40,26 +40,26 @@ func (s *SchemaTestSuite) TestNew_ClassesAttributesAssociations() {
 	s.True(sch.IsClassInScope(orderKey))
 	s.True(sch.IsClassInScope(lineKey))
 
-	order, ok := sch.Class(orderKey)
+	order, ok := sch.class(orderKey)
 	s.True(ok)
 	s.Equal("Order", order.Name)
 	s.Require().Len(order.Attributes, 1)
 	s.Equal(attrKey, order.Attributes[0].Key)
 
-	attrs := sch.Attributes(orderKey)
+	attrs := sch.attributes(orderKey)
 	s.Require().Len(attrs, 1)
 	s.Equal("status", attrs[0].Name)
 
-	assoc, ok := sch.Association(assocKey)
+	assoc, ok := sch.association(assocKey)
 	s.True(ok)
 	s.Equal("Lines", assoc.Name)
 	s.Equal(orderKey, assoc.FromClassKey)
 	s.Equal(lineKey, assoc.ToClassKey)
 	s.Nil(assoc.AssociationClassKey)
-	s.False(sch.IsAssociationClass(orderKey))
+	s.False(sch.isAssociationClass(orderKey))
 
-	s.Len(sch.ClassKeys(), 2)
-	s.Len(sch.AssociationKeys(), 1)
+	s.Len(sch.classKeys(), 2)
+	s.Len(sch.associationKeys(), 1)
 }
 
 func (s *SchemaTestSuite) sampleModel() (

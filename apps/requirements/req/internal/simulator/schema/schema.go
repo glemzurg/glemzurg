@@ -69,8 +69,8 @@ func (s *Schema) IsClassInScope(classKey identity.Key) bool {
 	return ok
 }
 
-// Class returns the model class for classKey, if present on the owned model.
-func (s *Schema) Class(classKey identity.Key) (model_class.Class, bool) {
+// class returns the model class for classKey, if present on the owned model.
+func (s *Schema) class(classKey identity.Key) (model_class.Class, bool) {
 	if s == nil {
 		return model_class.Class{}, false
 	}
@@ -78,17 +78,17 @@ func (s *Schema) Class(classKey identity.Key) (model_class.Class, bool) {
 	return c, ok
 }
 
-// Attributes returns the attribute definitions for a class, or nil if unknown.
-func (s *Schema) Attributes(classKey identity.Key) []model_class.Attribute {
-	c, ok := s.Class(classKey)
+// attributes returns the attribute definitions for a class, or nil if unknown.
+func (s *Schema) attributes(classKey identity.Key) []model_class.Attribute {
+	c, ok := s.class(classKey)
 	if !ok {
 		return nil
 	}
 	return c.Attributes
 }
 
-// ClassKeys returns every in-scope class key (order is not significant).
-func (s *Schema) ClassKeys() []identity.Key {
+// classKeys returns every in-scope class key (order is not significant).
+func (s *Schema) classKeys() []identity.Key {
 	if s == nil || len(s.classes) == 0 {
 		return nil
 	}
@@ -99,8 +99,8 @@ func (s *Schema) ClassKeys() []identity.Key {
 	return keys
 }
 
-// Association returns the model association for assocKey, if present.
-func (s *Schema) Association(assocKey identity.Key) (model_class.Association, bool) {
+// association returns the model association for assocKey, if present.
+func (s *Schema) association(assocKey identity.Key) (model_class.Association, bool) {
 	if s == nil {
 		return model_class.Association{}, false
 	}
@@ -108,8 +108,8 @@ func (s *Schema) Association(assocKey identity.Key) (model_class.Association, bo
 	return a, ok
 }
 
-// IsAssociationClass reports whether classKey is an association-class for some association.
-func (s *Schema) IsAssociationClass(classKey identity.Key) bool {
+// isAssociationClass reports whether classKey is an association-class for some association.
+func (s *Schema) isAssociationClass(classKey identity.Key) bool {
 	if s == nil {
 		return false
 	}
@@ -121,8 +121,8 @@ func (s *Schema) IsAssociationClass(classKey identity.Key) bool {
 	return false
 }
 
-// AssociationKeys returns every association key (order is not significant).
-func (s *Schema) AssociationKeys() []identity.Key {
+// associationKeys returns every association key (order is not significant).
+func (s *Schema) associationKeys() []identity.Key {
 	if s == nil || len(s.associations) == 0 {
 		return nil
 	}

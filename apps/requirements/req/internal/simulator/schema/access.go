@@ -47,8 +47,8 @@ func (s *Schema) NamedSets() map[identity.Key]model_logic.NamedSet {
 	return out
 }
 
-// GlobalFunctions returns model-level global functions from the owned model.
-func (s *Schema) GlobalFunctions() map[identity.Key]model_logic.GlobalFunction {
+// globalFunctions returns model-level global functions from the owned model.
+func (s *Schema) globalFunctions() map[identity.Key]model_logic.GlobalFunction {
 	if s == nil || s.model == nil || len(s.model.GlobalFunctions) == 0 {
 		return nil
 	}
