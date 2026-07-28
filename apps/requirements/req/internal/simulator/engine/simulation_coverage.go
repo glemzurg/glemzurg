@@ -14,8 +14,8 @@ func NewSimulationCoverageTracker() *SimulationCoverageTracker {
 	}
 }
 
-// MarkSimulationParamUsed records that a parameter simulation specification produced a value.
-func (t *SimulationCoverageTracker) MarkSimulationParamUsed(paramKey identity.Key) {
+// markSimulationParamUsed records that a parameter simulation specification produced a value.
+func (t *SimulationCoverageTracker) markSimulationParamUsed(paramKey identity.Key) {
 	if t == nil {
 		return
 	}

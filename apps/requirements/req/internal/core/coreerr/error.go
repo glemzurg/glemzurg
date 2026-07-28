@@ -157,8 +157,8 @@ func (vc *ValidationContext) Child(entity, key string) *ValidationContext {
 	return &ValidationContext{path: newPath}
 }
 
-// ContextPath returns the current path segments.
-func (vc *ValidationContext) ContextPath() []PathSegment {
+// contextPath returns the current path segments.
+func (vc *ValidationContext) contextPath() []PathSegment {
 	return vc.path
 }
 

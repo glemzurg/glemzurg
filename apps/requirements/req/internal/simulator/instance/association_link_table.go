@@ -58,24 +58,6 @@ func (t *AssociationLinkTable) AddLink(link AssociationLink) error {
 	return nil
 }
 
-// AppendLinkWithoutValidation records a row without duplicate checking.
-// Invariant tests use this to represent tables that bypass normal insertion rules.
-func (t *AssociationLinkTable) AppendLinkWithoutValidation(link AssociationLink) {
-	hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
-
-	if t.byHostFrom[hostKey] == nil {
-		t.byHostFrom[hostKey] = make(map[ID][]AssociationLink)
-	}
-	t.byHostFrom[hostKey][link.FromEndpointID] = append(t.byHostFrom[hostKey][link.FromEndpointID], link)
-
-	if t.byHostTo[hostKey] == nil {
-		t.byHostTo[hostKey] = make(map[ID][]AssociationLink)
-	}
-	t.byHostTo[hostKey][link.ToEndpointID] = append(t.byHostTo[hostKey][link.ToEndpointID], link)
-
-	t.byInstance[link.LinkInstanceID] = link
-}
-
 func (t *AssociationLinkTable) hasEndpointPair(
 	hostKey evaluator.AssociationKey,
 	fromID ID,

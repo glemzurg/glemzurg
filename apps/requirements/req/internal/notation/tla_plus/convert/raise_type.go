@@ -7,9 +7,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
 
-// RaiseType converts a model ExpressionType into a TLA+ string representation.
+// raiseType converts a model ExpressionType into a TLA+ string representation.
 // It constructs AST nodes internally and prints them via ast.Print.
-func RaiseType(et met.ExpressionType, ctx *RaiseContext) (string, error) {
+func raiseType(et met.ExpressionType, ctx *RaiseContext) (string, error) {
 	expr, err := raiseTypeToAST(et, ctx)
 	if err != nil {
 		return "", err

@@ -242,13 +242,13 @@ func (s *Step) ValidateWithParent(ctx *coreerr.ValidationContext, parent *identi
 	return nil
 }
 
-// FromJSON parses the JSON string into the Step.
-func (s *Step) FromJSON(jsonStr string) error {
+// fromJSON parses the JSON string into the Step.
+func (s *Step) fromJSON(jsonStr string) error {
 	return json.Unmarshal([]byte(jsonStr), s)
 }
 
-// ToJSON generates the JSON string from the Step.
-func (s Step) ToJSON() (string, error) {
+// toJSON generates the JSON string from the Step.
+func (s Step) toJSON() (string, error) {
 	data, err := json.Marshal(s)
 	return string(data), err
 }
@@ -258,8 +258,8 @@ func (s *Step) FromYAML(yamlStr string) error {
 	return yaml.Unmarshal([]byte(yamlStr), s)
 }
 
-// ToYAML generates the YAML string from the Step.
-func (s Step) ToYAML() (string, error) {
+// toYAML generates the YAML string from the Step.
+func (s Step) toYAML() (string, error) {
 	data, err := yaml.Marshal(s)
 	return string(data), err
 }

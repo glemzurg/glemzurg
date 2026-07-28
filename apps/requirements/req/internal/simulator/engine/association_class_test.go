@@ -286,15 +286,15 @@ func (s *AssociationClassSuite) TestDeleteToNamedStateStillCountsAsLink() {
 	addResult, err := ae.ExecuteTransition(linkDefClass, linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")], nil, nil, actions.CreationLinkSource{SourceAssocKey: &hostAssocKey, SourceID: &partnerResult.InstanceID}, &jurisdictionResult.InstanceID)
 	s.Require().NoError(err)
 
-	s.Empty(addResult.Violations.ByType(invariants.ViolationTypeMultiplicity))
+	s.Empty(violationsByType(addResult.Violations, invariants.ViolationTypeMultiplicity))
 
 	acInstance := simState.GetInstance(addResult.InstanceID)
 	deleteEvent := linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/delete")]
 	deleteResult, err := ae.ExecuteTransition(linkDefClass, deleteEvent, acInstance, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
-	s.Empty(deleteResult.Violations.ByType(invariants.ViolationTypeMultiplicity))
-	s.Empty(deleteResult.Violations.ByType(invariants.ViolationTypeAssociationUniqueness))
+	s.Empty(violationsByType(deleteResult.Violations, invariants.ViolationTypeMultiplicity))
+	s.Empty(violationsByType(deleteResult.Violations, invariants.ViolationTypeAssociationUniqueness))
 	s.Equal("Deleted", getInstanceStateName(simState.GetInstance(addResult.InstanceID)))
 }
 

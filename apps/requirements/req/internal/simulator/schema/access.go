@@ -47,16 +47,6 @@ func (s *Schema) NamedSets() map[identity.Key]model_logic.NamedSet {
 	return out
 }
 
-// globalFunctions returns model-level global functions from the owned model.
-func (s *Schema) globalFunctions() map[identity.Key]model_logic.GlobalFunction {
-	if s == nil || s.model == nil || len(s.model.GlobalFunctions) == 0 {
-		return nil
-	}
-	out := make(map[identity.Key]model_logic.GlobalFunction, len(s.model.GlobalFunctions))
-	maps.Copy(out, s.model.GlobalFunctions)
-	return out
-}
-
 // ForEachUseCase calls fn for every use case on the owned model.
 func (s *Schema) ForEachUseCase(fn func(model_use_case.UseCase)) {
 	if s == nil || s.model == nil || fn == nil {

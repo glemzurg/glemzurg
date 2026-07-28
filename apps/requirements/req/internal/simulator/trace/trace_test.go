@@ -582,7 +582,7 @@ func (s *TraceSuite) TestFormatJSONRoundTrip() {
 	}
 
 	tr := FromResult(result)
-	data, err := tr.FormatJSON()
+	data, err := tr.formatJSON()
 	s.Require().NoError(err)
 
 	var decoded SimulationTrace

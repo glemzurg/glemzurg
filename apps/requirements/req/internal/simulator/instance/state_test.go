@@ -32,13 +32,13 @@ func (s *StateTestSuite) TestCreateInstance() {
 	s.Equal(classKey, inst.ClassKey)
 	s.Equal("pending", inst.GetAttribute("status").(*object.String).Value())
 	s.Equal("100", inst.GetAttribute("total").(*object.Number).Inspect())
-	s.NotNil(st.Schema())
+	s.NotNil(st.schema())
 }
 
 func (s *StateTestSuite) TestSchemaSharedAcrossClone() {
 	st := NewState(emptySchema())
 	cloned := st.Clone()
-	s.Same(st.Schema(), cloned.Schema())
+	s.Same(st.schema(), cloned.schema())
 }
 
 func (s *StateTestSuite) TestCreateMultipleInstances() {
@@ -57,7 +57,7 @@ func (s *StateTestSuite) TestCreateMultipleInstances() {
 
 	s.Equal(ID(1), inst1.ID)
 	s.Equal(ID(2), inst2.ID)
-	s.Equal(2, st.InstanceCount())
+	s.Equal(2, st.instanceCount())
 }
 
 func (s *StateTestSuite) TestGetInstance() {
@@ -91,7 +91,7 @@ func (s *StateTestSuite) TestUpdateInstance() {
 	newAttrs := object.NewRecordFromFields(map[string]object.Object{
 		"status": object.NewString("shipped"),
 	})
-	err := st.UpdateInstance(inst.ID, newAttrs)
+	err := st.updateInstance(inst.ID, newAttrs)
 	s.Require().NoError(err)
 
 	updated := st.GetInstance(inst.ID)
@@ -126,11 +126,11 @@ func (s *StateTestSuite) TestDeleteInstance() {
 	})
 
 	inst := st.CreateInstance(classKey, attrs)
-	s.Equal(1, st.InstanceCount())
+	s.Equal(1, st.instanceCount())
 
 	err := st.DeleteInstance(inst.ID)
 	s.Require().NoError(err)
-	s.Equal(0, st.InstanceCount())
+	s.Equal(0, st.instanceCount())
 
 	retrieved := st.GetInstance(inst.ID)
 	s.Nil(retrieved)
@@ -168,11 +168,11 @@ func (s *StateTestSuite) TestForEachInstanceAndClassQueries() {
 	s.Equal(3, all)
 
 	var orders int
-	st.ForEachInstanceOfClass(orderKey, func(*Instance) { orders++ })
+	st.forEachInstanceOfClass(orderKey, func(*Instance) { orders++ })
 	s.Equal(2, orders)
-	s.Equal(2, st.CountByClass(orderKey))
-	s.True(st.HasInstanceOfClass(orderKey))
-	s.False(st.HasInstanceOfClass(s.createClassKey("orders", "management", "missing")))
+	s.Equal(2, st.countByClass(orderKey))
+	s.True(st.hasInstanceOfClass(orderKey))
+	s.False(st.hasInstanceOfClass(s.createClassKey("orders", "management", "missing")))
 }
 
 func (s *StateTestSuite) TestLookupIDByRecord() {
@@ -238,7 +238,7 @@ func (s *StateTestSuite) TestAddLink() {
 
 	s.Require().NoError(st.AddLink(assocKey, order.ID, line.ID))
 
-	s.Equal(1, st.LinkCount())
+	s.Equal(1, st.linkCount())
 }
 
 func (s *StateTestSuite) TestAddLink_RejectsDuplicatePair() {
@@ -254,7 +254,7 @@ func (s *StateTestSuite) TestAddLink_RejectsDuplicatePair() {
 	s.Require().NoError(st.AddLink(assocKey, order.ID, line.ID))
 	err := st.AddLink(assocKey, order.ID, line.ID)
 	s.Require().Error(err)
-	s.Equal(1, st.LinkCount())
+	s.Equal(1, st.linkCount())
 }
 
 func (s *StateTestSuite) TestRemoveLink() {
@@ -268,11 +268,11 @@ func (s *StateTestSuite) TestRemoveLink() {
 	line := st.CreateInstance(lineKey, object.NewRecord())
 
 	s.Require().NoError(st.AddLink(assocKey, order.ID, line.ID))
-	s.Equal(1, st.LinkCount())
+	s.Equal(1, st.linkCount())
 
 	removed := st.RemoveLink(assocKey, order.ID, line.ID)
 	s.True(removed)
-	s.Equal(0, st.LinkCount())
+	s.Equal(0, st.linkCount())
 
 	removed = st.RemoveLink(assocKey, order.ID, line.ID)
 	s.False(removed)
@@ -326,11 +326,11 @@ func (s *StateTestSuite) TestDeleteInstanceRemovesLinks() {
 	line := st.CreateInstance(lineKey, object.NewRecord())
 
 	s.Require().NoError(st.AddLink(assocKey, order.ID, line.ID))
-	s.Equal(1, st.LinkCount())
+	s.Equal(1, st.linkCount())
 
 	err := st.DeleteInstance(order.ID)
 	s.Require().NoError(err)
-	s.Equal(0, st.LinkCount())
+	s.Equal(0, st.linkCount())
 }
 
 func (s *StateTestSuite) TestSetStateMachineState() {
@@ -344,7 +344,7 @@ func (s *StateTestSuite) TestSetStateMachineState() {
 	err := st.SetStateMachineState(inst.ID, stateKey)
 	s.Require().NoError(err)
 
-	retrieved, ok := st.GetStateMachineState(inst.ID)
+	retrieved, ok := st.getStateMachineState(inst.ID)
 	s.True(ok)
 	s.Equal(stateKey, retrieved)
 }
@@ -359,9 +359,9 @@ func (s *StateTestSuite) TestClearStateMachineState() {
 
 	err := st.SetStateMachineState(inst.ID, stateKey)
 	s.Require().NoError(err)
-	st.ClearStateMachineState(inst.ID)
+	st.clearStateMachineState(inst.ID)
 
-	_, ok := st.GetStateMachineState(inst.ID)
+	_, ok := st.getStateMachineState(inst.ID)
 	s.False(ok)
 }
 
@@ -383,14 +383,14 @@ func (s *StateTestSuite) TestClone() {
 
 	cloned := st.Clone()
 
-	s.Equal(st.InstanceCount(), cloned.InstanceCount())
-	s.Equal(st.LinkCount(), cloned.LinkCount())
+	s.Equal(st.instanceCount(), cloned.instanceCount())
+	s.Equal(st.linkCount(), cloned.linkCount())
 
 	clonedOrder := cloned.GetInstance(order.ID)
 	s.NotNil(clonedOrder)
 	s.Equal("pending", clonedOrder.GetAttribute("status").(*object.String).Value())
 
-	clonedState, ok := cloned.GetStateMachineState(order.ID)
+	clonedState, ok := cloned.getStateMachineState(order.ID)
 	s.True(ok)
 	s.Equal(stateKey, clonedState)
 
@@ -430,7 +430,7 @@ func (s *StateTestSuite) TestInstance_WithAttribute() {
 		}),
 	}
 
-	updated := inst.WithAttribute("status", object.NewString("shipped"))
+	updated := inst.withAttribute("status", object.NewString("shipped"))
 
 	s.Equal("pending", inst.GetAttribute("status").(*object.String).Value())
 	s.Equal("shipped", updated.GetAttribute("status").(*object.String).Value())

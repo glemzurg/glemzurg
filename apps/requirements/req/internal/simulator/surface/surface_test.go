@@ -564,7 +564,7 @@ func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Item.count >= 0", "Item"), nil),
 	}
 	inScope := map[string]bool{"Order": true, "Item": true}
-	included, excluded := ScopeInvariants(invariants, inScope)
+	included, excluded := scopeInvariants(invariants, inScope)
 	s.Len(included, 2)
 	s.Empty(excluded)
 }
@@ -575,8 +575,8 @@ func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil),
 	}
 	inScope := map[string]bool{"Order": true}
-	included, excluded := ScopeInvariants(invariants, inScope)
-	// ScopeInvariants includes everything since it doesn't know Payment is a class.
+	included, excluded := scopeInvariants(invariants, inScope)
+	// scopeInvariants includes everything since it doesn't know Payment is a class.
 	// It only filters if the identifier matches a class name that's NOT in scope.
 	// Without the allClassNames context, it can't tell.
 	s.Len(included, 2)
@@ -590,7 +590,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfSc
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
-	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
+	included, excluded := scopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Len(included, 1)
 	s.Equal("Order.count > 0", included[0].Spec.Specification)
 	s.Len(excluded, 1)
@@ -604,13 +604,13 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_KeepsNonClassI
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
 	// "x" and "y" are not known class names, so this invariant stays.
-	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
+	included, excluded := scopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Len(included, 1)
 	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_EmptyInvariants() {
-	included, excluded := ScopeInvariantsWithAllClasses(nil, map[string]bool{}, map[string]bool{})
+	included, excluded := scopeInvariantsWithAllClasses(nil, map[string]bool{}, map[string]bool{})
 	s.Empty(included)
 	s.Empty(excluded)
 }
@@ -622,7 +622,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_NilExpressionI
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
 	// Invariants with nil IR should be kept (fail-open).
-	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
+	included, excluded := scopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Len(included, 1)
 	s.Empty(excluded)
 }
@@ -634,7 +634,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_MultipleClassR
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
 	// References Payment which is out of scope.
-	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
+	included, excluded := scopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Empty(included)
 	s.Len(excluded, 1)
 }
@@ -927,7 +927,7 @@ func (s *DiagnosticsSuite) TestDiagnose_BrokenCreationChain() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	diagnostics := Diagnose(resolved, model, nil)
+	diagnostics := diagnose(resolved, model, nil)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "broken creation chain") {
@@ -956,7 +956,7 @@ func (s *DiagnosticsSuite) TestDiagnose_IsolatedClass() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	diagnostics := Diagnose(resolved, model, nil)
+	diagnostics := diagnose(resolved, model, nil)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "isolated class") {
@@ -979,7 +979,7 @@ func (s *DiagnosticsSuite) TestDiagnose_HalfAssociation() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	diagnostics := Diagnose(resolved, model, nil)
+	diagnostics := diagnose(resolved, model, nil)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "half-association") {
@@ -1010,7 +1010,7 @@ func (s *DiagnosticsSuite) TestDiagnose_AllEventsInternal() {
 		},
 	}
 
-	diagnostics := Diagnose(resolved, model, callerData)
+	diagnostics := diagnose(resolved, model, callerData)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "all events internal") {
@@ -1043,7 +1043,7 @@ func (s *DiagnosticsSuite) TestDiagnose_SentByUnknownClass() {
 		},
 	}
 
-	diagnostics := Diagnose(resolved, model, callerData)
+	diagnostics := diagnose(resolved, model, callerData)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "SentBy references unknown class") {
@@ -1075,7 +1075,7 @@ func (s *DiagnosticsSuite) TestDiagnose_CalledByUnknownClass() {
 		},
 	}
 
-	diagnostics := Diagnose(resolved, model, callerData)
+	diagnostics := diagnose(resolved, model, callerData)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "CalledBy references unknown class") {
@@ -1098,7 +1098,7 @@ func (s *DiagnosticsSuite) TestDiagnose_NoDiagnosticsForHealthySurface() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	diagnostics := Diagnose(resolved, model, nil)
+	diagnostics := diagnose(resolved, model, nil)
 	s.Empty(diagnostics, "expected no diagnostics for a healthy surface, got: %v", diagnostics)
 }
 

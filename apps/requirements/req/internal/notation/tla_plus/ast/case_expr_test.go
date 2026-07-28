@@ -26,7 +26,7 @@ func (suite *ExpressionCaseSuite) TestString() {
 			branches: []*CaseBranch{
 				{
 					Condition: &BooleanLiteral{Value: true},
-					Result:    NewIntLiteral(1),
+					Result:    newIntLiteral(1),
 				},
 			},
 			expected: `CASE TRUE → 1`,
@@ -36,17 +36,17 @@ func (suite *ExpressionCaseSuite) TestString() {
 			branches: []*CaseBranch{
 				{
 					Condition: &LogicRealComparison{
-						Left:     NewIntLiteral(5),
+						Left:     newIntLiteral(5),
 						Operator: RealComparisonGreaterThanOrEqual,
-						Right:    NewIntLiteral(0),
+						Right:    newIntLiteral(0),
 					},
 					Result: &StringLiteral{Value: `positive`},
 				},
 				{
 					Condition: &LogicRealComparison{
-						Left:     NewIntLiteral(5),
+						Left:     newIntLiteral(5),
 						Operator: RealComparisonLessThan,
-						Right:    NewIntLiteral(0),
+						Right:    newIntLiteral(0),
 					},
 					Result: &StringLiteral{Value: `negative`},
 				},
@@ -58,10 +58,10 @@ func (suite *ExpressionCaseSuite) TestString() {
 			branches: []*CaseBranch{
 				{
 					Condition: &BooleanLiteral{Value: true},
-					Result:    NewIntLiteral(1),
+					Result:    newIntLiteral(1),
 				},
 			},
-			other:    NewIntLiteral(0),
+			other:    newIntLiteral(0),
 			expected: `CASE TRUE → 1 □ OTHER → 0`,
 		},
 		{
@@ -69,23 +69,23 @@ func (suite *ExpressionCaseSuite) TestString() {
 			branches: []*CaseBranch{
 				{
 					Condition: &LogicRealComparison{
-						Left:     NewIntLiteral(5),
+						Left:     newIntLiteral(5),
 						Operator: RealComparisonGreaterThan,
-						Right:    NewIntLiteral(0),
+						Right:    newIntLiteral(0),
 					},
-					Result: NewIntLiteral(1),
+					Result: newIntLiteral(1),
 				},
 				{
 					Condition: &LogicRealComparison{
-						Left:     NewIntLiteral(5),
+						Left:     newIntLiteral(5),
 						Operator: RealComparisonLessThan,
-						Right:    NewIntLiteral(0),
+						Right:    newIntLiteral(0),
 					},
-					Result: NewIntLiteral(-1),
+					Result: newIntLiteral(-1),
 				},
 				{
 					Condition: &BooleanLiteral{Value: true},
-					Result:    NewIntLiteral(0),
+					Result:    newIntLiteral(0),
 				},
 			},
 			other:    &StringLiteral{Value: `error`},
@@ -130,7 +130,7 @@ func (suite *ExpressionCaseSuite) TestASCII() {
 			branches: []*CaseBranch{
 				{
 					Condition: &BooleanLiteral{Value: true},
-					Result:    NewIntLiteral(1),
+					Result:    newIntLiteral(1),
 				},
 			},
 			expected: `CASE TRUE -> 1`,
@@ -140,17 +140,17 @@ func (suite *ExpressionCaseSuite) TestASCII() {
 			branches: []*CaseBranch{
 				{
 					Condition: &LogicRealComparison{
-						Left:     NewIntLiteral(5),
+						Left:     newIntLiteral(5),
 						Operator: RealComparisonGreaterThanOrEqual,
-						Right:    NewIntLiteral(0),
+						Right:    newIntLiteral(0),
 					},
 					Result: &StringLiteral{Value: `positive`},
 				},
 				{
 					Condition: &LogicRealComparison{
-						Left:     NewIntLiteral(5),
+						Left:     newIntLiteral(5),
 						Operator: RealComparisonLessThan,
-						Right:    NewIntLiteral(0),
+						Right:    newIntLiteral(0),
 					},
 					Result: &StringLiteral{Value: `negative`},
 				},
@@ -162,10 +162,10 @@ func (suite *ExpressionCaseSuite) TestASCII() {
 			branches: []*CaseBranch{
 				{
 					Condition: &BooleanLiteral{Value: true},
-					Result:    NewIntLiteral(1),
+					Result:    newIntLiteral(1),
 				},
 			},
-			other:    NewIntLiteral(0),
+			other:    newIntLiteral(0),
 			expected: `CASE TRUE -> 1 [] OTHER -> 0`,
 		},
 	}
@@ -193,7 +193,7 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 				Branches: []*CaseBranch{
 					{
 						Condition: &BooleanLiteral{Value: true},
-						Result:    NewIntLiteral(1),
+						Result:    newIntLiteral(1),
 					},
 				},
 			},
@@ -204,11 +204,11 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 				Branches: []*CaseBranch{
 					{
 						Condition: &BooleanLiteral{Value: true},
-						Result:    NewIntLiteral(1),
+						Result:    newIntLiteral(1),
 					},
 					{
 						Condition: &BooleanLiteral{Value: false},
-						Result:    NewIntLiteral(2),
+						Result:    newIntLiteral(2),
 					},
 				},
 			},
@@ -219,10 +219,10 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 				Branches: []*CaseBranch{
 					{
 						Condition: &BooleanLiteral{Value: true},
-						Result:    NewIntLiteral(1),
+						Result:    newIntLiteral(1),
 					},
 				},
-				Other: NewIntLiteral(0),
+				Other: newIntLiteral(0),
 			},
 		},
 
@@ -256,7 +256,7 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 							Left:     &BooleanLiteral{Value: true},
 							// Missing Right
 						},
-						Result: NewIntLiteral(1),
+						Result: newIntLiteral(1),
 					},
 				},
 			},
@@ -280,7 +280,7 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 				Branches: []*CaseBranch{
 					{
 						Condition: &BooleanLiteral{Value: true},
-						Result:    NewIntLiteral(1),
+						Result:    newIntLiteral(1),
 					},
 				},
 				Other: &Identifier{Value: ``},
@@ -305,7 +305,7 @@ func (suite *ExpressionCaseSuite) TestExpressionNode() {
 		Branches: []*CaseBranch{
 			{
 				Condition: &BooleanLiteral{Value: true},
-				Result:    NewIntLiteral(1),
+				Result:    newIntLiteral(1),
 			},
 		},
 	}

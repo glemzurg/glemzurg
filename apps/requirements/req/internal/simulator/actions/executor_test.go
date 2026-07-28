@@ -227,7 +227,7 @@ func (s *ActionsSuite) TestExecutionContextDepthLimit() {
 
 func (s *ActionsSuite) TestExecutionContextPostConditions() {
 	ctx := NewExecutionContext()
-	ctx.AddPostCondition(DeferredPostCondition{
+	ctx.addPostCondition(DeferredPostCondition{
 		SourceName: "testAction",
 		SourceType: "action",
 		Index:      0,
@@ -657,7 +657,7 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 	s.Equal("Open", result.ToState)
 
 	// Verify instance was created
-	s.Equal(1, simState.InstanceCount())
+	s.Equal(1, simState.Snapshot().InstanceCount)
 	created := simState.GetInstance(result.InstanceID)
 	s.NotNil(created)
 	s.Equal("Open", created.GetAttribute("_state").(*object.String).Value())
@@ -704,7 +704,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 
 	// Instance should be deleted
 	s.Nil(simState.GetInstance(instance.ID))
-	s.Equal(0, simState.InstanceCount())
+	s.Equal(0, simState.Snapshot().InstanceCount)
 }
 
 func (s *ActionsSuite) TestExecuteTransitionNoMatchingTransition() {
@@ -916,14 +916,14 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 }
 
 // ========================================================================
-// ValidateClassForSimulation test
+// validateClassForSimulation test
 // ========================================================================
 
 func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
 	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/empty"), model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Empty", Details: "", UnfinishedNotes: "", UmlComment: ""})
 	class.SetStates(map[identity.Key]model_state.State{})
 
-	err := ValidateClassForSimulation(class)
+	err := validateClassForSimulation(class)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "no states")
 }
@@ -936,12 +936,12 @@ func (s *ActionsSuite) TestValidateClassForSimulationWithStates() {
 		stateKey: model_state.NewState(stateKey, "S1", "", ""),
 	})
 
-	err := ValidateClassForSimulation(class)
+	err := validateClassForSimulation(class)
 	s.Require().NoError(err)
 }
 
 // ========================================================================
-// GetStateEnumValues test
+// getStateEnumValues test
 // ========================================================================
 
 func (s *ActionsSuite) TestGetStateEnumValues() {
@@ -954,7 +954,7 @@ func (s *ActionsSuite) TestGetStateEnumValues() {
 		stateClosedKey: model_state.NewState(stateClosedKey, "Closed", "", ""),
 	})
 
-	values := GetStateEnumValues(class)
+	values := getStateEnumValues(class)
 	s.Len(values, 2)
 	s.Contains(values, "Open")
 	s.Contains(values, "Closed")
@@ -978,7 +978,7 @@ func (s *ActionsSuite) TestBindParametersSuccess() {
 		"name":   object.NewString("test"),
 	}
 
-	result, err := binder.BindParameters(paramDefs, values)
+	result, err := binder.bindParameters(paramDefs, values)
 	s.Require().NoError(err)
 	s.Len(result, 2)
 	s.Equal("50", result["amount"].Inspect())
@@ -995,7 +995,7 @@ func (s *ActionsSuite) TestBindParametersMissing() {
 
 	values := map[string]object.Object{} // missing amount
 
-	_, err := binder.BindParameters(paramDefs, values)
+	_, err := binder.bindParameters(paramDefs, values)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "missing required parameter")
 }
@@ -1433,7 +1433,7 @@ func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
 	result, err := exec.ExecuteTransition(orderClass, event, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
-	multViolations := result.Violations.ByType(invariants.ViolationTypeMultiplicity)
+	multViolations := violationsByType(result.Violations, invariants.ViolationTypeMultiplicity)
 	s.Require().Len(multViolations, 1)
 	s.Contains(multViolations[0].Message, "at least 2")
 }

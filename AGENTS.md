@@ -196,6 +196,15 @@ Unit tests for `schema` follow the same joint AI/human curation expectation when
 - Production `.go` files must stay free of symbols that exist solely so tests can avoid setup.
 - If production needs a real constructor, it must be a legitimate runtime API—not a test shortcut.
 
+### Methods only used by tests must be unexported
+
+**Any function or method defined in a production `.go` file that is only called from tests (same package or other packages’ tests) should be unexported** (rename to a lower-case identifier).
+
+- Same-package tests can still call unexported symbols.
+- If another package’s tests need the behavior, either unexport and have those tests go through a public protocol, or keep export only when it is intentional production API.
+- Do not keep exported “for tests” methods on production types (e.g. dumps, setters, or helpers that no production caller uses).
+- When in doubt: if no production code path under `apps/` calls it, unexport it unless it is deliberate public library surface for external consumers (document that exception).
+
 ## Complexity linter (`go-complexity-lint`)
 
 These rules apply on the **build-gate closing bead** (see [Quality gate](#quality-gate-appsrequirementsreqbuildsh)) when `./apps/requirements/req/build.sh` reports `go-complexity-lint` findings. They govern how that bead fixes parameter-count and other complexity metrics — not how feature or staging beads shape code before the gate runs.

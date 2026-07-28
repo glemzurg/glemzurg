@@ -41,17 +41,17 @@ func (s *NumberSuite) TestNewInteger() {
 
 func (s *NumberSuite) TestNewReal() {
 	// Fractional value stays Real (1/2 = 0.5)
-	n := NewReal(1, 2)
+	n := newReal(1, 2)
 	s.Equal("1/2", n.Inspect())
 	s.Equal(KindRational, n.Kind())
 
 	// Whole number becomes Natural (10/2 = 5)
-	n = NewReal(10, 2)
+	n = newReal(10, 2)
 	s.Equal("5", n.Inspect())
 	s.Equal(KindNatural, n.Kind())
 
 	// Negative whole number becomes Integer (-10/1 = -10)
-	n = NewReal(-10, 1)
+	n = newReal(-10, 1)
 	s.Equal("-10", n.Inspect())
 	s.Equal(KindInteger, n.Kind())
 }
@@ -82,8 +82,8 @@ func (s *NumberSuite) TestInspect() {
 		{"natural", NewNatural(42), "42"},
 		{"zero", NewInteger(0), "0"},
 		{"negative", NewInteger(-100), "-100"},
-		{"real", NewReal(314, 100), "157/50"},     // RatString format (reduced)
-		{"negative real", NewReal(-5, 2), "-5/2"}, // RatString format
+		{"real", newReal(314, 100), "157/50"},     // RatString format (reduced)
+		{"negative real", newReal(-5, 2), "-5/2"}, // RatString format
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
@@ -124,14 +124,14 @@ func (s *NumberSuite) TestClone() {
 }
 
 func (s *NumberSuite) TestCloneReal() {
-	original := NewReal(314, 100) // 3.14
+	original := newReal(314, 100) // 3.14
 	clone := original.Clone().(*Number)
 
 	s.Equal(original.Inspect(), clone.Inspect())
 	s.Equal(KindRational, clone.Kind())
 
 	// Modify clone via SetValue, original unchanged
-	err := clone.SetValue(NewReal(271, 100)) // 2.71
+	err := clone.SetValue(newReal(271, 100)) // 2.71
 	s.Require().NoError(err)
 	s.Equal("157/50", original.Inspect())
 	s.Equal("271/100", clone.Inspect())
@@ -160,7 +160,7 @@ func (s *NumberSuite) TestAdd() {
 	s.Equal(KindInteger, result.Kind())
 
 	// Real + Integer = may stay Real
-	n1 = NewReal(5, 2) // 2.5
+	n1 = newReal(5, 2) // 2.5
 	n2 = NewInteger(2)
 	result = n1.Add(n2)
 	s.Equal("9/2", result.Inspect())
@@ -219,19 +219,19 @@ func (s *NumberSuite) TestIntDiv() {
 	// 10 \div 3 = 3
 	n1 := NewNatural(10)
 	n2 := NewNatural(3)
-	result, err := n1.IntDiv(n2)
+	result, err := n1.intDiv(n2)
 	s.Require().NoError(err)
 	s.Equal("3", result.Inspect())
 
 	// Division by zero
 	n2 = NewNatural(0)
-	_, err = n1.IntDiv(n2)
+	_, err = n1.intDiv(n2)
 	s.Require().Error(err)
 
 	// Real operand not allowed
-	n1 = NewReal(21, 2) // 10.5
+	n1 = newReal(21, 2) // 10.5
 	n2 = NewNatural(3)
-	_, err = n1.IntDiv(n2)
+	_, err = n1.intDiv(n2)
 	s.Require().Error(err)
 }
 
@@ -263,7 +263,7 @@ func (s *NumberSuite) TestNeg() {
 	s.Equal(KindNatural, result.Kind())
 
 	// -3.14 = -3.14
-	n = NewReal(314, 100)
+	n = newReal(314, 100)
 	result = n.Neg()
 	s.Equal("-157/50", result.Inspect())
 	s.Equal(KindRational, result.Kind())
@@ -279,7 +279,7 @@ func (s *NumberSuite) TestCmp() {
 	s.Equal(0, n1.Cmp(n3))
 
 	// Compare integer with real
-	n4 := NewReal(5, 1) // 5.0
+	n4 := newReal(5, 1) // 5.0
 	s.Equal(0, n1.Cmp(n4))
 }
 
@@ -287,7 +287,7 @@ func (s *NumberSuite) TestEquals() {
 	n1 := NewInteger(5)
 	n2 := NewInteger(5)
 	n3 := NewInteger(10)
-	n4 := NewReal(10, 2) // 5.0
+	n4 := newReal(10, 2) // 5.0
 
 	s.True(n1.Equals(n2))
 	s.False(n1.Equals(n3))
@@ -309,7 +309,7 @@ func (s *NumberSuite) TestKindTransitions() {
 	s.Equal(KindRational, result.Kind())
 
 	// Real that happens to be whole number normalizes to Natural
-	n = NewReal(10, 1)
+	n = newReal(10, 1)
 	s.Equal(KindNatural, n.Kind())
 }
 

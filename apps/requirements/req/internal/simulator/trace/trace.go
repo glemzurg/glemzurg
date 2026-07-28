@@ -121,8 +121,8 @@ func (t *SimulationTrace) FormatText() string {
 	return b.String()
 }
 
-// FormatJSON renders the trace as indented JSON bytes.
-func (t *SimulationTrace) FormatJSON() ([]byte, error) {
+// formatJSON renders the trace as indented JSON bytes.
+func (t *SimulationTrace) formatJSON() ([]byte, error) {
 	return json.MarshalIndent(t, "", "  ")
 }
 

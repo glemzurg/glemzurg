@@ -13,7 +13,7 @@ import (
 func TestAssociationNavigationKeepsIdenticalPeerDataDistinct(t *testing.T) {
 	t.Parallel()
 
-	sim := NewSimulationState()
+	sim := newSimulationState()
 	txnKey := testClassKey(t, "finance", "wallet", "transaction")
 	acctKey := testClassKey(t, "finance", "wallet", "account")
 	abcKey := testClassKey(t, "finance", "wallet", "account_balance_change")

@@ -32,7 +32,7 @@ func TestAssociationClassHostNavigationEndpointsAndMember(t *testing.T) {
 	link.Set("_state", object.NewString("Active"))
 	link.Set("Fee", object.NewInteger(5))
 
-	ctx.CreateLink(hostKey, partner, jurisdiction)
+	ctx.createLink(hostKey, partner, jurisdiction)
 	ctx.AddAssociationClassRow(hostKey, partner, jurisdiction, link)
 
 	relInfo := ctx.GetForwardRelation(partnerKey, "Configures")
@@ -99,8 +99,8 @@ func TestAssociationClassMemberResolvesViaQuantifierEndpoint(t *testing.T) {
 	link2 := object.NewRecord()
 	link2.Set("Fee", object.NewInteger(2))
 
-	ctx.CreateLink(hostKey, partner, j1)
-	ctx.CreateLink(hostKey, partner, j2)
+	ctx.createLink(hostKey, partner, j1)
+	ctx.createLink(hostKey, partner, j2)
 	ctx.AddAssociationClassRow(hostKey, partner, j1, link1)
 	ctx.AddAssociationClassRow(hostKey, partner, j2, link2)
 
@@ -147,8 +147,8 @@ func TestAssociationClassMemberMultiWithoutBinderReturnsLinkSet(t *testing.T) {
 	link2 := object.NewRecord()
 	link2.Set("Fee", object.NewInteger(2))
 
-	ctx.CreateLink(hostKey, partner, j1)
-	ctx.CreateLink(hostKey, partner, j2)
+	ctx.createLink(hostKey, partner, j1)
+	ctx.createLink(hostKey, partner, j2)
 	ctx.AddAssociationClassRow(hostKey, partner, j1, link1)
 	ctx.AddAssociationClassRow(hostKey, partner, j2, link2)
 
@@ -204,8 +204,8 @@ func TestEndpointFieldBinderScalar(t *testing.T) {
 	link2 := object.NewRecord()
 	link2.Set("Fee", object.NewInteger(2))
 
-	ctx.CreateLink(hostKey, partner, j1)
-	ctx.CreateLink(hostKey, partner, j2)
+	ctx.createLink(hostKey, partner, j1)
+	ctx.createLink(hostKey, partner, j2)
 	ctx.AddAssociationClassRow(hostKey, partner, j1, link1)
 	ctx.AddAssociationClassRow(hostKey, partner, j2, link2)
 

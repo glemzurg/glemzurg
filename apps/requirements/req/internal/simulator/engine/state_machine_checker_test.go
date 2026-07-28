@@ -28,7 +28,7 @@ func (s *StateMachineCheckerSuite) TestNoStateMachine_NoViolation() {
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
-	s.Empty(violations.ByType(invariants.ViolationTypeStateMachineIncomplete))
+	s.Empty(violationsByType(violations, invariants.ViolationTypeStateMachineIncomplete))
 }
 
 func (s *StateMachineCheckerSuite) TestStateMachineWithoutNewEvent_Violation() {
@@ -48,7 +48,7 @@ func (s *StateMachineCheckerSuite) TestStateMachineWithoutNewEvent_Violation() {
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
-	incomplete := violations.ByType(invariants.ViolationTypeStateMachineIncomplete)
+	incomplete := violationsByType(violations, invariants.ViolationTypeStateMachineIncomplete)
 	s.Len(incomplete, 1)
 	s.Equal(classKey, incomplete[0].ClassKey)
 	s.Contains(incomplete[0].Message, "Order")
@@ -72,7 +72,7 @@ func (s *StateMachineCheckerSuite) TestStateMachineWithNewEvent_NoViolation() {
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
-	s.Empty(violations.ByType(invariants.ViolationTypeStateMachineIncomplete))
+	s.Empty(violationsByType(violations, invariants.ViolationTypeStateMachineIncomplete))
 }
 
 func (s *StateMachineCheckerSuite) TestTransitionsOnlyWithoutNewEvent_Violation() {
@@ -99,7 +99,7 @@ func (s *StateMachineCheckerSuite) TestTransitionsOnlyWithoutNewEvent_Violation(
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
-	incomplete := violations.ByType(invariants.ViolationTypeStateMachineIncomplete)
+	incomplete := violationsByType(violations, invariants.ViolationTypeStateMachineIncomplete)
 	s.Len(incomplete, 1)
 }
 
@@ -122,7 +122,7 @@ func (s *StateMachineCheckerSuite) TestMultipleClasses_OnlyIncompleteReported() 
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
-	incomplete := violations.ByType(invariants.ViolationTypeStateMachineIncomplete)
+	incomplete := violationsByType(violations, invariants.ViolationTypeStateMachineIncomplete)
 	s.Len(incomplete, 1)
 	s.Contains(incomplete[0].Message, "Order")
 }
@@ -137,7 +137,7 @@ func (s *StateMachineCheckerSuite) TestEngineRunReportsIncompleteStateMachine() 
 	result, err := engine.Run()
 	s.Require().NoError(err)
 
-	incomplete := result.Violations.ByType(invariants.ViolationTypeStateMachineIncomplete)
+	incomplete := violationsByType(result.Violations, invariants.ViolationTypeStateMachineIncomplete)
 	s.Len(incomplete, 1)
 	s.Contains(incomplete[0].Message, "Order")
 }

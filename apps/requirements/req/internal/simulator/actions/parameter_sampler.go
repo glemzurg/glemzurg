@@ -51,8 +51,8 @@ func (s *ParameterSampler) PeerFieldDistinctExcludeInstanceID() instance.ID {
 	return s.peerFieldDistinctExcludeInstanceID
 }
 
-// SampleFromRequires builds parameters for paramDefs using the action's effective requires.
-func (s *ParameterSampler) SampleFromRequires(
+// sampleFromRequires builds parameters for paramDefs using the action's effective requires.
+func (s *ParameterSampler) sampleFromRequires(
 	paramDefs []model_state.Parameter,
 	action *model_state.Action,
 	rng *rand.Rand,

@@ -160,11 +160,11 @@ func (s *RecordSuite) TestWithout() {
 		"b": NewInteger(2),
 	})
 
-	without := original.Without("a")
+	without := original.without("a")
 
 	// Original unchanged
 	s.Equal(2, original.Len())
-	// Without has one less field
+	// without has one less field
 	s.Equal(1, without.Len())
 	s.False(without.Has("a"))
 	s.True(without.Has("b"))

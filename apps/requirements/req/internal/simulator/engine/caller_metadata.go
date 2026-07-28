@@ -20,12 +20,6 @@ func PopulateCallerDataFromSchema(sch *schema.Schema, catalog *ClassCatalog) {
 	populateAssociationSetMapSenders(sch, catalog)
 }
 
-// PopulateCallerDataFromModel is kept as a test helper name alias.
-// Prefer PopulateCallerDataFromSchema.
-func PopulateCallerDataFromModel(sch *schema.Schema, catalog *ClassCatalog) {
-	PopulateCallerDataFromSchema(sch, catalog)
-}
-
 func populateCallerDataFromUseCase(useCase model_use_case.UseCase, catalog *ClassCatalog) {
 	for _, scenario := range useCase.Scenarios {
 		if scenario.Steps == nil {

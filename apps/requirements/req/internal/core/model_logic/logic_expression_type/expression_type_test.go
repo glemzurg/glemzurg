@@ -173,10 +173,10 @@ func (s *ExpressionTypeTestSuite) TestTypeName() {
 func (s *ExpressionTypeTestSuite) TestValidateExpressionTypeHelper() {
 	ctx := coreerr.NewContext("test", "")
 	// Nil is valid.
-	s.Require().NoError(ValidateExpressionType(ctx, nil))
+	s.Require().NoError(validateExpressionType(ctx, nil))
 	// Valid type.
-	s.Require().NoError(ValidateExpressionType(ctx, &BooleanType{}))
+	s.Require().NoError(validateExpressionType(ctx, &BooleanType{}))
 	// Invalid type.
-	err := ValidateExpressionType(ctx, &SequenceType{})
+	err := validateExpressionType(ctx, &SequenceType{})
 	s.Require().Error(err)
 }

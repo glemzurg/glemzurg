@@ -18,11 +18,6 @@ func PopulateDerivedAttributeCallersFromSchema(sch *schema.Schema, catalog *Clas
 	})
 }
 
-// PopulateDerivedAttributeCallersFromModel is an alias for schema-based population.
-func PopulateDerivedAttributeCallersFromModel(sch *schema.Schema, catalog *ClassCatalog) {
-	PopulateDerivedAttributeCallersFromSchema(sch, catalog)
-}
-
 func buildDerivedAttributeKeyIndex(sch *schema.Schema) map[identity.Key]bool {
 	derivedKeys := make(map[identity.Key]bool)
 	sch.ForEachClass(func(class model_class.Class) {

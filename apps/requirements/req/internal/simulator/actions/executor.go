@@ -129,7 +129,7 @@ type ActionExecutor struct {
 
 	// worldStateDeferDepth skips world-state checks (model/index/association
 	// structural) while a step is mid-flight: transition action, nested peer
-	// transitions, entry/exit actions, and creation-chain nesting. Depth lets
+	// transitions, entry/exit actions, and creation-chain nesting. depth lets
 	// nested ExecuteTransition calls keep deferral active for the outer step.
 	// Callers that BeginWorldStateDeferral must run CheckWorldStateInvariants
 	// after nested work completes.
@@ -1275,17 +1275,17 @@ func (e *ActionExecutor) applyStateTransition(
 	return toStateName, nil
 }
 
-// ValidateClassForSimulation checks that a class is valid for simulation.
+// validateClassForSimulation checks that a class is valid for simulation.
 // Every simulated class must have at least one defined state.
-func ValidateClassForSimulation(class model_class.Class) error {
+func validateClassForSimulation(class model_class.Class) error {
 	if len(class.States) == 0 {
 		return fmt.Errorf("class %s has no states defined; cannot simulate", class.Name)
 	}
 	return nil
 }
 
-// GetStateEnumValues returns the allowed _state values for a class.
-func GetStateEnumValues(class model_class.Class) []string {
+// getStateEnumValues returns the allowed _state values for a class.
+func getStateEnumValues(class model_class.Class) []string {
 	values := make([]string, 0, len(class.States))
 	for _, s := range class.States {
 		values = append(values, s.Name)

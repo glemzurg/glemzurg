@@ -57,7 +57,7 @@ func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
 	model, _ := indexTestModel([]model_class.Attribute{attr})
 
 	checker := NewIndexUniquenessChecker(schema.New(model))
-	s.False(checker.HasIndexes())
+	s.False(checker.hasIndexes())
 
 	simState := instance.NewState(emptySchema())
 	violations := checker.CheckState(simState)
@@ -69,7 +69,7 @@ func (s *InvariantsSuite) TestIndexCheckerSingleAttrNoConflict() {
 	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
 	checker := NewIndexUniquenessChecker(schema.New(model))
-	s.True(checker.HasIndexes())
+	s.True(checker.hasIndexes())
 
 	simState := instance.NewState(emptySchema())
 

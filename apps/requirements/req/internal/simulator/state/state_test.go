@@ -22,17 +22,17 @@ func TestStateSuite(t *testing.T) {
 // =============================================================================
 
 func (s *StateTestSuite) TestBindingsBuilder_BuildGlobal() {
-	simState := NewSimulationState()
+	simState := newSimulationState()
 	builder := NewBindingsBuilder(simState)
 
-	bindings := builder.BuildGlobal()
+	bindings := builder.buildGlobal()
 
 	s.NotNil(bindings)
 	s.NotNil(bindings.RelationContext())
 }
 
 func (s *StateTestSuite) TestBindingsBuilder_BuildForInstance() {
-	simState := NewSimulationState()
+	simState := newSimulationState()
 
 	classKey := s.createClassKey("order")
 	attrs := object.NewRecordFromFields(map[string]object.Object{
@@ -51,7 +51,7 @@ func (s *StateTestSuite) TestBindingsBuilder_BuildForInstance() {
 }
 
 func (s *StateTestSuite) TestBindingsBuilder_BuildForInstanceWithVariables() {
-	simState := NewSimulationState()
+	simState := newSimulationState()
 
 	classKey := s.createClassKey("order")
 	inst := simState.CreateInstance(classKey, object.NewRecord())
@@ -74,7 +74,7 @@ func (s *StateTestSuite) TestBindingsBuilder_BuildForInstanceWithVariables() {
 }
 
 func (s *StateTestSuite) TestBindingsBuilder_BuildWithClassInstances() {
-	simState := NewSimulationState()
+	simState := newSimulationState()
 
 	orderKey := s.createClassKey("order")
 
@@ -114,7 +114,7 @@ func (s *StateTestSuite) TestBindingsBuilder_BuildWithClassInstances() {
 }
 
 func (s *StateTestSuite) TestBindingsBuilder_AddAssociation() {
-	simState := NewSimulationState()
+	simState := newSimulationState()
 
 	orderKey := s.createClassKey("order")
 	lineKey := s.createClassKey("line")

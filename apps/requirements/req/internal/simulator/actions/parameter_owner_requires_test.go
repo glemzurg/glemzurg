@@ -68,7 +68,7 @@ func (s *ParameterSamplerSuite) TestSampleImplicitEnumParameterWithoutExplicitRe
 	sampler := NewParameterSampler(binder, nil)
 	rng := rand.New(rand.NewSource(11)) //nolint:gosec // deterministic test seed
 
-	result, err := sampler.SampleFromRequires(params, &action, rng)
+	result, err := sampler.sampleFromRequires(params, &action, rng)
 	s.Require().NoError(err)
 
 	value, ok := result["Type"].(*object.String)
@@ -117,7 +117,7 @@ func (s *ParameterSamplerSuite) TestSampleParameterInvariantMembershipFromNamedS
 	sampler := NewParameterSampler(binder, s.iso4217NamedSet())
 
 	for seed := range 200 {
-		result, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		result, err := sampler.sampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
 		s.Require().NoError(err)
 		if object.IsNull(result["ISO"]) {
 			continue

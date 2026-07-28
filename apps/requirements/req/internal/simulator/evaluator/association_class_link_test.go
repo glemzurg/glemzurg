@@ -20,8 +20,8 @@ func TestGetAssociationClassLinksByEndpointPairsRows(t *testing.T) {
 	link1 := object.NewRecord()
 	link2 := object.NewRecord()
 
-	ctx.CreateLink(hostKey, partner, j1)
-	ctx.CreateLink(hostKey, partner, j2)
+	ctx.createLink(hostKey, partner, j1)
+	ctx.createLink(hostKey, partner, j2)
 	ctx.AddAssociationClassRow(hostKey, partner, j1, link1)
 	ctx.AddAssociationClassRow(hostKey, partner, j2, link2)
 

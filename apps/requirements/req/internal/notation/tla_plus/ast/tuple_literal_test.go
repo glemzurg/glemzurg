@@ -28,24 +28,24 @@ func (suite *TupleLiteralSuite) TestString() {
 		{
 			testName: `single element`,
 			elements: []Expression{
-				NewIntLiteral(3),
+				newIntLiteral(3),
 			},
 			expected: `⟨3⟩`,
 		},
 		{
 			testName: `two elements`,
 			elements: []Expression{
-				NewIntLiteral(3),
-				NewIntLiteral(7),
+				newIntLiteral(3),
+				newIntLiteral(7),
 			},
 			expected: `⟨3, 7⟩`,
 		},
 		{
 			testName: `three elements`,
 			elements: []Expression{
-				NewIntLiteral(3),
-				NewIntLiteral(7),
-				NewIntLiteral(3),
+				newIntLiteral(3),
+				newIntLiteral(7),
+				newIntLiteral(3),
 			},
 			expected: `⟨3, 7, 3⟩`,
 		},
@@ -69,7 +69,7 @@ func (suite *TupleLiteralSuite) TestString() {
 		{
 			testName: `with mixed values`,
 			elements: []Expression{
-				NewIntLiteral(1),
+				newIntLiteral(1),
 				&StringLiteral{Value: `two`},
 				&Identifier{Value: `three`},
 			},
@@ -80,11 +80,11 @@ func (suite *TupleLiteralSuite) TestString() {
 			elements: []Expression{
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
-						NewIntLiteral(2),
+						newIntLiteral(1),
+						newIntLiteral(2),
 					},
 				},
-				NewIntLiteral(3),
+				newIntLiteral(3),
 			},
 			expected: `⟨⟨1, 2⟩, 3⟩`,
 		},
@@ -113,9 +113,9 @@ func (suite *TupleLiteralSuite) TestASCII() {
 		{
 			testName: `three elements`,
 			elements: []Expression{
-				NewIntLiteral(3),
-				NewIntLiteral(7),
-				NewIntLiteral(3),
+				newIntLiteral(3),
+				newIntLiteral(7),
+				newIntLiteral(3),
 			},
 			expected: `<<3, 7, 3>>`,
 		},
@@ -123,9 +123,9 @@ func (suite *TupleLiteralSuite) TestASCII() {
 			testName: `with real infix`,
 			elements: []Expression{
 				&RealInfixExpression{
-					Left:     NewIntLiteral(1),
+					Left:     newIntLiteral(1),
 					Operator: RealOperatorAdd,
-					Right:    NewIntLiteral(2),
+					Right:    newIntLiteral(2),
 				},
 			},
 			expected: `<<1 + 2>>`,
@@ -160,7 +160,7 @@ func (suite *TupleLiteralSuite) TestValidate() {
 			testName: `valid single element`,
 			t: &TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(1),
+					newIntLiteral(1),
 				},
 			},
 		},
@@ -168,9 +168,9 @@ func (suite *TupleLiteralSuite) TestValidate() {
 			testName: `valid multiple elements`,
 			t: &TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(1),
-					NewIntLiteral(2),
-					NewIntLiteral(3),
+					newIntLiteral(1),
+					newIntLiteral(2),
+					newIntLiteral(3),
 				},
 			},
 		},
@@ -187,9 +187,9 @@ func (suite *TupleLiteralSuite) TestValidate() {
 			testName: `error nil element in middle`,
 			t: &TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(1),
+					newIntLiteral(1),
 					nil,
-					NewIntLiteral(3),
+					newIntLiteral(3),
 				},
 			},
 			errstr: `elements[1]`,
@@ -220,7 +220,7 @@ func (suite *TupleLiteralSuite) TestExpressionNode() {
 	// Verify that TupleLiteral implements the expressionNode interface method.
 	t := &TupleLiteral{
 		Elements: []Expression{
-			NewIntLiteral(1),
+			newIntLiteral(1),
 		},
 	}
 	// This should compile and not panic.

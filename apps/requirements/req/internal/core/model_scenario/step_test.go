@@ -935,11 +935,11 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 
 	// Parse into structure
 	var step Step
-	err := step.FromJSON(jsonLiteral)
+	err := step.fromJSON(jsonLiteral)
 	suite.Require().NoError(err)
 
 	// Export back to JSON
-	jsonStr, err := step.ToJSON()
+	jsonStr, err := step.toJSON()
 	suite.Require().NoError(err)
 
 	// Compare values are the same
@@ -1000,7 +1000,7 @@ statements:
 	suite.Require().NoError(err)
 
 	// Export back to YAML
-	yamlStr, err := step.ToYAML()
+	yamlStr, err := step.toYAML()
 	suite.Require().NoError(err)
 
 	// Parse the exported YAML back into a second struct for comparison

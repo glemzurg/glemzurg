@@ -54,8 +54,8 @@ func NewGlobalScopeContext(registry *Registry) *ScopeContext {
 	}
 }
 
-// NewDomainScopeContext creates a scope context at domain level.
-func NewDomainScopeContext(registry *Registry, domain string) *ScopeContext {
+// newDomainScopeContext creates a scope context at domain level.
+func newDomainScopeContext(registry *Registry, domain string) *ScopeContext {
 	return &ScopeContext{
 		Level:    ScopeLevelDomain,
 		Domain:   domain,
@@ -63,8 +63,8 @@ func NewDomainScopeContext(registry *Registry, domain string) *ScopeContext {
 	}
 }
 
-// NewSubdomainScopeContext creates a scope context at subdomain level.
-func NewSubdomainScopeContext(registry *Registry, domain, subdomain string) *ScopeContext {
+// newSubdomainScopeContext creates a scope context at subdomain level.
+func newSubdomainScopeContext(registry *Registry, domain, subdomain string) *ScopeContext {
 	return &ScopeContext{
 		Level:     ScopeLevelSubdomain,
 		Domain:    domain,
@@ -81,18 +81,6 @@ func NewClassScopeContext(registry *Registry, domain, subdomain, class string) *
 		Subdomain: subdomain,
 		Class:     class,
 		Registry:  registry,
-	}
-}
-
-// WithSelf creates a copy of this context with the self record set.
-func (sc *ScopeContext) WithSelf(self *object.Record) *ScopeContext {
-	return &ScopeContext{
-		Level:      sc.Level,
-		Domain:     sc.Domain,
-		Subdomain:  sc.Subdomain,
-		Class:      sc.Class,
-		SelfRecord: self,
-		Registry:   sc.Registry,
 	}
 }
 

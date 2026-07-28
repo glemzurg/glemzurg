@@ -647,20 +647,3 @@ func BuildSystemEventNameMap(class *model_class.Class) map[string]identity.Key {
 	}
 	return m
 }
-
-// BuildSystemEventRaiseNameMap maps event keys to canonical TLA spellings («new», «destroy»).
-func BuildSystemEventRaiseNameMap(class *model_class.Class) map[identity.Key]string {
-	if len(class.Events) == 0 {
-		return nil
-	}
-	m := make(map[identity.Key]string)
-	for _, event := range class.Events {
-		if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
-			m[event.Key] = model_state.SystemEventTLAName(event.Name)
-		}
-	}
-	if len(m) == 0 {
-		return nil
-	}
-	return m
-}

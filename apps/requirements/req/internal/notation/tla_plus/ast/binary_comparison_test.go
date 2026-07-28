@@ -24,55 +24,55 @@ func (suite *LogicRealComparisonSuite) TestString() {
 	}{
 		{
 			testName: `less than`,
-			left:     NewIntLiteral(1),
+			left:     newIntLiteral(1),
 			operator: RealComparisonLessThan,
-			right:    NewIntLiteral(2),
+			right:    newIntLiteral(2),
 			expected: `1 < 2`,
 		},
 		{
 			testName: `greater than`,
-			left:     NewIntLiteral(5),
+			left:     newIntLiteral(5),
 			operator: RealComparisonGreaterThan,
-			right:    NewIntLiteral(3),
+			right:    newIntLiteral(3),
 			expected: `5 > 3`,
 		},
 		{
 			testName: `less than or equal`,
-			left:     NewIntLiteral(4),
+			left:     newIntLiteral(4),
 			operator: RealComparisonLessThanOrEqual,
-			right:    NewIntLiteral(4),
+			right:    newIntLiteral(4),
 			expected: `4 ≤ 4`,
 		},
 		{
 			testName: `greater than or equal`,
-			left:     NewIntLiteral(10),
+			left:     newIntLiteral(10),
 			operator: RealComparisonGreaterThanOrEqual,
-			right:    NewIntLiteral(5),
+			right:    newIntLiteral(5),
 			expected: `10 ≥ 5`,
 		},
 		{
 			testName: `with natural literals`,
-			left:     NewIntLiteral(0),
+			left:     newIntLiteral(0),
 			operator: RealComparisonLessThanOrEqual,
-			right:    NewIntLiteral(100),
+			right:    newIntLiteral(100),
 			expected: `0 ≤ 100`,
 		},
 		{
 			testName: `with real literal`,
 			left:     NewDecimalNumberLiteral("3", "14"),
 			operator: RealComparisonLessThan,
-			right:    NewIntLiteral(4),
+			right:    newIntLiteral(4),
 			expected: `3.14 < 4`,
 		},
 		{
 			testName: `with arithmetic expression`,
 			left: &RealInfixExpression{
-				Left:     NewIntLiteral(1),
+				Left:     newIntLiteral(1),
 				Operator: RealOperatorAdd,
-				Right:    NewIntLiteral(2),
+				Right:    newIntLiteral(2),
 			},
 			operator: RealComparisonLessThan,
-			right:    NewIntLiteral(5),
+			right:    newIntLiteral(5),
 			expected: `1 + 2 < 5`,
 		},
 	}
@@ -98,30 +98,30 @@ func (suite *LogicRealComparisonSuite) TestASCII() {
 	}{
 		{
 			testName: `less than`,
-			left:     NewIntLiteral(1),
+			left:     newIntLiteral(1),
 			operator: RealComparisonLessThan,
-			right:    NewIntLiteral(2),
+			right:    newIntLiteral(2),
 			expected: `1 < 2`,
 		},
 		{
 			testName: `greater than`,
-			left:     NewIntLiteral(5),
+			left:     newIntLiteral(5),
 			operator: RealComparisonGreaterThan,
-			right:    NewIntLiteral(3),
+			right:    newIntLiteral(3),
 			expected: `5 > 3`,
 		},
 		{
 			testName: `less than or equal unicode to ascii`,
-			left:     NewIntLiteral(4),
+			left:     newIntLiteral(4),
 			operator: RealComparisonLessThanOrEqual,
-			right:    NewIntLiteral(4),
+			right:    newIntLiteral(4),
 			expected: `4 =< 4`,
 		},
 		{
 			testName: `greater than or equal unicode to ascii`,
-			left:     NewIntLiteral(10),
+			left:     newIntLiteral(10),
 			operator: RealComparisonGreaterThanOrEqual,
-			right:    NewIntLiteral(5),
+			right:    newIntLiteral(5),
 			expected: `10 >= 5`,
 		},
 	}
@@ -148,32 +148,32 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 			testName: `valid less than`,
 			l: &LogicRealComparison{
 				Operator: RealComparisonLessThan,
-				Left:     NewIntLiteral(1),
-				Right:    NewIntLiteral(2),
+				Left:     newIntLiteral(1),
+				Right:    newIntLiteral(2),
 			},
 		},
 		{
 			testName: `valid greater than`,
 			l: &LogicRealComparison{
 				Operator: RealComparisonGreaterThan,
-				Left:     NewIntLiteral(5),
-				Right:    NewIntLiteral(3),
+				Left:     newIntLiteral(5),
+				Right:    newIntLiteral(3),
 			},
 		},
 		{
 			testName: `valid less than or equal`,
 			l: &LogicRealComparison{
 				Operator: RealComparisonLessThanOrEqual,
-				Left:     NewIntLiteral(4),
-				Right:    NewIntLiteral(4),
+				Left:     newIntLiteral(4),
+				Right:    newIntLiteral(4),
 			},
 		},
 		{
 			testName: `valid greater than or equal`,
 			l: &LogicRealComparison{
 				Operator: RealComparisonGreaterThanOrEqual,
-				Left:     NewIntLiteral(10),
-				Right:    NewIntLiteral(5),
+				Left:     newIntLiteral(10),
+				Right:    newIntLiteral(5),
 			},
 		},
 		{
@@ -182,10 +182,10 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 				Operator: RealComparisonLessThan,
 				Left: &RealInfixExpression{
 					Operator: RealOperatorAdd,
-					Left:     NewIntLiteral(1),
-					Right:    NewIntLiteral(2),
+					Left:     newIntLiteral(1),
+					Right:    newIntLiteral(2),
 				},
-				Right: NewIntLiteral(5),
+				Right: newIntLiteral(5),
 			},
 		},
 
@@ -193,8 +193,8 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 		{
 			testName: `error missing operator`,
 			l: &LogicRealComparison{
-				Left:  NewIntLiteral(1),
-				Right: NewIntLiteral(2),
+				Left:  newIntLiteral(1),
+				Right: newIntLiteral(2),
 			},
 			errstr: `Operator`,
 		},
@@ -202,8 +202,8 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 			testName: `error invalid operator`,
 			l: &LogicRealComparison{
 				Operator: `invalid`,
-				Left:     NewIntLiteral(1),
-				Right:    NewIntLiteral(2),
+				Left:     newIntLiteral(1),
+				Right:    newIntLiteral(2),
 			},
 			errstr: `Operator`,
 		},
@@ -211,7 +211,7 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 			testName: `error missing left`,
 			l: &LogicRealComparison{
 				Operator: RealComparisonLessThan,
-				Right:    NewIntLiteral(2),
+				Right:    newIntLiteral(2),
 			},
 			errstr: `Left`,
 		},
@@ -219,7 +219,7 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 			testName: `error missing right`,
 			l: &LogicRealComparison{
 				Operator: RealComparisonLessThan,
-				Left:     NewIntLiteral(1),
+				Left:     newIntLiteral(1),
 			},
 			errstr: `Right`,
 		},
@@ -229,10 +229,10 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 				Operator: RealComparisonLessThan,
 				Left: &RealInfixExpression{
 					Operator: `invalid`,
-					Left:     NewIntLiteral(1),
-					Right:    NewIntLiteral(2),
+					Left:     newIntLiteral(1),
+					Right:    newIntLiteral(2),
 				},
-				Right: NewIntLiteral(5),
+				Right: newIntLiteral(5),
 			},
 			errstr: `Operator`,
 		},
@@ -252,9 +252,9 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 func (suite *LogicRealComparisonSuite) TestExpressionNode() {
 	// Verify that LogicRealComparison implements the expressionNode interface method.
 	l := &LogicRealComparison{
-		Left:     NewIntLiteral(1),
+		Left:     newIntLiteral(1),
 		Operator: RealComparisonLessThan,
-		Right:    NewIntLiteral(2),
+		Right:    newIntLiteral(2),
 	}
 	// This should compile and not panic.
 	l.expressionNode()

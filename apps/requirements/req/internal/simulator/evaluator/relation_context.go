@@ -201,10 +201,10 @@ func (c *RelationContext) GetRelation(classKey, fieldName string) *RelationInfo 
 	return c.GetForwardRelation(classKey, fieldName)
 }
 
-// CreateLink creates a link between two records for the given association.
+// createLink creates a link between two records for the given association.
 // Both records will be assigned object IDs if they don't have them.
 // Prefer CreateInstanceLink when engine InstanceIDs and [id, data] extents are available.
-func (c *RelationContext) CreateLink(assocKey AssociationKey, from, to *object.Record) {
+func (c *RelationContext) createLink(assocKey AssociationKey, from, to *object.Record) {
 	fromID := c.identities.GetOrAssign(from)
 	toID := c.identities.GetOrAssign(to)
 	_ = c.links.AddLink(assocKey, fromID, toID)
@@ -373,22 +373,6 @@ func (c *RelationContext) GetAssociationClassLinksByEndpoint(
 // ClearAssociationClassRows removes materialized host-row indexes.
 func (c *RelationContext) ClearAssociationClassRows() {
 	c.associationClassRows = nil
-}
-
-// RegisterRecord ensures a record has an object ID assigned.
-// Returns the assigned ID.
-func (c *RelationContext) RegisterRecord(record *object.Record) ObjectID {
-	return c.identities.GetOrAssign(record)
-}
-
-// GetObjectID returns the object ID for a record, if assigned.
-func (c *RelationContext) GetObjectID(record *object.Record) (ObjectID, bool) {
-	return c.identities.GetID(record)
-}
-
-// Identities returns the underlying identity registry (for advanced use).
-func (c *RelationContext) Identities() *IdentityRegistry {
-	return c.identities
 }
 
 // Links returns the underlying link table (for advanced use).

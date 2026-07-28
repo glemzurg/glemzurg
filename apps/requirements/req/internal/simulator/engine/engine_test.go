@@ -109,7 +109,7 @@ func (s *EngineSuite) TestSimulationCreatesInstances() {
 	s.True(foundCreation, "should have at least one creation step")
 
 	// Final state should have instances.
-	s.Positive(result.FinalState.InstanceCount())
+	s.Positive(result.FinalState.Snapshot().InstanceCount)
 }
 
 func (s *EngineSuite) TestSimulationTransitions() {

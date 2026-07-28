@@ -35,12 +35,12 @@ type CallerData struct {
 	AttributeCalledBy map[identity.Key][]identity.Key
 }
 
-// Diagnose analyzes a resolved surface and produces diagnostic messages
+// diagnose analyzes a resolved surface and produces diagnostic messages
 // about potential issues: broken creation chains, unreachable states,
 // orphaned multiplicity constraints, etc.
 //
 // callerData is optional (nil means no caller data available).
-func Diagnose(resolved *ResolvedSurface, model *core.Model, callerData *CallerData) []Diagnostic {
+func diagnose(resolved *ResolvedSurface, model *core.Model, callerData *CallerData) []Diagnostic {
 	var diagnostics []Diagnostic
 
 	allAssocs := model.GetClassAssociations()

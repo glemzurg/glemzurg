@@ -20,7 +20,7 @@ func (s *RelationContextTestSuite) TestNewRelationContext() {
 	s.NotNil(ctx)
 	s.NotNil(ctx.ForwardRelations)
 	s.NotNil(ctx.ReverseRelations)
-	s.NotNil(ctx.Identities())
+	s.NotNil(ctx.identities)
 	s.NotNil(ctx.Links())
 }
 
@@ -125,17 +125,17 @@ func (s *RelationContextTestSuite) TestCreateLink() {
 	lineItem := object.NewRecord()
 	lineItem.Set("id", object.NewNatural(100))
 
-	ctx.CreateLink(AssociationKey("test/assoc"), order, lineItem)
+	ctx.createLink(AssociationKey("test/assoc"), order, lineItem)
 
 	// Verify link was created
 	s.Equal(1, ctx.Links().Count())
 
 	// Verify both records have IDs
-	orderId, ok := ctx.GetObjectID(order)
+	orderId, ok := ctx.identities.GetID(order)
 	s.True(ok)
 	s.NotEqual(ObjectID(0), orderId)
 
-	lineId, ok := ctx.GetObjectID(lineItem)
+	lineId, ok := ctx.identities.GetID(lineItem)
 	s.True(ok)
 	s.NotEqual(ObjectID(0), lineId)
 }
@@ -163,8 +163,8 @@ func (s *RelationContextTestSuite) TestGetRelatedRecords_Forward() {
 	lineItem2.Set("id", object.NewNatural(102))
 
 	// Create links
-	ctx.CreateLink(assocKey, order, lineItem1)
-	ctx.CreateLink(assocKey, order, lineItem2)
+	ctx.createLink(assocKey, order, lineItem1)
+	ctx.createLink(assocKey, order, lineItem2)
 
 	// Forward traversal: order.Lines
 	related := ctx.GetRelatedRecords(order, assocKey, false)
@@ -193,7 +193,7 @@ func (s *RelationContextTestSuite) TestGetRelatedRecords_Reverse() {
 	lineItem.Set("id", object.NewNatural(101))
 
 	// Create link
-	ctx.CreateLink(assocKey, order, lineItem)
+	ctx.createLink(assocKey, order, lineItem)
 
 	// Reverse traversal: lineItem._Lines
 	related := ctx.GetRelatedRecords(lineItem, assocKey, true)
@@ -217,7 +217,7 @@ func (s *RelationContextTestSuite) TestGetRelatedRecords_Empty() {
 	// Order with no line items
 	order := object.NewRecord()
 	order.Set("id", object.NewNatural(1))
-	ctx.RegisterRecord(order) // Register but don't create links
+	ctx.identities.GetOrAssign(order) // Register but don't create links
 
 	related := ctx.GetRelatedRecords(order, assocKey, false)
 	s.Empty(related)
@@ -257,7 +257,7 @@ func (s *RelationContextTestSuite) TestRemoveLink() {
 	lineItem.Set("id", object.NewNatural(101))
 
 	// Create and then remove link
-	ctx.CreateLink(assocKey, order, lineItem)
+	ctx.createLink(assocKey, order, lineItem)
 	s.Equal(1, ctx.Links().Count())
 
 	removed := ctx.RemoveLink(assocKey, order, lineItem)
@@ -313,14 +313,14 @@ func (s *RelationContextTestSuite) TestClear() {
 	lineItem := object.NewRecord()
 	lineItem.Set("id", object.NewNatural(101))
 
-	ctx.CreateLink(assocKey, order, lineItem)
+	ctx.createLink(assocKey, order, lineItem)
 
 	// Clear runtime state
 	ctx.Clear()
 
 	// Links and identities should be cleared
 	s.Equal(0, ctx.Links().Count())
-	s.Equal(0, ctx.Identities().Count())
+	s.Equal(0, ctx.identities.Count())
 
 	// But association metadata should remain
 	info := ctx.GetForwardRelation("class/Order", "Lines")

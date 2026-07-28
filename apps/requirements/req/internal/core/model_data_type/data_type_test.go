@@ -939,7 +939,7 @@ func TestDateTimeHelpers(t *testing.T) {
 	require.NoError(t, err)
 	dataType.TypeSpec = &natTypeSpec
 	require.True(t, HasNatTypeSpec(dataType))
-	require.False(t, IsAtomicUnconstrained(dataType))
+	require.False(t, isAtomicUnconstrained(dataType))
 }
 
 func TestIsAtomicUnconstrained(t *testing.T) {
@@ -972,7 +972,7 @@ func TestIsAtomicUnconstrained(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, IsAtomicUnconstrained(tc.dataType))
+			assert.Equal(t, tc.want, isAtomicUnconstrained(tc.dataType))
 		})
 	}
 }

@@ -191,8 +191,8 @@ func (ctx *ExecutionContext) RecordPrimedAssignment(
 	return nil
 }
 
-// AddPostCondition queues a post-condition for deferred checking.
-func (ctx *ExecutionContext) AddPostCondition(pc DeferredPostCondition) {
+// addPostCondition queues a post-condition for deferred checking.
+func (ctx *ExecutionContext) addPostCondition(pc DeferredPostCondition) {
 	ctx.postConditions = append(ctx.postConditions, pc)
 }
 
@@ -271,11 +271,6 @@ func (ctx *ExecutionContext) MutatedInstanceIDs() []instance.ID {
 		ids = append(ids, id)
 	}
 	return ids
-}
-
-// Depth returns the current call chain depth.
-func (ctx *ExecutionContext) Depth() int {
-	return ctx.depth
 }
 
 // IncrementDepth increments the call depth. Returns an error if the depth

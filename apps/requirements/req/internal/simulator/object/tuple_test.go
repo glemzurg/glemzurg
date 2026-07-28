@@ -141,15 +141,15 @@ func (s *TupleSuite) TestSubSeq() {
 	})
 
 	// Normal subsequence (1-indexed, inclusive)
-	sub := t.SubSeq(2, 4)
+	sub := t.subSeq(2, 4)
 	s.Equal("<<2, 3, 4>>", sub.Inspect())
 
 	// Clamping
-	sub = t.SubSeq(0, 10)
+	sub = t.subSeq(0, 10)
 	s.Equal("<<1, 2, 3, 4, 5>>", sub.Inspect())
 
 	// Invalid range returns empty
-	sub = t.SubSeq(4, 2)
+	sub = t.subSeq(4, 2)
 	s.Equal("<<>>", sub.Inspect())
 }
 

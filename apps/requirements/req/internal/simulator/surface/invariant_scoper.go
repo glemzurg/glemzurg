@@ -5,25 +5,26 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 )
 
-// ScopeInvariants filters model invariants to those relevant to the given
+// scopeInvariants filters model invariants to those relevant to the given
 // surface. An invariant is excluded if it references a class name that exists
 // in the model but is NOT in the in-scope set.
 //
 // classNames is the set of in-scope class names.
 // allClassNames is the set of ALL class names in the model.
-func ScopeInvariants(invariants []model_logic.Logic, _ map[string]bool) (included []model_logic.Logic, excluded []model_logic.Logic) {
+func scopeInvariants(invariants []model_logic.Logic, _ map[string]bool) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	// Without knowing all class names, we can't detect out-of-scope references.
-	// Include everything by default. Use ScopeInvariantsWithAllClasses for full filtering.
+	// Include everything by default. Use scopeInvariantsWithAllClasses for full filtering.
 	included = append(included, invariants...)
+	excluded = []model_logic.Logic{}
 	return included, excluded
 }
 
-// ScopeInvariantsWithAllClasses filters invariants using both in-scope and
+// scopeInvariantsWithAllClasses filters invariants using both in-scope and
 // all class names. An invariant is excluded if it references a class name
 // that exists in the model but is NOT in the in-scope set.
 //
 //complexity:cyclo:warn=60,fail=60 Simple routing switch.
-func ScopeInvariantsWithAllClasses(
+func scopeInvariantsWithAllClasses(
 	invariants []model_logic.Logic,
 	inScopeClassNames map[string]bool,
 	allClassNames map[string]bool,

@@ -52,9 +52,9 @@ func (i *Instance) AttributeNames() []string {
 	return i.Attributes.FieldNames()
 }
 
-// WithAttribute returns a new instance with the specified attribute updated.
+// withAttribute returns a new instance with the specified attribute updated.
 // The original instance is not modified.
-func (i *Instance) WithAttribute(name string, value object.Object) *Instance {
+func (i *Instance) withAttribute(name string, value object.Object) *Instance {
 	return &Instance{
 		ID:         i.ID,
 		ClassKey:   i.ClassKey,

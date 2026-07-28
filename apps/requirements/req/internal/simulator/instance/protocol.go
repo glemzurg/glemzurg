@@ -24,9 +24,9 @@ func (s *State) ForEachInstance(fn func(*Instance)) {
 	}
 }
 
-// ForEachInstanceOfClass calls fn for every live instance of classKey.
+// forEachInstanceOfClass calls fn for every live instance of classKey.
 // fn must not call mutating State methods (may deadlock or race).
-func (s *State) ForEachInstanceOfClass(classKey identity.Key, fn func(*Instance)) {
+func (s *State) forEachInstanceOfClass(classKey identity.Key, fn func(*Instance)) {
 	if fn == nil {
 		return
 	}
@@ -44,8 +44,8 @@ func (s *State) ForEachInstanceOfClass(classKey identity.Key, fn func(*Instance)
 	}
 }
 
-// HasInstanceOfClass reports whether any live instance has the given class key.
-func (s *State) HasInstanceOfClass(classKey identity.Key) bool {
+// hasInstanceOfClass reports whether any live instance has the given class key.
+func (s *State) hasInstanceOfClass(classKey identity.Key) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, inst := range s.instances {
@@ -56,8 +56,8 @@ func (s *State) HasInstanceOfClass(classKey identity.Key) bool {
 	return false
 }
 
-// CountByClass returns how many live instances have the given class key.
-func (s *State) CountByClass(classKey identity.Key) int {
+// countByClass returns how many live instances have the given class key.
+func (s *State) countByClass(classKey identity.Key) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	n := 0

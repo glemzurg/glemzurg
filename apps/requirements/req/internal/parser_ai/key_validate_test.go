@@ -240,7 +240,7 @@ func (suite *KeyValidateSuite) TestNormalizeToKey() {
 
 	for _, tt := range tests {
 		suite.Run(tt.input, func() {
-			result := NormalizeToKey(tt.input)
+			result := normalizeToKey(tt.input)
 			suite.Equal(tt.expected, result)
 		})
 	}

@@ -128,13 +128,13 @@ func (n *NumberLiteral) validateDigits() error {
 	return nil
 }
 
-// IsInteger returns true if this is an integer (no decimal point).
-func (n *NumberLiteral) IsInteger() bool {
+// isInteger returns true if this is an integer (no decimal point).
+func (n *NumberLiteral) isInteger() bool {
 	return !n.HasDecimalPoint
 }
 
-// IsDecimal returns true if this has a decimal point.
-func (n *NumberLiteral) IsDecimal() bool {
+// isDecimal returns true if this has a decimal point.
+func (n *NumberLiteral) isDecimal() bool {
 	return n.HasDecimalPoint
 }
 
@@ -183,10 +183,10 @@ func NewHexNumberLiteral(prefix, digits string) *NumberLiteral {
 	}
 }
 
-// NewIntLiteral creates a NumberLiteral from an integer value.
+// newIntLiteral creates a NumberLiteral from an integer value.
 // For negative values, creates a NumericPrefixExpression with negation.
 // This is a convenience function for tests and programmatic AST construction.
-func NewIntLiteral(value int) Expression {
+func newIntLiteral(value int) Expression {
 	if value < 0 {
 		return NewNegation(&NumberLiteral{
 			Base:        BaseDecimal,

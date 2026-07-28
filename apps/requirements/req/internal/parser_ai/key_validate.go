@@ -308,13 +308,13 @@ func validatePathComponent(path, componentName string, expectedParts int, filePa
 	return nil
 }
 
-// NormalizeToKey converts a human-readable name to a valid key.
+// normalizeToKey converts a human-readable name to a valid key.
 // This is a helper function for suggesting fixes.
 // Examples:
 //   - "Book Order" -> "book_order"
 //   - "BookOrder" -> "book_order"
 //   - "book-order" -> "book_order"
-func NormalizeToKey(name string) string {
+func normalizeToKey(name string) string {
 	// Handle empty string
 	if name == "" {
 		return ""

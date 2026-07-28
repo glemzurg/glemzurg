@@ -255,8 +255,8 @@ func (d DataType) validateCollectionFields(ctx *coreerr.ValidationContext) error
 	return nil
 }
 
-// IsAtomicUnconstrained reports whether dataType is a parsed atomic unconstrained rule.
-func IsAtomicUnconstrained(dataType *DataType) bool {
+// isAtomicUnconstrained reports whether dataType is a parsed atomic unconstrained rule.
+func isAtomicUnconstrained(dataType *DataType) bool {
 	return dataType != nil &&
 		dataType.CollectionType == COLLECTION_TYPE_ATOMIC &&
 		dataType.Atomic != nil &&

@@ -599,12 +599,12 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 	return violations
 }
 
-// CheckAllInvariants is a convenience method that checks:
+// checkAllInvariants is a convenience method that checks:
 //   - Model invariants
 //   - Data type constraints (requires a DataTypeChecker)
 //
 // This is typically called after each state change.
-func (c *InvariantChecker) CheckAllInvariants(
+func (c *InvariantChecker) checkAllInvariants(
 	simState *instance.State,
 	bindingsBuilder *state.BindingsBuilder,
 	dataTypeChecker *DataTypeChecker,
@@ -669,8 +669,8 @@ func (c *InvariantChecker) GetQueryPostConditionCount(queryKey identity.Key) int
 	return len(guarantees)
 }
 
-// GetModelInvariantCount returns the number of model invariants (excluding let items).
-func (c *InvariantChecker) GetModelInvariantCount() int {
+// getModelInvariantCount returns the number of model invariants (excluding let items).
+func (c *InvariantChecker) getModelInvariantCount() int {
 	count := 0
 	for _, item := range c.parsedInvariantItems {
 		if !item.isLet {

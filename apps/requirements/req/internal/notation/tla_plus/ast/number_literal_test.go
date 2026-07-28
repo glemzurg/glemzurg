@@ -178,7 +178,7 @@ func (suite *NumberLiteralSuite) TestIsInteger() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			suite.Equal(tt.expected, tt.n.IsInteger())
+			suite.Equal(tt.expected, tt.n.isInteger())
 		})
 	}
 }
@@ -202,7 +202,7 @@ func (suite *NumberLiteralSuite) TestIsDecimal() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			suite.Equal(tt.expected, tt.n.IsDecimal())
+			suite.Equal(tt.expected, tt.n.isDecimal())
 		})
 	}
 }
@@ -248,19 +248,19 @@ func (suite *NumberLiteralSuite) TestConstructors() {
 
 func (suite *NumberLiteralSuite) TestNewIntLiteral() {
 	// Positive
-	expr := NewIntLiteral(42)
+	expr := newIntLiteral(42)
 	n, ok := expr.(*NumberLiteral)
 	suite.True(ok, "expected *NumberLiteral for positive")
 	suite.Equal("42", n.String())
 
 	// Zero
-	expr = NewIntLiteral(0)
+	expr = newIntLiteral(0)
 	n, ok = expr.(*NumberLiteral)
 	suite.True(ok, "expected *NumberLiteral for zero")
 	suite.Equal("0", n.String())
 
 	// Negative - should be NumericPrefixExpression
-	expr = NewIntLiteral(-5)
+	expr = newIntLiteral(-5)
 	neg, ok := expr.(*NumericPrefixExpression)
 	suite.True(ok, "expected *NumericPrefixExpression for negative")
 	suite.Equal("-", neg.Operator)

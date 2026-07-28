@@ -218,12 +218,12 @@ func (s *RegistryTestSuite) TestNewScopeContext() {
 	s.Empty(ctx.Domain)
 
 	// Domain scope
-	ctx = NewDomainScopeContext(r, "DomainA")
+	ctx = newDomainScopeContext(r, "DomainA")
 	s.Equal(ScopeLevelDomain, ctx.Level)
 	s.Equal("DomainA", ctx.Domain)
 
 	// Subdomain scope
-	ctx = NewSubdomainScopeContext(r, "DomainA", "SubB")
+	ctx = newSubdomainScopeContext(r, "DomainA", "SubB")
 	s.Equal(ScopeLevelSubdomain, ctx.Level)
 	s.Equal("DomainA", ctx.Domain)
 	s.Equal("SubB", ctx.Subdomain)
@@ -249,12 +249,12 @@ func (s *RegistryTestSuite) TestAddDependency() {
 	_, err = r.RegisterGlobalFunction("B", body, nil)
 	s.Require().NoError(err)
 
-	r.AddDependency("_A", "_B") // A depends on B
+	r.addDependency("_A", "_B") // A depends on B
 
-	deps := r.GetDependencies("_A")
+	deps := r.getDependencies("_A")
 	s.Contains(deps, DefinitionKey("_B"))
 
-	dependents := r.GetDependents("_B")
+	dependents := r.getDependents("_B")
 	s.Contains(dependents, DefinitionKey("_A"))
 }
 
@@ -270,11 +270,11 @@ func (s *RegistryTestSuite) TestFindTransitiveDependents() {
 	_, err = r.RegisterGlobalFunction("C", body, nil)
 	s.Require().NoError(err)
 
-	r.AddDependency("_A", "_B")
-	r.AddDependency("_B", "_C")
+	r.addDependency("_A", "_B")
+	r.addDependency("_B", "_C")
 
 	// Dependents of C should include both A and B
-	dependents := r.FindTransitiveDependents("_C")
+	dependents := r.findTransitiveDependents("_C")
 	s.Len(dependents, 2)
 	s.Contains(dependents, DefinitionKey("_A"))
 	s.Contains(dependents, DefinitionKey("_B"))
@@ -289,7 +289,7 @@ func (s *RegistryTestSuite) TestInvalidateDefinition() {
 	_, err = r.RegisterGlobalFunction("B", body, nil)
 	s.Require().NoError(err)
 
-	r.AddDependency("_A", "_B")
+	r.addDependency("_A", "_B")
 
 	// Invalidate B - should also invalidate A
 	invalidated := r.InvalidateDefinition("_B")

@@ -143,8 +143,8 @@ func (t *Tuple) Concat(other *Tuple) *Tuple {
 	return result
 }
 
-// SubSeq returns a subsequence from start to end (1-indexed, inclusive).
-func (t *Tuple) SubSeq(start, end int) *Tuple {
+// subSeq returns a subsequence from start to end (1-indexed, inclusive).
+func (t *Tuple) subSeq(start, end int) *Tuple {
 	if start < 1 {
 		start = 1
 	}

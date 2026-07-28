@@ -845,8 +845,8 @@ func (v ViolationErrors) HasViolations() bool {
 	return len(v) > 0
 }
 
-// ByType filters violations by type.
-func (v ViolationErrors) ByType(t ViolationType) ViolationErrors {
+// byType filters violations by type.
+func (v ViolationErrors) byType(t ViolationType) ViolationErrors {
 	var result ViolationErrors
 	for _, violation := range v {
 		if violation.Type == t {

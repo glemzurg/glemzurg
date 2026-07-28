@@ -41,8 +41,8 @@ func (s *LoaderTestSuite) TestLoadModelInvariants() {
 	result := loader.LoadFromModel(&model)
 
 	s.False(result.HasErrors())
-	s.Equal(2, result.SuccessCount())
-	s.Equal(0, result.ErrorCount())
+	s.Equal(2, result.successCount())
+	s.Equal(0, result.errorCount())
 
 	// Check that definitions are registered at global scope
 	def0, ok := result.Registry.GetGlobal("Invariant0")
@@ -62,7 +62,7 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_Empty() {
 	result := loader.LoadFromModel(&model)
 
 	s.False(result.HasErrors())
-	s.Equal(0, result.SuccessCount())
+	s.Equal(0, result.successCount())
 	s.Equal(0, result.Registry.Count())
 }
 
@@ -82,8 +82,8 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_NilExpression() {
 	result := loader.LoadFromModel(&model)
 
 	s.True(result.HasErrors())
-	s.Equal(1, result.SuccessCount())
-	s.Equal(1, result.ErrorCount())
+	s.Equal(1, result.successCount())
+	s.Equal(1, result.errorCount())
 }
 
 // =============================================================================
@@ -107,7 +107,7 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions() {
 	result := loader.LoadFromModel(&model)
 
 	s.False(result.HasErrors())
-	s.Equal(1, result.SuccessCount())
+	s.Equal(1, result.successCount())
 
 	// Check that definition is registered at global scope with correct name
 	def, ok := result.Registry.GetGlobal("_Max")
@@ -187,7 +187,7 @@ func (s *LoaderTestSuite) TestLoadActionExpressions() {
 	result := loader.LoadFromModel(&model)
 
 	s.False(result.HasErrors())
-	s.Equal(2, result.SuccessCount())
+	s.Equal(2, result.successCount())
 
 	// Check that definitions are registered at class scope
 	requiresKey := registry.DefinitionKey("orders!management!order!PlaceOrder_Requires0")
@@ -252,7 +252,7 @@ func (s *LoaderTestSuite) TestLoadQueryExpressions() {
 	result := loader.LoadFromModel(&model)
 
 	s.False(result.HasErrors())
-	s.Equal(3, result.SuccessCount())
+	s.Equal(3, result.successCount())
 
 	// Check query definitions
 	requiresKey := registry.DefinitionKey("orders!management!order!FindPending_Requires0")
@@ -308,7 +308,7 @@ func (s *LoaderTestSuite) TestLoadGuardExpressions() {
 	result := loader.LoadFromModel(&model)
 
 	s.False(result.HasErrors())
-	s.Equal(1, result.SuccessCount())
+	s.Equal(1, result.successCount())
 
 	// Check guard definition
 	guardDefKey := registry.DefinitionKey("orders!management!order!CanShip_Guard0")
@@ -377,10 +377,10 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	result := loader.LoadFromModel(&model)
 
 	s.False(result.HasErrors())
-	s.Equal(4, result.SuccessCount())
+	s.Equal(4, result.successCount())
 
 	// Check definitions by source
-	bySource := result.DefinitionsBySource()
+	bySource := result.definitionsBySource()
 	s.Len(bySource[SourceModelInvariant], 1)
 	s.Len(bySource[SourceTlaDefinition], 1)
 	s.Len(bySource[SourceActionRequires], 1)
@@ -388,7 +388,7 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 }
 
 // =============================================================================
-// LoadFromExpressions
+// loadFromExpressions
 // =============================================================================
 
 func (s *LoaderTestSuite) TestLoadFromExpressions() {
@@ -413,15 +413,15 @@ func (s *LoaderTestSuite) TestLoadFromExpressions() {
 	}
 
 	loader := NewLoader()
-	result := loader.LoadFromExpressions(expressions)
+	result := loader.loadFromExpressions(expressions)
 
 	s.False(result.HasErrors())
-	s.Equal(2, result.SuccessCount())
+	s.Equal(2, result.successCount())
 	s.Equal(2, result.Registry.Count())
 }
 
 // =============================================================================
-// LoadIntoRegistry
+// loadIntoRegistry
 // =============================================================================
 
 func (s *LoaderTestSuite) TestLoadIntoRegistry() {
@@ -442,16 +442,16 @@ func (s *LoaderTestSuite) TestLoadIntoRegistry() {
 	}
 
 	loader := NewLoader()
-	result := loader.LoadIntoRegistry(expressions, reg)
+	result := loader.loadIntoRegistry(expressions, reg)
 
 	s.False(result.HasErrors())
-	s.Equal(1, result.SuccessCount())
+	s.Equal(1, result.successCount())
 	s.Equal(2, reg.Count()) // Existing + new
 	s.Same(reg, result.Registry)
 }
 
 // =============================================================================
-// LoadFromModelStrict
+// loadFromModelStrict
 // =============================================================================
 
 func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
@@ -462,11 +462,11 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
-	result, err := loader.LoadFromModelStrict(&model)
+	result, err := loader.loadFromModelStrict(&model)
 
 	s.Require().NoError(err)
 	s.False(result.HasErrors())
-	s.Equal(1, result.SuccessCount())
+	s.Equal(1, result.successCount())
 }
 
 func (s *LoaderTestSuite) TestLoadFromModelStrict_NilExpression() {
@@ -477,14 +477,14 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_NilExpression() {
 	model := core.NewModel("test_model", core.ModelDetails{Name: "Test Model", Details: ""}, "", []model_logic.Logic{inv0}, nil, nil)
 
 	loader := NewLoader()
-	result, err := loader.LoadFromModelStrict(&model)
+	result, err := loader.loadFromModelStrict(&model)
 
 	s.Require().Error(err)
 	s.True(result.HasErrors())
 }
 
 // =============================================================================
-// MustLoadFromModel
+// mustLoadFromModel
 // =============================================================================
 
 func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
@@ -497,8 +497,8 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
 	loader := NewLoader()
 
 	s.NotPanics(func() {
-		result := loader.MustLoadFromModel(&model)
-		s.Equal(1, result.SuccessCount())
+		result := loader.mustLoadFromModel(&model)
+		s.Equal(1, result.successCount())
 	})
 }
 
@@ -512,7 +512,7 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Panics() {
 	loader := NewLoader()
 
 	s.Panics(func() {
-		loader.MustLoadFromModel(&model)
+		loader.mustLoadFromModel(&model)
 	})
 }
 

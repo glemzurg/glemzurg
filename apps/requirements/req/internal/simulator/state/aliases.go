@@ -25,9 +25,9 @@ type AssociationLink = instance.AssociationLink
 // AssociationLinkTable indexes association-class host rows.
 type AssociationLinkTable = instance.AssociationLinkTable
 
-// NewSimulationState creates a simulation state with a schema over an empty model.
+// newSimulationState creates a simulation state with a schema over an empty model.
 // Prefer instance.NewState(schema.New(model)) when surface metadata is available.
-func NewSimulationState() *SimulationState {
+func newSimulationState() *SimulationState {
 	m := core.NewModel("empty", core.ModelDetails{Name: "empty", Details: ""}, "", nil, nil, nil)
 	return instance.NewState(schema.New(&m))
 }

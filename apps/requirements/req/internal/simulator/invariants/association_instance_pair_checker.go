@@ -39,7 +39,14 @@ func (c *AssociationInstancePairChecker) checkAssociation(
 	simState *instance.State,
 	assoc model_class.Association,
 ) ViolationErrors {
-	links := collectAssociationLinks(simState, assoc)
+	return checkAssociationInstancePairs(assoc, collectAssociationLinks(simState, assoc))
+}
+
+// checkAssociationInstancePairs reports when the same from/to pair appears more than once.
+func checkAssociationInstancePairs(
+	assoc model_class.Association,
+	links []associationLinkEndpoints,
+) ViolationErrors {
 	if len(links) == 0 {
 		return nil
 	}

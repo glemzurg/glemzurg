@@ -25,12 +25,12 @@ func (suite *ExpressionTupleIndexSuite) TestString() {
 			testName: `literal tuple with literal index`,
 			tuple: &TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(1),
-					NewIntLiteral(2),
-					NewIntLiteral(3),
+					newIntLiteral(1),
+					newIntLiteral(2),
+					newIntLiteral(3),
 				},
 			},
-			index:    NewIntLiteral(1),
+			index:    newIntLiteral(1),
 			expected: `⟨1, 2, 3⟩[1]`,
 		},
 		{
@@ -41,7 +41,7 @@ func (suite *ExpressionTupleIndexSuite) TestString() {
 					&StringLiteral{Value: `b`},
 				},
 			},
-			index:    NewIntLiteral(0),
+			index:    newIntLiteral(0),
 			expected: `⟨"a", "b"⟩[0]`,
 		},
 		{
@@ -51,13 +51,13 @@ func (suite *ExpressionTupleIndexSuite) TestString() {
 				Args: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
+							newIntLiteral(1),
 						},
 					},
-					NewIntLiteral(2),
+					newIntLiteral(2),
 				},
 			},
-			index:    NewIntLiteral(2),
+			index:    newIntLiteral(2),
 			expected: `_Seq!Append(⟨1⟩, 2)[2]`,
 		},
 		{
@@ -67,13 +67,13 @@ func (suite *ExpressionTupleIndexSuite) TestString() {
 				Args: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
-							NewIntLiteral(2),
+							newIntLiteral(1),
+							newIntLiteral(2),
 						},
 					},
 				},
 			},
-			index:    NewIntLiteral(1),
+			index:    newIntLiteral(1),
 			expected: `_Seq!Tail(⟨1, 2⟩)[1]`,
 		},
 	}
@@ -99,12 +99,12 @@ func (suite *ExpressionTupleIndexSuite) TestASCII() {
 			testName: `literal tuple with literal index`,
 			tuple: &TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(1),
-					NewIntLiteral(2),
-					NewIntLiteral(3),
+					newIntLiteral(1),
+					newIntLiteral(2),
+					newIntLiteral(3),
 				},
 			},
-			index:    NewIntLiteral(1),
+			index:    newIntLiteral(1),
 			expected: `<<1, 2, 3>>[1]`,
 		},
 		{
@@ -114,13 +114,13 @@ func (suite *ExpressionTupleIndexSuite) TestASCII() {
 				Args: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
+							newIntLiteral(1),
 						},
 					},
-					NewIntLiteral(2),
+					newIntLiteral(2),
 				},
 			},
-			index:    NewIntLiteral(2),
+			index:    newIntLiteral(2),
 			expected: `_Seq!Append(<<1>>, 2)[2]`,
 		},
 	}
@@ -147,10 +147,10 @@ func (suite *ExpressionTupleIndexSuite) TestValidate() {
 			e: &ExpressionTupleIndex{
 				Tuple: &TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
+						newIntLiteral(1),
 					},
 				},
-				Index: NewIntLiteral(0),
+				Index: newIntLiteral(0),
 			},
 		},
 
@@ -158,7 +158,7 @@ func (suite *ExpressionTupleIndexSuite) TestValidate() {
 		{
 			testName: `error missing tuple`,
 			e: &ExpressionTupleIndex{
-				Index: NewIntLiteral(0),
+				Index: newIntLiteral(0),
 			},
 			errstr: `Tuple`,
 		},
@@ -167,7 +167,7 @@ func (suite *ExpressionTupleIndexSuite) TestValidate() {
 			e: &ExpressionTupleIndex{
 				Tuple: &TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
+						newIntLiteral(1),
 					},
 				},
 			},
@@ -181,7 +181,7 @@ func (suite *ExpressionTupleIndexSuite) TestValidate() {
 						&Identifier{Value: ``},
 					},
 				},
-				Index: NewIntLiteral(0),
+				Index: newIntLiteral(0),
 			},
 			errstr: `Value`,
 		},
@@ -202,10 +202,10 @@ func (suite *ExpressionTupleIndexSuite) TestExpressionNode() {
 	e := &ExpressionTupleIndex{
 		Tuple: &TupleLiteral{
 			Elements: []Expression{
-				NewIntLiteral(1),
+				newIntLiteral(1),
 			},
 		},
-		Index: NewIntLiteral(0),
+		Index: newIntLiteral(0),
 	}
 	e.expressionNode()
 }

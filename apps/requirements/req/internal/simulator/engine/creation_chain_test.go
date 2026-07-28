@@ -122,7 +122,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 	s.Equal(StepKindCreation, steps[0].Kind)
 
 	// Should now have 2 instances total: 1 Order + 1 Item.
-	s.Equal(2, simState.InstanceCount())
+	s.Equal(2, simState.Snapshot().InstanceCount)
 
 	// The Item should be linked to the Order.
 	links := simState.GetLinkedForward(result.InstanceID, tcm.assocKey)
@@ -149,7 +149,7 @@ func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 	ae.BeginWorldStateDeferral()
 	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, actions.CreationLinkSource{}, nil)
 	s.Require().NoError(err)
-	s.Empty(result.Violations.ByType(invariants.ViolationTypeMultiplicity),
+	s.Empty(violationsByType(result.Violations, invariants.ViolationTypeMultiplicity),
 		"multiplicity must not fire before nested mandatory creates")
 
 	// After nesting, the mandatory Item link exists; world-state should pass.
@@ -159,7 +159,7 @@ func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 	ae.EndWorldStateDeferral()
 
 	afterNesting := ae.CheckWorldStateInvariants()
-	s.Empty(afterNesting.ByType(invariants.ViolationTypeMultiplicity),
+	s.Empty(violationsByType(afterNesting, invariants.ViolationTypeMultiplicity),
 		"multiplicity should see nested links after creation chain")
 }
 

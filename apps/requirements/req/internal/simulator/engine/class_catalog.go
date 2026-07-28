@@ -410,8 +410,8 @@ func (c *ClassCatalog) GetAssociationClassInfo(classKey identity.Key) actions.As
 	}
 }
 
-// SetEventSentBy records which classes send a given event.
-func (c *ClassCatalog) SetEventSentBy(eventKey identity.Key, senderClassKeys []identity.Key) {
+// setEventSentBy records which classes send a given event.
+func (c *ClassCatalog) setEventSentBy(eventKey identity.Key, senderClassKeys []identity.Key) {
 	c.eventSentBy[eventKey] = senderClassKeys
 }
 
@@ -422,13 +422,13 @@ func (c *ClassCatalog) addEventSender(eventKey, senderClassKey identity.Key) {
 	c.eventSentBy[eventKey] = append(c.eventSentBy[eventKey], senderClassKey)
 }
 
-// SetActionCalledBy records which classes call a given action.
-func (c *ClassCatalog) SetActionCalledBy(actionKey identity.Key, callerClassKeys []identity.Key) {
+// setActionCalledBy records which classes call a given action.
+func (c *ClassCatalog) setActionCalledBy(actionKey identity.Key, callerClassKeys []identity.Key) {
 	c.actionCalledBy[actionKey] = callerClassKeys
 }
 
-// SetQueryCalledBy records which classes call a given query.
-func (c *ClassCatalog) SetQueryCalledBy(queryKey identity.Key, callerClassKeys []identity.Key) {
+// setQueryCalledBy records which classes call a given query.
+func (c *ClassCatalog) setQueryCalledBy(queryKey identity.Key, callerClassKeys []identity.Key) {
 	c.queryCalledBy[queryKey] = callerClassKeys
 }
 
@@ -437,11 +437,6 @@ func (c *ClassCatalog) addQueryCaller(queryKey, callerClassKey identity.Key) {
 		return
 	}
 	c.queryCalledBy[queryKey] = append(c.queryCalledBy[queryKey], callerClassKey)
-}
-
-// SetAttributeCalledBy records which classes reference a derived attribute.
-func (c *ClassCatalog) SetAttributeCalledBy(attributeKey identity.Key, callerClassKeys []identity.Key) {
-	c.attributeCalledBy[attributeKey] = callerClassKeys
 }
 
 func (c *ClassCatalog) addAttributeCaller(attributeKey, callerClassKey identity.Key) {
@@ -453,7 +448,7 @@ func (c *ClassCatalog) addAttributeCaller(attributeKey, callerClassKey identity.
 
 // CallerData exports the SentBy/CalledBy metadata as a surface.CallerData
 // for use with surface.Diagnose.
-func (c *ClassCatalog) CallerData() *surface.CallerData {
+func (c *ClassCatalog) callerData() *surface.CallerData {
 	return &surface.CallerData{
 		EventSentBy:       c.eventSentBy,
 		ActionCalledBy:    c.actionCalledBy,

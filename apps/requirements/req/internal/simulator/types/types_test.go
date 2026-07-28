@@ -15,7 +15,7 @@ type TypesSuite struct {
 }
 
 func (s *TypesSuite) SetupTest() {
-	ResetTypeVarCounter()
+	resetTypeVarCounter()
 }
 
 // === Basic Type String Representations ===
@@ -319,7 +319,7 @@ func (s *TypesSuite) TestSubstitution_Compose() {
 	s1 := Substitution{1: TypeVar{ID: 2, Name: "b"}}
 	s2 := Substitution{2: Number{}}
 
-	composed := s1.Compose(s2)
+	composed := s1.compose(s2)
 
 	tvA := TypeVar{ID: 1, Name: "a"}
 	tvB := TypeVar{ID: 2, Name: "b"}
@@ -331,7 +331,7 @@ func (s *TypesSuite) TestSubstitution_Compose() {
 // === Scheme String ===
 
 func (s *TypesSuite) TestScheme_String_Monomorphic() {
-	scheme := Monotype(Number{})
+	scheme := monotype(Number{})
 	s.Equal("Number", scheme.String())
 }
 
@@ -345,14 +345,14 @@ func (s *TypesSuite) TestScheme_String_Polymorphic() {
 	s.Equal("∀a. a → a", scheme.String())
 }
 
-// === NewTypeVar ===
+// === newTypeVar ===
 
 func (s *TypesSuite) TestNewTypeVar() {
-	ResetTypeVarCounter()
+	resetTypeVarCounter()
 
-	tv1 := NewTypeVar("a")
-	tv2 := NewTypeVar("b")
-	tv3 := NewTypeVar("")
+	tv1 := newTypeVar("a")
+	tv2 := newTypeVar("b")
+	tv3 := newTypeVar("")
 
 	s.Equal(0, tv1.ID)
 	s.Equal("a", tv1.Name)
@@ -365,14 +365,14 @@ func (s *TypesSuite) TestNewTypeVar() {
 // === Helper Functions ===
 
 func (s *TypesSuite) TestMonotype() {
-	scheme := Monotype(Boolean{})
+	scheme := monotype(Boolean{})
 	s.Empty(scheme.TypeVars)
 	s.True(scheme.Type.Equals(Boolean{}))
 }
 
 func (s *TypesSuite) TestForAll() {
 	tv := TypeVar{ID: 1, Name: "a"}
-	scheme := ForAll([]int{1}, Function{Params: []Type{tv}, Return: tv})
+	scheme := forAll([]int{1}, Function{Params: []Type{tv}, Return: tv})
 
 	s.Equal([]int{1}, scheme.TypeVars)
 	s.IsType(Function{}, scheme.Type)

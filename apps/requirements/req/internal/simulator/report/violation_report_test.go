@@ -207,7 +207,7 @@ func (s *ViolationReportSuite) TestFormatJSONRoundTrip() {
 	}
 
 	report := FromViolations(violations)
-	data, err := report.FormatJSON()
+	data, err := report.formatJSON()
 	s.Require().NoError(err)
 
 	var decoded ViolationReport

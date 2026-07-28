@@ -146,8 +146,8 @@ func (c *IndexUniquenessChecker) GetClassIndexInfo(classKey identity.Key) *Class
 	return c.classIndexes[classKey]
 }
 
-// HasIndexes returns true if any class has indexes.
-func (c *IndexUniquenessChecker) HasIndexes() bool {
+// hasIndexes returns true if any class has indexes.
+func (c *IndexUniquenessChecker) hasIndexes() bool {
 	return len(c.classIndexes) > 0
 }
 

@@ -276,7 +276,7 @@ func (s *ClassCatalogSuite) TestExternalStateEvents_SentByInScope() {
 
 	// Mark the "close" event as sent by Item (in-scope).
 	closeEventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
-	catalog.SetEventSentBy(closeEventKey, []identity.Key{itemKey})
+	catalog.setEventSentBy(closeEventKey, []identity.Key{itemKey})
 
 	ext := catalog.ExternalStateEvents(orderKey, "Open")
 	s.Empty(ext, "close event should be internal because sender Item is in scope")
@@ -292,7 +292,7 @@ func (s *ClassCatalogSuite) TestExternalStateEvents_SentByOutOfScope() {
 	// Mark the "close" event as sent by a class NOT in the catalog.
 	closeEventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
 	outsideClassKey := mustKey("domain/d/subdomain/s/class/external_system")
-	catalog.SetEventSentBy(closeEventKey, []identity.Key{outsideClassKey})
+	catalog.setEventSentBy(closeEventKey, []identity.Key{outsideClassKey})
 
 	ext := catalog.ExternalStateEvents(orderKey, "Open")
 	s.Len(ext, 1, "close event should be external because sender is not in scope")
@@ -382,7 +382,7 @@ func (s *ClassCatalogSuite) TestSurfaceDoActions_UnaffectedByCalledBy() {
 	catalog := NewClassCatalog(schema.New(model))
 
 	// Mark the action as called by Order (in-scope).
-	catalog.SetActionCalledBy(actionDoKey, []identity.Key{orderKey})
+	catalog.setActionCalledBy(actionDoKey, []identity.Key{orderKey})
 
 	ext := catalog.SurfaceDoActions(classKey, "Active")
 	s.Len(ext, 1)
@@ -400,11 +400,11 @@ func (s *ClassCatalogSuite) TestCallerDataExport() {
 	actionKey := mustKey("domain/d/subdomain/s/class/order/action/do_close")
 	queryKey := mustKey("domain/d/subdomain/s/class/order/query/get_total")
 
-	catalog.SetEventSentBy(eventKey, []identity.Key{itemKey})
-	catalog.SetActionCalledBy(actionKey, []identity.Key{itemKey})
-	catalog.SetQueryCalledBy(queryKey, []identity.Key{orderKey})
+	catalog.setEventSentBy(eventKey, []identity.Key{itemKey})
+	catalog.setActionCalledBy(actionKey, []identity.Key{itemKey})
+	catalog.setQueryCalledBy(queryKey, []identity.Key{orderKey})
 
-	cd := catalog.CallerData()
+	cd := catalog.callerData()
 	s.NotNil(cd)
 	s.Equal([]identity.Key{itemKey}, cd.EventSentBy[eventKey])
 	s.Equal([]identity.Key{itemKey}, cd.ActionCalledBy[actionKey])

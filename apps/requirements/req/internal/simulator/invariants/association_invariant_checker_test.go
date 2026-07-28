@@ -63,8 +63,15 @@ func (s *AssociationInvariantCheckerSuite) TestPassesWhenInvariantHolds() {
 	bb := state.NewBindingsBuilder(simState)
 	bb.AddAssociation(assocKey, "Configures", partnerKey, jurisdictionKey,
 		evaluator.Multiplicity{}, evaluator.Multiplicity{HigherBound: 0})
-	bb.RelationContext().CreateLink(evaluator.AssociationKey(assocKey.String()), partner.Attributes, j1.Attributes)
-	bb.RelationContext().CreateLink(evaluator.AssociationKey(assocKey.String()), partner.Attributes, j2.Attributes)
+	assocKeyStr := evaluator.AssociationKey(assocKey.String())
+	bb.RelationContext().CreateInstanceLink(assocKeyStr,
+		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(partner.ID), Extent: partner.Attributes, Data: partner.Attributes},
+		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(j1.ID), Extent: j1.Attributes, Data: j1.Attributes},
+	)
+	bb.RelationContext().CreateInstanceLink(assocKeyStr,
+		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(partner.ID), Extent: partner.Attributes, Data: partner.Attributes},
+		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(j2.ID), Extent: j2.Attributes, Data: j2.Attributes},
+	)
 
 	s.Empty(checker.CheckState(simState, bb))
 }

@@ -159,7 +159,7 @@ func (s *ParameterSamplerSuite) TestSampleNullableElseTupleFromNamedSet() {
 	params := s.jurisdictionParams()
 
 	for seed := range 30 {
-		result, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		result, err := sampler.sampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
 		s.Require().NoError(err)
 		s.assertJurisdictionPair(result["CountryCode"], result["StateCode"], int64(seed))
 	}
@@ -192,7 +192,7 @@ func (s *ParameterSamplerSuite) TestSampleEnumConstraint() {
 	sampler := NewParameterSampler(binder, nil)
 	rng := rand.New(rand.NewSource(7)) //nolint:gosec // deterministic test seed
 
-	result, err := sampler.SampleFromRequires(params, &action, rng)
+	result, err := sampler.sampleFromRequires(params, &action, rng)
 	s.Require().NoError(err)
 	value, ok := result["SocialOnly"].(*object.Boolean)
 	s.Require().True(ok)
@@ -210,7 +210,7 @@ func (s *ParameterSamplerSuite) TestSampleFallsBackWithoutRequires() {
 	sampler := NewParameterSampler(binder, nil)
 	rng := rand.New(rand.NewSource(1)) //nolint:gosec // deterministic test seed
 
-	result, err := sampler.SampleFromRequires(params, nil, rng)
+	result, err := sampler.sampleFromRequires(params, nil, rng)
 	s.Require().NoError(err)
 	s.NotNil(result["Name"])
 }
@@ -237,7 +237,7 @@ func (s *ParameterSamplerSuite) TestBareParameterReferenceRequireIsSupported() {
 		helper.Must(model_state.NewParameter(actionKey, "Name", "display name", false)),
 	})
 
-	err := ValidateActionRequiresSamplingSupport("Jurisdiction", action)
+	err := validateActionRequiresSamplingSupport("Jurisdiction", action)
 	s.NoError(err)
 }
 
@@ -257,7 +257,7 @@ func (s *ParameterSamplerSuite) TestUnsupportedCompareRequireReturnsSpecificErro
 		helper.Must(model_state.NewParameter(actionKey, "Amount", "positive amount", false)),
 	})
 
-	err := ValidateActionRequiresSamplingSupport("Order", action)
+	err := validateActionRequiresSamplingSupport("Order", action)
 	s.Require().Error(err)
 
 	var unsupported *UnsupportedRequiresSamplingError
@@ -299,7 +299,7 @@ func (s *ParameterSamplerSuite) TestNonNullableParameterNeverSampledAsNull() {
 	params := s.jurisdictionUpdateParams()
 
 	for seed := range 200 {
-		result, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		result, err := sampler.sampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
 		s.Require().NoError(err)
 		s.False(object.IsNull(result["Name"]), "seed %d", seed)
 		s.False(object.IsNull(result["SocialOnly"]), "seed %d", seed)
@@ -372,7 +372,7 @@ func (s *ParameterSamplerSuite) TestSampleFromRequiresReturnsUnsupportedError() 
 
 	binder := NewParameterBinder()
 	sampler := NewParameterSampler(binder, nil)
-	_, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(1))) //nolint:gosec // deterministic test seed
+	_, err := sampler.sampleFromRequires(params, &action, rand.New(rand.NewSource(1))) //nolint:gosec // deterministic test seed
 	s.Require().Error(err)
 	s.ErrorAs(err, new(*UnsupportedRequiresSamplingError))
 }
@@ -436,7 +436,7 @@ func (s *ParameterSamplerSuite) TestCurrencyRequiresSamplingSupport() {
 		helper.Must(model_state.NewParameter(actionKey, "ISO", "ref of valid ISO 4217 codes", true)),
 	})
 
-	err := ValidateActionRequiresSamplingSupport("Currency", action)
+	err := validateActionRequiresSamplingSupport("Currency", action)
 	s.NoError(err)
 }
 
@@ -609,7 +609,7 @@ func (s *ParameterSamplerSuite) TestSampleNullableElseMembershipFromNamedSet() {
 	sampler := NewParameterSampler(binder, s.iso4217NamedSet())
 
 	for seed := range 200 {
-		result, err := sampler.SampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
+		result, err := sampler.sampleFromRequires(params, &action, rand.New(rand.NewSource(int64(seed)))) //nolint:gosec // deterministic test seed
 		s.Require().NoError(err)
 		if object.IsNull(result["ISO"]) {
 			continue

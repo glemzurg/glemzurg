@@ -23,49 +23,49 @@ func (s *RaiseTypeTestSuite) SetupTest() {
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeBooleanType() {
-	result, err := RaiseType(&met.BooleanType{}, s.ctx)
+	result, err := raiseType(&met.BooleanType{}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal("BOOLEAN", result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeIntegerType() {
-	result, err := RaiseType(&met.IntegerType{}, s.ctx)
+	result, err := raiseType(&met.IntegerType{}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal("Int", result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeRationalType() {
-	result, err := RaiseType(&met.RationalType{}, s.ctx)
+	result, err := raiseType(&met.RationalType{}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal("Real", result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeStringType() {
-	result, err := RaiseType(&met.StringType{}, s.ctx)
+	result, err := raiseType(&met.StringType{}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal("STRING", result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeEnumType() {
-	result, err := RaiseType(&met.EnumType{Values: []string{"a", "b", "c"}}, s.ctx)
+	result, err := raiseType(&met.EnumType{Values: []string{"a", "b", "c"}}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal(`{"a", "b", "c"}`, result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeSequenceType() {
-	result, err := RaiseType(&met.SequenceType{ElementType: &met.StringType{}, Unique: false}, s.ctx)
+	result, err := raiseType(&met.SequenceType{ElementType: &met.StringType{}, Unique: false}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal("_Seq!Seq(STRING)", result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeSequenceTypeUnique() {
-	result, err := RaiseType(&met.SequenceType{ElementType: &met.StringType{}, Unique: true}, s.ctx)
+	result, err := raiseType(&met.SequenceType{ElementType: &met.StringType{}, Unique: true}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal("_Seq!SeqUnique(STRING)", result)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeTupleType() {
-	result, err := RaiseType(&met.TupleType{
+	result, err := raiseType(&met.TupleType{
 		ElementTypes: []met.ExpressionType{
 			&met.IntegerType{},
 			&met.StringType{},
@@ -76,7 +76,7 @@ func (s *RaiseTypeTestSuite) TestRaiseTypeTupleType() {
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeRecordType() {
-	result, err := RaiseType(&met.RecordType{
+	result, err := raiseType(&met.RecordType{
 		Fields: []met.RecordFieldType{
 			{Name: "name", Type: &met.StringType{}},
 			{Name: "age", Type: &met.IntegerType{}},
@@ -87,7 +87,7 @@ func (s *RaiseTypeTestSuite) TestRaiseTypeRecordType() {
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeFunctionTypeError() {
-	_, err := RaiseType(&met.FunctionType{
+	_, err := raiseType(&met.FunctionType{
 		Params: []met.ExpressionType{&met.IntegerType{}},
 		Return: &met.BooleanType{},
 	}, s.ctx)
@@ -99,18 +99,18 @@ func (s *RaiseTypeTestSuite) TestRaiseTypeObjectType() {
 	subKey, _ := identity.NewSubdomainKey(domainKey, "s")
 	classKey, _ := identity.NewClassKey(subKey, "Account")
 
-	result, err := RaiseType(&met.ObjectType{ClassKey: classKey}, s.ctx)
+	result, err := raiseType(&met.ObjectType{ClassKey: classKey}, s.ctx)
 	s.Require().NoError(err)
 	s.Equal("account", result) // NewClassKey lowercases the SubKey
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeNilError() {
-	_, err := RaiseType(nil, s.ctx)
+	_, err := raiseType(nil, s.ctx)
 	s.Require().Error(err)
 }
 
 func (s *RaiseTypeTestSuite) TestRaiseTypeSequenceOfTuples() {
-	result, err := RaiseType(&met.SequenceType{
+	result, err := raiseType(&met.SequenceType{
 		ElementType: &met.TupleType{
 			ElementTypes: []met.ExpressionType{
 				&met.IntegerType{},

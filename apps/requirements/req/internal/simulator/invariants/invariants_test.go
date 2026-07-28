@@ -696,7 +696,7 @@ func (s *InvariantsSuite) TestViolationErrorsFiltering() {
 	}
 
 	// Filter by type
-	required := violations.ByType(ViolationTypeRequiredAttribute)
+	required := violations.byType(ViolationTypeRequiredAttribute)
 	s.Len(required, 1)
 	s.Equal("a", required[0].AttributeName)
 
@@ -716,7 +716,7 @@ func (s *InvariantsSuite) TestInvariantCheckerCreation() {
 	checker, err := NewInvariantChecker(schema.New(model))
 	s.Require().NoError(err)
 	s.NotNil(checker)
-	s.Equal(1, checker.GetModelInvariantCount())
+	s.Equal(1, checker.getModelInvariantCount())
 }
 
 // Test: InvariantChecker model invariant that passes.
@@ -767,10 +767,10 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 	// The checker should handle nil Expression (skip unparsed invariants).
 	checker, err := NewInvariantChecker(schema.New(&model))
 	s.Require().NoError(err)
-	s.Equal(0, checker.GetModelInvariantCount()) // Unparsed invariants are not counted.
+	s.Equal(0, checker.getModelInvariantCount()) // Unparsed invariants are not counted.
 }
 
-// Test: CheckAllInvariants combines data type and TLA+ checks.
+// Test: checkAllInvariants combines data type and TLA+ checks.
 func (s *InvariantsSuite) TestCheckAllInvariants() {
 	model := createTestModel()
 
@@ -793,7 +793,7 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
-	violations := invChecker.CheckAllInvariants(simState, bindingsBuilder, dtChecker, nil)
+	violations := invChecker.checkAllInvariants(simState, bindingsBuilder, dtChecker, nil)
 	s.True(violations.HasViolations())
 
 	// Should have data type violation

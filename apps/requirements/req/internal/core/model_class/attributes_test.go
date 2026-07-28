@@ -23,7 +23,7 @@ func TestAttributesByKey(t *testing.T) {
 		{Key: secondKey, Name: "Second"},
 	}
 
-	byKey := AttributesByKey(attrs)
+	byKey := attributesByKey(attrs)
 	assert.Len(t, byKey, 2)
 	assert.Equal(t, "First", byKey[firstKey].Name)
 	assert.Equal(t, "Second", byKey[secondKey].Name)
@@ -37,11 +37,11 @@ func TestAttributeBySubKey(t *testing.T) {
 	attrKey := helper.Must(identity.NewAttributeKey(classKey, "abbr"))
 	attrs := []Attribute{{Key: attrKey, Name: "Abbr"}}
 
-	got, ok := AttributeBySubKey(attrs, "abbr")
+	got, ok := attributeBySubKey(attrs, "abbr")
 	require.True(t, ok)
 	assert.Equal(t, "Abbr", got.Name)
 
-	_, ok = AttributeBySubKey(attrs, "missing")
+	_, ok = attributeBySubKey(attrs, "missing")
 	assert.False(t, ok)
 }
 

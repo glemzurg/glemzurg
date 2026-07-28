@@ -15,7 +15,7 @@ import (
 
 func TestAssociationSetAddGuaranteeTLARoundTrip(t *testing.T) {
 	t.Run("ASCII _new input raises as «new»", func(t *testing.T) {
-		ctx, class := associationSetAddFixture()
+		ctx := associationSetAddFixture()
 		spec := `IsSubdividedInto \union {_new(PartId, Label)}`
 
 		astExpr, err := parser.ParseExpression(spec)
@@ -24,7 +24,7 @@ func TestAssociationSetAddGuaranteeTLARoundTrip(t *testing.T) {
 		lowered, err := convert.Lower(astExpr, ctx)
 		require.NoError(t, err)
 
-		raised, err := convert.Raise(lowered, raiseContextForAssociationSetAdd(ctx, &class))
+		raised, err := convert.Raise(lowered, convert.RaiseContextFromLower(ctx))
 		require.NoError(t, err)
 
 		printed := ast.Print(raised)
@@ -35,7 +35,7 @@ func TestAssociationSetAddGuaranteeTLARoundTrip(t *testing.T) {
 	})
 
 	t.Run("canonical «new» input round-trips", func(t *testing.T) {
-		ctx, class := associationSetAddFixture()
+		ctx := associationSetAddFixture()
 		spec := `IsSubdividedInto ∪ {«new»(PartId, Label)}`
 
 		astExpr, err := parser.ParseExpression(spec)
@@ -44,7 +44,7 @@ func TestAssociationSetAddGuaranteeTLARoundTrip(t *testing.T) {
 		lowered, err := convert.Lower(astExpr, ctx)
 		require.NoError(t, err)
 
-		raised, err := convert.Raise(lowered, raiseContextForAssociationSetAdd(ctx, &class))
+		raised, err := convert.Raise(lowered, convert.RaiseContextFromLower(ctx))
 		require.NoError(t, err)
 
 		printed := ast.Print(raised)
@@ -60,7 +60,7 @@ func TestAssociationSetAddGuaranteeTLARoundTrip(t *testing.T) {
 	})
 }
 
-func associationSetAddFixture() (*convert.LowerContext, model_class.Class) {
+func associationSetAddFixture() *convert.LowerContext {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s"))
 	containerKey := helper.Must(identity.NewClassKey(subdomainKey, "container"))
 	partKey := helper.Must(identity.NewClassKey(subdomainKey, "part"))
@@ -81,29 +81,10 @@ func associationSetAddFixture() (*convert.LowerContext, model_class.Class) {
 	})
 
 	associations := map[identity.Key]model_class.Association{assocKey: assoc}
-	ctx := &convert.LowerContext{
+	return &convert.LowerContext{
 		ClassKey:         containerKey,
 		AssociationNames: convert.BuildOutgoingAssociationFieldNameMap(containerKey, associations),
 		SystemEventNames: convert.BuildSystemEventNameMap(&class),
 		Parameters:       map[string]bool{"PartId": true, "Label": true},
 	}
-	return ctx, class
-}
-
-func raiseContextForAssociationSetAdd(ctx *convert.LowerContext, class *model_class.Class) *convert.RaiseContext {
-	return &convert.RaiseContext{
-		AssociationNames: invertKeyStringMap(ctx.AssociationNames),
-		SystemEventNames: convert.BuildSystemEventRaiseNameMap(class),
-	}
-}
-
-func invertKeyStringMap(m map[string]identity.Key) map[identity.Key]string {
-	if m == nil {
-		return nil
-	}
-	out := make(map[identity.Key]string, len(m))
-	for name, key := range m {
-		out[key] = name
-	}
-	return out
 }

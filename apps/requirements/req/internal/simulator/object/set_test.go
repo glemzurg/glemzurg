@@ -59,7 +59,7 @@ func (s *SetSuite) TestRemove() {
 		NewInteger(1), NewInteger(2), NewInteger(3),
 	})
 
-	set.Remove(NewInteger(2))
+	set.remove(NewInteger(2))
 	s.Equal(2, set.Size())
 	s.False(set.Contains(NewInteger(2)))
 }

@@ -57,7 +57,7 @@ func NewState(sch *schema.Schema) *State {
 }
 
 // Schema returns the immutable surface metadata for this run.
-func (s *State) Schema() *schema.Schema {
+func (s *State) schema() *schema.Schema {
 	return s.sch
 }
 
@@ -93,9 +93,9 @@ func (s *State) GetInstance(id ID) *Instance {
 	return s.instances[id]
 }
 
-// UpdateInstance updates an instance's attributes.
+// updateInstance updates an instance's attributes.
 // Returns an error if the instance does not exist.
-func (s *State) UpdateInstance(id ID, attributes *object.Record) error {
+func (s *State) updateInstance(id ID, attributes *object.Record) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -156,8 +156,8 @@ func (s *State) removeAllLinks(id ID) {
 	}
 }
 
-// InstanceCount returns the number of instances.
-func (s *State) InstanceCount() int {
+// instanceCount returns the number of instances.
+func (s *State) instanceCount() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.instances)
@@ -269,8 +269,8 @@ func (s *State) CountActivePairLinks(
 	)
 }
 
-// LinkCount returns the total number of binary links.
-func (s *State) LinkCount() int {
+// linkCount returns the total number of binary links.
+func (s *State) linkCount() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.links.Count()
@@ -341,9 +341,9 @@ func (s *State) SetStateMachineState(id ID, stateKey identity.Key) error {
 	return nil
 }
 
-// GetStateMachineState returns the current state machine state for an instance.
+// getStateMachineState returns the current state machine state for an instance.
 // Returns the zero value if the instance has no state machine state set.
-func (s *State) GetStateMachineState(id ID) (identity.Key, bool) {
+func (s *State) getStateMachineState(id ID) (identity.Key, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -351,8 +351,8 @@ func (s *State) GetStateMachineState(id ID) (identity.Key, bool) {
 	return stateKey, ok
 }
 
-// ClearStateMachineState removes the state machine state for an instance.
-func (s *State) ClearStateMachineState(id ID) {
+// clearStateMachineState removes the state machine state for an instance.
+func (s *State) clearStateMachineState(id ID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

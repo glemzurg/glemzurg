@@ -71,8 +71,8 @@ func (b *Bag) Size() int {
 	return total
 }
 
-// UniqueCount returns the number of distinct elements.
-func (b *Bag) UniqueCount() int {
+// uniqueCount returns the number of distinct elements.
+func (b *Bag) uniqueCount() int {
 	return len(b.elements)
 }
 
@@ -89,8 +89,8 @@ func (b *Bag) Add(elem Object, count int) {
 	}
 }
 
-// Remove removes count copies of an element from the bag.
-func (b *Bag) Remove(elem Object, count int) {
+// remove removes count copies of an element from the bag.
+func (b *Bag) remove(elem Object, count int) {
 	if count <= 0 {
 		return
 	}

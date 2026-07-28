@@ -26,8 +26,8 @@ const (
 	TypeObject   = "object"
 )
 
-// ValidateExpressionType validates an ExpressionType if it is non-nil.
-func ValidateExpressionType(ctx *coreerr.ValidationContext, et ExpressionType) error {
+// validateExpressionType validates an ExpressionType if it is non-nil.
+func validateExpressionType(ctx *coreerr.ValidationContext, et ExpressionType) error {
 	if et == nil {
 		return nil
 	}

@@ -123,8 +123,8 @@ func (r *ViolationReport) FormatText() string {
 	return b.String()
 }
 
-// FormatJSON renders the report as indented JSON bytes.
-func (r *ViolationReport) FormatJSON() ([]byte, error) {
+// formatJSON renders the report as indented JSON bytes.
+func (r *ViolationReport) formatJSON() ([]byte, error) {
 	return json.MarshalIndent(r, "", "  ")
 }
 

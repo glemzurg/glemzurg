@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPopulateCallerDataFromModel_UseCaseEventSender(t *testing.T) {
+func TestPopulateCallerDataFromSchema_UseCaseEventSender(t *testing.T) {
 	subdomainKey := mustKey("domain/finance/subdomain/wallet")
 	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "maintains_partners"))
 	scenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "main"))
@@ -72,9 +72,9 @@ func TestPopulateCallerDataFromModel_UseCaseEventSender(t *testing.T) {
 	}
 
 	catalog := NewClassCatalog(schema.New(&model))
-	PopulateCallerDataFromModel(schema.New(&model), catalog)
+	PopulateCallerDataFromSchema(schema.New(&model), catalog)
 
-	cd := catalog.CallerData()
+	cd := catalog.callerData()
 	require.Contains(t, cd.EventSentBy, eventKey)
 	assert.Contains(t, cd.EventSentBy[eventKey], adminClassKey)
 }
@@ -85,7 +85,7 @@ func TestPopulateCallerData_MandatoryAssociationClassDoesNotSendToEndpointCreati
 	PopulateCallerDataFromSchema(schema.New(tcm.model), catalog)
 
 	jurisdictionCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")
-	cd := catalog.CallerData()
+	cd := catalog.callerData()
 	assert.NotContains(t, cd.EventSentBy, jurisdictionCreateKey,
 		"mandatory association-class link does not mark to-endpoint creation as SentBy from host")
 }
@@ -97,7 +97,7 @@ func TestExternalCreationEvents_FiltersSimulatableSender(t *testing.T) {
 
 	catalog := NewClassCatalog(schema.New(model))
 	createEventKey := mustKey("domain/d/subdomain/s/class/item/event/create")
-	catalog.SetEventSentBy(createEventKey, []identity.Key{orderKey})
+	catalog.setEventSentBy(createEventKey, []identity.Key{orderKey})
 
 	ext := catalog.ExternalCreationEvents(itemKey)
 	assert.Empty(t, ext, "creation event sent by simulatable in-scope class is internal")
@@ -181,9 +181,9 @@ func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	catalog := NewClassCatalog(schema.New(&model))
-	PopulateCallerDataFromModel(schema.New(&model), catalog)
+	PopulateCallerDataFromSchema(schema.New(&model), catalog)
 
-	cd := catalog.CallerData()
+	cd := catalog.callerData()
 	require.Contains(t, cd.EventSentBy, eventNewTo)
 	assert.Contains(t, cd.EventSentBy[eventNewTo], fromKey)
 	assert.Empty(t, catalog.ExternalCreationEvents(toKey))

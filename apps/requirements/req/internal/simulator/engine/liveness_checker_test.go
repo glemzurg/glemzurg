@@ -153,7 +153,7 @@ func (s *LivenessCheckerSuite) TestAllClassesInstantiated_NoViolations() {
 	}
 
 	violations := checker.Check(result)
-	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
 	s.Empty(classViolations)
 }
 
@@ -171,7 +171,7 @@ func (s *LivenessCheckerSuite) TestClassNotInstantiated_Violation() {
 	}
 
 	violations := checker.Check(result)
-	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
 	s.Len(classViolations, 1)
 	s.Contains(classViolations[0].Message, "Item")
 }
@@ -199,7 +199,7 @@ func (s *LivenessCheckerSuite) TestCascadedCreationStepsCounted() {
 	}
 
 	violations := checker.Check(result)
-	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
 	s.Empty(classViolations)
 }
 
@@ -249,7 +249,7 @@ func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -268,7 +268,7 @@ func (s *LivenessCheckerSuite) TestAttributeWrittenBySubKey_MatchesDisplayName()
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -285,7 +285,7 @@ func (s *LivenessCheckerSuite) TestAttributeNotWritten_Violation() {
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
 	s.Len(attrViolations, 1)
 	s.Contains(attrViolations[0].Message, "amount")
 	s.Contains(attrViolations[0].Message, "Order")
@@ -331,7 +331,7 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -350,7 +350,7 @@ func (s *LivenessCheckerSuite) TestDoActionWritesCounted() {
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -375,7 +375,7 @@ func (s *LivenessCheckerSuite) TestCascadedStepWritesCounted() {
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -409,7 +409,7 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 	}
 
 	violations := checker.Check(result)
-	assocViolations := violations.ByType(invariants.ViolationTypeLivenessAssociationNotLinked)
+	assocViolations := violationsByType(violations, invariants.ViolationTypeLivenessAssociationNotLinked)
 	s.Empty(assocViolations)
 }
 
@@ -436,7 +436,7 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 	}
 
 	violations := checker.Check(result)
-	assocViolations := violations.ByType(invariants.ViolationTypeLivenessAssociationNotLinked)
+	assocViolations := violationsByType(violations, invariants.ViolationTypeLivenessAssociationNotLinked)
 	s.Len(assocViolations, 1)
 	s.Contains(assocViolations[0].Message, "order_items")
 }
@@ -463,7 +463,7 @@ func (s *LivenessCheckerSuite) TestStatelessClass_InstantiationViolation() {
 	}
 
 	violations := checker.Check(result)
-	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
 	s.Len(classViolations, 1)
 	s.Contains(classViolations[0].Message, "Stateless")
 }
@@ -482,13 +482,13 @@ func (s *LivenessCheckerSuite) TestMultipleViolationsCombined() {
 	}
 
 	violations := checker.Check(result)
-	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
 	s.Len(classViolations, 2)
 
-	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
 	s.Len(attrViolations, 2)
 
-	eventViolations := violations.ByType(invariants.ViolationTypeLivenessEventNotSent)
+	eventViolations := violationsByType(violations, invariants.ViolationTypeLivenessEventNotSent)
 	s.NotEmpty(eventViolations)
 
 	s.NotEmpty(violations.LivenessViolations())
@@ -506,7 +506,7 @@ func (s *LivenessCheckerSuite) TestEventNotSent_Violation() {
 	}
 
 	violations := checker.Check(result)
-	eventViolations := violations.ByType(invariants.ViolationTypeLivenessEventNotSent)
+	eventViolations := violationsByType(violations, invariants.ViolationTypeLivenessEventNotSent)
 	s.NotEmpty(eventViolations)
 	s.Contains(eventViolations[0].Message, "create")
 }
@@ -539,7 +539,7 @@ func (s *LivenessCheckerSuite) TestParameterSimulationNotUsed_Violation() {
 		SimulationCoverage: NewSimulationCoverageTracker(),
 	}
 
-	violations := checker.Check(result).ByType(invariants.ViolationTypeLivenessParameterSimulationNotUsed)
+	violations := violationsByType(checker.Check(result), invariants.ViolationTypeLivenessParameterSimulationNotUsed)
 	s.Len(violations, 1)
 	s.Contains(violations[0].Message, "Amounts")
 }
@@ -555,7 +555,7 @@ func (s *LivenessCheckerSuite) TestParameterSimulationUsed_NoViolation() {
 	checker := NewLivenessChecker(catalog)
 
 	coverage := NewSimulationCoverageTracker()
-	coverage.MarkSimulationParamUsed(paramKey)
+	coverage.markSimulationParamUsed(paramKey)
 
 	result := &SimulationResult{
 		Steps:              []*SimulationStep{},
@@ -563,7 +563,7 @@ func (s *LivenessCheckerSuite) TestParameterSimulationUsed_NoViolation() {
 		SimulationCoverage: coverage,
 	}
 
-	violations := checker.Check(result).ByType(invariants.ViolationTypeLivenessParameterSimulationNotUsed)
+	violations := violationsByType(checker.Check(result), invariants.ViolationTypeLivenessParameterSimulationNotUsed)
 	s.Empty(violations)
 }
 
