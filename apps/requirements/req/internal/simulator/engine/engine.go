@@ -261,10 +261,8 @@ func newSimulationRNG(seed int64) *rand.Rand {
 }
 
 func setupClassCatalog(sch *schema.Schema) *ClassCatalog {
-	catalog := NewClassCatalog(sch)
-	PopulateCallerDataFromSchema(sch, catalog)
-	PopulateDerivedAttributeCallersFromSchema(sch, catalog)
-	return catalog
+	// Catalog (caller graphs, association nav, extents) is built inside schema.New.
+	return NewClassCatalog(sch)
 }
 
 // setupState creates simulation state and bindings builder, registers associations,

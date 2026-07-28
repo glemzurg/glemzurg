@@ -15,6 +15,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -101,21 +102,13 @@ type TransitionResult struct {
 
 // AssociationClassIndex resolves association-class metadata for creation linking.
 type AssociationClassIndex interface {
-	GetAssociationClassInfo(classKey identity.Key) AssociationClassLinkInfo
+	GetAssociationClassInfo(classKey identity.Key) schema.AssociationClassLinkInfo
 	IsAssociationClass(classKey identity.Key) bool
 	IsAssociationClassHost(assocKey identity.Key) bool
 }
 
-// AssociationClassLinkInfo holds host-association and endpoint metadata for one AC row.
-type AssociationClassLinkInfo struct {
-	Found               bool
-	HostAssocKey        identity.Key
-	HostAssociationName string
-	FromClassKey        identity.Key
-	FromClassName       string
-	ToClassKey          identity.Key
-	ToClassName         string
-}
+// AssociationClassLinkInfo is schema.AssociationClassLinkInfo (host + endpoint metadata).
+type AssociationClassLinkInfo = schema.AssociationClassLinkInfo
 
 // ActionExecutor executes actions, queries, and transitions against simulation state.
 type ActionExecutor struct {

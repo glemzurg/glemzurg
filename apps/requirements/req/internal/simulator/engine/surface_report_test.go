@@ -131,7 +131,6 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsExternalDerivedAttribute
 
 	model := testModel(classEntry(accountClass, accountKey))
 	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
-	PopulateDerivedAttributeCallersFromSchema(schema.New(model, schema.RunScopeAll()), catalog)
 	report := BuildSurfaceReport(catalog)
 
 	entry := findSurfaceClass(report, accountKey.String())

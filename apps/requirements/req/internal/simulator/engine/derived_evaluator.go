@@ -63,11 +63,7 @@ func NewDerivedAttributeEvaluator(sch *schema.Schema, bindingsBuilder *state.Bin
 		bindingsBuilder: bindingsBuilder,
 		evalCtx:         evalCtx,
 	}
-	for _, sim := range sch.AllClassSims() {
-		defs, inScope, err := sch.DerivedAttributes(sim.ClassKey)
-		if err != nil || !inScope {
-			continue
-		}
+	sch.EachDerivedAttributeClass(func(classKey identity.Key, defs []schema.DerivedAttrDef) {
 		for _, def := range defs {
 			info := derivedAttrInfo{
 				attrKey:    def.AttrKey,
@@ -75,10 +71,10 @@ func NewDerivedAttributeEvaluator(sch *schema.Schema, bindingsBuilder *state.Bin
 				attrName:   def.AttrName,
 				expression: def.Expression,
 			}
-			dae.byClass[sim.ClassKey] = append(dae.byClass[sim.ClassKey], info)
+			dae.byClass[classKey] = append(dae.byClass[classKey], info)
 			dae.byAttrKey[def.AttrKey] = info
 		}
-	}
+	})
 	return dae, nil
 }
 

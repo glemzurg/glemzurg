@@ -150,10 +150,11 @@ func (s *Schema) ClassSim(classKey identity.Key) (*ClassSimInfo, bool, error) {
 	return info, true, nil
 }
 
-// AllClassSims returns simulation metadata for every in-scope class (deterministic key order).
-func (s *Schema) AllClassSims() []*ClassSimInfo {
-	if s == nil || len(s.classSim) == 0 {
-		return nil
+// EachInScopeClassSim calls fn for every in-scope class simulation index (key order).
+// Prefer keyed ClassSim for single-class questions; use this only for true full-surface scans.
+func (s *Schema) EachInScopeClassSim(fn func(*ClassSimInfo)) {
+	if s == nil || fn == nil || len(s.classSim) == 0 {
+		return
 	}
 	keys := make([]identity.Key, 0, len(s.classSim))
 	for k := range s.classSim {
@@ -162,9 +163,34 @@ func (s *Schema) AllClassSims() []*ClassSimInfo {
 	sort.Slice(keys, func(i, j int) bool {
 		return keys[i].String() < keys[j].String()
 	})
-	out := make([]*ClassSimInfo, 0, len(keys))
 	for _, k := range keys {
-		out = append(out, s.classSim[k])
+		fn(s.classSim[k])
 	}
-	return out
+}
+
+// EachInScopeClass calls fn for every in-scope class model body (key order).
+func (s *Schema) EachInScopeClass(fn func(model_class.Class)) {
+	s.EachInScopeClassSim(func(sim *ClassSimInfo) {
+		if sim != nil {
+			fn(sim.Class)
+		}
+	})
+}
+
+// EachSimulatableClassSim calls fn for in-scope classes that have a state machine.
+func (s *Schema) EachSimulatableClassSim(fn func(*ClassSimInfo)) {
+	s.EachInScopeClassSim(func(sim *ClassSimInfo) {
+		if sim != nil && sim.HasStates {
+			fn(sim)
+		}
+	})
+}
+
+// EachEventBearingClassSim calls fn for in-scope classes that declare at least one event.
+func (s *Schema) EachEventBearingClassSim(fn func(*ClassSimInfo)) {
+	s.EachInScopeClassSim(func(sim *ClassSimInfo) {
+		if sim != nil && sim.HasEvents {
+			fn(sim)
+		}
+	})
 }

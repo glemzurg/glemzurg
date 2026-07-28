@@ -89,7 +89,7 @@ type SurfaceAssocCreateNote struct {
 // derived/queries appear under UnavailableMembers, not as drivers.
 func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
 	report := &SurfaceReport{
-		Classes: make([]SurfaceClassReport, 0, len(catalog.classes)),
+		Classes: make([]SurfaceClassReport, 0),
 	}
 
 	for _, classInfo := range catalog.AllScopedClasses() {

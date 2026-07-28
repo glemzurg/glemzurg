@@ -157,17 +157,24 @@ func NewInvariantChecker(sch *schema.Schema) (*InvariantChecker, error) {
 		})
 	}
 
-	// Load class/attribute invariants from schema class-sim index.
-	for _, sim := range sch.AllClassSims() {
-		class := sim.Class
+	// Load class/attribute invariants for every in-scope class body.
+	var loadErr error
+	sch.EachInScopeClass(func(class model_class.Class) {
+		if loadErr != nil {
+			return
+		}
 		checker.classNameMap[class.Key] = strings.ReplaceAll(class.Name, " ", "")
 		checker.classAttributes[class.Key] = class.Attributes
 		if err := checker.loadClassInvariants(class); err != nil {
-			return nil, err
+			loadErr = err
+			return
 		}
 		if err := checker.loadAttributeInvariants(class); err != nil {
-			return nil, err
+			loadErr = err
 		}
+	})
+	if loadErr != nil {
+		return nil, loadErr
 	}
 
 	return checker, nil

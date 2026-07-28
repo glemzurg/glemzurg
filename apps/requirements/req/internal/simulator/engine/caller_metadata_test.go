@@ -72,9 +72,8 @@ func TestPopulateCallerDataFromSchema_UseCaseEventSender(t *testing.T) {
 	}
 
 	catalog := NewClassCatalog(schema.New(&model, schema.RunScopeAll()))
-	PopulateCallerDataFromSchema(schema.New(&model, schema.RunScopeAll()), catalog)
 
-	cd := catalog.callerData()
+	cd := catalog.CallerData()
 	require.Contains(t, cd.EventSentBy, eventKey)
 	assert.Contains(t, cd.EventSentBy[eventKey], adminClassKey)
 }
@@ -82,10 +81,9 @@ func TestPopulateCallerDataFromSchema_UseCaseEventSender(t *testing.T) {
 func TestPopulateCallerData_MandatoryAssociationClassDoesNotSendToEndpointCreation(t *testing.T) {
 	tcm := buildAssociationClassTestModel()
 	catalog := NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll()))
-	PopulateCallerDataFromSchema(schema.New(tcm.model, schema.RunScopeAll()), catalog)
 
 	jurisdictionCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")
-	cd := catalog.callerData()
+	cd := catalog.CallerData()
 	assert.NotContains(t, cd.EventSentBy, jurisdictionCreateKey,
 		"mandatory association-class link does not mark to-endpoint creation as SentBy from host")
 }
@@ -97,7 +95,7 @@ func TestExternalCreationEvents_FiltersSimulatableSender(t *testing.T) {
 
 	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
 	createEventKey := mustKey("domain/d/subdomain/s/class/item/event/create")
-	catalog.setEventSentBy(createEventKey, []identity.Key{orderKey})
+	catalog.SetEventSentBy(createEventKey, []identity.Key{orderKey})
 
 	ext := catalog.ExternalCreationEvents(itemKey)
 	assert.Empty(t, ext, "creation event sent by simulatable in-scope class is internal")
@@ -181,9 +179,8 @@ func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	catalog := NewClassCatalog(schema.New(&model, schema.RunScopeAll()))
-	PopulateCallerDataFromSchema(schema.New(&model, schema.RunScopeAll()), catalog)
 
-	cd := catalog.callerData()
+	cd := catalog.CallerData()
 	require.Contains(t, cd.EventSentBy, eventNewTo)
 	assert.Contains(t, cd.EventSentBy[eventNewTo], fromKey)
 	assert.Empty(t, catalog.ExternalCreationEvents(toKey))

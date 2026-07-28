@@ -83,6 +83,9 @@ type Schema struct {
 
 	// modelInvariants is the run-scoped model-level invariant list (may differ from model.Invariants).
 	modelInvariants []model_logic.Logic
+
+	// catalog holds association navigation, caller graphs, and surface-unavailable indexes.
+	catalog *Catalog
 }
 
 // New takes ownership of model as the sole static model for a run and internalizes scope.
@@ -133,6 +136,8 @@ func (s *Schema) ReplaceInScopeClass(class model_class.Class) error {
 	// Class body changed (e.g. surface-scoped invariants); rebuild projections that depend on it.
 	s.classSim[class.Key] = buildClassSimInfo(c)
 	s.indexClassAttributes(&c)
+	// Caller graphs and association nav depend on class bodies; rebuild catalog.
+	s.catalog = newCatalog(s)
 	return nil
 }
 
@@ -176,6 +181,7 @@ func (s *Schema) reindex(scope RunScope) {
 	s.reindexAssociationGraph()
 	s.reindexClassSim()
 	s.reindexAttributeProjections()
+	s.catalog = newCatalog(s)
 }
 
 func (s *Schema) reindexBoundaryAssociations() {

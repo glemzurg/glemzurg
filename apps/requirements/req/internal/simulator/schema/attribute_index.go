@@ -199,6 +199,26 @@ func (s *Schema) DerivedAttributeKeys() map[identity.Key]bool {
 	return out
 }
 
+// EachDerivedAttributeClass calls fn for each in-scope class that has derived attributes.
+func (s *Schema) EachDerivedAttributeClass(fn func(classKey identity.Key, defs []DerivedAttrDef)) {
+	if s == nil || fn == nil || len(s.derivedByClass) == 0 {
+		return
+	}
+	keys := make([]identity.Key, 0, len(s.derivedByClass))
+	for k := range s.derivedByClass {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].String() < keys[j].String()
+	})
+	for _, k := range keys {
+		defs := s.derivedByClass[k]
+		cp := make([]DerivedAttrDef, len(defs))
+		copy(cp, defs)
+		fn(k, cp)
+	}
+}
+
 // ValidateDerivedAttributes reports derivation policies that failed to index (unparsed / primed).
 func (s *Schema) ValidateDerivedAttributes() error {
 	if s == nil {

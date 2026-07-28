@@ -108,10 +108,12 @@ func (s *SchemaTestSuite) TestClass_OutOfScopeAndUnknown() {
 	s.False(inScope)
 	s.NotEmpty(name)
 
-	// AllClassSims only includes in-scope classes.
-	sims := sch.AllClassSims()
-	s.Require().Len(sims, 1)
-	s.Equal("Order", sims[0].Class.Name)
+	// EachInScopeClassSim only includes in-scope classes.
+	var names []string
+	sch.EachInScopeClassSim(func(sim *ClassSimInfo) {
+		names = append(names, sim.Class.Name)
+	})
+	s.Equal([]string{"Order"}, names)
 }
 
 func (s *SchemaTestSuite) sampleModel() (
