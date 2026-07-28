@@ -14,32 +14,25 @@ type AssociationClassInfo struct {
 	ToClassKey          identity.Key
 }
 
-func buildAssociationClassIndex(sch *schema.Schema, scopedClasses map[identity.Key]*ClassInfo) map[identity.Key]*AssociationClassInfo {
+func buildAssociationClassIndexFromSchema(sch *schema.Schema) map[identity.Key]*AssociationClassInfo {
 	index := make(map[identity.Key]*AssociationClassInfo)
-
-	sch.ForEachAssociation(func(assoc model_class.Association) {
+	for _, view := range sch.ScopedAssociations() {
+		assoc := view.Association
 		if assoc.AssociationClassKey == nil {
-			return
+			continue
 		}
 		acKey := *assoc.AssociationClassKey
-		if _, inScope := scopedClasses[acKey]; !inScope {
-			return
+		host, inScope, err := sch.HostAssociationForAC(acKey)
+		if err != nil || !inScope || host == nil {
+			continue
 		}
-		if _, fromIn := scopedClasses[assoc.FromClassKey]; !fromIn {
-			return
-		}
-		if _, toIn := scopedClasses[assoc.ToClassKey]; !toIn {
-			return
-		}
-
 		index[acKey] = &AssociationClassInfo{
-			AssociationClassKey: acKey,
-			HostAssociation:     assoc,
-			FromClassKey:        assoc.FromClassKey,
-			ToClassKey:          assoc.ToClassKey,
+			AssociationClassKey: host.AssociationClassKey,
+			HostAssociation:     host.HostAssociation,
+			FromClassKey:        host.FromClassKey,
+			ToClassKey:          host.ToClassKey,
 		}
-	})
-
+	}
 	return index
 }
 

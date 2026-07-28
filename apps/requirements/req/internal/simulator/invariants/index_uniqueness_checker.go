@@ -1,8 +1,6 @@
 package invariants
 
 import (
-	"slices"
-	"sort"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -35,53 +33,17 @@ func NewIndexUniquenessChecker(sch *schema.Schema) *IndexUniquenessChecker {
 	checker := &IndexUniquenessChecker{
 		classIndexes: make(map[identity.Key]*ClassIndexInfo),
 	}
-
-	sch.ForEachClass(func(class model_class.Class) {
-		// Group attributes by index number
-		indexGroups := make(map[uint][]*model_class.Attribute)
-
-		for _, attr := range class.Attributes {
-			attrCopy := attr
-			for _, indexNum := range attr.IndexNums {
-				indexGroups[indexNum] = append(indexGroups[indexNum], &attrCopy)
-			}
-		}
-
-		if len(indexGroups) == 0 {
-			return
-		}
-
-		// Build sorted index definitions
-		info := &ClassIndexInfo{
-			ClassKey: class.Key,
-		}
-
-		// Sort index numbers for deterministic order
-		indexNums := make([]uint, 0, len(indexGroups))
-		for num := range indexGroups {
-			indexNums = append(indexNums, num)
-		}
-		slices.Sort(indexNums)
-
-		for _, indexNum := range indexNums {
-			attrs := indexGroups[indexNum]
-			sort.Slice(attrs, func(i, j int) bool { return attrs[i].Key.SubKey < attrs[j].Key.SubKey })
-
-			names := make([]string, len(attrs))
-			for i, a := range attrs {
-				names[i] = a.Key.SubKey
-			}
-
+	for classKey, defs := range sch.AllClassIndexes() {
+		info := &ClassIndexInfo{ClassKey: classKey}
+		for _, d := range defs {
 			info.Indexes = append(info.Indexes, IndexDefinition{
-				IndexNum:  indexNum,
-				AttrNames: names,
-				AttrDefs:  attrs,
+				IndexNum:  d.IndexNum,
+				AttrNames: d.AttrNames,
+				AttrDefs:  d.AttrDefs,
 			})
 		}
-
-		checker.classIndexes[class.Key] = info
-	})
-
+		checker.classIndexes[classKey] = info
+	}
 	return checker
 }
 

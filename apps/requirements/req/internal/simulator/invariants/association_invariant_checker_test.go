@@ -45,7 +45,7 @@ func (s *AssociationInvariantCheckerSuite) buildChecker() (*AssociationInvariant
 	model := multiplicityTestModel(classEntry(partnerClass, partnerKey), classEntry(jurisdictionClass, jurisdictionKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	checker, err := NewAssociationInvariantChecker(schema.New(model))
+	checker, err := NewAssociationInvariantChecker(schema.New(model, schema.RunScopeAll()))
 	s.Require().NoError(err)
 	return checker, partnerKey, jurisdictionKey, assocKey
 }
@@ -95,7 +95,7 @@ func (s *AssociationInvariantCheckerSuite) TestFailsWhenAssessmentIsFalse() {
 	model := multiplicityTestModel(classEntry(partnerClass, partnerKey), classEntry(jurisdictionClass, jurisdictionKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	checker, err := NewAssociationInvariantChecker(schema.New(model))
+	checker, err := NewAssociationInvariantChecker(schema.New(model, schema.RunScopeAll()))
 	s.Require().NoError(err)
 
 	simState := instance.NewState(emptySchema())

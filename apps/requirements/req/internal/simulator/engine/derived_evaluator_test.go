@@ -73,7 +73,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(schema.New(model), bindingsBuilder, nil)
+	dae, err := NewDerivedAttributeEvaluator(schema.New(model, schema.RunScopeAll()), bindingsBuilder, nil)
 	s.Require().NoError(err)
 	s.NotNil(dae)
 
@@ -116,7 +116,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(schema.New(model), bindingsBuilder, nil)
+	dae, err := NewDerivedAttributeEvaluator(schema.New(model, schema.RunScopeAll()), bindingsBuilder, nil)
 	s.Require().NoError(err)
 	s.NotNil(dae)
 	// Empty specification is silently skipped — no derived attributes.
@@ -148,7 +148,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(schema.New(model), bindingsBuilder, nil)
+	dae, err := NewDerivedAttributeEvaluator(schema.New(model, schema.RunScopeAll()), bindingsBuilder, nil)
 	s.Require().Error(err)
 	s.Nil(dae)
 	s.Contains(err.Error(), "must not contain primed variables")
@@ -180,7 +180,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(schema.New(model), bindingsBuilder, nil)
+	dae, err := NewDerivedAttributeEvaluator(schema.New(model, schema.RunScopeAll()), bindingsBuilder, nil)
 	s.Require().NoError(err)
 
 	// Create an instance with price=5.
@@ -241,7 +241,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeSubKeyWhenDisplayNameDiffers
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 	model := testModel(classEntry(class, classKey))
 
-	dae, err := NewDerivedAttributeEvaluator(schema.New(model), bindingsBuilder, nil)
+	dae, err := NewDerivedAttributeEvaluator(schema.New(model, schema.RunScopeAll()), bindingsBuilder, nil)
 	s.Require().NoError(err)
 
 	instance := simState.CreateInstance(classKey, object.NewRecord())

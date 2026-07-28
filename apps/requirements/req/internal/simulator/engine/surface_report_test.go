@@ -42,7 +42,7 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsClassesEventsQueriesAndD
 	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	model.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	catalog := NewClassCatalog(schema.New(model))
+	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
 	report := BuildSurfaceReport(catalog)
 
 	// Item has no external drivers (mandatory peer of Order); surface lists drivers only.
@@ -74,7 +74,7 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportOmitsClassesWithNoExternalDri
 	simpleClass.SetQueries(map[identity.Key]model_state.Query{})
 	simpleClass.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	catalog := NewClassCatalog(schema.New(testModel(classEntry(simpleClass, classKey))))
+	catalog := NewClassCatalog(schema.New(testModel(classEntry(simpleClass, classKey)), schema.RunScopeAll()))
 	report := BuildSurfaceReport(catalog)
 
 	s.Empty(report.Classes, "liveness-only / peer-only classes are not surface drivers")
@@ -130,8 +130,8 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsExternalDerivedAttribute
 	})
 
 	model := testModel(classEntry(accountClass, accountKey))
-	catalog := NewClassCatalog(schema.New(model))
-	PopulateDerivedAttributeCallersFromSchema(schema.New(model), catalog)
+	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
+	PopulateDerivedAttributeCallersFromSchema(schema.New(model, schema.RunScopeAll()), catalog)
 	report := BuildSurfaceReport(catalog)
 
 	entry := findSurfaceClass(report, accountKey.String())
@@ -143,7 +143,7 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsExternalDerivedAttribute
 
 func (s *SurfaceReportSuite) TestFormatTextIncludesClassAndSurfaceEntries() {
 	orderClass, orderKey := testOrderClass()
-	catalog := NewClassCatalog(schema.New(testModel(classEntry(orderClass, orderKey))))
+	catalog := NewClassCatalog(schema.New(testModel(classEntry(orderClass, orderKey)), schema.RunScopeAll()))
 	text := BuildSurfaceReport(catalog).FormatText()
 
 	s.Contains(text, "Simulation surface")
@@ -175,7 +175,7 @@ func TestFormatTextEmptySurface(t *testing.T) {
 
 func (s *SurfaceReportSuite) TestFormatTextIncludesScopeBeforeSurface() {
 	orderClass, orderKey := testOrderClass()
-	catalog := NewClassCatalog(schema.New(testModel(classEntry(orderClass, orderKey))))
+	catalog := NewClassCatalog(schema.New(testModel(classEntry(orderClass, orderKey)), schema.RunScopeAll()))
 	report := BuildSurfaceReport(catalog)
 	report.Scope = []surface.ScopeEntry{
 		{Kind: surface.ScopeClass, Path: "d/s/order"},

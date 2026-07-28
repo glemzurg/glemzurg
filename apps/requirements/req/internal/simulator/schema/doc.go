@@ -1,14 +1,22 @@
-// Package schema is the sole home of model facts for one simulation run.
+// Package schema is the sole home of model facts, run scope, and static simulator
+// indexes for one simulation run.
 //
 // Data-flow gate:
 //
-//	*core.Model ──New──► *Schema ──► instance.State, engine, checkers, …
+//	full *core.Model + RunScope ──New──► *Schema ──► instance, engine, checkers, …
 //
 // After construction, the running simulator must not carry a separate *core.Model
-// for the same run. Components use Schema methods (Class, Association, ForEach*,
-// NamedSets, …) and values built from schema (catalog, checkers, eval context).
-// Lookups return model tree types ([model_class.Class], [model_class.Association]),
-// not parallel schema DTOs. The owned model pointer is private.
+// or include-list as authority for the same run. Schema presents:
+//
+//   - Keyed lookups: Class / Association / ClassSim / … as (*T, inScope bool, err)
+//     with out-of-scope = (nil, false, nil)
+//   - Scoped bulk indexes: ScopedAssociations, AssociationsWithUniqueness,
+//     AllClassSims, ClassIndexes, DerivedAttributes, extents, boundary edges
+//   - Factories: NewEvalContext
+//
+// Static indexes (association graph, class simulation metadata, attribute/derived
+// projections) are built once at New. Runtime Check* and execution stay outside
+// this package.
 //
 // [instance.State] holds *Schema for static lookups; mutable world state stays in
 // instance. Do not mutate the model after New.

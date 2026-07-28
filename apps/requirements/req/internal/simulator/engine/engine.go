@@ -84,20 +84,19 @@ type SimulationEngine struct {
 // The model must have its ExpressionSpec.Expression fields already populated
 // (e.g., via parse functions passed to ExpressionSpec constructors).
 //
-// Data-flow gate: model is used only for surface resolution and schema.New.
-// After that, the run is driven from *schema.Schema (and components built from it).
+// Data-flow gate: model + surface resolve into schema.New(fullModel, RunScope).
+// After that, the run is driven from *schema.Schema only (no dual model authority).
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
 	rng := newSimulationRNG(config.RandomSeed)
 
-	activeModel, unavailable, scopeEntries, err := prepareActiveModel(model, config)
+	sch, unavailable, scopeEntries, err := buildRunSchema(model, config)
 	if err != nil {
 		return nil, err
 	}
 
-	// Sole model home for this run: active (filtered) model is owned by schema.
-	sch := schema.New(activeModel)
+	catalog := setupClassCatalog(sch)
+	catalog.SetSurfaceUnavailableMembers(unavailable)
 
-	catalog := setupCatalogForSurface(model, sch, config, unavailable)
 	core, err := wireSimulationCore(sch, catalog, rng)
 	if err != nil {
 		return nil, err
@@ -107,21 +106,66 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	return newWiredSimulationEngine(config, catalog, core, scopeEntries), nil
 }
 
-// setupCatalogForSurface builds the scoped catalog from schema and, when a surface
-// is set, registers full-model empty extents and boundary associations for OOS peers.
-// fullModel is only for out-of-scope metadata (not retained on the engine).
-func setupCatalogForSurface(
-	fullModel *core.Model,
-	sch *schema.Schema,
+// buildRunSchema resolves surface scope, builds schema from the full model + RunScope,
+// and overlays surface-scoped class bodies / model invariants when a surface is set.
+func buildRunSchema(
+	model *core.Model,
 	config SimulationConfig,
-	unavailable []surface.UnavailableMember,
-) *ClassCatalog {
-	catalog := setupClassCatalog(sch)
-	if config.Surface != nil && !config.Surface.IsEmpty() {
-		catalog.RegisterOutOfScopeMetadata(fullModel)
+) (*schema.Schema, []surface.UnavailableMember, []surface.ScopeEntry, error) {
+	if err := validateSimulationModel(model); err != nil {
+		return nil, nil, nil, err
 	}
-	catalog.SetSurfaceUnavailableMembers(unavailable)
-	return catalog
+	if config.Surface == nil || config.Surface.IsEmpty() {
+		scopeEntries := surface.BuildScopeEntries(model, surface.AllNonRealizedClasses(model))
+		return schema.New(model, schema.RunScopeAll()), nil, scopeEntries, nil
+	}
+	return buildRunSchemaWithSurface(model, config.Surface)
+}
+
+func buildRunSchemaWithSurface(
+	model *core.Model,
+	spec *surface.SurfaceSpecification,
+) (*schema.Schema, []surface.UnavailableMember, []surface.ScopeEntry, error) {
+	resolved, err := surface.Resolve(spec, model)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("surface area resolution: %w", err)
+	}
+	scopeEntries := surface.BuildScopeEntries(model, resolved.Classes)
+	sch := schema.New(model, schema.NewRunScope(resolvedClassKeys(resolved)))
+	if err := applySurfaceClassOverlays(sch, model, resolved); err != nil {
+		return nil, nil, nil, err
+	}
+	return sch, resolved.UnavailableMembers, scopeEntries, nil
+}
+
+func resolvedClassKeys(resolved *surface.ResolvedSurface) []identity.Key {
+	keys := make([]identity.Key, 0, len(resolved.Classes))
+	for k := range resolved.Classes {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// applySurfaceClassOverlays installs surface-scoped class bodies and model invariants.
+func applySurfaceClassOverlays(sch *schema.Schema, model *core.Model, resolved *surface.ResolvedSurface) error {
+	filtered, err := surface.BuildFilteredModel(model, resolved)
+	if err != nil {
+		return fmt.Errorf("build filtered model: %w", err)
+	}
+	if err := validateSimulationModel(filtered); err != nil {
+		return err
+	}
+	for _, domain := range filtered.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				if err := sch.ReplaceInScopeClass(class); err != nil {
+					return fmt.Errorf("install scoped class %s: %w", class.Key.String(), err)
+				}
+			}
+		}
+	}
+	sch.SetModelInvariants(resolved.ModelInvariants)
+	return nil
 }
 
 // includeOutOfScopeExtents lets invariant evaluation bind empty sets for OOS class names.
@@ -216,43 +260,11 @@ func newSimulationRNG(seed int64) *rand.Rand {
 	return rand.New(rand.NewSource(seed)) //nolint:gosec // simulation uses deterministic seeded RNG
 }
 
-func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, []surface.ScopeEntry, error) {
-	activeModel, unavailable, scopeEntries, err := resolveActiveModel(model, config)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	if err := validateSimulationModel(activeModel); err != nil {
-		return nil, nil, nil, err
-	}
-	return activeModel, unavailable, scopeEntries, nil
-}
-
 func setupClassCatalog(sch *schema.Schema) *ClassCatalog {
 	catalog := NewClassCatalog(sch)
 	PopulateCallerDataFromSchema(sch, catalog)
 	PopulateDerivedAttributeCallersFromSchema(sch, catalog)
 	return catalog
-}
-
-// resolveActiveModel applies surface area filtering if configured.
-// UnavailableMembers (derived/query depending on out-of-scope classes) are returned
-// for catalog wiring — they stay off the external surface.
-// ScopeEntries summarize included subdomains vs individual classes for tester reports.
-func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, []surface.ScopeEntry, error) {
-	if config.Surface == nil || config.Surface.IsEmpty() {
-		scope := surface.BuildScopeEntries(model, surface.AllNonRealizedClasses(model))
-		return model, nil, scope, nil
-	}
-	resolved, err := surface.Resolve(config.Surface, model)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("surface area resolution: %w", err)
-	}
-	scope := surface.BuildScopeEntries(model, resolved.Classes)
-	filtered, err := surface.BuildFilteredModel(model, resolved)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("build filtered model: %w", err)
-	}
-	return filtered, resolved.UnavailableMembers, scope, nil
 }
 
 // setupState creates simulation state and bindings builder, registers associations,

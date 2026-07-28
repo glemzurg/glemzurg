@@ -49,7 +49,7 @@ func (s *AssociationInstancePairCheckerSuite) buildPlainAssociationModel() (*cor
 
 func (s *AssociationInstancePairCheckerSuite) TestDistinctPairsNoViolation() {
 	model, assocKey, orderKey, itemKey := s.buildPlainAssociationModel()
-	checker := NewAssociationInstancePairChecker(schema.New(model))
+	checker := NewAssociationInstancePairChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())

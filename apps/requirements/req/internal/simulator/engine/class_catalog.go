@@ -5,7 +5,6 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -14,32 +13,33 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
-// ClassInfo holds pre-computed simulation metadata for one class.
-type ClassInfo struct {
-	Class          model_class.Class
-	ClassKey       identity.Key
-	CreationEvents []model_state.Event             // Events that have creation transitions (FromStateKey==nil).
-	StateEvents    map[string][]EventInfo          // stateName → eligible events from that state.
-	DoActions      map[string][]model_state.Action // stateName → "do" actions available while in state.
-	HasStates      bool
-	HasEvents      bool
-}
+// ClassInfo is simulation metadata for one class (owned by schema; re-exported here).
+type ClassInfo = schema.ClassSimInfo
 
-// EventInfo pairs an event with the transitions it can trigger from a specific state.
-type EventInfo struct {
-	Event       model_state.Event
-	Transitions []model_state.Transition
-}
+// EventInfo pairs an event with transitions (owned by schema; re-exported here).
+type EventInfo = schema.EventInfo
 
 // AssociationInfo holds pre-computed metadata for one class association.
 type AssociationInfo struct {
 	Association   model_class.Association
 	FromClassKey  identity.Key
 	ToClassKey    identity.Key
-	MandatoryTo   bool // ToMultiplicity.LowerBound >= 1
-	MandatoryFrom bool // FromMultiplicity.LowerBound >= 1
-	MinTo         uint // ToMultiplicity.LowerBound
-	MinFrom       uint // FromMultiplicity.LowerBound
+	MandatoryTo   bool
+	MandatoryFrom bool
+	MinTo         uint
+	MinFrom       uint
+}
+
+func associationInfoFromView(v schema.AssociationView) AssociationInfo {
+	return AssociationInfo{
+		Association:   v.Association,
+		FromClassKey:  v.FromClassKey,
+		ToClassKey:    v.ToClassKey,
+		MandatoryTo:   v.MandatoryTo,
+		MandatoryFrom: v.MandatoryFrom,
+		MinTo:         v.MinTo,
+		MinFrom:       v.MinFrom,
+	}
 }
 
 // ClassCatalog pre-computes per-class simulation metadata from the model.
@@ -80,65 +80,46 @@ func NewClassCatalog(sch *schema.Schema) *ClassCatalog {
 		surfaceUnavailableQueries: make(map[identity.Key]surface.UnavailableMember),
 	}
 
-	// Walk all in-scope classes; stateless classes are liveness-only metadata.
-	sch.ForEachClass(func(class model_class.Class) {
-		catalog.classes[class.Key] = buildScopedClassInfo(class)
-		catalog.extentClassNames[class.Key] = model_class.ClassTLAName(class.Name)
-	})
+	// Class sim metadata from schema (already scoped).
+	for _, sim := range sch.AllClassSims() {
+		catalog.classes[sim.ClassKey] = sim
+	}
 
-	catalog.associationClasses = buildAssociationClassIndex(sch, catalog.classes)
-	catalog.buildAssociationInfo(sch)
+	// Extent names for in-scope and out-of-scope classes (empty-set bindings).
+	catalog.loadExtentNamesFromSchema(sch)
+
+	catalog.associationClasses = buildAssociationClassIndexFromSchema(sch)
+	catalog.buildAssociationInfoFromSchema(sch)
+	catalog.addBoundaryAssociationsFromSchema(sch)
 
 	return catalog
 }
 
-// RegisterOutOfScopeMetadata records full-model class extents and boundary associations
-// so out-of-scope peers evaluate as empty sets and link guarantees can no-op.
-// Call with the unfiltered model after building the catalog from the surface-filtered model.
-// Model-agnostic: every class and association is treated the same way.
-func (c *ClassCatalog) RegisterOutOfScopeMetadata(fullModel *core.Model) {
-	if fullModel == nil {
+// loadExtentNamesFromSchema copies TLA extent names for every class schema knows.
+func (c *ClassCatalog) loadExtentNamesFromSchema(sch *schema.Schema) {
+	if sch == nil {
 		return
 	}
-	for _, domain := range fullModel.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for classKey, class := range subdomain.Classes {
-				if _, ok := c.extentClassNames[classKey]; !ok {
-					c.extentClassNames[classKey] = model_class.ClassTLAName(class.Name)
-				}
-			}
-		}
-	}
-	c.addBoundaryAssociations(fullModel)
+	sch.ForEachExtent(func(classKey identity.Key, name string, _ bool) {
+		c.extentClassNames[classKey] = name
+	})
 }
 
-// addBoundaryAssociations registers associations with exactly one endpoint in scope.
-// They are not in the filtered model (multiplicity is not enforced across the boundary)
-// but catalog resolution still finds them so link guarantees no-op instead of hard-failing.
-func (c *ClassCatalog) addBoundaryAssociations(fullModel *core.Model) {
+// addBoundaryAssociationsFromSchema registers half-in-scope associations from schema.
+func (c *ClassCatalog) addBoundaryAssociationsFromSchema(sch *schema.Schema) {
+	if sch == nil {
+		return
+	}
 	known := make(map[identity.Key]bool, len(c.associations))
 	for _, ai := range c.associations {
 		known[ai.Association.Key] = true
 	}
-	for _, assoc := range fullModel.GetClassAssociations() {
+	for _, assoc := range sch.BoundaryAssociations() {
 		if known[assoc.Key] {
 			continue
 		}
-		_, fromIn := c.classes[assoc.FromClassKey]
-		_, toIn := c.classes[assoc.ToClassKey]
-		if fromIn == toIn {
-			// Both in scope already handled, or both out of scope (irrelevant to surface).
-			continue
-		}
-		// Boundary association: keep AC key only when the association class is in scope.
-		surfaceAssoc := assoc
-		if assoc.AssociationClassKey != nil {
-			if _, acIn := c.classes[*assoc.AssociationClassKey]; !acIn {
-				surfaceAssoc.AssociationClassKey = nil
-			}
-		}
 		c.addAssociationInfo(AssociationInfo{
-			Association:   surfaceAssoc,
+			Association:   *assoc,
 			FromClassKey:  assoc.FromClassKey,
 			ToClassKey:    assoc.ToClassKey,
 			MandatoryTo:   assoc.ToMultiplicity.LowerBound >= 1,
@@ -208,152 +189,11 @@ func (c *ClassCatalog) IsSurfaceUnavailableQuery(queryKey identity.Key) bool {
 
 // buildScopedClassInfo creates catalog metadata for any in-scope class.
 // Stateless classes stay in the catalog for liveness even though they cannot simulate.
-func buildScopedClassInfo(class model_class.Class) *ClassInfo {
-	if len(class.States) == 0 {
-		return &ClassInfo{
-			Class:       class,
-			ClassKey:    class.Key,
-			StateEvents: make(map[string][]EventInfo),
-			DoActions:   make(map[string][]model_state.Action),
-			HasEvents:   len(class.Events) > 0,
-		}
+// buildAssociationInfoFromSchema loads both-ends-in-scope associations from schema.
+func (c *ClassCatalog) buildAssociationInfoFromSchema(sch *schema.Schema) {
+	for _, view := range sch.ScopedAssociations() {
+		c.addAssociationInfo(associationInfoFromView(view))
 	}
-	return buildClassInfo(class)
-}
-
-// buildClassInfo creates pre-computed simulation metadata for a simulatable class.
-func buildClassInfo(class model_class.Class) *ClassInfo {
-	info := &ClassInfo{
-		Class:       class,
-		ClassKey:    class.Key,
-		StateEvents: make(map[string][]EventInfo),
-		DoActions:   make(map[string][]model_state.Action),
-		HasStates:   true,
-	}
-
-	// Build event lookup by key.
-	eventByKey := make(map[identity.Key]model_state.Event)
-	for _, e := range class.Events {
-		eventByKey[e.Key] = e
-	}
-
-	info.CreationEvents = findCreationEvents(class, eventByKey)
-	info.HasEvents = len(class.Events) > 0
-	buildPerStateInfo(info, class, eventByKey)
-
-	return info
-}
-
-// findCreationEvents finds events that trigger creation transitions (FromStateKey==nil).
-func findCreationEvents(class model_class.Class, eventByKey map[identity.Key]model_state.Event) []model_state.Event {
-	creationEventKeys := make(map[identity.Key]bool)
-	for _, t := range class.Transitions {
-		if t.FromStateKey == nil {
-			creationEventKeys[t.EventKey] = true
-		}
-	}
-
-	var events []model_state.Event
-	for ek := range creationEventKeys {
-		if ev, ok := eventByKey[ek]; ok {
-			events = append(events, ev)
-		}
-	}
-
-	sort.Slice(events, func(i, j int) bool {
-		return events[i].Key.String() < events[j].Key.String()
-	})
-	return events
-}
-
-// buildPerStateInfo populates StateEvents and DoActions for each state in the class.
-func buildPerStateInfo(info *ClassInfo, class model_class.Class, eventByKey map[identity.Key]model_state.Event) {
-	for _, s := range class.States {
-		eventInfos := buildStateEventInfos(class, s, eventByKey)
-		if len(eventInfos) > 0 {
-			info.StateEvents[s.Name] = eventInfos
-		}
-
-		doActions := buildDoActions(class, s)
-		if len(doActions) > 0 {
-			info.DoActions[s.Name] = doActions
-		}
-	}
-}
-
-// buildStateEventInfos builds the event infos for transitions from a specific state.
-func buildStateEventInfos(
-	class model_class.Class,
-	s model_state.State,
-	eventByKey map[identity.Key]model_state.Event,
-) []EventInfo {
-	// Group transitions by event key for this state.
-	eventTransitions := make(map[identity.Key][]model_state.Transition)
-	for _, t := range class.Transitions {
-		if t.FromStateKey != nil && *t.FromStateKey == s.Key {
-			eventTransitions[t.EventKey] = append(eventTransitions[t.EventKey], t)
-		}
-	}
-
-	var eventInfos []EventInfo
-	for ek, transitions := range eventTransitions {
-		if ev, ok := eventByKey[ek]; ok {
-			eventInfos = append(eventInfos, EventInfo{
-				Event:       ev,
-				Transitions: transitions,
-			})
-		}
-	}
-
-	sort.Slice(eventInfos, func(i, j int) bool {
-		return eventInfos[i].Event.Key.String() < eventInfos[j].Event.Key.String()
-	})
-	return eventInfos
-}
-
-// buildDoActions builds "do" actions for a specific state.
-func buildDoActions(class model_class.Class, s model_state.State) []model_state.Action {
-	var doActions []model_state.Action
-	for _, sa := range s.Actions {
-		if sa.When == "do" {
-			if action, ok := class.Actions[sa.ActionKey]; ok {
-				doActions = append(doActions, action)
-			}
-		}
-	}
-	if len(doActions) > 0 {
-		sort.Slice(doActions, func(i, j int) bool {
-			return doActions[i].Key.String() < doActions[j].Key.String()
-		})
-	}
-	return doActions
-}
-
-// buildAssociationInfo builds association metadata from schema.
-func (c *ClassCatalog) buildAssociationInfo(sch *schema.Schema) {
-	sch.ForEachAssociation(func(assoc model_class.Association) {
-		if _, fromIn := c.classes[assoc.FromClassKey]; !fromIn {
-			return
-		}
-		if _, toIn := c.classes[assoc.ToClassKey]; !toIn {
-			return
-		}
-		ai := AssociationInfo{
-			Association:   assoc,
-			FromClassKey:  assoc.FromClassKey,
-			ToClassKey:    assoc.ToClassKey,
-			MandatoryTo:   assoc.ToMultiplicity.LowerBound >= 1,
-			MandatoryFrom: assoc.FromMultiplicity.LowerBound >= 1,
-			MinTo:         assoc.ToMultiplicity.LowerBound,
-			MinFrom:       assoc.FromMultiplicity.LowerBound,
-		}
-		c.addAssociationInfo(ai)
-	})
-
-	// Sort associations for determinism.
-	sort.Slice(c.associations, func(i, j int) bool {
-		return c.associations[i].Association.Key.String() < c.associations[j].Association.Key.String()
-	})
 }
 
 func (c *ClassCatalog) addAssociationInfo(ai AssociationInfo) {

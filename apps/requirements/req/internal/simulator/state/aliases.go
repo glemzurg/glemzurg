@@ -26,10 +26,10 @@ type AssociationLink = instance.AssociationLink
 type AssociationLinkTable = instance.AssociationLinkTable
 
 // newSimulationState creates a simulation state with a schema over an empty model.
-// Prefer instance.NewState(schema.New(model)) when surface metadata is available.
+// Prefer instance.NewState(schema.New(model, schema.RunScopeAll())) when surface metadata is available.
 func newSimulationState() *SimulationState {
 	m := core.NewModel("empty", core.ModelDetails{Name: "empty", Details: ""}, "", nil, nil, nil)
-	return instance.NewState(schema.New(&m))
+	return instance.NewState(schema.New(&m, schema.RunScopeAll()))
 }
 
 // NewAssociationLinkTable creates an empty association link table.

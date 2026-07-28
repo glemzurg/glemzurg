@@ -21,11 +21,11 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaTestSuite) TestNew_RequiresModel() {
-	s.Panics(func() { New(nil) })
+	s.Panics(func() { New(nil, RunScopeAll()) })
 }
 
 func (s *SchemaTestSuite) TestNew_EmptyModel() {
-	sch := New(emptyModel())
+	sch := New(emptyModel(), RunScopeAll())
 	s.NotNil(sch)
 	s.Empty(sch.classKeys())
 	s.Empty(sch.associationKeys())
@@ -35,7 +35,7 @@ func (s *SchemaTestSuite) TestNew_EmptyModel() {
 func (s *SchemaTestSuite) TestNew_ClassesAttributesAssociations() {
 	model, orderKey, lineKey, assocKey, attrKey := s.sampleModel()
 
-	sch := New(model)
+	sch := New(model, RunScopeAll())
 
 	s.True(sch.IsClassInScope(orderKey))
 	s.True(sch.IsClassInScope(lineKey))
@@ -60,6 +60,58 @@ func (s *SchemaTestSuite) TestNew_ClassesAttributesAssociations() {
 
 	s.Len(sch.classKeys(), 2)
 	s.Len(sch.associationKeys(), 1)
+
+	// Public triples: in-scope hits.
+	orderPtr, inScope, err := sch.Class(orderKey)
+	s.Require().NoError(err)
+	s.True(inScope)
+	s.Require().NotNil(orderPtr)
+	s.Equal("Order", orderPtr.Name)
+
+	assocPtr, inScope, err := sch.Association(assocKey)
+	s.Require().NoError(err)
+	s.True(inScope)
+	s.Require().NotNil(assocPtr)
+	s.Equal("Lines", assocPtr.Name)
+}
+
+func (s *SchemaTestSuite) TestClass_OutOfScopeAndUnknown() {
+	model, orderKey, lineKey, assocKey, _ := s.sampleModel()
+	// Only Order in scope — Line is out of scope; association is boundary.
+	sch := New(model, NewRunScope([]identity.Key{orderKey}))
+
+	order, inScope, err := sch.Class(orderKey)
+	s.Require().NoError(err)
+	s.True(inScope)
+	s.NotNil(order)
+
+	line, inScope, err := sch.Class(lineKey)
+	s.Require().NoError(err)
+	s.False(inScope)
+	s.Nil(line)
+
+	_, _, err = sch.Class(mustParse(s.T(), "domain/d/subdomain/s/class/missing"))
+	s.Require().Error(err)
+
+	// Both ends must be in scope for Association triple.
+	a, inScope, err := sch.Association(assocKey)
+	s.Require().NoError(err)
+	s.False(inScope)
+	s.Nil(a)
+
+	boundary := sch.BoundaryAssociations()
+	s.Require().Len(boundary, 1)
+	s.Equal(assocKey, boundary[0].Key)
+
+	name, inScope, err := sch.ExtentName(lineKey)
+	s.Require().NoError(err)
+	s.False(inScope)
+	s.NotEmpty(name)
+
+	// AllClassSims only includes in-scope classes.
+	sims := sch.AllClassSims()
+	s.Require().Len(sims, 1)
+	s.Equal("Order", sims[0].Class.Name)
 }
 
 func (s *SchemaTestSuite) sampleModel() (

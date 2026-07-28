@@ -15,14 +15,9 @@ type AssociationInstancePairChecker struct {
 // NewAssociationInstancePairChecker builds instance-pair uniqueness metadata from schema.
 func NewAssociationInstancePairChecker(sch *schema.Schema) *AssociationInstancePairChecker {
 	checker := &AssociationInstancePairChecker{}
-
-	sch.ForEachAssociation(func(assoc model_class.Association) {
-		if !sch.IsClassInScope(assoc.FromClassKey) || !sch.IsClassInScope(assoc.ToClassKey) {
-			return
-		}
-		checker.associations = append(checker.associations, assoc)
-	})
-
+	for _, view := range sch.ScopedAssociations() {
+		checker.associations = append(checker.associations, view.Association)
+	}
 	return checker
 }
 

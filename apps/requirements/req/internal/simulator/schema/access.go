@@ -3,38 +3,17 @@ package schema
 import (
 	"maps"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// ForEachClass calls fn for every in-scope class (model tree type).
-func (s *Schema) ForEachClass(fn func(model_class.Class)) {
-	if s == nil || fn == nil {
-		return
-	}
-	for _, class := range s.classes {
-		fn(class)
-	}
-}
-
-// ForEachAssociation calls fn for every association on the owned model.
-func (s *Schema) ForEachAssociation(fn func(model_class.Association)) {
-	if s == nil || fn == nil {
-		return
-	}
-	for _, assoc := range s.associations {
-		fn(assoc)
-	}
-}
-
-// ModelInvariants returns model-level invariants from the owned model.
+// ModelInvariants returns run-scoped model-level invariants.
 func (s *Schema) ModelInvariants() []model_logic.Logic {
-	if s == nil || s.model == nil {
+	if s == nil {
 		return nil
 	}
-	return s.model.Invariants
+	return s.modelInvariants
 }
 
 // NamedSets returns model-level named sets from the owned model.
@@ -47,16 +26,18 @@ func (s *Schema) NamedSets() map[identity.Key]model_logic.NamedSet {
 	return out
 }
 
-// ForEachUseCase calls fn for every use case on the owned model.
-func (s *Schema) ForEachUseCase(fn func(model_use_case.UseCase)) {
-	if s == nil || s.model == nil || fn == nil {
-		return
+// AllUseCases returns every use case on the owned model.
+func (s *Schema) AllUseCases() []model_use_case.UseCase {
+	if s == nil || s.model == nil {
+		return nil
 	}
+	var out []model_use_case.UseCase
 	for _, domain := range s.model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for _, uc := range subdomain.UseCases {
-				fn(uc)
+				out = append(out, uc)
 			}
 		}
 	}
+	return out
 }

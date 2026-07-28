@@ -56,7 +56,7 @@ func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
 	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/name"), model_class.AttributeDetails{Name: "name", Details: ""}, "string", nil, false, model_class.AttributeAnnotations{}))
 	model, _ := indexTestModel([]model_class.Attribute{attr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 	s.False(checker.hasIndexes())
 
 	simState := instance.NewState(emptySchema())
@@ -68,7 +68,7 @@ func (s *InvariantsSuite) TestIndexCheckerSingleAttrNoConflict() {
 	attr := spanAttr("tail_number", []uint{1})
 	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 	s.True(checker.hasIndexes())
 
 	simState := instance.NewState(emptySchema())
@@ -89,7 +89,7 @@ func (s *InvariantsSuite) TestIndexCheckerSingleAttrConflict() {
 	attr := spanAttr("tail_number", []uint{1})
 	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 
@@ -115,7 +115,7 @@ func (s *InvariantsSuite) TestIndexCheckerCompositeNoConflict() {
 
 	model, classKey := indexTestModel([]model_class.Attribute{emailAttr, tenantAttr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 
@@ -140,7 +140,7 @@ func (s *InvariantsSuite) TestIndexCheckerCompositeConflict() {
 
 	model, classKey := indexTestModel([]model_class.Attribute{emailAttr, tenantAttr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 
@@ -168,7 +168,7 @@ func (s *InvariantsSuite) TestIndexCheckerMultipleIndexes() {
 
 	model, classKey := indexTestModel([]model_class.Attribute{tailAttr, callAttr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 
@@ -194,7 +194,7 @@ func (s *InvariantsSuite) TestIndexCheckerNilValuesDuplicate() {
 	attr := spanAttr("tail_number", []uint{1})
 	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 
@@ -222,7 +222,7 @@ func (s *InvariantsSuite) TestIndexCheckerNullableIndexAllowsOneNullAndDistinctV
 		model_class.AttributeAnnotations{IndexNums: []uint{0}},
 	))
 	model, classKey := indexTestModel([]model_class.Attribute{codeAttr})
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 	simState := instance.NewState(emptySchema())
 
 	nullJurisdiction := object.NewRecord()
@@ -250,7 +250,7 @@ func (s *InvariantsSuite) TestIndexCheckerNullableIndexRejectsSecondNull() {
 		model_class.AttributeAnnotations{IndexNums: []uint{0}},
 	))
 	model, classKey := indexTestModel([]model_class.Attribute{codeAttr})
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 	simState := instance.NewState(emptySchema())
 
 	first := object.NewRecord()
@@ -282,7 +282,7 @@ func (s *InvariantsSuite) TestIndexCheckerUsesAttributeFieldKeyNotDisplayName() 
 	))
 	model, classKey := indexTestModel([]model_class.Attribute{abbrAttr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 	info := checker.GetClassIndexInfo(classKey)
 	s.Require().NotNil(info)
 	s.Require().Len(info.Indexes, 1)
@@ -306,7 +306,7 @@ func (s *InvariantsSuite) TestIndexCheckerMixedTypesNotEqual() {
 	attr := spanAttr("id", []uint{1})
 	model, classKey := indexTestModel([]model_class.Attribute{attr})
 
-	checker := NewIndexUniquenessChecker(schema.New(model))
+	checker := NewIndexUniquenessChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 

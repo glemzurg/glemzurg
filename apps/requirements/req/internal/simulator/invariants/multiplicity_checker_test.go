@@ -38,7 +38,7 @@ func (s *MultiplicityCheckerSuite) TestValidMultiplicities() {
 		assocKey: assoc,
 	}
 
-	checker := NewMultiplicityChecker(schema.New(model))
+	checker := NewMultiplicityChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
@@ -63,7 +63,7 @@ func (s *MultiplicityCheckerSuite) TestLowerBoundViolation() {
 		assocKey: assoc,
 	}
 
-	checker := NewMultiplicityChecker(schema.New(model))
+	checker := NewMultiplicityChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
@@ -89,7 +89,7 @@ func (s *MultiplicityCheckerSuite) TestUpperBoundViolation() {
 		assocKey: assoc,
 	}
 
-	checker := NewMultiplicityChecker(schema.New(model))
+	checker := NewMultiplicityChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
@@ -117,7 +117,7 @@ func (s *MultiplicityCheckerSuite) TestOptionalAssociationNeverViolated() {
 		assocKey: assoc,
 	}
 
-	checker := NewMultiplicityChecker(schema.New(model))
+	checker := NewMultiplicityChecker(schema.New(model, schema.RunScopeAll()))
 
 	simState := instance.NewState(emptySchema())
 	simState.CreateInstance(orderKey, object.NewRecord())

@@ -11,7 +11,7 @@ func emptyModel() *core.Model {
 	return &m
 }
 
-// emptySchema builds schema.New(emptyModel()) for test simulation state.
+// emptySchema builds schema.New(emptyModel(), schema.RunScopeAll()) for test simulation state.
 func emptySchema() *schema.Schema {
-	return schema.New(emptyModel())
+	return schema.New(emptyModel(), schema.RunScopeAll())
 }

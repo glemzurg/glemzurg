@@ -41,22 +41,21 @@ func NewDataTypeChecker(sch *schema.Schema) (*DataTypeChecker, ViolationErrors) 
 		classAttributes: make(map[identity.Key]map[string]*model_class.Attribute),
 	}
 
-	sch.ForEachClass(func(class model_class.Class) {
-		attrMap := make(map[string]*model_class.Attribute)
-
+	attrsByClass := sch.AllAttributesBySubKey()
+	for classKey, attrMap := range attrsByClass {
+		checker.classAttributes[classKey] = attrMap
+		class, inScope, err := sch.Class(classKey)
+		if err != nil || !inScope || class == nil {
+			continue
+		}
 		for _, attr := range class.Attributes {
-			attrCopy := attr // Make a copy to get a stable pointer
-			attrMap[attr.Key.SubKey] = &attrCopy
-
 			if attr.DataType == nil {
 				checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
 					NewUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
 				)
 			}
 		}
-
-		checker.classAttributes[class.Key] = attrMap
-	})
+	}
 
 	return checker, checker.unparsedAttributeDefs
 }

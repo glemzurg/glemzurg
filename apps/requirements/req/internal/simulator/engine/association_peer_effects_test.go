@@ -92,7 +92,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteViolationWhenPeerLacksDele
 func (s *AssociationPeerEffectsSuite) TestSetAddCreatesAssociationClassRow() {
 	tcm := buildAssociationClassPeerEffectModel()
 	simState, ae := s.buildPeerEffectExecutor(tcm.model)
-	registerCatalogAssociations(NewClassCatalog(schema.New(tcm.model)), state.NewBindingsBuilder(simState))
+	registerCatalogAssociations(NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll())), state.NewBindingsBuilder(simState))
 
 	partnerInst := s.createPeerEffectInstance(simState, tcm.partnerKey, "Active")
 	action := peerNewSetAddAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
@@ -112,7 +112,7 @@ func (s *AssociationPeerEffectsSuite) TestSetAddCreatesAssociationClassRow() {
 func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow() {
 	tcm := buildAssociationClassPeerEffectModel()
 	simState, ae := s.buildPeerEffectExecutor(tcm.model)
-	registerCatalogAssociations(NewClassCatalog(schema.New(tcm.model)), state.NewBindingsBuilder(simState))
+	registerCatalogAssociations(NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll())), state.NewBindingsBuilder(simState))
 
 	partnerInst := s.createPeerEffectInstance(simState, tcm.partnerKey, "Active")
 	jurisdictionInst := s.createPeerEffectInstance(simState, tcm.jurisdictionKey, "Active")
@@ -140,7 +140,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow
 func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*instance.State, *actions.ActionExecutor) {
 	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
-	catalog := NewClassCatalog(schema.New(model))
+	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
 	registerCatalogAssociations(catalog, bb)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed

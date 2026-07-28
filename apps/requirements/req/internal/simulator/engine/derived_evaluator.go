@@ -3,13 +3,11 @@ package engine
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -53,57 +51,34 @@ type DerivedAttributeEvaluator struct {
 //   - any DerivationPolicy expression is not parsed (ParseOk() == false)
 //   - any DerivationPolicy expression contains primed variables
 func NewDerivedAttributeEvaluator(sch *schema.Schema, bindingsBuilder *state.BindingsBuilder, evalCtx *evaluator.EvalContext) (*DerivedAttributeEvaluator, error) {
+	if sch == nil {
+		return nil, fmt.Errorf("derived attribute setup: nil schema")
+	}
+	if err := sch.ValidateDerivedAttributes(); err != nil {
+		return nil, err
+	}
 	dae := &DerivedAttributeEvaluator{
 		byClass:         make(map[identity.Key][]derivedAttrInfo),
 		byAttrKey:       make(map[identity.Key]derivedAttrInfo),
 		bindingsBuilder: bindingsBuilder,
 		evalCtx:         evalCtx,
 	}
-
-	var buildErr error
-	sch.ForEachClass(func(class model_class.Class) {
-		if buildErr != nil {
-			return
+	for _, sim := range sch.AllClassSims() {
+		defs, inScope, err := sch.DerivedAttributes(sim.ClassKey)
+		if err != nil || !inScope {
+			continue
 		}
-		for _, attr := range class.Attributes {
-			if attr.DerivationPolicy == nil {
-				continue
-			}
-
-			expr := attr.DerivationPolicy.Spec.Expression
-			if expr == nil {
-				if attr.DerivationPolicy.Spec.Specification == "" {
-					continue // Skip empty specs
-				}
-				buildErr = fmt.Errorf(
-					"class %s attribute %s DerivationPolicy: expression not lowered",
-					class.Name, attr.Name,
-				)
-				return
-			}
-
-			if model_bridge.ContainsAnyPrimedME(expr) {
-				buildErr = fmt.Errorf(
-					"class %s attribute %s DerivationPolicy must not contain primed variables",
-					class.Name, attr.Name,
-				)
-				return
-			}
-
+		for _, def := range defs {
 			info := derivedAttrInfo{
-				attrKey:    attr.Key,
-				attrSubKey: attr.Key.SubKey,
-				attrName:   attr.Name,
-				expression: expr,
+				attrKey:    def.AttrKey,
+				attrSubKey: def.AttrSubKey,
+				attrName:   def.AttrName,
+				expression: def.Expression,
 			}
-			dae.byClass[class.Key] = append(dae.byClass[class.Key], info)
-			dae.byAttrKey[attr.Key] = info
+			dae.byClass[sim.ClassKey] = append(dae.byClass[sim.ClassKey], info)
+			dae.byAttrKey[def.AttrKey] = info
 		}
-	})
-	if buildErr != nil {
-		return nil, buildErr
 	}
-
 	return dae, nil
 }
 

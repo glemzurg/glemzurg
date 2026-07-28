@@ -26,22 +26,17 @@ func NewMultiplicityChecker(sch *schema.Schema) *MultiplicityChecker {
 	checker := &MultiplicityChecker{
 		classAssocs: make(map[identity.Key][]associationBinding),
 	}
-
-	sch.ForEachAssociation(func(assoc model_class.Association) {
-		if !sch.IsClassInScope(assoc.FromClassKey) || !sch.IsClassInScope(assoc.ToClassKey) {
-			return
-		}
+	for _, view := range sch.ScopedAssociations() {
 		binding := associationBinding{
-			association:  assoc,
-			fromClassKey: assoc.FromClassKey,
-			toClassKey:   assoc.ToClassKey,
+			association:  view.Association,
+			fromClassKey: view.FromClassKey,
+			toClassKey:   view.ToClassKey,
 		}
-		checker.classAssocs[assoc.FromClassKey] = append(checker.classAssocs[assoc.FromClassKey], binding)
-		if assoc.FromClassKey != assoc.ToClassKey {
-			checker.classAssocs[assoc.ToClassKey] = append(checker.classAssocs[assoc.ToClassKey], binding)
+		checker.classAssocs[view.FromClassKey] = append(checker.classAssocs[view.FromClassKey], binding)
+		if view.FromClassKey != view.ToClassKey {
+			checker.classAssocs[view.ToClassKey] = append(checker.classAssocs[view.ToClassKey], binding)
 		}
-	})
-
+	}
 	return checker
 }
 

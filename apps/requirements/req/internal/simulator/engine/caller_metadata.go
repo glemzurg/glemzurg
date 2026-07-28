@@ -12,9 +12,9 @@ import (
 // PopulateCallerDataFromSchema records SentBy/CalledBy metadata from use-case
 // scenarios and mandatory association creation chains.
 func PopulateCallerDataFromSchema(sch *schema.Schema, catalog *ClassCatalog) {
-	sch.ForEachUseCase(func(useCase model_use_case.UseCase) {
+	for _, useCase := range sch.AllUseCases() {
 		populateCallerDataFromUseCase(useCase, catalog)
-	})
+	}
 	populateMandatoryAssociationSenders(catalog)
 	populateAssociationSetAddSenders(sch, catalog)
 	populateAssociationSetMapSenders(sch, catalog)
@@ -85,9 +85,9 @@ func recordScenarioQueryCaller(
 
 func populateAssociationSetAddSenders(sch *schema.Schema, catalog *ClassCatalog) {
 	assocByKey := associationMapFromSchema(sch)
-	sch.ForEachClass(func(class model_class.Class) {
-		recordAssociationSetAddSenders(class, assocByKey, catalog)
-	})
+	for _, sim := range sch.AllClassSims() {
+		recordAssociationSetAddSenders(sim.Class, assocByKey, catalog)
+	}
 }
 
 func recordAssociationSetAddSenders(class model_class.Class, associations map[identity.Key]model_class.Association, catalog *ClassCatalog) {
@@ -116,17 +116,13 @@ func recordAssociationSetAddSenders(class model_class.Class, associations map[id
 
 func populateAssociationSetMapSenders(sch *schema.Schema, catalog *ClassCatalog) {
 	assocByKey := associationMapFromSchema(sch)
-	sch.ForEachClass(func(class model_class.Class) {
-		recordAssociationSetMapSenders(class, assocByKey, catalog)
-	})
+	for _, sim := range sch.AllClassSims() {
+		recordAssociationSetMapSenders(sim.Class, assocByKey, catalog)
+	}
 }
 
 func associationMapFromSchema(sch *schema.Schema) map[identity.Key]model_class.Association {
-	out := make(map[identity.Key]model_class.Association)
-	sch.ForEachAssociation(func(assoc model_class.Association) {
-		out[assoc.Key] = assoc
-	})
-	return out
+	return sch.AllAssociationsMap()
 }
 
 func recordAssociationSetMapSenders(class model_class.Class, associations map[identity.Key]model_class.Association, catalog *ClassCatalog) {

@@ -35,22 +35,14 @@ func NewAssociationInvariantChecker(sch *schema.Schema) (*AssociationInvariantCh
 		byFromClass: make(map[identity.Key][]parsedAssociationInvariantItem),
 	}
 
-	var parseErr error
-	sch.ForEachAssociation(func(assoc model_class.Association) {
-		if parseErr != nil || len(assoc.Invariants) == 0 {
-			return
-		}
+	for _, assoc := range sch.AssociationsWithInvariants() {
 		items, err := parseAssociationInvariantItems(assoc)
 		if err != nil {
-			parseErr = err
-			return
+			return nil, err
 		}
 		if len(items) > 0 {
 			checker.byFromClass[assoc.FromClassKey] = append(checker.byFromClass[assoc.FromClassKey], items...)
 		}
-	})
-	if parseErr != nil {
-		return nil, parseErr
 	}
 
 	return checker, nil

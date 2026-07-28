@@ -13,21 +13,13 @@ import (
 // in-scope caller) belong on the simulation surface, like queries.
 func PopulateDerivedAttributeCallersFromSchema(sch *schema.Schema, catalog *ClassCatalog) {
 	derivedKeys := buildDerivedAttributeKeyIndex(sch)
-	sch.ForEachClass(func(class model_class.Class) {
-		recordClassDerivedAttributeCallers(class, derivedKeys, catalog)
-	})
+	for _, sim := range sch.AllClassSims() {
+		recordClassDerivedAttributeCallers(sim.Class, derivedKeys, catalog)
+	}
 }
 
 func buildDerivedAttributeKeyIndex(sch *schema.Schema) map[identity.Key]bool {
-	derivedKeys := make(map[identity.Key]bool)
-	sch.ForEachClass(func(class model_class.Class) {
-		for _, attr := range class.Attributes {
-			if attr.DerivationPolicy != nil {
-				derivedKeys[attr.Key] = true
-			}
-		}
-	})
-	return derivedKeys
+	return sch.DerivedAttributeKeys()
 }
 
 func recordClassDerivedAttributeCallers(

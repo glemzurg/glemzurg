@@ -22,20 +22,12 @@ type AssociationUniquenessChecker struct {
 // NewAssociationUniquenessChecker builds association uniqueness metadata from schema.
 func NewAssociationUniquenessChecker(sch *schema.Schema) *AssociationUniquenessChecker {
 	checker := &AssociationUniquenessChecker{}
-
-	sch.ForEachAssociation(func(assoc model_class.Association) {
-		if assoc.Uniqueness == nil {
-			return
-		}
-		if !sch.IsClassInScope(assoc.FromClassKey) || !sch.IsClassInScope(assoc.ToClassKey) {
-			return
-		}
+	for _, b := range sch.AssociationsWithUniqueness() {
 		checker.bindings = append(checker.bindings, associationUniquenessBinding{
-			association: assoc,
-			uniqueness:  *assoc.Uniqueness,
+			association: b.Association,
+			uniqueness:  b.Uniqueness,
 		})
-	})
-
+	}
 	return checker
 }
 

@@ -56,16 +56,13 @@ func (s *OutOfScopeProtocolSuite) orderItemAssocModel() (
 	return orderClass, orderKey, itemClass, itemKey, assocKey, assoc
 }
 
-func (s *OutOfScopeProtocolSuite) TestRegisterOutOfScopeMetadata_EmptyExtentNames() {
+func (s *OutOfScopeProtocolSuite) TestSchemaScope_EmptyExtentNames() {
 	orderClass, orderKey := testOrderClass()
 	itemClass, itemKey := testItemClass()
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(schema.New(active))
-	s.NotContains(catalog.ClassNameMap(), itemKey)
-
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
+	catalog := NewClassCatalog(sch)
 	names := catalog.ClassNameMap()
 	s.Equal("Order", names[orderKey])
 	s.Equal("Item", names[itemKey])
@@ -73,17 +70,13 @@ func (s *OutOfScopeProtocolSuite) TestRegisterOutOfScopeMetadata_EmptyExtentName
 	s.True(catalog.IsClassInScope(orderKey))
 }
 
-func (s *OutOfScopeProtocolSuite) TestRegisterOutOfScopeMetadata_BoundaryAssociationNavigable() {
+func (s *OutOfScopeProtocolSuite) TestSchemaScope_BoundaryAssociationNavigable() {
 	orderClass, orderKey, itemClass, itemKey, assocKey, assoc := s.orderItemAssocModel()
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	full.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(schema.New(active))
-	_, _, foundBefore := catalog.OutgoingAssociationByTLAField(orderKey, "Lines")
-	s.False(foundBefore)
-
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
+	catalog := NewClassCatalog(sch)
 	gotKey, gotAssoc, found := catalog.OutgoingAssociationByTLAField(orderKey, "Lines")
 	s.True(found)
 	s.Equal(assocKey, gotKey)
@@ -97,9 +90,8 @@ func (s *OutOfScopeProtocolSuite) TestClassExtentBinding_OutOfScopeIsEmptySet() 
 	itemClass, itemKey := testItemClass()
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(schema.New(active))
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
+	catalog := NewClassCatalog(sch)
 
 	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
@@ -154,7 +146,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	// Item uses create event name "create" (testItemClass), not _new — set-add matches PeerCreationEvent.
 	// Use EventNameNew only if peer has that event. testItemClass has "create" as creation event.
 	// MatchAssociationSetAddExpr needs EventCall with peer creation event key.
-	createEvent, ok := NewClassCatalog(schema.New(testModel(classEntry(itemClass, itemKey)))).GetCreationEvent(itemKey)
+	createEvent, ok := NewClassCatalog(schema.New(testModel(classEntry(itemClass, itemKey)), schema.RunScopeAll())).GetCreationEvent(itemKey)
 	s.Require().True(ok)
 	expr := &me.SetOp{
 		Op:   me.SetUnion,
@@ -183,9 +175,8 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 		nil,
 	)
 
-	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(schema.New(active))
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
+	catalog := NewClassCatalog(sch)
 
 	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
@@ -247,9 +238,8 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 		nil,
 	)
 
-	active := testModel(classEntry(itemClass, itemKey))
-	catalog := NewClassCatalog(schema.New(active))
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{itemKey}))
+	catalog := NewClassCatalog(sch)
 
 	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)

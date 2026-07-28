@@ -71,8 +71,8 @@ func TestPopulateCallerDataFromSchema_UseCaseEventSender(t *testing.T) {
 		domainKey: domain,
 	}
 
-	catalog := NewClassCatalog(schema.New(&model))
-	PopulateCallerDataFromSchema(schema.New(&model), catalog)
+	catalog := NewClassCatalog(schema.New(&model, schema.RunScopeAll()))
+	PopulateCallerDataFromSchema(schema.New(&model, schema.RunScopeAll()), catalog)
 
 	cd := catalog.callerData()
 	require.Contains(t, cd.EventSentBy, eventKey)
@@ -81,8 +81,8 @@ func TestPopulateCallerDataFromSchema_UseCaseEventSender(t *testing.T) {
 
 func TestPopulateCallerData_MandatoryAssociationClassDoesNotSendToEndpointCreation(t *testing.T) {
 	tcm := buildAssociationClassTestModel()
-	catalog := NewClassCatalog(schema.New(tcm.model))
-	PopulateCallerDataFromSchema(schema.New(tcm.model), catalog)
+	catalog := NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll()))
+	PopulateCallerDataFromSchema(schema.New(tcm.model, schema.RunScopeAll()), catalog)
 
 	jurisdictionCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")
 	cd := catalog.callerData()
@@ -95,7 +95,7 @@ func TestExternalCreationEvents_FiltersSimulatableSender(t *testing.T) {
 	itemClass, itemKey := testItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	catalog := NewClassCatalog(schema.New(model))
+	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
 	createEventKey := mustKey("domain/d/subdomain/s/class/item/event/create")
 	catalog.setEventSentBy(createEventKey, []identity.Key{orderKey})
 
@@ -180,8 +180,8 @@ func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {
 	model := core.NewModel("fixture-model", core.ModelDetails{Name: "Fixture Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	catalog := NewClassCatalog(schema.New(&model))
-	PopulateCallerDataFromSchema(schema.New(&model), catalog)
+	catalog := NewClassCatalog(schema.New(&model, schema.RunScopeAll()))
+	PopulateCallerDataFromSchema(schema.New(&model, schema.RunScopeAll()), catalog)
 
 	cd := catalog.callerData()
 	require.Contains(t, cd.EventSentBy, eventNewTo)
