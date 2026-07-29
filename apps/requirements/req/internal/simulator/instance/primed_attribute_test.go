@@ -36,8 +36,8 @@ func TestPrimedAndUnprimedAttributeLookup(t *testing.T) {
 	_, ok := inst.GetPrimedAttribute("status")
 	require.False(t, ok)
 
-	inst.SetPrimedAttribute("status", object.NewString("shipped"))
-	inst.SetPrimedAttribute("total", object.NewInteger(150))
+	inst.setPrimedAttribute("status", object.NewString("shipped"))
+	inst.setPrimedAttribute("total", object.NewInteger(150))
 
 	// Primed values are visible via GetPrimedAttribute…
 	primedStatus, ok := inst.GetPrimedAttribute("status")

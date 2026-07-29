@@ -72,7 +72,7 @@ func (i *Instance) GetAttributes() *object.Record {
 }
 
 // Clone creates a deep copy of the class instance, including any primed values.
-func (i *Instance) Clone() *Instance {
+func (i *Instance) clone() *Instance {
 	clone := &Instance{
 		id:         i.id,
 		classKey:   i.classKey,
@@ -95,13 +95,18 @@ func (i *Instance) GetAttribute(name string) object.Object {
 }
 
 // SetAttribute sets the current (unprimed) value of an attribute.
-func (i *Instance) SetAttribute(name string, value object.Object) {
+func (i *Instance) setAttribute(name string, value object.Object) {
 	i.attributes.Set(name, value)
+}
+
+// SetState sets the current state for the instance.
+func (i *Instance) SetState(toStateName string) {
+	i.setAttribute("_state", object.NewString(toStateName))
 }
 
 // SetPrimedAttribute records a next-state (primed) value for an attribute.
 // Current unprimed storage is unchanged so both values remain readable.
-func (i *Instance) SetPrimedAttribute(name string, value object.Object) {
+func (i *Instance) setPrimedAttribute(name string, value object.Object) {
 	if i.primed == nil {
 		i.primed = make(map[string]object.Object)
 	}
@@ -120,7 +125,7 @@ func (i *Instance) GetPrimedAttribute(name string) (object.Object, bool) {
 }
 
 // ClearPrimedAttributes drops all outstanding next-state values.
-func (i *Instance) ClearPrimedAttributes() {
+func (i *Instance) clearPrimedAttributes() {
 	if i == nil {
 		return
 	}

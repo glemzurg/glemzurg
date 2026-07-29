@@ -405,13 +405,13 @@ func (s *StateTestSuite) TestInstance_Clone() {
 		"status": object.NewString("pending"),
 	}))
 
-	cloned := inst.Clone()
+	cloned := inst.clone()
 
 	s.Equal(inst.GetID(), cloned.GetID())
 	s.Equal(inst.GetClassKey(), cloned.GetClassKey())
 	s.Equal("pending", cloned.GetAttribute("status").(*object.String).Value())
 
-	inst.SetAttribute("status", object.NewString("shipped"))
+	inst.setAttribute("status", object.NewString("shipped"))
 	s.Equal("pending", cloned.GetAttribute("status").(*object.String).Value())
 }
 

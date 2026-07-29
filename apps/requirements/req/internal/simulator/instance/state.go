@@ -362,7 +362,7 @@ func (s *State) Clone() *State {
 	clone.nextID = s.nextID
 
 	for id, inst := range s.instances {
-		clone.instances[id] = inst.Clone()
+		clone.instances[id] = inst.clone()
 	}
 
 	maps.Copy(clone.stateMachineStates, s.stateMachineStates)

@@ -1317,7 +1317,7 @@ func (e *ActionExecutor) applyStateTransition(
 	}
 
 	toStateName := stateKeyToName(*chosen.ToStateKey, class)
-	instance.SetAttribute("_state", object.NewString(toStateName))
+	instance.SetState(toStateName)
 	if err := simState.SetStateMachineState(instance.GetID(), *chosen.ToStateKey); err != nil {
 		return "", fmt.Errorf("failed to set state machine state: %w", err)
 	}
