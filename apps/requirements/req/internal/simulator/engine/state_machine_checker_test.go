@@ -24,7 +24,7 @@ func (s *StateMachineCheckerSuite) TestNoStateMachine_NoViolation() {
 	classKey := mustKey("domain/d/subdomain/s/class/empty")
 	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Empty", Details: ""})
 
-	catalog := schema.New(testModel(classEntry(class, classKey)), schema.RunScopeAll()).Catalog()
+	catalog := schema.New(testModel(classEntry(class, classKey)), schema.RunScopeAll())
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
@@ -44,7 +44,7 @@ func (s *StateMachineCheckerSuite) TestStateMachineWithoutNewEvent_Violation() {
 		eventCreateKey: model_state.NewEvent(eventCreateKey, "create", "", nil),
 	})
 
-	catalog := schema.New(testModel(classEntry(class, classKey)), schema.RunScopeAll()).Catalog()
+	catalog := schema.New(testModel(classEntry(class, classKey)), schema.RunScopeAll())
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
@@ -68,7 +68,7 @@ func (s *StateMachineCheckerSuite) TestStateMachineWithNewEvent_NoViolation() {
 		eventNewKey: model_state.NewEvent(eventNewKey, model_state.EventNameNew, "", nil),
 	})
 
-	catalog := schema.New(testModel(classEntry(class, classKey)), schema.RunScopeAll()).Catalog()
+	catalog := schema.New(testModel(classEntry(class, classKey)), schema.RunScopeAll())
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
@@ -95,7 +95,7 @@ func (s *StateMachineCheckerSuite) TestTransitionsOnlyWithoutNewEvent_Violation(
 		),
 	})
 
-	catalog := schema.New(testModel(classEntry(class, classKey)), schema.RunScopeAll()).Catalog()
+	catalog := schema.New(testModel(classEntry(class, classKey)), schema.RunScopeAll())
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()
@@ -118,7 +118,7 @@ func (s *StateMachineCheckerSuite) TestMultipleClasses_OnlyIncompleteReported() 
 	})
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
-	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
+	catalog := schema.New(model, schema.RunScopeAll())
 	checker := NewStateMachineChecker(catalog)
 
 	violations := checker.Check()

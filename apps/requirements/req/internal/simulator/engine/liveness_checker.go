@@ -17,11 +17,11 @@ import (
 // simulation surface. Violations highlight gaps in subdomain logic — classes,
 // associations, events, queries, and actions that the run never exercised.
 type LivenessChecker struct {
-	catalog *schema.Catalog
+	catalog *schema.Schema
 }
 
 // NewLivenessChecker creates a new liveness checker.
-func NewLivenessChecker(catalog *schema.Catalog) *LivenessChecker {
+func NewLivenessChecker(catalog *schema.Schema) *LivenessChecker {
 	return &LivenessChecker{catalog: catalog}
 }
 
@@ -173,7 +173,7 @@ type simulationCoverage struct {
 	actions      map[identity.Key]bool
 }
 
-func collectSimulationCoverage(steps []*SimulationStep, catalog *schema.Catalog, out *simulationCoverage) {
+func collectSimulationCoverage(steps []*SimulationStep, catalog *schema.Schema, out *simulationCoverage) {
 	for _, step := range steps {
 		if step.EventName != "" {
 			out.events[step.EventKey] = true
@@ -194,7 +194,7 @@ func collectSimulationCoverage(steps []*SimulationStep, catalog *schema.Catalog,
 	}
 }
 
-func recordTransitionActionCoverage(step *SimulationStep, catalog *schema.Catalog, out *simulationCoverage) {
+func recordTransitionActionCoverage(step *SimulationStep, catalog *schema.Schema, out *simulationCoverage) {
 	if step.TransitionResult == nil || step.TransitionResult.ActionResult == nil {
 		return
 	}
@@ -406,7 +406,7 @@ func sortedClassQueries(classInfo *schema.ClassSimInfo) []model_state.Query {
 	return queries
 }
 
-func sortedExternalDerivedAttributes(catalog *schema.Catalog, classInfo *schema.ClassSimInfo) []model_class.Attribute {
+func sortedExternalDerivedAttributes(catalog *schema.Schema, classInfo *schema.ClassSimInfo) []model_class.Attribute {
 	attrs := catalog.ExternalDerivedAttributes(classInfo.ClassKey)
 	sort.Slice(attrs, func(i, j int) bool { return attrs[i].Name < attrs[j].Name })
 	return attrs

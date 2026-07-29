@@ -14,7 +14,7 @@ import (
 type surfaceEventSamplingDeps struct {
 	paramGen           *StepParameterGenerator
 	bindingsBuilder    *state.BindingsBuilder
-	catalog            *schema.Catalog
+	catalog            *schema.Schema
 	simulationCoverage *SimulationCoverageTracker
 	rng                *rand.Rand
 }

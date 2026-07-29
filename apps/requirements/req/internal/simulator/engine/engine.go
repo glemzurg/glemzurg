@@ -51,8 +51,8 @@ type SimulationResult struct {
 	// FinalState is the simulation state when the run ended.
 	FinalState *instance.State
 
-	// Catalog holds scoped class metadata for trace rendering (association-class endpoints).
-	Catalog *schema.Catalog
+	// Schema is the static model+catalog for this run (trace AC endpoints, etc.).
+	Schema *schema.Schema
 
 	// SimulationCoverage records parameter simulation specs that produced values during the run.
 	SimulationCoverage *SimulationCoverageTracker
@@ -67,7 +67,7 @@ type SimulationEngine struct {
 	bindingsBuilder *state.BindingsBuilder
 
 	// Components
-	catalog             *schema.Catalog
+	sch                 *schema.Schema
 	stepExecutor        *StepExecutor
 	selector            *ActionSelector
 	invariantChecker    *invariants.InvariantChecker
@@ -94,7 +94,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 		return nil, err
 	}
 
-	catalog := setupSimulationCatalog(sch)
+	catalog := sch // schema owns private catalog indexes
 	catalog.SetSurfaceUnavailableMembers(unavailable)
 
 	core, err := wireSimulationCore(sch, catalog, rng)
@@ -169,7 +169,7 @@ func applySurfaceClassOverlays(sch *schema.Schema, model *core.Model, resolved *
 }
 
 // includeOutOfScopeExtents lets invariant evaluation bind empty sets for OOS class names.
-func includeOutOfScopeExtents(core *simulationCore, catalog *schema.Catalog) {
+func includeOutOfScopeExtents(core *simulationCore, catalog *schema.Schema) {
 	if core == nil || core.checkers == nil || core.checkers.invariantChecker == nil {
 		return
 	}
@@ -178,7 +178,7 @@ func includeOutOfScopeExtents(core *simulationCore, catalog *schema.Catalog) {
 
 func newWiredSimulationEngine(
 	config SimulationConfig,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	core *simulationCore,
 	scopeEntries []surface.ScopeEntry,
 ) *SimulationEngine {
@@ -186,7 +186,7 @@ func newWiredSimulationEngine(
 		config:              config,
 		simState:            core.simState,
 		bindingsBuilder:     core.bindingsBuilder,
-		catalog:             catalog,
+		sch:                 catalog,
 		stepExecutor:        core.stepExecutor,
 		selector:            core.selector,
 		invariantChecker:    core.checkers.invariantChecker,
@@ -211,7 +211,7 @@ type simulationCore struct {
 
 func wireSimulationCore(
 	sch *schema.Schema,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	rng *rand.Rand,
 ) (*simulationCore, error) {
 	evalCtx, err := sch.NewEvalContext()
@@ -260,16 +260,11 @@ func newSimulationRNG(seed int64) *rand.Rand {
 	return rand.New(rand.NewSource(seed)) //nolint:gosec // simulation uses deterministic seeded RNG
 }
 
-func setupSimulationCatalog(sch *schema.Schema) *schema.Catalog {
-	// Catalog (caller graphs, association nav, extents) is built inside schema.New.
-	return sch.Catalog()
-}
-
 // setupState creates simulation state and bindings builder, registers associations,
 // and sets up derived attribute evaluation. sch is the sole static model for the run.
 func setupState(
 	sch *schema.Schema,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	evalCtx *evaluator.EvalContext,
 ) (*instance.State, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
 	simState := instance.NewState(sch)
@@ -332,7 +327,7 @@ func setupCheckers(sch *schema.Schema, evalCtx *evaluator.EvalContext) (*simulat
 	}, nil
 }
 
-func registerCatalogAssociations(catalog *schema.Catalog, bindingsBuilder *state.BindingsBuilder) {
+func registerCatalogAssociations(catalog *schema.Schema, bindingsBuilder *state.BindingsBuilder) {
 	for _, ai := range catalog.AllAssociations() {
 		assoc := ai.Association
 		fromMult := evaluator.Multiplicity{
@@ -374,7 +369,7 @@ type executorSetupDeps struct {
 	bindingsBuilder    *state.BindingsBuilder
 	derivedEval        *DerivedAttributeEvaluator
 	checkers           *simulationCheckers
-	catalog            *schema.Catalog
+	catalog            *schema.Schema
 	rng                *rand.Rand
 	simulationCoverage *SimulationCoverageTracker
 }
@@ -397,7 +392,7 @@ func setupExecutors(deps executorSetupDeps) (*StepExecutor, *ActionSelector, *Li
 func buildActionExecutor(
 	bindingsBuilder *state.BindingsBuilder,
 	checkers *simulationCheckers,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	rng *rand.Rand,
 ) *actions.ActionExecutor {
 	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
@@ -412,14 +407,14 @@ func buildActionExecutor(
 		bindingsBuilder,
 		actions.InvariantRuntimeCheckers{Checker: checkers.invariantChecker, DataType: checkers.dataTypeChecker},
 		structuralCheckers,
-		guardEvaluator, catalog.Schema(), rng,
+		guardEvaluator, catalog, rng,
 	)
 }
 
 // buildStepParameterGenerator creates surface and nested parameter generators from model named sets.
 func buildStepParameterGenerator(
 	bindingsBuilder *state.BindingsBuilder,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 ) (*actions.ParameterBinder, *StepParameterGenerator) {
 	paramBinder := actions.NewParameterBinder()
 	wireParameterLookups(paramBinder, bindingsBuilder, catalog)
@@ -431,7 +426,7 @@ func buildStepParameterGenerator(
 func wireParameterLookups(
 	paramBinder *actions.ParameterBinder,
 	bindingsBuilder *state.BindingsBuilder,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 ) {
 	if paramBinder == nil || catalog == nil {
 		return
@@ -465,7 +460,7 @@ func wirePeerFieldDistinctLookup(
 // an object-of class reference (subkey, display name, or TLA name).
 func objectInstancesForClassRef(
 	simState *instance.State,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	objectClassRef string,
 ) []object.Object {
 	if simState == nil || catalog == nil || objectClassRef == "" {
@@ -506,7 +501,7 @@ func buildStepExecutor(
 	actionExecutor *actions.ActionExecutor,
 	bindingsBuilder *state.BindingsBuilder,
 	derivedEval *DerivedAttributeEvaluator,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	rng *rand.Rand,
 	simulationCoverage *SimulationCoverageTracker,
 ) (*StepExecutor, *ActionSelector, *LivenessChecker) {
@@ -518,7 +513,7 @@ func buildStepExecutor(
 		StateActionExec:    stateActionExec,
 		ChainHandler:       chainHandler,
 		ParamGen:           paramGen,
-		Catalog:            catalog,
+		Schema:             catalog,
 		DerivedEval:        derivedEval,
 		RNG:                rng,
 		SimulationCoverage: simulationCoverage,
@@ -578,7 +573,7 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	}
 
 	result.FinalState = e.simState
-	result.Catalog = e.catalog
+	result.Schema = e.sch
 	result.SimulationCoverage = e.simulationCoverage
 
 	if e.dataTypeChecker != nil {
@@ -602,7 +597,7 @@ func (e *SimulationEngine) State() *instance.State {
 
 // SurfaceReport returns simulation scope plus external drivers for this run.
 func (e *SimulationEngine) SurfaceReport() *SurfaceReport {
-	report := BuildSurfaceReport(e.catalog)
+	report := BuildSurfaceReport(e.sch)
 	report.Scope = append([]surface.ScopeEntry(nil), e.scopeEntries...)
 	return report
 }

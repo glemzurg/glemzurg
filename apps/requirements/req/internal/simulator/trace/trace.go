@@ -83,7 +83,7 @@ func FromResult(result *engine.SimulationResult) *SimulationTrace {
 	}
 
 	if result.FinalState != nil {
-		t.FinalState = buildFinalState(result.FinalState, result.Catalog)
+		t.FinalState = buildFinalState(result.FinalState, result.Schema)
 	}
 
 	return t
@@ -197,7 +197,7 @@ func convertAssociationMaterialization(mat *actions.AssociationMaterialization) 
 }
 
 // buildFinalState creates a FinalState snapshot from SimulationState.
-func buildFinalState(simState *instance.State, catalog *schema.Catalog) *FinalState {
+func buildFinalState(simState *instance.State, catalog *schema.Schema) *FinalState {
 	snap := simState.Snapshot()
 	fs := &FinalState{
 		InstanceCount: snap.InstanceCount,
@@ -221,7 +221,7 @@ func buildFinalState(simState *instance.State, catalog *schema.Catalog) *FinalSt
 func associationEndpointsForSnapshot(
 	inst instance.SnapshotInstance,
 	simState *instance.State,
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 ) *AssociationMaterializationTrace {
 	if catalog == nil || !catalog.IsAssociationClass(inst.ClassKey) {
 		return nil

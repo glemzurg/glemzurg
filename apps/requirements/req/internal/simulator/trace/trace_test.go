@@ -420,7 +420,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 	model.ClassAssociations = map[identity.Key]model_class.Association{hostAssocKey: hostAssoc}
 
-	catalog := schema.New(&model, schema.RunScopeAll()).Catalog()
+	catalog := schema.New(&model, schema.RunScopeAll())
 
 	simState := instance.NewState(emptySchema())
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
@@ -432,7 +432,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 		StepsTaken:        1,
 		TerminationReason: "max_steps",
 		FinalState:        simState,
-		Catalog:           catalog,
+		Schema:            catalog,
 	}
 
 	tr := FromResult(result)

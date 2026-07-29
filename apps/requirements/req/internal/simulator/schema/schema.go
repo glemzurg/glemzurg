@@ -85,7 +85,7 @@ type Schema struct {
 	modelInvariants []model_logic.Logic
 
 	// catalog holds association navigation, caller graphs, and surface-unavailable indexes.
-	catalog *Catalog
+	catalog *catalog
 }
 
 // New takes ownership of model as the sole static model for a run and internalizes scope.

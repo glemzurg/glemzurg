@@ -32,7 +32,7 @@ type StepExecutorDeps struct {
 	StateActionExec    *StateActionExecutor
 	ChainHandler       *CreationChainHandler
 	ParamGen           *StepParameterGenerator
-	Catalog            *schema.Catalog
+	Schema             *schema.Schema
 	DerivedEval        *DerivedAttributeEvaluator
 	RNG                *rand.Rand
 	SimulationCoverage *SimulationCoverageTracker
@@ -45,7 +45,7 @@ type StepExecutor struct {
 	stateActionExec    *StateActionExecutor
 	chainHandler       *CreationChainHandler
 	paramGen           *StepParameterGenerator
-	catalog            *schema.Catalog
+	catalog            *schema.Schema
 	derivedEval        *DerivedAttributeEvaluator
 	rng                *rand.Rand
 	simulationCoverage *SimulationCoverageTracker
@@ -59,7 +59,7 @@ func NewStepExecutor(deps StepExecutorDeps) *StepExecutor {
 		stateActionExec:    deps.StateActionExec,
 		chainHandler:       deps.ChainHandler,
 		paramGen:           deps.ParamGen,
-		catalog:            deps.Catalog,
+		catalog:            deps.Schema,
 		derivedEval:        deps.DerivedEval,
 		rng:                deps.RNG,
 		simulationCoverage: deps.SimulationCoverage,

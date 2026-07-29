@@ -82,7 +82,7 @@ func TestExternalDerivedAttributes_ExcludesSimulatableCaller(t *testing.T) {
 	ledgerClass.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	model := testModel(classEntry(accountClass, accountKey), classEntry(ledgerClass, ledgerKey))
-	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	ext := catalog.ExternalDerivedAttributes(accountKey)
 	assert.Empty(t, ext, "balance referenced by simulatable ledger class should be internal")
@@ -134,7 +134,7 @@ func TestExternalDerivedAttributes_IncludesUncalledDerivedAttribute(t *testing.T
 	})
 
 	model := testModel(classEntry(accountClass, accountKey))
-	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	ext := catalog.ExternalDerivedAttributes(accountKey)
 	require.Len(t, ext, 1)

@@ -11,11 +11,11 @@ import (
 
 // StateMachineChecker reports structural defects in scoped class state machines.
 type StateMachineChecker struct {
-	catalog *schema.Catalog
+	catalog *schema.Schema
 }
 
 // NewStateMachineChecker creates a checker for state machine completeness rules.
-func NewStateMachineChecker(catalog *schema.Catalog) *StateMachineChecker {
+func NewStateMachineChecker(catalog *schema.Schema) *StateMachineChecker {
 	return &StateMachineChecker{catalog: catalog}
 }
 

@@ -88,7 +88,7 @@ type SurfaceAssocCreateNote struct {
 // association classes, and empty scoped classes are omitted so the report matches what
 // a human tester can treat as under test at the top level. Out-of-scope pass-through
 // derived/queries appear under UnavailableMembers, not as drivers.
-func BuildSurfaceReport(catalog *schema.Catalog) *SurfaceReport {
+func BuildSurfaceReport(catalog *schema.Schema) *SurfaceReport {
 	report := &SurfaceReport{
 		Classes: make([]SurfaceClassReport, 0),
 	}
@@ -131,7 +131,7 @@ func surfaceClassHasDrivers(entry SurfaceClassReport) bool {
 	return false
 }
 
-func buildSurfaceClassReport(catalog *schema.Catalog, classInfo *schema.ClassSimInfo) SurfaceClassReport {
+func buildSurfaceClassReport(catalog *schema.Schema, classInfo *schema.ClassSimInfo) SurfaceClassReport {
 	entry := SurfaceClassReport{
 		ClassKey:  classInfo.ClassKey.String(),
 		ClassName: classInfo.Class.Name,
@@ -174,7 +174,7 @@ func buildSurfaceClassReport(catalog *schema.Catalog, classInfo *schema.ClassSim
 	return entry
 }
 
-func appendSurfaceReadEntries(catalog *schema.Catalog, classKey identity.Key, entry *SurfaceClassReport) {
+func appendSurfaceReadEntries(catalog *schema.Schema, classKey identity.Key, entry *SurfaceClassReport) {
 	for _, query := range catalog.ExternalQueries(classKey) {
 		entry.Queries = append(entry.Queries, SurfaceQueryReport{QueryName: query.Name})
 	}
@@ -183,7 +183,7 @@ func appendSurfaceReadEntries(catalog *schema.Catalog, classKey identity.Key, en
 	}
 }
 
-func surfaceClassRole(catalog *schema.Catalog, classInfo *schema.ClassSimInfo) string {
+func surfaceClassRole(catalog *schema.Schema, classInfo *schema.ClassSimInfo) string {
 	switch {
 	case !classInfo.HasStates:
 		return "liveness_only"
@@ -204,7 +204,7 @@ func sortedStateNames(classInfo *schema.ClassSimInfo) []string {
 }
 
 func surfaceEventReport(
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	classKey identity.Key,
 	event model_state.Event,
 	stateName string,

@@ -52,7 +52,7 @@ type PendingAction struct {
 
 // ActionSelector randomly selects the next simulation action.
 type ActionSelector struct {
-	catalog         *schema.Catalog
+	catalog         *schema.Schema
 	derivedEval     *DerivedAttributeEvaluator
 	bindingsBuilder *state.BindingsBuilder
 	paramSampler    *actions.ParameterSampler
@@ -61,7 +61,7 @@ type ActionSelector struct {
 
 // NewActionSelector creates a new action selector.
 func NewActionSelector(
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	derivedEval *DerivedAttributeEvaluator,
 	bindingsBuilder *state.BindingsBuilder,
 	paramSampler *actions.ParameterSampler,
@@ -173,7 +173,7 @@ func (s *ActionSelector) requiredObjectParamClasses(pending PendingAction) []ide
 
 // objectClassKeysFromDataType collects in-catalog class keys referenced by object-of
 // constraints anywhere in a parameter data type tree.
-func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *schema.Catalog) []identity.Key {
+func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *schema.Schema) []identity.Key {
 	if dt == nil || catalog == nil {
 		return nil
 	}
@@ -197,7 +197,7 @@ func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *schema.C
 // resolveObjectClassRef maps an object-of class reference to a catalog class key.
 // Prefers in-scope classes; falls back to full extent names (out-of-scope) so callers
 // can still distinguish "known but OOS" (allow empty) from "unknown".
-func resolveObjectClassRef(objectClassRef string, catalog *schema.Catalog) (identity.Key, bool) {
+func resolveObjectClassRef(objectClassRef string, catalog *schema.Schema) (identity.Key, bool) {
 	if catalog == nil || objectClassRef == "" {
 		return identity.Key{}, false
 	}

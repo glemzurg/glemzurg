@@ -20,7 +20,7 @@ const maxCascadeDepth = 20
 // When a new instance is created, this checks if the class has mandatory outbound
 // associations and triggers creation events on the target classes.
 type CreationChainHandler struct {
-	catalog         *schema.Catalog
+	catalog         *schema.Schema
 	actionExecutor  *actions.ActionExecutor
 	stateActionExec *StateActionExecutor
 	paramBinder     *actions.ParameterBinder
@@ -29,7 +29,7 @@ type CreationChainHandler struct {
 
 // NewCreationChainHandler creates a new creation chain handler.
 func NewCreationChainHandler(
-	catalog *schema.Catalog,
+	catalog *schema.Schema,
 	actionExecutor *actions.ActionExecutor,
 	stateActionExec *StateActionExecutor,
 	paramBinder *actions.ParameterBinder,
