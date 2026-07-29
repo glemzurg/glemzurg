@@ -62,7 +62,7 @@ func (s *OutOfScopeProtocolSuite) TestSchemaScope_EmptyExtentNames() {
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
 	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
-	catalog := NewClassCatalog(sch)
+	catalog := sch.Catalog()
 	names := catalog.ClassNameMap()
 	s.Equal("Order", names[orderKey])
 	s.Equal("Item", names[itemKey])
@@ -76,7 +76,7 @@ func (s *OutOfScopeProtocolSuite) TestSchemaScope_BoundaryAssociationNavigable()
 	full.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
 	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
-	catalog := NewClassCatalog(sch)
+	catalog := sch.Catalog()
 	gotKey, gotAssoc, found := catalog.OutgoingAssociationByTLAField(orderKey, "Lines")
 	s.True(found)
 	s.Equal(assocKey, gotKey)
@@ -91,7 +91,7 @@ func (s *OutOfScopeProtocolSuite) TestClassExtentBinding_OutOfScopeIsEmptySet() 
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
 	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
-	catalog := NewClassCatalog(sch)
+	catalog := sch.Catalog()
 
 	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
@@ -146,7 +146,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	// Item uses create event name "create" (testItemClass), not _new — set-add matches PeerCreationEvent.
 	// Use EventNameNew only if peer has that event. testItemClass has "create" as creation event.
 	// MatchAssociationSetAddExpr needs EventCall with peer creation event key.
-	createEvent, ok := NewClassCatalog(schema.New(testModel(classEntry(itemClass, itemKey)), schema.RunScopeAll())).GetCreationEvent(itemKey)
+	createEvent, ok := schema.New(testModel(classEntry(itemClass, itemKey)), schema.RunScopeAll()).Catalog().GetCreationEvent(itemKey)
 	s.Require().True(ok)
 	expr := &me.SetOp{
 		Op:   me.SetUnion,
@@ -176,7 +176,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	)
 
 	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
-	catalog := NewClassCatalog(sch)
+	catalog := sch.Catalog()
 
 	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
@@ -188,7 +188,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 		actions.InvariantRuntimeCheckers{},
 		nil,
 		actions.NewGuardEvaluator(bb),
-		catalog,
+		catalog.Schema(),
 		rand.New(rand.NewSource(1)), //nolint:gosec
 	)
 	result, err := ae.ExecuteAction(action, orderInst, nil)
@@ -239,7 +239,7 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 	)
 
 	sch := schema.New(full, schema.NewRunScope([]identity.Key{itemKey}))
-	catalog := NewClassCatalog(sch)
+	catalog := sch.Catalog()
 
 	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
@@ -251,7 +251,7 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 		actions.InvariantRuntimeCheckers{},
 		nil,
 		actions.NewGuardEvaluator(bb),
-		catalog,
+		catalog.Schema(),
 		rand.New(rand.NewSource(1)), //nolint:gosec
 	)
 	result, err := ae.ExecuteAction(action, itemInst, nil)

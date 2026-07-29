@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -10,11 +11,11 @@ import (
 
 // StateMachineChecker reports structural defects in scoped class state machines.
 type StateMachineChecker struct {
-	catalog *ClassCatalog
+	catalog *schema.Catalog
 }
 
 // NewStateMachineChecker creates a checker for state machine completeness rules.
-func NewStateMachineChecker(catalog *ClassCatalog) *StateMachineChecker {
+func NewStateMachineChecker(catalog *schema.Catalog) *StateMachineChecker {
 	return &StateMachineChecker{catalog: catalog}
 }
 

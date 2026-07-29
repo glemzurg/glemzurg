@@ -11,6 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -31,7 +32,7 @@ type StepExecutorDeps struct {
 	StateActionExec    *StateActionExecutor
 	ChainHandler       *CreationChainHandler
 	ParamGen           *StepParameterGenerator
-	Catalog            *ClassCatalog
+	Catalog            *schema.Catalog
 	DerivedEval        *DerivedAttributeEvaluator
 	RNG                *rand.Rand
 	SimulationCoverage *SimulationCoverageTracker
@@ -44,7 +45,7 @@ type StepExecutor struct {
 	stateActionExec    *StateActionExecutor
 	chainHandler       *CreationChainHandler
 	paramGen           *StepParameterGenerator
-	catalog            *ClassCatalog
+	catalog            *schema.Catalog
 	derivedEval        *DerivedAttributeEvaluator
 	rng                *rand.Rand
 	simulationCoverage *SimulationCoverageTracker
@@ -414,7 +415,7 @@ func (e *StepExecutor) handleCreationChain(
 }
 
 // getCurrentStateKey looks up the instance's current state key from its _state attribute.
-func getCurrentStateKey(instance *instance.Instance, classInfo *ClassInfo) *identity.Key {
+func getCurrentStateKey(instance *instance.Instance, classInfo *schema.ClassSimInfo) *identity.Key {
 	stateName := getInstanceStateName(instance)
 	if stateName == "" {
 		return nil

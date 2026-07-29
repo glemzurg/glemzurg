@@ -45,7 +45,7 @@ func buildChainTestComponents(
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
 
-	catalog := NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll()))
+	catalog := schema.New(tcm.model, schema.RunScopeAll()).Catalog()
 	handler := NewCreationChainHandler(catalog, ae, sae, pb, rng)
 
 	return handler, simState, ae
@@ -135,11 +135,11 @@ func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	catalog := NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll()))
+	catalog := schema.New(tcm.model, schema.RunScopeAll()).Catalog()
 	multChecker := invariants.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll()))
 	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
 		Multiplicity: multChecker,
-	}, ge, catalog, rng)
+	}, ge, catalog.Schema(), rng)
 	handler := NewCreationChainHandler(catalog, ae, NewStateActionExecutor(ae), actions.NewParameterBinder(), rng)
 
 	orderClass, _ := testOrderClass()
@@ -198,7 +198,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationClassCreatesEndpointAndLink
 	s.Equal("LinkDef", steps[1].ClassName)
 	s.Equal("Add", steps[1].EventName)
 
-	acInfo := NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll())).LookupAssociationClass(tcm.linkDefKey)
+	acInfo := schema.New(tcm.model, schema.RunScopeAll()).Catalog().LookupAssociationClass(tcm.linkDefKey)
 	s.Require().NotNil(acInfo)
 	links := simState.AssociationLinksFromEndpoint(acInfo.HostAssociation.Key, result.InstanceID)
 	s.Len(links, 1)
@@ -207,11 +207,11 @@ func (s *CreationChainSuite) TestMandatoryAssociationClassCreatesEndpointAndLink
 func buildAssociationClassChainComponents(tcm *acTestModel) (*CreationChainHandler, *instance.State, *actions.ActionExecutor) {
 	simState := instance.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
-	registerCatalogAssociations(NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll())), bb)
+	registerCatalogAssociations(schema.New(tcm.model, schema.RunScopeAll()).Catalog(), bb)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
-	catalog := NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll()))
-	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, catalog, rng)
+	catalog := schema.New(tcm.model, schema.RunScopeAll()).Catalog()
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, catalog.Schema(), rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
 	handler := NewCreationChainHandler(catalog, ae, sae, pb, rng)
@@ -264,7 +264,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, nil, ge, nil, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
-	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
+	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
 	handler := NewCreationChainHandler(catalog, ae, sae, pb, rng)
 
 	// Create an Order.

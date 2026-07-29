@@ -21,10 +21,10 @@ func (e *ActionExecutor) peerEventAvailable(
 	instance *instance.Instance,
 	eventKey identity.Key,
 ) bool {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return false
 	}
-	event, ok := e.peerCatalog.PeerEvent(class.Key, eventKey)
+	event, ok := e.sch.PeerEvent(class.Key, eventKey)
 	if !ok {
 		return false
 	}

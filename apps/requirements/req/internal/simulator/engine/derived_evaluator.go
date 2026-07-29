@@ -41,7 +41,7 @@ type DerivedAttributeEvaluator struct {
 	evalCtx *evaluator.EvalContext
 
 	// catalog reports surface-unavailable derived attributes (out-of-scope deps).
-	catalog *ClassCatalog
+	catalog *schema.Catalog
 }
 
 // NewDerivedAttributeEvaluator creates a new evaluator by scanning the model
@@ -79,7 +79,7 @@ func NewDerivedAttributeEvaluator(sch *schema.Schema, bindingsBuilder *state.Bin
 }
 
 // SetCatalog wires surface unavailability checks for derived evaluation.
-func (d *DerivedAttributeEvaluator) SetCatalog(catalog *ClassCatalog) {
+func (d *DerivedAttributeEvaluator) SetCatalog(catalog *schema.Catalog) {
 	d.catalog = catalog
 }
 

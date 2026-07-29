@@ -13,6 +13,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // SimulationTrace is the top-level serializable trace of a simulation run.
@@ -196,7 +197,7 @@ func convertAssociationMaterialization(mat *actions.AssociationMaterialization) 
 }
 
 // buildFinalState creates a FinalState snapshot from SimulationState.
-func buildFinalState(simState *instance.State, catalog *engine.ClassCatalog) *FinalState {
+func buildFinalState(simState *instance.State, catalog *schema.Catalog) *FinalState {
 	snap := simState.Snapshot()
 	fs := &FinalState{
 		InstanceCount: snap.InstanceCount,
@@ -220,7 +221,7 @@ func buildFinalState(simState *instance.State, catalog *engine.ClassCatalog) *Fi
 func associationEndpointsForSnapshot(
 	inst instance.SnapshotInstance,
 	simState *instance.State,
-	catalog *engine.ClassCatalog,
+	catalog *schema.Catalog,
 ) *AssociationMaterializationTrace {
 	if catalog == nil || !catalog.IsAssociationClass(inst.ClassKey) {
 		return nil

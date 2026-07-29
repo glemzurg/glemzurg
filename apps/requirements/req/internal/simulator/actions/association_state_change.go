@@ -18,10 +18,10 @@ func (e *ActionExecutor) tryApplyAssociationStateChangeGuarantee(
 	expr me.Expression,
 	bindings *evaluator.Bindings,
 ) (bool, error) {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return false, nil
 	}
-	assocKey, assoc, reverse, found := e.peerCatalog.AssociationByNavigableTLAField(instance.ClassKey, target)
+	assocKey, assoc, reverse, found := e.sch.AssociationByNavigableTLAField(instance.ClassKey, target)
 	if !found {
 		return false, nil
 	}

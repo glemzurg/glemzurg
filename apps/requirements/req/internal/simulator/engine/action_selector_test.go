@@ -30,7 +30,7 @@ func (s *ActionSelectorSuite) TestCreationEligibleWhenNoInstancesExist() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
+	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
@@ -47,7 +47,7 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
+	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
@@ -106,7 +106,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	})
 
 	model := testModel(classEntry(class, classKey))
-	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
+	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
@@ -121,7 +121,7 @@ func (s *ActionSelectorSuite) TestCreationBlockedUntilObjectParamClassHasInstanc
 	// Owner._new(Peer) requires an in-scope Peer instance before Owner creation is eligible.
 	ownerClass, ownerKey, peerClass, peerKey := ownerWithObjectParamPeer()
 	model := testModel(classEntry(ownerClass, ownerKey), classEntry(peerClass, peerKey))
-	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
+	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
 	selector := NewActionSelector(catalog, nil, state.NewBindingsBuilder(instance.NewState(emptySchema())), nil, rand.New(rand.NewSource(1))) //nolint:gosec
 
 	simState := instance.NewState(emptySchema())
@@ -155,7 +155,7 @@ func (s *ActionSelectorSuite) TestCreationAllowedWhenObjectParamClassOutOfScope(
 	// Catalog has only Owner; Peer is registered as OOS extent — Owner _new always eligible.
 	ownerClass, ownerKey, peerClass, peerKey := ownerWithObjectParamPeer()
 	full := testModel(classEntry(ownerClass, ownerKey), classEntry(peerClass, peerKey))
-	catalog := NewClassCatalog(schema.New(full, schema.NewRunScope([]identity.Key{ownerKey})))
+	catalog := schema.New(full, schema.NewRunScope([]identity.Key{ownerKey})).Catalog()
 	selector := NewActionSelector(catalog, nil, nil, nil, rand.New(rand.NewSource(1))) //nolint:gosec
 
 	simState := instance.NewState(emptySchema())
@@ -249,7 +249,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleOnExistingInstances() {
 	})
 
 	model := testModel(classEntry(class, classKey))
-	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
+	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 

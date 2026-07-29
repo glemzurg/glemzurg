@@ -7,6 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
@@ -87,7 +88,7 @@ type SurfaceAssocCreateNote struct {
 // association classes, and empty scoped classes are omitted so the report matches what
 // a human tester can treat as under test at the top level. Out-of-scope pass-through
 // derived/queries appear under UnavailableMembers, not as drivers.
-func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
+func BuildSurfaceReport(catalog *schema.Catalog) *SurfaceReport {
 	report := &SurfaceReport{
 		Classes: make([]SurfaceClassReport, 0),
 	}
@@ -130,7 +131,7 @@ func surfaceClassHasDrivers(entry SurfaceClassReport) bool {
 	return false
 }
 
-func buildSurfaceClassReport(catalog *ClassCatalog, classInfo *ClassInfo) SurfaceClassReport {
+func buildSurfaceClassReport(catalog *schema.Catalog, classInfo *schema.ClassSimInfo) SurfaceClassReport {
 	entry := SurfaceClassReport{
 		ClassKey:  classInfo.ClassKey.String(),
 		ClassName: classInfo.Class.Name,
@@ -173,7 +174,7 @@ func buildSurfaceClassReport(catalog *ClassCatalog, classInfo *ClassInfo) Surfac
 	return entry
 }
 
-func appendSurfaceReadEntries(catalog *ClassCatalog, classKey identity.Key, entry *SurfaceClassReport) {
+func appendSurfaceReadEntries(catalog *schema.Catalog, classKey identity.Key, entry *SurfaceClassReport) {
 	for _, query := range catalog.ExternalQueries(classKey) {
 		entry.Queries = append(entry.Queries, SurfaceQueryReport{QueryName: query.Name})
 	}
@@ -182,7 +183,7 @@ func appendSurfaceReadEntries(catalog *ClassCatalog, classKey identity.Key, entr
 	}
 }
 
-func surfaceClassRole(catalog *ClassCatalog, classInfo *ClassInfo) string {
+func surfaceClassRole(catalog *schema.Catalog, classInfo *schema.ClassSimInfo) string {
 	switch {
 	case !classInfo.HasStates:
 		return "liveness_only"
@@ -193,7 +194,7 @@ func surfaceClassRole(catalog *ClassCatalog, classInfo *ClassInfo) string {
 	}
 }
 
-func sortedStateNames(classInfo *ClassInfo) []string {
+func sortedStateNames(classInfo *schema.ClassSimInfo) []string {
 	names := make([]string, 0, len(classInfo.Class.States))
 	for _, state := range classInfo.Class.States {
 		names = append(names, state.Name)
@@ -203,7 +204,7 @@ func sortedStateNames(classInfo *ClassInfo) []string {
 }
 
 func surfaceEventReport(
-	catalog *ClassCatalog,
+	catalog *schema.Catalog,
 	classKey identity.Key,
 	event model_state.Event,
 	stateName string,

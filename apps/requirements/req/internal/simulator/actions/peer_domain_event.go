@@ -41,7 +41,7 @@ func (e *ActionExecutor) tryQueuePeerDomainEventSetMap(
 	if !ok {
 		return false, nil
 	}
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return false, fmt.Errorf("peer domain event: peer catalog not configured")
 	}
 
@@ -71,11 +71,11 @@ func (e *ActionExecutor) findPeerEventByKey(eventKey identity.Key) (model_class.
 	if err != nil {
 		return model_class.Class{}, model_state.Event{}, false
 	}
-	toClass, ok := e.peerCatalog.PeerClass(classKey)
+	toClass, ok := e.sch.PeerClass(classKey)
 	if !ok {
 		return model_class.Class{}, model_state.Event{}, false
 	}
-	event, ok := e.peerCatalog.PeerEvent(classKey, eventKey)
+	event, ok := e.sch.PeerEvent(classKey, eventKey)
 	return toClass, event, ok
 }
 

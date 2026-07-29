@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -19,7 +20,7 @@ const maxCascadeDepth = 20
 // When a new instance is created, this checks if the class has mandatory outbound
 // associations and triggers creation events on the target classes.
 type CreationChainHandler struct {
-	catalog         *ClassCatalog
+	catalog         *schema.Catalog
 	actionExecutor  *actions.ActionExecutor
 	stateActionExec *StateActionExecutor
 	paramBinder     *actions.ParameterBinder
@@ -28,7 +29,7 @@ type CreationChainHandler struct {
 
 // NewCreationChainHandler creates a new creation chain handler.
 func NewCreationChainHandler(
-	catalog *ClassCatalog,
+	catalog *schema.Catalog,
 	actionExecutor *actions.ActionExecutor,
 	stateActionExec *StateActionExecutor,
 	paramBinder *actions.ParameterBinder,
@@ -74,7 +75,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 			continue
 		}
 
-		cascadeClassKey := CreationCascadeClassKey(assocInfo)
+		cascadeClassKey := schema.CreationCascadeClassKey(assocInfo)
 		toClassInfo := h.catalog.GetClassInfo(cascadeClassKey)
 		if toClassInfo == nil {
 			continue // Target class has no state machine, skip.
@@ -123,7 +124,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 
 func activeOutboundLinkCount(
 	simState *instance.State,
-	assocInfo AssociationInfo,
+	assocInfo schema.AssociationInfo,
 	fromID instance.ID,
 ) uint {
 	assoc := assocInfo.Association
@@ -134,9 +135,9 @@ func activeOutboundLinkCount(
 }
 
 func (h *CreationChainHandler) createMandatoryInstance(
-	toClassInfo *ClassInfo,
+	toClassInfo *schema.ClassSimInfo,
 	creationEvent *model_state.Event,
-	assocInfo AssociationInfo,
+	assocInfo schema.AssociationInfo,
 	createdInstanceID instance.ID,
 	simState *instance.State,
 	depth int,
@@ -205,9 +206,9 @@ func (h *CreationChainHandler) createMandatoryInstance(
 
 // acCascadeInput groups association-class cascade construction inputs.
 type acCascadeInput struct {
-	acClassInfo    *ClassInfo
+	acClassInfo    *schema.ClassSimInfo
 	creationEvent  *model_state.Event
-	assocInfo      AssociationInfo
+	assocInfo      schema.AssociationInfo
 	fromInstanceID instance.ID
 	simState       *instance.State
 	depth          int
@@ -274,7 +275,7 @@ func (h *CreationChainHandler) createMandatoryAssociationClassInstances(
 }
 
 func (h *CreationChainHandler) ensureActiveToEndpointInstances(
-	toClassInfo *ClassInfo,
+	toClassInfo *schema.ClassSimInfo,
 	creationEvent *model_state.Event,
 	toClassKey identity.Key,
 	minCount uint,
@@ -300,7 +301,7 @@ func (h *CreationChainHandler) ensureActiveToEndpointInstances(
 }
 
 func (h *CreationChainHandler) createPlainEndpointInstance(
-	toClassInfo *ClassInfo,
+	toClassInfo *schema.ClassSimInfo,
 	creationEvent *model_state.Event,
 	simState *instance.State,
 	depth int,
@@ -367,7 +368,7 @@ func (h *CreationChainHandler) createPlainEndpointInstance(
 // sampleCreationEventParams samples creation-event parameters using the creation
 // transition action when present so typed action parameters (spans, etc.) apply.
 func (h *CreationChainHandler) sampleCreationEventParams(
-	classInfo *ClassInfo,
+	classInfo *schema.ClassSimInfo,
 	creationEvent *model_state.Event,
 ) (map[string]object.Object, error) {
 	var actionPtr *model_state.Action
@@ -392,7 +393,7 @@ type instanceEndpointIDs struct {
 
 // acCreateInput groups one association-class instance creation.
 type acCreateInput struct {
-	acClassInfo   *ClassInfo
+	acClassInfo   *schema.ClassSimInfo
 	creationEvent *model_state.Event
 	hostAssocKey  identity.Key
 	endpoints     instanceEndpointIDs

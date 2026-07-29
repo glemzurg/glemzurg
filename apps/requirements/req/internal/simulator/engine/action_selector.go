@@ -14,6 +14,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -32,7 +33,7 @@ func isNamedSetDomainExhaustedError(err error) bool {
 
 // PendingAction describes a single eligible simulation action.
 type PendingAction struct {
-	Class            *ClassInfo
+	Class            *schema.ClassSimInfo
 	Event            *model_state.Event     // Non-nil for event-triggered transitions.
 	Query            *model_state.Query     // Non-nil for query invocations.
 	DerivedAttribute *model_class.Attribute // Non-nil for derived attribute reads.
@@ -51,7 +52,7 @@ type PendingAction struct {
 
 // ActionSelector randomly selects the next simulation action.
 type ActionSelector struct {
-	catalog         *ClassCatalog
+	catalog         *schema.Catalog
 	derivedEval     *DerivedAttributeEvaluator
 	bindingsBuilder *state.BindingsBuilder
 	paramSampler    *actions.ParameterSampler
@@ -60,7 +61,7 @@ type ActionSelector struct {
 
 // NewActionSelector creates a new action selector.
 func NewActionSelector(
-	catalog *ClassCatalog,
+	catalog *schema.Catalog,
 	derivedEval *DerivedAttributeEvaluator,
 	bindingsBuilder *state.BindingsBuilder,
 	paramSampler *actions.ParameterSampler,
@@ -172,7 +173,7 @@ func (s *ActionSelector) requiredObjectParamClasses(pending PendingAction) []ide
 
 // objectClassKeysFromDataType collects in-catalog class keys referenced by object-of
 // constraints anywhere in a parameter data type tree.
-func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *ClassCatalog) []identity.Key {
+func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *schema.Catalog) []identity.Key {
 	if dt == nil || catalog == nil {
 		return nil
 	}
@@ -196,7 +197,7 @@ func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *ClassCat
 // resolveObjectClassRef maps an object-of class reference to a catalog class key.
 // Prefers in-scope classes; falls back to full extent names (out-of-scope) so callers
 // can still distinguish "known but OOS" (allow empty) from "unknown".
-func resolveObjectClassRef(objectClassRef string, catalog *ClassCatalog) (identity.Key, bool) {
+func resolveObjectClassRef(objectClassRef string, catalog *schema.Catalog) (identity.Key, bool) {
 	if catalog == nil || objectClassRef == "" {
 		return identity.Key{}, false
 	}
@@ -370,7 +371,7 @@ func (s *ActionSelector) resolveSurfaceAction(pending PendingAction) *model_stat
 }
 
 func (s *ActionSelector) collectDerivedReadActions(
-	classInfo *ClassInfo,
+	classInfo *schema.ClassSimInfo,
 	instance *instance.Instance,
 ) []PendingAction {
 	externalDerived := s.catalog.ExternalDerivedAttributes(classInfo.ClassKey)

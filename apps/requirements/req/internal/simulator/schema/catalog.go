@@ -1010,3 +1010,11 @@ func (s *Schema) Catalog() *Catalog {
 	s.ensureCatalog()
 	return s.catalog
 }
+
+// Schema returns the parent schema for this catalog (never nil after construction).
+func (c *Catalog) Schema() *Schema {
+	if c == nil {
+		return nil
+	}
+	return c.owner
+}

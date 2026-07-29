@@ -60,10 +60,10 @@ func (e *ActionExecutor) resolveAssociationClassReifyWork(
 	instance *instance.Instance,
 	guar model_logic.Logic,
 ) (work associationClassReifyWork, active bool, err error) {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return work, false, fmt.Errorf("association-class reify on %q: peer catalog not configured", guar.Target)
 	}
-	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByAssociationClassTLAName(instance.ClassKey, guar.Target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByAssociationClassTLAName(instance.ClassKey, guar.Target)
 	if !found {
 		// Host association may be plain after surface strip of the association class.
 		return work, false, nil
@@ -71,7 +71,7 @@ func (e *ActionExecutor) resolveAssociationClassReifyWork(
 	if assoc.AssociationClassKey == nil {
 		return work, false, fmt.Errorf("association-class reify on %q: association has no association class", guar.Target)
 	}
-	acCreationEvent, ok := e.peerCatalog.PeerCreationEvent(*assoc.AssociationClassKey)
+	acCreationEvent, ok := e.sch.PeerCreationEvent(*assoc.AssociationClassKey)
 	if !ok {
 		// Association class present as key but not creatable on this surface — skip reify.
 		return work, false, nil

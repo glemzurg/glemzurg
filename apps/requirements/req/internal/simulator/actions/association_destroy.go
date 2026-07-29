@@ -93,10 +93,10 @@ func (e *ActionExecutor) resolveDestroyGuaranteeTarget(
 	assocRef *me.AssociationRef,
 	eventCall *me.EventCall,
 ) (*associationSetMapTarget, model_state.Event, bool, error) {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return nil, model_state.Event{}, false, fmt.Errorf("destroy guarantee on %q: peer catalog not configured", target)
 	}
-	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.ClassKey, target)
 	if !found {
 		return nil, model_state.Event{}, false, fmt.Errorf(
 			"destroy guarantee on %q: no outgoing association on class %s",
@@ -109,12 +109,12 @@ func (e *ActionExecutor) resolveDestroyGuaranteeTarget(
 			target, assocRef.AssociationKey.String(),
 		)
 	}
-	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
+	toClass, ok := e.sch.PeerClass(assoc.ToClassKey)
 	if !ok {
 		// Peer class outside surface: no peers to destroy — no-op (eventFound=false, no error).
 		return &associationSetMapTarget{assocKey: assocKey, assoc: assoc}, model_state.Event{}, false, nil
 	}
-	event, ok := e.peerCatalog.PeerEvent(assoc.ToClassKey, eventCall.EventKey)
+	event, ok := e.sch.PeerEvent(assoc.ToClassKey, eventCall.EventKey)
 	if !ok {
 		return &associationSetMapTarget{assocKey: assocKey, assoc: assoc, toClass: toClass}, model_state.Event{}, false, nil
 	}

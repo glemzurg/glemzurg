@@ -71,7 +71,7 @@ func TestPopulateCallerDataFromSchema_UseCaseEventSender(t *testing.T) {
 		domainKey: domain,
 	}
 
-	catalog := NewClassCatalog(schema.New(&model, schema.RunScopeAll()))
+	catalog := schema.New(&model, schema.RunScopeAll()).Catalog()
 
 	cd := catalog.CallerData()
 	require.Contains(t, cd.EventSentBy, eventKey)
@@ -80,7 +80,7 @@ func TestPopulateCallerDataFromSchema_UseCaseEventSender(t *testing.T) {
 
 func TestPopulateCallerData_MandatoryAssociationClassDoesNotSendToEndpointCreation(t *testing.T) {
 	tcm := buildAssociationClassTestModel()
-	catalog := NewClassCatalog(schema.New(tcm.model, schema.RunScopeAll()))
+	catalog := schema.New(tcm.model, schema.RunScopeAll()).Catalog()
 
 	jurisdictionCreateKey := mustKey("domain/d/subdomain/s/class/jurisdiction/event/create")
 	cd := catalog.CallerData()
@@ -93,7 +93,7 @@ func TestExternalCreationEvents_FiltersSimulatableSender(t *testing.T) {
 	itemClass, itemKey := testItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	catalog := NewClassCatalog(schema.New(model, schema.RunScopeAll()))
+	catalog := schema.New(model, schema.RunScopeAll()).Catalog()
 	createEventKey := mustKey("domain/d/subdomain/s/class/item/event/create")
 	catalog.SetEventSentBy(createEventKey, []identity.Key{orderKey})
 
@@ -178,7 +178,7 @@ func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {
 	model := core.NewModel("fixture-model", core.ModelDetails{Name: "Fixture Model", Details: ""}, "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	catalog := NewClassCatalog(schema.New(&model, schema.RunScopeAll()))
+	catalog := schema.New(&model, schema.RunScopeAll()).Catalog()
 
 	cd := catalog.CallerData()
 	require.Contains(t, cd.EventSentBy, eventNewTo)

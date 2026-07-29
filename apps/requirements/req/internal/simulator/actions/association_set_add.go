@@ -44,7 +44,7 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	if !e.validateSetAddPeerEvents(ctx, instance, assocTarget, eventCall) {
 		return true, nil
 	}
-	creationEvent, ok := e.peerCatalog.PeerCreationEvent(assocTarget.assoc.ToClassKey)
+	creationEvent, ok := e.sch.PeerCreationEvent(assocTarget.assoc.ToClassKey)
 	if !ok {
 		return false, fmt.Errorf("association set-add guarantee on %q: peer class has no creation event", target)
 	}
@@ -72,10 +72,10 @@ func (e *ActionExecutor) resolveAssociationSetAddTarget(
 	target string,
 	assocRef *me.AssociationRef,
 ) (*associationSetAddTarget, error) {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return nil, fmt.Errorf("association set-add guarantee on %q: peer catalog not configured", target)
 	}
-	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.ClassKey, target)
 	if !found {
 		return nil, fmt.Errorf(
 			"association set-add guarantee on %q: no outgoing association on class %s",
@@ -88,7 +88,7 @@ func (e *ActionExecutor) resolveAssociationSetAddTarget(
 			target, assocRef.AssociationKey.String(),
 		)
 	}
-	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
+	toClass, ok := e.sch.PeerClass(assoc.ToClassKey)
 	if !ok {
 		// Association is known but peer class is outside the simulation surface.
 		return nil, errPeerClassOutOfScope
@@ -107,7 +107,7 @@ func (e *ActionExecutor) validateSetAddPeerEvents(
 		OwnerClassKey:   instance.ClassKey,
 		AssociationName: target.assoc.Name,
 	}
-	creationEvent, ok := e.peerCatalog.PeerCreationEvent(target.assoc.ToClassKey)
+	creationEvent, ok := e.sch.PeerCreationEvent(target.assoc.ToClassKey)
 	if !ok || !e.peerEventAvailable(target.toClass, nil, creationEvent.Key) {
 		e.recordPeerEventUnavailable(ctx, vctx, target.toClass, 0, eventCall.EventKey, eventCall.EventKey.SubKey)
 		return false
@@ -115,11 +115,11 @@ func (e *ActionExecutor) validateSetAddPeerEvents(
 	if target.assoc.AssociationClassKey == nil {
 		return true
 	}
-	acClass, ok := e.peerCatalog.PeerClass(*target.assoc.AssociationClassKey)
+	acClass, ok := e.sch.PeerClass(*target.assoc.AssociationClassKey)
 	if !ok {
 		return true
 	}
-	acCreationEvent, ok := e.peerCatalog.PeerCreationEvent(*target.assoc.AssociationClassKey)
+	acCreationEvent, ok := e.sch.PeerCreationEvent(*target.assoc.AssociationClassKey)
 	if !ok || !e.peerEventAvailable(acClass, nil, acCreationEvent.Key) {
 		e.recordPeerEventUnavailable(ctx, vctx, acClass, 0, eventCall.EventKey, eventCall.EventKey.SubKey)
 		return false
@@ -137,16 +137,16 @@ func (e *ActionExecutor) applyPeerCreations(ctx *ExecutionContext) error {
 }
 
 func (e *ActionExecutor) applyPeerCreation(ctx *ExecutionContext, pc DeferredPeerCreation) error {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return fmt.Errorf("peer creation for association %s: catalog not configured", pc.AssocKey.String())
 	}
-	assoc, found := e.peerCatalog.AssociationByKey(pc.AssocKey)
+	assoc, found := e.sch.AssociationByKey(pc.AssocKey)
 	if !found {
 		return fmt.Errorf("peer creation for association %s: association metadata not found", pc.AssocKey.String())
 	}
 	// Association-class materialization only when the AC class is on the surface catalog.
 	if assoc.AssociationClassKey != nil {
-		if _, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey); ok {
+		if _, ok := e.sch.PeerClass(*assoc.AssociationClassKey); ok {
 			return e.applyAssociationClassPeerCreation(ctx, pc, assoc)
 		}
 	}
@@ -205,13 +205,13 @@ func (e *ActionExecutor) applyAssociationClassPeerCreation(
 }
 
 func (e *ActionExecutor) resolvePeerCreationEvent(pc DeferredPeerCreation) (model_class.Class, model_state.Event, error) {
-	toClass, ok := e.peerCatalog.PeerClass(pc.ToClassKey)
+	toClass, ok := e.sch.PeerClass(pc.ToClassKey)
 	if !ok {
 		return model_class.Class{}, model_state.Event{}, fmt.Errorf(
 			"peer creation for association %s: to-class %s not found", pc.AssocKey.String(), pc.ToClassKey.String(),
 		)
 	}
-	creationEvent, ok := e.peerCatalog.PeerCreationEvent(pc.ToClassKey)
+	creationEvent, ok := e.sch.PeerCreationEvent(pc.ToClassKey)
 	if !ok {
 		return model_class.Class{}, model_state.Event{}, fmt.Errorf(
 			"peer creation for association %s: to-class %s has no creation event",
@@ -228,11 +228,11 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	targetID instance.ID,
 	acParams map[string]object.Object,
 ) error {
-	acClass, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey)
+	acClass, ok := e.sch.PeerClass(*assoc.AssociationClassKey)
 	if !ok {
 		return fmt.Errorf("peer creation for association %s: association class %s not found", pc.AssocKey.String(), assoc.AssociationClassKey.String())
 	}
-	acCreationEvent, ok := e.peerCatalog.PeerCreationEvent(*assoc.AssociationClassKey)
+	acCreationEvent, ok := e.sch.PeerCreationEvent(*assoc.AssociationClassKey)
 	if !ok {
 		vctx := e.ownerViolationContext(pc.FromInstanceID, acClass.Key, assoc.Name)
 		e.recordPeerEventUnavailable(ctx, vctx, acClass, 0, identity.Key{}, model_state.EventNameNew)
@@ -258,7 +258,7 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 // of class C and C has exactly one outgoing association to the created peer class,
 // the simulator also links that parameter instance to the new peer.
 func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, newPeerID instance.ID) error {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return nil
 	}
 	paramSources := make([]object.Object, 0, len(pc.ActionParams)+len(pc.Params))
@@ -285,7 +285,7 @@ func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, ne
 		if fromID == pc.FromInstanceID {
 			continue
 		}
-		candidates := e.peerCatalog.OutgoingAssociationsTo(fromInst.ClassKey, pc.ToClassKey)
+		candidates := e.sch.OutgoingAssociationsTo(fromInst.ClassKey, pc.ToClassKey)
 		if len(candidates) != 1 {
 			// Zero or ambiguous associations: do not invent links.
 			continue

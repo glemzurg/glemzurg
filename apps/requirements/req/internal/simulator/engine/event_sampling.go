@@ -7,13 +7,14 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 type surfaceEventSamplingDeps struct {
 	paramGen           *StepParameterGenerator
 	bindingsBuilder    *state.BindingsBuilder
-	catalog            *ClassCatalog
+	catalog            *schema.Catalog
 	simulationCoverage *SimulationCoverageTracker
 	rng                *rand.Rand
 }

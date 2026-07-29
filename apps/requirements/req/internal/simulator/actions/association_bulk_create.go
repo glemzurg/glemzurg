@@ -72,15 +72,15 @@ func (e *ActionExecutor) matchAssociationBulkCreate(
 		return empty, false
 	}
 	eventCall, ok := setMap.Transform.(*me.EventCall)
-	if !ok || e.peerCatalog == nil || !isSystemCreationEventCall(eventCall) {
+	if !ok || e.sch == nil || !isSystemCreationEventCall(eventCall) {
 		return empty, false
 	}
-	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.ClassKey, target)
 	if !found || assoc.AssociationClassKey == nil {
 		return empty, false
 	}
 	// Materialization always uses the association class creation event from the catalog.
-	acCreationEvent, ok := e.peerCatalog.PeerCreationEvent(*assoc.AssociationClassKey)
+	acCreationEvent, ok := e.sch.PeerCreationEvent(*assoc.AssociationClassKey)
 	if !ok {
 		return empty, false
 	}

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -16,11 +17,11 @@ import (
 // simulation surface. Violations highlight gaps in subdomain logic — classes,
 // associations, events, queries, and actions that the run never exercised.
 type LivenessChecker struct {
-	catalog *ClassCatalog
+	catalog *schema.Catalog
 }
 
 // NewLivenessChecker creates a new liveness checker.
-func NewLivenessChecker(catalog *ClassCatalog) *LivenessChecker {
+func NewLivenessChecker(catalog *schema.Catalog) *LivenessChecker {
 	return &LivenessChecker{catalog: catalog}
 }
 
@@ -172,7 +173,7 @@ type simulationCoverage struct {
 	actions      map[identity.Key]bool
 }
 
-func collectSimulationCoverage(steps []*SimulationStep, catalog *ClassCatalog, out *simulationCoverage) {
+func collectSimulationCoverage(steps []*SimulationStep, catalog *schema.Catalog, out *simulationCoverage) {
 	for _, step := range steps {
 		if step.EventName != "" {
 			out.events[step.EventKey] = true
@@ -193,7 +194,7 @@ func collectSimulationCoverage(steps []*SimulationStep, catalog *ClassCatalog, o
 	}
 }
 
-func recordTransitionActionCoverage(step *SimulationStep, catalog *ClassCatalog, out *simulationCoverage) {
+func recordTransitionActionCoverage(step *SimulationStep, catalog *schema.Catalog, out *simulationCoverage) {
 	if step.TransitionResult == nil || step.TransitionResult.ActionResult == nil {
 		return
 	}
@@ -387,7 +388,7 @@ func (lc *LivenessChecker) checkActionCoverage(result *SimulationResult) invaria
 	return violations
 }
 
-func sortedClassEvents(classInfo *ClassInfo) []model_state.Event {
+func sortedClassEvents(classInfo *schema.ClassSimInfo) []model_state.Event {
 	events := make([]model_state.Event, 0, len(classInfo.Class.Events))
 	for _, event := range classInfo.Class.Events {
 		events = append(events, event)
@@ -396,7 +397,7 @@ func sortedClassEvents(classInfo *ClassInfo) []model_state.Event {
 	return events
 }
 
-func sortedClassQueries(classInfo *ClassInfo) []model_state.Query {
+func sortedClassQueries(classInfo *schema.ClassSimInfo) []model_state.Query {
 	queries := make([]model_state.Query, 0, len(classInfo.Class.Queries))
 	for _, query := range classInfo.Class.Queries {
 		queries = append(queries, query)
@@ -405,13 +406,13 @@ func sortedClassQueries(classInfo *ClassInfo) []model_state.Query {
 	return queries
 }
 
-func sortedExternalDerivedAttributes(catalog *ClassCatalog, classInfo *ClassInfo) []model_class.Attribute {
+func sortedExternalDerivedAttributes(catalog *schema.Catalog, classInfo *schema.ClassSimInfo) []model_class.Attribute {
 	attrs := catalog.ExternalDerivedAttributes(classInfo.ClassKey)
 	sort.Slice(attrs, func(i, j int) bool { return attrs[i].Name < attrs[j].Name })
 	return attrs
 }
 
-func sortedClassActions(classInfo *ClassInfo) []model_state.Action {
+func sortedClassActions(classInfo *schema.ClassSimInfo) []model_state.Action {
 	actions := make([]model_state.Action, 0, len(classInfo.Class.Actions))
 	for _, action := range classInfo.Class.Actions {
 		actions = append(actions, action)
