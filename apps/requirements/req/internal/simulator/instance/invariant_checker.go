@@ -306,7 +306,7 @@ func (c *InvariantChecker) CheckClassInvariants(
 	var violations ViolationErrors
 
 	simState.ForEachInstance(func(inst *Instance) {
-		items, ok := c.parsedClassInvariants[inst.ClassKey]
+		items, ok := c.parsedClassInvariants[inst.GetClassKey()]
 		if !ok {
 			return
 		}
@@ -330,9 +330,8 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 		}
 		result := c.evalExpr(item.expression, bindings)
 		if result.IsError() {
-			violations = append(violations, newClassInvariantViolation(
-				instance.ClassKey, instance.ID, item.originalIndex, item.spec,
-				fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
+			violations = append(violations, classInvariantViolation(
+				instance, item, fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
 			))
 			continue
 		}
@@ -345,26 +344,26 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 		}
 		result := c.evalExpr(item.expression, bindings)
 		if result.Error != nil {
-			violations = append(violations, newClassInvariantViolation(
-				instance.ClassKey, instance.ID, item.originalIndex, item.spec,
-				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
+			violations = append(violations, classInvariantViolation(
+				instance, item, fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
 			continue
 		}
 		if !isTrueBoolean(result.Value) {
-			var message string
-			if result.Value == nil {
-				message = _EXPRESSION_RETURNED_NIL
-			} else {
+			message := _EXPRESSION_RETURNED_NIL
+			if result.Value != nil {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
-			violations = append(violations, newClassInvariantViolation(
-				instance.ClassKey, instance.ID, item.originalIndex, item.spec, message,
-			))
+			violations = append(violations, classInvariantViolation(instance, item, message))
 		}
 	}
 
 	return violations
+}
+
+// classInvariantViolation packages a class-level invariant failure for an instance.
+func classInvariantViolation(inst *Instance, item parsedClassInvariantItem, message string) *ViolationError {
+	return newClassInvariantViolation(inst.GetClassKey(), inst.GetID(), item.originalIndex, item.spec, message)
 }
 
 // CheckAttributeInvariants evaluates attribute invariants for every instance in state.
@@ -376,11 +375,11 @@ func (c *InvariantChecker) CheckAttributeInvariants(
 	var violations ViolationErrors
 
 	simState.ForEachInstance(func(inst *Instance) {
-		items, ok := c.parsedAttributeInvariants[inst.ClassKey]
+		items, ok := c.parsedAttributeInvariants[inst.GetClassKey()]
 		if !ok {
 			return
 		}
-		nullableByFieldKey := attributeNullableByFieldKey(c.classAttributes[inst.ClassKey])
+		nullableByFieldKey := attributeNullableByFieldKey(c.classAttributes[inst.GetClassKey()])
 		violations = append(violations, c.checkAttributeInvariantsForInstance(inst, items, nullableByFieldKey, bindingsBuilder)...)
 	})
 
@@ -437,7 +436,7 @@ func (c *InvariantChecker) evalAttributeInvariantLet(
 	result := c.evalExpr(item.expression, bindings)
 	if result.IsError() {
 		return ViolationErrors{newAttributeInvariantViolation(
-			instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
+			instance.GetClassKey(), instance.GetID(), item.attributeName, item.originalIndex, item.spec,
 			fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
 		)}
 	}
@@ -453,7 +452,7 @@ func (c *InvariantChecker) evalAttributeInvariantAssessment(
 	result := c.evalExpr(item.expression, bindings)
 	if result.Error != nil {
 		return ViolationErrors{newAttributeInvariantViolation(
-			instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
+			instance.GetClassKey(), instance.GetID(), item.attributeName, item.originalIndex, item.spec,
 			fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 		)}
 	}
@@ -461,7 +460,7 @@ func (c *InvariantChecker) evalAttributeInvariantAssessment(
 		return nil
 	}
 	return ViolationErrors{newAttributeInvariantViolation(
-		instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
+		instance.GetClassKey(), instance.GetID(), item.attributeName, item.originalIndex, item.spec,
 		invariantAssessmentFailureMessage(result.Value),
 	)}
 }
@@ -507,7 +506,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 				actionName,
 				g.index,
 				g.spec,
-				instance.ID,
+				instance.GetID(),
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
 			continue
@@ -526,7 +525,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 				actionName,
 				g.index,
 				g.spec,
-				instance.ID,
+				instance.GetID(),
 				message,
 			))
 		}
@@ -569,7 +568,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 				queryName,
 				g.index,
 				g.spec,
-				instance.ID,
+				instance.GetID(),
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
 			continue
@@ -588,7 +587,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 				queryName,
 				g.index,
 				g.spec,
-				instance.ID,
+				instance.GetID(),
 				message,
 			))
 		}

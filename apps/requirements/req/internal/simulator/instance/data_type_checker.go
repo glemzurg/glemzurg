@@ -67,7 +67,7 @@ func (c *DataTypeChecker) CheckInstance(instance *Instance) ViolationErrors {
 		return violations
 	}
 
-	attrs, inScope, err := c.sch.AttributesBySubKey(instance.ClassKey)
+	attrs, inScope, err := c.sch.AttributesBySubKey(instance.GetClassKey())
 	if err != nil || !inScope || len(attrs) == 0 {
 		return violations
 	}
@@ -84,8 +84,8 @@ func (c *DataTypeChecker) CheckInstance(instance *Instance) ViolationErrors {
 		// Check required (non-nullable) constraint
 		if !attrDef.Nullable && object.IsNull(value) {
 			violations = append(violations, newRequiredAttributeViolation(
-				instance.ID,
-				instance.ClassKey,
+				instance.GetID(),
+				instance.GetClassKey(),
 				attrDef.Name,
 			))
 			continue // No point checking other constraints on nil value
@@ -96,14 +96,14 @@ func (c *DataTypeChecker) CheckInstance(instance *Instance) ViolationErrors {
 			continue
 		}
 
-		if defViolations := attributeDefinitionViolations(instance.ID, instance.ClassKey, attrDef); len(defViolations) > 0 {
+		if defViolations := attributeDefinitionViolations(instance.GetID(), instance.GetClassKey(), attrDef); len(defViolations) > 0 {
 			violations = append(violations, defViolations...)
 			continue
 		}
 
 		typeViolations := c.checkDataTypeConstraints(
-			instance.ID,
-			instance.ClassKey,
+			instance.GetID(),
+			instance.GetClassKey(),
 			attrDef.Name,
 			value,
 			attrDef.DataType,

@@ -8,10 +8,10 @@ import (
 // Instance is one live class instance in a simulation run.
 // Construct via [State.CreateInstance]; tests may use [NewInstance].
 //
-// Accessors [Instance.GetID], [Instance.GetClassKey], and [Instance.GetAttributes]
-// are preferred. Fields stay exported because the package is named instance: methods
-// named ID/ClassKey would collide with package-qualified types (instance.ID) at
-// call sites that also name the variable instance.
+// Use accessors [Instance.GetID], [Instance.GetClassKey], and [Instance.GetAttributes].
+// Fields are unexported; the package name instance would make methods named ID/ClassKey
+// collide with package-qualified types (instance.ID) at call sites that also name the
+// variable instance, so Get* names are used instead.
 //
 // Attribute mutability: update attributes via [Instance.SetAttribute] or
 // [State.UpdateInstanceField]. The attribute record pointer is shared with the

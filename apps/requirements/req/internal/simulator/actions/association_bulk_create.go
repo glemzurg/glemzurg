@@ -75,7 +75,7 @@ func (e *ActionExecutor) matchAssociationBulkCreate(
 	if !ok || e.sch == nil || !isSystemCreationEventCall(eventCall) {
 		return empty, false
 	}
-	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.GetClassKey(), target)
 	if !found || assoc.AssociationClassKey == nil {
 		return empty, false
 	}
@@ -166,7 +166,7 @@ func queueOneBulkCreateRow(env bulkCreateQueueEnv, elem object.Object) error {
 	}
 	toIDCopy := toID
 	env.ctx.AddPeerCreation(DeferredPeerCreation{
-		FromInstanceID: env.instance.ID,
+		FromInstanceID: env.instance.GetID(),
 		AssocKey:       env.plan.assocKey,
 		ToClassKey:     env.plan.assoc.ToClassKey,
 		ToInstanceID:   &toIDCopy,
@@ -221,7 +221,7 @@ func liveInstanceIDFromExtent(
 		return 0, false
 	}
 	inst := simState.GetInstance(id)
-	if inst == nil || inst.ClassKey != toClassKey {
+	if inst == nil || inst.GetClassKey() != toClassKey {
 		return 0, false
 	}
 	return id, true
@@ -234,10 +234,10 @@ func matchLiveInstanceByData(
 ) (instance.ID, bool) {
 	data := state.DataFromExtentElement(rec)
 	for _, inst := range simState.InstancesByClass(toClassKey) {
-		if inst.Attributes == rec || inst.Attributes == data ||
-			(data != nil && inst.Attributes.Equals(data)) ||
-			inst.Attributes.Equals(rec) {
-			return inst.ID, true
+		if inst.GetAttributes() == rec || inst.GetAttributes() == data ||
+			(data != nil && inst.GetAttributes().Equals(data)) ||
+			inst.GetAttributes().Equals(rec) {
+			return inst.GetID(), true
 		}
 	}
 	return 0, false

@@ -44,7 +44,7 @@ func (c *MultiplicityChecker) CheckInstance(
 		return nil
 	}
 
-	views, inScope, err := c.sch.AssociationsForClass(instance.ClassKey)
+	views, inScope, err := c.sch.AssociationsForClass(instance.GetClassKey())
 	if err != nil || !inScope || len(views) == 0 {
 		return nil
 	}
@@ -57,12 +57,12 @@ func (c *MultiplicityChecker) CheckInstance(
 			fromClassKey: view.FromClassKey,
 			toClassKey:   view.ToClassKey,
 		}
-		if binding.fromClassKey == instance.ClassKey {
-			count := c.countActiveForwardLinks(instance.ID, binding, simState)
+		if binding.fromClassKey == instance.GetClassKey() {
+			count := c.countActiveForwardLinks(instance.GetID(), binding, simState)
 			if msg := checkMultiplicityBounds(count, binding.association.ToMultiplicity.LowerBound, binding.association.ToMultiplicity.HigherBound); msg != "" {
 				violations = append(violations, newMultiplicityViolation(MultiplicityViolationParams{
-					InstanceID:      instance.ID,
-					ClassKey:        instance.ClassKey,
+					InstanceID:      instance.GetID(),
+					ClassKey:        instance.GetClassKey(),
 					AssociationName: binding.association.Name,
 					Direction:       "forward",
 					ActualCount:     count,
@@ -73,12 +73,12 @@ func (c *MultiplicityChecker) CheckInstance(
 			}
 		}
 
-		if binding.toClassKey == instance.ClassKey {
-			count := c.countActiveReverseLinks(instance.ID, binding, simState)
+		if binding.toClassKey == instance.GetClassKey() {
+			count := c.countActiveReverseLinks(instance.GetID(), binding, simState)
 			if msg := checkMultiplicityBounds(count, binding.association.FromMultiplicity.LowerBound, binding.association.FromMultiplicity.HigherBound); msg != "" {
 				violations = append(violations, newMultiplicityViolation(MultiplicityViolationParams{
-					InstanceID:      instance.ID,
-					ClassKey:        instance.ClassKey,
+					InstanceID:      instance.GetID(),
+					ClassKey:        instance.GetClassKey(),
 					AssociationName: binding.association.Name,
 					Direction:       "reverse",
 					ActualCount:     count,

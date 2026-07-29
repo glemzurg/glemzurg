@@ -94,7 +94,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	s.Empty(violations)
 
 	// The exit action should have incremented exit_count.
-	updated := simState.GetInstance(instance.ID)
+	updated := simState.GetInstance(instance.GetID())
 	s.Equal("1", updated.GetAttribute("exit_count").Inspect())
 }
 
@@ -140,7 +140,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	s.Require().NoError(err)
 	s.Empty(violations)
 
-	updated := simState.GetInstance(instance.ID)
+	updated := simState.GetInstance(instance.GetID())
 	s.Equal("1", updated.GetAttribute("entry_count").Inspect())
 }
 

@@ -425,7 +425,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	jurisdiction := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	linkInst := simState.CreateInstance(linkDefKey, object.NewRecord())
-	s.Require().NoError(simState.AddAssociationLink(hostAssocKey, partner.ID, jurisdiction.ID, linkInst.ID))
+	s.Require().NoError(simState.AddAssociationLink(hostAssocKey, partner.GetID(), jurisdiction.GetID(), linkInst.GetID()))
 
 	result := &engine.SimulationResult{
 		StepsTaken:        1,
@@ -440,7 +440,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	s.Require().NotNil(tr.FinalState)
 	var linkRow *InstanceState
 	for i := range tr.FinalState.Instances {
-		if tr.FinalState.Instances[i].InstanceID == uint64(linkInst.ID) {
+		if tr.FinalState.Instances[i].InstanceID == uint64(linkInst.GetID()) {
 			linkRow = &tr.FinalState.Instances[i]
 			break
 		}
@@ -449,9 +449,9 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	s.Require().NotNil(linkRow.Endpoints)
 	s.Equal("Configures", linkRow.Endpoints.AssociationName)
 	s.Equal("Partner", linkRow.Endpoints.FromClassName)
-	s.Equal(uint64(partner.ID), linkRow.Endpoints.FromInstanceID)
+	s.Equal(uint64(partner.GetID()), linkRow.Endpoints.FromInstanceID)
 	s.Equal("Jurisdiction", linkRow.Endpoints.ToClassName)
-	s.Equal(uint64(jurisdiction.ID), linkRow.Endpoints.ToInstanceID)
+	s.Equal(uint64(jurisdiction.GetID()), linkRow.Endpoints.ToInstanceID)
 	s.Contains(text, "Configures (Partner#")
 	s.Contains(text, "-> Jurisdiction#")
 }

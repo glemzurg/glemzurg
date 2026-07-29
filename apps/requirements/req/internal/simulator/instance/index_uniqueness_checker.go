@@ -43,7 +43,7 @@ func (c *IndexUniquenessChecker) CheckState(simState *State) ViolationErrors {
 	// Group live instances by class, then ask schema for that class's indexes only.
 	byClass := make(map[identity.Key][]*Instance)
 	simState.ForEachInstance(func(inst *Instance) {
-		byClass[inst.ClassKey] = append(byClass[inst.ClassKey], inst)
+		byClass[inst.GetClassKey()] = append(byClass[inst.GetClassKey()], inst)
 	})
 	for classKey, instances := range byClass {
 		if len(instances) < 2 {
@@ -85,14 +85,14 @@ func (c *IndexUniquenessChecker) CheckClassInstances(
 
 				violations = append(violations, newIndexUniquenessViolation(
 					existingID,
-					instance.ID,
+					instance.GetID(),
 					classKey,
 					indexDef.IndexNum,
 					indexDef.AttrNames,
 					tupleValues,
 				))
 			} else {
-				seen[tupleKey] = instance.ID
+				seen[tupleKey] = instance.GetID()
 			}
 		}
 	}

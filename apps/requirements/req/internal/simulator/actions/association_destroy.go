@@ -62,7 +62,7 @@ func (e *ActionExecutor) prepareDestroyGuaranteeWork(
 	if err != nil {
 		return nil, false, err
 	}
-	removed := ctx.AssociationRemovedPeers(instance.ID, mapTarget.assocKey)
+	removed := ctx.AssociationRemovedPeers(instance.GetID(), mapTarget.assocKey)
 	if !eventFound {
 		if len(removed) > 0 {
 			e.recordDestroyGuaranteeUnavailable(ctx, instance, destroyGuaranteeUnavailableWork{
@@ -96,11 +96,11 @@ func (e *ActionExecutor) resolveDestroyGuaranteeTarget(
 	if e.sch == nil {
 		return nil, model_state.Event{}, false, fmt.Errorf("destroy guarantee on %q: peer catalog not configured", target)
 	}
-	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.GetClassKey(), target)
 	if !found {
 		return nil, model_state.Event{}, false, fmt.Errorf(
 			"destroy guarantee on %q: no outgoing association on class %s",
-			target, instance.ClassKey.String(),
+			target, instance.GetClassKey().String(),
 		)
 	}
 	if assocRef.AssociationKey != assocKey {
@@ -145,12 +145,25 @@ func (e *ActionExecutor) queueDestroyGuaranteePeer(
 	peerID instance.ID,
 	peerInstance *instance.Instance,
 ) {
-	if !destroyGuaranteeSelectsPeer(work.selection, peerInstance.Attributes, bindings) {
+	peerAttrs := peerInstance.GetAttributes()
+	if !destroyGuaranteeSelectsPeer(work.selection, peerAttrs, bindings) {
 		return
 	}
-	ctx.MarkAssociationDestroyCandidate(instance.ID, work.mapTarget.assocKey, peerID)
+	e.queueSelectedDestroyPeer(ctx, instance, work, bindings, peerID, peerAttrs)
+}
+
+// queueSelectedDestroyPeer records a destroy candidate and queues the peer event update.
+func (e *ActionExecutor) queueSelectedDestroyPeer(
+	ctx *ExecutionContext,
+	instance *instance.Instance,
+	work *destroyGuaranteeWork,
+	bindings *evaluator.Bindings,
+	peerID instance.ID,
+	peerAttrs *object.Record,
+) {
+	ctx.MarkAssociationDestroyCandidate(instance.GetID(), work.mapTarget.assocKey, peerID)
 	childBindings := evaluator.NewEnclosedBindings(bindings)
-	childBindings.Set(work.selection.Variable, peerInstance.Attributes, evaluator.NamespaceLocal)
+	childBindings.Set(work.selection.Variable, peerAttrs, evaluator.NamespaceLocal)
 	params, err := resolvePositionalEventCallParams(
 		destroyEventCallBoundVariable(work.eventCall),
 		work.event.ParameterNames,
@@ -182,18 +195,18 @@ func (e *ActionExecutor) recordDestroyGuaranteeUnavailable(
 ) {
 	simState := e.bindingsBuilder.State()
 	vctx := peerEventViolationContext{
-		OwnerInstanceID: instance.ID,
-		OwnerClassKey:   instance.ClassKey,
+		OwnerInstanceID: instance.GetID(),
+		OwnerClassKey:   instance.GetClassKey(),
 		AssociationName: work.mapTarget.assoc.Name,
 	}
 	eventName := work.eventCall.EventKey.SubKey
 	recorded := false
 	for _, peerID := range work.removed {
 		peerInstance := simState.GetInstance(peerID)
-		if peerInstance == nil || !destroyGuaranteeSelectsPeer(work.selection, peerInstance.Attributes, work.bindings) {
+		if peerInstance == nil || !destroyGuaranteeSelectsPeer(work.selection, peerInstance.GetAttributes(), work.bindings) {
 			continue
 		}
-		ctx.MarkAssociationDestroyCandidate(instance.ID, work.mapTarget.assocKey, peerID)
+		ctx.MarkAssociationDestroyCandidate(instance.GetID(), work.mapTarget.assocKey, peerID)
 		e.recordPeerEventUnavailable(ctx, vctx, work.mapTarget.toClass, peerID, work.eventCall.EventKey, eventName)
 		recorded = true
 	}
@@ -237,8 +250,8 @@ func (e *ActionExecutor) queueDestroyPeerUpdate(
 	peerID instance.ID,
 ) {
 	vctx := peerEventViolationContext{
-		OwnerInstanceID: instance.ID,
-		OwnerClassKey:   instance.ClassKey,
+		OwnerInstanceID: instance.GetID(),
+		OwnerClassKey:   instance.GetClassKey(),
 		AssociationName: mapTarget.assoc.Name,
 	}
 	peerInstance := e.bindingsBuilder.State().GetInstance(peerID)
@@ -250,7 +263,7 @@ func (e *ActionExecutor) queueDestroyPeerUpdate(
 		return
 	}
 	ctx.AddPeerUpdate(DeferredPeerUpdate{
-		OwnerInstanceID: instance.ID,
+		OwnerInstanceID: instance.GetID(),
 		AssocKey:        mapTarget.assocKey,
 		PeerInstanceID:  peerID,
 		ToClassKey:      mapTarget.assoc.ToClassKey,

@@ -54,8 +54,8 @@ func (s *AssociationInstancePairCheckerSuite) TestDistinctPairsNoViolation() {
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item1 := simState.CreateInstance(itemKey, object.NewRecord())
 	item2 := simState.CreateInstance(itemKey, object.NewRecord())
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, item1.ID))
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, item2.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), item1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), item2.GetID()))
 
 	violations := checker.CheckState(simState)
 	s.Empty(violations)

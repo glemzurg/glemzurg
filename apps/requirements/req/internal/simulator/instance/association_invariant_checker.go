@@ -90,7 +90,7 @@ func (c *AssociationInvariantChecker) CheckInstance(
 	instance *Instance,
 	bindingsBuilder ExpressionBindings,
 ) ViolationErrors {
-	items, ok := c.byFromClass[instance.ClassKey]
+	items, ok := c.byFromClass[instance.GetClassKey()]
 	if !ok {
 		return nil
 	}
@@ -123,7 +123,7 @@ func evalAssociationInvariantLet(
 	result := evaluator.Eval(item.expression, bindings)
 	if result.IsError() {
 		return ViolationErrors{newAssociationInvariantViolation(
-			item.associationKey, item.associationName, instance.ID, item.originalIndex, item.spec,
+			item.associationKey, item.associationName, instance.GetID(), item.originalIndex, item.spec,
 			fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
 		)}
 	}
@@ -139,7 +139,7 @@ func evalAssociationInvariantAssessment(
 	result := evaluator.Eval(item.expression, bindings)
 	if result.Error != nil {
 		return ViolationErrors{newAssociationInvariantViolation(
-			item.associationKey, item.associationName, instance.ID, item.originalIndex, item.spec,
+			item.associationKey, item.associationName, instance.GetID(), item.originalIndex, item.spec,
 			fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 		)}
 	}
@@ -147,7 +147,7 @@ func evalAssociationInvariantAssessment(
 		return nil
 	}
 	return ViolationErrors{newAssociationInvariantViolation(
-		item.associationKey, item.associationName, instance.ID, item.originalIndex, item.spec,
+		item.associationKey, item.associationName, instance.GetID(), item.originalIndex, item.spec,
 		invariantAssessmentFailureMessage(result.Value),
 	)}
 }

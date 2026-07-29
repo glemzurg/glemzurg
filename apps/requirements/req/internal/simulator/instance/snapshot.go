@@ -41,8 +41,8 @@ func (s *State) Snapshot() Snapshot {
 			}
 		}
 		out.Instances = append(out.Instances, SnapshotInstance{
-			ID:         inst.ID,
-			ClassKey:   inst.ClassKey,
+			ID:         inst.GetID(),
+			ClassKey:   inst.GetClassKey(),
 			Attributes: attrs,
 		})
 	}

@@ -87,7 +87,7 @@ func (d *DerivedAttributeEvaluator) SetCatalog(catalog *schema.Schema) {
 // bindings inject only values that can be computed on this surface.
 // Keys in the returned map are attribute SubKeys so they match stored fields and self.field access.
 func (d *DerivedAttributeEvaluator) ResolveDerived(instance *siminst.Instance) (map[string]object.Object, error) {
-	infos := d.byClass[instance.ClassKey]
+	infos := d.byClass[instance.GetClassKey()]
 	if len(infos) == 0 {
 		return make(map[string]object.Object), nil
 	}
@@ -120,7 +120,7 @@ func (d *DerivedAttributeEvaluator) ResolveDerivedAttribute(
 ) (object.Object, siminst.ViolationErrors, error) {
 	if d.catalog != nil {
 		if v := siminst.CheckSurfaceMemberAccess(
-			d.catalog, siminst.SurfaceMemberDerived, attrKey, instance.ClassKey, instance.ID, attrName,
+			d.catalog, siminst.SurfaceMemberDerived, attrKey, instance.GetClassKey(), instance.GetID(), attrName,
 		); v != nil {
 			return nil, siminst.ViolationErrors{v}, nil
 		}
@@ -129,7 +129,7 @@ func (d *DerivedAttributeEvaluator) ResolveDerivedAttribute(
 	info, ok := d.byAttrKey[attrKey]
 	if !ok {
 		// Fall back to name match within the class (tests may use synthetic keys).
-		for _, candidate := range d.byClass[instance.ClassKey] {
+		for _, candidate := range d.byClass[instance.GetClassKey()] {
 			if candidate.attrName == attrName {
 				info = candidate
 				ok = true

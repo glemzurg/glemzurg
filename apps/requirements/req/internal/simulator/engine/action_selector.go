@@ -225,7 +225,7 @@ func (s *ActionSelector) collectEligibleActions(simState *siminst.State) []Pendi
 
 		instances := simState.InstancesByClass(classInfo.ClassKey)
 		sort.Slice(instances, func(i, j int) bool {
-			return instances[i].ID < instances[j].ID
+			return instances[i].GetID() < instances[j].GetID()
 		})
 		for _, instance := range instances {
 			currentState := getInstanceStateName(instance)
@@ -327,7 +327,7 @@ func (s *ActionSelector) namedSetSampleDomainsAvailable(pending PendingAction) b
 	}
 	params := action.Parameters
 	if pending.Instance != nil {
-		s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.ID)
+		s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.GetID())
 		defer s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(0)
 	}
 	owner := actions.ParameterOwnerFromAction(*action)

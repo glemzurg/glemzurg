@@ -474,7 +474,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerUnparsedAttributeOnInstance() {
 	instanceViolations := checker.CheckInstance(instance)
 	s.Require().Len(instanceViolations, 1)
 	s.Equal(ViolationTypeUnparsedDataType, instanceViolations[0].Type)
-	s.Equal(instance.ID, instanceViolations[0].InstanceID)
+	s.Equal(instance.GetID(), instanceViolations[0].InstanceID)
 }
 
 func (s *InvariantsSuite) TestCheckParameterTypeSpecsUnparsedRules() {

@@ -409,7 +409,7 @@ func wirePeerFieldDistinctLookup(
 		var values []object.Object
 		excludeID := paramSampler.PeerFieldDistinctExcludeInstanceID()
 		for _, inst := range bindingsBuilder.State().InstancesByClass(classKey) {
-			if excludeID != 0 && inst.ID == excludeID {
+			if excludeID != 0 && inst.GetID() == excludeID {
 				continue
 			}
 			values = append(values, inst.GetAttribute(fieldSubKey))
@@ -434,7 +434,7 @@ func objectInstancesForClassRef(
 	}
 	var out []object.Object
 	for _, inst := range simState.InstancesByClass(classKey) {
-		out = append(out, state.ClassExtentElement(inst.ID, inst.Attributes))
+		out = append(out, state.ClassExtentElement(inst.GetID(), inst.GetAttributes()))
 	}
 	return out
 }

@@ -169,33 +169,81 @@ func (e *ActionExecutor) ExecuteAction(
 	instance *instance.Instance,
 	parameters map[string]object.Object,
 ) (*ActionResult, error) {
+	return e.runActionExecution(action, instance, parameters)
+}
+
+// runActionExecution owns the peer-phase → requires → state-phase → result pipeline.
+func (e *ActionExecutor) runActionExecution(
+	action model_state.Action,
+	instance *instance.Instance,
+	parameters map[string]object.Object,
+) (*ActionResult, error) {
 	ctx := NewExecutionContext()
-	paramViolations := checkParameterTypeSpecs(
-		action.Parameters, action.Key, action.Name, "action", instance.ID, instance.ClassKey,
-	)
+	paramViolations := actionParameterTypeSpecViolations(action, instance)
 
 	// Phase A: requires + peer-effect guarantees (peer events that may create structure).
 	if err := e.executeActionInContext(ctx, action, instance, parameters, guaranteePhasePeer); err != nil {
 		return nil, err
 	}
-	if ctx.RequiresViolations().HasViolations() {
-		return &ActionResult{
-			InstanceID: instance.ID,
-			Violations: append(ctx.RequiresViolations(), paramViolations...),
-			Success:    false,
-		}, nil
+	if result, done := e.actionResultAfterPeerPhase(ctx, instance, paramViolations); done {
+		return result, nil
 	}
 	if err := e.runStatePhaseAndFinalize(ctx, action, instance, parameters); err != nil {
 		return nil, err
 	}
-	allViolations := e.collectActionViolations(ctx, paramViolations)
+	return e.completedActionResult(ctx, instance, paramViolations), nil
+}
+
+// actionResultAfterPeerPhase returns an early result when requires failed after the peer phase.
+func (e *ActionExecutor) actionResultAfterPeerPhase(
+	ctx *ExecutionContext,
+	instance *instance.Instance,
+	paramViolations instance.ViolationErrors,
+) (*ActionResult, bool) {
+	if !ctx.RequiresViolations().HasViolations() {
+		return nil, false
+	}
+	return actionResultForInstance(instance, nil, nil, append(ctx.RequiresViolations(), paramViolations...)), true
+}
+
+// completedActionResult builds the final ActionResult after state phase and materialization.
+func (e *ActionExecutor) completedActionResult(
+	ctx *ExecutionContext,
+	instance *instance.Instance,
+	paramViolations instance.ViolationErrors,
+) *ActionResult {
+	return actionResultForInstance(
+		instance,
+		ctx.GetAllPrimedAssignments(),
+		ctx.GetPeerTransitions(),
+		e.collectActionViolations(ctx, paramViolations),
+	)
+}
+
+// actionParameterTypeSpecViolations checks action parameter type_spec completeness for the owner instance.
+func actionParameterTypeSpecViolations(
+	action model_state.Action,
+	instance *instance.Instance,
+) instance.ViolationErrors {
+	return checkParameterTypeSpecs(
+		action.Parameters, action.Key, action.Name, "action", instance.GetID(), instance.GetClassKey(),
+	)
+}
+
+// actionResultForInstance builds an ActionResult from the primary instance and run outcomes.
+func actionResultForInstance(
+	inst *instance.Instance,
+	primed map[instance.ID]map[string]object.Object,
+	peers []PeerTransitionRecord,
+	violations instance.ViolationErrors,
+) *ActionResult {
 	return &ActionResult{
-		InstanceID:        instance.ID,
-		PrimedAssignments: ctx.GetAllPrimedAssignments(),
-		PeerTransitions:   ctx.GetPeerTransitions(),
-		Violations:        allViolations,
-		Success:           !allViolations.HasViolations(),
-	}, nil
+		InstanceID:        inst.GetID(),
+		PrimedAssignments: primed,
+		PeerTransitions:   peers,
+		Violations:        violations,
+		Success:           !violations.HasViolations(),
+	}
 }
 
 // runStatePhaseAndFinalize applies peer updates then state-phase guarantees and materialization.
@@ -257,7 +305,7 @@ func (e *ActionExecutor) applyPrimedAssignments(ctx *ExecutionContext) error {
 		instance := simState.GetInstance(instanceID)
 		for fieldName, value := range primedFields {
 			if instance != nil && e.dataTypeChecker != nil {
-				if attr := e.dataTypeChecker.AttributeDef(instance.ClassKey, fieldName); attr != nil {
+				if attr := e.dataTypeChecker.AttributeDef(instance.GetClassKey(), fieldName); attr != nil {
 					value = CoerceValueForDataType(attr.DataType, value)
 				}
 			}
@@ -446,22 +494,9 @@ func (e *ActionExecutor) executeActionInContext(
 	}
 	defer ctx.DecrementDepth()
 
-	if !ctx.ClaimInstanceForAction(instance.ID, action.Key) {
-		return fmt.Errorf(
-			"re-entrant mutation on instance %d in action %s: instance already mutated by another action in the chain",
-			instance.ID, action.Name,
-		)
-	}
-
-	bindings := e.buildRequiresBindings(instance, parameters)
-
-	reqViolations, err := e.evaluateActionRequires(action, instance.ID, bindings)
-	if err != nil {
+	bindings, blocked, err := e.claimInstanceAndEvaluateRequires(ctx, action, instance, parameters)
+	if err != nil || blocked {
 		return err
-	}
-	if reqViolations.HasViolations() {
-		ctx.SetRequiresViolations(reqViolations)
-		return nil
 	}
 
 	if err := e.evaluateActionGuarantees(ctx, action, instance, bindings, parameters, phase); err != nil {
@@ -472,6 +507,34 @@ func (e *ActionExecutor) executeActionInContext(
 		return e.collectActionSafetyRules(ctx, action, instance, bindings)
 	}
 	return nil
+}
+
+// claimInstanceAndEvaluateRequires claims the instance for this action and runs Requires.
+// blocked is true when requires failed (violations already stored on ctx).
+func (e *ActionExecutor) claimInstanceAndEvaluateRequires(
+	ctx *ExecutionContext,
+	action model_state.Action,
+	instance *instance.Instance,
+	parameters map[string]object.Object,
+) (bindings *evaluator.Bindings, blocked bool, err error) {
+	instanceID := instance.GetID()
+	if !ctx.ClaimInstanceForAction(instanceID, action.Key) {
+		return nil, false, fmt.Errorf(
+			"re-entrant mutation on instance %d in action %s: instance already mutated by another action in the chain",
+			instanceID, action.Name,
+		)
+	}
+
+	bindings = e.buildRequiresBindings(instance, parameters)
+	reqViolations, err := e.evaluateActionRequires(action, instanceID, bindings)
+	if err != nil {
+		return nil, false, err
+	}
+	if reqViolations.HasViolations() {
+		ctx.SetRequiresViolations(reqViolations)
+		return bindings, true, nil
+	}
+	return bindings, false, nil
 }
 
 // evaluateActionRequires evaluates the preconditions (Requires) for an action.
@@ -648,7 +711,7 @@ func (e *ActionExecutor) applyAttributePrimeGuarantee(
 	if rhsValue.IsError() {
 		return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", ref.actionName, ref.index, rhsValue.Error.Inspect())
 	}
-	if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
+	if err := ctx.RecordPrimedAssignment(instance.GetID(), guar.Target, rhsValue.Value); err != nil {
 		return fmt.Errorf("action %s guarantee[%d]: %w", ref.actionName, ref.index, err)
 	}
 	return nil
@@ -721,7 +784,7 @@ func (e *ActionExecutor) collectActionSafetyRules(
 
 		ctx.AddSafetyRule(DeferredSafetyRule{
 			Expression:         expr,
-			InstanceID:         instance.ID,
+			InstanceID:         instance.GetID(),
 			SourceKey:          action.Key,
 			SourceName:         action.Name,
 			Index:              i,
@@ -762,7 +825,7 @@ func (e *ActionExecutor) ExecuteQuery(
 ) (*QueryResult, error) {
 	ctx := NewExecutionContext()
 	paramViolations := checkParameterTypeSpecs(
-		query.Parameters, query.Key, query.Name, "query", instance.ID, instance.ClassKey,
+		query.Parameters, query.Key, query.Name, "query", instance.GetID(), instance.GetClassKey(),
 	)
 
 	outputs, err := e.executeQueryInContext(ctx, query, instance, parameters)
@@ -775,7 +838,7 @@ func (e *ActionExecutor) ExecuteQuery(
 	allViolations = append(allViolations, paramViolations...)
 
 	return &QueryResult{
-		InstanceID: instance.ID,
+		InstanceID: instance.GetID(),
 		Outputs:    outputs,
 		Violations: allViolations,
 		Success:    !allViolations.HasViolations(),
@@ -963,7 +1026,7 @@ func (e *ActionExecutor) buildTransitionResult(in transitionResultInput) *Transi
 	}
 
 	return &TransitionResult{
-		InstanceID:                 in.instance.ID,
+		InstanceID:                 in.instance.GetID(),
 		FromState:                  in.currentStateName,
 		ToState:                    in.toStateName,
 		EventKey:                   in.event.Key,
@@ -1109,7 +1172,7 @@ func (e *ActionExecutor) handleCreation(
 	}
 
 	instance := simState.CreateInstance(class.Key, newAttrs)
-	if err := e.linkPlainCreationOverAssociation(simState, sourceAssocKey, sourceID, instance.ID); err != nil {
+	if err := e.linkPlainCreationOverAssociation(simState, sourceAssocKey, sourceID, instance.GetID()); err != nil {
 		return nil, err
 	}
 
@@ -1195,12 +1258,25 @@ func (e *ActionExecutor) handleAssociationClassCreation(
 		}
 	}
 
-	instance := simState.CreateInstance(class.Key, newAttrs)
-	if err := simState.AddAssociationLink(linkInfo.HostAssocKey, *sourceID, *targetID, instance.ID); err != nil {
-		return nil, fmt.Errorf("failed to materialize host association %s: %w", linkInfo.HostAssocKey.String(), err)
+	created := simState.CreateInstance(class.Key, newAttrs)
+	if err := e.linkAssociationClassHost(simState, linkInfo, *sourceID, *targetID, created); err != nil {
+		return nil, err
 	}
 
-	return instance, nil
+	return created, nil
+}
+
+// linkAssociationClassHost materializes the host association row for a new association-class instance.
+func (e *ActionExecutor) linkAssociationClassHost(
+	simState *instance.State,
+	linkInfo schema.AssociationClassLinkInfo,
+	sourceID, targetID instance.ID,
+	created *instance.Instance,
+) error {
+	if err := simState.AddAssociationLink(linkInfo.HostAssocKey, sourceID, targetID, created.GetID()); err != nil {
+		return fmt.Errorf("failed to materialize host association %s: %w", linkInfo.HostAssocKey.String(), err)
+	}
+	return nil
 }
 
 // executeTransitionAction executes the action associated with a transition (if any).
@@ -1234,15 +1310,15 @@ func (e *ActionExecutor) applyStateTransition(
 
 	if chosen.ToStateKey == nil {
 		// To final state = object deletion
-		if err := simState.DeleteInstance(instance.ID); err != nil {
-			return "", fmt.Errorf("failed to delete instance %d: %w", instance.ID, err)
+		if err := simState.DeleteInstance(instance.GetID()); err != nil {
+			return "", fmt.Errorf("failed to delete instance %d: %w", instance.GetID(), err)
 		}
 		return "", nil
 	}
 
 	toStateName := stateKeyToName(*chosen.ToStateKey, class)
 	instance.SetAttribute("_state", object.NewString(toStateName))
-	if err := simState.SetStateMachineState(instance.ID, *chosen.ToStateKey); err != nil {
+	if err := simState.SetStateMachineState(instance.GetID(), *chosen.ToStateKey); err != nil {
 		return "", fmt.Errorf("failed to set state machine state: %w", err)
 	}
 	return toStateName, nil

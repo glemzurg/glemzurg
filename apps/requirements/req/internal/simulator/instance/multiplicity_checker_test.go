@@ -42,7 +42,7 @@ func (s *MultiplicityCheckerSuite) TestValidMultiplicities() {
 	simState := NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), item.GetID()))
 
 	violations := checker.CheckState(simState)
 	s.Empty(violations)
@@ -67,7 +67,7 @@ func (s *MultiplicityCheckerSuite) TestLowerBoundViolation() {
 	simState := NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), item.GetID()))
 
 	violations := checker.CheckInstance(order, simState)
 	s.Len(violations, 1)
@@ -94,8 +94,8 @@ func (s *MultiplicityCheckerSuite) TestUpperBoundViolation() {
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item1 := simState.CreateInstance(itemKey, object.NewRecord())
 	item2 := simState.CreateInstance(itemKey, object.NewRecord())
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, item1.ID))
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, item2.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), item1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), item2.GetID()))
 
 	violations := checker.CheckInstance(order, simState)
 	s.Len(violations, 1)

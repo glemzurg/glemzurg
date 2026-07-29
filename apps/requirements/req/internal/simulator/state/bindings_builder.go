@@ -112,8 +112,8 @@ func (b *BindingsBuilder) BuildForInstanceBase(instance *ClassInstance) *evaluat
 	bindings := evaluator.NewBindings()
 	relCtx := b.buildRelationContext()
 	bindings.SetRelationContext(relCtx)
-	b.aliasSelfForNavigation(relCtx, instance, instance.Attributes)
-	child := bindings.WithSelfAndClass(instance.Attributes, instance.ClassKey.String())
+	b.aliasSelfForNavigation(relCtx, instance, instance.GetAttributes())
+	child := bindings.WithSelfAndClass(instance.GetAttributes(), instance.GetClassKey().String())
 	b.applyNamedSets(child)
 	return child
 }
@@ -131,7 +131,7 @@ func (b *BindingsBuilder) BuildForInstance(instance *ClassInstance) *evaluator.B
 	b.aliasSelfForNavigation(relCtx, instance, attrs)
 
 	// Create a child scope with self set
-	child := bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+	child := bindings.WithSelfAndClass(attrs, instance.GetClassKey().String())
 	b.applyNamedSets(child)
 	return child
 }
@@ -146,10 +146,10 @@ func (b *BindingsBuilder) aliasSelfForNavigation(
 	if relCtx == nil || instance == nil {
 		return
 	}
-	id := evaluator.ObjectID(instance.ID)
-	relCtx.EnsureInstance(id, instance.Attributes)
-	relCtx.RegisterClassKey(id, instance.ClassKey.String())
-	if selfData != nil && selfData != instance.Attributes {
+	id := evaluator.ObjectID(instance.GetID())
+	relCtx.EnsureInstance(id, instance.GetAttributes())
+	relCtx.RegisterClassKey(id, instance.GetClassKey().String())
+	if selfData != nil && selfData != instance.GetAttributes() {
 		relCtx.RegisterDataAlias(id, selfData)
 	}
 }
@@ -202,7 +202,7 @@ func (b *BindingsBuilder) bindClassInstanceSets(bindings *evaluator.Bindings, cl
 func classInstanceExtentSet(instances []*ClassInstance) *object.Set {
 	classSet := object.NewSet()
 	for _, instance := range instances {
-		classSet.Add(ClassExtentElement(instance.ID, instance.Attributes))
+		classSet.Add(ClassExtentElement(instance.GetID(), instance.GetAttributes()))
 	}
 	return classSet
 }
@@ -238,7 +238,7 @@ func (b *BindingsBuilder) BuildWithClassInstancesForInstance(
 	attrs := b.resolveAttributes(instance)
 
 	// Create a child scope with self set
-	return bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+	return bindings.WithSelfAndClass(attrs, instance.GetClassKey().String())
 }
 
 // BuildWithClassInstancesForInstanceWithVariables combines class instance sets, self, and parameters.
@@ -258,16 +258,16 @@ func (b *BindingsBuilder) BuildWithClassInstancesForInstanceWithVariables(
 // If no DerivedAttributeResolver is set, returns the original attributes unchanged.
 func (b *BindingsBuilder) resolveAttributes(instance *ClassInstance) *object.Record {
 	if b.derivedResolver == nil {
-		return instance.Attributes
+		return instance.GetAttributes()
 	}
 
 	derived, err := b.derivedResolver.ResolveDerived(instance)
 	if err != nil || len(derived) == 0 {
-		return instance.Attributes
+		return instance.GetAttributes()
 	}
 
 	// Clone the attributes to avoid modifying the persisted instance.
-	attrs := instance.Attributes.Clone().(*object.Record)
+	attrs := instance.GetAttributes().Clone().(*object.Record)
 	for name, value := range derived {
 		attrs.Set(name, value)
 	}
@@ -350,7 +350,7 @@ func (b *BindingsBuilder) ApplyPrimedBindings(
 		// Check if this is a self field modification (self.field' = value)
 		// In the bindings, self fields appear as the field name directly
 		if instance.HasAttribute(name) {
-			if err := b.state.UpdateInstanceField(instance.ID, name, value); err != nil {
+			if err := b.state.UpdateInstanceField(instance.GetID(), name, value); err != nil {
 				return err
 			}
 		}

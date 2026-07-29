@@ -78,7 +78,7 @@ func (e *ActionExecutor) recordPeerEventUnavailable(
 func (e *ActionExecutor) ownerViolationContext(ownerInstanceID instance.ID, fallbackClassKey identity.Key, assocName string) peerEventViolationContext {
 	ownerClassKey := fallbackClassKey
 	if owner := e.bindingsBuilder.State().GetInstance(ownerInstanceID); owner != nil {
-		ownerClassKey = owner.ClassKey
+		ownerClassKey = owner.GetClassKey()
 	}
 	return peerEventViolationContext{
 		OwnerInstanceID: ownerInstanceID,

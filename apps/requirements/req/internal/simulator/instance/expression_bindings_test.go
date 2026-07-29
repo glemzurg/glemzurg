@@ -58,7 +58,7 @@ func (b *testBindings) BuildWithClassInstances(classNameMap map[identity.Key]str
 	for classKey, name := range classNameMap {
 		var elems []object.Object
 		for _, inst := range b.sim.InstancesByClass(classKey) {
-			elems = append(elems, inst.Attributes)
+			elems = append(elems, inst.GetAttributes())
 		}
 		bindings.Set(name, object.NewSetFromElements(elems), evaluator.NamespaceGlobal)
 	}
@@ -74,12 +74,12 @@ func (b *testBindings) BuildForInstance(inst *Instance) *evaluator.Bindings {
 		return bindings
 	}
 	if b.relCtx != nil {
-		id := evaluator.ObjectID(inst.ID)
-		b.relCtx.EnsureInstance(id, inst.Attributes)
-		b.relCtx.RegisterClassKey(id, inst.ClassKey.String())
+		id := evaluator.ObjectID(inst.GetID())
+		b.relCtx.EnsureInstance(id, inst.GetAttributes())
+		b.relCtx.RegisterClassKey(id, inst.GetClassKey().String())
 	}
-	if inst.Attributes != nil {
-		return bindings.WithSelfAndClass(inst.Attributes, inst.ClassKey.String())
+	if inst.GetAttributes() != nil {
+		return bindings.WithSelfAndClass(inst.GetAttributes(), inst.GetClassKey().String())
 	}
 	return bindings
 }

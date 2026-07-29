@@ -195,7 +195,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	s.Require().NoError(err)
 	s.NotNil(result)
 	s.Empty(simState.InstancesByClass(itemKey))
-	s.Empty(simState.GetLinkedForward(orderInst.ID, assocKey))
+	s.Empty(simState.GetLinkedForward(orderInst.GetID(), assocKey))
 }
 
 func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp() {
@@ -257,7 +257,7 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 	result, err := ae.ExecuteAction(action, itemInst, nil)
 	s.Require().NoError(err)
 	s.NotNil(result)
-	s.Empty(simState.GetLinkedReverse(itemInst.ID, assocKey))
+	s.Empty(simState.GetLinkedReverse(itemInst.GetID(), assocKey))
 	s.Empty(simState.InstancesByClass(peerKey))
 }
 
@@ -296,7 +296,7 @@ func (s *OutOfScopeProtocolSuite) TestEngineWithSurface_RunsWithOutOfScopePeerCl
 	s.NotNil(result)
 	hasPeer := false
 	result.FinalState.ForEachInstance(func(inst *siminst.Instance) {
-		if inst.ClassKey == peerKey {
+		if inst.GetClassKey() == peerKey {
 			hasPeer = true
 		}
 	})

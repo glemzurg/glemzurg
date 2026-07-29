@@ -95,8 +95,8 @@ func (e *ActionExecutor) queuePeerDomainUpdates(
 	bindings *evaluator.Bindings,
 ) (bool, error) {
 	vctx := peerEventViolationContext{
-		OwnerInstanceID: owner.ID,
-		OwnerClassKey:   owner.ClassKey,
+		OwnerInstanceID: owner.GetID(),
+		OwnerClassKey:   owner.GetClassKey(),
 		AssociationName: "",
 	}
 	for _, elem := range domainSet.Elements() {
@@ -119,7 +119,7 @@ func (e *ActionExecutor) queueOnePeerDomainUpdate(
 		return
 	}
 	peerInstance := simState.GetInstance(peerID)
-	if peerInstance == nil || peerInstance.ClassKey != work.toClass.Key {
+	if peerInstance == nil || peerInstance.GetClassKey() != work.toClass.Key {
 		return
 	}
 	params, ok := e.bindPeerDomainEventParams(work, elem, bindings, owner)
@@ -132,7 +132,7 @@ func (e *ActionExecutor) queueOnePeerDomainUpdate(
 		return
 	}
 	ctx.AddPeerUpdate(DeferredPeerUpdate{
-		OwnerInstanceID: owner.ID,
+		OwnerInstanceID: owner.GetID(),
 		PeerInstanceID:  peerID,
 		ToClassKey:      work.toClass.Key,
 		EventKey:        work.event.Key,
@@ -175,11 +175,11 @@ func reifyOwnerSelfParams(
 			out[name] = val
 			continue
 		}
-		if rec == owner.Attributes ||
-			(owner.Attributes != nil && owner.Attributes.Equals(rec)) ||
-			(state.DataFromExtentElement(rec) != nil && owner.Attributes != nil &&
-				owner.Attributes.Equals(state.DataFromExtentElement(rec))) {
-			out[name] = state.ClassExtentElement(owner.ID, owner.Attributes)
+		if rec == owner.GetAttributes() ||
+			(owner.GetAttributes() != nil && owner.GetAttributes().Equals(rec)) ||
+			(state.DataFromExtentElement(rec) != nil && owner.GetAttributes() != nil &&
+				owner.GetAttributes().Equals(state.DataFromExtentElement(rec))) {
+			out[name] = state.ClassExtentElement(owner.GetID(), owner.GetAttributes())
 			continue
 		}
 		out[name] = val

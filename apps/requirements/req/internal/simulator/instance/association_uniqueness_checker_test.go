@@ -75,8 +75,8 @@ func (s *AssociationUniquenessCheckerSuite) TestDistinctCodesNoViolation() {
 	}))
 	link1 := simState.CreateInstance(acKey, object.NewRecord())
 	link2 := simState.CreateInstance(acKey, object.NewRecord())
-	s.Require().NoError(simState.AddAssociationLink(assocKey, fromInst.ID, toInst1.ID, link1.ID))
-	s.Require().NoError(simState.AddAssociationLink(assocKey, fromInst.ID, toInst2.ID, link2.ID))
+	s.Require().NoError(simState.AddAssociationLink(assocKey, fromInst.GetID(), toInst1.GetID(), link1.GetID()))
+	s.Require().NoError(simState.AddAssociationLink(assocKey, fromInst.GetID(), toInst2.GetID(), link2.GetID()))
 
 	violations := checker.CheckState(simState)
 	s.Empty(violations)
@@ -96,8 +96,8 @@ func (s *AssociationUniquenessCheckerSuite) TestDuplicateCodeReportsViolation() 
 	}))
 	link1 := simState.CreateInstance(acKey, object.NewRecord())
 	link2 := simState.CreateInstance(acKey, object.NewRecord())
-	s.Require().NoError(simState.AddAssociationLink(assocKey, fromInst.ID, toInst1.ID, link1.ID))
-	s.Require().NoError(simState.AddAssociationLink(assocKey, fromInst.ID, toInst2.ID, link2.ID))
+	s.Require().NoError(simState.AddAssociationLink(assocKey, fromInst.GetID(), toInst1.GetID(), link1.GetID()))
+	s.Require().NoError(simState.AddAssociationLink(assocKey, fromInst.GetID(), toInst2.GetID(), link2.GetID()))
 
 	violations := checker.CheckState(simState)
 	s.Require().Len(violations, 1)
@@ -116,8 +116,8 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDistinctNoViolation()
 	customer2 := simState.CreateInstance(customerKey, object.NewRecordFromFields(map[string]object.Object{
 		"customer_code": object.NewString("C-200"),
 	}))
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, customer1.ID))
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, customer2.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), customer1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), customer2.GetID()))
 
 	s.Empty(checker.CheckState(simState))
 }
@@ -134,8 +134,8 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDuplicateReportsViola
 	customer2 := simState.CreateInstance(customerKey, object.NewRecordFromFields(map[string]object.Object{
 		"customer_code": object.NewString("C-100"),
 	}))
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, customer1.ID))
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, customer2.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), customer1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), customer2.GetID()))
 
 	violations := checker.CheckState(simState)
 	s.Require().Len(violations, 1)
@@ -155,8 +155,8 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainFromOnlyDistinctNoViolation
 	}))
 	shelf1 := simState.CreateInstance(shelfKey, object.NewRecord())
 	shelf2 := simState.CreateInstance(shelfKey, object.NewRecord())
-	s.Require().NoError(simState.AddLink(assocKey, product1.ID, shelf1.ID))
-	s.Require().NoError(simState.AddLink(assocKey, product2.ID, shelf2.ID))
+	s.Require().NoError(simState.AddLink(assocKey, product1.GetID(), shelf1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, product2.GetID(), shelf2.GetID()))
 
 	s.Empty(checker.CheckState(simState))
 }
@@ -173,8 +173,8 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainFromOnlyDuplicateReportsVio
 		"name": object.NewString("Widget"),
 	}))
 	shelf := simState.CreateInstance(shelfKey, object.NewRecord())
-	s.Require().NoError(simState.AddLink(assocKey, product1.ID, shelf.ID))
-	s.Require().NoError(simState.AddLink(assocKey, product2.ID, shelf.ID))
+	s.Require().NoError(simState.AddLink(assocKey, product1.GetID(), shelf.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, product2.GetID(), shelf.GetID()))
 
 	violations := checker.CheckState(simState)
 	s.Require().Len(violations, 1)
@@ -198,8 +198,8 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainBothSidesDistinctNoViolatio
 	shipment2 := simState.CreateInstance(shipmentKey, object.NewRecordFromFields(map[string]object.Object{
 		"tracking_id": object.NewString("TRK-2"),
 	}))
-	s.Require().NoError(simState.AddLink(assocKey, order1.ID, shipment1.ID))
-	s.Require().NoError(simState.AddLink(assocKey, order2.ID, shipment2.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order1.GetID(), shipment1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, order2.GetID(), shipment2.GetID()))
 
 	s.Empty(checker.CheckState(simState))
 }
@@ -221,8 +221,8 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainBothSidesDuplicateReportsVi
 	shipment2 := simState.CreateInstance(shipmentKey, object.NewRecordFromFields(map[string]object.Object{
 		"tracking_id": object.NewString("TRK-1"),
 	}))
-	s.Require().NoError(simState.AddLink(assocKey, order1.ID, shipment1.ID))
-	s.Require().NoError(simState.AddLink(assocKey, order2.ID, shipment2.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order1.GetID(), shipment1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, order2.GetID(), shipment2.GetID()))
 
 	violations := checker.CheckState(simState)
 	s.Require().Len(violations, 1)

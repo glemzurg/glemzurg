@@ -33,7 +33,7 @@ func (s *State) forEachInstanceOfClass(classKey identity.Key, fn func(*Instance)
 	s.mu.RLock()
 	var list []*Instance
 	for _, inst := range s.instances {
-		if inst.ClassKey == classKey {
+		if inst.GetClassKey() == classKey {
 			list = append(list, inst)
 		}
 	}
@@ -49,7 +49,7 @@ func (s *State) hasInstanceOfClass(classKey identity.Key) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, inst := range s.instances {
-		if inst.ClassKey == classKey {
+		if inst.GetClassKey() == classKey {
 			return true
 		}
 	}
@@ -62,7 +62,7 @@ func (s *State) countByClass(classKey identity.Key) int {
 	defer s.mu.RUnlock()
 	n := 0
 	for _, inst := range s.instances {
-		if inst.ClassKey == classKey {
+		if inst.GetClassKey() == classKey {
 			n++
 		}
 	}
@@ -97,11 +97,11 @@ func (s *State) LookupIDByRecord(rec *object.Record) (ID, bool) {
 		n     int
 	)
 	for _, inst := range s.instances {
-		if inst.Attributes == rec || inst.Attributes == data {
-			return inst.ID, true
+		if inst.GetAttributes() == rec || inst.GetAttributes() == data {
+			return inst.GetID(), true
 		}
-		if (data != nil && inst.Attributes.Equals(data)) || inst.Attributes.Equals(rec) {
-			found = inst.ID
+		if (data != nil && inst.GetAttributes().Equals(data)) || inst.GetAttributes().Equals(rec) {
+			found = inst.GetID()
 			n++
 		}
 	}
@@ -126,7 +126,7 @@ func (s *State) ForEachBinaryLink(fn func(BinaryLink)) {
 	s.mu.RLock()
 	var edges []BinaryLink
 	for _, inst := range s.instances {
-		for _, link := range s.links.GetAllForward(evaluator.ObjectID(inst.ID)) {
+		for _, link := range s.links.GetAllForward(evaluator.ObjectID(inst.GetID())) {
 			edges = append(edges, BinaryLink{
 				AssocKey: link.AssociationKey,
 				FromID:   ID(link.FromID),
@@ -194,9 +194,9 @@ func (s *State) ProjectToRelationContext(relCtx *evaluator.RelationContext) {
 
 func (s *State) projectInstancesToRelationContext(relCtx *evaluator.RelationContext) {
 	s.ForEachInstance(func(inst *Instance) {
-		id := evaluator.ObjectID(inst.ID)
-		relCtx.EnsureInstance(id, inst.Attributes)
-		relCtx.RegisterClassKey(id, inst.ClassKey.String())
+		id := evaluator.ObjectID(inst.GetID())
+		relCtx.EnsureInstance(id, inst.GetAttributes())
+		relCtx.RegisterClassKey(id, inst.GetClassKey().String())
 	})
 }
 
@@ -221,8 +221,8 @@ func (s *State) projectAssociationLinksToRelationContext(relCtx *evaluator.Relat
 		}
 		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
 		fromExtent, toExtent := createExtentLink(relCtx, hostKey, fromInst, toInst)
-		linkExtent := object.NewExtentElement(uint64(linkInst.ID), linkInst.Attributes)
-		relCtx.EnsureInstance(evaluator.ObjectID(linkInst.ID), linkInst.Attributes)
+		linkExtent := object.NewExtentElement(uint64(linkInst.GetID()), linkInst.GetAttributes())
+		relCtx.EnsureInstance(evaluator.ObjectID(linkInst.GetID()), linkInst.GetAttributes())
 		relCtx.AddAssociationClassRow(hostKey, fromExtent, toExtent, linkExtent)
 	})
 }
@@ -232,22 +232,22 @@ func createExtentLink(
 	assocKey evaluator.AssociationKey,
 	fromInst, toInst *Instance,
 ) (fromExtent, toExtent *object.Record) {
-	fromExtent = object.NewExtentElement(uint64(fromInst.ID), fromInst.Attributes)
-	toExtent = object.NewExtentElement(uint64(toInst.ID), toInst.Attributes)
+	fromExtent = object.NewExtentElement(uint64(fromInst.GetID()), fromInst.GetAttributes())
+	toExtent = object.NewExtentElement(uint64(toInst.GetID()), toInst.GetAttributes())
 	relCtx.CreateInstanceLink(
 		assocKey,
 		evaluator.InstanceEndpoint{
-			ID:     evaluator.ObjectID(fromInst.ID),
+			ID:     evaluator.ObjectID(fromInst.GetID()),
 			Extent: fromExtent,
-			Data:   fromInst.Attributes,
+			Data:   fromInst.GetAttributes(),
 		},
 		evaluator.InstanceEndpoint{
-			ID:     evaluator.ObjectID(toInst.ID),
+			ID:     evaluator.ObjectID(toInst.GetID()),
 			Extent: toExtent,
-			Data:   toInst.Attributes,
+			Data:   toInst.GetAttributes(),
 		},
 	)
-	relCtx.RegisterClassKey(evaluator.ObjectID(fromInst.ID), fromInst.ClassKey.String())
-	relCtx.RegisterClassKey(evaluator.ObjectID(toInst.ID), toInst.ClassKey.String())
+	relCtx.RegisterClassKey(evaluator.ObjectID(fromInst.GetID()), fromInst.GetClassKey().String())
+	relCtx.RegisterClassKey(evaluator.ObjectID(toInst.GetID()), toInst.GetClassKey().String())
 	return fromExtent, toExtent
 }

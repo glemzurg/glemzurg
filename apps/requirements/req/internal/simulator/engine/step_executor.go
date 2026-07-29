@@ -98,7 +98,7 @@ func (e *StepExecutor) executeQuery(
 		Kind:       StepKindNormal,
 		ClassKey:   pending.Class.ClassKey,
 		ClassName:  pending.Class.Class.Name,
-		InstanceID: pending.Instance.ID,
+		InstanceID: pending.Instance.GetID(),
 	}
 
 	if pending.Query == nil {
@@ -113,7 +113,7 @@ func (e *StepExecutor) executeQuery(
 	if e.catalog != nil {
 		if v := siminst.CheckSurfaceMemberAccess(
 			e.catalog, siminst.SurfaceMemberQuery, pending.Query.Key,
-			pending.Class.ClassKey, pending.Instance.ID, pending.Query.Name,
+			pending.Class.ClassKey, pending.Instance.GetID(), pending.Query.Name,
 		); v != nil {
 			step.Violations = append(step.Violations, v)
 			return step, nil
@@ -147,7 +147,7 @@ func (e *StepExecutor) executeDerivedRead(
 		Kind:       StepKindNormal,
 		ClassKey:   pending.Class.ClassKey,
 		ClassName:  pending.Class.Class.Name,
-		InstanceID: pending.Instance.ID,
+		InstanceID: pending.Instance.GetID(),
 	}
 
 	if pending.DerivedAttribute == nil {
@@ -189,7 +189,7 @@ func (e *StepExecutor) executeDo(
 		Kind:       StepKindNormal,
 		ClassKey:   pending.Class.ClassKey,
 		ClassName:  pending.Class.Class.Name,
-		InstanceID: pending.Instance.ID,
+		InstanceID: pending.Instance.GetID(),
 	}
 
 	if pending.DoAction == nil {
@@ -320,7 +320,7 @@ func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string
 
 	if e.paramGen != nil && e.paramGen.Sampler != nil {
 		if pending.Instance != nil {
-			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.ID)
+			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.GetID())
 		} else {
 			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(0)
 		}

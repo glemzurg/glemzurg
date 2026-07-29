@@ -63,7 +63,7 @@ func (e *ActionExecutor) resolveAssociationClassReifyWork(
 	if e.sch == nil {
 		return work, false, fmt.Errorf("association-class reify on %q: peer catalog not configured", guar.Target)
 	}
-	assocKey, assoc, found := e.sch.OutgoingAssociationByAssociationClassTLAName(instance.ClassKey, guar.Target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByAssociationClassTLAName(instance.GetClassKey(), guar.Target)
 	if !found {
 		// Host association may be plain after surface strip of the association class.
 		return work, false, nil
@@ -167,7 +167,7 @@ func (e *ActionExecutor) queueOneAssociationClassReify(
 	}
 	toIDCopy := toID
 	ctx.AddPeerCreation(DeferredPeerCreation{
-		FromInstanceID: instance.ID,
+		FromInstanceID: instance.GetID(),
 		AssocKey:       work.assocKey,
 		ToClassKey:     work.assoc.ToClassKey,
 		ToInstanceID:   &toIDCopy,

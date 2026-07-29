@@ -60,7 +60,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 		return nil, nil, fmt.Errorf("instance %d not found for creation chain", createdInstanceID)
 	}
 
-	mandatory := h.catalog.GetMandatoryOutboundAssociations(instance.ClassKey)
+	mandatory := h.catalog.GetMandatoryOutboundAssociations(instance.GetClassKey())
 	if len(mandatory) == 0 {
 		return nil, nil, nil
 	}
@@ -253,7 +253,7 @@ func (h *CreationChainHandler) createMandatoryAssociationClassInstances(
 	}
 
 	for range in.assocInfo.MinTo {
-		toID := toInstances[0].ID
+		toID := toInstances[0].GetID()
 		step, stepViolations, err := h.createAssociationClassInstance(acCreateInput{
 			acClassInfo:   in.acClassInfo,
 			creationEvent: in.creationEvent,

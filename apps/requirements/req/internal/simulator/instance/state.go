@@ -79,7 +79,7 @@ func (s *State) CreateInstance(classKey identity.Key, attributes *object.Record)
 	s.instances[id] = inst
 
 	// Register with identity registry for evaluator integration.
-	s.identityRegistry.GetOrAssign(inst.Attributes)
+	s.identityRegistry.GetOrAssign(inst.GetAttributes())
 
 	return inst
 }
@@ -104,7 +104,7 @@ func (s *State) updateInstance(id ID, attributes *object.Record) error {
 		return fmt.Errorf("instance %d not found", id)
 	}
 
-	inst.Attributes = attributes.Clone().(*object.Record)
+	inst.attributes = attributes.Clone().(*object.Record)
 	return nil
 }
 
@@ -119,7 +119,7 @@ func (s *State) UpdateInstanceField(id ID, fieldName string, value object.Object
 		return fmt.Errorf("instance %d not found", id)
 	}
 
-	inst.Attributes.Set(fieldName, value)
+	inst.GetAttributes().Set(fieldName, value)
 	return nil
 }
 
@@ -170,7 +170,7 @@ func (s *State) InstancesByClass(classKey identity.Key) []*Instance {
 
 	var out []*Instance
 	for _, inst := range s.instances {
-		if inst.ClassKey == classKey {
+		if inst.GetClassKey() == classKey {
 			out = append(out, inst)
 		}
 	}
@@ -368,7 +368,7 @@ func (s *State) Clone() *State {
 	maps.Copy(clone.stateMachineStates, s.stateMachineStates)
 
 	for _, inst := range s.instances {
-		objID := evaluator.ObjectID(inst.ID)
+		objID := evaluator.ObjectID(inst.GetID())
 		for _, link := range s.links.GetAllForward(objID) {
 			if err := clone.links.AddLink(link.AssociationKey, link.FromID, link.ToID); err != nil {
 				panic(fmt.Sprintf("clone link table: %v", err))

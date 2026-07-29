@@ -53,21 +53,21 @@ func (s *AssociationInvariantCheckerSuite) TestPassesWhenInvariantHolds() {
 	simState := NewState(emptySchema())
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	j1 := simState.CreateInstance(jurisdictionKey, object.NewRecord())
-	j1.Attributes.Set("Code", object.NewString("US"))
+	j1.GetAttributes().Set("Code", object.NewString("US"))
 	j2 := simState.CreateInstance(jurisdictionKey, object.NewRecord())
-	j2.Attributes.Set("Code", object.NewString("UK"))
+	j2.GetAttributes().Set("Code", object.NewString("UK"))
 
 	bb := newTestBindings(simState)
 	bb.AddAssociation(assocKey, "Configures", partnerKey, jurisdictionKey,
 		evaluator.Multiplicity{}, evaluator.Multiplicity{HigherBound: 0})
 	assocKeyStr := evaluator.AssociationKey(assocKey.String())
 	bb.RelationContext().CreateInstanceLink(assocKeyStr,
-		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(partner.ID), Extent: partner.Attributes, Data: partner.Attributes},
-		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(j1.ID), Extent: j1.Attributes, Data: j1.Attributes},
+		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(partner.GetID()), Extent: partner.GetAttributes(), Data: partner.GetAttributes()},
+		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(j1.GetID()), Extent: j1.GetAttributes(), Data: j1.GetAttributes()},
 	)
 	bb.RelationContext().CreateInstanceLink(assocKeyStr,
-		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(partner.ID), Extent: partner.Attributes, Data: partner.Attributes},
-		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(j2.ID), Extent: j2.Attributes, Data: j2.Attributes},
+		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(partner.GetID()), Extent: partner.GetAttributes(), Data: partner.GetAttributes()},
+		evaluator.InstanceEndpoint{ID: evaluator.ObjectID(j2.GetID()), Extent: j2.GetAttributes(), Data: j2.GetAttributes()},
 	)
 
 	s.Empty(checker.CheckState(simState, bb))

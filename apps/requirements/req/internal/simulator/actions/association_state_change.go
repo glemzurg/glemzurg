@@ -21,7 +21,7 @@ func (e *ActionExecutor) tryApplyAssociationStateChangeGuarantee(
 	if e.sch == nil {
 		return false, nil
 	}
-	assocKey, assoc, reverse, found := e.sch.AssociationByNavigableTLAField(instance.ClassKey, target)
+	assocKey, assoc, reverse, found := e.sch.AssociationByNavigableTLAField(instance.GetClassKey(), target)
 	if !found {
 		return false, nil
 	}
@@ -35,30 +35,59 @@ func (e *ActionExecutor) tryApplyAssociationStateChangeGuarantee(
 		return false, fmt.Errorf("association state_change on %q: expression must evaluate to a set", target)
 	}
 
-	simState := e.bindingsBuilder.State()
-	peerClassKey := assoc.ToClassKey
-	if reverse {
-		peerClassKey = assoc.FromClassKey
+	if err := e.applyAssociationStateChangeSet(associationStateChangeApply{
+		ctx:      ctx,
+		instance: instance,
+		target:   target,
+		assocKey: assocKey,
+		assoc:    assoc,
+		reverse:  reverse,
+		newSet:   newSet,
+	}); err != nil {
+		return true, err
 	}
-	removed := associationPeersRemovedFromSet(simState, instance.ID, assoc, reverse, peerClassKey, newSet)
-	ctx.SetAssociationRemovedPeers(instance.ID, assocKey, reverse, removed)
+	return true, nil
+}
+
+// associationStateChangeApply carries a resolved state_change guarantee ready to apply to live links.
+type associationStateChangeApply struct {
+	ctx      *ExecutionContext
+	instance *instance.Instance
+	target   string
+	assocKey identity.Key
+	assoc    model_class.Association
+	reverse  bool
+	newSet   *object.Set
+}
+
+// applyAssociationStateChangeSet records removed peers and adds missing plain links for the RHS set.
+func (e *ActionExecutor) applyAssociationStateChangeSet(work associationStateChangeApply) error {
+	simState := e.bindingsBuilder.State()
+	ownerID := work.instance.GetID()
+	peerClassKey := work.assoc.ToClassKey
+	if work.reverse {
+		peerClassKey = work.assoc.FromClassKey
+	}
+	removed := associationPeersRemovedFromSet(simState, ownerID, work.assoc, work.reverse, peerClassKey, work.newSet)
+	work.ctx.SetAssociationRemovedPeers(ownerID, work.assocKey, work.reverse, removed)
 
 	// Plain associations also establish missing links from the RHS set. Association-class
 	// hosts materialize rows via reify; their endpoint image is derived from those rows.
-	if assoc.AssociationClassKey == nil {
-		if err := e.addMissingPlainAssociationLinks(plainAssocLinkWork{
-			simState:     simState,
-			ownerID:      instance.ID,
-			assocKey:     assocKey,
-			assoc:        assoc,
-			reverse:      reverse,
-			peerClassKey: peerClassKey,
-			newSet:       newSet,
-		}); err != nil {
-			return true, fmt.Errorf("association state_change on %q: %w", target, err)
-		}
+	if work.assoc.AssociationClassKey != nil {
+		return nil
 	}
-	return true, nil
+	if err := e.addMissingPlainAssociationLinks(plainAssocLinkWork{
+		simState:     simState,
+		ownerID:      ownerID,
+		assocKey:     work.assocKey,
+		assoc:        work.assoc,
+		reverse:      work.reverse,
+		peerClassKey: peerClassKey,
+		newSet:       work.newSet,
+	}); err != nil {
+		return fmt.Errorf("association state_change on %q: %w", work.target, err)
+	}
+	return nil
 }
 
 // plainAssocLinkWork is the context for establishing plain association links from a state_change RHS set.
@@ -104,7 +133,7 @@ func peerInRHSSet(
 	if peerInstance == nil {
 		return false
 	}
-	if newSet.Contains(peerInstance.Attributes) {
+	if newSet.Contains(peerInstance.GetAttributes()) {
 		return true
 	}
 	for _, elem := range newSet.Elements() {

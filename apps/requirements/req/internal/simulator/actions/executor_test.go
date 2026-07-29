@@ -264,7 +264,7 @@ func (s *ActionsSuite) TestExecuteActionWithPrimedAssignment() {
 	s.True(result.Success)
 
 	// Verify state was updated
-	updated := simState.GetInstance(instance.ID)
+	updated := simState.GetInstance(instance.GetID())
 	s.Equal("11", updated.GetAttribute("count").Inspect())
 }
 
@@ -297,7 +297,7 @@ func (s *ActionsSuite) TestExecuteActionPreconditionPasses() {
 	s.Require().NoError(err)
 	s.True(result.Success)
 
-	updated := simState.GetInstance(instance.ID)
+	updated := simState.GetInstance(instance.GetID())
 	s.Equal("closed", updated.GetAttribute("status").(*object.String).Value())
 }
 
@@ -363,7 +363,7 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 	s.Require().NoError(err)
 	s.True(result.Success)
 
-	updated := simState.GetInstance(instance.ID)
+	updated := simState.GetInstance(instance.GetID())
 	s.Equal("500", updated.GetAttribute("amount").Inspect())
 }
 
@@ -486,7 +486,7 @@ func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {
 	s.Require().NoError(err)
 
 	// State should be unchanged
-	unchanged := simState.GetInstance(instance.ID)
+	unchanged := simState.GetInstance(instance.GetID())
 	s.Equal("50", unchanged.GetAttribute("amount").Inspect())
 }
 
@@ -594,7 +594,7 @@ func (s *ActionsSuite) TestExecuteTransitionNormal() {
 
 	// Set state machine state
 	stateOpenKey := mustKey("domain/d/subdomain/s/class/order/state/open")
-	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
+	_ = simState.SetStateMachineState(instance.GetID(), stateOpenKey)
 
 	exec := buildTestExecutor(simState)
 
@@ -615,7 +615,7 @@ func (s *ActionsSuite) TestExecuteTransitionNormal() {
 	s.True(result.ActionResult.Success)
 
 	// Check state was updated (amount went from 100 to 110)
-	updated := simState.GetInstance(instance.ID)
+	updated := simState.GetInstance(instance.GetID())
 	s.Equal("110", updated.GetAttribute("amount").Inspect())
 	s.Equal("Closed", updated.GetAttribute("_state").(*object.String).Value())
 }
@@ -691,7 +691,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
-	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
+	_ = simState.SetStateMachineState(instance.GetID(), stateOpenKey)
 
 	exec := buildTestExecutor(simState)
 
@@ -702,7 +702,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 	s.True(result.WasDestroy)
 
 	// Instance should be deleted
-	s.Nil(simState.GetInstance(instance.ID))
+	s.Nil(simState.GetInstance(instance.GetID()))
 	s.Equal(0, simState.Snapshot().InstanceCount)
 }
 
@@ -715,7 +715,7 @@ func (s *ActionsSuite) TestExecuteTransitionNoMatchingTransition() {
 	instance := simState.CreateInstance(classKey, attrs)
 
 	stateClosedKey := mustKey("domain/d/subdomain/s/class/order/state/closed")
-	_ = simState.SetStateMachineState(instance.ID, stateClosedKey)
+	_ = simState.SetStateMachineState(instance.GetID(), stateClosedKey)
 
 	exec := buildTestExecutor(simState)
 
@@ -789,7 +789,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	attrs.Set("amount", object.NewInteger(200))
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
-	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
+	_ = simState.SetStateMachineState(instance.GetID(), stateOpenKey)
 
 	exec := buildTestExecutor(simState)
 
@@ -803,7 +803,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	attrs2.Set("amount", object.NewInteger(50))
 	attrs2.Set("_state", object.NewString("Open"))
 	instance2 := simState.CreateInstance(classKey, attrs2)
-	_ = simState.SetStateMachineState(instance2.ID, stateOpenKey)
+	_ = simState.SetStateMachineState(instance2.GetID(), stateOpenKey)
 
 	result2, err := exec.ExecuteTransition(class, event, instance2, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
@@ -857,7 +857,7 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
-	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
+	_ = simState.SetStateMachineState(instance.GetID(), stateOpenKey)
 
 	exec := buildTestExecutor(simState)
 
@@ -904,7 +904,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	instance := simState.CreateInstance(classKey, attrs)
-	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
+	_ = simState.SetStateMachineState(instance.GetID(), stateOpenKey)
 
 	exec := buildTestExecutor(simState)
 
@@ -1425,10 +1425,10 @@ func (s *ActionsSuite) TestExecuteTransitionReportsMultiplicityViolation() {
 	orderAttrs.Set("amount", object.NewInteger(0))
 	order := simState.CreateInstance(orderKey, orderAttrs)
 	item := simState.CreateInstance(itemKey, object.NewRecord())
-	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
+	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), item.GetID()))
 
 	event := orderClass.Events[mustKey("domain/d/subdomain/s/class/order/event/close")]
-	instance := simState.GetInstance(order.ID)
+	instance := simState.GetInstance(order.GetID())
 	result, err := exec.ExecuteTransition(orderClass, event, instance, nil, CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 

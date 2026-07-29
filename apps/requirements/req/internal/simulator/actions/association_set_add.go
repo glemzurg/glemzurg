@@ -53,7 +53,7 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 		return false, fmt.Errorf("association set-add guarantee on %q: %w", target, err)
 	}
 	ctx.AddPeerCreation(DeferredPeerCreation{
-		FromInstanceID: instance.ID,
+		FromInstanceID: instance.GetID(),
 		AssocKey:       assocTarget.assoc.Key,
 		ToClassKey:     assocTarget.assoc.ToClassKey,
 		Params:         params,
@@ -75,11 +75,11 @@ func (e *ActionExecutor) resolveAssociationSetAddTarget(
 	if e.sch == nil {
 		return nil, fmt.Errorf("association set-add guarantee on %q: peer catalog not configured", target)
 	}
-	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.GetClassKey(), target)
 	if !found {
 		return nil, fmt.Errorf(
 			"association set-add guarantee on %q: no outgoing association on class %s",
-			target, instance.ClassKey.String(),
+			target, instance.GetClassKey().String(),
 		)
 	}
 	if assocRef.AssociationKey != assocKey {
@@ -103,8 +103,8 @@ func (e *ActionExecutor) validateSetAddPeerEvents(
 	eventCall *me.EventCall,
 ) bool {
 	vctx := peerEventViolationContext{
-		OwnerInstanceID: instance.ID,
-		OwnerClassKey:   instance.ClassKey,
+		OwnerInstanceID: instance.GetID(),
+		OwnerClassKey:   instance.GetClassKey(),
 		AssociationName: target.assoc.Name,
 	}
 	creationEvent, ok := e.sch.PeerCreationEvent(target.assoc.ToClassKey)
@@ -285,7 +285,7 @@ func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, ne
 		if fromID == pc.FromInstanceID {
 			continue
 		}
-		candidates := e.sch.OutgoingAssociationsTo(fromInst.ClassKey, pc.ToClassKey)
+		candidates := e.sch.OutgoingAssociationsTo(fromInst.GetClassKey(), pc.ToClassKey)
 		if len(candidates) != 1 {
 			// Zero or ambiguous associations: do not invent links.
 			continue
