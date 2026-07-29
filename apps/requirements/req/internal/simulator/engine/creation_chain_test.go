@@ -12,8 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
@@ -36,8 +35,8 @@ type testChainModel struct {
 // buildChainTestComponents builds all components needed for creation chain tests.
 func buildChainTestComponents(
 	tcm *testChainModel,
-) (*CreationChainHandler, *instance.State, *actions.ActionExecutor) {
-	simState := instance.NewState(emptySchema())
+) (*CreationChainHandler, *siminst.State, *actions.ActionExecutor) {
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
@@ -105,7 +104,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 	tcm := buildOrderItemModel(true) // mandatory
 	handler, simState, ae := buildChainTestComponents(tcm)
 
-	// Create an Order instance.
+	// Create an Order siminst.
 	orderClass, _ := testOrderClass()
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
@@ -131,13 +130,13 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 
 func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 	tcm := buildOrderItemModel(true)
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	catalog := schema.New(tcm.model, schema.RunScopeAll())
-	multChecker := invariants.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll()))
-	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
+	multChecker := siminst.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll()))
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &siminst.StructuralInvariantCheckers{
 		Multiplicity: multChecker,
 	}, ge, catalog, rng)
 	handler := NewCreationChainHandler(catalog, ae, NewStateActionExecutor(ae), actions.NewParameterBinder(), rng)
@@ -149,7 +148,7 @@ func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 	ae.BeginWorldStateDeferral()
 	result, err := ae.ExecuteTransition(orderClass, event, nil, nil, actions.CreationLinkSource{}, nil)
 	s.Require().NoError(err)
-	s.Empty(violationsByType(result.Violations, invariants.ViolationTypeMultiplicity),
+	s.Empty(violationsByType(result.Violations, siminst.ViolationTypeMultiplicity),
 		"multiplicity must not fire before nested mandatory creates")
 
 	// After nesting, the mandatory Item link exists; world-state should pass.
@@ -159,7 +158,7 @@ func (s *CreationChainSuite) TestWorldStateChecksWaitForCreationChain() {
 	ae.EndWorldStateDeferral()
 
 	afterNesting := ae.CheckWorldStateInvariants()
-	s.Empty(violationsByType(afterNesting, invariants.ViolationTypeMultiplicity),
+	s.Empty(violationsByType(afterNesting, siminst.ViolationTypeMultiplicity),
 		"multiplicity should see nested links after creation chain")
 }
 
@@ -167,7 +166,7 @@ func (s *CreationChainSuite) TestCascadeDepthLimitReturnsError() {
 	tcm := buildOrderItemModel(true)
 	handler, simState, ae := buildChainTestComponents(tcm)
 
-	// Create an Order instance.
+	// Create an Order siminst.
 	orderClass, _ := testOrderClass()
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	event := orderClass.Events[eventCreateKey]
@@ -204,8 +203,8 @@ func (s *CreationChainSuite) TestMandatoryAssociationClassCreatesEndpointAndLink
 	s.Len(links, 1)
 }
 
-func buildAssociationClassChainComponents(tcm *acTestModel) (*CreationChainHandler, *instance.State, *actions.ActionExecutor) {
-	simState := instance.NewState(emptySchema())
+func buildAssociationClassChainComponents(tcm *acTestModel) (*CreationChainHandler, *siminst.State, *actions.ActionExecutor) {
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(schema.New(tcm.model, schema.RunScopeAll()), bb)
 	ge := actions.NewGuardEvaluator(bb)
@@ -257,7 +256,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 		assocKey: assoc,
 	}
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests

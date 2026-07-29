@@ -13,8 +13,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
@@ -151,25 +150,25 @@ func (s *AssociationClassSuite) TestCatalogIndexesAssociationClass() {
 	s.Equal(tcm.jurisdictionKey, acInfo.ToClassKey)
 	s.Equal(tcm.hostAssocKey, acInfo.HostAssociation.Key)
 
-	assocs := catalog.AllAssociations()
-	s.Len(assocs, 1)
-	s.Equal(tcm.hostAssocKey, assocs[0].Association.Key)
-	s.Require().NotNil(assocs[0].Association.AssociationClassKey)
+	views := catalog.ScopedAssociations()
+	s.Len(views, 1)
+	s.Equal(tcm.hostAssocKey, views[0].Association.Key)
+	s.Require().NotNil(views[0].Association.AssociationClassKey)
 
 	s.Empty(catalog.ExternalCreationEvents(tcm.linkDefKey))
 }
 
 func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := schema.New(tcm.model, schema.RunScopeAll())
 	registerCatalogAssociations(catalog, bb)
 
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
-		Multiplicity: invariants.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll())),
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &siminst.StructuralInvariantCheckers{
+		Multiplicity: siminst.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll())),
 	}, ge, catalog, rng)
 
 	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
@@ -212,13 +211,13 @@ func (s *AssociationClassSuite) TestAssociationClassAddCreatesNativeHostLink() {
 
 func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationClass() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := schema.New(tcm.model, schema.RunScopeAll())
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
-		Multiplicity: invariants.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll())),
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &siminst.StructuralInvariantCheckers{
+		Multiplicity: siminst.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll())),
 	}, ge, catalog, rng)
 
 	partnerClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.partnerKey]
@@ -242,13 +241,13 @@ func (s *AssociationClassSuite) TestHostAssociationCannotLinkWithoutAssociationC
 
 func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := schema.New(tcm.model, schema.RunScopeAll())
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
-		Multiplicity: invariants.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll())),
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &siminst.StructuralInvariantCheckers{
+		Multiplicity: siminst.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll())),
 	}, ge, catalog, rng)
 
 	linkDefClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.linkDefKey]
@@ -261,15 +260,15 @@ func (s *AssociationClassSuite) TestAssociationClassAddRequiresEndpoints() {
 
 func (s *AssociationClassSuite) TestDeleteToNamedStateStillCountsAsLink() {
 	tcm := buildAssociationClassTestModel()
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := schema.New(tcm.model, schema.RunScopeAll())
 	registerCatalogAssociations(catalog, bb)
 
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
-	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &invariants.StructuralInvariantCheckers{
-		Multiplicity: invariants.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll())),
+	ae := actions.NewActionExecutor(bb, actions.InvariantRuntimeCheckers{Checker: nil, DataType: nil}, &siminst.StructuralInvariantCheckers{
+		Multiplicity: siminst.NewMultiplicityChecker(schema.New(tcm.model, schema.RunScopeAll())),
 	}, ge, catalog, rng)
 
 	linkDefClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.linkDefKey]
@@ -286,15 +285,15 @@ func (s *AssociationClassSuite) TestDeleteToNamedStateStillCountsAsLink() {
 	addResult, err := ae.ExecuteTransition(linkDefClass, linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")], nil, nil, actions.CreationLinkSource{SourceAssocKey: &hostAssocKey, SourceID: &partnerResult.InstanceID}, &jurisdictionResult.InstanceID)
 	s.Require().NoError(err)
 
-	s.Empty(violationsByType(addResult.Violations, invariants.ViolationTypeMultiplicity))
+	s.Empty(violationsByType(addResult.Violations, siminst.ViolationTypeMultiplicity))
 
 	acInstance := simState.GetInstance(addResult.InstanceID)
 	deleteEvent := linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/delete")]
 	deleteResult, err := ae.ExecuteTransition(linkDefClass, deleteEvent, acInstance, nil, actions.CreationLinkSource{SourceAssocKey: nil, SourceID: nil}, nil)
 	s.Require().NoError(err)
 
-	s.Empty(violationsByType(deleteResult.Violations, invariants.ViolationTypeMultiplicity))
-	s.Empty(violationsByType(deleteResult.Violations, invariants.ViolationTypeAssociationUniqueness))
+	s.Empty(violationsByType(deleteResult.Violations, siminst.ViolationTypeMultiplicity))
+	s.Empty(violationsByType(deleteResult.Violations, siminst.ViolationTypeAssociationUniqueness))
 	s.Equal("Deleted", getInstanceStateName(simState.GetInstance(addResult.InstanceID)))
 }
 
@@ -334,8 +333,8 @@ func (s *AssociationClassSuite) TestSimulationRunsAssociationClassScenario() {
 
 	acInfo := schema.New(tcm.model, schema.RunScopeAll()).LookupAssociationClass(tcm.linkDefKey)
 	s.Require().NotNil(acInfo)
-	linkedHosts := result.FinalState.AssociationLinks().AllHostAssociationKeys()
-	s.True(linkedHosts[evaluator.AssociationKey(acInfo.HostAssociation.Key.String())])
+	linkedHosts := result.FinalState.LinkedAssociationKeys()
+	s.True(linkedHosts[string(evaluator.AssociationKey(acInfo.HostAssociation.Key.String()))])
 
 	_ = foundDelete
 }

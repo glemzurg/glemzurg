@@ -7,7 +7,6 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -127,13 +126,13 @@ type ExecutionContext struct {
 	peerTransitions []PeerTransitionRecord
 
 	// peerViolations records association peer events the target class could not accept.
-	peerViolations invariants.ViolationErrors
+	peerViolations instance.ViolationErrors
 
 	// depth tracks the current call chain depth (for debugging/limits).
 	depth int
 
 	// requiresViolations holds precondition failures that block guarantee application.
-	requiresViolations invariants.ViolationErrors
+	requiresViolations instance.ViolationErrors
 
 	// associationRemovedPeers records peers dropped by association state_change guarantees.
 	associationRemovedPeers map[associationRemovalKey][]instance.ID
@@ -247,7 +246,7 @@ func (ctx *ExecutionContext) GetPeerTransitions() []PeerTransitionRecord {
 }
 
 // AddPeerViolation records an association peer event the target class could not accept.
-func (ctx *ExecutionContext) AddPeerViolation(v *invariants.ViolationError) {
+func (ctx *ExecutionContext) AddPeerViolation(v *instance.ViolationError) {
 	if v == nil {
 		return
 	}
@@ -255,7 +254,7 @@ func (ctx *ExecutionContext) AddPeerViolation(v *invariants.ViolationError) {
 }
 
 // GetPeerViolations returns association peer event violations.
-func (ctx *ExecutionContext) GetPeerViolations() invariants.ViolationErrors {
+func (ctx *ExecutionContext) GetPeerViolations() instance.ViolationErrors {
 	return ctx.peerViolations
 }
 
@@ -289,12 +288,12 @@ func (ctx *ExecutionContext) DecrementDepth() {
 }
 
 // SetRequiresViolations records precondition failures for the current action chain.
-func (ctx *ExecutionContext) SetRequiresViolations(violations invariants.ViolationErrors) {
+func (ctx *ExecutionContext) SetRequiresViolations(violations instance.ViolationErrors) {
 	ctx.requiresViolations = violations
 }
 
 // RequiresViolations returns precondition failures recorded during execution.
-func (ctx *ExecutionContext) RequiresViolations() invariants.ViolationErrors {
+func (ctx *ExecutionContext) RequiresViolations() instance.ViolationErrors {
 	return ctx.requiresViolations
 }
 

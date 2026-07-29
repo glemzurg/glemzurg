@@ -5,12 +5,10 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -42,14 +40,14 @@ type SimulationResult struct {
 	StepsTaken int
 
 	// Violations is the combined list of all violations from all steps.
-	Violations invariants.ViolationErrors
+	Violations siminst.ViolationErrors
 
 	// TerminationReason explains why the simulation stopped.
 	// One of: "max_steps", "violation", "deadlock".
 	TerminationReason string
 
 	// FinalState is the simulation state when the run ended.
-	FinalState *instance.State
+	FinalState *siminst.State
 
 	// Schema is the static model+catalog for this run (trace AC endpoints, etc.).
 	Schema *schema.Schema
@@ -63,15 +61,15 @@ type SimulationEngine struct {
 	config SimulationConfig
 
 	// Core state
-	simState        *instance.State
+	simState        *siminst.State
 	bindingsBuilder *state.BindingsBuilder
 
 	// Components
 	sch                 *schema.Schema
 	stepExecutor        *StepExecutor
 	selector            *ActionSelector
-	invariantChecker    *invariants.InvariantChecker
-	dataTypeChecker     *invariants.DataTypeChecker
+	invariantChecker    *siminst.InvariantChecker
+	dataTypeChecker     *siminst.DataTypeChecker
 	livenessChecker     *LivenessChecker
 	stateMachineChecker *StateMachineChecker
 	simulationCoverage  *SimulationCoverageTracker
@@ -146,7 +144,7 @@ func resolvedClassKeys(resolved *surface.ResolvedSurface) []identity.Key {
 	return keys
 }
 
-// applySurfaceClassOverlays installs surface-scoped class bodies and model invariants.
+// applySurfaceClassOverlays installs surface-scoped class bodies and model siminst.
 func applySurfaceClassOverlays(sch *schema.Schema, model *core.Model, resolved *surface.ResolvedSurface) error {
 	filtered, err := surface.BuildFilteredModel(model, resolved)
 	if err != nil {
@@ -200,7 +198,7 @@ func newWiredSimulationEngine(
 
 // simulationCore holds wired runtime components after catalog setup.
 type simulationCore struct {
-	simState           *instance.State
+	simState           *siminst.State
 	bindingsBuilder    *state.BindingsBuilder
 	stepExecutor       *StepExecutor
 	selector           *ActionSelector
@@ -266,8 +264,8 @@ func setupState(
 	sch *schema.Schema,
 	catalog *schema.Schema,
 	evalCtx *evaluator.EvalContext,
-) (*instance.State, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
-	simState := instance.NewState(sch)
+) (*siminst.State, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
+	simState := siminst.NewState(sch)
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
 	registerCatalogAssociations(catalog, bindingsBuilder)
@@ -289,29 +287,29 @@ func setupState(
 
 // simulationCheckers groups all invariant/constraint checkers.
 type simulationCheckers struct {
-	invariantChecker         *invariants.InvariantChecker
-	dataTypeChecker          *invariants.DataTypeChecker
-	indexChecker             *invariants.IndexUniquenessChecker
-	multChecker              *invariants.MultiplicityChecker
-	assocInstancePairChecker *invariants.AssociationInstancePairChecker
-	assocUniquenessChecker   *invariants.AssociationUniquenessChecker
-	associationInvChecker    *invariants.AssociationInvariantChecker
+	invariantChecker         *siminst.InvariantChecker
+	dataTypeChecker          *siminst.DataTypeChecker
+	indexChecker             *siminst.IndexUniquenessChecker
+	multChecker              *siminst.MultiplicityChecker
+	assocInstancePairChecker *siminst.AssociationInstancePairChecker
+	assocUniquenessChecker   *siminst.AssociationUniquenessChecker
+	associationInvChecker    *siminst.AssociationInvariantChecker
 }
 
 // setupCheckers constructs constraint checkers from schema (no *core.Model).
 func setupCheckers(sch *schema.Schema, evalCtx *evaluator.EvalContext) (*simulationCheckers, error) {
-	invariantChecker, err := invariants.NewInvariantChecker(sch)
+	invariantChecker, err := siminst.NewInvariantChecker(sch)
 	if err != nil {
 		return nil, fmt.Errorf("invariant checker setup: %w", err)
 	}
 	invariantChecker.SetEvalContext(evalCtx)
 
-	dataTypeChecker, _ := invariants.NewDataTypeChecker(sch)
-	indexChecker := invariants.NewIndexUniquenessChecker(sch)
-	multChecker := invariants.NewMultiplicityChecker(sch)
-	assocInstancePairChecker := invariants.NewAssociationInstancePairChecker(sch)
-	assocUniquenessChecker := invariants.NewAssociationUniquenessChecker(sch)
-	associationInvChecker, err := invariants.NewAssociationInvariantChecker(sch)
+	dataTypeChecker, _ := siminst.NewDataTypeChecker(sch)
+	indexChecker := siminst.NewIndexUniquenessChecker(sch)
+	multChecker := siminst.NewMultiplicityChecker(sch)
+	assocInstancePairChecker := siminst.NewAssociationInstancePairChecker(sch)
+	assocUniquenessChecker := siminst.NewAssociationUniquenessChecker(sch)
+	associationInvChecker, err := siminst.NewAssociationInvariantChecker(sch)
 	if err != nil {
 		return nil, fmt.Errorf("association invariant checker setup: %w", err)
 	}
@@ -328,41 +326,7 @@ func setupCheckers(sch *schema.Schema, evalCtx *evaluator.EvalContext) (*simulat
 }
 
 func registerCatalogAssociations(catalog *schema.Schema, bindingsBuilder *state.BindingsBuilder) {
-	for _, ai := range catalog.AllAssociations() {
-		assoc := ai.Association
-		fromMult := evaluator.Multiplicity{
-			LowerBound:  assoc.FromMultiplicity.LowerBound,
-			HigherBound: assoc.FromMultiplicity.HigherBound,
-		}
-		toMult := evaluator.Multiplicity{
-			LowerBound:  assoc.ToMultiplicity.LowerBound,
-			HigherBound: assoc.ToMultiplicity.HigherBound,
-		}
-		// Association-class host only when the AC class is on the surface; otherwise plain.
-		if assoc.AssociationClassKey != nil {
-			if linkInfo := catalog.GetClassInfo(*assoc.AssociationClassKey); linkInfo != nil {
-				bindingsBuilder.AddAssociationClassHost(
-					assoc.Key,
-					assoc.Name,
-					evaluator.AssociationHostEndpoints{
-						FromClassKey: assoc.FromClassKey.String(),
-						ToClassKey:   assoc.ToClassKey.String(),
-					},
-					linkInfo.Class.Name,
-					evaluator.AssociationHostMultiplicities{From: fromMult, To: toMult},
-				)
-				continue
-			}
-		}
-		bindingsBuilder.AddAssociation(
-			assoc.Key,
-			assoc.Name,
-			assoc.FromClassKey,
-			assoc.ToClassKey,
-			fromMult,
-			toMult,
-		)
-	}
+	catalog.RegisterAssociationBindings(bindingsBuilder)
 }
 
 type executorSetupDeps struct {
@@ -378,7 +342,7 @@ type executorSetupDeps struct {
 func setupExecutors(deps executorSetupDeps) (*StepExecutor, *ActionSelector, *LivenessChecker, error) {
 	actionExecutor := buildActionExecutor(deps.bindingsBuilder, deps.checkers, deps.catalog, deps.rng)
 
-	if len(deps.catalog.AllEventBearingClasses()) == 0 {
+	if !deps.catalog.HasEventBearingClass() {
 		return nil, nil, nil, fmt.Errorf("no event-bearing simulatable classes found in model")
 	}
 
@@ -396,7 +360,7 @@ func buildActionExecutor(
 	rng *rand.Rand,
 ) *actions.ActionExecutor {
 	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
-	structuralCheckers := &invariants.StructuralInvariantCheckers{
+	structuralCheckers := &siminst.StructuralInvariantCheckers{
 		Index:                   checkers.indexChecker,
 		Multiplicity:            checkers.multChecker,
 		AssociationInstancePair: checkers.assocInstancePairChecker,
@@ -459,41 +423,22 @@ func wirePeerFieldDistinctLookup(
 // objectInstancesForClassRef returns extent elements for in-scope instances matching
 // an object-of class reference (subkey, display name, or TLA name).
 func objectInstancesForClassRef(
-	simState *instance.State,
+	simState *siminst.State,
 	catalog *schema.Schema,
 	objectClassRef string,
 ) []object.Object {
 	if simState == nil || catalog == nil || objectClassRef == "" {
 		return nil
 	}
-	want := identity.NormalizeSubKey(objectClassRef)
+	classKey, inScope, ok := catalog.ResolveObjectClassRef(objectClassRef)
+	if !ok || !inScope {
+		return nil
+	}
 	var out []object.Object
-	for _, info := range catalog.AllScopedClasses() {
-		if !objectClassRefMatches(want, objectClassRef, info) {
-			continue
-		}
-		for _, inst := range simState.InstancesByClass(info.ClassKey) {
-			out = append(out, state.ClassExtentElement(inst.ID, inst.Attributes))
-		}
-		return out
+	for _, inst := range simState.InstancesByClass(classKey) {
+		out = append(out, state.ClassExtentElement(inst.ID, inst.Attributes))
 	}
-	return nil
-}
-
-func objectClassRefMatches(wantNorm, objectClassRef string, info *schema.ClassSimInfo) bool {
-	if info == nil {
-		return false
-	}
-	if info.ClassKey.SubKey == objectClassRef || info.ClassKey.String() == objectClassRef {
-		return true
-	}
-	if identity.NormalizeSubKey(info.Class.Name) == wantNorm {
-		return true
-	}
-	if model_class.ClassTLAName(info.Class.Name) == objectClassRef {
-		return true
-	}
-	return identity.NormalizeSubKey(model_class.ClassTLAName(info.Class.Name)) == wantNorm
+	return out
 }
 
 // buildStepExecutor creates the step executor, action selector, and liveness checker.
@@ -591,7 +536,7 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 }
 
 // State returns the current simulation state (useful for testing).
-func (e *SimulationEngine) State() *instance.State {
+func (e *SimulationEngine) State() *siminst.State {
 	return e.simState
 }
 

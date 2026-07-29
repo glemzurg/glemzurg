@@ -1,4 +1,4 @@
-package invariants
+package instance
 
 import (
 	"fmt"
@@ -8,10 +8,8 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 type parsedAssociationInvariantItem struct {
@@ -77,11 +75,11 @@ func parseAssociationInvariantItems(assoc model_class.Association) ([]parsedAsso
 
 // CheckState validates association invariants for every from-class instance.
 func (c *AssociationInvariantChecker) CheckState(
-	simState *instance.State,
-	bindingsBuilder *state.BindingsBuilder,
+	simState *State,
+	bindingsBuilder ExpressionBindings,
 ) ViolationErrors {
 	var violations ViolationErrors
-	simState.ForEachInstance(func(inst *instance.Instance) {
+	simState.ForEachInstance(func(inst *Instance) {
 		violations = append(violations, c.CheckInstance(inst, bindingsBuilder)...)
 	})
 	return violations
@@ -89,8 +87,8 @@ func (c *AssociationInvariantChecker) CheckState(
 
 // CheckInstance validates association invariants for one from-class anchor instance.
 func (c *AssociationInvariantChecker) CheckInstance(
-	instance *instance.Instance,
-	bindingsBuilder *state.BindingsBuilder,
+	instance *Instance,
+	bindingsBuilder ExpressionBindings,
 ) ViolationErrors {
 	items, ok := c.byFromClass[instance.ClassKey]
 	if !ok {
@@ -118,7 +116,7 @@ func (c *AssociationInvariantChecker) CheckInstance(
 }
 
 func evalAssociationInvariantLet(
-	instance *instance.Instance,
+	instance *Instance,
 	item parsedAssociationInvariantItem,
 	bindings *evaluator.Bindings,
 ) ViolationErrors {
@@ -134,7 +132,7 @@ func evalAssociationInvariantLet(
 }
 
 func evalAssociationInvariantAssessment(
-	instance *instance.Instance,
+	instance *Instance,
 	item parsedAssociationInvariantItem,
 	bindings *evaluator.Bindings,
 ) ViolationErrors {

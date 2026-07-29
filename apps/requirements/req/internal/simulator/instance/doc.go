@@ -5,6 +5,13 @@
 // world consistent. Static model facts live in [schema.Schema] (the sole model
 // home for the run), passed into [NewState]; instance never mutates schema.
 //
+// State correctness checks (authored invariants, data types, indexes, multiplicity,
+// association structural rules) live here: they examine live world data and ask
+// schema only keyed questions about the subject under check.
+//
+// Liveness obligations are installed once at [NewState] from schema; hit collection
+// and [State.CheckLiveness] compare against that contract without further schema walks.
+//
 // Action execution, expression evaluation, model loading, and TLA binding
 // construction live in other packages and call into this one.
 //

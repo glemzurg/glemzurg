@@ -3,8 +3,7 @@ package engine
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -55,7 +54,7 @@ type SimulationStep struct {
 	EventName string
 
 	// InstanceID is the instance that was acted upon (assigned after creation).
-	InstanceID instance.ID
+	InstanceID siminst.ID
 
 	// FromState is the state name before the transition (empty for creation).
 	FromState string
@@ -97,5 +96,5 @@ type SimulationStep struct {
 	CascadedSteps []*SimulationStep
 
 	// Violations contains any invariant violations detected during this step.
-	Violations invariants.ViolationErrors
+	Violations siminst.ViolationErrors
 }

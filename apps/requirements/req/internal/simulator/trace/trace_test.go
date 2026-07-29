@@ -16,7 +16,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -272,9 +271,9 @@ func (s *TraceSuite) TestStepWithViolations() {
 				ClassKey:   classKey,
 				ClassName:  "Order",
 				InstanceID: 1,
-				Violations: invariants.ViolationErrors{
+				Violations: instance.ViolationErrors{
 					{
-						Type:    invariants.ViolationTypeModelInvariant,
+						Type:    instance.ViolationTypeModelInvariant,
 						Message: "invariant failed: x > 0",
 					},
 				},
@@ -316,9 +315,9 @@ func (s *TraceSuite) TestViolationsPrintAfterCascadedSteps() {
 						EventName:  "_new",
 					},
 				},
-				Violations: invariants.ViolationErrors{
+				Violations: instance.ViolationErrors{
 					{
-						Type:    invariants.ViolationTypeMultiplicity,
+						Type:    instance.ViolationTypeMultiplicity,
 						Message: "multiplicity violation on instance 2",
 					},
 				},

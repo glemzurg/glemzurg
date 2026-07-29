@@ -1,11 +1,10 @@
-package invariants
+package instance
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
@@ -32,7 +31,7 @@ func NewAssociationUniquenessChecker(sch *schema.Schema) *AssociationUniquenessC
 }
 
 // CheckState validates all association uniqueness rules.
-func (c *AssociationUniquenessChecker) CheckState(simState *instance.State) ViolationErrors {
+func (c *AssociationUniquenessChecker) CheckState(simState *State) ViolationErrors {
 	var violations ViolationErrors
 	for _, binding := range c.bindings {
 		violations = append(violations, c.checkBinding(simState, binding)...)
@@ -41,7 +40,7 @@ func (c *AssociationUniquenessChecker) CheckState(simState *instance.State) Viol
 }
 
 func (c *AssociationUniquenessChecker) checkBinding(
-	simState *instance.State,
+	simState *State,
 	binding associationUniquenessBinding,
 ) ViolationErrors {
 	links := collectAssociationLinks(simState, binding.association)
@@ -86,17 +85,17 @@ func (c *AssociationUniquenessChecker) checkBinding(
 }
 
 type associationLinkEndpoints struct {
-	fromID instance.ID
-	toID   instance.ID
+	fromID ID
+	toID   ID
 }
 
 func collectAssociationLinks(
-	simState *instance.State,
+	simState *State,
 	assoc model_class.Association,
 ) []associationLinkEndpoints {
 	var links []associationLinkEndpoints
 	if assoc.AssociationClassKey != nil {
-		simState.ForEachAssociationLinkOfHost(assoc.Key, func(link instance.AssociationLink) {
+		simState.ForEachAssociationLinkOfHost(assoc.Key, func(link AssociationLink) {
 			links = append(links, associationLinkEndpoints{
 				fromID: link.FromEndpointID,
 				toID:   link.ToEndpointID,
@@ -105,7 +104,7 @@ func collectAssociationLinks(
 		return links
 	}
 
-	simState.ForEachBinaryLinkOfAssociation(assoc.Key, func(fromID, toID instance.ID) {
+	simState.ForEachBinaryLinkOfAssociation(assoc.Key, func(fromID, toID ID) {
 		links = append(links, associationLinkEndpoints{
 			fromID: fromID,
 			toID:   toID,
@@ -128,7 +127,7 @@ func associationUniquenessPartitionKey(uniqueness model_class.AssociationUniquen
 }
 
 func associationUniquenessTupleKey(
-	fromInst, toInst *instance.Instance,
+	fromInst, toInst *Instance,
 	uniqueness model_class.AssociationUniqueness,
 ) string {
 	parts := make([]string, 0, len(uniqueness.FromAttributeKeys)+len(uniqueness.ToAttributeKeys))

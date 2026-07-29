@@ -48,7 +48,8 @@ func (s *ClassCatalogSuite) TestCatalogWithMultipleClasses() {
 
 	catalog := schema.New(model, schema.RunScopeAll())
 
-	all := catalog.AllSimulatableClasses()
+	var all []*schema.ClassSimInfo
+	catalog.EachSimulatableClassSim(func(sim *schema.ClassSimInfo) { all = append(all, sim) })
 	s.Len(all, 2)
 
 	s.NotNil(catalog.GetClassInfo(orderKey))
@@ -74,8 +75,11 @@ func (s *ClassCatalogSuite) TestClassWithNoStatesScopedForLiveness() {
 	info := catalog.GetClassInfo(classKey)
 	s.NotNil(info)
 	s.False(info.HasStates)
-	s.Len(catalog.AllScopedClasses(), 1)
-	s.Empty(catalog.AllSimulatableClasses())
+	var scoped, simulatable int
+	catalog.EachInScopeClassSim(func(*schema.ClassSimInfo) { scoped++ })
+	catalog.EachSimulatableClassSim(func(*schema.ClassSimInfo) { simulatable++ })
+	s.Equal(1, scoped)
+	s.Equal(0, simulatable)
 }
 
 func (s *ClassCatalogSuite) TestStateEventsIndexedCorrectly() {

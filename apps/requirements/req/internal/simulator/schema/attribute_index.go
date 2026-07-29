@@ -118,20 +118,6 @@ func (s *Schema) ClassIndexes(classKey identity.Key) ([]IndexDefinition, bool, e
 	return out, true, nil
 }
 
-// AllClassIndexes returns index definitions for every in-scope class that has indexes.
-func (s *Schema) AllClassIndexes() map[identity.Key][]IndexDefinition {
-	if s == nil || len(s.classIndexes) == 0 {
-		return nil
-	}
-	out := make(map[identity.Key][]IndexDefinition, len(s.classIndexes))
-	for k, defs := range s.classIndexes {
-		cp := make([]IndexDefinition, len(defs))
-		copy(cp, defs)
-		out[k] = cp
-	}
-	return out
-}
-
 // AttributesBySubKey returns attribute defs keyed by SubKey for an in-scope class.
 func (s *Schema) AttributesBySubKey(classKey identity.Key) (map[string]*model_class.Attribute, bool, error) {
 	if s == nil {
@@ -144,14 +130,6 @@ func (s *Schema) AttributesBySubKey(classKey identity.Key) (map[string]*model_cl
 		return nil, false, nil
 	}
 	return s.attrsBySubKey[classKey], true, nil
-}
-
-// AllAttributesBySubKey returns attr maps for every in-scope class.
-func (s *Schema) AllAttributesBySubKey() map[identity.Key]map[string]*model_class.Attribute {
-	if s == nil || len(s.attrsBySubKey) == 0 {
-		return nil
-	}
-	return s.attrsBySubKey
 }
 
 // DerivedAttributes returns derived attribute defs for an in-scope class.

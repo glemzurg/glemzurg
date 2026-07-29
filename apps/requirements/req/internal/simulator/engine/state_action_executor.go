@@ -6,8 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 // StateActionExecutor executes entry/exit/do StateActions around transitions.
@@ -26,8 +25,8 @@ func NewStateActionExecutor(actionExecutor *actions.ActionExecutor) *StateAction
 func (e *StateActionExecutor) ExecuteExitActions(
 	class model_class.Class,
 	fromStateKey identity.Key,
-	instance *instance.Instance,
-) ([]identity.Key, invariants.ViolationErrors, error) {
+	instance *siminst.Instance,
+) ([]identity.Key, siminst.ViolationErrors, error) {
 	return e.executeStateActions(class, fromStateKey, instance, "exit")
 }
 
@@ -35,24 +34,24 @@ func (e *StateActionExecutor) ExecuteExitActions(
 func (e *StateActionExecutor) ExecuteEntryActions(
 	class model_class.Class,
 	toStateKey identity.Key,
-	instance *instance.Instance,
-) ([]identity.Key, invariants.ViolationErrors, error) {
+	instance *siminst.Instance,
+) ([]identity.Key, siminst.ViolationErrors, error) {
 	return e.executeStateActions(class, toStateKey, instance, "entry")
 }
 
 func (e *StateActionExecutor) executeStateActions(
 	class model_class.Class,
 	stateKey identity.Key,
-	instance *instance.Instance,
+	instance *siminst.Instance,
 	when string,
-) ([]identity.Key, invariants.ViolationErrors, error) {
+) ([]identity.Key, siminst.ViolationErrors, error) {
 	s, ok := class.States[stateKey]
 	if !ok {
 		return nil, nil, fmt.Errorf("state %s not found in class %s", stateKey.String(), class.Name)
 	}
 
 	var executed []identity.Key
-	var allViolations invariants.ViolationErrors
+	var allViolations siminst.ViolationErrors
 
 	for _, sa := range s.Actions {
 		if sa.When != when {

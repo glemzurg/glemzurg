@@ -8,8 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -70,7 +69,7 @@ func NewStepExecutor(deps StepExecutorDeps) *StepExecutor {
 // Execute runs a single simulation step for the given pending action.
 func (e *StepExecutor) Execute(
 	pending *PendingAction,
-	simState *instance.State,
+	simState *siminst.State,
 	stepNumber int,
 ) (*SimulationStep, error) {
 	if pending.IsQuery {
@@ -89,7 +88,7 @@ func (e *StepExecutor) Execute(
 	return e.executeTransition(pending, simState, stepNumber)
 }
 
-// executeQuery runs a read-only query on an existing instance.
+// executeQuery runs a read-only query on an existing siminst.
 func (e *StepExecutor) executeQuery(
 	pending *PendingAction,
 	stepNumber int,
@@ -113,7 +112,7 @@ func (e *StepExecutor) executeQuery(
 	// something still invokes it, report a surface-out-of-scope violation.
 	if e.catalog != nil {
 		if unavail, ok := e.catalog.SurfaceUnavailableQuery(pending.Query.Key); ok {
-			step.Violations = append(step.Violations, invariants.NewSurfaceOutOfScopeViolation(
+			step.Violations = append(step.Violations, siminst.NewSurfaceOutOfScopeViolation(
 				pending.Class.ClassKey, pending.Instance.ID, pending.Query.Name, unavail.Reason(),
 			))
 			return step, nil
@@ -137,7 +136,7 @@ func (e *StepExecutor) executeQuery(
 	return step, nil
 }
 
-// executeDerivedRead evaluates one external derived attribute on an existing instance.
+// executeDerivedRead evaluates one external derived attribute on an existing siminst.
 func (e *StepExecutor) executeDerivedRead(
 	pending *PendingAction,
 	stepNumber int,
@@ -179,7 +178,7 @@ func (e *StepExecutor) executeDerivedRead(
 	return step, nil
 }
 
-// executeDo handles a "do" state action — runs the action on the instance.
+// executeDo handles a "do" state action — runs the action on the siminst.
 func (e *StepExecutor) executeDo(
 	pending *PendingAction,
 	stepNumber int,
@@ -211,7 +210,7 @@ func (e *StepExecutor) executeDo(
 // executeTransition handles event-triggered transitions (creation, normal, deletion).
 func (e *StepExecutor) executeTransition(
 	pending *PendingAction,
-	simState *instance.State,
+	simState *siminst.State,
 	stepNumber int,
 ) (*SimulationStep, error) {
 	if pending.Event == nil {
@@ -367,7 +366,7 @@ func (e *StepExecutor) executeExitActions(pending *PendingAction, step *Simulati
 func (e *StepExecutor) executeEntryActions(
 	pending *PendingAction,
 	result *actions.TransitionResult,
-	simState *instance.State,
+	simState *siminst.State,
 	step *SimulationStep,
 ) error {
 	if result.WasDestroy || result.ToState == "" {
@@ -395,7 +394,7 @@ func (e *StepExecutor) executeEntryActions(
 // handleCreationChain handles cascaded creation steps for a creation transition.
 func (e *StepExecutor) handleCreationChain(
 	result *actions.TransitionResult,
-	simState *instance.State,
+	simState *siminst.State,
 	step *SimulationStep,
 ) error {
 	if !result.WasCreation {
@@ -415,7 +414,7 @@ func (e *StepExecutor) handleCreationChain(
 }
 
 // getCurrentStateKey looks up the instance's current state key from its _state attribute.
-func getCurrentStateKey(instance *instance.Instance, classInfo *schema.ClassSimInfo) *identity.Key {
+func getCurrentStateKey(instance *siminst.Instance, classInfo *schema.ClassSimInfo) *identity.Key {
 	stateName := getInstanceStateName(instance)
 	if stateName == "" {
 		return nil

@@ -12,9 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -92,7 +90,7 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 }
 
 // makeCreationStep creates a SimulationStep representing a creation event.
-func makeCreationStep(classKey identity.Key, className string, instanceID instance.ID) *SimulationStep {
+func makeCreationStep(classKey identity.Key, className string, instanceID siminst.ID) *SimulationStep {
 	return &SimulationStep{
 		Kind:       StepKindCreation,
 		ClassKey:   classKey,
@@ -102,7 +100,7 @@ func makeCreationStep(classKey identity.Key, className string, instanceID instan
 }
 
 // makeStepWithWrite creates a step with a primed assignment (attribute write).
-func makeStepWithWrite(classKey identity.Key, className string, instanceID instance.ID, attrName string, value object.Object) *SimulationStep {
+func makeStepWithWrite(classKey identity.Key, className string, instanceID siminst.ID, attrName string, value object.Object) *SimulationStep {
 	return &SimulationStep{
 		Kind:      StepKindCreation,
 		ClassKey:  classKey,
@@ -111,7 +109,7 @@ func makeStepWithWrite(classKey identity.Key, className string, instanceID insta
 			InstanceID: instanceID,
 			ActionResult: &actions.ActionResult{
 				InstanceID: instanceID,
-				PrimedAssignments: map[instance.ID]map[string]object.Object{
+				PrimedAssignments: map[siminst.ID]map[string]object.Object{
 					instanceID: {attrName: value},
 				},
 			},
@@ -120,23 +118,26 @@ func makeStepWithWrite(classKey identity.Key, className string, instanceID insta
 }
 
 // makeDoStepWithWrite creates a step with a DoActionResult primed assignment.
-func makeDoStepWithWrite(classKey identity.Key, className string, instanceID instance.ID, attrName string, value object.Object) *SimulationStep {
+func makeDoStepWithWrite(classKey identity.Key, className string, instanceID siminst.ID, attrName string, value object.Object) *SimulationStep {
 	return &SimulationStep{
 		Kind:      StepKindNormal,
 		ClassKey:  classKey,
 		ClassName: className,
 		DoActionResult: &actions.ActionResult{
 			InstanceID: instanceID,
-			PrimedAssignments: map[instance.ID]map[string]object.Object{
+			PrimedAssignments: map[siminst.ID]map[string]object.Object{
 				instanceID: {attrName: value},
 			},
 		},
 	}
 }
 
-// makeFinalState creates a SimulationState for test results.
-func makeFinalState() *instance.State {
-	return instance.NewState(emptySchema())
+// makeFinalState creates a SimulationState with the run schema (liveness obligations).
+func makeFinalState(sch *schema.Schema) *siminst.State {
+	if sch == nil {
+		sch = emptySchema()
+	}
+	return siminst.NewState(sch)
 }
 
 // --- Tests ---
@@ -149,11 +150,11 @@ func (s *LivenessCheckerSuite) TestAllClassesInstantiated_NoViolations() {
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{makeCreationStep(orderKey, "Order", 1)},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, siminst.ViolationTypeLivenessClassNotInstantiated)
 	s.Empty(classViolations)
 }
 
@@ -167,11 +168,11 @@ func (s *LivenessCheckerSuite) TestClassNotInstantiated_Violation() {
 	// Only Order is created, not Item.
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{makeCreationStep(orderKey, "Order", 1)},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, siminst.ViolationTypeLivenessClassNotInstantiated)
 	s.Len(classViolations, 1)
 	s.Contains(classViolations[0].Message, "Item")
 }
@@ -195,11 +196,11 @@ func (s *LivenessCheckerSuite) TestCascadedCreationStepsCounted() {
 				},
 			},
 		},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, siminst.ViolationTypeLivenessClassNotInstantiated)
 	s.Empty(classViolations)
 }
 
@@ -245,11 +246,11 @@ func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
 		Steps: []*SimulationStep{
 			makeStepWithWrite(orderKey, "Order", 1, "amount", object.NewInteger(100)),
 		},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, siminst.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -264,11 +265,11 @@ func (s *LivenessCheckerSuite) TestAttributeWrittenBySubKey_MatchesDisplayName()
 		Steps: []*SimulationStep{
 			makeStepWithWrite(jurisdictionKey, "Jurisdiction", 1, "country_code", object.NewString("US")),
 		},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, siminst.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -281,11 +282,11 @@ func (s *LivenessCheckerSuite) TestAttributeNotWritten_Violation() {
 	// No steps at all — amount was never written.
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, siminst.ViolationTypeLivenessAttributeNotWritten)
 	s.Len(attrViolations, 1)
 	s.Contains(attrViolations[0].Message, "amount")
 	s.Contains(attrViolations[0].Message, "Order")
@@ -327,11 +328,11 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	// No writes — but the only attribute is derived, so no violation.
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, siminst.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -346,11 +347,11 @@ func (s *LivenessCheckerSuite) TestDoActionWritesCounted() {
 		Steps: []*SimulationStep{
 			makeDoStepWithWrite(orderKey, "Order", 1, "amount", object.NewInteger(42)),
 		},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, siminst.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -371,11 +372,11 @@ func (s *LivenessCheckerSuite) TestCascadedStepWritesCounted() {
 				},
 			},
 		},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, siminst.ViolationTypeLivenessAttributeNotWritten)
 	s.Empty(attrViolations)
 }
 
@@ -396,12 +397,8 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 	checker := NewLivenessChecker(catalog)
 
 	// Create a state with a link.
-	finalState := makeFinalState()
-	s.Require().NoError(finalState.Links().AddLink(
-		evaluator.AssociationKey(assocKey.String()),
-		evaluator.ObjectID(1),
-		evaluator.ObjectID(2),
-	))
+	finalState := makeFinalState(catalog)
+	s.Require().NoError(finalState.AddLink(assocKey, 1, 2))
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
@@ -409,7 +406,7 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 	}
 
 	violations := checker.Check(result)
-	assocViolations := violationsByType(violations, invariants.ViolationTypeLivenessAssociationNotLinked)
+	assocViolations := violationsByType(violations, siminst.ViolationTypeLivenessAssociationNotLinked)
 	s.Empty(assocViolations)
 }
 
@@ -432,11 +429,11 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 	// No links in final state.
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	assocViolations := violationsByType(violations, invariants.ViolationTypeLivenessAssociationNotLinked)
+	assocViolations := violationsByType(violations, siminst.ViolationTypeLivenessAssociationNotLinked)
 	s.Len(assocViolations, 1)
 	s.Contains(assocViolations[0].Message, "order_items")
 }
@@ -459,11 +456,11 @@ func (s *LivenessCheckerSuite) TestStatelessClass_InstantiationViolation() {
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, siminst.ViolationTypeLivenessClassNotInstantiated)
 	s.Len(classViolations, 1)
 	s.Contains(classViolations[0].Message, "Stateless")
 }
@@ -478,17 +475,17 @@ func (s *LivenessCheckerSuite) TestMultipleViolationsCombined() {
 	// No steps at all — both classes not instantiated, attributes not written.
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	classViolations := violationsByType(violations, invariants.ViolationTypeLivenessClassNotInstantiated)
+	classViolations := violationsByType(violations, siminst.ViolationTypeLivenessClassNotInstantiated)
 	s.Len(classViolations, 2)
 
-	attrViolations := violationsByType(violations, invariants.ViolationTypeLivenessAttributeNotWritten)
+	attrViolations := violationsByType(violations, siminst.ViolationTypeLivenessAttributeNotWritten)
 	s.Len(attrViolations, 2)
 
-	eventViolations := violationsByType(violations, invariants.ViolationTypeLivenessEventNotSent)
+	eventViolations := violationsByType(violations, siminst.ViolationTypeLivenessEventNotSent)
 	s.NotEmpty(eventViolations)
 
 	s.NotEmpty(violations.LivenessViolations())
@@ -502,11 +499,11 @@ func (s *LivenessCheckerSuite) TestEventNotSent_Violation() {
 
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
-		FinalState: makeFinalState(),
+		FinalState: makeFinalState(catalog),
 	}
 
 	violations := checker.Check(result)
-	eventViolations := violationsByType(violations, invariants.ViolationTypeLivenessEventNotSent)
+	eventViolations := violationsByType(violations, siminst.ViolationTypeLivenessEventNotSent)
 	s.NotEmpty(eventViolations)
 	s.Contains(eventViolations[0].Message, "create")
 }
@@ -520,6 +517,7 @@ func (s *LivenessCheckerSuite) TestNilFinalState_NoAssociationPanic() {
 	result := &SimulationResult{
 		Steps:      []*SimulationStep{},
 		FinalState: nil,
+		Schema:     catalog,
 	}
 
 	// Should not panic on nil FinalState.
@@ -535,11 +533,11 @@ func (s *LivenessCheckerSuite) TestParameterSimulationNotUsed_Violation() {
 
 	result := &SimulationResult{
 		Steps:              []*SimulationStep{},
-		FinalState:         makeFinalState(),
+		FinalState:         makeFinalState(catalog),
 		SimulationCoverage: NewSimulationCoverageTracker(),
 	}
 
-	violations := violationsByType(checker.Check(result), invariants.ViolationTypeLivenessParameterSimulationNotUsed)
+	violations := violationsByType(checker.Check(result), siminst.ViolationTypeLivenessParameterSimulationNotUsed)
 	s.Len(violations, 1)
 	s.Contains(violations[0].Message, "Amounts")
 }
@@ -559,11 +557,11 @@ func (s *LivenessCheckerSuite) TestParameterSimulationUsed_NoViolation() {
 
 	result := &SimulationResult{
 		Steps:              []*SimulationStep{},
-		FinalState:         makeFinalState(),
+		FinalState:         makeFinalState(catalog),
 		SimulationCoverage: coverage,
 	}
 
-	violations := violationsByType(checker.Check(result), invariants.ViolationTypeLivenessParameterSimulationNotUsed)
+	violations := violationsByType(checker.Check(result), siminst.ViolationTypeLivenessParameterSimulationNotUsed)
 	s.Empty(violations)
 }
 

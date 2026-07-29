@@ -1,4 +1,4 @@
-package invariants
+package instance
 
 import (
 	"strings"
@@ -16,7 +16,7 @@ const (
 )
 
 // NullableWhenSetSpecification wraps inner so NULL/absent is valid and inner applies only when set.
-// Used for nullable attribute and parameter invariants; not for requires or class invariants.
+// Used for nullable attribute and parameter invariants; not for requires or class instance.
 func NullableWhenSetSpecification(subject, inner string) string {
 	return "_GZ!WhenNotNull(" + subject + ", " + inner + ")"
 }

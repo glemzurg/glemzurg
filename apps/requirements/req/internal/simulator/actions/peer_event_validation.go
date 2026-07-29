@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 )
 
 type peerEventViolationContext struct {
@@ -68,7 +67,7 @@ func (e *ActionExecutor) peerEventUnavailableViolation(
 	peerInstanceID instance.ID,
 	eventKey identity.Key,
 	eventName string,
-) *invariants.ViolationError {
+) *instance.ViolationError {
 	stateName := ""
 	if peerInstanceID != 0 {
 		if inst := e.bindingsBuilder.State().GetInstance(peerInstanceID); inst != nil {
@@ -91,7 +90,7 @@ func (e *ActionExecutor) peerEventUnavailableViolation(
 	} else {
 		msg = fmt.Sprintf("%s but the class has no %s creation transition", msg, eventName)
 	}
-	return invariants.NewPeerEventUnavailableViolation(invariants.PeerEventUnavailableParams{
+	return instance.NewPeerEventUnavailableViolation(instance.PeerEventUnavailableParams{
 		OwnerClassKey:   vctx.OwnerClassKey,
 		OwnerInstanceID: vctx.OwnerInstanceID,
 		AssociationName: vctx.AssociationName,

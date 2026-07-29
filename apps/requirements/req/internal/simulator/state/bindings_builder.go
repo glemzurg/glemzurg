@@ -93,7 +93,7 @@ func (b *BindingsBuilder) applyNamedSets(bindings *evaluator.Bindings) {
 }
 
 // buildGlobal creates a root bindings context with global state variables.
-// This is suitable for evaluating model-level invariants.
+// This is suitable for evaluating model-level instance.
 func (b *BindingsBuilder) buildGlobal() *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
 	bindings.SetRelationContext(b.buildRelationContext())

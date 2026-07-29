@@ -12,7 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
@@ -34,7 +33,7 @@ type ActionResult struct {
 	PeerTransitions []PeerTransitionRecord
 
 	// Violations contains any invariant violations detected after state changes.
-	Violations invariants.ViolationErrors
+	Violations instance.ViolationErrors
 
 	// Success is true if there are no violations.
 	Success bool
@@ -49,7 +48,7 @@ type QueryResult struct {
 	Outputs map[string]object.Object
 
 	// Violations contains any post-condition violations.
-	Violations invariants.ViolationErrors
+	Violations instance.ViolationErrors
 
 	// Success is true if there are no violations.
 	Success bool
@@ -97,7 +96,7 @@ type TransitionResult struct {
 	ActionResult *ActionResult
 
 	// Violations contains any violations from the transition.
-	Violations invariants.ViolationErrors
+	Violations instance.ViolationErrors
 }
 
 // AssociationClassIndex resolves association-class metadata for creation linking.
@@ -113,9 +112,9 @@ type AssociationClassLinkInfo = schema.AssociationClassLinkInfo
 // ActionExecutor executes actions, queries, and transitions against simulation state.
 type ActionExecutor struct {
 	bindingsBuilder    *state.BindingsBuilder
-	invariantChecker   *invariants.InvariantChecker
-	dataTypeChecker    *invariants.DataTypeChecker
-	structuralCheckers *invariants.StructuralInvariantCheckers
+	invariantChecker   *instance.InvariantChecker
+	dataTypeChecker    *instance.DataTypeChecker
+	structuralCheckers *instance.StructuralInvariantCheckers
 	guardEvaluator     *GuardEvaluator
 	sch                *schema.Schema
 	rng                *rand.Rand
@@ -134,15 +133,15 @@ type ActionExecutor struct {
 
 // InvariantRuntimeCheckers pairs the primary invariant and data-type checkers used during action execution.
 type InvariantRuntimeCheckers struct {
-	Checker  *invariants.InvariantChecker
-	DataType *invariants.DataTypeChecker
+	Checker  *instance.InvariantChecker
+	DataType *instance.DataTypeChecker
 }
 
 // NewActionExecutor creates a new action executor.
 func NewActionExecutor(
 	bindingsBuilder *state.BindingsBuilder,
 	runtime InvariantRuntimeCheckers,
-	structuralCheckers *invariants.StructuralInvariantCheckers,
+	structuralCheckers *instance.StructuralInvariantCheckers,
 	guardEvaluator *GuardEvaluator,
 	sch *schema.Schema,
 	rng *rand.Rand,
@@ -167,14 +166,14 @@ func NewActionExecutor(
 
 // ExecuteAction is the top-level entry point for action execution.
 // It creates an ExecutionContext, runs the action (which may chain to others),
-// then applies all primed assignments and checks all invariants.
+// then applies all primed assignments and checks all instance.
 func (e *ActionExecutor) ExecuteAction(
 	action model_state.Action,
 	instance *instance.Instance,
 	parameters map[string]object.Object,
 ) (*ActionResult, error) {
 	ctx := NewExecutionContext()
-	paramViolations := invariants.CheckParameterTypeSpecs(
+	paramViolations := checkParameterTypeSpecs(
 		action.Parameters, action.Key, action.Name, "action", instance.ID, instance.ClassKey,
 	)
 
@@ -226,8 +225,8 @@ func (e *ActionExecutor) runStatePhaseAndFinalize(
 
 func (e *ActionExecutor) collectActionViolations(
 	ctx *ExecutionContext,
-	paramViolations invariants.ViolationErrors,
-) invariants.ViolationErrors {
+	paramViolations instance.ViolationErrors,
+) instance.ViolationErrors {
 	allViolations := e.checkAllInvariants(ctx)
 	allViolations = append(allViolations, ctx.GetPeerViolations()...)
 	return append(allViolations, paramViolations...)
@@ -275,8 +274,8 @@ func (e *ActionExecutor) applyPrimedAssignments(ctx *ExecutionContext) error {
 
 // checkAllInvariants runs post-conditions and invariant checks after an action.
 // World-state checks are omitted while a step is mid-flight so nesting can finish first.
-func (e *ActionExecutor) checkAllInvariants(ctx *ExecutionContext) invariants.ViolationErrors {
-	var allViolations invariants.ViolationErrors
+func (e *ActionExecutor) checkAllInvariants(ctx *ExecutionContext) instance.ViolationErrors {
+	var allViolations instance.ViolationErrors
 
 	allViolations = append(allViolations, e.checkPostConditions(ctx)...)
 	allViolations = append(allViolations, e.checkSafetyRules(ctx)...)
@@ -309,8 +308,8 @@ func (e *ActionExecutor) worldStateChecksDeferred() bool {
 // rules against the current simulation state. Call after _state is applied and
 // all nested peer/creation-chain work for the step has finished.
 // Class and attribute invariants are checked by the simulation engine after each step.
-func (e *ActionExecutor) CheckWorldStateInvariants() invariants.ViolationErrors {
-	var violations invariants.ViolationErrors
+func (e *ActionExecutor) CheckWorldStateInvariants() instance.ViolationErrors {
+	var violations instance.ViolationErrors
 	violations = append(violations, e.checkModelInvariants()...)
 	violations = append(violations, e.checkIndexUniqueness()...)
 	violations = append(violations, e.checkAssociationStructuralInvariants()...)
@@ -318,8 +317,8 @@ func (e *ActionExecutor) CheckWorldStateInvariants() invariants.ViolationErrors 
 }
 
 // checkPostConditions evaluates all deferred post-conditions from the execution context.
-func (e *ActionExecutor) checkPostConditions(ctx *ExecutionContext) invariants.ViolationErrors {
-	var violations invariants.ViolationErrors
+func (e *ActionExecutor) checkPostConditions(ctx *ExecutionContext) instance.ViolationErrors {
+	var violations instance.ViolationErrors
 	simState := e.bindingsBuilder.State()
 
 	for _, pc := range ctx.GetAllPostConditions() {
@@ -337,8 +336,8 @@ func (e *ActionExecutor) checkPostConditions(ctx *ExecutionContext) invariants.V
 }
 
 // checkSafetyRules evaluates all deferred safety rules from the execution context.
-func (e *ActionExecutor) checkSafetyRules(ctx *ExecutionContext) invariants.ViolationErrors {
-	var violations invariants.ViolationErrors
+func (e *ActionExecutor) checkSafetyRules(ctx *ExecutionContext) instance.ViolationErrors {
+	var violations instance.ViolationErrors
 	simState := e.bindingsBuilder.State()
 
 	for _, sr := range ctx.GetAllSafetyRules() {
@@ -351,7 +350,7 @@ func (e *ActionExecutor) checkSafetyRules(ctx *ExecutionContext) invariants.Viol
 			safetyBindings.Set(name, value, evaluator.NamespaceLocal)
 		}
 		if msg := evalBooleanCheck(sr.Expression, safetyBindings); msg != "" {
-			violations = append(violations, invariants.NewSafetyRuleViolation(
+			violations = append(violations, instance.NewSafetyRuleViolation(
 				sr.SourceKey, sr.SourceName, sr.Index, sr.OriginalExpression,
 				sr.InstanceID, msg,
 			))
@@ -378,11 +377,11 @@ func evalBooleanCheck(expr me.Expression, bindings *evaluator.Bindings) string {
 }
 
 // checkDataTypeConstraints checks data type constraints on all mutated instances.
-func (e *ActionExecutor) checkDataTypeConstraints(ctx *ExecutionContext) invariants.ViolationErrors {
+func (e *ActionExecutor) checkDataTypeConstraints(ctx *ExecutionContext) instance.ViolationErrors {
 	if e.dataTypeChecker == nil {
 		return nil
 	}
-	var violations invariants.ViolationErrors
+	var violations instance.ViolationErrors
 	simState := e.bindingsBuilder.State()
 
 	for _, instanceID := range ctx.MutatedInstanceIDs() {
@@ -396,8 +395,8 @@ func (e *ActionExecutor) checkDataTypeConstraints(ctx *ExecutionContext) invaria
 	return violations
 }
 
-// checkModelInvariants checks model-level invariants.
-func (e *ActionExecutor) checkModelInvariants() invariants.ViolationErrors {
+// checkModelInvariants checks model-level instance.
+func (e *ActionExecutor) checkModelInvariants() instance.ViolationErrors {
 	if e.invariantChecker == nil {
 		return nil
 	}
@@ -405,19 +404,19 @@ func (e *ActionExecutor) checkModelInvariants() invariants.ViolationErrors {
 }
 
 // checkIndexUniqueness checks index uniqueness constraints.
-func (e *ActionExecutor) checkIndexUniqueness() invariants.ViolationErrors {
+func (e *ActionExecutor) checkIndexUniqueness() instance.ViolationErrors {
 	if e.structuralCheckers == nil || e.structuralCheckers.Index == nil {
 		return nil
 	}
 	return e.structuralCheckers.Index.CheckState(e.bindingsBuilder.State())
 }
 
-// checkAssociationStructuralInvariants checks association multiplicities and association invariants.
-func (e *ActionExecutor) checkAssociationStructuralInvariants() invariants.ViolationErrors {
+// checkAssociationStructuralInvariants checks association multiplicities and association instance.
+func (e *ActionExecutor) checkAssociationStructuralInvariants() instance.ViolationErrors {
 	if e.structuralCheckers == nil {
 		return nil
 	}
-	var violations invariants.ViolationErrors
+	var violations instance.ViolationErrors
 	if e.structuralCheckers.Multiplicity != nil {
 		violations = append(violations, e.structuralCheckers.Multiplicity.CheckState(e.bindingsBuilder.State())...)
 	}
@@ -496,7 +495,7 @@ func (e *ActionExecutor) evaluateActionRequires(
 	action model_state.Action,
 	instanceID instance.ID,
 	bindings *evaluator.Bindings,
-) (invariants.ViolationErrors, error) {
+) (instance.ViolationErrors, error) {
 	owner := ParameterOwnerFromAction(action)
 	reqFailures, err := owner.AssessRequires(action.Parameters, bindings)
 	if err != nil {
@@ -778,7 +777,7 @@ func (e *ActionExecutor) ExecuteQuery(
 	parameters map[string]object.Object,
 ) (*QueryResult, error) {
 	ctx := NewExecutionContext()
-	paramViolations := invariants.CheckParameterTypeSpecs(
+	paramViolations := checkParameterTypeSpecs(
 		query.Parameters, query.Key, query.Name, "query", instance.ID, instance.ClassKey,
 	)
 
@@ -969,7 +968,7 @@ type transitionResultInput struct {
 }
 
 func (e *ActionExecutor) buildTransitionResult(in transitionResultInput) *TransitionResult {
-	var violations invariants.ViolationErrors
+	var violations instance.ViolationErrors
 	if in.actionResult != nil {
 		violations = in.actionResult.Violations
 	}
@@ -1304,9 +1303,9 @@ func isTrueBoolean(obj object.Object) bool {
 }
 
 // createPostConditionViolation creates a violation from a deferred post-condition.
-func createPostConditionViolation(pc DeferredPostCondition, message string) *invariants.ViolationError {
+func createPostConditionViolation(pc DeferredPostCondition, message string) *instance.ViolationError {
 	if pc.SourceType == logicOwnerKindAction {
-		return invariants.NewActionGuaranteeViolation(
+		return instance.NewActionGuaranteeViolation(
 			pc.SourceKey,
 			pc.SourceName,
 			pc.Index,
@@ -1315,7 +1314,7 @@ func createPostConditionViolation(pc DeferredPostCondition, message string) *inv
 			message,
 		)
 	}
-	return invariants.NewQueryGuaranteeViolation(
+	return instance.NewQueryGuaranteeViolation(
 		pc.SourceKey,
 		pc.SourceName,
 		pc.Index,

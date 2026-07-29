@@ -37,6 +37,9 @@ type State struct {
 
 	// identityRegistry maps between object.Record pointers and evaluator ObjectIDs.
 	identityRegistry *evaluator.IdentityRegistry
+
+	// liveness is the coverage contract for this run (installed once from schema at New).
+	liveness *livenessObligations
 }
 
 // NewState creates a new empty simulation state.
@@ -53,6 +56,7 @@ func NewState(sch *schema.Schema) *State {
 		stateMachineStates: make(map[ID]identity.Key),
 		nextID:             1, // Start at 1 so 0 can indicate "no instance"
 		identityRegistry:   evaluator.NewIdentityRegistry(),
+		liveness:           installLivenessObligations(sch),
 	}
 }
 
@@ -70,11 +74,7 @@ func (s *State) CreateInstance(classKey identity.Key, attributes *object.Record)
 	id := s.nextID
 	s.nextID++
 
-	inst := &Instance{
-		ID:         id,
-		ClassKey:   classKey,
-		Attributes: attributes.Clone().(*object.Record),
-	}
+	inst := NewInstance(id, classKey, attributes.Clone().(*object.Record))
 
 	s.instances[id] = inst
 
@@ -276,12 +276,6 @@ func (s *State) linkCount() int {
 	return s.links.Count()
 }
 
-// Links returns the underlying binary link table.
-// Migration-era escape hatch; prefer State navigation methods when possible.
-func (s *State) Links() *evaluator.LinkTable {
-	return s.links
-}
-
 // AddAssociationLink materializes one host association row via an association-class instance.
 // Returns an error when the host association already links the endpoint pair.
 func (s *State) AddAssociationLink(
@@ -320,12 +314,6 @@ func (s *State) AssociationLinkByInstance(linkInstanceID ID) (AssociationLink, b
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.associationLinks.LinkByInstance(linkInstanceID)
-}
-
-// AssociationLinks returns the underlying association link table.
-// Migration-era escape hatch; prefer State association methods when possible.
-func (s *State) AssociationLinks() *AssociationLinkTable {
-	return s.associationLinks
 }
 
 // SetStateMachineState sets the current state machine state for an instance.

@@ -19,7 +19,7 @@ func (s *ParameterSampler) NamedSetSampleDomainsAvailable(
 	if s == nil {
 		return true, nil
 	}
-	// Domain gates come from owner requires/invariants. Prefer full owner parameters
+	// Domain gates come from owner requires/instance. Prefer full owner parameters
 	// when the caller has no matched subset (e.g. event name mismatch) so requires
 	// like set-minus-used still exclude the action.
 	if len(paramDefs) == 0 {

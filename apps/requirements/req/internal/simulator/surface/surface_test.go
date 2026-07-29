@@ -675,7 +675,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_KeepsIncludedClasses() {
 	}
 	s.Equal(2, totalClasses)
 
-	// Check invariants.
+	// Check instance.
 	s.Len(filtered.Invariants, 1)
 	s.Equal("Order.count > 0", filtered.Invariants[0].Spec.Specification)
 }

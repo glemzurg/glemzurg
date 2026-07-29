@@ -296,6 +296,30 @@ func HasBooleanTypeSpec(dataType *DataType) bool {
 	return strings.EqualFold(strings.TrimSpace(dataType.TypeSpec.Specification), "BOOLEAN")
 }
 
+// IsNumericAtomic reports whether dataType is a span/int-style atomic value that
+// should be stored and used as a Number (INT/Int/Nat type_spec or span constraint).
+func IsNumericAtomic(dataType *DataType) bool {
+	if dataType == nil || dataType.CollectionType != COLLECTION_TYPE_ATOMIC || dataType.Atomic == nil {
+		return false
+	}
+	if dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_SPAN {
+		return true
+	}
+	if dataType.Atomic.ConstraintType == CONSTRAINT_TYPE_DATETIME {
+		return true
+	}
+	if dataType.TypeSpec == nil {
+		return false
+	}
+	spec := strings.TrimSpace(dataType.TypeSpec.Specification)
+	switch strings.ToUpper(spec) {
+	case "INT", "INTEGER", "NAT", "NATURAL":
+		return true
+	default:
+		return false
+	}
+}
+
 // BooleanFromEnumerationLiteral maps enum literals TRUE/FALSE to a bool.
 // Returns ok=false when literal is not a recognized boolean enumeration value.
 func BooleanFromEnumerationLiteral(literal string) (value bool, ok bool) {

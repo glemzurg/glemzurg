@@ -8,7 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// ModelInvariants returns run-scoped model-level invariants.
+// ModelInvariants returns run-scoped model-level instance.
 func (s *Schema) ModelInvariants() []model_logic.Logic {
 	if s == nil {
 		return nil
@@ -26,8 +26,8 @@ func (s *Schema) NamedSets() map[identity.Key]model_logic.NamedSet {
 	return out
 }
 
-// AllUseCases returns every use case on the owned model.
-func (s *Schema) AllUseCases() []model_use_case.UseCase {
+// allUseCases returns every use case on the owned model (caller-graph install only).
+func (s *Schema) allUseCases() []model_use_case.UseCase {
 	if s == nil || s.model == nil {
 		return nil
 	}

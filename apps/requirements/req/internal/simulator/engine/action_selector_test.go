@@ -12,7 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -34,7 +34,7 @@ func (s *ActionSelectorSuite) TestCreationEligibleWhenNoInstancesExist() {
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 
 	action, err := selector.SelectAction(simState)
 	s.Require().NoError(err)
@@ -51,7 +51,7 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Open"))
 	attrs.Set("amount", object.NewInteger(0))
@@ -111,7 +111,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
 	// No creation transitions and no instances → deadlock.
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	_, err := selector.SelectAction(simState)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "deadlock")
@@ -122,9 +122,9 @@ func (s *ActionSelectorSuite) TestCreationBlockedUntilObjectParamClassHasInstanc
 	ownerClass, ownerKey, peerClass, peerKey := ownerWithObjectParamPeer()
 	model := testModel(classEntry(ownerClass, ownerKey), classEntry(peerClass, peerKey))
 	catalog := schema.New(model, schema.RunScopeAll())
-	selector := NewActionSelector(catalog, nil, state.NewBindingsBuilder(instance.NewState(emptySchema())), nil, rand.New(rand.NewSource(1))) //nolint:gosec
+	selector := NewActionSelector(catalog, nil, state.NewBindingsBuilder(siminst.NewState(emptySchema())), nil, rand.New(rand.NewSource(1))) //nolint:gosec
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 
 	// Only Peer creation should be eligible (Owner needs a Peer instance).
 	for range 20 {
@@ -158,7 +158,7 @@ func (s *ActionSelectorSuite) TestCreationAllowedWhenObjectParamClassOutOfScope(
 	catalog := schema.New(full, schema.NewRunScope([]identity.Key{ownerKey}))
 	selector := NewActionSelector(catalog, nil, nil, nil, rand.New(rand.NewSource(1))) //nolint:gosec
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	action, err := selector.SelectAction(simState)
 	s.Require().NoError(err)
 	s.True(action.IsCreation)
@@ -253,7 +253,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleOnExistingInstances() {
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, nil, nil, nil, rng)
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Active"))
 	attrs.Set("count", object.NewInteger(0))

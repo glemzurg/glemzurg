@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -53,8 +52,8 @@ func enumAttrDef(name string, values []string) *model_class.Attribute {
 	return &attr
 }
 
-func makeIndexInfo(classKey identity.Key, indexes []invariants.IndexDefinition) *invariants.ClassIndexInfo {
-	return &invariants.ClassIndexInfo{
+func makeIndexInfo(classKey identity.Key, indexes []instance.IndexDefinition) *instance.ClassIndexInfo {
+	return &instance.ClassIndexInfo{
 		ClassKey: classKey,
 		Indexes:  indexes,
 	}
@@ -74,7 +73,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesUsesAttributeFieldKeyNotDispla
 		false,
 		model_class.AttributeAnnotations{IndexNums: []uint{0}},
 	))
-	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
+	indexInfo := makeIndexInfo(classKey, []instance.IndexDefinition{
 		{
 			IndexNum:  0,
 			AttrNames: []string{"abbr"},
@@ -105,7 +104,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesSpanUnique() {
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	idAttr := spanAttrDef("id", 1, 10000)
-	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
+	indexInfo := makeIndexInfo(classKey, []instance.IndexDefinition{
 		{
 			IndexNum:  1,
 			AttrNames: []string{"id"},
@@ -135,7 +134,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumUnique() {
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	colorAttr := enumAttrDef("color", []string{"red", "green", "blue"})
-	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
+	indexInfo := makeIndexInfo(classKey, []instance.IndexDefinition{
 		{
 			IndexNum:  1,
 			AttrNames: []string{"color"},
@@ -172,7 +171,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumExhausted() {
 
 	// Only 2 possible enum values
 	colorAttr := enumAttrDef("color", []string{"red", "green"})
-	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
+	indexInfo := makeIndexInfo(classKey, []instance.IndexDefinition{
 		{
 			IndexNum:  1,
 			AttrNames: []string{"color"},
@@ -207,7 +206,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesComposite() {
 	emailAttr.IndexNums = []uint{1}
 	tenantAttr.IndexNums = []uint{1}
 
-	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
+	indexInfo := makeIndexInfo(classKey, []instance.IndexDefinition{
 		{
 			IndexNum:  1,
 			AttrNames: []string{"email", "tenant"},
@@ -242,7 +241,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesPresetAttribute() {
 	emailAttr.IndexNums = []uint{1}
 	tenantAttr.IndexNums = []uint{1}
 
-	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
+	indexInfo := makeIndexInfo(classKey, []instance.IndexDefinition{
 		{
 			IndexNum:  1,
 			AttrNames: []string{"email", "tenant"},

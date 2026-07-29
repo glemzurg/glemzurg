@@ -18,8 +18,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/require"
@@ -45,7 +44,7 @@ func (s *AssociationPeerEffectsSuite) TestInlineDestroyGuaranteeRemovesPlainAsso
 	action := peerInlineDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
-	s.Empty(violationsByType(result.Violations, invariants.ViolationTypePeerEventUnavailable))
+	s.Empty(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable))
 	s.Require().Len(result.PeerTransitions, 1)
 	s.Equal(model_state.EventNameDestroy, result.PeerTransitions[0].EventName)
 	s.True(result.PeerTransitions[0].Result.WasDestroy)
@@ -64,7 +63,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesPlainAssociationLin
 	action := peerDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
-	s.Empty(violationsByType(result.Violations, invariants.ViolationTypePeerEventUnavailable))
+	s.Empty(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable))
 	s.Require().Len(result.PeerTransitions, 1)
 	s.Equal(model_state.EventNameDestroy, result.PeerTransitions[0].EventName)
 	s.Nil(simState.GetInstance(itemInst.ID))
@@ -83,7 +82,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteViolationWhenPeerLacksDele
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
 	s.False(result.Success)
-	s.Require().Len(violationsByType(result.Violations, invariants.ViolationTypePeerEventUnavailable), 1)
+	s.Require().Len(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable), 1)
 	s.Equal(fmt.Sprintf("%d", itemInst.ID), result.Violations[0].ActualValue)
 	s.NotNil(simState.GetInstance(itemInst.ID))
 	s.Len(simState.GetLinkedForward(orderInst.ID, fix.assocKey), 1)
@@ -98,7 +97,7 @@ func (s *AssociationPeerEffectsSuite) TestSetAddCreatesAssociationClassRow() {
 	action := peerNewSetAddAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
 	result, err := ae.ExecuteAction(action, partnerInst, nil)
 	s.Require().NoError(err)
-	s.Empty(violationsByType(result.Violations, invariants.ViolationTypePeerEventUnavailable))
+	s.Empty(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable))
 	s.Require().Len(result.PeerTransitions, 2)
 	s.Equal("create", result.PeerTransitions[0].EventName)
 	s.Equal("Add", result.PeerTransitions[1].EventName)
@@ -129,7 +128,7 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow
 	action := peerDestroyGuaranteeAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
 	result, err := ae.ExecuteAction(action, partnerInst, nil)
 	s.Require().NoError(err)
-	s.Empty(violationsByType(result.Violations, invariants.ViolationTypePeerEventUnavailable))
+	s.Empty(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable))
 	s.Require().GreaterOrEqual(len(result.PeerTransitions), 2)
 
 	s.Nil(simState.GetInstance(jurisdictionInst.ID))
@@ -137,8 +136,8 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow
 	s.Nil(simState.GetInstance(addResult.InstanceID))
 }
 
-func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*instance.State, *actions.ActionExecutor) {
-	simState := instance.NewState(emptySchema())
+func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*siminst.State, *actions.ActionExecutor) {
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	catalog := schema.New(model, schema.RunScopeAll())
 	registerCatalogAssociations(catalog, bb)
@@ -149,10 +148,10 @@ func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model)
 }
 
 func (s *AssociationPeerEffectsSuite) createPeerEffectInstance(
-	simState *instance.State,
+	simState *siminst.State,
 	classKey identity.Key,
 	stateName string,
-) *instance.Instance {
+) *siminst.Instance {
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString(stateName))
 	return simState.CreateInstance(classKey, attrs)
@@ -329,7 +328,7 @@ func TestSetMapUpdateViolationWhenEventParamsOmitted(t *testing.T) {
 	action := peerUpdateSetMapAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	require.NoError(t, err)
-	require.Len(t, violationsByType(result.Violations, invariants.ViolationTypePeerEventUnavailable), 1)
+	require.Len(t, violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable), 1)
 	require.Contains(t, result.Violations[0].Message, "parameter binding failed")
 }
 

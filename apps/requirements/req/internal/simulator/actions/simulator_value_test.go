@@ -48,3 +48,16 @@ func TestEnumMembershipSpecificationUsesBooleanSetForBooleanTypeSpec(t *testing.
 	)
 	require.Equal(t, `SocialOnly \in BOOLEAN`, spec)
 }
+
+func TestCoerceValueForDataTypeStoresNumericStringAsNumber(t *testing.T) {
+	classKey := mustKey("domain/finance/wallet/class/account_balance_change")
+	actionKey := helper.Must(identity.NewActionKey(classKey, "initialize"))
+	param := helper.Must(model_state.NewParameter(actionKey, "Amount", "[unconstrained..unconstrained] at 1 penny", false))
+	intTypeSpec := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "INT", nil))
+	param.DataType.TypeSpec = &intTypeSpec
+
+	coerced := CoerceValueForDataType(param.DataType, object.NewString("75"))
+	num, ok := coerced.(*object.Number)
+	require.True(t, ok)
+	require.Equal(t, 0, num.Cmp(object.NewInteger(75)))
+}

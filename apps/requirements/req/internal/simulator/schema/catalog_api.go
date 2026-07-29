@@ -64,19 +64,13 @@ func (s *Schema) GetClassInfo(classKey identity.Key) *ClassSimInfo {
 	return s.mustCatalog().getClassInfo(classKey)
 }
 
-// AllScopedClasses delegates to the private simulation index.
-func (s *Schema) AllScopedClasses() []*ClassSimInfo {
-	return s.mustCatalog().allScopedClasses()
-}
-
-// AllSimulatableClasses delegates to the private simulation index.
-func (s *Schema) AllSimulatableClasses() []*ClassSimInfo {
-	return s.mustCatalog().allSimulatableClasses()
-}
-
-// AllEventBearingClasses delegates to the private simulation index.
-func (s *Schema) AllEventBearingClasses() []*ClassSimInfo {
-	return s.mustCatalog().allEventBearingClasses()
+// HasEventBearingClass reports whether any in-scope class declares at least one event.
+func (s *Schema) HasEventBearingClass() bool {
+	found := false
+	s.EachEventBearingClassSim(func(*ClassSimInfo) {
+		found = true
+	})
+	return found
 }
 
 // GetMandatoryOutboundAssociations delegates to the private simulation index.
@@ -96,11 +90,6 @@ func (s *Schema) GetActionForEvent(
 // GetCreationEvent delegates to the private simulation index.
 func (s *Schema) GetCreationEvent(classKey identity.Key) (*model_state.Event, bool) {
 	return s.mustCatalog().getCreationEvent(classKey)
-}
-
-// AllAssociations delegates to the private simulation index.
-func (s *Schema) AllAssociations() []AssociationInfo {
-	return s.mustCatalog().allAssociations()
 }
 
 // GetAssociationsForClass delegates to the private simulation index.

@@ -76,7 +76,7 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 	// when the association class is out of scope (no auto-pull).
 	resolveAssociations(model, resolved)
 
-	// 5. Scope invariants.
+	// 5. Scope instance.
 	scopeModelInvariants(model, resolved)
 
 	// 6. Validate: at least one simulatable class must remain.

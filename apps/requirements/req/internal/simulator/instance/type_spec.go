@@ -1,4 +1,4 @@
-package invariants
+package instance
 
 import (
 	"strings"
@@ -6,7 +6,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 func dataTypeHasTypeSpec(dataType *model_data_type.DataType) bool {
@@ -35,7 +34,7 @@ func dateTimeTypeSpecSatisfied(dataType *model_data_type.DataType) bool {
 }
 
 func attributeDefinitionViolations(
-	instanceID instance.ID,
+	instanceID ID,
 	classKey identity.Key,
 	attrDef *model_class.Attribute,
 ) ViolationErrors {

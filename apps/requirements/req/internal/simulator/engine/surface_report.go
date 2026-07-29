@@ -93,16 +93,16 @@ func BuildSurfaceReport(catalog *schema.Schema) *SurfaceReport {
 		Classes: make([]SurfaceClassReport, 0),
 	}
 
-	for _, classInfo := range catalog.AllScopedClasses() {
+	catalog.EachInScopeClassSim(func(classInfo *schema.ClassSimInfo) {
 		if catalog.IsAssociationClass(classInfo.ClassKey) {
-			continue
+			return
 		}
 		entry := buildSurfaceClassReport(catalog, classInfo)
 		if !surfaceClassHasDrivers(entry) {
-			continue
+			return
 		}
 		report.Classes = append(report.Classes, entry)
-	}
+	})
 
 	for _, m := range catalog.SurfaceUnavailableMembers() {
 		report.UnavailableMembers = append(report.UnavailableMembers, SurfaceUnavailableMemberReport{

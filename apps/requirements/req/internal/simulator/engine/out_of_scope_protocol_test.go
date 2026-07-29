@@ -16,7 +16,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
@@ -93,7 +93,7 @@ func (s *OutOfScopeProtocolSuite) TestClassExtentBinding_OutOfScopeIsEmptySet() 
 	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
 	catalog := sch
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	_ = simState.CreateInstance(orderKey, object.NewRecord())
 
@@ -178,7 +178,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
 	catalog := sch
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(catalog, bb)
 	orderInst := simState.CreateInstance(orderKey, object.NewRecord())
@@ -241,7 +241,7 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 	sch := schema.New(full, schema.NewRunScope([]identity.Key{itemKey}))
 	catalog := sch
 
-	simState := instance.NewState(emptySchema())
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(catalog, bb)
 	itemInst := simState.CreateInstance(itemKey, object.NewRecord())
@@ -295,7 +295,7 @@ func (s *OutOfScopeProtocolSuite) TestEngineWithSurface_RunsWithOutOfScopePeerCl
 	s.Require().NoError(err)
 	s.NotNil(result)
 	hasPeer := false
-	result.FinalState.ForEachInstance(func(inst *instance.Instance) {
+	result.FinalState.ForEachInstance(func(inst *siminst.Instance) {
 		if inst.ClassKey == peerKey {
 			hasPeer = true
 		}

@@ -6,8 +6,7 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -83,11 +82,11 @@ func (d *DerivedAttributeEvaluator) SetCatalog(catalog *schema.Schema) {
 	d.catalog = catalog
 }
 
-// ResolveDerived evaluates surface-available derived attributes for the given instance.
+// ResolveDerived evaluates surface-available derived attributes for the given siminst.
 // Surface-unavailable attributes (out-of-scope association deps) are skipped so
 // bindings inject only values that can be computed on this surface.
 // Keys in the returned map are attribute SubKeys so they match stored fields and self.field access.
-func (d *DerivedAttributeEvaluator) ResolveDerived(instance *instance.Instance) (map[string]object.Object, error) {
+func (d *DerivedAttributeEvaluator) ResolveDerived(instance *siminst.Instance) (map[string]object.Object, error) {
 	infos := d.byClass[instance.ClassKey]
 	if len(infos) == 0 {
 		return make(map[string]object.Object), nil
@@ -115,14 +114,14 @@ func (d *DerivedAttributeEvaluator) ResolveDerived(instance *instance.Instance) 
 // ResolveDerivedAttribute evaluates one derived attribute. When the attribute depends
 // on out-of-scope classes, returns a surface-out-of-scope violation (not a hard error).
 func (d *DerivedAttributeEvaluator) ResolveDerivedAttribute(
-	instance *instance.Instance,
+	instance *siminst.Instance,
 	attrKey identity.Key,
 	attrName string,
-) (object.Object, invariants.ViolationErrors, error) {
+) (object.Object, siminst.ViolationErrors, error) {
 	if d.catalog != nil {
 		if unavail, ok := d.catalog.SurfaceUnavailableDerived(attrKey); ok {
-			return nil, invariants.ViolationErrors{
-				invariants.NewSurfaceOutOfScopeViolation(
+			return nil, siminst.ViolationErrors{
+				siminst.NewSurfaceOutOfScopeViolation(
 					instance.ClassKey, instance.ID, attrName, unavail.Reason(),
 				),
 			}, nil

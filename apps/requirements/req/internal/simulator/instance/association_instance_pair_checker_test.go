@@ -1,4 +1,4 @@
-package invariants
+package instance
 
 import (
 	"testing"
@@ -9,7 +9,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -51,7 +50,7 @@ func (s *AssociationInstancePairCheckerSuite) TestDistinctPairsNoViolation() {
 	model, assocKey, orderKey, itemKey := s.buildPlainAssociationModel()
 	checker := NewAssociationInstancePairChecker(schema.New(model, schema.RunScopeAll()))
 
-	simState := instance.NewState(emptySchema())
+	simState := NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item1 := simState.CreateInstance(itemKey, object.NewRecord())
 	item2 := simState.CreateInstance(itemKey, object.NewRecord())

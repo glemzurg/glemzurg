@@ -1,37 +1,35 @@
-package invariants
+package instance
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // AssociationInstancePairChecker validates that each association has at most one
-// link per from/to instance pair.
+// link per from/to instance pair. Associations are loaded from schema at check time.
 type AssociationInstancePairChecker struct {
-	associations []model_class.Association
+	sch *schema.Schema
 }
 
-// NewAssociationInstancePairChecker builds instance-pair uniqueness metadata from schema.
+// NewAssociationInstancePairChecker binds an instance-pair checker to schema.
 func NewAssociationInstancePairChecker(sch *schema.Schema) *AssociationInstancePairChecker {
-	checker := &AssociationInstancePairChecker{}
-	for _, view := range sch.ScopedAssociations() {
-		checker.associations = append(checker.associations, view.Association)
-	}
-	return checker
+	return &AssociationInstancePairChecker{sch: sch}
 }
 
 // CheckState validates instance-pair uniqueness across all associations.
-func (c *AssociationInstancePairChecker) CheckState(simState *instance.State) ViolationErrors {
+func (c *AssociationInstancePairChecker) CheckState(simState *State) ViolationErrors {
 	var violations ViolationErrors
-	for _, assoc := range c.associations {
-		violations = append(violations, c.checkAssociation(simState, assoc)...)
+	if c == nil || c.sch == nil {
+		return violations
+	}
+	for _, view := range c.sch.ScopedAssociations() {
+		violations = append(violations, c.checkAssociation(simState, view.Association)...)
 	}
 	return violations
 }
 
 func (c *AssociationInstancePairChecker) checkAssociation(
-	simState *instance.State,
+	simState *State,
 	assoc model_class.Association,
 ) ViolationErrors {
 	return checkAssociationInstancePairs(assoc, collectAssociationLinks(simState, assoc))

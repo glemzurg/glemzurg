@@ -1,4 +1,4 @@
-package invariants
+package instance
 
 import (
 	"testing"
@@ -11,7 +11,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -40,7 +39,7 @@ func (s *MultiplicityCheckerSuite) TestValidMultiplicities() {
 
 	checker := NewMultiplicityChecker(schema.New(model, schema.RunScopeAll()))
 
-	simState := instance.NewState(emptySchema())
+	simState := NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
 	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
@@ -65,7 +64,7 @@ func (s *MultiplicityCheckerSuite) TestLowerBoundViolation() {
 
 	checker := NewMultiplicityChecker(schema.New(model, schema.RunScopeAll()))
 
-	simState := instance.NewState(emptySchema())
+	simState := NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item := simState.CreateInstance(itemKey, object.NewRecord())
 	s.Require().NoError(simState.AddLink(assocKey, order.ID, item.ID))
@@ -91,7 +90,7 @@ func (s *MultiplicityCheckerSuite) TestUpperBoundViolation() {
 
 	checker := NewMultiplicityChecker(schema.New(model, schema.RunScopeAll()))
 
-	simState := instance.NewState(emptySchema())
+	simState := NewState(emptySchema())
 	order := simState.CreateInstance(orderKey, object.NewRecord())
 	item1 := simState.CreateInstance(itemKey, object.NewRecord())
 	item2 := simState.CreateInstance(itemKey, object.NewRecord())
@@ -119,7 +118,7 @@ func (s *MultiplicityCheckerSuite) TestOptionalAssociationNeverViolated() {
 
 	checker := NewMultiplicityChecker(schema.New(model, schema.RunScopeAll()))
 
-	simState := instance.NewState(emptySchema())
+	simState := NewState(emptySchema())
 	simState.CreateInstance(orderKey, object.NewRecord())
 	simState.CreateInstance(itemKey, object.NewRecord())
 

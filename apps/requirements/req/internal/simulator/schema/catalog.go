@@ -304,42 +304,6 @@ func (c *catalog) getClassInfo(classKey identity.Key) *ClassSimInfo {
 	return c.classInfo(classKey)
 }
 
-// AllScopedClasses returns every in-scope class (simulatable and stateless), sorted by key.
-func (c *catalog) allScopedClasses() []*ClassSimInfo {
-	var result []*ClassSimInfo
-	if c.owner == nil {
-		return nil
-	}
-	c.owner.EachInScopeClassSim(func(sim *ClassSimInfo) {
-		result = append(result, sim)
-	})
-	return result
-}
-
-// AllSimulatableClasses returns classes with state machines, sorted by key.
-func (c *catalog) allSimulatableClasses() []*ClassSimInfo {
-	var result []*ClassSimInfo
-	if c.owner == nil {
-		return nil
-	}
-	c.owner.EachSimulatableClassSim(func(sim *ClassSimInfo) {
-		result = append(result, sim)
-	})
-	return result
-}
-
-// AllEventBearingClasses returns simulatable classes that declare at least one event.
-func (c *catalog) allEventBearingClasses() []*ClassSimInfo {
-	var result []*ClassSimInfo
-	if c.owner == nil {
-		return nil
-	}
-	c.owner.EachEventBearingClassSim(func(sim *ClassSimInfo) {
-		result = append(result, sim)
-	})
-	return result
-}
-
 // GetMandatoryOutboundAssociations returns associations where the given class is
 // the "from" side and the "to" side requires at least one instance (LowerBound >= 1).
 func (c *catalog) getMandatoryOutboundAssociations(classKey identity.Key) []AssociationInfo {
@@ -744,7 +708,7 @@ func (c *catalog) buildCallerGraph() {
 	if sch == nil {
 		return
 	}
-	for _, useCase := range sch.AllUseCases() {
+	for _, useCase := range sch.allUseCases() {
 		populateCallerDataFromUseCase(useCase, c)
 	}
 	populateMandatoryAssociationSenders(c)
@@ -854,7 +818,7 @@ func populateAssociationSetMapSenders(sch *Schema, cat *catalog) {
 }
 
 func associationMapFromSchema(sch *Schema) map[identity.Key]model_class.Association {
-	return sch.AllAssociationsMap()
+	return sch.allAssociationsMap()
 }
 
 func recordAssociationSetMapSenders(class model_class.Class, associations map[identity.Key]model_class.Association, cat *catalog) {

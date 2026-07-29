@@ -1,18 +1,15 @@
-package invariants
+package instance
 
 import (
 	"testing"
-
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -53,14 +50,14 @@ func (s *AssociationInvariantCheckerSuite) buildChecker() (*AssociationInvariant
 func (s *AssociationInvariantCheckerSuite) TestPassesWhenInvariantHolds() {
 	checker, partnerKey, jurisdictionKey, assocKey := s.buildChecker()
 
-	simState := instance.NewState(emptySchema())
+	simState := NewState(emptySchema())
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	j1 := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	j1.Attributes.Set("Code", object.NewString("US"))
 	j2 := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	j2.Attributes.Set("Code", object.NewString("UK"))
 
-	bb := state.NewBindingsBuilder(simState)
+	bb := newTestBindings(simState)
 	bb.AddAssociation(assocKey, "Configures", partnerKey, jurisdictionKey,
 		evaluator.Multiplicity{}, evaluator.Multiplicity{HigherBound: 0})
 	assocKeyStr := evaluator.AssociationKey(assocKey.String())
@@ -98,10 +95,10 @@ func (s *AssociationInvariantCheckerSuite) TestFailsWhenAssessmentIsFalse() {
 	checker, err := NewAssociationInvariantChecker(schema.New(model, schema.RunScopeAll()))
 	s.Require().NoError(err)
 
-	simState := instance.NewState(emptySchema())
+	simState := NewState(emptySchema())
 	simState.CreateInstance(partnerKey, object.NewRecord())
 
-	bb := state.NewBindingsBuilder(simState)
+	bb := newTestBindings(simState)
 	bb.AddAssociation(assocKey, "Configures", partnerKey, jurisdictionKey,
 		evaluator.Multiplicity{}, evaluator.Multiplicity{HigherBound: 0})
 

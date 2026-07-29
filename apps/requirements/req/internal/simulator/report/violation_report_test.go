@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,9 +35,9 @@ func (s *ViolationReportSuite) TestEmptyViolations() {
 }
 
 func (s *ViolationReportSuite) TestTLAViolationsCategorized() {
-	violations := invariants.ViolationErrors{
-		invariants.NewModelInvariantViolation(0, "x > 0", "evaluated to FALSE"),
-		invariants.NewActionGuaranteeViolation(
+	violations := instance.ViolationErrors{
+		instance.NewModelInvariantViolation(0, "x > 0", "evaluated to FALSE"),
+		instance.NewActionGuaranteeViolation(
 			mustKey("domain/d/subdomain/s/class/c/action/a"),
 			"DoSomething", 0, "self.x' = 1", 1, "guarantee failed",
 		),
@@ -54,9 +54,9 @@ func (s *ViolationReportSuite) TestTLAViolationsCategorized() {
 
 func (s *ViolationReportSuite) TestDataTypeViolationsCategorized() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationErrors{
-		invariants.NewRequiredAttributeViolation(1, classKey, "name"),
-		invariants.NewSpanConstraintViolation(1, classKey, "amount", "150", "[0, 100]"),
+	violations := instance.ViolationErrors{
+		instance.NewRequiredAttributeViolation(1, classKey, "name"),
+		instance.NewSpanConstraintViolation(1, classKey, "amount", "150", "[0, 100]"),
 	}
 
 	report := FromViolations(violations)
@@ -72,9 +72,9 @@ func (s *ViolationReportSuite) TestDataTypeViolationsCategorized() {
 
 func (s *ViolationReportSuite) TestLivenessViolationsCategorized() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationErrors{
-		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
-		invariants.NewLivenessAttributeNotWrittenViolation(classKey, "Order", "amount"),
+	violations := instance.ViolationErrors{
+		instance.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
+		instance.NewLivenessAttributeNotWrittenViolation(classKey, "Order", "amount"),
 	}
 
 	report := FromViolations(violations)
@@ -87,11 +87,11 @@ func (s *ViolationReportSuite) TestLivenessViolationsCategorized() {
 
 func (s *ViolationReportSuite) TestMixedViolations() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationErrors{
-		invariants.NewModelInvariantViolation(0, "TRUE", "failed"),
-		invariants.NewRequiredAttributeViolation(1, classKey, "name"),
-		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
-		invariants.NewMultiplicityViolation(invariants.MultiplicityViolationParams{
+	violations := instance.ViolationErrors{
+		instance.NewModelInvariantViolation(0, "TRUE", "failed"),
+		instance.NewRequiredAttributeViolation(1, classKey, "name"),
+		instance.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
+		instance.NewMultiplicityViolation(instance.MultiplicityViolationParams{
 			InstanceID:      1,
 			ClassKey:        classKey,
 			AssociationName: "items",
@@ -139,8 +139,8 @@ func (s *ViolationReportSuite) TestMixedViolations() {
 
 func (s *ViolationReportSuite) TestLivenessDetailsOmittedWhenDataViolationsPresent() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationErrors{
-		invariants.NewMultiplicityViolation(invariants.MultiplicityViolationParams{
+	violations := instance.ViolationErrors{
+		instance.NewMultiplicityViolation(instance.MultiplicityViolationParams{
 			InstanceID:      1,
 			ClassKey:        classKey,
 			AssociationName: "items",
@@ -150,8 +150,8 @@ func (s *ViolationReportSuite) TestLivenessDetailsOmittedWhenDataViolationsPrese
 			RequiredMax:     10,
 			Message:         "too few",
 		}),
-		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
-		invariants.NewLivenessEventNotSentViolation(classKey, "Order", "close"),
+		instance.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
+		instance.NewLivenessEventNotSentViolation(classKey, "Order", "close"),
 	}
 
 	report := FromViolations(violations)
@@ -168,8 +168,8 @@ func (s *ViolationReportSuite) TestLivenessDetailsOmittedWhenDataViolationsPrese
 
 func (s *ViolationReportSuite) TestLivenessDetailsShownWhenOnlyLiveness() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationErrors{
-		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
+	violations := instance.ViolationErrors{
+		instance.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
 	}
 
 	report := FromViolations(violations)
@@ -188,8 +188,8 @@ func (s *ViolationReportSuite) TestFormatTextEmpty() {
 }
 
 func (s *ViolationReportSuite) TestFormatTextWithViolations() {
-	violations := invariants.ViolationErrors{
-		invariants.NewModelInvariantViolation(0, "x > 0", "failed"),
+	violations := instance.ViolationErrors{
+		instance.NewModelInvariantViolation(0, "x > 0", "failed"),
 	}
 
 	report := FromViolations(violations)
@@ -202,8 +202,8 @@ func (s *ViolationReportSuite) TestFormatTextWithViolations() {
 
 func (s *ViolationReportSuite) TestFormatJSONRoundTrip() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationErrors{
-		invariants.NewRequiredAttributeViolation(1, classKey, "name"),
+	violations := instance.ViolationErrors{
+		instance.NewRequiredAttributeViolation(1, classKey, "name"),
 	}
 
 	report := FromViolations(violations)

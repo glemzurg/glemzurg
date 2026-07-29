@@ -1,11 +1,10 @@
-package invariants
+package instance
 
 import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
@@ -24,36 +23,34 @@ type ClassIndexInfo struct {
 }
 
 // IndexUniquenessChecker validates that index tuples are unique across instances of a class.
+// Index definitions are loaded per class from schema at check time (no bulk dump).
 type IndexUniquenessChecker struct {
-	classIndexes map[identity.Key]*ClassIndexInfo
+	sch *schema.Schema
 }
 
 // NewIndexUniquenessChecker creates a new index uniqueness checker from schema.
 func NewIndexUniquenessChecker(sch *schema.Schema) *IndexUniquenessChecker {
-	checker := &IndexUniquenessChecker{
-		classIndexes: make(map[identity.Key]*ClassIndexInfo),
-	}
-	for classKey, defs := range sch.AllClassIndexes() {
-		info := &ClassIndexInfo{ClassKey: classKey}
-		for _, d := range defs {
-			info.Indexes = append(info.Indexes, IndexDefinition{
-				IndexNum:  d.IndexNum,
-				AttrNames: d.AttrNames,
-				AttrDefs:  d.AttrDefs,
-			})
-		}
-		checker.classIndexes[classKey] = info
-	}
-	return checker
+	return &IndexUniquenessChecker{sch: sch}
 }
 
 // CheckState validates all instances in a simulation state for index uniqueness.
-func (c *IndexUniquenessChecker) CheckState(simState *instance.State) ViolationErrors {
+func (c *IndexUniquenessChecker) CheckState(simState *State) ViolationErrors {
 	var violations ViolationErrors
+	if c == nil || c.sch == nil || simState == nil {
+		return violations
+	}
 
-	for classKey, indexInfo := range c.classIndexes {
-		instances := simState.InstancesByClass(classKey)
+	// Group live instances by class, then ask schema for that class's indexes only.
+	byClass := make(map[identity.Key][]*Instance)
+	simState.ForEachInstance(func(inst *Instance) {
+		byClass[inst.ClassKey] = append(byClass[inst.ClassKey], inst)
+	})
+	for classKey, instances := range byClass {
 		if len(instances) < 2 {
+			continue
+		}
+		indexInfo := c.GetClassIndexInfo(classKey)
+		if indexInfo == nil {
 			continue
 		}
 		violations = append(violations, c.CheckClassInstances(classKey, instances, indexInfo)...)
@@ -65,13 +62,13 @@ func (c *IndexUniquenessChecker) CheckState(simState *instance.State) ViolationE
 // CheckClassInstances checks index uniqueness for instances of a single class.
 func (c *IndexUniquenessChecker) CheckClassInstances(
 	classKey identity.Key,
-	instances []*instance.Instance,
+	instances []*Instance,
 	indexInfo *ClassIndexInfo,
 ) ViolationErrors {
 	var violations ViolationErrors
 
 	for _, indexDef := range indexInfo.Indexes {
-		seen := make(map[string]instance.ID)
+		seen := make(map[string]ID)
 
 		for _, instance := range instances {
 			getter := func(name string) object.Object {
@@ -105,12 +102,39 @@ func (c *IndexUniquenessChecker) CheckClassInstances(
 
 // GetClassIndexInfo returns the index info for a class, or nil if the class has no indexes.
 func (c *IndexUniquenessChecker) GetClassIndexInfo(classKey identity.Key) *ClassIndexInfo {
-	return c.classIndexes[classKey]
+	if c == nil || c.sch == nil {
+		return nil
+	}
+	defs, inScope, err := c.sch.ClassIndexes(classKey)
+	if err != nil || !inScope || len(defs) == 0 {
+		return nil
+	}
+	info := &ClassIndexInfo{ClassKey: classKey}
+	for _, d := range defs {
+		info.Indexes = append(info.Indexes, IndexDefinition{
+			IndexNum:  d.IndexNum,
+			AttrNames: d.AttrNames,
+			AttrDefs:  d.AttrDefs,
+		})
+	}
+	return info
 }
 
-// hasIndexes returns true if any class has indexes.
+// hasIndexes reports whether any in-scope class declares indexes (setup/tests).
 func (c *IndexUniquenessChecker) hasIndexes() bool {
-	return len(c.classIndexes) > 0
+	if c == nil || c.sch == nil {
+		return false
+	}
+	found := false
+	c.sch.EachInScopeClassSim(func(sim *schema.ClassSimInfo) {
+		if found || sim == nil {
+			return
+		}
+		if info := c.GetClassIndexInfo(sim.ClassKey); info != nil {
+			found = true
+		}
+	})
+	return found
 }
 
 // BuildTupleKey builds a string key from attribute values for duplicate detection.

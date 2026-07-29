@@ -1,4 +1,4 @@
-package invariants
+package instance
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
@@ -27,9 +26,10 @@ const _BOUND_TYPE_OPEN = "open"
 //   - Numeric values are within span constraints
 //   - Enumeration values are in the allowed set
 //   - Collection sizes are within bounds
+//
+// Attribute definitions are loaded per class from schema at check time (no bulk dump).
 type DataTypeChecker struct {
-	// classAttributes maps class key to its attribute definitions
-	classAttributes map[identity.Key]map[string]*model_class.Attribute
+	sch *schema.Schema
 
 	// unparsedAttributeDefs holds class-level violations for attributes whose rules did not parse.
 	unparsedAttributeDefs ViolationErrors
@@ -37,26 +37,18 @@ type DataTypeChecker struct {
 
 // NewDataTypeChecker creates a new data type checker from schema.
 func NewDataTypeChecker(sch *schema.Schema) (*DataTypeChecker, ViolationErrors) {
-	checker := &DataTypeChecker{
-		classAttributes: make(map[identity.Key]map[string]*model_class.Attribute),
-	}
-
-	attrsByClass := sch.AllAttributesBySubKey()
-	for classKey, attrMap := range attrsByClass {
-		checker.classAttributes[classKey] = attrMap
-		class, inScope, err := sch.Class(classKey)
-		if err != nil || !inScope || class == nil {
-			continue
-		}
-		for _, attr := range class.Attributes {
-			if attr.DataType == nil {
-				checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
-					NewUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
-				)
+	checker := &DataTypeChecker{sch: sch}
+	if sch != nil {
+		sch.EachInScopeClass(func(class model_class.Class) {
+			for _, attr := range class.Attributes {
+				if attr.DataType == nil {
+					checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
+						NewUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
+					)
+				}
 			}
-		}
+		})
 	}
-
 	return checker, checker.unparsedAttributeDefs
 }
 
@@ -69,12 +61,14 @@ func (c *DataTypeChecker) UnparsedAttributeDefinitionViolations() ViolationError
 // CheckInstance validates all attribute values on an instance against their data type constraints.
 // Attributes with a DerivationPolicy are virtual: their values are computed on demand and are not
 // stored on the instance, so storage-based required/type checks do not apply to them.
-func (c *DataTypeChecker) CheckInstance(instance *instance.Instance) ViolationErrors {
+func (c *DataTypeChecker) CheckInstance(instance *Instance) ViolationErrors {
 	var violations ViolationErrors
+	if c == nil || c.sch == nil || instance == nil {
+		return violations
+	}
 
-	attrs, ok := c.classAttributes[instance.ClassKey]
-	if !ok {
-		// No attribute definitions for this class - skip validation
+	attrs, inScope, err := c.sch.AttributesBySubKey(instance.ClassKey)
+	if err != nil || !inScope || len(attrs) == 0 {
 		return violations
 	}
 
@@ -122,7 +116,7 @@ func (c *DataTypeChecker) CheckInstance(instance *instance.Instance) ViolationEr
 
 // checkDataTypeConstraints validates a value against its data type constraints.
 func (c *DataTypeChecker) checkDataTypeConstraints(
-	instanceID instance.ID,
+	instanceID ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -153,7 +147,7 @@ func (c *DataTypeChecker) checkDataTypeConstraints(
 
 // checkCollectionSize validates collection size against min/max constraints.
 func (c *DataTypeChecker) checkCollectionSize(
-	instanceID instance.ID,
+	instanceID ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -221,7 +215,7 @@ func (c *DataTypeChecker) checkCollectionSize(
 
 // checkAtomicConstraints validates value against atomic type constraints (span, enumeration).
 func (c *DataTypeChecker) checkAtomicConstraints(
-	instanceID instance.ID,
+	instanceID ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -264,7 +258,7 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 
 // checkDateTimeConstraint validates an integer timestamp against the datetime Nat range.
 func checkDateTimeConstraint(
-	instanceID instance.ID,
+	instanceID ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -290,7 +284,7 @@ func checkDateTimeConstraint(
 
 // checkSpanConstraint validates a numeric value against a span (range) constraint.
 func (c *DataTypeChecker) checkSpanConstraint(
-	instanceID instance.ID,
+	instanceID ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -433,8 +427,11 @@ func formatSpanValue(value *int, denom *int) string {
 
 // AttributeDef returns the attribute definition for a class field sub-key, if known.
 func (c *DataTypeChecker) AttributeDef(classKey identity.Key, fieldSubKey string) *model_class.Attribute {
-	attrs, ok := c.classAttributes[classKey]
-	if !ok {
+	if c == nil || c.sch == nil {
+		return nil
+	}
+	attrs, inScope, err := c.sch.AttributesBySubKey(classKey)
+	if err != nil || !inScope {
 		return nil
 	}
 	return attrs[fieldSubKey]
@@ -442,7 +439,7 @@ func (c *DataTypeChecker) AttributeDef(classKey identity.Key, fieldSubKey string
 
 // checkEnumConstraint validates a value against enumeration constraint.
 func (c *DataTypeChecker) checkEnumConstraint(
-	instanceID instance.ID,
+	instanceID ID,
 	classKey identity.Key,
 	attrName string,
 	value object.Object,
@@ -502,10 +499,10 @@ func (c *DataTypeChecker) checkEnumConstraint(
 }
 
 // CheckState validates all instances in a simulation state.
-func (c *DataTypeChecker) CheckState(simState *instance.State) ViolationErrors {
+func (c *DataTypeChecker) CheckState(simState *State) ViolationErrors {
 	var violations ViolationErrors
 
-	simState.ForEachInstance(func(inst *instance.Instance) {
+	simState.ForEachInstance(func(inst *Instance) {
 		violations = append(violations, c.CheckInstance(inst)...)
 	})
 
@@ -514,13 +511,13 @@ func (c *DataTypeChecker) CheckState(simState *instance.State) ViolationErrors {
 
 // GetAttributeDefinition returns the attribute definition keyed by YAML field name (attribute SubKey).
 func (c *DataTypeChecker) GetAttributeDefinition(classKey identity.Key, fieldKey string) *model_class.Attribute {
-	if attrs, ok := c.classAttributes[classKey]; ok {
-		return attrs[fieldKey]
-	}
-	return nil
+	return c.AttributeDef(classKey, fieldKey)
 }
 
 func (c *DataTypeChecker) HasClass(classKey identity.Key) bool {
-	_, ok := c.classAttributes[classKey]
-	return ok
+	if c == nil || c.sch == nil {
+		return false
+	}
+	_, inScope, err := c.sch.AttributesBySubKey(classKey)
+	return err == nil && inScope
 }

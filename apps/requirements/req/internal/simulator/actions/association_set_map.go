@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -234,15 +233,13 @@ func (e *ActionExecutor) recordSetMapParamBindingError(
 		"association %q set-map event %s parameter binding failed: %s",
 		mapTarget.assoc.Name, event.Name, err.Error(),
 	)
-	ctx.AddPeerViolation(invariants.NewPeerEventUnavailableViolation(invariants.PeerEventUnavailableParams{
-		OwnerClassKey:   instance.ClassKey,
-		OwnerInstanceID: instance.ID,
-		AssociationName: mapTarget.assoc.Name,
-		PeerClassKey:    mapTarget.toClass.Key,
-		EventKey:        event.Key,
-		EventName:       event.Name,
-		Message:         msg,
-	}))
+	ctx.AddPeerViolation(newPeerEventUnavailableForOwner(
+		instance,
+		mapTarget.assoc.Name,
+		mapTarget.toClass.Key,
+		event,
+		msg,
+	))
 }
 
 func (e *ActionExecutor) applyPeerUpdates(ctx *ExecutionContext) error {

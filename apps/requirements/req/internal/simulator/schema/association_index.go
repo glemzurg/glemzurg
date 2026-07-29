@@ -169,7 +169,7 @@ func (s *Schema) AssociationsWithUniqueness() []UniquenessBinding {
 	return out
 }
 
-// AssociationsWithInvariants returns scoped associations that author invariants.
+// AssociationsWithInvariants returns scoped associations that author instance.
 func (s *Schema) AssociationsWithInvariants() []model_class.Association {
 	if s == nil || len(s.assocsWithInvariants) == 0 {
 		return nil
@@ -179,9 +179,9 @@ func (s *Schema) AssociationsWithInvariants() []model_class.Association {
 	return out
 }
 
-// AllAssociationsMap returns every association on the full model by key (including OOS).
-// Used by guarantee analysis that must resolve targets outside the surface.
-func (s *Schema) AllAssociationsMap() map[identity.Key]model_class.Association {
+// allAssociationsMap returns every association on the full model by key (including OOS).
+// Used only inside schema reindex / caller-graph install.
+func (s *Schema) allAssociationsMap() map[identity.Key]model_class.Association {
 	if s == nil || len(s.associations) == 0 {
 		return nil
 	}

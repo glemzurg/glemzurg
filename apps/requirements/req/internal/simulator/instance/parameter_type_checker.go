@@ -1,10 +1,9 @@
-package invariants
+package instance
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 // CheckParameterTypeSpecs reports parameters on an action or query that lack TLA+ type_spec
@@ -14,7 +13,7 @@ func CheckParameterTypeSpecs(
 	sourceKey identity.Key,
 	sourceName string,
 	sourceKind string,
-	instanceID instance.ID,
+	instanceID ID,
 	classKey identity.Key,
 ) ViolationErrors {
 	var violations ViolationErrors

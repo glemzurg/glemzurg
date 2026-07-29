@@ -1,11 +1,10 @@
-package invariants
+package instance
 
 import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
@@ -17,33 +16,20 @@ type associationBinding struct {
 }
 
 // MultiplicityChecker validates association multiplicity constraints as implicit invariants.
+// Association edges are loaded per class from schema when that instance is checked.
 type MultiplicityChecker struct {
-	classAssocs map[identity.Key][]associationBinding
+	sch *schema.Schema
 }
 
-// NewMultiplicityChecker builds association multiplicity metadata from schema.
+// NewMultiplicityChecker binds a multiplicity checker to schema.
 func NewMultiplicityChecker(sch *schema.Schema) *MultiplicityChecker {
-	checker := &MultiplicityChecker{
-		classAssocs: make(map[identity.Key][]associationBinding),
-	}
-	for _, view := range sch.ScopedAssociations() {
-		binding := associationBinding{
-			association:  view.Association,
-			fromClassKey: view.FromClassKey,
-			toClassKey:   view.ToClassKey,
-		}
-		checker.classAssocs[view.FromClassKey] = append(checker.classAssocs[view.FromClassKey], binding)
-		if view.FromClassKey != view.ToClassKey {
-			checker.classAssocs[view.ToClassKey] = append(checker.classAssocs[view.ToClassKey], binding)
-		}
-	}
-	return checker
+	return &MultiplicityChecker{sch: sch}
 }
 
 // CheckState validates all association multiplicities across every live instance.
-func (c *MultiplicityChecker) CheckState(simState *instance.State) ViolationErrors {
+func (c *MultiplicityChecker) CheckState(simState *State) ViolationErrors {
 	var violations ViolationErrors
-	simState.ForEachInstance(func(inst *instance.Instance) {
+	simState.ForEachInstance(func(inst *Instance) {
 		violations = append(violations, c.CheckInstance(inst, simState)...)
 	})
 	return violations
@@ -51,21 +37,26 @@ func (c *MultiplicityChecker) CheckState(simState *instance.State) ViolationErro
 
 // CheckInstance validates all multiplicity constraints for a single instance.
 func (c *MultiplicityChecker) CheckInstance(
-	instance *instance.Instance,
-	simState *instance.State,
+	instance *Instance,
+	simState *State,
 ) ViolationErrors {
-	if instance == nil {
+	if c == nil || c.sch == nil || instance == nil {
 		return nil
 	}
 
-	assocs := c.classAssocs[instance.ClassKey]
-	if len(assocs) == 0 {
+	views, inScope, err := c.sch.AssociationsForClass(instance.ClassKey)
+	if err != nil || !inScope || len(views) == 0 {
 		return nil
 	}
 
 	var violations ViolationErrors
 
-	for _, binding := range assocs {
+	for _, view := range views {
+		binding := associationBinding{
+			association:  view.Association,
+			fromClassKey: view.FromClassKey,
+			toClassKey:   view.ToClassKey,
+		}
 		if binding.fromClassKey == instance.ClassKey {
 			count := c.countActiveForwardLinks(instance.ID, binding, simState)
 			if msg := checkMultiplicityBounds(count, binding.association.ToMultiplicity.LowerBound, binding.association.ToMultiplicity.HigherBound); msg != "" {
@@ -103,9 +94,9 @@ func (c *MultiplicityChecker) CheckInstance(
 }
 
 func (c *MultiplicityChecker) countActiveForwardLinks(
-	fromID instance.ID,
+	fromID ID,
 	binding associationBinding,
-	simState *instance.State,
+	simState *State,
 ) int {
 	if binding.association.AssociationClassKey != nil {
 		return c.countActiveAssociationLinksFrom(fromID, binding.association.Key, simState)
@@ -115,9 +106,9 @@ func (c *MultiplicityChecker) countActiveForwardLinks(
 }
 
 func (c *MultiplicityChecker) countActiveReverseLinks(
-	toID instance.ID,
+	toID ID,
 	binding associationBinding,
-	simState *instance.State,
+	simState *State,
 ) int {
 	if binding.association.AssociationClassKey != nil {
 		return c.countActiveAssociationLinksTo(toID, binding.association.Key, simState)
@@ -127,9 +118,9 @@ func (c *MultiplicityChecker) countActiveReverseLinks(
 }
 
 func (c *MultiplicityChecker) countActiveAssociationLinksFrom(
-	fromID instance.ID,
+	fromID ID,
 	hostAssocKey identity.Key,
-	simState *instance.State,
+	simState *State,
 ) int {
 	links := simState.AssociationLinksFromEndpoint(hostAssocKey, fromID)
 	count := 0
@@ -143,9 +134,9 @@ func (c *MultiplicityChecker) countActiveAssociationLinksFrom(
 }
 
 func (c *MultiplicityChecker) countActiveAssociationLinksTo(
-	toID instance.ID,
+	toID ID,
 	hostAssocKey identity.Key,
-	simState *instance.State,
+	simState *State,
 ) int {
 	links := simState.AssociationLinksToEndpoint(hostAssocKey, toID)
 	count := 0
@@ -159,8 +150,8 @@ func (c *MultiplicityChecker) countActiveAssociationLinksTo(
 }
 
 func (c *MultiplicityChecker) countActiveLinkedInstances(
-	linked []instance.ID,
-	simState *instance.State,
+	linked []ID,
+	simState *State,
 ) int {
 	count := 0
 	for _, id := range linked {
