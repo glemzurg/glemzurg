@@ -19,20 +19,20 @@ func CheckParameterTypeSpecs(
 	var violations ViolationErrors
 	for _, param := range params {
 		if param.DataType == nil {
-			violations = append(violations, NewUnparsedParameterDataTypeViolation(
+			violations = append(violations, newUnparsedParameterDataTypeViolation(
 				ViolationSourceIdentity{Key: sourceKey, Name: sourceName},
 				sourceKind, param.Name, param.DataTypeRules, instanceID, classKey,
 			))
 			continue
 		}
 		if !dataTypeHasTypeSpec(param.DataType) {
-			violations = append(violations, NewMissingParameterTypeSpecViolation(
+			violations = append(violations, newMissingParameterTypeSpecViolation(
 				sourceKey, sourceName, sourceKind, param.Name, instanceID, classKey,
 			))
 			continue
 		}
 		if model_data_type.IsAtomicDateTime(param.DataType) && !dateTimeTypeSpecSatisfied(param.DataType) {
-			violations = append(violations, NewDateTimeTypeSpecMismatchParameterViolation(DateTimeTypeSpecMismatchParameterParams{
+			violations = append(violations, newDateTimeTypeSpecMismatchParameterViolation(DateTimeTypeSpecMismatchParameterParams{
 				Source:         ViolationSourceIdentity{Key: sourceKey, Name: sourceName},
 				SourceKind:     sourceKind,
 				ParameterName:  param.Name,

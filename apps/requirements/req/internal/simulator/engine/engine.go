@@ -65,14 +65,13 @@ type SimulationEngine struct {
 	bindingsBuilder *state.BindingsBuilder
 
 	// Components
-	sch                 *schema.Schema
-	stepExecutor        *StepExecutor
-	selector            *ActionSelector
-	invariantChecker    *siminst.InvariantChecker
-	dataTypeChecker     *siminst.DataTypeChecker
-	livenessChecker     *LivenessChecker
-	stateMachineChecker *StateMachineChecker
-	simulationCoverage  *SimulationCoverageTracker
+	sch                *schema.Schema
+	stepExecutor       *StepExecutor
+	selector           *ActionSelector
+	invariantChecker   *siminst.InvariantChecker
+	dataTypeChecker    *siminst.DataTypeChecker
+	livenessChecker    *LivenessChecker
+	simulationCoverage *SimulationCoverageTracker
 
 	// scopeEntries summarize which classes/subdomains participate (include-list scope).
 	scopeEntries []surface.ScopeEntry
@@ -181,18 +180,17 @@ func newWiredSimulationEngine(
 	scopeEntries []surface.ScopeEntry,
 ) *SimulationEngine {
 	return &SimulationEngine{
-		config:              config,
-		simState:            core.simState,
-		bindingsBuilder:     core.bindingsBuilder,
-		sch:                 catalog,
-		stepExecutor:        core.stepExecutor,
-		selector:            core.selector,
-		invariantChecker:    core.checkers.invariantChecker,
-		dataTypeChecker:     core.checkers.dataTypeChecker,
-		livenessChecker:     core.livenessChecker,
-		stateMachineChecker: NewStateMachineChecker(catalog),
-		simulationCoverage:  core.simulationCoverage,
-		scopeEntries:        scopeEntries,
+		config:             config,
+		simState:           core.simState,
+		bindingsBuilder:    core.bindingsBuilder,
+		sch:                catalog,
+		stepExecutor:       core.stepExecutor,
+		selector:           core.selector,
+		invariantChecker:   core.checkers.invariantChecker,
+		dataTypeChecker:    core.checkers.dataTypeChecker,
+		livenessChecker:    core.livenessChecker,
+		simulationCoverage: core.simulationCoverage,
+		scopeEntries:       scopeEntries,
 	}
 }
 
@@ -526,7 +524,7 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	}
 
 	// Run post-simulation model checks.
-	result.Violations = append(result.Violations, e.stateMachineChecker.Check()...)
+	result.Violations = append(result.Violations, siminst.CheckStateMachineCompleteness(e.sch)...)
 
 	// Run liveness checks after simulation completes.
 	livenessViolations := e.livenessChecker.Check(result)

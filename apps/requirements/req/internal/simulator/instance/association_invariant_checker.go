@@ -122,7 +122,7 @@ func evalAssociationInvariantLet(
 ) ViolationErrors {
 	result := evaluator.Eval(item.expression, bindings)
 	if result.IsError() {
-		return ViolationErrors{NewAssociationInvariantViolation(
+		return ViolationErrors{newAssociationInvariantViolation(
 			item.associationKey, item.associationName, instance.ID, item.originalIndex, item.spec,
 			fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
 		)}
@@ -138,7 +138,7 @@ func evalAssociationInvariantAssessment(
 ) ViolationErrors {
 	result := evaluator.Eval(item.expression, bindings)
 	if result.Error != nil {
-		return ViolationErrors{NewAssociationInvariantViolation(
+		return ViolationErrors{newAssociationInvariantViolation(
 			item.associationKey, item.associationName, instance.ID, item.originalIndex, item.spec,
 			fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 		)}
@@ -146,7 +146,7 @@ func evalAssociationInvariantAssessment(
 	if isTrueBoolean(result.Value) {
 		return nil
 	}
-	return ViolationErrors{NewAssociationInvariantViolation(
+	return ViolationErrors{newAssociationInvariantViolation(
 		item.associationKey, item.associationName, instance.ID, item.originalIndex, item.spec,
 		invariantAssessmentFailureMessage(result.Value),
 	)}

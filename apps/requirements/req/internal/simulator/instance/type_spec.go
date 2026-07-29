@@ -39,17 +39,17 @@ func attributeDefinitionViolations(
 	attrDef *model_class.Attribute,
 ) ViolationErrors {
 	if attrDef.DataType == nil {
-		return ViolationErrors{NewUnparsedAttributeDataTypeViolation(
+		return ViolationErrors{newUnparsedAttributeDataTypeViolation(
 			instanceID, classKey, attrDef.Name, attrDef.DataTypeRules,
 		)}
 	}
 	if !attributeHasTypeSpec(attrDef) {
-		return ViolationErrors{NewMissingAttributeTypeSpecViolation(
+		return ViolationErrors{newMissingAttributeTypeSpecViolation(
 			instanceID, classKey, attrDef.Name,
 		)}
 	}
 	if model_data_type.IsAtomicDateTime(attrDef.DataType) && !dateTimeTypeSpecSatisfied(attrDef.DataType) {
-		return ViolationErrors{NewDateTimeTypeSpecMismatchAttributeViolation(
+		return ViolationErrors{newDateTimeTypeSpecMismatchAttributeViolation(
 			instanceID, classKey, attrDef.Name, typeSpecSpecification(attrDef.DataType),
 		)}
 	}

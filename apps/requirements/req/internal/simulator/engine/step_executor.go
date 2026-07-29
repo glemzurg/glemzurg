@@ -111,10 +111,11 @@ func (e *StepExecutor) executeQuery(
 	// Query depends on out-of-scope association data — not surface-selected, but if
 	// something still invokes it, report a surface-out-of-scope violation.
 	if e.catalog != nil {
-		if unavail, ok := e.catalog.SurfaceUnavailableQuery(pending.Query.Key); ok {
-			step.Violations = append(step.Violations, siminst.NewSurfaceOutOfScopeViolation(
-				pending.Class.ClassKey, pending.Instance.ID, pending.Query.Name, unavail.Reason(),
-			))
+		if v := siminst.CheckSurfaceMemberAccess(
+			e.catalog, siminst.SurfaceMemberQuery, pending.Query.Key,
+			pending.Class.ClassKey, pending.Instance.ID, pending.Query.Name,
+		); v != nil {
+			step.Violations = append(step.Violations, v)
 			return step, nil
 		}
 	}

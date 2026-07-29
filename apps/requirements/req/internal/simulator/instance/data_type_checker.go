@@ -43,7 +43,7 @@ func NewDataTypeChecker(sch *schema.Schema) (*DataTypeChecker, ViolationErrors) 
 			for _, attr := range class.Attributes {
 				if attr.DataType == nil {
 					checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
-						NewUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
+						newUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
 					)
 				}
 			}
@@ -83,7 +83,7 @@ func (c *DataTypeChecker) CheckInstance(instance *Instance) ViolationErrors {
 
 		// Check required (non-nullable) constraint
 		if !attrDef.Nullable && object.IsNull(value) {
-			violations = append(violations, NewRequiredAttributeViolation(
+			violations = append(violations, newRequiredAttributeViolation(
 				instance.ID,
 				instance.ClassKey,
 				attrDef.Name,
@@ -188,7 +188,7 @@ func (c *DataTypeChecker) checkCollectionSize(
 
 	// Check min constraint
 	if dataType.CollectionMin != nil && size < *dataType.CollectionMin {
-		return NewCollectionSizeViolation(
+		return newCollectionSizeViolation(
 			instanceID,
 			classKey,
 			attrName,
@@ -200,7 +200,7 @@ func (c *DataTypeChecker) checkCollectionSize(
 
 	// Check max constraint
 	if dataType.CollectionMax != nil && size > *dataType.CollectionMax {
-		return NewCollectionSizeViolation(
+		return newCollectionSizeViolation(
 			instanceID,
 			classKey,
 			attrName,
@@ -270,13 +270,13 @@ func checkDateTimeConstraint(
 
 	rat := num.Rat()
 	if !rat.IsInt() {
-		return NewDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
+		return newDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
 	}
 
 	minRat := big.NewRat(model_data_type.DateTimeValueMin, 1)
 	maxRat := big.NewRat(model_data_type.DateTimeValueMax, 1)
 	if rat.Cmp(minRat) < 0 || rat.Cmp(maxRat) > 0 {
-		return NewDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
+		return newDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
 	}
 
 	return nil
@@ -312,7 +312,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 		case _BOUND_TYPE_CLOSED:
 			// Closed: value >= lower
 			if cmp < 0 {
-				return NewSpanConstraintViolation(
+				return newSpanConstraintViolation(
 					instanceID,
 					classKey,
 					attrName,
@@ -323,7 +323,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 		case _BOUND_TYPE_OPEN:
 			// Open: value > lower
 			if cmp <= 0 {
-				return NewSpanConstraintViolation(
+				return newSpanConstraintViolation(
 					instanceID,
 					classKey,
 					attrName,
@@ -343,7 +343,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 		case _BOUND_TYPE_CLOSED:
 			// Closed: value <= higher
 			if cmp > 0 {
-				return NewSpanConstraintViolation(
+				return newSpanConstraintViolation(
 					instanceID,
 					classKey,
 					attrName,
@@ -354,7 +354,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 		case _BOUND_TYPE_OPEN:
 			// Open: value < higher
 			if cmp >= 0 {
-				return NewSpanConstraintViolation(
+				return newSpanConstraintViolation(
 					instanceID,
 					classKey,
 					attrName,
@@ -462,7 +462,7 @@ func (c *DataTypeChecker) checkEnumConstraint(
 					return nil
 				}
 			}
-			return NewEnumConstraintViolation(
+			return newEnumConstraintViolation(
 				instanceID,
 				classKey,
 				attrName,
@@ -489,7 +489,7 @@ func (c *DataTypeChecker) checkEnumConstraint(
 	}
 
 	// Value not in enumeration
-	return NewEnumConstraintViolation(
+	return newEnumConstraintViolation(
 		instanceID,
 		classKey,
 		attrName,

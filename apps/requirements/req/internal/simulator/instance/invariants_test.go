@@ -644,20 +644,20 @@ func (s *InvariantsSuite) TestViolationTypes() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
 	// Test required attribute violation
-	v1 := NewRequiredAttributeViolation(1, classKey, "field")
+	v1 := newRequiredAttributeViolation(1, classKey, "field")
 	s.Equal(ViolationTypeRequiredAttribute, v1.Type)
 	s.Contains(v1.Message, "field")
 	s.Contains(v1.Message, "required")
 
 	// Test span constraint violation
-	v2 := NewSpanConstraintViolation(1, classKey, "amount", "500", "[0, 100]")
+	v2 := newSpanConstraintViolation(1, classKey, "amount", "500", "[0, 100]")
 	s.Equal(ViolationTypeSpanConstraint, v2.Type)
 	s.Contains(v2.Message, "amount")
 	s.Contains(v2.Message, "500")
 	s.Contains(v2.Message, "[0, 100]")
 
 	// Test enum constraint violation
-	v3 := NewEnumConstraintViolation(1, classKey, "status", "bad", []string{"good", "ok"})
+	v3 := newEnumConstraintViolation(1, classKey, "status", "bad", []string{"good", "ok"})
 	s.Equal(ViolationTypeEnumConstraint, v3.Type)
 	s.Contains(v3.Message, "status")
 	s.Contains(v3.Message, "bad")
@@ -665,18 +665,18 @@ func (s *InvariantsSuite) TestViolationTypes() {
 	// Test collection size violation
 	minSize := 1
 	maxSize := 5
-	v4 := NewCollectionSizeViolation(1, classKey, "items", 10, &minSize, &maxSize)
+	v4 := newCollectionSizeViolation(1, classKey, "items", 10, &minSize, &maxSize)
 	s.Equal(ViolationTypeCollectionSize, v4.Type)
 	s.Contains(v4.Message, "items")
 	s.Contains(v4.Message, "10")
 
 	// Test model invariant violation
-	v5 := NewModelInvariantViolation(0, "x > 5", "expression returned FALSE")
+	v5 := newModelInvariantViolation(0, "x > 5", "expression returned FALSE")
 	s.Equal(ViolationTypeModelInvariant, v5.Type)
 	s.Contains(v5.Message, "x > 5")
 
 	// Test unparsed data type violation
-	v6 := NewUnparsedDataTypeViolation(classKey, "bad_field", "invalid syntax")
+	v6 := newUnparsedDataTypeViolation(classKey, "bad_field", "invalid syntax")
 	s.Equal(ViolationTypeUnparsedDataType, v6.Type)
 	s.Contains(v6.Message, "bad_field")
 	s.Contains(v6.Message, "unparsed")
@@ -687,10 +687,10 @@ func (s *InvariantsSuite) TestViolationErrorsFiltering() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
 	violations := ViolationErrors{
-		NewRequiredAttributeViolation(1, classKey, "a"),
-		NewSpanConstraintViolation(1, classKey, "b", "1", "[0,0]"),
-		NewModelInvariantViolation(0, "TRUE", "failed"),
-		NewEnumConstraintViolation(1, classKey, "c", "x", []string{"y"}),
+		newRequiredAttributeViolation(1, classKey, "a"),
+		newSpanConstraintViolation(1, classKey, "b", "1", "[0,0]"),
+		newModelInvariantViolation(0, "TRUE", "failed"),
+		newEnumConstraintViolation(1, classKey, "c", "x", []string{"y"}),
 	}
 
 	// Filter by type

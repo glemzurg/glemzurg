@@ -19,21 +19,3 @@ func checkParameterTypeSpecs(
 ) instance.ViolationErrors {
 	return instance.CheckParameterTypeSpecs(params, sourceKey, sourceName, sourceKind, instanceID, classKey)
 }
-
-func newPeerEventUnavailableForOwner(
-	owner *instance.Instance,
-	assocName string,
-	peerClassKey identity.Key,
-	event model_state.Event,
-	message string,
-) *instance.ViolationError {
-	return instance.NewPeerEventUnavailableViolation(instance.PeerEventUnavailableParams{
-		OwnerClassKey:   owner.ClassKey,
-		OwnerInstanceID: owner.ID,
-		AssociationName: assocName,
-		PeerClassKey:    peerClassKey,
-		EventKey:        event.Key,
-		EventName:       event.Name,
-		Message:         message,
-	})
-}

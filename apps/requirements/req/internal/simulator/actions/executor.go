@@ -18,9 +18,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
-// _EXPRESSION_RETURNED_NIL is the error message used when an expression evaluates to nil.
-const _EXPRESSION_RETURNED_NIL = "expression returned nil"
-
 // ActionResult holds the result of executing an action.
 type ActionResult struct {
 	// InstanceID is the primary instance the action was executed on.
@@ -316,64 +313,51 @@ func (e *ActionExecutor) CheckWorldStateInvariants() instance.ViolationErrors {
 	return violations
 }
 
-// checkPostConditions evaluates all deferred post-conditions from the execution context.
+// checkPostConditions evaluates all deferred post-conditions against live state (instance owns judgment).
 func (e *ActionExecutor) checkPostConditions(ctx *ExecutionContext) instance.ViolationErrors {
-	var violations instance.ViolationErrors
 	simState := e.bindingsBuilder.State()
-
+	if simState == nil {
+		return nil
+	}
+	assertions := make([]instance.DeferredAssertion, 0, len(ctx.GetAllPostConditions()))
 	for _, pc := range ctx.GetAllPostConditions() {
-		targetInstance := simState.GetInstance(pc.InstanceID)
-		if targetInstance == nil {
-			continue
+		kind := instance.AssertionPostconditionAction
+		if pc.SourceType == logicOwnerKindQuery {
+			kind = instance.AssertionPostconditionQuery
 		}
-		postBindings := e.bindingsBuilder.BuildForInstance(targetInstance)
-		if msg := evalBooleanCheck(pc.Expression, postBindings); msg != "" {
-			violations = append(violations, createPostConditionViolation(pc, msg))
-		}
+		assertions = append(assertions, instance.DeferredAssertion{
+			Expression:         pc.Expression,
+			InstanceID:         pc.InstanceID,
+			SourceKey:          pc.SourceKey,
+			SourceName:         pc.SourceName,
+			Kind:               kind,
+			Index:              pc.Index,
+			OriginalExpression: pc.OriginalExpression,
+		})
 	}
-
-	return violations
+	return simState.CheckDeferredAssertions(assertions, e.bindingsBuilder)
 }
 
-// checkSafetyRules evaluates all deferred safety rules from the execution context.
+// checkSafetyRules evaluates deferred safety rules against live state (instance owns judgment).
 func (e *ActionExecutor) checkSafetyRules(ctx *ExecutionContext) instance.ViolationErrors {
-	var violations instance.ViolationErrors
 	simState := e.bindingsBuilder.State()
-
+	if simState == nil {
+		return nil
+	}
+	assertions := make([]instance.DeferredAssertion, 0, len(ctx.GetAllSafetyRules()))
 	for _, sr := range ctx.GetAllSafetyRules() {
-		targetInstance := simState.GetInstance(sr.InstanceID)
-		if targetInstance == nil {
-			continue
-		}
-		safetyBindings := e.bindingsBuilder.BuildForInstance(targetInstance)
-		for name, value := range sr.LetBindings {
-			safetyBindings.Set(name, value, evaluator.NamespaceLocal)
-		}
-		if msg := evalBooleanCheck(sr.Expression, safetyBindings); msg != "" {
-			violations = append(violations, instance.NewSafetyRuleViolation(
-				sr.SourceKey, sr.SourceName, sr.Index, sr.OriginalExpression,
-				sr.InstanceID, msg,
-			))
-		}
+		assertions = append(assertions, instance.DeferredAssertion{
+			Expression:         sr.Expression,
+			InstanceID:         sr.InstanceID,
+			SourceKey:          sr.SourceKey,
+			SourceName:         sr.SourceName,
+			Kind:               instance.AssertionSafetyRule,
+			Index:              sr.Index,
+			OriginalExpression: sr.OriginalExpression,
+			LetBindings:        sr.LetBindings,
+		})
 	}
-
-	return violations
-}
-
-// evalBooleanCheck evaluates an expression and returns an error message if it
-// doesn't evaluate to TRUE. Returns empty string on success.
-func evalBooleanCheck(expr me.Expression, bindings *evaluator.Bindings) string {
-	result := evaluator.Eval(expr, bindings)
-	if result.IsError() {
-		return fmt.Sprintf("evaluation error: %s", result.Error.Inspect())
-	}
-	if isTrueBoolean(result.Value) {
-		return ""
-	}
-	if result.Value == nil {
-		return _EXPRESSION_RETURNED_NIL
-	}
-	return fmt.Sprintf("expression returned %s", result.Value.Inspect())
+	return simState.CheckDeferredAssertions(assertions, e.bindingsBuilder)
 }
 
 // checkDataTypeConstraints checks data type constraints on all mutated instances.
@@ -1300,26 +1284,4 @@ func isTrueBoolean(obj object.Object) bool {
 		return false
 	}
 	return b.Value()
-}
-
-// createPostConditionViolation creates a violation from a deferred post-condition.
-func createPostConditionViolation(pc DeferredPostCondition, message string) *instance.ViolationError {
-	if pc.SourceType == logicOwnerKindAction {
-		return instance.NewActionGuaranteeViolation(
-			pc.SourceKey,
-			pc.SourceName,
-			pc.Index,
-			pc.OriginalExpression,
-			pc.InstanceID,
-			message,
-		)
-	}
-	return instance.NewQueryGuaranteeViolation(
-		pc.SourceKey,
-		pc.SourceName,
-		pc.Index,
-		pc.OriginalExpression,
-		pc.InstanceID,
-		message,
-	)
 }

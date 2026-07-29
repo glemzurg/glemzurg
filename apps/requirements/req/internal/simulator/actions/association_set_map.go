@@ -224,7 +224,7 @@ func (e *ActionExecutor) queueSetMapPeerUpdates(
 
 func (e *ActionExecutor) recordSetMapParamBindingError(
 	ctx *ExecutionContext,
-	instance *instance.Instance,
+	owner *instance.Instance,
 	mapTarget *associationSetMapTarget,
 	event model_state.Event,
 	err error,
@@ -233,13 +233,22 @@ func (e *ActionExecutor) recordSetMapParamBindingError(
 		"association %q set-map event %s parameter binding failed: %s",
 		mapTarget.assoc.Name, event.Name, err.Error(),
 	)
-	ctx.AddPeerViolation(newPeerEventUnavailableForOwner(
-		instance,
-		mapTarget.assoc.Name,
-		mapTarget.toClass.Key,
-		event,
-		msg,
-	))
+	st := e.bindingsBuilder.State()
+	if st == nil || owner == nil {
+		return
+	}
+	if v := st.CheckPeerEventUnavailable(instance.PeerEventUnavailableInput{
+		OwnerClassKey:   owner.ClassKey,
+		OwnerInstanceID: owner.ID,
+		AssociationName: mapTarget.assoc.Name,
+		PeerClassKey:    mapTarget.toClass.Key,
+		PeerClassName:   mapTarget.toClass.Name,
+		EventKey:        event.Key,
+		EventName:       event.Name,
+		Detail:          msg,
+	}); v != nil {
+		ctx.AddPeerViolation(v)
+	}
 }
 
 func (e *ActionExecutor) applyPeerUpdates(ctx *ExecutionContext) error {

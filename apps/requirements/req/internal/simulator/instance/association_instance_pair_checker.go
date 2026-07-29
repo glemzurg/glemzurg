@@ -49,7 +49,7 @@ func checkAssociationInstancePairs(
 	for _, link := range links {
 		counts[link]++
 		if counts[link] > 1 {
-			violations = append(violations, NewAssociationDuplicateLinkViolation(AssociationDuplicateLinkViolationParams{
+			violations = append(violations, newAssociationDuplicateLinkViolation(AssociationDuplicateLinkViolationParams{
 				AssociationName: assoc.Name,
 				FromInstanceID:  link.fromID,
 				ToInstanceID:    link.toID,

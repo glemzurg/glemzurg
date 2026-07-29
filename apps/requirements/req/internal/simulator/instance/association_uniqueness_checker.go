@@ -66,7 +66,7 @@ func (c *AssociationUniquenessChecker) checkBinding(
 			tupleKey := associationUniquenessTupleKey(fromInst, toInst, binding.uniqueness)
 			counts[tupleKey]++
 			if counts[tupleKey] > 1 {
-				violations = append(violations, NewAssociationUniquenessViolation(AssociationUniquenessViolationParams{
+				violations = append(violations, newAssociationUniquenessViolation(AssociationUniquenessViolationParams{
 					AssociationName: binding.association.Name,
 					FromInstanceID:  link.fromID,
 					ToInstanceID:    link.toID,

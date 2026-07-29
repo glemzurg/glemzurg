@@ -253,7 +253,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 		}
 		result := c.evalExpr(item.expression, bindings)
 		if result.IsError() {
-			violations = append(violations, NewModelInvariantViolation(
+			violations = append(violations, newModelInvariantViolation(
 				item.originalIndex,
 				item.spec,
 				fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
@@ -271,7 +271,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 		result := c.evalExpr(item.expression, bindings)
 
 		if result.Error != nil {
-			violations = append(violations, NewModelInvariantViolation(
+			violations = append(violations, newModelInvariantViolation(
 				item.originalIndex,
 				item.spec,
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
@@ -287,7 +287,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
-			violations = append(violations, NewModelInvariantViolation(
+			violations = append(violations, newModelInvariantViolation(
 				item.originalIndex,
 				item.spec,
 				message,
@@ -330,7 +330,7 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 		}
 		result := c.evalExpr(item.expression, bindings)
 		if result.IsError() {
-			violations = append(violations, NewClassInvariantViolation(
+			violations = append(violations, newClassInvariantViolation(
 				instance.ClassKey, instance.ID, item.originalIndex, item.spec,
 				fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
 			))
@@ -345,7 +345,7 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 		}
 		result := c.evalExpr(item.expression, bindings)
 		if result.Error != nil {
-			violations = append(violations, NewClassInvariantViolation(
+			violations = append(violations, newClassInvariantViolation(
 				instance.ClassKey, instance.ID, item.originalIndex, item.spec,
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
@@ -358,7 +358,7 @@ func (c *InvariantChecker) checkClassInvariantsForInstance(
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
-			violations = append(violations, NewClassInvariantViolation(
+			violations = append(violations, newClassInvariantViolation(
 				instance.ClassKey, instance.ID, item.originalIndex, item.spec, message,
 			))
 		}
@@ -436,7 +436,7 @@ func (c *InvariantChecker) evalAttributeInvariantLet(
 ) ViolationErrors {
 	result := c.evalExpr(item.expression, bindings)
 	if result.IsError() {
-		return ViolationErrors{NewAttributeInvariantViolation(
+		return ViolationErrors{newAttributeInvariantViolation(
 			instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
 			fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
 		)}
@@ -452,7 +452,7 @@ func (c *InvariantChecker) evalAttributeInvariantAssessment(
 ) ViolationErrors {
 	result := c.evalExpr(item.expression, bindings)
 	if result.Error != nil {
-		return ViolationErrors{NewAttributeInvariantViolation(
+		return ViolationErrors{newAttributeInvariantViolation(
 			instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
 			fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 		)}
@@ -460,7 +460,7 @@ func (c *InvariantChecker) evalAttributeInvariantAssessment(
 	if isTrueBoolean(result.Value) {
 		return nil
 	}
-	return ViolationErrors{NewAttributeInvariantViolation(
+	return ViolationErrors{newAttributeInvariantViolation(
 		instance.ClassKey, instance.ID, item.attributeName, item.originalIndex, item.spec,
 		invariantAssessmentFailureMessage(result.Value),
 	)}
@@ -502,7 +502,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 		result := c.evalExpr(g.expression, bindings)
 
 		if result.Error != nil {
-			violations = append(violations, NewActionGuaranteeViolation(
+			violations = append(violations, newActionGuaranteeViolation(
 				actionKey,
 				actionName,
 				g.index,
@@ -521,7 +521,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
-			violations = append(violations, NewActionGuaranteeViolation(
+			violations = append(violations, newActionGuaranteeViolation(
 				actionKey,
 				actionName,
 				g.index,
@@ -564,7 +564,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 		result := c.evalExpr(g.expression, bindings)
 
 		if result.Error != nil {
-			violations = append(violations, NewQueryGuaranteeViolation(
+			violations = append(violations, newQueryGuaranteeViolation(
 				queryKey,
 				queryName,
 				g.index,
@@ -583,7 +583,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
-			violations = append(violations, NewQueryGuaranteeViolation(
+			violations = append(violations, newQueryGuaranteeViolation(
 				queryKey,
 				queryName,
 				g.index,

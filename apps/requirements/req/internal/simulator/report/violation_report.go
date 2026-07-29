@@ -3,7 +3,6 @@
 package report
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -121,11 +120,6 @@ func (r *ViolationReport) FormatText() string {
 	}
 
 	return b.String()
-}
-
-// formatJSON renders the report as indented JSON bytes.
-func (r *ViolationReport) formatJSON() ([]byte, error) {
-	return json.MarshalIndent(r, "", "  ")
 }
 
 // buildCategory creates a ViolationCategory from a ViolationErrors.

@@ -119,12 +119,10 @@ func (d *DerivedAttributeEvaluator) ResolveDerivedAttribute(
 	attrName string,
 ) (object.Object, siminst.ViolationErrors, error) {
 	if d.catalog != nil {
-		if unavail, ok := d.catalog.SurfaceUnavailableDerived(attrKey); ok {
-			return nil, siminst.ViolationErrors{
-				siminst.NewSurfaceOutOfScopeViolation(
-					instance.ClassKey, instance.ID, attrName, unavail.Reason(),
-				),
-			}, nil
+		if v := siminst.CheckSurfaceMemberAccess(
+			d.catalog, siminst.SurfaceMemberDerived, attrKey, instance.ClassKey, instance.ID, attrName,
+		); v != nil {
+			return nil, siminst.ViolationErrors{v}, nil
 		}
 	}
 

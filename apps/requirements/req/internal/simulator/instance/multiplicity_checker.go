@@ -60,7 +60,7 @@ func (c *MultiplicityChecker) CheckInstance(
 		if binding.fromClassKey == instance.ClassKey {
 			count := c.countActiveForwardLinks(instance.ID, binding, simState)
 			if msg := checkMultiplicityBounds(count, binding.association.ToMultiplicity.LowerBound, binding.association.ToMultiplicity.HigherBound); msg != "" {
-				violations = append(violations, NewMultiplicityViolation(MultiplicityViolationParams{
+				violations = append(violations, newMultiplicityViolation(MultiplicityViolationParams{
 					InstanceID:      instance.ID,
 					ClassKey:        instance.ClassKey,
 					AssociationName: binding.association.Name,
@@ -76,7 +76,7 @@ func (c *MultiplicityChecker) CheckInstance(
 		if binding.toClassKey == instance.ClassKey {
 			count := c.countActiveReverseLinks(instance.ID, binding, simState)
 			if msg := checkMultiplicityBounds(count, binding.association.FromMultiplicity.LowerBound, binding.association.FromMultiplicity.HigherBound); msg != "" {
-				violations = append(violations, NewMultiplicityViolation(MultiplicityViolationParams{
+				violations = append(violations, newMultiplicityViolation(MultiplicityViolationParams{
 					InstanceID:      instance.ID,
 					ClassKey:        instance.ClassKey,
 					AssociationName: binding.association.Name,

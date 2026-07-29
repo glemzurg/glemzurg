@@ -357,7 +357,7 @@ func checkClassLiveness(obl *livenessObligations, hits LivenessHits) ViolationEr
 	var violations ViolationErrors
 	for _, c := range obl.classes {
 		if !hits.Instantiated[c.key] {
-			violations = append(violations, NewLivenessClassNotInstantiatedViolation(c.key, c.name))
+			violations = append(violations, newLivenessClassNotInstantiatedViolation(c.key, c.name))
 		}
 	}
 	return violations
@@ -368,7 +368,7 @@ func checkAttributeLiveness(obl *livenessObligations, hits LivenessHits) Violati
 	for _, a := range obl.attributes {
 		written := hits.WrittenAttrs[a.classKey]
 		if written == nil || !written[a.subKey] {
-			violations = append(violations, NewLivenessAttributeNotWrittenViolation(a.classKey, a.className, a.name))
+			violations = append(violations, newLivenessAttributeNotWrittenViolation(a.classKey, a.className, a.name))
 		}
 	}
 	return violations
@@ -380,7 +380,7 @@ func checkAssociationLiveness(obl *livenessObligations, hits LivenessHits) Viola
 		// Link tables store evaluator.AssociationKey form of the model key string.
 		assocKeyStr := string(evaluator.AssociationKey(assoc.keyStr))
 		if !hits.LinkedAssocs[assocKeyStr] && !hits.LinkedAssocs[assoc.keyStr] {
-			violations = append(violations, NewLivenessAssociationNotLinkedViolation(
+			violations = append(violations, newLivenessAssociationNotLinkedViolation(
 				assoc.key, assoc.name, assoc.fromKey, assoc.toKey,
 			))
 		}
@@ -392,22 +392,22 @@ func checkMemberLiveness(obl *livenessObligations, hits LivenessHits) ViolationE
 	var violations ViolationErrors
 	for _, e := range obl.events {
 		if !hits.Events[e.memberKey] {
-			violations = append(violations, NewLivenessEventNotSentViolation(e.classKey, e.className, e.name))
+			violations = append(violations, newLivenessEventNotSentViolation(e.classKey, e.className, e.name))
 		}
 	}
 	for _, q := range obl.queries {
 		if !hits.Queries[q.memberKey] {
-			violations = append(violations, NewLivenessQueryNotRunViolation(q.classKey, q.className, q.name))
+			violations = append(violations, newLivenessQueryNotRunViolation(q.classKey, q.className, q.name))
 		}
 	}
 	for _, d := range obl.derived {
 		if !hits.DerivedReads[d.memberKey] {
-			violations = append(violations, NewLivenessAttributeNotReadViolation(d.classKey, d.className, d.name))
+			violations = append(violations, newLivenessAttributeNotReadViolation(d.classKey, d.className, d.name))
 		}
 	}
 	for _, a := range obl.actions {
 		if !hits.Actions[a.memberKey] {
-			violations = append(violations, NewLivenessActionNotExecutedViolation(a.classKey, a.className, a.name))
+			violations = append(violations, newLivenessActionNotExecutedViolation(a.classKey, a.className, a.name))
 		}
 	}
 	return violations
@@ -417,7 +417,7 @@ func checkParamLiveness(obl *livenessObligations, hits LivenessHits) ViolationEr
 	var violations ViolationErrors
 	for _, p := range obl.params {
 		if !hits.UsedSimulationParams[p.paramKey] {
-			violations = append(violations, NewLivenessParameterSimulationNotUsedViolation(
+			violations = append(violations, newLivenessParameterSimulationNotUsedViolation(
 				p.classKey, p.className, p.actionName, p.paramName,
 			))
 		}

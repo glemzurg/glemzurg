@@ -83,7 +83,7 @@ func (c *IndexUniquenessChecker) CheckClassInstances(
 					tupleValues[i] = formatIndexTupleValue(instance.GetAttribute(name))
 				}
 
-				violations = append(violations, NewIndexUniquenessViolation(
+				violations = append(violations, newIndexUniquenessViolation(
 					existingID,
 					instance.ID,
 					classKey,

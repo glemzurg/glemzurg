@@ -12,6 +12,10 @@
 // Liveness obligations are installed once at [NewState] from schema; hit collection
 // and [State.CheckLiveness] compare against that contract without further schema walks.
 //
+// Violation values are constructed only inside this package (private constructors).
+// Outside packages call Check* / Package* APIs (or checker methods) that judge live world
+// data and may consult schema; they do not assemble ViolationError messages themselves.
+//
 // Action execution, expression evaluation, model loading, and TLA binding
 // construction live in other packages and call into this one.
 //

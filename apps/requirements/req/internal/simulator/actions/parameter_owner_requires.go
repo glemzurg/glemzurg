@@ -27,6 +27,8 @@ const (
 	logicOwnerKindAction                 = "action"
 	logicOwnerKindQuery                  = "query"
 	maxParameterSampleAttempts           = 10
+	// _EXPRESSION_RETURNED_NIL is the message when a requires expression evaluates to nil.
+	_EXPRESSION_RETURNED_NIL = "expression returned nil"
 )
 
 // ParameterOwner is an action or query that owns typed parameters and requires.
@@ -249,13 +251,9 @@ func (o ParameterOwner) ParameterInvariantViolations(
 	failures []RequireAssessmentFailure,
 	instanceID instance.ID,
 ) instance.ViolationErrors {
-	var violations instance.ViolationErrors
-	for _, failure := range failures {
-		violations = append(violations, instance.NewParameterInvariantViolation(
-			o.Key, o.Name, failure.Index, failure.Logic.Spec.Specification, instanceID, failure.Message,
-		))
-	}
-	return violations
+	return instance.PackageParameterInvariantFailures(
+		o.Key, o.Name, assessedFailures(failures), instanceID,
+	)
 }
 
 // ActionRequiresViolations converts assessment failures into action-require violations.
@@ -263,13 +261,21 @@ func (o ParameterOwner) ActionRequiresViolations(
 	failures []RequireAssessmentFailure,
 	instanceID instance.ID,
 ) instance.ViolationErrors {
-	var violations instance.ViolationErrors
-	for _, failure := range failures {
-		violations = append(violations, instance.NewActionRequiresViolation(
-			o.Key, o.Name, failure.Index, failure.Logic.Spec.Specification, instanceID, failure.Message,
-		))
+	return instance.PackageActionRequireFailures(
+		o.Key, o.Name, assessedFailures(failures), instanceID,
+	)
+}
+
+func assessedFailures(failures []RequireAssessmentFailure) []instance.AssessedFailure {
+	out := make([]instance.AssessedFailure, 0, len(failures))
+	for _, f := range failures {
+		out = append(out, instance.AssessedFailure{
+			Index:   f.Index,
+			Spec:    f.Logic.Spec.Specification,
+			Message: f.Message,
+		})
 	}
-	return violations
+	return out
 }
 
 // RequireAssessmentError returns the first failure as an error for query-style callers.
