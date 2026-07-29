@@ -41,8 +41,7 @@ func catalogAssociationInfoFromView(v AssociationView) AssociationInfo {
 	return AssociationInfo(v)
 }
 
-// Catalog holds association navigation, caller graphs, and surface-unavailable
-// indexes for one schema (built at schema.New).
+// catalog is the private simulation index (association nav, callers, extents).
 type catalog struct {
 	owner *Schema
 
@@ -62,23 +61,23 @@ type catalog struct {
 	attributeCalledBy map[identity.Key][]identity.Key // derived attribute key → caller class keys
 
 	// Surface-unavailable derived attributes and queries (depend on out-of-scope classes).
-	surfaceUnavailableDerived map[identity.Key]surface.UnavailableMember
-	surfaceUnavailableQueries map[identity.Key]surface.UnavailableMember
-	surfaceUnavailableList    []surface.UnavailableMember
+	unavailableDerived map[identity.Key]surface.UnavailableMember
+	unavailableQueries map[identity.Key]surface.UnavailableMember
+	unavailableList    []surface.UnavailableMember
 }
 
 // newCatalog builds a façade over schema indexes (no copy of class-sim map).
 func newCatalog(owner *Schema) *catalog {
 	catalog := &catalog{
-		owner:                     owner,
-		classAssocs:               make(map[identity.Key][]AssociationInfo),
-		extentClassNames:          make(map[identity.Key]string),
-		eventSentBy:               make(map[identity.Key][]identity.Key),
-		actionCalledBy:            make(map[identity.Key][]identity.Key),
-		queryCalledBy:             make(map[identity.Key][]identity.Key),
-		attributeCalledBy:         make(map[identity.Key][]identity.Key),
-		surfaceUnavailableDerived: make(map[identity.Key]surface.UnavailableMember),
-		surfaceUnavailableQueries: make(map[identity.Key]surface.UnavailableMember),
+		owner:              owner,
+		classAssocs:        make(map[identity.Key][]AssociationInfo),
+		extentClassNames:   make(map[identity.Key]string),
+		eventSentBy:        make(map[identity.Key][]identity.Key),
+		actionCalledBy:     make(map[identity.Key][]identity.Key),
+		queryCalledBy:      make(map[identity.Key][]identity.Key),
+		attributeCalledBy:  make(map[identity.Key][]identity.Key),
+		unavailableDerived: make(map[identity.Key]surface.UnavailableMember),
+		unavailableQueries: make(map[identity.Key]surface.UnavailableMember),
 	}
 
 	catalog.loadExtentNamesFromSchema()
@@ -143,54 +142,50 @@ func (c *catalog) addBoundaryAssociationsFromSchema() {
 }
 
 // IsClassInScope reports whether classKey is on the simulation surface (may hold instances).
-func (c *catalog) IsClassInScope(classKey identity.Key) bool {
-	return c.classInfo(classKey) != nil
-}
-
-// SetSurfaceUnavailableMembers records derived attributes and queries that depend on
+// setSurfaceUnavailableMembers records derived attributes and queries that depend on
 // out-of-scope classes. They are excluded from external surface selection; evaluation
 // produces a surface-out-of-scope violation when something calls them.
-func (c *catalog) SetSurfaceUnavailableMembers(members []surface.UnavailableMember) {
-	c.surfaceUnavailableDerived = make(map[identity.Key]surface.UnavailableMember)
-	c.surfaceUnavailableQueries = make(map[identity.Key]surface.UnavailableMember)
-	c.surfaceUnavailableList = append([]surface.UnavailableMember(nil), members...)
+func (c *catalog) setSurfaceUnavailableMembers(members []surface.UnavailableMember) {
+	c.unavailableDerived = make(map[identity.Key]surface.UnavailableMember)
+	c.unavailableQueries = make(map[identity.Key]surface.UnavailableMember)
+	c.unavailableList = append([]surface.UnavailableMember(nil), members...)
 	for _, m := range members {
 		switch m.Kind {
 		case surface.MemberDerived:
-			c.surfaceUnavailableDerived[m.MemberKey] = m
+			c.unavailableDerived[m.MemberKey] = m
 		case surface.MemberQuery:
-			c.surfaceUnavailableQueries[m.MemberKey] = m
+			c.unavailableQueries[m.MemberKey] = m
 		}
 	}
 }
 
 // SurfaceUnavailableMembers returns all members off the external surface due to scope.
-func (c *catalog) SurfaceUnavailableMembers() []surface.UnavailableMember {
-	return c.surfaceUnavailableList
+func (c *catalog) surfaceUnavailableMembers() []surface.UnavailableMember {
+	return c.unavailableList
 }
 
-// SurfaceUnavailableDerived returns unavailability metadata when the derived attribute
+// lookupUnavailableDerived returns unavailability metadata when the derived attribute
 // is off the surface for this run.
-func (c *catalog) SurfaceUnavailableDerived(attrKey identity.Key) (surface.UnavailableMember, bool) {
-	m, ok := c.surfaceUnavailableDerived[attrKey]
+func (c *catalog) lookupUnavailableDerived(attrKey identity.Key) (surface.UnavailableMember, bool) {
+	m, ok := c.unavailableDerived[attrKey]
 	return m, ok
 }
 
 // SurfaceUnavailableQuery returns unavailability metadata when the query is off the surface.
-func (c *catalog) SurfaceUnavailableQuery(queryKey identity.Key) (surface.UnavailableMember, bool) {
-	m, ok := c.surfaceUnavailableQueries[queryKey]
+func (c *catalog) surfaceUnavailableQuery(queryKey identity.Key) (surface.UnavailableMember, bool) {
+	m, ok := c.unavailableQueries[queryKey]
 	return m, ok
 }
 
 // IsSurfaceUnavailableDerived reports whether a derived attribute is off the surface.
-func (c *catalog) IsSurfaceUnavailableDerived(attrKey identity.Key) bool {
-	_, ok := c.surfaceUnavailableDerived[attrKey]
+func (c *catalog) isSurfaceUnavailableDerived(attrKey identity.Key) bool {
+	_, ok := c.lookupUnavailableDerived(attrKey)
 	return ok
 }
 
 // IsSurfaceUnavailableQuery reports whether a query is off the surface.
-func (c *catalog) IsSurfaceUnavailableQuery(queryKey identity.Key) bool {
-	_, ok := c.surfaceUnavailableQueries[queryKey]
+func (c *catalog) isSurfaceUnavailableQuery(queryKey identity.Key) bool {
+	_, ok := c.unavailableQueries[queryKey]
 	return ok
 }
 
@@ -212,18 +207,18 @@ func (c *catalog) addAssociationInfo(ai AssociationInfo) {
 }
 
 // LookupAssociationClass returns host-association metadata for an association-class key.
-func (c *catalog) LookupAssociationClass(classKey identity.Key) *AssociationClassInfo {
+func (c *catalog) lookupAssociationClass(classKey identity.Key) *AssociationClassInfo {
 	return c.associationClasses[classKey]
 }
 
 // IsAssociationClass reports whether the class serves as an association class in the model.
-func (c *catalog) IsAssociationClass(classKey identity.Key) bool {
+func (c *catalog) isAssociationClass(classKey identity.Key) bool {
 	_, ok := c.associationClasses[classKey]
 	return ok
 }
 
 // IsAssociationClassHost reports whether the association is materialized via association-class rows.
-func (c *catalog) IsAssociationClassHost(assocKey identity.Key) bool {
+func (c *catalog) isAssociationClassHost(assocKey identity.Key) bool {
 	for _, info := range c.associationClasses {
 		if info.HostAssociation.Key == assocKey {
 			return true
@@ -233,7 +228,7 @@ func (c *catalog) IsAssociationClassHost(assocKey identity.Key) bool {
 }
 
 // GetAssociationClassInfo returns host-association metadata for an association-class key.
-func (c *catalog) GetAssociationClassInfo(classKey identity.Key) AssociationClassLinkInfo {
+func (c *catalog) getAssociationClassInfo(classKey identity.Key) AssociationClassLinkInfo {
 	info := c.associationClasses[classKey]
 	if info == nil {
 		return AssociationClassLinkInfo{}
@@ -258,7 +253,7 @@ func (c *catalog) GetAssociationClassInfo(classKey identity.Key) AssociationClas
 }
 
 // setEventSentBy records which classes send a given event.
-func (c *catalog) SetEventSentBy(eventKey identity.Key, senderClassKeys []identity.Key) {
+func (c *catalog) setEventSentBy(eventKey identity.Key, senderClassKeys []identity.Key) {
 	c.eventSentBy[eventKey] = senderClassKeys
 }
 
@@ -270,12 +265,12 @@ func (c *catalog) addEventSender(eventKey, senderClassKey identity.Key) {
 }
 
 // setActionCalledBy records which classes call a given action.
-func (c *catalog) SetActionCalledBy(actionKey identity.Key, callerClassKeys []identity.Key) {
+func (c *catalog) setActionCalledBy(actionKey identity.Key, callerClassKeys []identity.Key) {
 	c.actionCalledBy[actionKey] = callerClassKeys
 }
 
 // setQueryCalledBy records which classes call a given query.
-func (c *catalog) SetQueryCalledBy(queryKey identity.Key, callerClassKeys []identity.Key) {
+func (c *catalog) setQueryCalledBy(queryKey identity.Key, callerClassKeys []identity.Key) {
 	c.queryCalledBy[queryKey] = callerClassKeys
 }
 
@@ -295,7 +290,7 @@ func (c *catalog) addAttributeCaller(attributeKey, callerClassKey identity.Key) 
 
 // CallerData exports the SentBy/CalledBy metadata as a surface.CallerData
 // for use with surface.Diagnose.
-func (c *catalog) CallerData() *surface.CallerData {
+func (c *catalog) callerData() *surface.CallerData {
 	return &surface.CallerData{
 		EventSentBy:       c.eventSentBy,
 		ActionCalledBy:    c.actionCalledBy,
@@ -305,12 +300,12 @@ func (c *catalog) CallerData() *surface.CallerData {
 }
 
 // GetClassInfo returns the pre-computed info for a class, or nil if not found.
-func (c *catalog) GetClassInfo(classKey identity.Key) *ClassSimInfo {
+func (c *catalog) getClassInfo(classKey identity.Key) *ClassSimInfo {
 	return c.classInfo(classKey)
 }
 
 // AllScopedClasses returns every in-scope class (simulatable and stateless), sorted by key.
-func (c *catalog) AllScopedClasses() []*ClassSimInfo {
+func (c *catalog) allScopedClasses() []*ClassSimInfo {
 	var result []*ClassSimInfo
 	if c.owner == nil {
 		return nil
@@ -322,7 +317,7 @@ func (c *catalog) AllScopedClasses() []*ClassSimInfo {
 }
 
 // AllSimulatableClasses returns classes with state machines, sorted by key.
-func (c *catalog) AllSimulatableClasses() []*ClassSimInfo {
+func (c *catalog) allSimulatableClasses() []*ClassSimInfo {
 	var result []*ClassSimInfo
 	if c.owner == nil {
 		return nil
@@ -334,7 +329,7 @@ func (c *catalog) AllSimulatableClasses() []*ClassSimInfo {
 }
 
 // AllEventBearingClasses returns simulatable classes that declare at least one event.
-func (c *catalog) AllEventBearingClasses() []*ClassSimInfo {
+func (c *catalog) allEventBearingClasses() []*ClassSimInfo {
 	var result []*ClassSimInfo
 	if c.owner == nil {
 		return nil
@@ -347,7 +342,7 @@ func (c *catalog) AllEventBearingClasses() []*ClassSimInfo {
 
 // GetMandatoryOutboundAssociations returns associations where the given class is
 // the "from" side and the "to" side requires at least one instance (LowerBound >= 1).
-func (c *catalog) GetMandatoryOutboundAssociations(classKey identity.Key) []AssociationInfo {
+func (c *catalog) getMandatoryOutboundAssociations(classKey identity.Key) []AssociationInfo {
 	var result []AssociationInfo
 	for _, ai := range c.classAssocs[classKey] {
 		if ai.FromClassKey == classKey && ai.MandatoryTo {
@@ -359,7 +354,7 @@ func (c *catalog) GetMandatoryOutboundAssociations(classKey identity.Key) []Asso
 
 // GetActionForEvent resolves the action wired to a transition for the given event and instance state.
 // When multiple transitions share the event, the first matching transition with an action is returned.
-func (c *catalog) GetActionForEvent(
+func (c *catalog) getActionForEvent(
 	classKey identity.Key,
 	eventKey identity.Key,
 	instanceStateName string,
@@ -412,7 +407,7 @@ func (c *catalog) GetActionForEvent(
 }
 
 // GetCreationEvent returns the first creation event for a class (if any).
-func (c *catalog) GetCreationEvent(classKey identity.Key) (*model_state.Event, bool) {
+func (c *catalog) getCreationEvent(classKey identity.Key) (*model_state.Event, bool) {
 	info := c.classInfo(classKey)
 	if info == nil || len(info.CreationEvents) == 0 {
 		return nil, false
@@ -421,17 +416,17 @@ func (c *catalog) GetCreationEvent(classKey identity.Key) (*model_state.Event, b
 }
 
 // AllAssociations returns all associations in the catalog.
-func (c *catalog) AllAssociations() []AssociationInfo {
+func (c *catalog) allAssociations() []AssociationInfo {
 	return c.associations
 }
 
 // GetAssociationsForClass returns all associations involving the given class.
-func (c *catalog) GetAssociationsForClass(classKey identity.Key) []AssociationInfo {
+func (c *catalog) getAssociationsForClass(classKey identity.Key) []AssociationInfo {
 	return c.classAssocs[classKey]
 }
 
 // AssociationByKey returns one association definition by key.
-func (c *catalog) AssociationByKey(assocKey identity.Key) (model_class.Association, bool) {
+func (c *catalog) associationByKey(assocKey identity.Key) (model_class.Association, bool) {
 	for _, ai := range c.associations {
 		if ai.Association.Key == assocKey {
 			return ai.Association, true
@@ -442,15 +437,15 @@ func (c *catalog) AssociationByKey(assocKey identity.Key) (model_class.Associati
 
 // OutgoingAssociationByAssociationClassTLAName finds the outgoing association whose
 // association class display name (spaces stripped) equals classTLAName.
-func (c *catalog) OutgoingAssociationByAssociationClassTLAName(
+func (c *catalog) outgoingAssociationByAssociationClassTLAName(
 	fromClassKey identity.Key,
 	classTLAName string,
 ) (identity.Key, model_class.Association, bool) {
-	for _, ai := range c.GetAssociationsForClass(fromClassKey) {
+	for _, ai := range c.getAssociationsForClass(fromClassKey) {
 		if ai.Association.FromClassKey != fromClassKey || ai.Association.AssociationClassKey == nil {
 			continue
 		}
-		acClass, ok := c.PeerClass(*ai.Association.AssociationClassKey)
+		acClass, ok := c.peerClass(*ai.Association.AssociationClassKey)
 		if !ok {
 			continue
 		}
@@ -462,11 +457,11 @@ func (c *catalog) OutgoingAssociationByAssociationClassTLAName(
 }
 
 // OutgoingAssociationByTLAField resolves an outgoing association by its TLA field name on fromClassKey.
-func (c *catalog) OutgoingAssociationByTLAField(
+func (c *catalog) outgoingAssociationByTLAField(
 	fromClassKey identity.Key,
 	tlaField string,
 ) (identity.Key, model_class.Association, bool) {
-	assocKey, assoc, reverse, found := c.AssociationByNavigableTLAField(fromClassKey, tlaField)
+	assocKey, assoc, reverse, found := c.associationByNavigableTLAField(fromClassKey, tlaField)
 	if !found || reverse {
 		return identity.Key{}, model_class.Association{}, false
 	}
@@ -475,7 +470,7 @@ func (c *catalog) OutgoingAssociationByTLAField(
 
 // AssociationByNavigableTLAField resolves a forward (AssocName) or reverse (_AssocName)
 // field on classKey. reverse is true when classKey is the association to-endpoint.
-func (c *catalog) AssociationByNavigableTLAField(
+func (c *catalog) associationByNavigableTLAField(
 	classKey identity.Key,
 	tlaField string,
 ) (identity.Key, model_class.Association, bool, bool) {
@@ -491,7 +486,7 @@ func (c *catalog) AssociationByNavigableTLAField(
 }
 
 // OutgoingAssociationsTo lists associations from fromClassKey whose to-class is toClassKey.
-func (c *catalog) OutgoingAssociationsTo(fromClassKey, toClassKey identity.Key) []model_class.Association {
+func (c *catalog) outgoingAssociationsTo(fromClassKey, toClassKey identity.Key) []model_class.Association {
 	var out []model_class.Association
 	for _, ai := range c.classAssocs[fromClassKey] {
 		if ai.FromClassKey != fromClassKey {
@@ -505,7 +500,7 @@ func (c *catalog) OutgoingAssociationsTo(fromClassKey, toClassKey identity.Key) 
 }
 
 // PeerClass returns the class for peer creation via association set-add guarantees.
-func (c *catalog) PeerClass(classKey identity.Key) (model_class.Class, bool) {
+func (c *catalog) peerClass(classKey identity.Key) (model_class.Class, bool) {
 	info := c.classInfo(classKey)
 	if info == nil {
 		return model_class.Class{}, false
@@ -514,8 +509,8 @@ func (c *catalog) PeerClass(classKey identity.Key) (model_class.Class, bool) {
 }
 
 // PeerCreationEvent returns the creation event for a peer class.
-func (c *catalog) PeerCreationEvent(classKey identity.Key) (model_state.Event, bool) {
-	ev, ok := c.GetCreationEvent(classKey)
+func (c *catalog) peerCreationEvent(classKey identity.Key) (model_state.Event, bool) {
+	ev, ok := c.getCreationEvent(classKey)
 	if !ok || ev == nil {
 		return model_state.Event{}, false
 	}
@@ -523,7 +518,7 @@ func (c *catalog) PeerCreationEvent(classKey identity.Key) (model_state.Event, b
 }
 
 // PeerEvent returns a declared event on a peer class by key.
-func (c *catalog) PeerEvent(classKey identity.Key, eventKey identity.Key) (model_state.Event, bool) {
+func (c *catalog) peerEvent(classKey identity.Key, eventKey identity.Key) (model_state.Event, bool) {
 	info := c.classInfo(classKey)
 	if info == nil {
 		return model_state.Event{}, false
@@ -539,14 +534,14 @@ func (c *catalog) PeerEvent(classKey identity.Key, eventKey identity.Key) (model
 // ExternalCreationEvents returns creation events eligible for top-level firing.
 // An event is excluded when a simulatable in-scope class sends it (SentBy) or
 // when another class's mandatory direct (non-association-class) outbound association targets this class.
-func (c *catalog) ExternalCreationEvents(classKey identity.Key) []model_state.Event {
+func (c *catalog) externalCreationEvents(classKey identity.Key) []model_state.Event {
 	info := c.classInfo(classKey)
 	if info == nil || len(info.CreationEvents) == 0 {
 		return nil
 	}
 
 	// Association-class Add must bind both endpoints; bare external creation would orphan rows.
-	if c.IsAssociationClass(classKey) {
+	if c.isAssociationClass(classKey) {
 		return nil
 	}
 
@@ -586,7 +581,7 @@ func (c *catalog) isMandatoryAssociationCreationTarget(classKey identity.Key) bo
 // on an instance in a given state. An event is "internal" if its SentBy list
 // contains any class that is in scope (i.e., in the catalog). Only truly
 // external events are returned for top-level simulation selection.
-func (c *catalog) ExternalStateEvents(classKey identity.Key, stateName string) []EventInfo {
+func (c *catalog) externalStateEvents(classKey identity.Key, stateName string) []EventInfo {
 	info := c.classInfo(classKey)
 	if info == nil {
 		return nil
@@ -608,7 +603,7 @@ func (c *catalog) ExternalStateEvents(classKey identity.Key, stateName string) [
 // ExternalQueries returns queries eligible for top-level firing on existing instances.
 // A query is "internal" if its CalledBy list contains a simulatable in-scope class.
 // Queries that depend on out-of-scope classes are never external.
-func (c *catalog) ExternalQueries(classKey identity.Key) []model_state.Query {
+func (c *catalog) externalQueries(classKey identity.Key) []model_state.Query {
 	info := c.classInfo(classKey)
 	if info == nil || len(info.Class.Queries) == 0 {
 		return nil
@@ -616,7 +611,7 @@ func (c *catalog) ExternalQueries(classKey identity.Key) []model_state.Query {
 
 	queries := make([]model_state.Query, 0, len(info.Class.Queries))
 	for _, query := range info.Class.Queries {
-		if c.IsSurfaceUnavailableQuery(query.Key) {
+		if c.isSurfaceUnavailableQuery(query.Key) {
 			continue
 		}
 		if c.isQueryExternal(query) {
@@ -631,7 +626,7 @@ func (c *catalog) ExternalQueries(classKey identity.Key) []model_state.Query {
 
 // SurfaceDoActions returns all "do" state actions for top-level simulation.
 // Do-actions are surface-level by nature — they are not filtered by CalledBy.
-func (c *catalog) SurfaceDoActions(classKey identity.Key, stateName string) []model_state.Action {
+func (c *catalog) surfaceDoActions(classKey identity.Key, stateName string) []model_state.Action {
 	info := c.classInfo(classKey)
 	if info == nil {
 		return nil
@@ -651,7 +646,7 @@ func (c *catalog) isQueryExternal(query model_state.Query) bool {
 // ExternalDerivedAttributes returns derived attributes eligible for top-level reads.
 // A derived attribute is internal when a simulatable in-scope class references it in logic.
 // Derived attributes that depend on out-of-scope classes are never external.
-func (c *catalog) ExternalDerivedAttributes(classKey identity.Key) []model_class.Attribute {
+func (c *catalog) externalDerivedAttributes(classKey identity.Key) []model_class.Attribute {
 	info := c.classInfo(classKey)
 	if info == nil {
 		return nil
@@ -665,7 +660,7 @@ func (c *catalog) ExternalDerivedAttributes(classKey identity.Key) []model_class
 		if attr.DerivationPolicy.Spec.Expression == nil && attr.DerivationPolicy.Spec.Specification == "" {
 			continue
 		}
-		if c.IsSurfaceUnavailableDerived(attr.Key) {
+		if c.isSurfaceUnavailableDerived(attr.Key) {
 			continue
 		}
 		if c.isDerivedAttributeExternal(attr) {
@@ -694,7 +689,7 @@ func (c *catalog) hasSimulatableSender(senders []identity.Key) bool {
 // ClassNameMap returns class keys mapped to TLA extent names for simulation bindings.
 // Includes out-of-scope classes (empty extents) so ClassRef never errors with "not found".
 // Spaces are stripped so "Account Definition" binds as AccountDefinition.
-func (c *catalog) ClassNameMap() map[identity.Key]string {
+func (c *catalog) classNameMap() map[identity.Key]string {
 	names := make(map[identity.Key]string, len(c.extentClassNames))
 	maps.Copy(names, c.extentClassNames)
 	// Prefer live class display names when present (should match extent names).
@@ -840,7 +835,7 @@ func recordAssociationSetAddSenders(class model_class.Class, associations map[id
 			if !ok {
 				continue
 			}
-			toInfo := cat.GetClassInfo(toClassKey)
+			toInfo := cat.getClassInfo(toClassKey)
 			if toInfo == nil {
 				continue
 			}
@@ -913,11 +908,11 @@ func associationToClassForSetAddTarget(
 }
 
 func populateMandatoryAssociationSenders(cat *catalog) {
-	for _, ai := range cat.AllAssociations() {
+	for _, ai := range cat.allAssociations() {
 		if !ai.MandatoryTo || ai.Association.AssociationClassKey != nil {
 			continue
 		}
-		toInfo := cat.GetClassInfo(ai.ToClassKey)
+		toInfo := cat.getClassInfo(ai.ToClassKey)
 		if toInfo == nil {
 			continue
 		}
@@ -994,7 +989,7 @@ func recordLogicDerivedAttributeCallers(
 	}
 }
 
-// --- Schema owns Catalog; public query surface delegates ---
+// --- private catalog helpers ---
 
 func (s *Schema) ensureCatalog() {
 	if s == nil {
