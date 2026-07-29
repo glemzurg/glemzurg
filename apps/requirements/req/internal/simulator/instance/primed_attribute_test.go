@@ -59,4 +59,9 @@ func TestPrimedAndUnprimedAttributeLookup(t *testing.T) {
 	primedFromState, ok := fromState.GetPrimedAttribute("status")
 	require.True(t, ok)
 	require.Equal(t, "shipped", primedFromState.(*object.String).Value())
+
+	inst.clearPrimedAttributes()
+	_, ok = inst.GetPrimedAttribute("status")
+	require.False(t, ok)
+	require.Equal(t, "pending", inst.GetAttribute("status").(*object.String).Value())
 }

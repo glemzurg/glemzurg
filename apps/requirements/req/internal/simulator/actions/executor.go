@@ -464,6 +464,9 @@ func (e *ActionExecutor) checkAssociationStructuralInvariants() instance.Violati
 			e.bindingsBuilder,
 		)...)
 	}
+	if e.structuralCheckers.AssociationClassHost != nil {
+		violations = append(violations, e.structuralCheckers.AssociationClassHost.CheckState(e.bindingsBuilder.State())...)
+	}
 	return violations
 }
 

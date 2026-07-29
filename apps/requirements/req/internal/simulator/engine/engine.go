@@ -292,6 +292,7 @@ type simulationCheckers struct {
 	assocInstancePairChecker *siminst.AssociationInstancePairChecker
 	assocUniquenessChecker   *siminst.AssociationUniquenessChecker
 	associationInvChecker    *siminst.AssociationInvariantChecker
+	assocClassHostChecker    *siminst.AssociationClassHostChecker
 }
 
 // setupCheckers constructs constraint checkers from schema (no *core.Model).
@@ -311,6 +312,7 @@ func setupCheckers(sch *schema.Schema, evalCtx *evaluator.EvalContext) (*simulat
 	if err != nil {
 		return nil, fmt.Errorf("association invariant checker setup: %w", err)
 	}
+	assocClassHostChecker := siminst.NewAssociationClassHostChecker(sch)
 
 	return &simulationCheckers{
 		invariantChecker:         invariantChecker,
@@ -320,6 +322,7 @@ func setupCheckers(sch *schema.Schema, evalCtx *evaluator.EvalContext) (*simulat
 		assocInstancePairChecker: assocInstancePairChecker,
 		assocUniquenessChecker:   assocUniquenessChecker,
 		associationInvChecker:    associationInvChecker,
+		assocClassHostChecker:    assocClassHostChecker,
 	}, nil
 }
 
@@ -364,6 +367,7 @@ func buildActionExecutor(
 		AssociationInstancePair: checkers.assocInstancePairChecker,
 		AssociationUniqueness:   checkers.assocUniquenessChecker,
 		AssociationInvariants:   checkers.associationInvChecker,
+		AssociationClassHost:    checkers.assocClassHostChecker,
 	}
 	return actions.NewActionExecutor(
 		bindingsBuilder,

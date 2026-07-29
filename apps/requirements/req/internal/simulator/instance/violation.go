@@ -77,6 +77,10 @@ const (
 	// ViolationTypeAssociationDuplicateLink indicates duplicate links between the same instance pair.
 	ViolationTypeAssociationDuplicateLink
 
+	// ViolationTypeAssociationClassMissing indicates a plain host link exists while the
+	// association class is in run scope (host must materialize via an AC instance).
+	ViolationTypeAssociationClassMissing
+
 	// ViolationTypeSafetyRule indicates an action's safety rule was violated.
 	ViolationTypeSafetyRule
 
@@ -138,6 +142,7 @@ var violationTypeNames = map[ViolationType]string{
 	ViolationTypeMultiplicity:                       "multiplicity",
 	ViolationTypeAssociationUniqueness:              "association_uniqueness",
 	ViolationTypeAssociationDuplicateLink:           "association_duplicate_link",
+	ViolationTypeAssociationClassMissing:            "association_class_missing",
 	ViolationTypeSafetyRule:                         "safety_rule",
 	ViolationTypeLivenessClassNotInstantiated:       "liveness_class_not_instantiated",
 	ViolationTypeLivenessAttributeNotWritten:        "liveness_attribute_not_written",
@@ -699,6 +704,32 @@ func newAssociationDuplicateLinkViolation(params AssociationDuplicateLinkViolati
 			params.ToInstanceID,
 		),
 		InstanceID: params.FromInstanceID,
+	}
+}
+
+// AssociationClassMissingViolationParams holds parameters for a plain host link
+// that should have been an association-class materialization.
+type AssociationClassMissingViolationParams struct {
+	AssociationName     string
+	AssociationClassKey identity.Key
+	FromInstanceID      ID
+	ToInstanceID        ID
+}
+
+// newAssociationClassMissingViolation creates a violation when endpoints are linked
+// without an association-class row while that AC is in run scope.
+func newAssociationClassMissingViolation(params AssociationClassMissingViolationParams) *ViolationError {
+	return &ViolationError{
+		Type: ViolationTypeAssociationClassMissing,
+		Message: fmt.Sprintf(
+			"association class missing: association %q linked instances %d and %d as a plain host link, but association class %s is in scope and must materialize the association",
+			params.AssociationName,
+			params.FromInstanceID,
+			params.ToInstanceID,
+			params.AssociationClassKey.String(),
+		),
+		InstanceID: params.FromInstanceID,
+		ClassKey:   params.AssociationClassKey,
 	}
 }
 

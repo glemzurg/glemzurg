@@ -7,4 +7,5 @@ type StructuralInvariantCheckers struct {
 	AssociationInstancePair *AssociationInstancePairChecker
 	AssociationUniqueness   *AssociationUniquenessChecker
 	AssociationInvariants   *AssociationInvariantChecker
+	AssociationClassHost    *AssociationClassHostChecker
 }

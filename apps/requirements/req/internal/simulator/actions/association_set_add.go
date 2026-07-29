@@ -144,10 +144,18 @@ func (e *ActionExecutor) applyPeerCreation(ctx *ExecutionContext, pc DeferredPee
 	if !found {
 		return fmt.Errorf("peer creation for association %s: association metadata not found", pc.AssocKey.String())
 	}
-	// Association-class materialization only when the AC class is on the surface catalog.
+	// Association-class materialization when the AC is in run scope. When the AC is out of
+	// scope the host degrades to plain endpoint links; never invent a plain link while the
+	// AC key is present and the AC class is still on the surface.
 	if assoc.AssociationClassKey != nil {
 		if _, ok := e.sch.PeerClass(*assoc.AssociationClassKey); ok {
 			return e.applyAssociationClassPeerCreation(ctx, pc, assoc)
+		}
+		if e.sch.IsClassInScope(*assoc.AssociationClassKey) {
+			return fmt.Errorf(
+				"peer creation for association %s: association class %s is in scope but not creatable as a peer; cannot materialize as a plain host link",
+				pc.AssocKey.String(), assoc.AssociationClassKey.String(),
+			)
 		}
 	}
 	return e.applyPlainPeerCreation(ctx, pc, assoc)
