@@ -21,13 +21,13 @@ import (
 // not change [Instance.GetAttribute] until applied into Attributes.
 type Instance struct {
 	// ID uniquely identifies this instance within the simulation.
-	ID ID
+	id ID
 
 	// ClassKey identifies the class this instance belongs to.
-	ClassKey identity.Key
+	classKey identity.Key
 
 	// Attributes holds the current attribute values for this instance.
-	Attributes *object.Record
+	attributes *object.Record
 
 	// primed holds next-state attribute values (field' = …) until commit.
 	// Nil when no primes are outstanding for this instance.
@@ -41,9 +41,9 @@ func NewInstance(id ID, classKey identity.Key, attributes *object.Record) *Insta
 		attributes = object.NewRecord()
 	}
 	return &Instance{
-		ID:         id,
-		ClassKey:   classKey,
-		Attributes: attributes,
+		id:         id,
+		classKey:   classKey,
+		attributes: attributes,
 	}
 }
 
@@ -52,7 +52,7 @@ func (i *Instance) GetID() ID {
 	if i == nil {
 		return 0
 	}
-	return i.ID
+	return i.id
 }
 
 // GetClassKey returns the class key for this instance.
@@ -60,7 +60,7 @@ func (i *Instance) GetClassKey() identity.Key {
 	if i == nil {
 		return identity.Key{}
 	}
-	return i.ClassKey
+	return i.classKey
 }
 
 // GetAttributes returns the attribute record (shared storage; see type comment).
@@ -68,15 +68,15 @@ func (i *Instance) GetAttributes() *object.Record {
 	if i == nil {
 		return nil
 	}
-	return i.Attributes
+	return i.attributes
 }
 
 // Clone creates a deep copy of the class instance, including any primed values.
 func (i *Instance) Clone() *Instance {
 	clone := &Instance{
-		ID:         i.ID,
-		ClassKey:   i.ClassKey,
-		Attributes: i.Attributes.Clone().(*object.Record),
+		id:         i.id,
+		classKey:   i.classKey,
+		attributes: i.attributes.Clone().(*object.Record),
 	}
 	if len(i.primed) > 0 {
 		clone.primed = make(map[string]object.Object, len(i.primed))
@@ -91,12 +91,12 @@ func (i *Instance) Clone() *Instance {
 // Returns nil if the attribute does not exist. Primed next-state values are
 // not visible here; use [Instance.GetPrimedAttribute].
 func (i *Instance) GetAttribute(name string) object.Object {
-	return i.Attributes.Get(name)
+	return i.attributes.Get(name)
 }
 
 // SetAttribute sets the current (unprimed) value of an attribute.
 func (i *Instance) SetAttribute(name string, value object.Object) {
-	i.Attributes.Set(name, value)
+	i.attributes.Set(name, value)
 }
 
 // SetPrimedAttribute records a next-state (primed) value for an attribute.
@@ -129,20 +129,20 @@ func (i *Instance) ClearPrimedAttributes() {
 
 // HasAttribute reports whether the attribute exists in current storage.
 func (i *Instance) HasAttribute(name string) bool {
-	return i.Attributes.Has(name)
+	return i.attributes.Has(name)
 }
 
 // AttributeNames returns the list of attribute names.
 func (i *Instance) AttributeNames() []string {
-	return i.Attributes.FieldNames()
+	return i.attributes.FieldNames()
 }
 
 // withAttribute returns a new instance with the specified attribute updated.
 // The original instance is not modified. Primed values are not copied.
 func (i *Instance) withAttribute(name string, value object.Object) *Instance {
 	return &Instance{
-		ID:         i.ID,
-		ClassKey:   i.ClassKey,
-		Attributes: i.Attributes.WithField(name, value),
+		id:         i.id,
+		classKey:   i.classKey,
+		attributes: i.attributes.WithField(name, value),
 	}
 }
