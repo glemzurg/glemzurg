@@ -486,9 +486,10 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 		// Execute the step (association structural checks run after nested work inside the step).
 		stepResult, err := e.stepExecutor.Execute(pending, e.simState, step+1)
 		if err != nil {
-			// Domain exhausted after selection: skip and reselect (eligibility filter
-			// should prevent this; soft-skip avoids hard failure if state raced).
-			if isNamedSetDomainExhaustedError(err) {
+			// Sampling ineligible after selection: skip and reselect (eligibility filters
+			// should prevent this; soft-skip avoids hard failure if state raced or
+			// parameter simulation requires no longer hold).
+			if isNamedSetDomainExhaustedError(err) || isNoEligibleSimulationRulesError(err) {
 				domainExhaustedSkips++
 				if domainExhaustedSkips > e.config.MaxSteps {
 					result.TerminationReason = "deadlock"

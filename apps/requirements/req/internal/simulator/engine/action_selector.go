@@ -31,6 +31,15 @@ func isNamedSetDomainExhaustedError(err error) bool {
 	return strings.Contains(err.Error(), "named-set sample domain empty")
 }
 
+// isNoEligibleSimulationRulesError reports parameter simulation sampling failure when
+// no rule's requires hold (e.g. object-of class extent empty).
+func isNoEligibleSimulationRulesError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "has no eligible simulation rules")
+}
+
 // PendingAction describes a single eligible simulation action.
 type PendingAction struct {
 	Class            *schema.ClassSimInfo
