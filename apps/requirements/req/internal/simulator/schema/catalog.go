@@ -714,6 +714,8 @@ func (c *catalog) buildCallerGraph() {
 	populateMandatoryAssociationSenders(c)
 	populateAssociationSetAddSenders(sch, c)
 	populateAssociationSetMapSenders(sch, c)
+	// type:events guarantees send events to other objects; those events are not surface drivers.
+	populateEventsGuaranteeSenders(sch, c)
 }
 
 func populateCallerDataFromUseCase(useCase model_use_case.UseCase, cat *catalog) {
@@ -882,6 +884,29 @@ func populateMandatoryAssociationSenders(cat *catalog) {
 		}
 		for _, ev := range toInfo.CreationEvents {
 			cat.addEventSender(ev.Key, ai.FromClassKey)
+		}
+	}
+}
+
+// populateEventsGuaranteeSenders records SentBy for peer events fired by type:events guarantees.
+// When class A sends Delete/Recover/… to instances of B, B's event is not a top-level surface driver.
+func populateEventsGuaranteeSenders(sch *Schema, cat *catalog) {
+	sch.EachInScopeClass(func(class model_class.Class) {
+		recordEventsGuaranteeSenders(class, cat)
+	})
+}
+
+func recordEventsGuaranteeSenders(class model_class.Class, cat *catalog) {
+	for _, action := range class.Actions {
+		for _, guar := range action.Guarantees {
+			if guar.Type != model_logic.LogicTypeEvents {
+				continue
+			}
+			eventKey, ok := model_class.EventsGuaranteeEventKey(guar.Spec.Expression)
+			if !ok {
+				continue
+			}
+			cat.addEventSender(eventKey, class.Key)
 		}
 	}
 }

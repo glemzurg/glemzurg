@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
@@ -99,6 +100,120 @@ func TestExternalCreationEvents_FiltersSimulatableSender(t *testing.T) {
 
 	ext := catalog.ExternalCreationEvents(itemKey)
 	assert.Empty(t, ext, "creation event sent by simulatable in-scope class is internal")
+}
+
+func TestExternalStateEvents_ExcludesEventsTypePeerSend(t *testing.T) {
+	// Account Definition type:events { Delete(a) : a \in ... } marks Account.Delete as SentBy definition.
+	subdomainKey := mustKey("domain/finance/subdomain/wallet")
+	defKey := mustKey("domain/finance/subdomain/wallet/class/account_definition")
+	accountKey := mustKey("domain/finance/subdomain/wallet/class/account")
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, defKey, accountKey, "defines"))
+	deleteActionKey := helper.Must(identity.NewActionKey(defKey, "delete"))
+	eventDeleteAccount := helper.Must(identity.NewEventKey(accountKey, "delete"))
+	eventDeleteDef := helper.Must(identity.NewEventKey(defKey, "delete"))
+
+	defStateActive := helper.Must(identity.NewStateKey(defKey, "active"))
+	defStateDeleted := helper.Must(identity.NewStateKey(defKey, "deleted"))
+	defClass := model_class.NewClass(defKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Account Definition"})
+	defClass.SetStates(map[identity.Key]model_state.State{
+		defStateActive:  model_state.NewState(defStateActive, "Active", "", ""),
+		defStateDeleted: model_state.NewState(defStateDeleted, "Deleted", "", ""),
+	})
+	defClass.SetEvents(map[identity.Key]model_state.Event{
+		eventDeleteDef: model_state.NewEvent(eventDeleteDef, "Delete", "", nil),
+	})
+	defClass.SetActions(map[identity.Key]model_state.Action{
+		deleteActionKey: model_state.NewAction(
+			deleteActionKey,
+			model_state.ActionDetails{Name: "Delete", Details: ""},
+			nil,
+			[]model_logic.Logic{
+				model_logic.NewLogic(
+					helper.Must(identity.NewActionGuaranteeKey(deleteActionKey, "0")),
+					model_logic.LogicTypeEvents,
+					"Send Delete to every active account this definition defines.",
+					"",
+					logic_spec.ExpressionSpec{
+						Notation: model_logic.NotationTLAPlus,
+						// Lowered form of { Delete(a) : a \in { x \in Defines : ... } }.
+						Expression: &me.SetMap{
+							Variable: "a",
+							Set: &me.SetFilter{
+								Variable:  "x",
+								Set:       &me.AssociationRef{AssociationKey: assocKey},
+								Predicate: &me.BoolLiteral{Value: true},
+							},
+							Transform: &me.EventCall{
+								EventKey: eventDeleteAccount,
+								Args:     []me.Expression{&me.LocalVar{Name: "a"}},
+							},
+						},
+						Specification: `{ Delete(a) : a \in { x \in Defines : x._state = "Active" } }`,
+					},
+					nil,
+				),
+			},
+			nil,
+			nil,
+		),
+	})
+	defTransKey := helper.Must(identity.NewTransitionKey(defKey, "active", "delete", "", "", "deleted"))
+	defClass.SetTransitions(map[identity.Key]model_state.Transition{
+		defTransKey: model_state.NewTransition(
+			defTransKey,
+			eventDeleteDef,
+			model_state.TransitionStateKeys{FromStateKey: &defStateActive, ToStateKey: &defStateDeleted},
+			model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: &deleteActionKey},
+			"",
+		),
+	})
+
+	accountActive := helper.Must(identity.NewStateKey(accountKey, "active"))
+	accountDeleted := helper.Must(identity.NewStateKey(accountKey, "deleted"))
+	accountClass := model_class.NewClass(accountKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Account"})
+	accountClass.SetStates(map[identity.Key]model_state.State{
+		accountActive:  model_state.NewState(accountActive, "Active", "", ""),
+		accountDeleted: model_state.NewState(accountDeleted, "Deleted", "", ""),
+	})
+	accountClass.SetEvents(map[identity.Key]model_state.Event{
+		eventDeleteAccount: model_state.NewEvent(eventDeleteAccount, "Delete", "", nil),
+	})
+	accountTransKey := helper.Must(identity.NewTransitionKey(accountKey, "active", "delete", "", "", "deleted"))
+	accountClass.SetTransitions(map[identity.Key]model_state.Transition{
+		accountTransKey: model_state.NewTransition(
+			accountTransKey,
+			eventDeleteAccount,
+			model_state.TransitionStateKeys{FromStateKey: &accountActive, ToStateKey: &accountDeleted},
+			model_state.TransitionLogicKeys{},
+			"",
+		),
+	})
+
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "Defines", Details: ""},
+		model_class.AssociationEnd{ClassKey: defKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))},
+		model_class.AssociationEnd{ClassKey: accountKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
+		model_class.AssociationOptions{},
+	)
+
+	subdomain := model_domain.NewSubdomain(subdomainKey, "Wallet", "", "", "")
+	subdomain.Classes = map[identity.Key]model_class.Class{defKey: defClass, accountKey: accountClass}
+	subdomain.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
+	domainKey := mustKey("domain/finance")
+	domain := model_domain.NewDomain(domainKey, "Finance", "", "", false, "")
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+	model := core.NewModel("fixture-model", core.ModelDetails{Name: "Fixture Model", Details: ""}, "", nil, nil, nil)
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	catalog := schema.New(&model, schema.RunScopeAll())
+	cd := catalog.CallerData()
+	require.Contains(t, cd.EventSentBy, eventDeleteAccount)
+	assert.Contains(t, cd.EventSentBy[eventDeleteAccount], defKey)
+
+	// Account.Delete is not external on Active — only definition sends it.
+	ext := catalog.ExternalStateEvents(accountKey, "Active")
+	assert.Empty(t, ext, "event sent by type:events guarantee of in-scope class is not a surface driver")
 }
 
 func TestExternalCreationEvents_ExcludesAssociationSetAddPeer(t *testing.T) {

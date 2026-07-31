@@ -160,7 +160,12 @@ func relowerActionExpressions(actKey identity.Key, action *model_state.Action, c
 			}
 			continue
 		}
-		if err := relowerSpec(&guar.Spec, actPF); err != nil {
+		guarPF := actPF
+		if guar.Type == model_logic.LogicTypeEvents {
+			// Resolve Event(receiver, …) to the peer event, not the sender's same-named event.
+			guarPF = NewExpressionParseFunc(withPreferPeerEvents(ContextWithParameters(classCtx, action.Parameters)))
+		}
+		if err := relowerSpec(&guar.Spec, guarPF); err != nil {
 			return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
 		}
 	}
@@ -432,7 +437,12 @@ func lowerActionGuaranteesStrict(
 			errs = append(errs, relowerAssociationClassReifyStrict(actKey, i, guar, actCtx, actPF)...)
 			continue
 		}
-		if err := relowerSpecStrict(&guar.Spec, actPF); err != nil {
+		guarPF := actPF
+		if guar.Type == model_logic.LogicTypeEvents {
+			// Resolve Event(receiver, …) to the peer event, not the sender's same-named event.
+			guarPF = NewExpressionParseFuncStrict(withPreferPeerEvents(actCtx))
+		}
+		if err := relowerSpecStrict(&guar.Spec, guarPF); err != nil {
 			errs = append(errs, fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err))
 		}
 	}

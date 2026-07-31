@@ -212,9 +212,10 @@ The **simulation surface** is the set of **external drivers** the exercise simul
 
 **Not surface (do not list as drivers even if in the simulation):**
 
-- Classes (or events) that only participate as **peers**—created or updated by another class’s guarantees (e.g. association set-add/set-map, cascade Delete, association-class reify)
+- Classes (or events) that only participate as **peers**—created or updated by another class’s guarantees (e.g. association set-add/set-map, association-class reify)
+- Events that another in-scope class **sends** via a `type: events` guarantee (e.g. Account Definition sends `Delete`/`Recover` to Account; those Account events are not surface drivers)
 - **Association classes** when they only materialize via a host association (even if included in the include-list so reify is enabled)
-- Classes that are in scope for liveness or cascade but have **no external events, queries, or derived attributes**
+- Classes that are in scope for liveness or peer effects but have **no external events, queries, or derived attributes**
 - Derived attributes / queries that depend on **out-of-scope** classes (listed separately as off-surface, not as drivers)
 
 **Include-list vs surface report:** `-include-class` / sandbox `SIMULATE_CLASSES` (and subdomain includes) define **scope**—which classes may exist in the run. The surface **drivers** section is narrower: only hooks the selector can fire. Peer-only scoped classes still run (instances, links, invariants) but must not appear as empty driver rows.

@@ -160,6 +160,10 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 			}
 			continue
 		}
+		if guar.Type == model_logic.LogicTypeEvents {
+			// Event(receiver, …) names the receiver's event, not the sender's same-named event.
+			guarCtx = withPreferPeerEvents(guarCtx)
+		}
 		if err := lowerLogicSpec(&guar.Spec, guarCtx); err != nil {
 			return fmt.Errorf("guarantee %d: %w", i, err)
 		}
@@ -451,21 +455,115 @@ func BuildQueryNameMap(class *model_class.Class) map[string]identity.Key {
 
 // NewClassLowerContext builds a LowerContext for expressions scoped to one class.
 func NewClassLowerContext(class *model_class.Class, maps ModelLowerMaps, subMaps SubdomainClassMaps) *LowerContext {
-	return &LowerContext{
+	ctx := &LowerContext{
 		ClassKey:         class.Key,
-		AttributeNames:   BuildAttributeNameMap(class),
-		ActionNames:      BuildActionNameMap(class),
-		QueryNames:       BuildQueryNameMap(class),
-		AssociationNames: BuildOutgoingAssociationFieldNameMap(class.Key, subMaps.Associations),
-		SystemEventNames: BuildSystemEventNameMap(class),
-		ClassEventNames:  BuildClassEventNameMap(class),
-		PeerEventNames:   BuildPeerEventNameMap(class.Key, subMaps.Associations, subMaps.Classes),
 		UniqueEventNames: maps.UniqueEvents,
 		GlobalFunctions:  maps.GlobalFunctions,
 		NamedSets:        maps.NamedSets,
-		ClassNames:       BuildClassNamesForLower(subMaps.Classes),
 		AllActions:       maps.AllActions,
 	}
+	fillClassLocalNameMaps(ctx, class, subMaps)
+	fillPeerEventNameMaps(ctx, class.Key, subMaps)
+	return ctx
+}
+
+// fillClassLocalNameMaps sets same-class name maps used for attribute/action/event/assoc resolution.
+func fillClassLocalNameMaps(ctx *LowerContext, class *model_class.Class, subMaps SubdomainClassMaps) {
+	ctx.AttributeNames = BuildAttributeNameMap(class)
+	ctx.ActionNames = BuildActionNameMap(class)
+	ctx.QueryNames = BuildQueryNameMap(class)
+	ctx.AssociationNames = BuildOutgoingAssociationFieldNameMap(class.Key, subMaps.Associations)
+	ctx.SystemEventNames = BuildSystemEventNameMap(class)
+	ctx.ClassEventNames = BuildClassEventNameMap(class)
+	ctx.ClassNames = BuildClassNamesForLower(subMaps.Classes)
+}
+
+// fillPeerEventNameMaps sets peer/association-class event maps for type:events Event resolution.
+func fillPeerEventNameMaps(ctx *LowerContext, classKey identity.Key, subMaps SubdomainClassMaps) {
+	ctx.PeerEventNames = BuildPeerEventNameMap(classKey, subMaps.Associations, subMaps.Classes)
+	ctx.AssocPeerEventNames = BuildAssocPeerEventNameMaps(classKey, subMaps.Associations, subMaps.Classes)
+	ctx.AssocClassPeerEventNames = BuildAssocClassPeerEventNameMaps(classKey, subMaps.Associations, subMaps.Classes)
+	ctx.ClassEventNamesByKey = BuildClassEventNamesByKey(subMaps.Classes)
+}
+
+// BuildAssocPeerEventNameMaps maps each outgoing association key to its to-class event name map.
+func BuildAssocPeerEventNameMaps(
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) map[identity.Key]map[string]identity.Key {
+	if len(associations) == 0 || len(classes) == 0 {
+		return nil
+	}
+	out := make(map[identity.Key]map[string]identity.Key)
+	for assocKey, assoc := range associations {
+		if assoc.FromClassKey != fromClassKey {
+			continue
+		}
+		peerClass, ok := classes[assoc.ToClassKey]
+		if !ok {
+			continue
+		}
+		m := make(map[string]identity.Key)
+		registerPeerClassEvents(m, peerClass)
+		if len(m) > 0 {
+			out[assocKey] = m
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// BuildAssocClassPeerEventNameMaps maps associations that have an association class to that
+// class's event names (for domains like IsSubdividedInto.CurrencyWalletDefinition).
+func BuildAssocClassPeerEventNameMaps(
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) map[identity.Key]map[string]identity.Key {
+	if len(associations) == 0 || len(classes) == 0 {
+		return nil
+	}
+	out := make(map[identity.Key]map[string]identity.Key)
+	for assocKey, assoc := range associations {
+		if assoc.FromClassKey != fromClassKey || assoc.AssociationClassKey == nil {
+			continue
+		}
+		acClass, ok := classes[*assoc.AssociationClassKey]
+		if !ok {
+			continue
+		}
+		m := make(map[string]identity.Key)
+		registerPeerClassEvents(m, acClass)
+		if len(m) > 0 {
+			out[assocKey] = m
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// BuildClassEventNamesByKey maps every class key to its event name→key map.
+func BuildClassEventNamesByKey(classes map[identity.Key]model_class.Class) map[identity.Key]map[string]identity.Key {
+	if len(classes) == 0 {
+		return nil
+	}
+	out := make(map[identity.Key]map[string]identity.Key, len(classes))
+	for key, class := range classes {
+		m := make(map[string]identity.Key)
+		registerPeerClassEvents(m, class)
+		if len(m) > 0 {
+			out[key] = m
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // BuildClassNamesForLower maps TLA-friendly class names to keys for quantifier domains.
