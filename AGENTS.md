@@ -107,6 +107,90 @@ This applies to Go under `apps/requirements/req` and to any other production cod
 - Prefer generic mechanisms driven by model structure and authored guarantees (e.g. association bulk-create from a set-map over a parameter set) over embedding domain cascade rules in the engine.
 - **Tests and sample models are the exception:** `_test.go` files, fixtures, and sandbox models may use concrete domain names and paths. Production packages must still treat those only as examples of arbitrary valid models.
 
+## Template-driven systems (Definition → Instance)
+
+Models often need **templates** (definitions) that configure how many **instances** exist and how they nest. The problem domain is treated as an infinite-speed machine: **provision eagerly** — create the full instance tree when a template or host is added. Do **not** encode lazy “create on first use” inside ordinary business actions.
+
+### Roles
+
+| Role | Responsibility |
+| --- | --- |
+| **Template / Definition** | Shared config; association `Defines` (or similar) to instances; may nest child templates via `Is Subdivided Into` (plain or association class). |
+| **Instance** | Runtime object under a template and a parent instance; continues cascade in its own Initialize. |
+| **Host** | Starts a tree (e.g. register a player) with set-add of the root instance. |
+
+### Two different “messages”
+
+#### 1. `_new` is special (create / “return” into an association)
+
+`_new` / `«new»` **creates** a peer. Parameters are **construction args**, not “who receives the message.” The association image is the return channel for the new object.
+
+```text
+# One peer
+target: Defines
+specification: Defines \union {_new(ParentParam)}
+
+# Many peers (multi set-add)
+target: Defines
+specification: Defines \union { _new(p) : p \in ExistingParents }
+```
+
+Use multi set-add when a new template must provision under every existing parent and the create path is pure set-add (no extra logic on a named Instantiate event).
+
+#### 2. Normal events — receiver-first
+
+For messages to **existing** objects, the **first argument is the receiver** (an object of the class that declares the event). Remaining arguments are the event’s parameters. The set-map domain only supplies binders.
+
+```text
+# Fire on self once per parent (named Instantiate transition)
+{ InstantiateLevel(self, p) : p \in ExistingParents }
+
+# Fire on each peer definition; self is a parameter (e.g. Wallet / Player)
+{ InstantiateLevel(d, self) : d \in ActiveDefinitions }
+
+# Cascade Delete / Recover (zero event parameters after receiver)
+{ Delete(a) : a \in { x \in Defines : x._state = "Active" } }
+{ Recover(a) : a \in { x \in Defines : x._state = "Deleted" } }
+```
+
+**Do not** use method-style `self.Event(…)` — ordinary TLA function-call form only.
+
+### Setup cascade (host → instances → templates)
+
+Because set-add materializes the peer **after** the creator’s peer phase, continue the tree **deeper** on the new instance’s Initialize (reverse link to parent is available).
+
+1. **Host.AddRoot** — `HasChildren \union {_new()}` only.
+2. **Root.Initialize** — `{ InstantiateLevel1(d, self) : d \in active templates of host }` (each template is receiver).
+3. **Template.InstantiateLevel1(Root)** — `Defines \union {_new(Root)}`.
+4. **Instance.Initialize** — link parent; `{ InstantiateChild(d, self) : d \in active child templates of defining template }`.
+5. Repeat until leaves.
+
+### Template addition (backfill)
+
+Pass `ExistingParents` as `unique unordered of object of <parent>` / `SUBSET Parent` (simulation: `{}` or the relevant set). Prefer:
+
+```text
+Defines \union { _new(p) : p \in ExistingParents }
+```
+
+or, if the named Instantiate event must run:
+
+```text
+{ InstantiateLevel(self, p) : p \in ExistingParents }
+```
+
+### What not to do
+
+- Lazy create-inside-business-action when the tree should already exist after setup/template add.
+- Cascades that need a return value from `_new` or from a peer event in the same action.
+- “Materialize” forwarder events that invert peer-domain only to work around missing multi set-add / receiver-first.
+- Treating `_new` as receiver-first (`_new` does not take a receiver as first parameter).
+- Dummy association targets on pure event set-maps when a real association target is not needed for multi set-add (multi set-add’s target **is** the link field).
+
+### Reference shape
+
+Sandbox finance wallet (`data_sandbox/model/evenplay/finance/wallet`) is one concrete example. Production Go stays model-agnostic; copy the **guarantee structure**, not domain names.
+
 ## Simulation surface (what is being tested)
 
 The **simulation surface** is the set of **external drivers** the exercise simulator may choose at the top level. Its purpose is to tell a **human tester what is actually being exercised** on a given run—not to dump every class that happens to be loaded in scope.

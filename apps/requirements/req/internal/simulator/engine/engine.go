@@ -503,9 +503,7 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 
 		// Class/attribute invariants after the full step graph is built (including nesting).
 		// Model + association structural checks run in the step executor after nesting.
-		stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)...)
-		stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckAttributeInvariants(e.simState, e.bindingsBuilder)...)
-
+		e.appendStepInvariantViolations(stepResult)
 		result.Steps = append(result.Steps, stepResult)
 		result.StepsTaken++
 		result.Violations = append(result.Violations, stepResult.Violations...)
@@ -519,23 +517,24 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	if result.TerminationReason == "" {
 		result.TerminationReason = "max_steps"
 	}
+	e.finalizeSimulationResult(result)
+	return result, nil
+}
 
+func (e *SimulationEngine) appendStepInvariantViolations(stepResult *SimulationStep) {
+	stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)...)
+	stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckAttributeInvariants(e.simState, e.bindingsBuilder)...)
+}
+
+func (e *SimulationEngine) finalizeSimulationResult(result *SimulationResult) {
 	result.FinalState = e.simState
 	result.Schema = e.sch
 	result.SimulationCoverage = e.simulationCoverage
-
 	if e.dataTypeChecker != nil {
 		result.Violations = append(result.Violations, e.dataTypeChecker.UnparsedAttributeDefinitionViolations()...)
 	}
-
-	// Run post-simulation model checks.
 	result.Violations = append(result.Violations, siminst.CheckStateMachineCompleteness(e.sch)...)
-
-	// Run liveness checks after simulation completes.
-	livenessViolations := e.livenessChecker.Check(result)
-	result.Violations = append(result.Violations, livenessViolations...)
-
-	return result, nil
+	result.Violations = append(result.Violations, e.livenessChecker.Check(result)...)
 }
 
 // State returns the current simulation state (useful for testing).

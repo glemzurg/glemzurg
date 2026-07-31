@@ -48,6 +48,82 @@ Consider a "Shopping Cart" class with a "total" attribute and a "Calculate Total
 
 In the requirements model, none of this complexity appears. There is simply a Shopping Cart with items, and when you ask for the total, you get the correct value reflecting prices, taxes, and discounts. The model describes the *behavior* humans expect, not the *mechanism* that delivers it.
 
+## Template-driven systems (Definition → Instance)
+
+Use this pattern when templates (definitions) configure nested runtime instances that must be **provisioned eagerly** (no lazy create-on-first-use inside ordinary business actions).
+
+### `_new` is special (create into an association)
+
+`_new` / `«new»` creates a peer. Parameters are construction args only. The association field is the “return channel” for the new object.
+
+```json
+{
+  "type": "state_change",
+  "description": "Create one peer linked under Defines",
+  "target": "Defines",
+  "notation": "tla_plus",
+  "specification": "Defines \\union {_new(ParentParam)}"
+}
+```
+
+**Multi set-add** (one create per domain element):
+
+```json
+{
+  "type": "state_change",
+  "description": "Create a peer for every existing parent",
+  "target": "Defines",
+  "notation": "tla_plus",
+  "specification": "Defines \\union { _new(p) : p \\in ExistingParents }"
+}
+```
+
+`target` must be the **outgoing association** that receives the new peers (not a dummy field).
+
+### Normal events — receiver-first
+
+For messages to **existing** objects, the first argument is the **receiver**. Remaining arguments are the event’s parameters. The set-map domain only supplies binders.
+
+```json
+{
+  "type": "state_change",
+  "description": "Fire Instantiate on self for each existing parent",
+  "target": "Defines",
+  "notation": "tla_plus",
+  "specification": "{ InstantiateLevel(self, p) : p \\in ExistingParents }"
+}
+```
+
+```json
+{
+  "type": "state_change",
+  "description": "Fire Instantiate on each definition peer; self is a parameter",
+  "target": "IsSubdividedInto",
+  "notation": "tla_plus",
+  "specification": "{ InstantiateLevel(d, self) : d \\in ActiveDefinitions }"
+}
+```
+
+```json
+{
+  "type": "state_change",
+  "description": "Cascade Delete to active linked instances",
+  "target": "Defines",
+  "notation": "tla_plus",
+  "specification": "{ Delete(a) : a \\in { x \\in Defines : x._state = \"Active\" } }"
+}
+```
+
+Do **not** use method-style `self.Event(...)`. Do **not** invent Materialize-style forwarder events to invert messaging direction.
+
+### Setup vs template backfill
+
+- **Host setup:** set-add root (`HasChildren \\union {_new()}`); continue cascades on the new instance’s Initialize with receiver-first `{ Instantiate(d, self) : d \\in templates }`.
+- **New template after parents exist:** multi set-add `Defines \\union { _new(p) : p \\in ExistingParents }` and/or receiver-first `{ Instantiate(self, p) : p \\in ExistingParents }`.
+- **Business actions** (e.g. post amounts) assume the tree already exists; do not lazily Instantiate missing structure there.
+
+See repository `AGENTS.md` section **Template-driven systems** for the full contract.
+
 ## Deriving a Model from an Existing System
 
 When examining another system to create a model, use these guidelines to identify model elements:

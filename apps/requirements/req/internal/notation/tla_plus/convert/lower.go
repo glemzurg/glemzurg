@@ -61,8 +61,17 @@ type LowerContext struct {
 	// SystemEventNames maps reserved system event names (_new, _destroy) to event keys.
 	SystemEventNames map[string]identity.Key
 
+	// ClassEventNames maps non-system event names declared on the current class to event keys
+	// (receiver-first Event(self, …) and same-class event set-maps).
+	ClassEventNames map[string]identity.Key
+
 	// PeerEventNames maps outgoing-association peer class event names to event keys.
 	PeerEventNames map[string]identity.Key
+
+	// UniqueEventNames maps event names that appear on exactly one class in the model.
+	// Used for receiver-first Event(receiver, …) when the receiver class is not a direct
+	// association peer of the authoring class (e.g. association-class definitions).
+	UniqueEventNames map[string]identity.Key
 
 	// GlobalFunctions maps global function names (with leading underscore) to their identity keys.
 	GlobalFunctions map[string]identity.Key
@@ -1012,22 +1021,32 @@ func lowerClassActionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression
 		// Same-class action/query call: ActionName(args...)
 		name := e.Name.Value
 
-		// Check actions first.
+		// Same-class events before actions so Event(self, …) set-maps lower to EventCall.
+		if key, ok := ctx.ClassEventNames[name]; ok {
+			return &me.EventCall{EventKey: key, Args: args}, nil
+		}
+		// Then actions / queries.
 		if key, ok := ctx.ActionNames[name]; ok {
 			return &me.ActionCall{ActionKey: key, Args: args}, nil
 		}
-		// Then queries.
 		if key, ok := ctx.QueryNames[name]; ok {
 			return &me.ActionCall{ActionKey: key, Args: args}, nil
 		}
-		// Peer-class events on outgoing associations (e.g. Update in set-map guarantees).
+		// Peer-class events (outgoing associations / object-of params).
 		if key, ok := ctx.PeerEventNames[name]; ok {
 			return &me.EventCall{EventKey: key, Args: args}, nil
 		}
+		// Uniquely named events elsewhere in the model (receiver-first across association classes).
+		if key, ok := ctx.UniqueEventNames[name]; ok {
+			return &me.EventCall{EventKey: key, Args: args}, nil
+		}
 		var available []string
+		available = append(available, mapKeys(ctx.ClassEventNames)...)
 		available = append(available, mapKeys(ctx.ActionNames)...)
 		available = append(available, mapKeys(ctx.QueryNames)...)
-		return nil, unresolvedError("action/query", name, available)
+		available = append(available, mapKeys(ctx.PeerEventNames)...)
+		available = append(available, mapKeys(ctx.UniqueEventNames)...)
+		return nil, unresolvedError("action/query/event", name, available)
 	}
 
 	// Cross-class action call: Domain!Subdomain!Class!Action or shorter scope paths.

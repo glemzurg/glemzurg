@@ -26,6 +26,10 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	bindings *evaluator.Bindings,
 	linkEnv setAddLinkEnv,
 ) (bool, error) {
+	// Multi set-add before single: Assoc \union { _new(...) : x \in Domain }.
+	if handled, err := e.tryQueueAssociationMultiSetAddGuarantee(ctx, instance, target, expr, bindings, linkEnv); err != nil || handled {
+		return handled, err
+	}
 	assocRef, eventCall, ok := model_class.MatchAssociationSetAddExpr(expr)
 	if !ok {
 		return false, nil
@@ -60,6 +64,128 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 		ActionParams:   linkEnv.actionParams,
 	})
 	return true, nil
+}
+
+// tryQueueAssociationMultiSetAddGuarantee queues one peer create+link per domain element for
+// Assoc \union { _new(...) : x \in Domain }. _new construction args are resolved with x bound.
+func (e *ActionExecutor) tryQueueAssociationMultiSetAddGuarantee(
+	ctx *ExecutionContext,
+	instance *instance.Instance,
+	target string,
+	expr me.Expression,
+	bindings *evaluator.Bindings,
+	linkEnv setAddLinkEnv,
+) (bool, error) {
+	assocRef, setMap, eventCall, ok := model_class.MatchAssociationMultiSetAddExpr(expr)
+	if !ok {
+		return false, nil
+	}
+	if !isSystemCreationEventCall(eventCall) {
+		return false, fmt.Errorf(
+			"association multi set-add guarantee on %q: transform must be _new / «new» (construction only)",
+			target,
+		)
+	}
+	assocTarget, creationEvent, handled, err := e.prepareMultiSetAddTarget(ctx, instance, target, assocRef, eventCall)
+	if err != nil || handled {
+		return handled, err
+	}
+	if assocTarget == nil {
+		return false, nil
+	}
+	domainSet, err := evalMultiSetAddDomain(target, setMap.Set, bindings)
+	if err != nil {
+		return false, err
+	}
+	work := multiSetAddWork{
+		ctx: ctx, instance: instance, assocTarget: assocTarget, creationEvent: creationEvent,
+		eventCall: eventCall, setMap: setMap, domainSet: domainSet, bindings: bindings, linkEnv: linkEnv,
+	}
+	if err := e.queueMultiSetAddCreations(work); err != nil {
+		return false, fmt.Errorf("association multi set-add guarantee on %q: %w", target, err)
+	}
+	return true, nil
+}
+
+// multiSetAddWork holds context for queuing one peer create per domain element.
+type multiSetAddWork struct {
+	ctx           *ExecutionContext
+	instance      *instance.Instance
+	assocTarget   *associationSetAddTarget
+	creationEvent model_state.Event
+	eventCall     *me.EventCall
+	setMap        *me.SetMap
+	domainSet     *object.Set
+	bindings      *evaluator.Bindings
+	linkEnv       setAddLinkEnv
+}
+
+func (e *ActionExecutor) prepareMultiSetAddTarget(
+	ctx *ExecutionContext,
+	instance *instance.Instance,
+	target string,
+	assocRef *me.AssociationRef,
+	eventCall *me.EventCall,
+) (*associationSetAddTarget, model_state.Event, bool, error) {
+	assocTarget, err := e.resolveAssociationSetAddTarget(instance, target, assocRef)
+	if errors.Is(err, errPeerClassOutOfScope) {
+		return nil, model_state.Event{}, true, nil
+	}
+	if err != nil {
+		return nil, model_state.Event{}, false, err
+	}
+	if assocTarget == nil {
+		return nil, model_state.Event{}, false, nil
+	}
+	if !e.validateSetAddPeerEvents(ctx, instance, assocTarget, eventCall) {
+		return nil, model_state.Event{}, true, nil
+	}
+	creationEvent, ok := e.sch.PeerCreationEvent(assocTarget.assoc.ToClassKey)
+	if !ok {
+		return nil, model_state.Event{}, false, fmt.Errorf(
+			"association multi set-add guarantee on %q: peer class has no creation event", target,
+		)
+	}
+	return assocTarget, creationEvent, false, nil
+}
+
+func evalMultiSetAddDomain(target string, domainExpr me.Expression, bindings *evaluator.Bindings) (*object.Set, error) {
+	domainResult := evaluator.Eval(domainExpr, bindings)
+	if domainResult.IsError() {
+		return nil, fmt.Errorf("association multi set-add guarantee on %q: domain: %s", target, domainResult.Error.Inspect())
+	}
+	domainSet, ok := evaluator.CoerceToSet(domainResult.Value)
+	if !ok {
+		return nil, fmt.Errorf(
+			"association multi set-add guarantee on %q: domain must be a set, got %s",
+			target, domainResult.Value.Type(),
+		)
+	}
+	return domainSet, nil
+}
+
+func (e *ActionExecutor) queueMultiSetAddCreations(work multiSetAddWork) error {
+	for _, elem := range work.domainSet.Elements() {
+		child := evaluator.NewEnclosedBindings(work.bindings)
+		if work.setMap.Variable != "" {
+			child.Set(work.setMap.Variable, elem, evaluator.NamespaceLocal)
+		}
+		// Domain binder is a construction argument (e.g. _new(p)); do not strip it as a set-map peer row.
+		params, err := resolvePositionalEventCallParams(
+			"", work.creationEvent.ParameterNames, work.eventCall, child,
+		)
+		if err != nil {
+			return err
+		}
+		work.ctx.AddPeerCreation(DeferredPeerCreation{
+			FromInstanceID: work.instance.GetID(),
+			AssocKey:       work.assocTarget.assoc.Key,
+			ToClassKey:     work.assocTarget.assoc.ToClassKey,
+			Params:         params,
+			ActionParams:   work.linkEnv.actionParams,
+		})
+	}
+	return nil
 }
 
 type associationSetAddTarget struct {

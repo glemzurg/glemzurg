@@ -686,6 +686,162 @@ func peerSetAddWithObjectParam(
 	)
 }
 
+// peerMultiSetAddOverWalletSet: Defines \union { _new() : w \in Wallets } — one peer create per domain element.
+func peerMultiSetAddOverWalletSet(
+	ownerKey, assocKey, peerClassKey identity.Key,
+	assocTLAField string,
+) model_state.Action {
+	newEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameNew))
+	expr := &me.SetOp{
+		Op:   me.SetUnion,
+		Left: &me.AssociationRef{AssociationKey: assocKey},
+		Right: &me.SetMap{
+			Variable:  "w",
+			Set:       &me.LocalVar{Name: "Wallets"},
+			Transform: &me.EventCall{EventKey: newEventKey},
+		},
+	}
+	actionKey := helper.Must(identity.NewActionKey(ownerKey, "multi_instantiate"))
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
+	logic := model_logic.NewLogic(
+		guaranteeKey, model_logic.LogicTypeStateChange, "", assocTLAField,
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil,
+	)
+	logic.Spec.Expression = expr
+	param := helper.Must(model_state.NewParameter(actionKey, "Wallets", "unique unordered of object of wallet", false))
+	ts := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "SUBSET Wallet", nil))
+	param.DataType.TypeSpec = &ts
+	return model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "MultiInstantiate", Details: ""},
+		nil,
+		[]model_logic.Logic{logic},
+		nil,
+		[]model_state.Parameter{param},
+	)
+}
+
+func (s *AssociationPeerEffectsSuite) TestMultiSetAddCreatesOnePeerPerDomainElement() {
+	fix := buildDualLinkFixture()
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+
+	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
+	w1 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	w2 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	w3 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+
+	wallets := object.NewSetFromElements([]object.Object{
+		state.ClassExtentElement(w1.GetID(), w1.GetAttributes()),
+		state.ClassExtentElement(w2.GetID(), w2.GetAttributes()),
+		state.ClassExtentElement(w3.GetID(), w3.GetAttributes()),
+	})
+
+	action := peerMultiSetAddOverWalletSet(fix.defKey, fix.definesKey, fix.accountKey, "Defines")
+	result, err := ae.ExecuteAction(action, defInst, map[string]object.Object{
+		"Wallets": wallets,
+	})
+	s.Require().NoError(err)
+	s.True(result.Success)
+	s.Empty(result.Violations)
+
+	defLinks := simState.GetLinkedForward(defInst.GetID(), fix.definesKey)
+	s.Require().Len(defLinks, 3, "one account per wallet in the domain set")
+	s.Require().Len(result.PeerTransitions, 3)
+}
+
+func (s *AssociationPeerEffectsSuite) TestMultiSetAddEmptyDomainIsNoOp() {
+	fix := buildDualLinkFixture()
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
+
+	action := peerMultiSetAddOverWalletSet(fix.defKey, fix.definesKey, fix.accountKey, "Defines")
+	result, err := ae.ExecuteAction(action, defInst, map[string]object.Object{
+		"Wallets": object.NewSet(),
+	})
+	s.Require().NoError(err)
+	s.True(result.Success)
+	s.Empty(simState.GetLinkedForward(defInst.GetID(), fix.definesKey))
+	s.Empty(result.PeerTransitions)
+}
+
+func (s *AssociationPeerEffectsSuite) TestSelfMultiFireEventSetMapFiresOnOwner() {
+	fix := buildDualLinkFixture()
+	// Definition.Backfill: { InstantiateAccount(self, w) : w \in Wallets } — receiver is owner.
+	defClass := fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.defKey]
+	stateActiveKey := mustKey("domain/d/subdomain/s/class/definition/state/active")
+	eventKey := helper.Must(identity.NewEventKey(fix.defKey, "InstantiateAccount"))
+	actionKey := helper.Must(identity.NewActionKey(fix.defKey, "InstantiateAccount"))
+	transKey := helper.Must(identity.NewTransitionKey(fix.defKey, "active", "InstantiateAccount", "", "InstantiateAccount", ""))
+
+	event := model_state.NewEvent(eventKey, "InstantiateAccount", "", []string{"Wallet"})
+	action := model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "InstantiateAccount", Details: ""},
+		nil, nil, nil,
+		[]model_state.Parameter{
+			paramWithTypeSpec(actionKey, "Wallet", "object of wallet", "Wallet"),
+		},
+	)
+	trans := model_state.NewTransition(
+		transKey, eventKey,
+		model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey},
+		model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: &actionKey}, "",
+	)
+	defClass.SetEvents(appendEvent(defClass.Events, eventKey, event))
+	defClass.SetActions(map[identity.Key]model_state.Action{actionKey: action})
+	defClass.SetTransitions(appendTransition(defClass.Transitions, transKey, trans))
+	fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.defKey] = defClass
+
+	backfillKey := helper.Must(identity.NewActionKey(fix.defKey, "backfill"))
+	backfillGuarKey := helper.Must(identity.NewActionGuaranteeKey(backfillKey, "0"))
+	setMapExpr := &me.SetMap{
+		Variable: "w",
+		Set:      &me.LocalVar{Name: "Wallets"},
+		Transform: &me.EventCall{
+			EventKey: eventKey,
+			Args: []me.Expression{
+				&me.SelfRef{},
+				&me.LocalVar{Name: "w"},
+			},
+		},
+	}
+	backfillLogic := model_logic.NewLogic(
+		backfillGuarKey, model_logic.LogicTypeStateChange, "", "Defines",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ InstantiateAccount(self, w) : w \\in Wallets }"}, nil,
+	)
+	backfillLogic.Spec.Expression = setMapExpr
+	backfillAction := model_state.NewAction(
+		backfillKey,
+		model_state.ActionDetails{Name: "Backfill", Details: ""},
+		nil,
+		[]model_logic.Logic{backfillLogic},
+		nil,
+		[]model_state.Parameter{
+			paramWithTypeSpec(backfillKey, "Wallets", "unique unordered of object of wallet", "SUBSET Wallet"),
+		},
+	)
+
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
+	w1 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	w2 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	wallets := object.NewSetFromElements([]object.Object{
+		state.ClassExtentElement(w1.GetID(), w1.GetAttributes()),
+		state.ClassExtentElement(w2.GetID(), w2.GetAttributes()),
+	})
+
+	result, err := ae.ExecuteAction(backfillAction, defInst, map[string]object.Object{
+		"Wallets": wallets,
+	})
+	s.Require().NoError(err)
+	s.True(result.Success)
+	s.Require().Len(result.PeerTransitions, 2)
+	for _, pt := range result.PeerTransitions {
+		s.Equal("InstantiateAccount", pt.EventName)
+		s.Equal(defInst.GetID(), pt.Result.InstanceID, "receiver must be the definition (self), not a wallet")
+	}
+}
+
 func (s *AssociationPeerEffectsSuite) TestPeerDomainEventSetMapFiresPeerAction() {
 	fix := buildDualLinkFixture()
 	// Add Instantiate event+action on definition that only records a primed no-op attribute-free success.
@@ -715,21 +871,24 @@ func (s *AssociationPeerEffectsSuite) TestPeerDomainEventSetMapFiresPeerAction()
 	defClass.SetTransitions(appendTransition(defClass.Transitions, transKey, trans))
 	fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.defKey] = defClass
 
-	// Wallet action: peer-domain set-map over a parameter set of definitions.
+	// Wallet action: receiver-first event set-map over a parameter set of definitions.
 	walletActionKey := helper.Must(identity.NewActionKey(fix.walletKey, "apply"))
 	walletGuarKey := helper.Must(identity.NewActionGuaranteeKey(walletActionKey, "0"))
-	// { InstantiateAccount(self) : d \in Definitions } as lowered AST.
+	// { InstantiateAccount(d, self) : d \in Definitions } — first arg is receiver.
 	setMapExpr := &me.SetMap{
 		Variable: "d",
 		Set:      &me.LocalVar{Name: "Definitions"},
 		Transform: &me.EventCall{
 			EventKey: eventKey,
-			Args:     []me.Expression{&me.SelfRef{}},
+			Args: []me.Expression{
+				&me.LocalVar{Name: "d"},
+				&me.SelfRef{},
+			},
 		},
 	}
 	walletLogic := model_logic.NewLogic(
 		walletGuarKey, model_logic.LogicTypeStateChange, "", "",
-		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ InstantiateAccount(self) : d \\in Definitions }"}, nil,
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ InstantiateAccount(d, self) : d \\in Definitions }"}, nil,
 	)
 	walletLogic.Spec.Expression = setMapExpr
 	walletAction := model_state.NewAction(

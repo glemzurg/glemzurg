@@ -88,3 +88,27 @@ func associationSetAddFixture() *convert.LowerContext {
 		Parameters:       map[string]bool{"PartId": true, "Label": true},
 	}
 }
+
+func TestAssociationMultiSetAddGuaranteeTLARoundTrip(t *testing.T) {
+	ctx := associationSetAddFixture()
+	ctx.Parameters["ExistingParents"] = true
+	spec := `IsSubdividedInto \union { _new(p) : p \in ExistingParents }`
+
+	astExpr, err := parser.ParseExpression(spec)
+	require.NoError(t, err)
+
+	lowered, err := convert.Lower(astExpr, ctx)
+	require.NoError(t, err)
+
+	assocRef, setMap, eventCall, ok := model_class.MatchAssociationMultiSetAddExpr(lowered)
+	require.True(t, ok, "lowered multi set-add must match")
+	require.NotNil(t, assocRef)
+	require.Equal(t, "p", setMap.Variable)
+	require.NotNil(t, eventCall)
+
+	raised, err := convert.Raise(lowered, convert.RaiseContextFromLower(ctx))
+	require.NoError(t, err)
+	printed := ast.Print(raised)
+	require.Contains(t, printed, "IsSubdividedInto")
+	require.Contains(t, printed, "ExistingParents")
+}

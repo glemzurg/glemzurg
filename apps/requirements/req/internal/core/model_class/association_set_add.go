@@ -26,6 +26,33 @@ func MatchAssociationSetAddExpr(expr me.Expression) (*me.AssociationRef, *me.Eve
 	return assocRef, eventCall, true
 }
 
+// MatchAssociationMultiSetAddExpr recognizes association-field' = field \union { _new(...) : x \in Domain }:
+// SetUnion(AssociationRef, SetMap{Transform: EventCall, Set: Domain}).
+// Domain is not a bare AssociationRef (that shape is association set-map).
+// _new is special: construction args only; each domain element produces one peer create+link.
+func MatchAssociationMultiSetAddExpr(expr me.Expression) (*me.AssociationRef, *me.SetMap, *me.EventCall, bool) {
+	setOp, ok := expr.(*me.SetOp)
+	if !ok || setOp.Op != me.SetUnion {
+		return nil, nil, nil, false
+	}
+	assocRef, ok := setOp.Left.(*me.AssociationRef)
+	if !ok {
+		return nil, nil, nil, false
+	}
+	setMap, ok := setOp.Right.(*me.SetMap)
+	if !ok {
+		return nil, nil, nil, false
+	}
+	if _, isAssoc := setMap.Set.(*me.AssociationRef); isAssoc {
+		return nil, nil, nil, false
+	}
+	eventCall, ok := setMap.Transform.(*me.EventCall)
+	if !ok {
+		return nil, nil, nil, false
+	}
+	return assocRef, setMap, eventCall, true
+}
+
 // IsAssociationSetAddSpecification reports the authored TLA shorthand for association set-add.
 func IsAssociationSetAddSpecification(specification string) bool {
 	return isAssociationSetAddSpecification(specification)
