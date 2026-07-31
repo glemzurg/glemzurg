@@ -216,16 +216,38 @@ func surfaceEventReport(
 	return report
 }
 
-// FormatText renders scope (what is loaded) then surface drivers (what is tested at top level).
-func (r *SurfaceReport) FormatText() string {
+// FormatDriversText renders surface drivers (what is tested at top level) and off-surface notes.
+func (r *SurfaceReport) FormatDriversText() string {
 	if r == nil {
-		return "Simulation scope\n\n  (empty)\n\nSimulation surface\n\n  (empty)\n"
+		return "Simulation surface\n\n  (empty)\n"
 	}
 	var b strings.Builder
-	writeSurfaceScopeSection(&b, r.Scope)
 	writeSurfaceDriversSection(&b, r.Classes)
 	writeSurfaceUnavailableSection(&b, r.UnavailableMembers)
 	return b.String()
+}
+
+// FormatScopeText renders simulation scope (what is loaded for the run).
+func (r *SurfaceReport) FormatScopeText() string {
+	if r == nil {
+		return "Simulation scope\n\n  (empty)\n"
+	}
+	var b strings.Builder
+	writeSurfaceScopeSection(&b, r.Scope)
+	return b.String()
+}
+
+// FormatText renders drivers then scope as a single block (CLI prints them after violations, scope last).
+func (r *SurfaceReport) FormatText() string {
+	drivers := r.FormatDriversText()
+	scope := r.FormatScopeText()
+	if drivers == "" {
+		return scope
+	}
+	if scope == "" {
+		return drivers
+	}
+	return strings.TrimRight(drivers, "\n") + "\n\n" + scope
 }
 
 func writeSurfaceScopeSection(b *strings.Builder, scope []surface.ScopeEntry) {
@@ -247,7 +269,7 @@ func writeSurfaceScopeSection(b *strings.Builder, scope []surface.ScopeEntry) {
 }
 
 func writeSurfaceDriversSection(b *strings.Builder, classes []SurfaceClassReport) {
-	b.WriteString("\nSimulation surface\n")
+	b.WriteString("Simulation surface\n")
 	if len(classes) == 0 {
 		b.WriteString("\n  (empty)\n")
 		return

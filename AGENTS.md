@@ -224,7 +224,7 @@ The **simulation surface** is the set of **external drivers** the exercise simul
 - If **every** class of a subdomain is in the run, list the **subdomain** path only (`finance/wallet`)—do not enumerate its classes.
 - If **only some** classes of a subdomain are in the run, list each **class** path (`finance/wallet/transaction`, …).
 
-**Output order (text CLI):** completion summary → step trace / final state → **simulation scope** → **simulation surface (drivers)** → violations.
+**Output order (text CLI):** completion summary → step trace / final state → violations → **simulation surface (drivers)** → **simulation scope**. Surface is second-to-last and scope last so both remain visible after long liveness or violation dumps.
 
 When changing surface reporting or selection, preserve this contract: scope shows what is loaded; surface shows what is driven at top level.
 

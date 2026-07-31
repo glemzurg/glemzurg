@@ -172,7 +172,7 @@ func TestFormatTextEmptySurface(t *testing.T) {
 	}
 }
 
-func (s *SurfaceReportSuite) TestFormatTextIncludesScopeBeforeSurface() {
+func (s *SurfaceReportSuite) TestFormatTextIncludesDriversBeforeScope() {
 	orderClass, orderKey := testOrderClass()
 	catalog := schema.New(testModel(classEntry(orderClass, orderKey)), schema.RunScopeAll())
 	report := BuildSurfaceReport(catalog)
@@ -183,5 +183,22 @@ func (s *SurfaceReportSuite) TestFormatTextIncludesScopeBeforeSurface() {
 	s.Contains(text, "Simulation scope")
 	s.Contains(text, "class d/s/order")
 	s.Contains(text, "Simulation surface")
-	s.Greater(strings.Index(text, "Simulation surface"), strings.Index(text, "Simulation scope"))
+	// Combined FormatText matches CLI piece order: drivers first, scope last.
+	s.Greater(strings.Index(text, "Simulation scope"), strings.Index(text, "Simulation surface"))
+}
+
+func (s *SurfaceReportSuite) TestFormatScopeTextAndDriversTextAreSeparate() {
+	orderClass, orderKey := testOrderClass()
+	catalog := schema.New(testModel(classEntry(orderClass, orderKey)), schema.RunScopeAll())
+	report := BuildSurfaceReport(catalog)
+	report.Scope = []surface.ScopeEntry{
+		{Kind: surface.ScopeClass, Path: "d/s/order"},
+	}
+	scopeText := report.FormatScopeText()
+	driversText := report.FormatDriversText()
+	s.Contains(scopeText, "Simulation scope")
+	s.Contains(scopeText, "class d/s/order")
+	s.NotContains(scopeText, "Simulation surface")
+	s.Contains(driversText, "Simulation surface")
+	s.NotContains(driversText, "Simulation scope")
 }

@@ -224,7 +224,7 @@ func shouldShowStepTrace(showTrace, quiet bool, hasViolations bool) bool {
 	return showTrace || !hasViolations
 }
 
-// outputText order: completion summary → step trace / final state → surface → violations.
+// outputText order: completion summary → step trace / final state → violations → surface drivers → simulation scope.
 func outputText(
 	surfaceReport *engine.SurfaceReport,
 	simTrace *trace.SimulationTrace,
@@ -242,12 +242,15 @@ func outputText(
 		log.Println()
 	}
 
-	if !quiet && surfaceReport != nil {
-		log.Print(surfaceReport.FormatText())
-		log.Println()
-	}
-
 	log.Print(violationReport.FormatText())
+
+	// Surface then scope last so both remain visible after long liveness/violation dumps.
+	if !quiet && surfaceReport != nil {
+		log.Println()
+		log.Print(surfaceReport.FormatDriversText())
+		log.Println()
+		log.Print(surfaceReport.FormatScopeText())
+	}
 }
 
 func outputJSON(surfaceReport *engine.SurfaceReport, simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
