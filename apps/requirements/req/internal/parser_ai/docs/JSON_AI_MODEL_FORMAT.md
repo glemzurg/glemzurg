@@ -80,15 +80,14 @@ Use this pattern when templates (definitions) configure nested runtime instances
 
 `target` must be the **outgoing association** that receives the new peers (not a dummy field).
 
-### Normal events — receiver-first
+### Normal events — receiver-first (`type: events`)
 
-For messages to **existing** objects, the first argument is the **receiver**. Remaining arguments are the event’s parameters. The set-map domain only supplies binders.
+For messages to **existing** objects, use logic **`type: events`**. There is **no `target`** and **no primed assignment on self** — only a specification that is a receiver-first event set-map (broadcast). The first argument is the **receiver**; remaining arguments are event parameters.
 
 ```json
 {
-  "type": "state_change",
+  "type": "events",
   "description": "Fire Instantiate on self for each existing parent",
-  "target": "Defines",
   "notation": "tla_plus",
   "specification": "{ InstantiateLevel(self, p) : p \\in ExistingParents }"
 }
@@ -96,9 +95,8 @@ For messages to **existing** objects, the first argument is the **receiver**. Re
 
 ```json
 {
-  "type": "state_change",
+  "type": "events",
   "description": "Fire Instantiate on each definition peer; self is a parameter",
-  "target": "IsSubdividedInto",
   "notation": "tla_plus",
   "specification": "{ InstantiateLevel(d, self) : d \\in ActiveDefinitions }"
 }
@@ -106,15 +104,14 @@ For messages to **existing** objects, the first argument is the **receiver**. Re
 
 ```json
 {
-  "type": "state_change",
+  "type": "events",
   "description": "Cascade Delete to active linked instances",
-  "target": "Defines",
   "notation": "tla_plus",
   "specification": "{ Delete(a) : a \\in { x \\in Defines : x._state = \"Active\" } }"
 }
 ```
 
-Do **not** use method-style `self.Event(...)`. Do **not** invent Materialize-style forwarder events to invert messaging direction.
+Do **not** use `state_change` with a dummy association target for event broadcasts (that falsely implies `Target' = …`). Do **not** use method-style `self.Event(...)`.
 
 ### Setup vs template backfill
 

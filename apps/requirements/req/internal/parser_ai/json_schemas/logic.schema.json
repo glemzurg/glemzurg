@@ -7,8 +7,8 @@
   "properties": {
     "type": {
       "type": "string",
-      "description": "Required. The kind of logic specification. Valid values: 'assessment' (boolean check, no primed values), 'state_change' (attribute assignment — the target field holds the attribute being set, the specification holds only the right-hand-side value expression with no primed values), 'query' (named return value — the target field holds the output identifier, the specification holds the value expression with no primed values), 'safety_rule' (boolean constraint that MAY reference primed values like inventory' >= 0 to express constraints over both prior and new state), 'value' (single unnamed value expression), 'let' (local variable definition: target = expression), 'destroy' (association peer removal — target is the outgoing association TLA field, specification is the set-filter selection, destroy_event is the peer event call such as _destroy(b)).",
-      "enum": ["assessment", "state_change", "query", "safety_rule", "value", "let", "destroy"]
+      "description": "Required. The kind of logic specification. Valid values: 'assessment' (boolean check, no primed values), 'state_change' (attribute assignment — the target field holds the attribute being set, the specification holds only the right-hand-side value expression with no primed values), 'query' (named return value — the target field holds the output identifier, the specification holds the value expression with no primed values), 'safety_rule' (boolean constraint that MAY reference primed values like inventory' >= 0 to express constraints over both prior and new state), 'value' (single unnamed value expression), 'let' (local variable definition: target = expression), 'destroy' (association peer removal — target is the outgoing association TLA field, specification is the set-filter selection, destroy_event is the peer event call such as _destroy(b)), 'events' (action guarantee only: broadcast of events to receivers — no target/primed LHS on self; specification is a receiver-first set-map such as { Event(receiver, args) : x \\in Domain }).",
+      "enum": ["assessment", "state_change", "query", "safety_rule", "value", "let", "destroy", "events"]
     },
     "description": {
       "type": "string",
@@ -17,7 +17,7 @@
     },
     "target": {
       "type": "string",
-      "description": "The target identifier for this logic. The target separates the left-hand side from the specification so that the specification contains only the right-hand-side value expression (no primed values). Required for 'state_change' type (the attribute SubKey being set, e.g., 'shipping', 'status' — so 'self.log' = Append(self.log, amount)' becomes target='log', specification='Append(self.log, amount)'). Required for 'query' type (the output identifier name, e.g., 'result'). Required for 'let' type (the local variable name). Required for 'destroy' type (the outgoing association TLA field name). Must be empty or omitted for 'assessment', 'safety_rule', and 'value' types.",
+      "description": "The target identifier for this logic. The target separates the left-hand side from the specification so that the specification contains only the right-hand-side value expression (no primed values). Required for 'state_change' type (the attribute SubKey being set, e.g., 'shipping', 'status' — so 'self.log' = Append(self.log, amount)' becomes target='log', specification='Append(self.log, amount)'). Required for 'query' type (the output identifier name, e.g., 'result'). Required for 'let' type (the local variable name). Required for 'destroy' type (the outgoing association TLA field name). Must be empty or omitted for 'assessment', 'safety_rule', 'value', and 'events' types.",
       "minLength": 1,
       "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
     },

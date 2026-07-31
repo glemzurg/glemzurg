@@ -137,21 +137,28 @@ specification: Defines \union { _new(p) : p \in ExistingParents }
 
 Use multi set-add when a new template must provision under every existing parent and the create path is pure set-add (no extra logic on a named Instantiate event).
 
-#### 2. Normal events — receiver-first
+#### 2. Normal events — receiver-first (`type: events`)
 
-For messages to **existing** objects, the **first argument is the receiver** (an object of the class that declares the event). Remaining arguments are the event’s parameters. The set-map domain only supplies binders.
+For messages to **existing** objects, use guarantee **`type: events`** (not `state_change`). There is **no primed left-hand side** on `self` — the specification is only the event set-map (a TLA definition-style expression, not `Target' = …`).
 
-```text
-# Fire on self once per parent (named Instantiate transition)
-{ InstantiateLevel(self, p) : p \in ExistingParents }
+The **first argument is the receiver** (object of the class that declares the event). Remaining arguments are the event’s parameters. The set-map domain only supplies binders.
 
-# Fire on each peer definition; self is a parameter (e.g. Wallet / Player)
-{ InstantiateLevel(d, self) : d \in ActiveDefinitions }
+```yaml
+guarantees:
+    - type: events
+      details: Fire Instantiate on self for each existing parent
+      specification: '{ InstantiateLevel(self, p) : p \in ExistingParents }'
 
-# Cascade Delete / Recover (zero event parameters after receiver)
-{ Delete(a) : a \in { x \in Defines : x._state = "Active" } }
-{ Recover(a) : a \in { x \in Defines : x._state = "Deleted" } }
+    - type: events
+      details: Fire Instantiate on each peer definition; self is a parameter
+      specification: '{ InstantiateLevel(d, self) : d \in ActiveDefinitions }'
+
+    - type: events
+      details: Cascade Delete to active linked instances
+      specification: '{ Delete(a) : a \in { x \in Defines : x._state = "Active" } }'
 ```
+
+**Do not** write `Defines' = { Recover(w) : … }` or attach a dummy association `target` for broadcasts. That is not a state change of `Defines`.
 
 **Do not** use method-style `self.Event(…)` — ordinary TLA function-call form only.
 

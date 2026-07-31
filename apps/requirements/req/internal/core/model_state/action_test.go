@@ -200,7 +200,7 @@ func (suite *ActionSuite) TestValidate() {
 					model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Set x to 1.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 				},
 			},
-			errstr: "guarantee 0: logic kind must be 'state_change', 'let', or 'destroy'",
+			errstr: "guarantee 0: logic kind must be 'state_change', 'let', 'destroy', or 'events'",
 		},
 		{
 			testName: "error safety rule wrong kind",
@@ -303,6 +303,27 @@ func (suite *ActionSuite) TestValidate() {
 					newDestroyGuarantee(guarKey, "Remove peers.", "AssocField"),
 				},
 			},
+		},
+		{
+			testName: "valid events guarantee with empty target",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeEvents, "Broadcast recover.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: `{ Recover(a) : a \in Defines }`}, nil),
+				},
+			},
+		},
+		{
+			testName: "error events guarantee must not have target",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeEvents, "Bad target.", "Defines", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: `{ Recover(a) : a \in Defines }`}, nil),
+				},
+			},
+			errstr: "must not have a target",
 		},
 		{
 			testName: "error duplicate destroy guarantee target",

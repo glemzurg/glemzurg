@@ -22,6 +22,12 @@ func expressionSpecBoldDisplay(spec logic_spec.ExpressionSpec) string {
 }
 
 func logicBoldSpecTextForClass(class model_class.Class, logic model_logic.Logic) string {
+	if logic.Type == model_logic.LogicTypeEvents {
+		if logic.Spec.Specification != "" {
+			return expressionSpecBoldDisplayForClass(class, logic.Spec)
+		}
+		return ""
+	}
 	if logic.Target != "" {
 		spec := missingSpecDisplay
 		if logic.Spec.Specification != "" {
@@ -43,6 +49,12 @@ func logicBoldSpecTextForClass(class model_class.Class, logic model_logic.Logic)
 }
 
 func logicBoldSpecText(logic model_logic.Logic) string {
+	if logic.Type == model_logic.LogicTypeEvents {
+		if logic.Spec.Specification != "" {
+			return expressionSpecBoldDisplay(logic.Spec)
+		}
+		return ""
+	}
 	if logic.Target != "" {
 		spec := missingSpecDisplay
 		if logic.Spec.Specification != "" {

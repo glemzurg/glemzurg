@@ -619,6 +619,10 @@ func isPeerEffectGuarantee(guar model_logic.Logic) bool {
 	if guar.Type == model_logic.LogicTypeLet || guar.Type == model_logic.LogicTypeDestroy {
 		return false
 	}
+	// Explicit events guarantees are always peer-phase (broadcast; no self prime).
+	if guar.Type == model_logic.LogicTypeEvents {
+		return true
+	}
 	expr := guar.Spec.Expression
 	if expr == nil {
 		return false
@@ -627,7 +631,7 @@ func isPeerEffectGuarantee(guar model_logic.Logic) bool {
 	if _, _, ok := model_class.MatchAssociationSetMapExpr(expr); ok {
 		return true
 	}
-	// Peer event over an arbitrary domain set of instances.
+	// Receiver-first event set-map over a domain set of instances.
 	if _, _, ok := matchPeerDomainEventSetMap(expr); ok {
 		return true
 	}
@@ -671,7 +675,21 @@ func (e *ActionExecutor) evaluateSingleActionGuarantee(
 	if expr == nil {
 		return fmt.Errorf("action %s guarantee[%d]: expression not lowered", ref.actionName, ref.index)
 	}
-	// Peer-domain set-maps may omit a self target (side-effect only).
+	// events type: pure event broadcast (no primed assignment on self).
+	if guar.Type == model_logic.LogicTypeEvents {
+		handled, err := e.tryQueuePeerDomainEventSetMap(ctx, instance, expr, bindings)
+		if err != nil {
+			return err
+		}
+		if !handled {
+			return fmt.Errorf(
+				"action %s guarantee[%d]: events type requires a receiver-first event set-map, e.g. { Event(receiver, args) : x \\in Domain }",
+				ref.actionName, ref.index,
+			)
+		}
+		return nil
+	}
+	// Receiver-first event set-maps may appear as state_change with a related assoc target (legacy).
 	if handled, err := e.tryQueuePeerDomainEventSetMap(ctx, instance, expr, bindings); err != nil || handled {
 		return err
 	}

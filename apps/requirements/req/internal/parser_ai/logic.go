@@ -12,6 +12,7 @@ import (
 const _LOGIC_TYPE_QUERY = "query"
 
 const _LOGIC_TYPE_DESTROY = "destroy"
+const _LOGIC_TYPE_EVENTS = "events"
 
 // inputLogic represents a formal logic specification in JSON.
 type inputLogic struct {
@@ -96,7 +97,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 			ErrLogicTypeRequired,
 			"logic type is required, got ''",
 			filename,
-		).WithField("type").WithHint("add a \"type\" field with one of: assessment, state_change, query, safety_rule, value, let, destroy")
+		).WithField("type").WithHint("add a \"type\" field with one of: assessment, state_change, query, safety_rule, value, let, destroy, events")
 	}
 
 	// Description is required (schema enforces this, but we provide a clearer error)
@@ -149,13 +150,20 @@ func validateLogic(logic *inputLogic, filename string) error {
 				filename,
 			).WithField("target").WithHint("query/let target names cannot start with underscore")
 		}
-	case "assessment", "safety_rule", "value":
+	case "assessment", "safety_rule", "value", _LOGIC_TYPE_EVENTS:
 		if logic.Target != "" {
 			return NewParseError(
 				ErrLogicTargetNotAllowed,
-				"logic of type '"+logic.Type+"' must not have a 'target' field, got '"+logic.Target+"' — only state_change, query, and let types use target",
+				"logic of type '"+logic.Type+"' must not have a 'target' field, got '"+logic.Target+"' — only state_change, query, let, and destroy types use target",
 				filename,
-			).WithField("target").WithHint("assessment/safety_rule/value types must not have a \"target\" field")
+			).WithField("target").WithHint("assessment/safety_rule/value/events types must not have a \"target\" field")
+		}
+		if strings.TrimSpace(logic.DestroyEvent) != "" {
+			return NewParseError(
+				ErrLogicDestroyEventNotAllowed,
+				"only destroy logic may declare destroy_event, got type '"+logic.Type+"'",
+				filename,
+			).WithField("destroy_event").WithHint("remove destroy_event or change type to destroy")
 		}
 	}
 	if err := validateAssociationClassFields(logic, filename); err != nil {

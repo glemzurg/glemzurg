@@ -1171,7 +1171,7 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		target, _ := itemMap["target"].(string)
 		specification, _ := itemMap["specification"].(string)
 
-		// Detect explicit logic type override (let or destroy in guarantees).
+		// Detect explicit logic type override (let, destroy, or events in guarantees).
 		itemType := logicType
 		if typeStr, ok := itemMap["type"].(string); ok {
 			switch typeStr {
@@ -1182,6 +1182,11 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 					return nil, errors.Errorf("%s[%d]: type destroy is only valid in action guarantees", field, i)
 				}
 				itemType = model_logic.LogicTypeDestroy
+			case "events":
+				if logicType != model_logic.LogicTypeStateChange {
+					return nil, errors.Errorf("%s[%d]: type events is only valid in action guarantees", field, i)
+				}
+				itemType = model_logic.LogicTypeEvents
 			}
 		}
 
@@ -1718,6 +1723,9 @@ func buildLogicMappingBuilder(logic model_logic.Logic, ownerClass *model_class.C
 	}
 	if logic.Type == model_logic.LogicTypeDestroy {
 		logicBuilder.AddField("type", "destroy")
+	}
+	if logic.Type == model_logic.LogicTypeEvents {
+		logicBuilder.AddField("type", "events")
 	}
 	logicBuilder.AddField("details", logic.Description)
 	logicBuilder.AddField("target", logic.Target)
