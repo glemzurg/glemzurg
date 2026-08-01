@@ -498,14 +498,13 @@ func (c *catalog) peerEvent(classKey identity.Key, eventKey identity.Key) (model
 // ExternalCreationEvents returns creation events eligible for top-level firing.
 // An event is excluded when a simulatable in-scope class sends it (SentBy) or
 // when another class's mandatory direct (non-association-class) outbound association targets this class.
+// Association-class creation is surface-eligible (E1) when the creation event declares at
+// least two parameters (A1 host from/to ends). Engine materializes the host row (B1).
+// AC creation events with fewer than two parameters stay off the surface (e.g. host bulk
+// materialization still uses CreationLinkSource ends internally).
 func (c *catalog) externalCreationEvents(classKey identity.Key) []model_state.Event {
 	info := c.classInfo(classKey)
 	if info == nil || len(info.CreationEvents) == 0 {
-		return nil
-	}
-
-	// Association-class Add must bind both endpoints; bare external creation would orphan rows.
-	if c.isAssociationClass(classKey) {
 		return nil
 	}
 
@@ -515,6 +514,9 @@ func (c *catalog) externalCreationEvents(classKey identity.Key) []model_state.Ev
 
 	var external []model_state.Event
 	for _, ev := range info.CreationEvents {
+		if c.isAssociationClass(classKey) && len(ev.ParameterNames) < 2 {
+			continue
+		}
 		if c.isEventExternal(ev) {
 			external = append(external, ev)
 		}

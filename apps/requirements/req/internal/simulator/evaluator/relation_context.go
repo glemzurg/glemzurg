@@ -43,16 +43,21 @@ type RelationContext struct {
 
 	// associationClassRows indexes materialized host rows for AC member traversal.
 	associationClassRows []associationClassRow
+
+	// associationClassHostKeys marks host associations whose endpoint image is
+	// derived only from associationClassRows (not the plain binary link table).
+	associationClassHostKeys map[AssociationKey]struct{}
 }
 
 // NewRelationContext creates a new relation context.
 func NewRelationContext() *RelationContext {
 	return &RelationContext{
-		ForwardRelations: make(map[string]map[string]*RelationInfo),
-		ReverseRelations: make(map[string]map[string]*RelationInfo),
-		identities:       NewIdentityRegistry(),
-		links:            NewLinkTable(),
-		classByObjectID:  make(map[ObjectID]string),
+		ForwardRelations:         make(map[string]map[string]*RelationInfo),
+		ReverseRelations:         make(map[string]map[string]*RelationInfo),
+		identities:               NewIdentityRegistry(),
+		links:                    NewLinkTable(),
+		classByObjectID:          make(map[ObjectID]string),
+		associationClassHostKeys: make(map[AssociationKey]struct{}),
 	}
 }
 
@@ -162,6 +167,20 @@ func (c *RelationContext) AddAssociationClassHost(
 		c.ReverseRelations[toClassKey] = make(map[string]*RelationInfo)
 	}
 	c.ReverseRelations[toClassKey][fieldName] = reverseInfo
+
+	if c.associationClassHostKeys == nil {
+		c.associationClassHostKeys = make(map[AssociationKey]struct{})
+	}
+	c.associationClassHostKeys[assocKey] = struct{}{}
+}
+
+// IsAssociationClassHost reports whether assocKey is materialized only via association-class rows.
+func (c *RelationContext) IsAssociationClassHost(assocKey AssociationKey) bool {
+	if c == nil || c.associationClassHostKeys == nil {
+		return false
+	}
+	_, ok := c.associationClassHostKeys[assocKey]
+	return ok
 }
 
 // GetForwardRelation returns relation info for a forward traversal (.Name).
@@ -300,6 +319,14 @@ func (c *RelationContext) EnsureInstance(id ObjectID, data *object.Record) {
 	c.identities.RegisterVisible(id, extent, data)
 }
 
+// VisibleRecord returns the TLA-visible record for a runtime object id, if any.
+func (c *RelationContext) VisibleRecord(id ObjectID) *object.Record {
+	if c == nil {
+		return nil
+	}
+	return c.identities.GetRecord(id)
+}
+
 // RemoveLink removes a link between two records for the given association.
 // Returns true if the link existed and was removed.
 func (c *RelationContext) RemoveLink(assocKey AssociationKey, from, to *object.Record) bool {
@@ -337,10 +364,16 @@ func (c *RelationContext) objectIDForRecord(record *object.Record) (ObjectID, bo
 // GetRelatedRecords returns records related to the given record via an association.
 // If reverse is false, returns records linked FROM this record (forward traversal).
 // If reverse is true, returns records linked TO this record (reverse traversal).
+// Host associations with an association class derive endpoints only from AC rows
+// (no parallel binary-link image).
 func (c *RelationContext) GetRelatedRecords(record *object.Record, assocKey AssociationKey, reverse bool) []*object.Record {
 	id, exists := c.objectIDForRecord(record)
 	if !exists {
 		return nil
+	}
+
+	if c.IsAssociationClassHost(assocKey) {
+		return c.relatedRecordsFromAssociationClassRows(id, assocKey, reverse)
 	}
 
 	var objectIDs []ObjectID
@@ -357,6 +390,43 @@ func (c *RelationContext) GetRelatedRecords(record *object.Record, assocKey Asso
 		}
 	}
 
+	return records
+}
+
+// relatedRecordsFromAssociationClassRows builds the host endpoint image from AC rows only.
+func (c *RelationContext) relatedRecordsFromAssociationClassRows(
+	anchorID ObjectID,
+	assocKey AssociationKey,
+	reverse bool,
+) []*object.Record {
+	records := make([]*object.Record, 0)
+	seen := make(map[ObjectID]struct{})
+	for _, row := range c.associationClassRows {
+		if row.hostKey != assocKey {
+			continue
+		}
+		var anchorRecord, farEndpoint *object.Record
+		if reverse {
+			anchorRecord = row.toRecord
+			farEndpoint = row.fromRecord
+		} else {
+			anchorRecord = row.fromRecord
+			farEndpoint = row.toRecord
+		}
+		rowAnchorID, ok := c.objectIDForRecord(anchorRecord)
+		if !ok || rowAnchorID != anchorID {
+			continue
+		}
+		farID, ok := c.objectIDForRecord(farEndpoint)
+		if !ok {
+			continue
+		}
+		if _, dup := seen[farID]; dup {
+			continue
+		}
+		seen[farID] = struct{}{}
+		records = append(records, farEndpoint)
+	}
 	return records
 }
 

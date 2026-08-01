@@ -218,8 +218,10 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociationCl
 	s.Len(ext, 1)
 	s.Equal("create", ext[0].Name)
 
-	// Association-class rows still require both host endpoints.
-	s.Empty(catalog.ExternalCreationEvents(tcm.linkDefKey))
+	// E1: association-class creation is itself a surface driver (ends from event params).
+	ext = catalog.ExternalCreationEvents(tcm.linkDefKey)
+	s.Len(ext, 1)
+	s.Equal("Add", ext[0].Name)
 }
 
 func (s *ClassCatalogSuite) TestGetActionForEvent() {

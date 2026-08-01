@@ -955,7 +955,7 @@ func (e *ActionExecutor) ExecuteTransition(
 
 	var associationMaterialization *AssociationMaterialization
 	if chosen.FromStateKey == nil {
-		instance, associationMaterialization, err = e.createTransitionInstance(class, instance, source, targetID)
+		instance, associationMaterialization, err = e.createTransitionInstance(class, instance, source, targetID, event, eventParams)
 		if err != nil {
 			return nil, err
 		}
@@ -1003,7 +1003,23 @@ func (e *ActionExecutor) createTransitionInstance(
 	instance *instance.Instance,
 	source CreationLinkSource,
 	targetID *instance.ID,
+	event model_state.Event,
+	eventParams map[string]object.Object,
 ) (*instance.Instance, *AssociationMaterialization, error) {
+	if e.sch != nil && e.sch.IsAssociationClass(class.Key) {
+		fromID, toID, err := e.resolveAssociationClassEndpointIDs(class, source, targetID, event, eventParams)
+		if err != nil {
+			return nil, nil, err
+		}
+		created, err := e.handleAssociationClassCreation(class, &fromID, &toID)
+		if err != nil {
+			return nil, nil, err
+		}
+		return created, e.associationMaterializationForCreation(class, CreationLinkSource{
+			SourceID: &fromID,
+		}, &toID), nil
+	}
+
 	created, err := e.handleCreation(class, instance, source.SourceAssocKey, source.SourceID, targetID)
 	if err != nil {
 		return nil, nil, err
@@ -1174,18 +1190,15 @@ func (e *ActionExecutor) evaluateGuards(
 	return &trueGuards[0], nil
 }
 
-// handleCreation creates a new instance for a creation transition.
+// handleCreation creates a new plain-class instance for a creation transition.
+// Association-class creation goes through createTransitionInstance → handleAssociationClassCreation.
 func (e *ActionExecutor) handleCreation(
 	class model_class.Class,
 	_ *instance.Instance,
 	sourceAssocKey *identity.Key,
 	sourceID *instance.ID,
-	targetID *instance.ID,
+	_ *instance.ID,
 ) (*instance.Instance, error) {
-	if e.sch != nil && e.sch.IsAssociationClass(class.Key) {
-		return e.handleAssociationClassCreation(class, sourceID, targetID)
-	}
-
 	simState := e.bindingsBuilder.State()
 	newAttrs, err := e.creationAttributes(class, simState)
 	if err != nil {
@@ -1198,6 +1211,72 @@ func (e *ActionExecutor) handleCreation(
 	}
 
 	return instance, nil
+}
+
+// resolveAssociationClassEndpointIDs resolves host from/to ends for AC creation (B1 outside TLA).
+// Prefer explicit reify/CreationLinkSource ends when both are present; otherwise A1: first two
+// creation-event parameters are the from and to endpoint instances.
+func (e *ActionExecutor) resolveAssociationClassEndpointIDs(
+	class model_class.Class,
+	source CreationLinkSource,
+	targetID *instance.ID,
+	event model_state.Event,
+	eventParams map[string]object.Object,
+) (fromID, toID instance.ID, err error) {
+	if source.SourceID != nil && targetID != nil {
+		return *source.SourceID, *targetID, nil
+	}
+
+	linkInfo := e.sch.GetAssociationClassInfo(class.Key)
+	if !linkInfo.Found {
+		return 0, 0, fmt.Errorf("association class %s: no host association metadata", class.Name)
+	}
+	if len(event.ParameterNames) < 2 {
+		return 0, 0, fmt.Errorf(
+			"association class %s creation requires at least two parameters (host from-end, host to-end)",
+			class.Name,
+		)
+	}
+	fromName := event.ParameterNames[0]
+	toName := event.ParameterNames[1]
+	fromObj, okFrom := eventParams[fromName]
+	toObj, okTo := eventParams[toName]
+	if !okFrom || fromObj == nil || !okTo || toObj == nil {
+		return 0, 0, fmt.Errorf(
+			"association class %s creation: endpoint parameters %q and %q must identify live instances",
+			class.Name, fromName, toName,
+		)
+	}
+	simState := e.bindingsBuilder.State()
+	fromID, ok := instanceIDFromObject(simState, fromObj)
+	if !ok {
+		return 0, 0, fmt.Errorf(
+			"association class %s creation: parameter %q is not a live %s instance",
+			class.Name, fromName, linkInfo.FromClassName,
+		)
+	}
+	toID, ok = instanceIDFromObject(simState, toObj)
+	if !ok {
+		return 0, 0, fmt.Errorf(
+			"association class %s creation: parameter %q is not a live %s instance",
+			class.Name, toName, linkInfo.ToClassName,
+		)
+	}
+	fromInst := simState.GetInstance(fromID)
+	toInst := simState.GetInstance(toID)
+	if fromInst == nil || fromInst.GetClassKey() != linkInfo.FromClassKey {
+		return 0, 0, fmt.Errorf(
+			"association class %s creation: parameter %q must be class %s",
+			class.Name, fromName, linkInfo.FromClassName,
+		)
+	}
+	if toInst == nil || toInst.GetClassKey() != linkInfo.ToClassKey {
+		return 0, 0, fmt.Errorf(
+			"association class %s creation: parameter %q must be class %s",
+			class.Name, toName, linkInfo.ToClassName,
+		)
+	}
+	return fromID, toID, nil
 }
 
 func (e *ActionExecutor) creationAttributes(

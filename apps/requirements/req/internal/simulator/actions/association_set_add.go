@@ -270,9 +270,10 @@ func (e *ActionExecutor) applyPeerCreation(ctx *ExecutionContext, pc DeferredPee
 	if !found {
 		return fmt.Errorf("peer creation for association %s: association metadata not found", pc.AssocKey.String())
 	}
-	// Association-class materialization when the AC is in run scope. When the AC is out of
-	// scope the host degrades to plain endpoint links; never invent a plain link while the
-	// AC key is present and the AC class is still on the surface.
+	// Association-class host: creating a *new* far endpoint via set-add is retired (C1 / E1).
+	// Existing-endpoint bulk materialization (ToInstanceID set) still builds an AC row for
+	// host guarantees that expand over known peers (e.g. transaction amounts). Out-of-scope
+	// AC degrades to plain endpoint links.
 	if assoc.AssociationClassKey != nil {
 		if _, ok := e.sch.PeerClass(*assoc.AssociationClassKey); ok {
 			return e.applyAssociationClassPeerCreation(ctx, pc, assoc)
@@ -305,7 +306,9 @@ func (e *ActionExecutor) applyPlainPeerCreation(
 	if err != nil {
 		vctx := e.ownerViolationContext(fromID, toClass.Key, assoc.Name)
 		// PeerInstanceID 0 would otherwise imply "no creation transition"; pass the real error.
-		e.recordPeerEventUnavailableDetail(ctx, vctx, toClass, 0, creationEvent.Key, creationEvent.Name,
+		e.recordPeerEventUnavailableDetail(ctx, vctx,
+			peerEventTarget{Class: toClass, InstanceID: 0},
+			peerEventRef{Key: creationEvent.Key, Name: creationEvent.Name},
 			fmt.Sprintf("association %q failed to create %s via %s: %v", assoc.Name, toClass.Name, creationEvent.Name, err))
 		return nil
 	}
@@ -318,26 +321,16 @@ func (e *ActionExecutor) applyAssociationClassPeerCreation(
 	pc DeferredPeerCreation,
 	assoc model_class.Association,
 ) error {
-	// Existing to-endpoint: only materialize the association-class row (params go to AC).
+	// Existing to-endpoint: materialize the association-class row (host bulk-create style).
 	if pc.ToInstanceID != nil {
 		return e.materializeAssociationClassRow(ctx, pc, assoc, *pc.ToInstanceID, pc.Params)
 	}
 
-	toClass, creationEvent, err := e.resolvePeerCreationEvent(pc)
-	if err != nil {
-		return err
-	}
-	endpointResult, err := e.ExecuteTransition(
-		toClass, creationEvent, nil, pc.Params, CreationLinkSource{}, nil,
+	// New far-endpoint + AC together is not supported: use surface AC _new(from, to, …).
+	return fmt.Errorf(
+		"peer creation for association %s: association class %s must be created via surface _new with host endpoint parameters (not host set-add of a new peer)",
+		pc.AssocKey.String(), assoc.AssociationClassKey.String(),
 	)
-	if err != nil {
-		vctx := e.ownerViolationContext(pc.FromInstanceID, toClass.Key, assoc.Name)
-		e.recordPeerEventUnavailable(ctx, vctx, toClass, 0, creationEvent.Key, creationEvent.Name)
-		return nil
-	}
-	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, endpointResult)
-	// AC row created without extra params when the event call targeted the to-class.
-	return e.materializeAssociationClassRow(ctx, pc, assoc, endpointResult.InstanceID, nil)
 }
 
 func (e *ActionExecutor) resolvePeerCreationEvent(pc DeferredPeerCreation) (model_class.Class, model_state.Event, error) {

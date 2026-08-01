@@ -48,6 +48,16 @@ func findFinalDestroyEvent(class model_class.Class) (model_state.Event, bool) {
 	return model_state.Event{}, false
 }
 
+type peerEventTarget struct {
+	Class      model_class.Class
+	InstanceID instance.ID
+}
+
+type peerEventRef struct {
+	Key  identity.Key
+	Name string
+}
+
 func (e *ActionExecutor) recordPeerEventUnavailable(
 	ctx *ExecutionContext,
 	vctx peerEventViolationContext,
@@ -56,16 +66,14 @@ func (e *ActionExecutor) recordPeerEventUnavailable(
 	eventKey identity.Key,
 	eventName string,
 ) {
-	e.recordPeerEventUnavailableDetail(ctx, vctx, peerClass, peerInstanceID, eventKey, eventName, "")
+	e.recordPeerEventUnavailableDetail(ctx, vctx, peerEventTarget{Class: peerClass, InstanceID: peerInstanceID}, peerEventRef{Key: eventKey, Name: eventName}, "")
 }
 
 func (e *ActionExecutor) recordPeerEventUnavailableDetail(
 	ctx *ExecutionContext,
 	vctx peerEventViolationContext,
-	peerClass model_class.Class,
-	peerInstanceID instance.ID,
-	eventKey identity.Key,
-	eventName string,
+	peer peerEventTarget,
+	event peerEventRef,
 	detail string,
 ) {
 	st := e.bindingsBuilder.State()
@@ -76,11 +84,11 @@ func (e *ActionExecutor) recordPeerEventUnavailableDetail(
 		OwnerClassKey:   vctx.OwnerClassKey,
 		OwnerInstanceID: vctx.OwnerInstanceID,
 		AssociationName: vctx.AssociationName,
-		PeerClassKey:    peerClass.Key,
-		PeerClassName:   peerClass.Name,
-		PeerInstanceID:  peerInstanceID,
-		EventKey:        eventKey,
-		EventName:       eventName,
+		PeerClassKey:    peer.Class.Key,
+		PeerClassName:   peer.Class.Name,
+		PeerInstanceID:  peer.InstanceID,
+		EventKey:        event.Key,
+		EventName:       event.Name,
 		Detail:          detail,
 	})
 	if v != nil {

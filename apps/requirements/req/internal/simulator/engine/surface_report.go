@@ -88,9 +88,8 @@ type SurfaceAssocCreateNote struct {
 // and empty scoped classes are omitted so the report matches what a human tester can
 // treat as under test at the top level.
 //
-// Association classes in scope are included for non-creation drivers (state events,
-// do-actions, queries, derived attributes). Bare _new is never listed for them
-// (ExternalCreationEvents excludes association classes; they materialize via the host).
+// Association classes in scope list creation (_new) as a surface driver when the
+// event is not SentBy an in-scope peer (E1: AC _new materializes data + host link).
 // Events sent by another in-scope class (e.g. type: events) stay off the surface via
 // ExternalStateEvents / SentBy. Out-of-scope pass-through derived/queries appear under
 // UnavailableMembers, not as drivers.

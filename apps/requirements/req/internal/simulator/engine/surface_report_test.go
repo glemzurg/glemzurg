@@ -203,15 +203,21 @@ func (s *SurfaceReportSuite) TestFormatScopeTextAndDriversTextAreSeparate() {
 	s.NotContains(driversText, "Simulation scope")
 }
 
-func (s *SurfaceReportSuite) TestBuildSurfaceReportListsAssociationClassStateEventsNotCreation() {
+func (s *SurfaceReportSuite) TestBuildSurfaceReportListsAssociationClassCreationAndStateEvents() {
 	tcm := buildAssociationClassTestModel()
 	catalog := schema.New(tcm.model, schema.RunScopeAll())
 	report := BuildSurfaceReport(catalog)
 
 	linkDef := findSurfaceClass(report, tcm.linkDefKey.String())
-	s.Require().NotNil(linkDef, "in-scope association class with external state events must appear")
+	s.Require().NotNil(linkDef, "in-scope association class must appear on the surface")
 	s.Equal("association_class", linkDef.Role)
-	s.Empty(linkDef.CreationEvents, "association class _new/create must not be a surface creation driver")
+	// E1: association-class _new/create is a surface creation driver.
+	s.Require().NotEmpty(linkDef.CreationEvents, "association class creation must be a surface driver")
+	creationNames := make([]string, 0, len(linkDef.CreationEvents))
+	for _, e := range linkDef.CreationEvents {
+		creationNames = append(creationNames, e.EventName)
+	}
+	s.Contains(creationNames, "Add")
 
 	// Active: Update and Delete (not Add, which is creation-only)
 	s.Require().NotEmpty(linkDef.States)
@@ -230,7 +236,6 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsAssociationClassStateEve
 	s.Contains(eventNames, "Update")
 	s.Contains(eventNames, "Delete")
 	s.NotContains(eventNames, "Add")
-	s.NotContains(eventNames, "_new")
 }
 
 func (s *SurfaceReportSuite) TestBuildSurfaceReportOmitsAssociationClassEventSentByInScopePeer() {

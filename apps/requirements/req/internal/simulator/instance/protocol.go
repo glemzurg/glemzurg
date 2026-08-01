@@ -213,18 +213,46 @@ func (s *State) projectBinaryLinksToRelationContext(relCtx *evaluator.RelationCo
 
 func (s *State) projectAssociationLinksToRelationContext(relCtx *evaluator.RelationContext) {
 	s.ForEachAssociationLink(func(link AssociationLink) {
-		fromInst := s.GetInstance(link.FromEndpointID)
-		linkInst := s.GetInstance(link.LinkInstanceID)
-		toInst := s.GetInstance(link.ToEndpointID)
-		if fromInst == nil || linkInst == nil || toInst == nil {
-			return
-		}
-		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
-		fromExtent, toExtent := createExtentLink(relCtx, hostKey, fromInst, toInst)
-		linkExtent := object.NewExtentElement(uint64(linkInst.GetID()), linkInst.GetAttributes())
-		relCtx.EnsureInstance(evaluator.ObjectID(linkInst.GetID()), linkInst.GetAttributes())
-		relCtx.AddAssociationClassRow(hostKey, fromExtent, toExtent, linkExtent)
+		s.projectOneAssociationLink(relCtx, link)
 	})
+}
+
+// projectOneAssociationLink projects a single AC host row into relation context.
+// Host image is derived from AC rows only — no parallel binary host link.
+func (s *State) projectOneAssociationLink(relCtx *evaluator.RelationContext, link AssociationLink) {
+	fromInst := s.GetInstance(link.FromEndpointID)
+	linkInst := s.GetInstance(link.LinkInstanceID)
+	toInst := s.GetInstance(link.ToEndpointID)
+	if fromInst == nil || linkInst == nil || toInst == nil {
+		return
+	}
+	fromExtent := registerProjectedEndpoint(relCtx, fromInst)
+	toExtent := registerProjectedEndpoint(relCtx, toInst)
+	if fromExtent == nil || toExtent == nil {
+		return
+	}
+	hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
+	linkExtent := registerProjectedLinkInstance(relCtx, linkInst)
+	relCtx.AddAssociationClassRow(hostKey, fromExtent, toExtent, linkExtent)
+}
+
+// registerProjectedEndpoint ensures a live instance is identity-visible for AC host projection.
+// Returns the TLA-visible extent record used as an AC row endpoint key.
+func registerProjectedEndpoint(relCtx *evaluator.RelationContext, inst *Instance) *object.Record {
+	id := evaluator.ObjectID(inst.GetID())
+	relCtx.EnsureInstance(id, inst.GetAttributes())
+	relCtx.RegisterClassKey(id, inst.GetClassKey().String())
+	return relCtx.VisibleRecord(id)
+}
+
+func registerProjectedLinkInstance(relCtx *evaluator.RelationContext, linkInst *Instance) *object.Record {
+	linkExtent := object.NewExtentElement(uint64(linkInst.GetID()), linkInst.GetAttributes())
+	relCtx.EnsureInstance(evaluator.ObjectID(linkInst.GetID()), linkInst.GetAttributes())
+	relCtx.RegisterClassKey(evaluator.ObjectID(linkInst.GetID()), linkInst.GetClassKey().String())
+	if visible := relCtx.VisibleRecord(evaluator.ObjectID(linkInst.GetID())); visible != nil {
+		return visible
+	}
+	return linkExtent
 }
 
 func createExtentLink(

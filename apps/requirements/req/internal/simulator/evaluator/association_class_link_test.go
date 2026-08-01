@@ -31,6 +31,43 @@ func TestGetAssociationClassLinksByEndpointPairsRows(t *testing.T) {
 	require.Equal(t, link2, links[j2])
 }
 
+// Host association endpoint image is derived from AC rows only (D2), not binary links.
+func TestGetRelatedRecordsForAssociationClassHostUsesRowsOnly(t *testing.T) {
+	t.Parallel()
+
+	ctx := NewRelationContext()
+	hostKey := AssociationKey("host")
+	partnerKey := "class/partner"
+	jurisdictionKey := "class/jurisdiction"
+	ctx.AddAssociationClassHost(
+		hostKey,
+		"Configures",
+		AssociationHostEndpoints{FromClassKey: partnerKey, ToClassKey: jurisdictionKey},
+		"Link Def",
+		AssociationHostMultiplicities{},
+	)
+
+	partnerAttrs := object.NewRecord()
+	jurisdictionAttrs := object.NewRecord()
+	linkAttrs := object.NewRecord()
+	partnerExtent := object.NewExtentElement(1, partnerAttrs)
+	jurisdictionExtent := object.NewExtentElement(2, jurisdictionAttrs)
+	linkExtent := object.NewExtentElement(3, linkAttrs)
+
+	// Register endpoints and AC row without a plain binary host link.
+	ctx.identities.RegisterVisible(1, partnerExtent, partnerAttrs)
+	ctx.identities.RegisterVisible(2, jurisdictionExtent, jurisdictionAttrs)
+	ctx.identities.RegisterVisible(3, linkExtent, linkAttrs)
+	ctx.AddAssociationClassRow(hostKey, partnerExtent, jurisdictionExtent, linkExtent)
+
+	related := ctx.GetRelatedRecords(partnerExtent, hostKey, false)
+	require.Len(t, related, 1)
+	require.Equal(t, jurisdictionExtent, related[0])
+
+	// Binary link table stays empty for this host.
+	require.Empty(t, ctx.Links().GetForward(1, hostKey))
+}
+
 // Set images clone extent elements; CHOOSE/set peers are not pointer-equal to the
 // registered anchor, but AC rows must still resolve (Player Initialize path).
 func TestGetAssociationClassLinksByEndpointAcceptsClonedExtentAnchor(t *testing.T) {

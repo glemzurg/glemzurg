@@ -88,7 +88,8 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteViolationWhenPeerLacksDele
 	s.Len(simState.GetLinkedForward(orderInst.GetID(), fix.assocKey), 1)
 }
 
-func (s *AssociationPeerEffectsSuite) TestSetAddCreatesAssociationClassRow() {
+func (s *AssociationPeerEffectsSuite) TestSetAddNewPeerDoesNotCreateAssociationClassRow() {
+	// C1/E1: host set-add of a *new* far endpoint must not invent the association class.
 	tcm := buildAssociationClassPeerEffectModel()
 	simState, ae := s.buildPeerEffectExecutor(tcm.model)
 	registerCatalogAssociations(schema.New(tcm.model, schema.RunScopeAll()), state.NewBindingsBuilder(simState))
@@ -96,16 +97,10 @@ func (s *AssociationPeerEffectsSuite) TestSetAddCreatesAssociationClassRow() {
 	partnerInst := s.createPeerEffectInstance(simState, tcm.partnerKey, "Active")
 	action := peerNewSetAddAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
 	result, err := ae.ExecuteAction(action, partnerInst, nil)
-	s.Require().NoError(err)
-	s.Empty(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable))
-	s.Require().Len(result.PeerTransitions, 2)
-	s.Equal("create", result.PeerTransitions[0].EventName)
-	s.Equal("Add", result.PeerTransitions[1].EventName)
-
-	links := simState.AssociationLinksFromEndpoint(tcm.hostAssocKey, partnerInst.GetID())
-	s.Len(links, 1)
-	s.NotNil(simState.GetInstance(links[0].ToEndpointID))
-	s.NotNil(simState.GetInstance(links[0].LinkInstanceID))
+	s.Require().Error(err)
+	s.Contains(err.Error(), "surface _new")
+	s.Empty(simState.AssociationLinksFromEndpoint(tcm.hostAssocKey, partnerInst.GetID()))
+	_ = result
 }
 
 func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow() {
