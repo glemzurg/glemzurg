@@ -304,7 +304,9 @@ func (e *ActionExecutor) applyPlainPeerCreation(
 	)
 	if err != nil {
 		vctx := e.ownerViolationContext(fromID, toClass.Key, assoc.Name)
-		e.recordPeerEventUnavailable(ctx, vctx, toClass, 0, creationEvent.Key, creationEvent.Name)
+		// PeerInstanceID 0 would otherwise imply "no creation transition"; pass the real error.
+		e.recordPeerEventUnavailableDetail(ctx, vctx, toClass, 0, creationEvent.Key, creationEvent.Name,
+			fmt.Sprintf("association %q failed to create %s via %s: %v", assoc.Name, toClass.Name, creationEvent.Name, err))
 		return nil
 	}
 	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, result)

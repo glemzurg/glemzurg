@@ -202,3 +202,60 @@ func (s *SurfaceReportSuite) TestFormatScopeTextAndDriversTextAreSeparate() {
 	s.Contains(driversText, "Simulation surface")
 	s.NotContains(driversText, "Simulation scope")
 }
+
+func (s *SurfaceReportSuite) TestBuildSurfaceReportListsAssociationClassStateEventsNotCreation() {
+	tcm := buildAssociationClassTestModel()
+	catalog := schema.New(tcm.model, schema.RunScopeAll())
+	report := BuildSurfaceReport(catalog)
+
+	linkDef := findSurfaceClass(report, tcm.linkDefKey.String())
+	s.Require().NotNil(linkDef, "in-scope association class with external state events must appear")
+	s.Equal("association_class", linkDef.Role)
+	s.Empty(linkDef.CreationEvents, "association class _new/create must not be a surface creation driver")
+
+	// Active: Update and Delete (not Add, which is creation-only)
+	s.Require().NotEmpty(linkDef.States)
+	var active *SurfaceStateReport
+	for i := range linkDef.States {
+		if linkDef.States[i].StateName == "Active" {
+			active = &linkDef.States[i]
+			break
+		}
+	}
+	s.Require().NotNil(active, "Active state drivers")
+	eventNames := make([]string, 0, len(active.Events))
+	for _, e := range active.Events {
+		eventNames = append(eventNames, e.EventName)
+	}
+	s.Contains(eventNames, "Update")
+	s.Contains(eventNames, "Delete")
+	s.NotContains(eventNames, "Add")
+	s.NotContains(eventNames, "_new")
+}
+
+func (s *SurfaceReportSuite) TestBuildSurfaceReportOmitsAssociationClassEventSentByInScopePeer() {
+	// Partner type:events sends Delete to LinkDef → LinkDef.Delete off surface; Update remains.
+	tcm := buildAssociationClassTestModel()
+	// Add partner action that type:events Delete to link def peers — simplified via SetEventSentBy after catalog build.
+	catalog := schema.New(tcm.model, schema.RunScopeAll())
+	eventDeleteKey := mustKey("domain/d/subdomain/s/class/link_def/event/delete")
+	catalog.SetEventSentBy(eventDeleteKey, []identity.Key{tcm.partnerKey})
+
+	report := BuildSurfaceReport(catalog)
+	linkDef := findSurfaceClass(report, tcm.linkDefKey.String())
+	s.Require().NotNil(linkDef)
+	var active *SurfaceStateReport
+	for i := range linkDef.States {
+		if linkDef.States[i].StateName == "Active" {
+			active = &linkDef.States[i]
+			break
+		}
+	}
+	s.Require().NotNil(active)
+	eventNames := make([]string, 0, len(active.Events))
+	for _, e := range active.Events {
+		eventNames = append(eventNames, e.EventName)
+	}
+	s.Contains(eventNames, "Update")
+	s.NotContains(eventNames, "Delete", "event sent by in-scope class is not a surface driver")
+}

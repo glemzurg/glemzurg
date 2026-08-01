@@ -209,12 +209,13 @@ The **simulation surface** is the set of **external drivers** the exercise simul
 - Surface **do-actions** on a state
 - External **queries**
 - External **derived attributes** (readable at top level)
+- **Association classes in scope:** same non-creation drivers as normal classes (state events, do-actions, queries, derived). Bare `_new` is never a surface driver for association classes (they materialize via the host association).
 
 **Not surface (do not list as drivers even if in the simulation):**
 
 - Classes (or events) that only participate as **peers**—created or updated by another class’s guarantees (e.g. association set-add/set-map, association-class reify)
-- Events that another in-scope class **sends** via a `type: events` guarantee (e.g. Account Definition sends `Delete`/`Recover` to Account; those Account events are not surface drivers)
-- **Association classes** when they only materialize via a host association (even if included in the include-list so reify is enabled)
+- Events that another in-scope class **sends** via a `type: events` guarantee (e.g. Account Definition sends `Delete`/`Recover` to Account; those Account events are not surface drivers). Same rule for association-class events sent by another in-scope class.
+- Association-class **`_new`** (host materialization only)
 - Classes that are in scope for liveness or peer effects but have **no external events, queries, or derived attributes**
 - Derived attributes / queries that depend on **out-of-scope** classes (listed separately as off-surface, not as drivers)
 

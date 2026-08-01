@@ -56,6 +56,18 @@ func (e *ActionExecutor) recordPeerEventUnavailable(
 	eventKey identity.Key,
 	eventName string,
 ) {
+	e.recordPeerEventUnavailableDetail(ctx, vctx, peerClass, peerInstanceID, eventKey, eventName, "")
+}
+
+func (e *ActionExecutor) recordPeerEventUnavailableDetail(
+	ctx *ExecutionContext,
+	vctx peerEventViolationContext,
+	peerClass model_class.Class,
+	peerInstanceID instance.ID,
+	eventKey identity.Key,
+	eventName string,
+	detail string,
+) {
 	st := e.bindingsBuilder.State()
 	if st == nil {
 		return
@@ -69,6 +81,7 @@ func (e *ActionExecutor) recordPeerEventUnavailable(
 		PeerInstanceID:  peerInstanceID,
 		EventKey:        eventKey,
 		EventName:       eventName,
+		Detail:          detail,
 	})
 	if v != nil {
 		ctx.AddPeerViolation(v)

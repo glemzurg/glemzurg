@@ -84,19 +84,22 @@ type SurfaceAssocCreateNote struct {
 }
 
 // BuildSurfaceReport lists only classes that have at least one external driver
-// (creation/state event, do-action, query, or derived attribute). Peer-only classes,
-// association classes, and empty scoped classes are omitted so the report matches what
-// a human tester can treat as under test at the top level. Out-of-scope pass-through
-// derived/queries appear under UnavailableMembers, not as drivers.
+// (creation/state event, do-action, query, or derived attribute). Peer-only classes
+// and empty scoped classes are omitted so the report matches what a human tester can
+// treat as under test at the top level.
+//
+// Association classes in scope are included for non-creation drivers (state events,
+// do-actions, queries, derived attributes). Bare _new is never listed for them
+// (ExternalCreationEvents excludes association classes; they materialize via the host).
+// Events sent by another in-scope class (e.g. type: events) stay off the surface via
+// ExternalStateEvents / SentBy. Out-of-scope pass-through derived/queries appear under
+// UnavailableMembers, not as drivers.
 func BuildSurfaceReport(catalog *schema.Schema) *SurfaceReport {
 	report := &SurfaceReport{
 		Classes: make([]SurfaceClassReport, 0),
 	}
 
 	catalog.EachInScopeClassSim(func(classInfo *schema.ClassSimInfo) {
-		if catalog.IsAssociationClass(classInfo.ClassKey) {
-			return
-		}
 		entry := buildSurfaceClassReport(catalog, classInfo)
 		if !surfaceClassHasDrivers(entry) {
 			return

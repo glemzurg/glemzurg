@@ -201,6 +201,29 @@ func (c *RelationContext) GetRelation(classKey, fieldName string) *RelationInfo 
 	return c.GetForwardRelation(classKey, fieldName)
 }
 
+// FindRelationByAssociationKey finds forward then reverse RelationInfo on classKey
+// for the given association key (used when evaluating bare AssociationRef in TLA).
+func (c *RelationContext) FindRelationByAssociationKey(classKey string, assocKey AssociationKey) *RelationInfo {
+	if c == nil || classKey == "" {
+		return nil
+	}
+	if classMap, ok := c.ForwardRelations[classKey]; ok {
+		for _, info := range classMap {
+			if info != nil && info.AssociationKey == assocKey {
+				return info
+			}
+		}
+	}
+	if classMap, ok := c.ReverseRelations[classKey]; ok {
+		for _, info := range classMap {
+			if info != nil && info.AssociationKey == assocKey {
+				return info
+			}
+		}
+	}
+	return nil
+}
+
 // createLink creates a link between two records for the given association.
 // Both records will be assigned object IDs if they don't have them.
 // Prefer CreateInstanceLink when engine InstanceIDs and [id, data] extents are available.
@@ -290,18 +313,32 @@ func (c *RelationContext) RemoveLink(assocKey AssociationKey, from, to *object.R
 	return c.links.RemoveLink(assocKey, fromID, toID)
 }
 
+// objectIDForRecord resolves a runtime record to its ObjectID.
+// Registered pointers hit the identity map; set-cloned [id, data] extent elements
+// fall back to the id field so CHOOSEn/set peers still navigate like the live instance.
+func (c *RelationContext) objectIDForRecord(record *object.Record) (ObjectID, bool) {
+	if record == nil {
+		return 0, false
+	}
+	if id, ok := c.identities.GetID(record); ok {
+		return id, true
+	}
+	eid, ok := object.ExtentID(record)
+	if !ok {
+		return 0, false
+	}
+	id := ObjectID(eid)
+	if c.identities.GetRecord(id) == nil {
+		return 0, false
+	}
+	return id, true
+}
+
 // GetRelatedRecords returns records related to the given record via an association.
 // If reverse is false, returns records linked FROM this record (forward traversal).
 // If reverse is true, returns records linked TO this record (reverse traversal).
 func (c *RelationContext) GetRelatedRecords(record *object.Record, assocKey AssociationKey, reverse bool) []*object.Record {
-	id, exists := c.identities.GetID(record)
-	if !exists {
-		// Extent element clones are not pointer-equal to registered data; use id field.
-		if eid, ok := object.ExtentID(record); ok {
-			id = ObjectID(eid)
-			exists = c.identities.GetRecord(id) != nil
-		}
-	}
+	id, exists := c.objectIDForRecord(record)
 	if !exists {
 		return nil
 	}
@@ -338,12 +375,14 @@ func (c *RelationContext) AddAssociationClassRow(
 
 // GetAssociationClassLinksByEndpoint maps each far-endpoint to its association-class row.
 // Each host association row (from, to) has exactly one association-class instance.
+// The anchor may be a set-cloned extent element (e.g. CHOOSE over an association image);
+// identity is resolved the same way as GetRelatedRecords so endpoints and link rows stay paired.
 func (c *RelationContext) GetAssociationClassLinksByEndpoint(
 	record *object.Record,
 	assocKey AssociationKey,
 	reverse bool,
 ) map[*object.Record]*object.Record {
-	anchorID, exists := c.identities.GetID(record)
+	anchorID, exists := c.objectIDForRecord(record)
 	if !exists {
 		return nil
 	}
@@ -361,7 +400,7 @@ func (c *RelationContext) GetAssociationClassLinksByEndpoint(
 			anchorRecord = row.fromRecord
 			farEndpoint = row.toRecord
 		}
-		rowAnchorID, ok := c.identities.GetID(anchorRecord)
+		rowAnchorID, ok := c.objectIDForRecord(anchorRecord)
 		if !ok || rowAnchorID != anchorID {
 			continue
 		}
