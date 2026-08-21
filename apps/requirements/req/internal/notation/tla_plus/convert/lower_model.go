@@ -22,6 +22,12 @@ import (
 // that has a TLA+ specification string into a logic_expression.Expression.
 // It returns the first error encountered, leaving the model partially populated.
 func LowerModel(model *core.Model) error {
+	// Association-class creation host ends are implicit params (not in authored files).
+	// Inject before lowering so Initialize logic may reference Partner / Jurisdiction / ….
+	if err := injectAssociationClassEndpointParams(model); err != nil {
+		return fmt.Errorf("association-class endpoint params: %w", err)
+	}
+
 	maps := BuildModelLowerMaps(model)
 
 	// 1. Lower model-level invariants (no class context).

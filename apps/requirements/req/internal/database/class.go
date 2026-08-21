@@ -14,7 +14,7 @@ import (
 func scanClass(scanner Scanner, subdomainKeyPtr *identity.Key, class *model_class.Class) (err error) {
 	var subdomainKeyStr string
 	var classKeyStr string
-	var actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr *string
+	var actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr, facetOfPtr *string
 
 	if err = scanner.Scan(
 		&subdomainKeyStr,
@@ -27,6 +27,7 @@ func scanClass(scanner Scanner, subdomainKeyPtr *identity.Key, class *model_clas
 		&subclassOfKeyPtr,
 		&class.UmlComment,
 		&class.Marked,
+		&facetOfPtr,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -68,6 +69,13 @@ func scanClass(scanner Scanner, subdomainKeyPtr *identity.Key, class *model_clas
 		}
 		class.SubclassOfKey = &subclassOfKey
 	}
+	if facetOfPtr != nil {
+		facetOf, err := identity.ParseKey(*facetOfPtr)
+		if err != nil {
+			return err
+		}
+		class.FacetOf = &facetOf
+	}
 
 	return nil
 }
@@ -93,7 +101,8 @@ func LoadClass(dbOrTx DbOrTx, modelKey string, classKey identity.Key) (subdomain
 			superclass_of_key ,
 			subclass_of_key   ,
 			uml_comment       ,
-			marked
+			marked            ,
+			facet_of_key
 		FROM
 			class
 		WHERE
@@ -134,6 +143,11 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 		subclassOfKeyStr := class.SubclassOfKey.String()
 		subclassOfKeyPtr = &subclassOfKeyStr
 	}
+	var facetOfPtr *string
+	if class.FacetOf != nil {
+		s := class.FacetOf.String()
+		facetOfPtr = &s
+	}
 
 	// Update the data.
 	err = dbExec(dbOrTx, `
@@ -147,7 +161,8 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 			superclass_of_key = $7 ,
 			subclass_of_key   = $8 ,
 			uml_comment       = $9 ,
-			marked            = $10
+			marked            = $10,
+			facet_of_key      = $11
 		WHERE
 			model_key = $1
 		AND
@@ -161,7 +176,8 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 		superclassOfKeyPtr,
 		subclassOfKeyPtr,
 		class.UmlComment,
-		class.Marked)
+		class.Marked,
+		facetOfPtr)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -218,7 +234,8 @@ func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[identity.Key][]mo
 			superclass_of_key ,
 			subclass_of_key   ,
 			uml_comment       ,
-			marked
+			marked            ,
+			facet_of_key
 		FROM
 			class
 		WHERE
@@ -281,5 +298,23 @@ func AddClasses(dbOrTx DbOrTx, modelKey string, classes map[identity.Key][]model
 		return errors.WithStack(err)
 	}
 
+	return updateClassFacetOfKeys(dbOrTx, modelKey, classes)
+}
+
+func updateClassFacetOfKeys(dbOrTx DbOrTx, modelKey string, classes map[identity.Key][]model_class.Class) error {
+	for _, classList := range classes {
+		for _, class := range classList {
+			if class.FacetOf == nil {
+				continue
+			}
+			if err := dbExec(dbOrTx, `
+				UPDATE class
+				SET facet_of_key = $3
+				WHERE model_key = $1 AND class_key = $2`,
+				modelKey, class.Key.String(), class.FacetOf.String()); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+	}
 	return nil
 }

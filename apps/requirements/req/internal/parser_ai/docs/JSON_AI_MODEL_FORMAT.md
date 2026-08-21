@@ -52,6 +52,31 @@ In the requirements model, none of this complexity appears. There is simply a Sh
 
 Use this pattern when templates (definitions) configure nested runtime instances that must be **provisioned eagerly** (no lazy create-on-first-use inside ordinary business actions).
 
+### Association-class `_new` — implicit host endpoint parameters
+
+When a class is the **association class** of a host association (`association_class_key` on that association), its **creation** event (`_new` / `«new»`) has **two engine-supplied parameters** that authors must **not** declare in JSON:
+
+| Situation | Parameter names (in order) |
+|-----------|----------------------------|
+| From-class and to-class are **different** | Class display names with spaces removed (TLA form), e.g. `Partner`, `Jurisdiction`, `JurisdictionalWalletDefinition` |
+| From-class and to-class are the **same** | `From<ClassTLAName>`, `To<ClassTLAName>` (e.g. `FromAccount`, `ToAccount`) |
+
+- Do **not** list these names under the creation event’s `parameters` or under the creation action’s `parameters` in AI JSON.
+- You **may and should** use them in Initialize (and other creation-action) TLA+ logic, e.g. `Partner.HasCustomers` or `JurisdictionalWalletDefinition.Defines`.
+- The host association link is materialised by the engine when surface `_new` runs; do not reify from the host class.
+- Any **extra** creation parameters you need (non-endpoint) are authored as usual and appear **after** the two implicit ends.
+
+Example (association class on Partner–Jurisdiction): authored `_new` has **no** parameters; Initialize may still say:
+
+```json
+{
+  "type": "events",
+  "description": "Instantiate a wallet for every existing customer of the host partner",
+  "notation": "tla_plus",
+  "specification": "{ InstantiateJurisdictionalWallet(self, p) : p \\in Partner.HasCustomers }"
+}
+```
+
 ### `_new` is special (create into an association)
 
 `_new` / `«new»` creates a peer. Parameters are construction args only. The association field is the “return channel” for the new object.

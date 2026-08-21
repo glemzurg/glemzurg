@@ -8,8 +8,8 @@ A set of objects that share the same semantics.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.attribute](public.attribute.md) [public.class_index](public.class_index.md) [public.class_invariant](public.class_invariant.md) [public.association](public.association.md) [public.query](public.query.md) [public.state](public.state.md) [public.event](public.event.md) [public.guard](public.guard.md) [public.action](public.action.md) [public.use_case_actor](public.use_case_actor.md) [public.scenario_object](public.scenario_object.md) | [public.model](public.model.md) [public.subdomain](public.subdomain.md) [public.actor](public.actor.md) [public.class_generalization](public.class_generalization.md) | The model this class is part of. |
-| class_key | text |  | false | [public.attribute](public.attribute.md) [public.class_index](public.class_index.md) [public.class_invariant](public.class_invariant.md) [public.association](public.association.md) [public.query](public.query.md) [public.state](public.state.md) [public.event](public.event.md) [public.guard](public.guard.md) [public.action](public.action.md) [public.use_case_actor](public.use_case_actor.md) [public.scenario_object](public.scenario_object.md) |  | The internal ID. |
+| model_key | text |  | false | [public.class](public.class.md) [public.attribute](public.attribute.md) [public.class_index](public.class_index.md) [public.class_invariant](public.class_invariant.md) [public.association](public.association.md) [public.query](public.query.md) [public.state](public.state.md) [public.event](public.event.md) [public.guard](public.guard.md) [public.action](public.action.md) [public.use_case_actor](public.use_case_actor.md) [public.scenario_object](public.scenario_object.md) | [public.model](public.model.md) [public.subdomain](public.subdomain.md) [public.actor](public.actor.md) [public.class_generalization](public.class_generalization.md) [public.class](public.class.md) | The model this class is part of. |
+| class_key | text |  | false | [public.class](public.class.md) [public.attribute](public.attribute.md) [public.class_index](public.class_index.md) [public.class_invariant](public.class_invariant.md) [public.association](public.association.md) [public.query](public.query.md) [public.state](public.state.md) [public.event](public.event.md) [public.guard](public.guard.md) [public.action](public.action.md) [public.use_case_actor](public.use_case_actor.md) [public.scenario_object](public.scenario_object.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the class. |
 | subdomain_key | text |  | false |  | [public.subdomain](public.subdomain.md) | The subdomain this class is part of. |
 | actor_key | text |  | true |  | [public.actor](public.actor.md) | If this class is also an actor, which actor is it. |
@@ -19,6 +19,7 @@ A set of objects that share the same semantics.
 | unfinished_notes | text |  | true |  |  | Scratch notes not yet placed in final requirement locations. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 | marked | boolean | false | false |  |  | Authoring selection flag; true when the class is marked in the model. |
+| facet_of_key | text |  | true |  | [public.class](public.class.md) | If this class is a facet of another class, that class. |
 
 ## Constraints
 
@@ -35,6 +36,7 @@ A set of objects that share the same semantics.
 | fk_class_subclass | FOREIGN KEY | FOREIGN KEY (model_key, subclass_of_key) REFERENCES class_generalization(model_key, generalization_key) ON DELETE CASCADE |
 | fk_class_superclass | FOREIGN KEY | FOREIGN KEY (model_key, superclass_of_key) REFERENCES class_generalization(model_key, generalization_key) ON DELETE CASCADE |
 | class_pkey | PRIMARY KEY | PRIMARY KEY (model_key, class_key) |
+| fk_class_facet_of | FOREIGN KEY | FOREIGN KEY (model_key, facet_of_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 
 ## Indexes
 

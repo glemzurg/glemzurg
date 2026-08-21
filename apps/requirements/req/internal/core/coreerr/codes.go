@@ -223,6 +223,10 @@ const (
 	ClassInvariantDuplicateLet         Code = "CLASS_INVARIANT_DUPLICATE_LET"          // Class invariant has duplicate let target.
 	ClassGuaranteeInvalidTarget        Code = "CLASS_GUARANTEE_INVALID_TARGET"         // Guarantee targets non-existent attribute.
 	ClassGuaranteeDestroyTargetInvalid Code = "CLASS_GUARANTEE_DESTROY_TARGET_INVALID" // Destroy guarantee target is not an outgoing association.
+	ClassFacetofInvalid                Code = "CLASS_FACETOF_INVALID"                  // FacetOf failed validation.
+	ClassFacetofTypeInvalid            Code = "CLASS_FACETOF_TYPE_INVALID"             // FacetOf is not KEY_TYPE_CLASS.
+	ClassFacetofSelf                   Code = "CLASS_FACETOF_SELF"                     // FacetOf points at this class.
+	ClassFacetofNotfound               Code = "CLASS_FACETOF_NOTFOUND"                 // FacetOf references a class that is not in the model.
 
 	// ---------------------------------------------------------------
 	// Attribute errors.

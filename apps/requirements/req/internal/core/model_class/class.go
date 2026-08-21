@@ -18,6 +18,7 @@ type Class struct {
 	ActorKey        *identity.Key // If this class is an Actor this is the key of that actor.
 	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
+	FacetOf         *identity.Key // If this class is a facet of another class, that class.
 	UmlComment      string
 	// Marked is an authoring/selection flag, not class body content; human models set it via a subdomain list file.
 	Marked bool
@@ -37,6 +38,7 @@ type ClassLinks struct {
 	ActorKey        *identity.Key
 	SuperclassOfKey *identity.Key
 	SubclassOfKey   *identity.Key
+	FacetOf         *identity.Key
 }
 
 // ClassDetails holds human-authored markdown fields from a class file.
@@ -56,6 +58,7 @@ func NewClass(key identity.Key, links ClassLinks, details ClassDetails) Class {
 		ActorKey:        links.ActorKey,
 		SuperclassOfKey: links.SuperclassOfKey,
 		SubclassOfKey:   links.SubclassOfKey,
+		FacetOf:         links.FacetOf,
 		UmlComment:      details.UmlComment,
 	}
 }
@@ -98,6 +101,17 @@ func (c *Class) Validate(ctx *coreerr.ValidationContext) error {
 		}
 		if c.SubclassOfKey.KeyType != identity.KEY_TYPE_CLASS_GENERALIZATION {
 			return coreerr.NewWithValues(ctx, coreerr.ClassSubkeyTypeInvalid, fmt.Sprintf("SubclassOfKey: invalid key type '%s' for class generalization", c.SubclassOfKey.KeyType), "SubclassOfKey", c.SubclassOfKey.KeyType, identity.KEY_TYPE_CLASS_GENERALIZATION)
+		}
+	}
+	if c.FacetOf != nil {
+		if err := c.FacetOf.ValidateWithContext(ctx); err != nil {
+			return coreerr.New(ctx, coreerr.ClassFacetofInvalid, fmt.Sprintf("FacetOf: %s", err.Error()), "FacetOf")
+		}
+		if c.FacetOf.KeyType != identity.KEY_TYPE_CLASS {
+			return coreerr.NewWithValues(ctx, coreerr.ClassFacetofTypeInvalid, fmt.Sprintf("FacetOf: invalid key type '%s' for class", c.FacetOf.KeyType), "FacetOf", c.FacetOf.KeyType, identity.KEY_TYPE_CLASS)
+		}
+		if *c.FacetOf == c.Key {
+			return coreerr.New(ctx, coreerr.ClassFacetofSelf, "FacetOf cannot be this class", "FacetOf")
 		}
 	}
 
@@ -194,6 +208,9 @@ func (c *Class) ValidateWithParent(ctx *coreerr.ValidationContext, parent *ident
 	if err := c.validateClassInvariants(ctx); err != nil {
 		return err
 	}
+	if err := c.validateFacetOf(ctx, allClasses); err != nil {
+		return err
+	}
 	if err := c.validateClassChildren(ctx); err != nil {
 		return err
 	}
@@ -267,6 +284,16 @@ func (c *Class) validateClassChildren(ctx *coreerr.ValidationContext) error {
 	return nil
 }
 
+func (c *Class) validateFacetOf(ctx *coreerr.ValidationContext, allClasses map[identity.Key]Class) error {
+	if c.FacetOf == nil {
+		return nil
+	}
+	if _, ok := allClasses[*c.FacetOf]; !ok {
+		return coreerr.NewWithValues(ctx, coreerr.ClassFacetofNotfound, fmt.Sprintf("class '%s' references non-existent facet_of class '%s'", c.Key.String(), c.FacetOf.String()), "FacetOf", c.FacetOf.String(), "")
+	}
+	return nil
+}
+
 func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAssociations map[identity.Key]Association, allClasses map[identity.Key]Class) error {
 	attrSubKeys := make(map[string]bool)
 	for _, attr := range c.Attributes {
@@ -297,7 +324,6 @@ func (c *Class) validateActionGuarantees(ctx *coreerr.ValidationContext, allAsso
 			if attrSubKeys[guar.Target] || assocTLAFields[guar.Target] || reverseAssocTLAFields[guar.Target] {
 				continue
 			}
-			// Association-class reify: target is the AC class TLA name (unique host via single-AC rule).
 			if model_logic.IsAssociationClassReify(guar) && assocClassTLANames[guar.Target] {
 				continue
 			}

@@ -61,28 +61,27 @@ There is **no** stored host edge that is not implied by an association-class ins
 
 ### Association class `_new` signature
 
-1. **First two parameters** (or clearly named parameters) identify the **from** and **to** endpoints of the host association.
-2. Types must match the host association’s endpoint classes (schema / catalog checks).
-3. Further parameters are ordinary event args (sets, numbers, …) for Initialize only.
+1. **Host ends are implicit** — not authored on the event or Initialize action in `parser_human` / `parser_ai` files.
+2. **Names** (engine injects as the first two creation parameters before logic lower / sim):
+   - Distinct endpoint classes: `ClassTLAName` of each end (spaces stripped), e.g. `Partner`, `Jurisdiction`, `JurisdictionalWalletDefinition`.
+   - Same class on both ends: `From<ClassTLAName>`, `To<ClassTLAName>`.
+3. Types are object-of the host endpoint classes. Further authored parameters (if any) come after these two.
+4. **Initialize logic may reference the implicit names** (e.g. `Partner.HasCustomers`); well-formed lower assumes they exist.
 
 Example shape (illustrative):
 
 ```yaml
 # On the association-class class (e.g. Jurisdictional Wallet Definition)
+# Do NOT list Partner / Jurisdiction under events._new or actions.Initialize parameters.
 events:
-  _new:
-    parameters:
-      - Partner          # host from-end
-      - Jurisdiction     # host to-end
-      - ExistingPlayers  # F1: used only in Initialize TLA
+  _new: { … }   # no endpoint parameter list
 actions:
   Initialize:
-    parameters: … same …
     guarantees:
       # B1: do NOT write host link guarantees here
-      # F1: nested materialization OK, e.g.
-      # - target: Defines
-      #   specification: 'Defines \union { _new(p) : p \in ExistingPlayers }'
+      # F1: nested via type:events using implicit Partner
+      # - type: events
+      #   specification: '{ Instantiate(self, p) : p \in Partner.HasCustomers }'
 ```
 
 ### What authors must not write

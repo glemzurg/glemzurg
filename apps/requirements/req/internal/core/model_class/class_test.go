@@ -120,6 +120,38 @@ func (suite *ClassSuite) TestValidate() {
 			}(),
 			errstr: "SubclassOfKey: invalid key type 'domain' for class generalization",
 		},
+		{
+			testName: "valid class with FacetOf",
+			class: func() Class {
+				other := helper.Must(identity.NewClassKey(subdomainKey, "other"))
+				return Class{
+					Key:     validKey,
+					Name:    "Name",
+					FacetOf: &other,
+				}
+			}(),
+		},
+		{
+			testName: "error FacetOf wrong key type",
+			class: func() Class {
+				wrongKey := domainKey
+				return Class{
+					Key:     validKey,
+					Name:    "Name",
+					FacetOf: &wrongKey,
+				}
+			}(),
+			errstr: "FacetOf: invalid key type 'domain' for class",
+		},
+		{
+			testName: "error FacetOf self",
+			class: Class{
+				Key:     validKey,
+				Name:    "Name",
+				FacetOf: &validKey,
+			},
+			errstr: "FacetOf cannot be this class",
+		},
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
@@ -144,7 +176,8 @@ func (suite *ClassSuite) TestNew() {
 	subclassOfKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2"))
 
 	// Test parameters are mapped correctly; Marked defaults to false.
-	class := NewClass(key, ClassLinks{ActorKey: &actorKey, SuperclassOfKey: &superclassOfKey, SubclassOfKey: &subclassOfKey}, ClassDetails{Name: "Name", Details: "Details", UnfinishedNotes: "", UmlComment: "UmlComment"})
+	facetOf := helper.Must(identity.NewClassKey(subdomainKey, "home"))
+	class := NewClass(key, ClassLinks{ActorKey: &actorKey, SuperclassOfKey: &superclassOfKey, SubclassOfKey: &subclassOfKey, FacetOf: &facetOf}, ClassDetails{Name: "Name", Details: "Details", UnfinishedNotes: "", UmlComment: "UmlComment"})
 	suite.Equal(Class{
 		Key:             key,
 		Name:            "Name",
@@ -152,6 +185,7 @@ func (suite *ClassSuite) TestNew() {
 		ActorKey:        &actorKey,
 		SuperclassOfKey: &superclassOfKey,
 		SubclassOfKey:   &subclassOfKey,
+		FacetOf:         &facetOf,
 		UmlComment:      "UmlComment",
 		Marked:          false,
 	}, class)
@@ -188,6 +222,14 @@ func (suite *ClassSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = class.ValidateWithParent(ctx, &subdomainKey, nil, nil)
+	suite.Require().NoError(err)
+
+	homeKey := helper.Must(identity.NewClassKey(subdomainKey, "home"))
+	home := Class{Key: homeKey, Name: "Home"}
+	facetClass := Class{Key: validKey, Name: "Name", FacetOf: &homeKey}
+	err = facetClass.ValidateWithParent(ctx, &subdomainKey, nil, nil)
+	suite.Require().ErrorContains(err, "non-existent facet_of")
+	err = facetClass.ValidateWithParent(ctx, &subdomainKey, nil, map[identity.Key]Class{homeKey: home})
 	suite.Require().NoError(err)
 
 	// Test child Invariant validation propagates error.

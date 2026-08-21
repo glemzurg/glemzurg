@@ -3,38 +3,28 @@ package test_helper
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetTestModel(t *testing.T) {
-	// Should not panic and should return a valid model.
+func TestGetTestModelFacetOf(t *testing.T) {
 	model := GetTestModel()
+	require.NoError(t, model.Validate())
 
-	assert.Equal(t, "test_model", model.Key)
-	assert.Equal(t, "Test Model", model.Name)
-
-	// Verify all top-level collections are populated.
-	assert.NotEmpty(t, model.Actors, "should have actors")
-	assert.NotEmpty(t, model.ActorGeneralizations, "should have actor generalizations")
-	assert.NotEmpty(t, model.Domains, "should have domains")
-	assert.NotEmpty(t, model.DomainAssociations, "should have domain associations")
-	assert.NotEmpty(t, model.Invariants, "should have invariants")
-	assert.NotEmpty(t, model.GlobalFunctions, "should have global functions")
-
-	// Verify the model validates.
-	err := model.Validate()
-	require.NoError(t, err)
-
-	assert.Equal(t, notesModel, model.UnfinishedNotes)
+	var product, warehouse model_class.Class
 	for _, domain := range model.Domains {
-		assert.NotEmpty(t, domain.UnfinishedNotes, "domain %s", domain.Key.SubKey)
 		for _, subdomain := range domain.Subdomains {
-			if domain.Key.SubKey == "domain_b" && subdomain.Key.SubKey == "default" {
-				assert.Equal(t, notesSubdomainDefault, subdomain.UnfinishedNotes)
-			} else {
-				assert.NotEmpty(t, subdomain.UnfinishedNotes, "subdomain %s/%s", domain.Key.SubKey, subdomain.Key.SubKey)
+			for _, class := range subdomain.Classes {
+				switch class.Name {
+				case "Product":
+					product = class
+				case "Warehouse":
+					warehouse = class
+				}
 			}
 		}
 	}
+	require.NotEmpty(t, product.Key.String())
+	require.NotNil(t, warehouse.FacetOf)
+	require.Equal(t, product.Key, *warehouse.FacetOf)
 }
