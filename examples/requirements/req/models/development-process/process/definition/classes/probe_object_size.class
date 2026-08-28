@@ -1,0 +1,19 @@
+# Probe Object Size
+
+A relative size category used when estimating objects with PROBE.
+
+◇
+
+attributes:
+    - key: number
+      name: Number
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING

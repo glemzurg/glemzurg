@@ -1,0 +1,193 @@
+# Project
+
+Work that follows a process. The two commented project drafts are one class: instance fields from the first draft and planning fields from the second.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING
+    - key: created_time
+      name: Created Time
+      rules: datetime
+      type_spec: Nat
+    - key: started_time
+      name: Started Time
+      details: Empty when the project has not started.
+      rules: datetime
+      type_spec: Nat
+      nullable: true
+    - key: estimate_minute
+      name: Estimate Minute
+      details: Defaults to 0.
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat
+    - key: estimate_comment
+      name: Estimate Comment
+      details: Defaults to empty.
+      rules: unconstrained
+      type_spec: STRING
+    - key: multi_day
+      name: Multi Day
+      details: SQL column mutli_day.
+      rules: enum of TRUE, FALSE
+      type_spec: BOOLEAN
+    - key: planned_time
+      name: Planned Time
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: actual_time
+      name: Actual Time
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: planned_pct_reuse
+      name: Planned Pct Reuse
+      rules: "[0 .. 100] at 1 percent"
+      type_spec: Nat
+    - key: actual_pct_reuse
+      name: Actual Pct Reuse
+      rules: "[0 .. 100] at 1 percent"
+      type_spec: Nat
+    - key: planned_defect_count
+      name: Planned Defect Count
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: planned_appraisal_coq
+      name: Planned Appraisal Coq
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: planned_failure_coq
+      name: Planned Failure Coq
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+
+associations:
+    - name: Follows Process
+      details: Process this project follows.
+      from_multiplicity: any
+      to_class_key: definition/process
+      to_multiplicity: "1"
+    - name: Instantiates
+      details: Module template this project is created from.
+      from_multiplicity: any
+      to_class_key: definition/module_template
+      to_multiplicity: "1"
+    - name: In Bucket
+      details: Stats bucket this project is grouped in, when one is set.
+      from_multiplicity: any
+      to_class_key: definition/stats_bucket
+      to_multiplicity: "0..1"
+    - name: Current Phase
+      details: Phase whose forms are currently open, when one is set.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "0..1"
+    - name: Current Subphase
+      details: Planning step currently taking place, when one is set.
+      from_multiplicity: any
+      to_class_key: definition/step
+      to_multiplicity: "0..1"
+    - name: Uses Design Method
+      details: Design template used by this project.
+      from_multiplicity: any
+      to_class_key: definition/design_method
+      to_multiplicity: "1"
+    - name: Uses Size Estimation Method
+      details: Method used to estimate size.
+      from_multiplicity: any
+      to_class_key: definition/method
+      to_multiplicity: "1"
+    - name: Uses Time Estimation Method
+      details: Method used to estimate time.
+      from_multiplicity: any
+      to_class_key: definition/method
+      to_multiplicity: "1"
+    - name: Uses Language
+      details: Language this project is implemented in.
+      from_multiplicity: any
+      to_class_key: definition/language
+      to_multiplicity: "1"
+    - name: Has Parts
+      details: Language-specific parts of this project.
+      from_multiplicity: "1"
+      to_class_key: project_part
+      to_multiplicity: any
+    - name: Has Cycle Plans
+      details: Planned reuse values recorded per cycle.
+      from_multiplicity: "1"
+      to_class_key: project_cycle_plan
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - num
+    - name: Has Cycle Actuals
+      details: Actual reuse values recorded per cycle.
+      from_multiplicity: "1"
+      to_class_key: project_cycle_actual
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - num
+    - name: Has Stat Phases
+      details: Per-phase statistical estimates for this project.
+      from_multiplicity: "1"
+      to_class_key: project_stat_phase
+      to_multiplicity: any
+    - name: Checks Phase Products
+      details: Whether each phase's products are satisfied for this project.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: any
+      association_class_key: phase_products_check
+    - name: Has Schedule
+      details: Schedule for recording planned work.
+      from_multiplicity: "1"
+      to_class_key: schedule
+      to_multiplicity: "0..1"
+    - name: Has Tasks
+      details: Planned tasks on this project.
+      from_multiplicity: "1"
+      to_class_key: task
+      to_multiplicity: any
+    - name: Has Time Logs
+      details: Recorded time log entries.
+      from_multiplicity: "1"
+      to_class_key: time_log
+      to_multiplicity: any
+    - name: Has Loc Estimate
+      details: Planned lines-of-code account for this project.
+      from_multiplicity: "1"
+      to_class_key: estimation/estimate_loc
+      to_multiplicity: "0..1"
+    - name: Has Actual Loc
+      details: Actual lines-of-code account for this project.
+      from_multiplicity: "1"
+      to_class_key: estimation/actual_loc
+      to_multiplicity: "0..1"
+    - name: Has Probe Estimate For
+      details: PROBE size and time calculation for a phase of this project.
+      from_multiplicity: "1"
+      to_class_key: definition/phase
+      to_multiplicity: any
+      association_class_key: estimation/estimate_probe
+    - name: Has Probe Add Loc
+      details: Added-object LOC lines in the PROBE estimate.
+      from_multiplicity: "1"
+      to_class_key: estimation/estimate_probe_add_loc
+      to_multiplicity: any
+    - name: Has Probe Object Loc
+      details: New-object LOC lines in the PROBE estimate.
+      from_multiplicity: "1"
+      to_class_key: estimation/estimate_probe_object_loc
+      to_multiplicity: any
+    - name: Has Probe Object Reused
+      details: Reused-object LOC lines in the PROBE estimate.
+      from_multiplicity: "1"
+      to_class_key: estimation/estimate_probe_object_reused
+      to_multiplicity: any

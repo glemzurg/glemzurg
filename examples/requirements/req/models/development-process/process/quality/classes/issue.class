@@ -1,0 +1,39 @@
+# Issue
+
+An issue found in a project phase, with an optional resolution.
+
+◇
+
+attributes:
+    - key: found_time
+      name: Found Time
+      rules: datetime
+      type_spec: Nat
+    - key: cycle
+      name: Cycle
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING
+    - key: resolution_time
+      name: Resolution Time
+      rules: datetime
+      type_spec: Nat
+    - key: resolution
+      name: Resolution
+      rules: unconstrained
+      type_spec: STRING
+
+associations:
+    - name: Injected In
+      details: Project where this issue was found.
+      from_multiplicity: any
+      to_class_key: project/project
+      to_multiplicity: "1"
+    - name: Injected In Phase
+      details: Phase where this issue was found.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"

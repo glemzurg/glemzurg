@@ -1,0 +1,28 @@
+# Schedule Week
+
+One week (or day slot) on a project schedule.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this week on the schedule.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: date_monday
+      name: Date Monday
+      details: Monday of this schedule week.
+      rules: datetime
+      type_spec: Nat
+
+invariants:
+    - details: The project of a schedule week is the project of its schedule.
+      specification: 'LET schedule == CHOOSE s \in self._HasWeeks : TRUE IN self.ForProject = schedule._HasSchedule'
+
+associations:
+    - name: For Project
+      details: Project this week belongs to, copied from the schedule.
+      from_multiplicity: any
+      to_class_key: project
+      to_multiplicity: "1"

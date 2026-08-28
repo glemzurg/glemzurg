@@ -1,0 +1,94 @@
+# Estimate Probe
+
+PROBE size and time calculation for a project in a phase. Reifies Project Has Probe Estimate For.
+
+◇
+
+attributes:
+    - key: base_loc
+      name: Base Loc
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: deleted_loc
+      name: Deleted Loc
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: modified_loc
+      name: Modified Loc
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: b0_size
+      name: B0 Size
+      details: Size regression intercept.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: b1_size
+      name: B1 Size
+      details: Size regression slope.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: b0_time
+      name: B0 Time
+      details: Time regression intercept.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: b1_time
+      name: B1 Time
+      details: Time regression slope.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: new_loc
+      name: New Loc
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: new_reuse_loc
+      name: New Reuse Loc
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: estimated_time_min
+      name: Estimated Time Min
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat
+    - key: upper_prediction_interval
+      name: Upper Prediction Interval
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: lower_prediction_interval
+      name: Lower Prediction Interval
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: prediction_interval_percent
+      name: Prediction Interval Percent
+      rules: "[0 .. 100] at 1 percent"
+      type_spec: Nat
+    - key: actual_base_loc
+      name: Actual Base Loc
+      details: SQL column acual_base_loc.
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: actual_deleted_loc
+      name: Actual Deleted Loc
+      details: SQL column acual_deleted_loc.
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: actual_modified_loc
+      name: Actual Modified Loc
+      details: SQL column acual_modified_loc.
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: loc_upper_prediction_interval_70
+      name: Loc Upper Prediction Interval 70
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: loc_lower_prediction_interval_70
+      name: Loc Lower Prediction Interval 70
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: time_upper_prediction_interval_70
+      name: Time Upper Prediction Interval 70
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat
+    - key: time_lower_prediction_interval_70
+      name: Time Lower Prediction Interval 70
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat

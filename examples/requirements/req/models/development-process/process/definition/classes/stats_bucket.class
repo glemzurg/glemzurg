@@ -1,0 +1,15 @@
+# Stats Bucket
+
+A bucket used to group project statistics.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING

@@ -37,6 +37,16 @@ attributes:
       details: When TRUE, scripts of this process are locked. Defaults to FALSE.
       rules: enum of TRUE, FALSE
       type_spec: BOOLEAN
+    - key: size_unit
+      name: Size Unit
+      details: Unit used for size, such as LOC or word.
+      rules: unconstrained
+      type_spec: STRING
+    - key: size_k_unit
+      name: Size K Unit
+      details: Unit used for thousands of size, such as KLOC.
+      rules: unconstrained
+      type_spec: STRING
 
 invariants:
     - details: Script name is unique among scripts of this process.

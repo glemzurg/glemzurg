@@ -1,0 +1,18 @@
+# Method
+
+A programming method used when recording phase statistics for a project.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      details: Unique name of this method.
+      rules: unconstrained
+      type_spec: STRING
+      index_nums: [0]
+    - key: description
+      name: Description
+      details: Defaults to empty when omitted.
+      rules: unconstrained
+      type_spec: STRING

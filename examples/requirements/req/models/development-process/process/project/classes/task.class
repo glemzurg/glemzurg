@@ -1,0 +1,35 @@
+# Task
+
+A planned task on a project, assigned to a phase and a schedule week.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: planned_hours
+      name: Planned Hours
+      rules: "[0 .. unconstrained] at 1 hour"
+      type_spec: Nat
+    - key: pct_complete
+      name: Pct Complete
+      rules: "[0 .. 100] at 1 percent"
+      type_spec: Nat
+
+associations:
+    - name: Occurs In
+      details: Phase this task is performed in.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"
+    - name: On Week
+      details: Schedule week this task is planned for.
+      from_multiplicity: any
+      to_class_key: schedule_week
+      to_multiplicity: "1"

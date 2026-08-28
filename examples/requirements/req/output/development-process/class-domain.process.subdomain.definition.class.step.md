@@ -52,12 +52,56 @@ class class_domain_process_subdomain_definition_class_step["Step"] {
         Name
         Tasks
     }
+namespace Project {
+class class_domain_process_subdomain_project_class_project["Project"] {
+            Name
+            Description
+            Created Time
+            Started Time
+            Estimate Minute
+            Estimate Comment
+            Multi Day
+            Planned Time
+            Actual Time
+            Planned Pct Reuse
+            Actual Pct Reuse
+            Planned Defect Count
+            Planned Appraisal Coq
+            Planned Failure Coq
+        }
+class class_domain_process_subdomain_project_class_project_part["Project Part"] {
+            Name
+            Description
+            Multi Day
+            Planned Time
+            Actual Time
+            Planned Pct Reuse
+            Actual Pct Reuse
+            Planned Defect Count
+            Planned Appraisal Coq
+            Planned Failure Coq
+        }
+}
+namespace Quality {
+class class_domain_process_subdomain_quality_class_pip["Process Improvement Proposal"] {
+            Found Time
+            Problem
+            Proposal
+            Resolved Time
+        }
+}
 style class_domain_process_subdomain_definition_class_step stroke:#9370DB,stroke-width:3px
+class_domain_process_subdomain_project_class_project "*" --> "0..1" class_domain_process_subdomain_definition_class_step : Current Subphase
+class_domain_process_subdomain_project_class_project_part "*" --> "0..1" class_domain_process_subdomain_definition_class_step : Current Subphase
+class_domain_process_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_step : On Subphase
 class_domain_process_subdomain_definition_class_script "1" --> "*" class_domain_process_subdomain_definition_class_step : Has Steps<br/>{unique → Num}
 class_domain_process_subdomain_definition_class_step "*" --> "1" class_domain_process_subdomain_definition_class_phase : Occurs In
 
 ```
 - **[Phase](class-domain.process.subdomain.definition.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Quality::Process Improvement Proposal](class-domain.process.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
+- **[Project::Project](class-domain.process.subdomain.project.class.project.md).** Work that follows a process.
+- **[Project::Project Part](class-domain.process.subdomain.project.class.project_part.md).** A language-specific part of a project.
 - **[Script](class-domain.process.subdomain.definition.class.script.md).** A step-by-step process script owned by a process.
 - **[Step](class-domain.process.subdomain.definition.class.step.md).** A step of a process script.
 

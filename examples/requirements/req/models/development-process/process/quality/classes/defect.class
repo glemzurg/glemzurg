@@ -1,0 +1,50 @@
+# Defect
+
+A defect injected and removed in projects and phases.
+
+◇
+
+attributes:
+    - key: found_time
+      name: Found Time
+      rules: datetime
+      type_spec: Nat
+    - key: cycle
+      name: Cycle
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: fix_minutes
+      name: Fix Minutes
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING
+
+associations:
+    - name: Injected In
+      details: Project where this defect was injected.
+      from_multiplicity: any
+      to_class_key: project/project
+      to_multiplicity: "1"
+    - name: Injected In Phase
+      details: Phase where this defect was injected.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"
+    - name: Removed In
+      details: Project where this defect was removed.
+      from_multiplicity: any
+      to_class_key: project/project
+      to_multiplicity: "1"
+    - name: Removed In Phase
+      details: Phase where this defect was removed.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"
+    - name: Has Source
+      details: Defect this one was cloned from, when one exists.
+      from_multiplicity: any
+      to_class_key: defect
+      to_multiplicity: "0..1"

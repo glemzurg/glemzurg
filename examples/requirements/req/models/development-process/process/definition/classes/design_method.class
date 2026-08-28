@@ -1,0 +1,16 @@
+# Design Method
+
+A design template used when planning a project or module.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      details: The various design templates used.
+      rules: unconstrained
+      type_spec: STRING

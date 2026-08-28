@@ -1,0 +1,9 @@
+# Project
+
+A project following a process: parts, cycles, schedule, tasks, and time logs.
+
+◇
+
+associations:
+
+    - solution_subdomain_key: definition

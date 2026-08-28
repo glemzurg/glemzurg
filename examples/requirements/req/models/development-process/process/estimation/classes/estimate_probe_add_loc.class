@@ -1,0 +1,37 @@
+# Estimate Probe Add Loc
+
+An added-object line in a PROBE size estimate.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: loc
+      name: Loc
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: actual_loc
+      name: Actual Loc
+      details: SQL column acual_loc.
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+
+associations:
+    - name: For Phase
+      details: Phase this added-object line is for.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"
+    - name: Of Type
+      details: PROBE type of this added object. SQL column type.
+      from_multiplicity: any
+      to_class_key: definition/probe_type
+      to_multiplicity: "1"
+    - name: Of Size
+      details: Relative size of this added object. SQL column relative_size.
+      from_multiplicity: any
+      to_class_key: definition/probe_object_size
+      to_multiplicity: "1"

@@ -1,0 +1,87 @@
+# Project Part
+
+A language-specific part of a project.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING
+    - key: multi_day
+      name: Multi Day
+      details: SQL column mutli_day.
+      rules: enum of TRUE, FALSE
+      type_spec: BOOLEAN
+    - key: planned_time
+      name: Planned Time
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: actual_time
+      name: Actual Time
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: planned_pct_reuse
+      name: Planned Pct Reuse
+      rules: "[0 .. 100] at 1 percent"
+      type_spec: Nat
+    - key: actual_pct_reuse
+      name: Actual Pct Reuse
+      rules: "[0 .. 100] at 1 percent"
+      type_spec: Nat
+    - key: planned_defect_count
+      name: Planned Defect Count
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: planned_appraisal_coq
+      name: Planned Appraisal Coq
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: planned_failure_coq
+      name: Planned Failure Coq
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+
+associations:
+    - name: Instantiates
+      details: Module template this part is created from.
+      from_multiplicity: any
+      to_class_key: definition/module_template
+      to_multiplicity: "1"
+    - name: In Bucket
+      details: Stats bucket this part is grouped in, when one is set.
+      from_multiplicity: any
+      to_class_key: definition/stats_bucket
+      to_multiplicity: "0..1"
+    - name: Current Phase
+      details: Phase whose forms are currently open, when one is set.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "0..1"
+    - name: Current Subphase
+      details: Planning step currently taking place, when one is set.
+      from_multiplicity: any
+      to_class_key: definition/step
+      to_multiplicity: "0..1"
+    - name: Uses Design Method
+      from_multiplicity: any
+      to_class_key: definition/design_method
+      to_multiplicity: "1"
+    - name: Uses Size Estimation Method
+      from_multiplicity: any
+      to_class_key: definition/method
+      to_multiplicity: "1"
+    - name: Uses Time Estimation Method
+      from_multiplicity: any
+      to_class_key: definition/method
+      to_multiplicity: "1"
+    - name: Uses Language
+      details: Language this part is implemented in.
+      from_multiplicity: any
+      to_class_key: definition/language
+      to_multiplicity: "1"

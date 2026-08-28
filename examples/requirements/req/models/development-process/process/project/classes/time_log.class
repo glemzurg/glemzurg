@@ -1,0 +1,39 @@
+# Time Log
+
+A recorded interval of work on a project.
+
+◇
+
+attributes:
+    - key: cycle
+      name: Cycle
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: start_time
+      name: Start Time
+      rules: datetime
+      type_spec: Nat
+    - key: stop_time
+      name: Stop Time
+      rules: datetime
+      type_spec: Nat
+    - key: interruption_minutes
+      name: Interruption Minutes
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat
+    - key: comments
+      name: Comments
+      rules: unconstrained
+      type_spec: STRING
+
+associations:
+    - name: Occurs In
+      details: Phase this time was spent in.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"
+    - name: For Task
+      details: Task this time was spent on.
+      from_multiplicity: any
+      to_class_key: task
+      to_multiplicity: "1"

@@ -1,0 +1,46 @@
+# Estimate Loc
+
+Planned lines-of-code account for a project.
+
+◇
+
+attributes:
+    - key: base
+      name: Base
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: new
+      name: New
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: changed
+      name: Changed
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: added
+      name: Added
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: modified
+      name: Modified
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: deleted
+      name: Deleted
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: reused
+      name: Reused
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: object_loc
+      name: Object Loc
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+
+associations:
+    - name: For Phase
+      details: Phase this size account is for.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"

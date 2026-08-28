@@ -1,0 +1,22 @@
+# Test Case Result
+
+A recorded run of a test case.
+
+◇
+
+attributes:
+    - key: run_time
+      name: Run Time
+      rules: datetime
+      type_spec: Nat
+    - key: actual
+      name: Actual
+      rules: unconstrained
+      type_spec: STRING
+
+associations:
+    - name: For Project
+      details: Project this result was recorded against.
+      from_multiplicity: any
+      to_class_key: project/project
+      to_multiplicity: "1"

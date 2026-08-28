@@ -1,0 +1,39 @@
+# Test Case
+
+A test case defined for a project.
+
+◇
+
+attributes:
+    - key: found_time
+      name: Found Time
+      rules: datetime
+      type_spec: Nat
+    - key: objective
+      name: Objective
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING
+    - key: conditions
+      name: Conditions
+      rules: unconstrained
+      type_spec: STRING
+    - key: expected
+      name: Expected
+      rules: unconstrained
+      type_spec: STRING
+
+associations:
+    - name: For Project
+      details: Project this test case belongs to.
+      from_multiplicity: any
+      to_class_key: project/project
+      to_multiplicity: "1"
+    - name: Has Results
+      details: Recorded runs of this test case.
+      from_multiplicity: "1"
+      to_class_key: test_case_result
+      to_multiplicity: any

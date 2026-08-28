@@ -1,0 +1,34 @@
+# Project Stat Phase
+
+A per-phase statistical estimate on a project. stat_phase is Phase; bucket is Stats Bucket.
+
+◇
+
+attributes:
+    - key: estimate_minute
+      name: Estimate Minute
+      details: Defaults to 0.
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat
+    - key: estimate_comment
+      name: Estimate Comment
+      details: Defaults to empty.
+      rules: unconstrained
+      type_spec: STRING
+
+associations:
+    - name: For Phase
+      details: Phase these statistics are for.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"
+    - name: In Bucket
+      details: Stats bucket these statistics are grouped in.
+      from_multiplicity: any
+      to_class_key: definition/stats_bucket
+      to_multiplicity: "1"
+    - name: Uses Method
+      details: Programming method for these statistics, when one is set.
+      from_multiplicity: any
+      to_class_key: definition/method
+      to_multiplicity: "0..1"

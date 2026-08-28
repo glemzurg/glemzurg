@@ -1,0 +1,21 @@
+# Probe Object Type
+
+A kind of object used when estimating with PROBE.
+
+The commented CREATE body repeated estimate_probe columns; those calculation columns live on Estimate Probe. This class is the object-type catalog named by the DROP TABLE.
+
+◇
+
+attributes:
+    - key: number
+      name: Number
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING

@@ -67,6 +67,8 @@ class class_domain_process_subdomain_definition_class_process["Process"] {
         Entry Criteria
         Exit Criteria
         Script Lock
+        Size Unit
+        Size K Unit
     }
 namespace Estimation {
 class class_domain_process_subdomain_estimation_class_estimate["Estimate"] {

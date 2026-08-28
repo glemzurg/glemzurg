@@ -1,0 +1,50 @@
+# Process Improvement Proposal
+
+A process improvement proposal raised on a project.
+
+◇
+
+attributes:
+    - key: found_time
+      name: Found Time
+      rules: datetime
+      type_spec: Nat
+    - key: problem
+      name: Problem
+      rules: unconstrained
+      type_spec: STRING
+    - key: proposal
+      name: Proposal
+      rules: unconstrained
+      type_spec: STRING
+    - key: resolved_time
+      name: Resolved Time
+      rules: datetime
+      type_spec: Nat
+
+associations:
+    - name: On Project
+      details: Project this proposal was raised on.
+      from_multiplicity: any
+      to_class_key: project/project
+      to_multiplicity: "1"
+    - name: On Process
+      details: Process this proposal is about.
+      from_multiplicity: any
+      to_class_key: definition/process
+      to_multiplicity: "1"
+    - name: On Phase
+      details: Phase this proposal is about.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"
+    - name: On Subphase
+      details: Planning step this proposal is about.
+      from_multiplicity: any
+      to_class_key: definition/step
+      to_multiplicity: "1"
+    - name: Resolved In Process
+      details: Process version that absorbed this proposal.
+      from_multiplicity: any
+      to_class_key: definition/process
+      to_multiplicity: "1"

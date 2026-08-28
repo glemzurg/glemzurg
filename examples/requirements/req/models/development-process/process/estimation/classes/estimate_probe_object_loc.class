@@ -1,0 +1,41 @@
+# Estimate Probe Object Loc
+
+A new-object line in a PROBE size estimate.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: loc_per_method
+      name: Loc Per Method
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: actual_loc
+      name: Actual Loc
+      details: SQL column acual_loc.
+      rules: "[0 .. unconstrained] at 1 loc"
+      type_spec: Nat
+    - key: for_reuse
+      name: For Reuse
+      rules: enum of TRUE, FALSE
+      type_spec: BOOLEAN
+
+associations:
+    - name: For Phase
+      details: Phase this new-object line is for.
+      from_multiplicity: any
+      to_class_key: definition/phase
+      to_multiplicity: "1"
+    - name: Of Type
+      details: PROBE type of this object. SQL column type.
+      from_multiplicity: any
+      to_class_key: definition/probe_type
+      to_multiplicity: "1"
+    - name: Of Size
+      details: Relative size of this object. SQL column relative_size.
+      from_multiplicity: any
+      to_class_key: definition/probe_object_size
+      to_multiplicity: "1"

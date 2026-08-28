@@ -1,0 +1,11 @@
+# Phase Products Check
+
+Whether a project's products for a phase are satisfied.
+
+◇
+
+attributes:
+    - key: satisfied
+      name: Satisfied
+      rules: enum of TRUE, FALSE
+      type_spec: BOOLEAN

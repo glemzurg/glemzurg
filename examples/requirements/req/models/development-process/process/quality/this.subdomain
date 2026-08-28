@@ -1,0 +1,10 @@
+# Quality
+
+Defects, issues, process improvement proposals, and test cases recorded against projects.
+
+◇
+
+associations:
+
+    - solution_subdomain_key: definition
+    - solution_subdomain_key: project

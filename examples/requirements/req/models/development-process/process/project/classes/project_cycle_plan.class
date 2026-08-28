@@ -1,0 +1,24 @@
+# Project Cycle Plan
+
+Planned recording values for one cycle of a project.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Cycle number. Unique among cycle plans of the same project.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+      nullable: true
+    - key: planned_pct_reuse
+      name: Planned Pct Reuse
+      rules: "[0 .. 100] at 1 percent"
+      type_spec: Nat
+
+associations:
+    - name: Instantiates
+      details: Module template this cycle plan is based on.
+      from_multiplicity: any
+      to_class_key: definition/module_template
+      to_multiplicity: "1"

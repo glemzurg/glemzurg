@@ -1,0 +1,42 @@
+# Module Template
+
+Shared configuration for projects (and project parts) that follow a process.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING
+
+associations:
+    - name: Follows Process
+      details: Process this template is based on, when one is set.
+      from_multiplicity: any
+      to_class_key: process
+      to_multiplicity: "0..1"
+    - name: Uses Size Estimation Method
+      details: Method used to estimate size under this template.
+      from_multiplicity: any
+      to_class_key: method
+      to_multiplicity: "1"
+    - name: Uses Time Estimation Method
+      details: Method used to estimate time under this template.
+      from_multiplicity: any
+      to_class_key: method
+      to_multiplicity: "1"
+    - name: Uses Design Method
+      details: Design template used under this module template.
+      from_multiplicity: any
+      to_class_key: design_method
+      to_multiplicity: "1"
+    - name: Uses Language
+      details: Language this module template is for.
+      from_multiplicity: any
+      to_class_key: language
+      to_multiplicity: "1"

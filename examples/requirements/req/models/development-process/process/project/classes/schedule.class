@@ -1,0 +1,22 @@
+# Schedule
+
+The planned calendar for a project, in days or weeks.
+
+◇
+
+attributes:
+    - key: day_or_week
+      name: Day Or Week
+      details: Whether the schedule is recorded by day or by week.
+      rules: enum of day, week
+      type_spec: STRING
+
+associations:
+    - name: Has Weeks
+      details: Ordered weeks (or day slots) on this schedule.
+      from_multiplicity: "1"
+      to_class_key: schedule_week
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - num

@@ -36,6 +36,10 @@ class class_domain_process_subdomain_definition_class_language["Language"] {
         Name
         Description
     }
+class class_domain_process_subdomain_definition_class_module_template["Module Template"] {
+        Name
+        Description
+    }
 namespace Estimation {
 class class_domain_process_subdomain_estimation_class_estimate["Estimate"] {
             Axis
@@ -82,16 +86,52 @@ class class_domain_process_subdomain_estimation_class_estimate_historic["Estimat
             Portion Variance
         }
 }
+namespace Project {
+class class_domain_process_subdomain_project_class_project["Project"] {
+            Name
+            Description
+            Created Time
+            Started Time
+            Estimate Minute
+            Estimate Comment
+            Multi Day
+            Planned Time
+            Actual Time
+            Planned Pct Reuse
+            Actual Pct Reuse
+            Planned Defect Count
+            Planned Appraisal Coq
+            Planned Failure Coq
+        }
+class class_domain_process_subdomain_project_class_project_part["Project Part"] {
+            Name
+            Description
+            Multi Day
+            Planned Time
+            Actual Time
+            Planned Pct Reuse
+            Actual Pct Reuse
+            Planned Defect Count
+            Planned Appraisal Coq
+            Planned Failure Coq
+        }
+}
 style class_domain_process_subdomain_definition_class_language stroke:#9370DB,stroke-width:3px
 class_domain_process_subdomain_estimation_class_estimate "*" --> "1" class_domain_process_subdomain_definition_class_language : Uses Language
 class_domain_process_subdomain_estimation_class_estimate_historic "*" --> "1" class_domain_process_subdomain_definition_class_language : Uses Language
+class_domain_process_subdomain_project_class_project "*" --> "1" class_domain_process_subdomain_definition_class_language : Uses Language
+class_domain_process_subdomain_project_class_project_part "*" --> "1" class_domain_process_subdomain_definition_class_language : Uses Language
 class_domain_process_subdomain_definition_class_family "1" --> "*" class_domain_process_subdomain_definition_class_language : Has Languages<br/>{unique → Name}
+class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_language : Uses Language
 
 ```
 - **[Estimation::Estimate](class-domain.process.subdomain.estimation.class.estimate.md).** An estimate of size or time, categorized by family, language, axis, and scope.
 - **[Estimation::Estimate Historic](class-domain.process.subdomain.estimation.class.estimate_historic.md).** A stored prior iteration of an estimate.
 - **[Family](class-domain.process.subdomain.definition.class.family.md).** Core partitioning of the catalog.
 - **[Language](class-domain.process.subdomain.definition.class.language.md).** A programming language used when estimating size or time in a process family.
+- **[Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
+- **[Project::Project](class-domain.process.subdomain.project.class.project.md).** Work that follows a process.
+- **[Project::Project Part](class-domain.process.subdomain.project.class.project_part.md).** A language-specific part of a project.
 
 
 # State Machine
