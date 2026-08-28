@@ -2,15 +2,15 @@ package engine
 
 import (
 	"fmt"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 const maxCascadeDepth = 20
@@ -19,7 +19,7 @@ const maxCascadeDepth = 20
 // When a new instance is created, this checks if the class has mandatory outbound
 // associations and triggers creation events on the target classes.
 type CreationChainHandler struct {
-	catalog         *ClassCatalog
+	catalog         *schema.Schema
 	actionExecutor  *actions.ActionExecutor
 	stateActionExec *StateActionExecutor
 	paramBinder     *actions.ParameterBinder
@@ -28,7 +28,7 @@ type CreationChainHandler struct {
 
 // NewCreationChainHandler creates a new creation chain handler.
 func NewCreationChainHandler(
-	catalog *ClassCatalog,
+	catalog *schema.Schema,
 	actionExecutor *actions.ActionExecutor,
 	stateActionExec *StateActionExecutor,
 	paramBinder *actions.ParameterBinder,
@@ -46,27 +46,27 @@ func NewCreationChainHandler(
 // HandleCreationChain fires creation events on mandatory associated classes
 // when action guarantees have not already satisfied the multiplicity.
 func (h *CreationChainHandler) HandleCreationChain(
-	createdInstanceID state.InstanceID,
-	simState *state.SimulationState,
+	createdInstanceID siminst.ID,
+	simState *siminst.State,
 	depth int,
-) ([]*SimulationStep, invariants.ViolationErrors, error) {
+) ([]*SimulationStep, siminst.ViolationErrors, error) {
 	if depth > maxCascadeDepth {
 		return nil, nil, fmt.Errorf("creation chain cascade exceeded max depth of %d", maxCascadeDepth)
 	}
 
-	// Get the class key from the created instance.
+	// Get the class key from the created siminst.
 	instance := simState.GetInstance(createdInstanceID)
 	if instance == nil {
 		return nil, nil, fmt.Errorf("instance %d not found for creation chain", createdInstanceID)
 	}
 
-	mandatory := h.catalog.GetMandatoryOutboundAssociations(instance.ClassKey)
+	mandatory := h.catalog.GetMandatoryOutboundAssociations(instance.GetClassKey())
 	if len(mandatory) == 0 {
 		return nil, nil, nil
 	}
 
 	var cascadedSteps []*SimulationStep
-	var allViolations invariants.ViolationErrors
+	var allViolations siminst.ViolationErrors
 
 	for _, assocInfo := range mandatory {
 		// Action guarantees (set-add / bulk-create) may already have satisfied MinTo.
@@ -74,7 +74,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 			continue
 		}
 
-		cascadeClassKey := CreationCascadeClassKey(assocInfo)
+		cascadeClassKey := schema.CreationCascadeClassKey(assocInfo)
 		toClassInfo := h.catalog.GetClassInfo(cascadeClassKey)
 		if toClassInfo == nil {
 			continue // Target class has no state machine, skip.
@@ -122,9 +122,9 @@ func (h *CreationChainHandler) HandleCreationChain(
 }
 
 func activeOutboundLinkCount(
-	simState *state.SimulationState,
-	assocInfo AssociationInfo,
-	fromID state.InstanceID,
+	simState *siminst.State,
+	assocInfo schema.AssociationInfo,
+	fromID siminst.ID,
 ) uint {
 	assoc := assocInfo.Association
 	if assoc.AssociationClassKey != nil {
@@ -134,13 +134,13 @@ func activeOutboundLinkCount(
 }
 
 func (h *CreationChainHandler) createMandatoryInstance(
-	toClassInfo *ClassInfo,
+	toClassInfo *schema.ClassSimInfo,
 	creationEvent *model_state.Event,
-	assocInfo AssociationInfo,
-	createdInstanceID state.InstanceID,
-	simState *state.SimulationState,
+	assocInfo schema.AssociationInfo,
+	createdInstanceID siminst.ID,
+	simState *siminst.State,
 	depth int,
-) (*SimulationStep, invariants.ViolationErrors, error) {
+) (*SimulationStep, siminst.ViolationErrors, error) {
 	params, err := h.sampleCreationEventParams(toClassInfo, creationEvent)
 	if err != nil {
 		return nil, nil, err
@@ -174,7 +174,7 @@ func (h *CreationChainHandler) createMandatoryInstance(
 		Violations:       result.Violations,
 	}
 
-	// Execute entry actions on the new instance.
+	// Execute entry actions on the new siminst.
 	if !result.WasDestroy && result.ToState != "" {
 		toStateKey := stateNameToKey(result.ToState, toClassInfo.Class)
 		if toStateKey != nil {
@@ -192,7 +192,7 @@ func (h *CreationChainHandler) createMandatoryInstance(
 		}
 	}
 
-	// Recursively handle creation chain for the new instance.
+	// Recursively handle creation chain for the new siminst.
 	childSteps, childViolations, err := h.HandleCreationChain(result.InstanceID, simState, depth+1)
 	if err != nil {
 		return nil, nil, err
@@ -205,17 +205,17 @@ func (h *CreationChainHandler) createMandatoryInstance(
 
 // acCascadeInput groups association-class cascade construction inputs.
 type acCascadeInput struct {
-	acClassInfo    *ClassInfo
+	acClassInfo    *schema.ClassSimInfo
 	creationEvent  *model_state.Event
-	assocInfo      AssociationInfo
-	fromInstanceID state.InstanceID
-	simState       *state.SimulationState
+	assocInfo      schema.AssociationInfo
+	fromInstanceID siminst.ID
+	simState       *siminst.State
 	depth          int
 }
 
 func (h *CreationChainHandler) createMandatoryAssociationClassInstances(
 	in acCascadeInput,
-) ([]*SimulationStep, invariants.ViolationErrors, error) {
+) ([]*SimulationStep, siminst.ViolationErrors, error) {
 	acMeta := h.catalog.LookupAssociationClass(in.acClassInfo.ClassKey)
 	if acMeta == nil {
 		return nil, nil, fmt.Errorf("association class %s: missing metadata", in.acClassInfo.Class.Name)
@@ -237,7 +237,7 @@ func (h *CreationChainHandler) createMandatoryAssociationClassInstances(
 	}
 
 	var cascadedSteps []*SimulationStep
-	var allViolations invariants.ViolationErrors
+	var allViolations siminst.ViolationErrors
 	hostAssocKey := acMeta.HostAssociation.Key
 
 	toSteps, toViolations, toInstances, err := h.ensureActiveToEndpointInstances(
@@ -253,7 +253,7 @@ func (h *CreationChainHandler) createMandatoryAssociationClassInstances(
 	}
 
 	for range in.assocInfo.MinTo {
-		toID := toInstances[0].ID
+		toID := toInstances[0].GetID()
 		step, stepViolations, err := h.createAssociationClassInstance(acCreateInput{
 			acClassInfo:   in.acClassInfo,
 			creationEvent: in.creationEvent,
@@ -274,15 +274,15 @@ func (h *CreationChainHandler) createMandatoryAssociationClassInstances(
 }
 
 func (h *CreationChainHandler) ensureActiveToEndpointInstances(
-	toClassInfo *ClassInfo,
+	toClassInfo *schema.ClassSimInfo,
 	creationEvent *model_state.Event,
 	toClassKey identity.Key,
 	minCount uint,
-	simState *state.SimulationState,
+	simState *siminst.State,
 	depth int,
-) ([]*SimulationStep, invariants.ViolationErrors, []*state.ClassInstance, error) {
+) ([]*SimulationStep, siminst.ViolationErrors, []*siminst.Instance, error) {
 	var steps []*SimulationStep
-	var violations invariants.ViolationErrors
+	var violations siminst.ViolationErrors
 
 	active := h.activeToEndpointInstances(simState, toClassKey)
 	for uint(len(active)) < minCount {
@@ -300,11 +300,11 @@ func (h *CreationChainHandler) ensureActiveToEndpointInstances(
 }
 
 func (h *CreationChainHandler) createPlainEndpointInstance(
-	toClassInfo *ClassInfo,
+	toClassInfo *schema.ClassSimInfo,
 	creationEvent *model_state.Event,
-	simState *state.SimulationState,
+	simState *siminst.State,
 	depth int,
-) (*SimulationStep, invariants.ViolationErrors, error) {
+) (*SimulationStep, siminst.ViolationErrors, error) {
 	params, err := h.sampleCreationEventParams(toClassInfo, creationEvent)
 	if err != nil {
 		return nil, nil, err
@@ -367,7 +367,7 @@ func (h *CreationChainHandler) createPlainEndpointInstance(
 // sampleCreationEventParams samples creation-event parameters using the creation
 // transition action when present so typed action parameters (spans, etc.) apply.
 func (h *CreationChainHandler) sampleCreationEventParams(
-	classInfo *ClassInfo,
+	classInfo *schema.ClassSimInfo,
 	creationEvent *model_state.Event,
 ) (map[string]object.Object, error) {
 	var actionPtr *model_state.Action
@@ -386,24 +386,24 @@ func (h *CreationChainHandler) sampleCreationEventParams(
 
 // instanceEndpointIDs holds the from and to endpoint instances for association-class materialization.
 type instanceEndpointIDs struct {
-	FromInstanceID state.InstanceID
-	ToInstanceID   state.InstanceID
+	FromInstanceID siminst.ID
+	ToInstanceID   siminst.ID
 }
 
 // acCreateInput groups one association-class instance creation.
 type acCreateInput struct {
-	acClassInfo   *ClassInfo
+	acClassInfo   *schema.ClassSimInfo
 	creationEvent *model_state.Event
 	hostAssocKey  identity.Key
 	endpoints     instanceEndpointIDs
-	simState      *state.SimulationState
+	simState      *siminst.State
 	depth         int
 	paramOverride map[string]object.Object
 }
 
 func (h *CreationChainHandler) createAssociationClassInstance(
 	in acCreateInput,
-) (*SimulationStep, invariants.ViolationErrors, error) {
+) (*SimulationStep, siminst.ViolationErrors, error) {
 	params := in.paramOverride
 	if len(params) == 0 {
 		var err error
@@ -469,9 +469,9 @@ func (h *CreationChainHandler) createAssociationClassInstance(
 }
 
 func (h *CreationChainHandler) activeToEndpointInstances(
-	simState *state.SimulationState,
+	simState *siminst.State,
 	classKey identity.Key,
-) []*state.ClassInstance {
+) []*siminst.Instance {
 	return simState.InstancesByClass(classKey)
 }
 

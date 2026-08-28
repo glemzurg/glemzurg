@@ -30,7 +30,7 @@ func (suite *CallExpressionSuite) TestString() {
 			functionName: &Identifier{Value: `Foo`},
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
-					{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+					{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 				},
 			},
 			expected: `Foo([a ↦ 1])`,
@@ -41,7 +41,7 @@ func (suite *CallExpressionSuite) TestString() {
 			functionName: &Identifier{Value: `GlobalFunc`},
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
-					{Field: &Identifier{Value: `x`}, Expression: NewIntLiteral(42)},
+					{Field: &Identifier{Value: `x`}, Expression: newIntLiteral(42)},
 				},
 			},
 			expected: `_GlobalFunc([x ↦ 42])`,
@@ -52,7 +52,7 @@ func (suite *CallExpressionSuite) TestString() {
 			functionName: &Identifier{Value: `Foo`},
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
-					{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+					{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 				},
 			},
 			expected: `MyClass!Foo([a ↦ 1])`,
@@ -64,7 +64,7 @@ func (suite *CallExpressionSuite) TestString() {
 			functionName: &Identifier{Value: `Foo`},
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
-					{Field: &Identifier{Value: `x`}, Expression: NewIntLiteral(42)},
+					{Field: &Identifier{Value: `x`}, Expression: newIntLiteral(42)},
 				},
 			},
 			expected: `Subdomain!Class!Foo([x ↦ 42])`,
@@ -77,7 +77,7 @@ func (suite *CallExpressionSuite) TestString() {
 			functionName: &Identifier{Value: `Foo`},
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
-					{Field: &Identifier{Value: `x`}, Expression: NewIntLiteral(42)},
+					{Field: &Identifier{Value: `x`}, Expression: newIntLiteral(42)},
 				},
 			},
 			expected: `Domain!Subdomain!Class!Foo([x ↦ 42])`,
@@ -92,7 +92,7 @@ func (suite *CallExpressionSuite) TestString() {
 				Bindings: []*FieldBinding{
 					{Field: &Identifier{Value: `p1`}, Expression: &Identifier{Value: `val1`}},
 					{Field: &Identifier{Value: `p2`}, Expression: &StringLiteral{Value: `hello`}},
-					{Field: &Identifier{Value: `p3`}, Expression: NewIntLiteral(100)},
+					{Field: &Identifier{Value: `p3`}, Expression: newIntLiteral(100)},
 				},
 			},
 			expected: `Domain!Subdomain!Class!FunctionName([p1 ↦ val1, p2 ↦ "hello", p3 ↦ 100])`,
@@ -129,7 +129,7 @@ func (suite *CallExpressionSuite) TestASCII() {
 			functionName: &Identifier{Value: `Foo`},
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
-					{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+					{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 				},
 			},
 			expected: `Foo([a |-> 1])`,
@@ -140,7 +140,7 @@ func (suite *CallExpressionSuite) TestASCII() {
 			functionName: &Identifier{Value: `GlobalFunc`},
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
-					{Field: &Identifier{Value: `x`}, Expression: NewIntLiteral(42)},
+					{Field: &Identifier{Value: `x`}, Expression: newIntLiteral(42)},
 				},
 			},
 			expected: `_GlobalFunc([x |-> 42])`,
@@ -151,7 +151,7 @@ func (suite *CallExpressionSuite) TestASCII() {
 			functionName: &Identifier{Value: `Foo`},
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
-					{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+					{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 				},
 			},
 			expected: `Class!Foo([a |-> 1])`,
@@ -165,7 +165,7 @@ func (suite *CallExpressionSuite) TestASCII() {
 			parameter: &RecordInstance{
 				Bindings: []*FieldBinding{
 					{Field: &Identifier{Value: `p1`}, Expression: &Identifier{Value: `val1`}},
-					{Field: &Identifier{Value: `p2`}, Expression: NewIntLiteral(2)},
+					{Field: &Identifier{Value: `p2`}, Expression: newIntLiteral(2)},
 				},
 			},
 			expected: `Domain!Subdomain!Class!FunctionName([p1 |-> val1, p2 |-> 2])`,
@@ -199,7 +199,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -211,7 +211,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `GlobalFunc`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -223,7 +223,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -236,7 +236,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -250,7 +250,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -263,7 +263,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				Domain: &Identifier{Value: `Domain`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -275,7 +275,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: ``},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -296,7 +296,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -310,7 +310,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -324,7 +324,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -337,7 +337,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -351,7 +351,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -364,7 +364,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -379,7 +379,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -391,7 +391,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 				FunctionName: &Identifier{Value: `Foo`},
 				Parameter: &RecordInstance{
 					Bindings: []*FieldBinding{
-						{Field: &Identifier{Value: ``}, Expression: NewIntLiteral(1)},
+						{Field: &Identifier{Value: ``}, Expression: newIntLiteral(1)},
 					},
 				},
 			},
@@ -416,7 +416,7 @@ func (suite *CallExpressionSuite) TestExpressionNode() {
 		FunctionName: &Identifier{Value: `Foo`},
 		Parameter: &RecordInstance{
 			Bindings: []*FieldBinding{
-				{Field: &Identifier{Value: `a`}, Expression: NewIntLiteral(1)},
+				{Field: &Identifier{Value: `a`}, Expression: newIntLiteral(1)},
 			},
 		},
 	}

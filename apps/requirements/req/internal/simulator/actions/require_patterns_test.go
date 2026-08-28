@@ -49,7 +49,7 @@ func TestAssessPeerFieldDistinctFromParamExcludesSelf(t *testing.T) {
 	bindings := evaluator.NewBindings()
 	bindings.Set("Currency", classSet, evaluator.NamespaceGlobal)
 	bindings.Set("Abbr", object.NewString("ZZZ"), evaluator.NamespaceLocal)
-	child := bindings.WithSelf(self)
+	child := bindings.WithSelfAndClass(self, "")
 	child.Set("Abbr", object.NewString("ZZZ"), evaluator.NamespaceLocal)
 
 	pattern := peerFieldDistinctFromParamPattern{
@@ -75,7 +75,7 @@ func TestAssessPeerFieldDistinctFromParamFailsOnDuplicatePeer(t *testing.T) {
 
 	bindings := evaluator.NewBindings()
 	bindings.Set("Currency", classSet, evaluator.NamespaceGlobal)
-	child := bindings.WithSelf(self)
+	child := bindings.WithSelfAndClass(self, "")
 	child.Set("Abbr", object.NewString("USD"), evaluator.NamespaceLocal)
 
 	pattern := peerFieldDistinctFromParamPattern{
@@ -99,7 +99,7 @@ func TestAssessPeerFieldDistinctFromParamFailsOnDuplicateNullPeer(t *testing.T) 
 
 	bindings := evaluator.NewBindings()
 	bindings.Set("Jurisdiction", classSet, evaluator.NamespaceGlobal)
-	child := bindings.WithSelf(self)
+	child := bindings.WithSelfAndClass(self, "")
 	child.Set("JurisdictionCode", object.Null(), evaluator.NamespaceLocal)
 
 	pattern := peerFieldDistinctFromParamPattern{

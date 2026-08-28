@@ -46,10 +46,10 @@ func NewRational(num, denom int64) *Number {
 	return &Number{rat: big.NewRat(num, denom)}
 }
 
-// NewReal creates a Number from a numerator and denominator (a rational number).
+// newReal creates a Number from a numerator and denominator (a rational number).
 //
 // Deprecated: Use NewRational for exact rationals. This is kept for backwards compatibility.
-func NewReal(num, denom int64) *Number {
+func newReal(num, denom int64) *Number {
 	return NewRational(num, denom)
 }
 
@@ -178,9 +178,9 @@ func (n *Number) Div(other *Number) *Number {
 	return &Number{rat: result}
 }
 
-// IntDiv returns a new Number that is the integer division of n by other.
+// intDiv returns a new Number that is the integer division of n by other.
 // Both operands must be integers (not Rational or Real).
-func (n *Number) IntDiv(other *Number) (*Number, error) {
+func (n *Number) intDiv(other *Number) (*Number, error) {
 	if n.real || other.real {
 		return nil, fmt.Errorf("integer division requires integer operands, got Real")
 	}

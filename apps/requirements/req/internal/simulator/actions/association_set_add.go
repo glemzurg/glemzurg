@@ -10,8 +10,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // errPeerClassOutOfScope means the association is known but its peer class is not on the surface.
@@ -20,12 +20,16 @@ var errPeerClassOutOfScope = errors.New("peer class out of simulation scope")
 
 func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
 	linkEnv setAddLinkEnv,
 ) (bool, error) {
+	// Multi set-add before single: Assoc \union { _new(...) : x \in Domain }.
+	if handled, err := e.tryQueueAssociationMultiSetAddGuarantee(ctx, instance, target, expr, bindings, linkEnv); err != nil || handled {
+		return handled, err
+	}
 	assocRef, eventCall, ok := model_class.MatchAssociationSetAddExpr(expr)
 	if !ok {
 		return false, nil
@@ -44,7 +48,7 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	if !e.validateSetAddPeerEvents(ctx, instance, assocTarget, eventCall) {
 		return true, nil
 	}
-	creationEvent, ok := e.peerCatalog.PeerCreationEvent(assocTarget.assoc.ToClassKey)
+	creationEvent, ok := e.sch.PeerCreationEvent(assocTarget.assoc.ToClassKey)
 	if !ok {
 		return false, fmt.Errorf("association set-add guarantee on %q: peer class has no creation event", target)
 	}
@@ -53,7 +57,7 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 		return false, fmt.Errorf("association set-add guarantee on %q: %w", target, err)
 	}
 	ctx.AddPeerCreation(DeferredPeerCreation{
-		FromInstanceID: instance.ID,
+		FromInstanceID: instance.GetID(),
 		AssocKey:       assocTarget.assoc.Key,
 		ToClassKey:     assocTarget.assoc.ToClassKey,
 		Params:         params,
@@ -62,24 +66,146 @@ func (e *ActionExecutor) tryQueueAssociationSetAddGuarantee(
 	return true, nil
 }
 
+// tryQueueAssociationMultiSetAddGuarantee queues one peer create+link per domain element for
+// Assoc \union { _new(...) : x \in Domain }. _new construction args are resolved with x bound.
+func (e *ActionExecutor) tryQueueAssociationMultiSetAddGuarantee(
+	ctx *ExecutionContext,
+	instance *instance.Instance,
+	target string,
+	expr me.Expression,
+	bindings *evaluator.Bindings,
+	linkEnv setAddLinkEnv,
+) (bool, error) {
+	assocRef, setMap, eventCall, ok := model_class.MatchAssociationMultiSetAddExpr(expr)
+	if !ok {
+		return false, nil
+	}
+	if !isSystemCreationEventCall(eventCall) {
+		return false, fmt.Errorf(
+			"association multi set-add guarantee on %q: transform must be _new / «new» (construction only)",
+			target,
+		)
+	}
+	assocTarget, creationEvent, handled, err := e.prepareMultiSetAddTarget(ctx, instance, target, assocRef, eventCall)
+	if err != nil || handled {
+		return handled, err
+	}
+	if assocTarget == nil {
+		return false, nil
+	}
+	domainSet, err := evalMultiSetAddDomain(target, setMap.Set, bindings)
+	if err != nil {
+		return false, err
+	}
+	work := multiSetAddWork{
+		ctx: ctx, instance: instance, assocTarget: assocTarget, creationEvent: creationEvent,
+		eventCall: eventCall, setMap: setMap, domainSet: domainSet, bindings: bindings, linkEnv: linkEnv,
+	}
+	if err := e.queueMultiSetAddCreations(work); err != nil {
+		return false, fmt.Errorf("association multi set-add guarantee on %q: %w", target, err)
+	}
+	return true, nil
+}
+
+// multiSetAddWork holds context for queuing one peer create per domain element.
+type multiSetAddWork struct {
+	ctx           *ExecutionContext
+	instance      *instance.Instance
+	assocTarget   *associationSetAddTarget
+	creationEvent model_state.Event
+	eventCall     *me.EventCall
+	setMap        *me.SetMap
+	domainSet     *object.Set
+	bindings      *evaluator.Bindings
+	linkEnv       setAddLinkEnv
+}
+
+func (e *ActionExecutor) prepareMultiSetAddTarget(
+	ctx *ExecutionContext,
+	instance *instance.Instance,
+	target string,
+	assocRef *me.AssociationRef,
+	eventCall *me.EventCall,
+) (*associationSetAddTarget, model_state.Event, bool, error) {
+	assocTarget, err := e.resolveAssociationSetAddTarget(instance, target, assocRef)
+	if errors.Is(err, errPeerClassOutOfScope) {
+		return nil, model_state.Event{}, true, nil
+	}
+	if err != nil {
+		return nil, model_state.Event{}, false, err
+	}
+	if assocTarget == nil {
+		return nil, model_state.Event{}, false, nil
+	}
+	if !e.validateSetAddPeerEvents(ctx, instance, assocTarget, eventCall) {
+		return nil, model_state.Event{}, true, nil
+	}
+	creationEvent, ok := e.sch.PeerCreationEvent(assocTarget.assoc.ToClassKey)
+	if !ok {
+		return nil, model_state.Event{}, false, fmt.Errorf(
+			"association multi set-add guarantee on %q: peer class has no creation event", target,
+		)
+	}
+	return assocTarget, creationEvent, false, nil
+}
+
+func evalMultiSetAddDomain(target string, domainExpr me.Expression, bindings *evaluator.Bindings) (*object.Set, error) {
+	domainResult := evaluator.Eval(domainExpr, bindings)
+	if domainResult.IsError() {
+		return nil, fmt.Errorf("association multi set-add guarantee on %q: domain: %s", target, domainResult.Error.Inspect())
+	}
+	domainSet, ok := evaluator.CoerceToSet(domainResult.Value)
+	if !ok {
+		return nil, fmt.Errorf(
+			"association multi set-add guarantee on %q: domain must be a set, got %s",
+			target, domainResult.Value.Type(),
+		)
+	}
+	return domainSet, nil
+}
+
+func (e *ActionExecutor) queueMultiSetAddCreations(work multiSetAddWork) error {
+	for _, elem := range work.domainSet.Elements() {
+		child := evaluator.NewEnclosedBindings(work.bindings)
+		if work.setMap.Variable != "" {
+			child.Set(work.setMap.Variable, elem, evaluator.NamespaceLocal)
+		}
+		// Domain binder is a construction argument (e.g. _new(p)); do not strip it as a set-map peer row.
+		params, err := resolvePositionalEventCallParams(
+			"", work.creationEvent.ParameterNames, work.eventCall, child,
+		)
+		if err != nil {
+			return err
+		}
+		work.ctx.AddPeerCreation(DeferredPeerCreation{
+			FromInstanceID: work.instance.GetID(),
+			AssocKey:       work.assocTarget.assoc.Key,
+			ToClassKey:     work.assocTarget.assoc.ToClassKey,
+			Params:         params,
+			ActionParams:   work.linkEnv.actionParams,
+		})
+	}
+	return nil
+}
+
 type associationSetAddTarget struct {
 	assoc   model_class.Association
 	toClass model_class.Class
 }
 
 func (e *ActionExecutor) resolveAssociationSetAddTarget(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	assocRef *me.AssociationRef,
 ) (*associationSetAddTarget, error) {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return nil, fmt.Errorf("association set-add guarantee on %q: peer catalog not configured", target)
 	}
-	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.GetClassKey(), target)
 	if !found {
 		return nil, fmt.Errorf(
 			"association set-add guarantee on %q: no outgoing association on class %s",
-			target, instance.ClassKey.String(),
+			target, instance.GetClassKey().String(),
 		)
 	}
 	if assocRef.AssociationKey != assocKey {
@@ -88,7 +214,7 @@ func (e *ActionExecutor) resolveAssociationSetAddTarget(
 			target, assocRef.AssociationKey.String(),
 		)
 	}
-	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
+	toClass, ok := e.sch.PeerClass(assoc.ToClassKey)
 	if !ok {
 		// Association is known but peer class is outside the simulation surface.
 		return nil, errPeerClassOutOfScope
@@ -98,16 +224,16 @@ func (e *ActionExecutor) resolveAssociationSetAddTarget(
 
 func (e *ActionExecutor) validateSetAddPeerEvents(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target *associationSetAddTarget,
 	eventCall *me.EventCall,
 ) bool {
 	vctx := peerEventViolationContext{
-		OwnerInstanceID: instance.ID,
-		OwnerClassKey:   instance.ClassKey,
+		OwnerInstanceID: instance.GetID(),
+		OwnerClassKey:   instance.GetClassKey(),
 		AssociationName: target.assoc.Name,
 	}
-	creationEvent, ok := e.peerCatalog.PeerCreationEvent(target.assoc.ToClassKey)
+	creationEvent, ok := e.sch.PeerCreationEvent(target.assoc.ToClassKey)
 	if !ok || !e.peerEventAvailable(target.toClass, nil, creationEvent.Key) {
 		e.recordPeerEventUnavailable(ctx, vctx, target.toClass, 0, eventCall.EventKey, eventCall.EventKey.SubKey)
 		return false
@@ -115,11 +241,11 @@ func (e *ActionExecutor) validateSetAddPeerEvents(
 	if target.assoc.AssociationClassKey == nil {
 		return true
 	}
-	acClass, ok := e.peerCatalog.PeerClass(*target.assoc.AssociationClassKey)
+	acClass, ok := e.sch.PeerClass(*target.assoc.AssociationClassKey)
 	if !ok {
 		return true
 	}
-	acCreationEvent, ok := e.peerCatalog.PeerCreationEvent(*target.assoc.AssociationClassKey)
+	acCreationEvent, ok := e.sch.PeerCreationEvent(*target.assoc.AssociationClassKey)
 	if !ok || !e.peerEventAvailable(acClass, nil, acCreationEvent.Key) {
 		e.recordPeerEventUnavailable(ctx, vctx, acClass, 0, eventCall.EventKey, eventCall.EventKey.SubKey)
 		return false
@@ -137,17 +263,26 @@ func (e *ActionExecutor) applyPeerCreations(ctx *ExecutionContext) error {
 }
 
 func (e *ActionExecutor) applyPeerCreation(ctx *ExecutionContext, pc DeferredPeerCreation) error {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return fmt.Errorf("peer creation for association %s: catalog not configured", pc.AssocKey.String())
 	}
-	assoc, found := e.peerCatalog.AssociationByKey(pc.AssocKey)
+	assoc, found := e.sch.AssociationByKey(pc.AssocKey)
 	if !found {
 		return fmt.Errorf("peer creation for association %s: association metadata not found", pc.AssocKey.String())
 	}
-	// Association-class materialization only when the AC class is on the surface catalog.
+	// Association-class host: creating a *new* far endpoint via set-add is retired (C1 / E1).
+	// Existing-endpoint bulk materialization (ToInstanceID set) still builds an AC row for
+	// host guarantees that expand over known peers (e.g. transaction amounts). Out-of-scope
+	// AC degrades to plain endpoint links.
 	if assoc.AssociationClassKey != nil {
-		if _, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey); ok {
+		if _, ok := e.sch.PeerClass(*assoc.AssociationClassKey); ok {
 			return e.applyAssociationClassPeerCreation(ctx, pc, assoc)
+		}
+		if e.sch.IsClassInScope(*assoc.AssociationClassKey) {
+			return fmt.Errorf(
+				"peer creation for association %s: association class %s is in scope but not creatable as a peer; cannot materialize as a plain host link",
+				pc.AssocKey.String(), assoc.AssociationClassKey.String(),
+			)
 		}
 	}
 	return e.applyPlainPeerCreation(ctx, pc, assoc)
@@ -170,7 +305,11 @@ func (e *ActionExecutor) applyPlainPeerCreation(
 	)
 	if err != nil {
 		vctx := e.ownerViolationContext(fromID, toClass.Key, assoc.Name)
-		e.recordPeerEventUnavailable(ctx, vctx, toClass, 0, creationEvent.Key, creationEvent.Name)
+		// PeerInstanceID 0 would otherwise imply "no creation transition"; pass the real error.
+		e.recordPeerEventUnavailableDetail(ctx, vctx,
+			peerEventTarget{Class: toClass, InstanceID: 0},
+			peerEventRef{Key: creationEvent.Key, Name: creationEvent.Name},
+			fmt.Sprintf("association %q failed to create %s via %s: %v", assoc.Name, toClass.Name, creationEvent.Name, err))
 		return nil
 	}
 	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, result)
@@ -182,36 +321,26 @@ func (e *ActionExecutor) applyAssociationClassPeerCreation(
 	pc DeferredPeerCreation,
 	assoc model_class.Association,
 ) error {
-	// Existing to-endpoint: only materialize the association-class row (params go to AC).
+	// Existing to-endpoint: materialize the association-class row (host bulk-create style).
 	if pc.ToInstanceID != nil {
 		return e.materializeAssociationClassRow(ctx, pc, assoc, *pc.ToInstanceID, pc.Params)
 	}
 
-	toClass, creationEvent, err := e.resolvePeerCreationEvent(pc)
-	if err != nil {
-		return err
-	}
-	endpointResult, err := e.ExecuteTransition(
-		toClass, creationEvent, nil, pc.Params, CreationLinkSource{}, nil,
+	// New far-endpoint + AC together is not supported: use surface AC _new(from, to, …).
+	return fmt.Errorf(
+		"peer creation for association %s: association class %s must be created via surface _new with host endpoint parameters (not host set-add of a new peer)",
+		pc.AssocKey.String(), assoc.AssociationClassKey.String(),
 	)
-	if err != nil {
-		vctx := e.ownerViolationContext(pc.FromInstanceID, toClass.Key, assoc.Name)
-		e.recordPeerEventUnavailable(ctx, vctx, toClass, 0, creationEvent.Key, creationEvent.Name)
-		return nil
-	}
-	e.recordPeerTransition(ctx, toClass, creationEvent, pc.Params, endpointResult)
-	// AC row created without extra params when the event call targeted the to-class.
-	return e.materializeAssociationClassRow(ctx, pc, assoc, endpointResult.InstanceID, nil)
 }
 
 func (e *ActionExecutor) resolvePeerCreationEvent(pc DeferredPeerCreation) (model_class.Class, model_state.Event, error) {
-	toClass, ok := e.peerCatalog.PeerClass(pc.ToClassKey)
+	toClass, ok := e.sch.PeerClass(pc.ToClassKey)
 	if !ok {
 		return model_class.Class{}, model_state.Event{}, fmt.Errorf(
 			"peer creation for association %s: to-class %s not found", pc.AssocKey.String(), pc.ToClassKey.String(),
 		)
 	}
-	creationEvent, ok := e.peerCatalog.PeerCreationEvent(pc.ToClassKey)
+	creationEvent, ok := e.sch.PeerCreationEvent(pc.ToClassKey)
 	if !ok {
 		return model_class.Class{}, model_state.Event{}, fmt.Errorf(
 			"peer creation for association %s: to-class %s has no creation event",
@@ -225,14 +354,14 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 	ctx *ExecutionContext,
 	pc DeferredPeerCreation,
 	assoc model_class.Association,
-	targetID state.InstanceID,
+	targetID instance.ID,
 	acParams map[string]object.Object,
 ) error {
-	acClass, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey)
+	acClass, ok := e.sch.PeerClass(*assoc.AssociationClassKey)
 	if !ok {
 		return fmt.Errorf("peer creation for association %s: association class %s not found", pc.AssocKey.String(), assoc.AssociationClassKey.String())
 	}
-	acCreationEvent, ok := e.peerCatalog.PeerCreationEvent(*assoc.AssociationClassKey)
+	acCreationEvent, ok := e.sch.PeerCreationEvent(*assoc.AssociationClassKey)
 	if !ok {
 		vctx := e.ownerViolationContext(pc.FromInstanceID, acClass.Key, assoc.Name)
 		e.recordPeerEventUnavailable(ctx, vctx, acClass, 0, identity.Key{}, model_state.EventNameNew)
@@ -257,8 +386,8 @@ func (e *ActionExecutor) materializeAssociationClassRow(
 // creation parameters and the association graph. When a parameter is a live instance
 // of class C and C has exactly one outgoing association to the created peer class,
 // the simulator also links that parameter instance to the new peer.
-func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, newPeerID state.InstanceID) error {
-	if e.peerCatalog == nil {
+func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, newPeerID instance.ID) error {
+	if e.sch == nil {
 		return nil
 	}
 	paramSources := make([]object.Object, 0, len(pc.ActionParams)+len(pc.Params))
@@ -285,7 +414,7 @@ func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, ne
 		if fromID == pc.FromInstanceID {
 			continue
 		}
-		candidates := e.peerCatalog.OutgoingAssociationsTo(fromInst.ClassKey, pc.ToClassKey)
+		candidates := e.sch.OutgoingAssociationsTo(fromInst.GetClassKey(), pc.ToClassKey)
 		if len(candidates) != 1 {
 			// Zero or ambiguous associations: do not invent links.
 			continue
@@ -302,35 +431,10 @@ func (e *ActionExecutor) applyInferredSecondaryLinks(pc DeferredPeerCreation, ne
 	return nil
 }
 
-func instanceIDFromObject(simState *state.SimulationState, val object.Object) (state.InstanceID, bool) {
+func instanceIDFromObject(simState *instance.State, val object.Object) (instance.ID, bool) {
 	rec, ok := val.(*object.Record)
 	if !ok || rec == nil {
 		return 0, false
 	}
-	if id, ok := state.InstanceIDFromExtentElement(rec); ok {
-		if simState.GetInstance(id) != nil {
-			return id, true
-		}
-	}
-	// Bare attribute records: match by pointer first (self), then unique structural equality.
-	// Structural equality alone is ambiguous when multiple instances share the same data shape
-	// (e.g. wallets that only store _state); refuse to guess among duplicates.
-	data := state.DataFromExtentElement(rec)
-	var (
-		found state.InstanceID
-		n     int
-	)
-	for _, inst := range simState.AllInstances() {
-		if inst.Attributes == rec || inst.Attributes == data {
-			return inst.ID, true
-		}
-		if (data != nil && inst.Attributes.Equals(data)) || inst.Attributes.Equals(rec) {
-			found = inst.ID
-			n++
-		}
-	}
-	if n == 1 {
-		return found, true
-	}
-	return 0, false
+	return simState.LookupIDByRecord(rec)
 }

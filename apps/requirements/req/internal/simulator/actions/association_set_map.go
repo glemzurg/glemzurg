@@ -2,15 +2,15 @@ package actions
 
 import (
 	"fmt"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 type associationSetMapTarget struct {
@@ -21,7 +21,7 @@ type associationSetMapTarget struct {
 
 func (e *ActionExecutor) tryQueueAssociationSetMapGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
@@ -35,7 +35,7 @@ func (e *ActionExecutor) tryQueueAssociationSetMapGuarantee(
 
 func (e *ActionExecutor) tryQueueAssociationAddOrUpdateGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
@@ -44,14 +44,14 @@ func (e *ActionExecutor) tryQueueAssociationAddOrUpdateGuarantee(
 	if !ok {
 		return false, nil
 	}
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return false, fmt.Errorf("association add-or-update guarantee on %q: peer catalog not configured", target)
 	}
-	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.GetClassKey(), target)
 	if !found {
 		return false, fmt.Errorf(
 			"association add-or-update guarantee on %q: no outgoing association on class %s",
-			target, instance.ClassKey.String(),
+			target, instance.GetClassKey().String(),
 		)
 	}
 	if assocRef.AssociationKey != assocKey {
@@ -61,7 +61,7 @@ func (e *ActionExecutor) tryQueueAssociationAddOrUpdateGuarantee(
 		)
 	}
 
-	linked := linkedAssociationPeerEndpoints(e.bindingsBuilder.State(), instance.ID, assoc)
+	linked := linkedAssociationPeerEndpoints(e.bindingsBuilder.State(), instance.GetID(), assoc)
 	if len(linked) == 0 {
 		setAddExpr := &me.SetOp{
 			Op:   me.SetUnion,
@@ -88,7 +88,7 @@ func (e *ActionExecutor) tryQueueAssociationAddOrUpdateGuarantee(
 
 func (e *ActionExecutor) queueAssociationSetMap(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	setMap *me.SetMap,
 	bindings *evaluator.Bindings,
@@ -108,7 +108,7 @@ func (e *ActionExecutor) queueAssociationSetMap(
 	if eventCall == nil {
 		return false, nil
 	}
-	linked := linkedAssociationPeerEndpoints(e.bindingsBuilder.State(), instance.ID, mapTarget.assoc)
+	linked := linkedAssociationPeerEndpoints(e.bindingsBuilder.State(), instance.GetID(), mapTarget.assoc)
 	if len(linked) == 0 {
 		// No peers to update (e.g. cascade Delete on an empty Defines) — not an error.
 		return true, nil
@@ -129,16 +129,16 @@ func (e *ActionExecutor) queueAssociationSetMap(
 
 func (e *ActionExecutor) resolveSetMapPeerEvent(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	mapTarget *associationSetMapTarget,
 	eventCall *me.EventCall,
 ) (model_state.Event, bool, error) {
-	event, ok := e.peerCatalog.PeerEvent(mapTarget.assoc.ToClassKey, eventCall.EventKey)
+	event, ok := e.sch.PeerEvent(mapTarget.assoc.ToClassKey, eventCall.EventKey)
 	if !ok {
 		vctx := peerEventViolationContext{
-			OwnerInstanceID: instance.ID,
-			OwnerClassKey:   instance.ClassKey,
+			OwnerInstanceID: instance.GetID(),
+			OwnerClassKey:   instance.GetClassKey(),
 			AssociationName: mapTarget.assoc.Name,
 		}
 		e.recordPeerEventUnavailable(ctx, vctx, mapTarget.toClass, 0, eventCall.EventKey, eventCall.EventKey.SubKey)
@@ -154,7 +154,7 @@ func (e *ActionExecutor) resolveSetMapPeerEvent(
 }
 
 func (e *ActionExecutor) resolveAssociationSetMapTarget(
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	setMap *me.SetMap,
 ) (*associationSetMapTarget, *me.EventCall, error) {
@@ -162,14 +162,14 @@ func (e *ActionExecutor) resolveAssociationSetMapTarget(
 	if !ok {
 		return nil, nil, nil
 	}
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return nil, nil, fmt.Errorf("association set-map guarantee on %q: peer catalog not configured", target)
 	}
-	assocKey, assoc, found := e.peerCatalog.OutgoingAssociationByTLAField(instance.ClassKey, target)
+	assocKey, assoc, found := e.sch.OutgoingAssociationByTLAField(instance.GetClassKey(), target)
 	if !found {
 		return nil, nil, fmt.Errorf(
 			"association set-map guarantee on %q: no outgoing association on class %s",
-			target, instance.ClassKey.String(),
+			target, instance.GetClassKey().String(),
 		)
 	}
 	if assocRef.AssociationKey != assocKey {
@@ -178,7 +178,7 @@ func (e *ActionExecutor) resolveAssociationSetMapTarget(
 			target, assocRef.AssociationKey.String(),
 		)
 	}
-	toClass, ok := e.peerCatalog.PeerClass(assoc.ToClassKey)
+	toClass, ok := e.sch.PeerClass(assoc.ToClassKey)
 	if !ok {
 		// Known association, peer class outside surface: no-op (eventCall non-nil signals handled).
 		return nil, eventCall, nil
@@ -188,15 +188,15 @@ func (e *ActionExecutor) resolveAssociationSetMapTarget(
 
 func (e *ActionExecutor) queueSetMapPeerUpdates(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	mapTarget *associationSetMapTarget,
 	event model_state.Event,
 	params map[string]object.Object,
-	linked []state.InstanceID,
+	linked []instance.ID,
 ) {
 	vctx := peerEventViolationContext{
-		OwnerInstanceID: instance.ID,
-		OwnerClassKey:   instance.ClassKey,
+		OwnerInstanceID: instance.GetID(),
+		OwnerClassKey:   instance.GetClassKey(),
 		AssociationName: mapTarget.assoc.Name,
 	}
 	simState := e.bindingsBuilder.State()
@@ -210,7 +210,7 @@ func (e *ActionExecutor) queueSetMapPeerUpdates(
 			continue
 		}
 		ctx.AddPeerUpdate(DeferredPeerUpdate{
-			OwnerInstanceID: instance.ID,
+			OwnerInstanceID: instance.GetID(),
 			AssocKey:        mapTarget.assocKey,
 			PeerInstanceID:  peerID,
 			ToClassKey:      mapTarget.assoc.ToClassKey,
@@ -224,7 +224,7 @@ func (e *ActionExecutor) queueSetMapPeerUpdates(
 
 func (e *ActionExecutor) recordSetMapParamBindingError(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	owner *instance.Instance,
 	mapTarget *associationSetMapTarget,
 	event model_state.Event,
 	err error,
@@ -233,15 +233,22 @@ func (e *ActionExecutor) recordSetMapParamBindingError(
 		"association %q set-map event %s parameter binding failed: %s",
 		mapTarget.assoc.Name, event.Name, err.Error(),
 	)
-	ctx.AddPeerViolation(invariants.NewPeerEventUnavailableViolation(invariants.PeerEventUnavailableParams{
-		OwnerClassKey:   instance.ClassKey,
-		OwnerInstanceID: instance.ID,
+	st := e.bindingsBuilder.State()
+	if st == nil || owner == nil {
+		return
+	}
+	if v := st.CheckPeerEventUnavailable(instance.PeerEventUnavailableInput{
+		OwnerClassKey:   owner.GetClassKey(),
+		OwnerInstanceID: owner.GetID(),
 		AssociationName: mapTarget.assoc.Name,
 		PeerClassKey:    mapTarget.toClass.Key,
+		PeerClassName:   mapTarget.toClass.Name,
 		EventKey:        event.Key,
 		EventName:       event.Name,
-		Message:         msg,
-	}))
+		Detail:          msg,
+	}); v != nil {
+		ctx.AddPeerViolation(v)
+	}
 }
 
 func (e *ActionExecutor) applyPeerUpdates(ctx *ExecutionContext) error {
@@ -280,7 +287,7 @@ func (e *ActionExecutor) recordPeerUpdateUnavailable(
 	toClass model_class.Class,
 	eventName string,
 ) {
-	assocName := associationNameForKey(e.peerCatalog, pu.AssocKey)
+	assocName := associationNameForKey(e.sch, pu.AssocKey)
 	vctx := e.ownerViolationContext(pu.OwnerInstanceID, toClass.Key, assocName)
 	e.recordPeerEventUnavailable(ctx, vctx, toClass, pu.PeerInstanceID, pu.EventKey, eventName)
 }
@@ -290,7 +297,7 @@ func (e *ActionExecutor) executePeerUpdateTransition(
 	pu DeferredPeerUpdate,
 	toClass model_class.Class,
 	event model_state.Event,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 ) error {
 	result, err := e.ExecuteTransition(toClass, event, instance, pu.Params, CreationLinkSource{}, nil)
 	if err != nil {
@@ -305,19 +312,19 @@ func (e *ActionExecutor) executePeerUpdateTransition(
 }
 
 func (e *ActionExecutor) resolvePeerUpdateEvent(pu DeferredPeerUpdate) (model_class.Class, model_state.Event, bool) {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return model_class.Class{}, model_state.Event{}, false
 	}
-	toClass, ok := e.peerCatalog.PeerClass(pu.ToClassKey)
+	toClass, ok := e.sch.PeerClass(pu.ToClassKey)
 	if !ok {
 		return model_class.Class{}, model_state.Event{}, false
 	}
-	event, ok := e.peerCatalog.PeerEvent(pu.ToClassKey, pu.EventKey)
+	event, ok := e.sch.PeerEvent(pu.ToClassKey, pu.EventKey)
 	return toClass, event, ok
 }
 
-func associationNameForKey(catalog PeerCreationCatalog, assocKey identity.Key) string {
-	if assoc, ok := catalog.AssociationByKey(assocKey); ok {
+func associationNameForKey(sch *schema.Schema, assocKey identity.Key) string {
+	if assoc, ok := sch.AssociationByKey(assocKey); ok {
 		return assoc.Name
 	}
 	return ""
@@ -328,7 +335,7 @@ func (e *ActionExecutor) deleteAssociationClassBeforePeer(
 	pu DeferredPeerUpdate,
 	toClass model_class.Class,
 ) error {
-	assoc, found := e.peerCatalog.AssociationByKey(pu.AssocKey)
+	assoc, found := e.sch.AssociationByKey(pu.AssocKey)
 	if !found || assoc.AssociationClassKey == nil {
 		return nil
 	}
@@ -345,7 +352,7 @@ type associationClassDestroyWork struct {
 	toClass        model_class.Class
 	assoc          model_class.Association
 	acClass        model_class.Class
-	linkInstanceID state.InstanceID
+	linkInstanceID instance.ID
 }
 
 func (e *ActionExecutor) fireAssociationClassDestroy(
@@ -353,9 +360,9 @@ func (e *ActionExecutor) fireAssociationClassDestroy(
 	pu DeferredPeerUpdate,
 	toClass model_class.Class,
 	assoc model_class.Association,
-	link state.AssociationLink,
+	link instance.AssociationLink,
 ) error {
-	acClass, ok := e.peerCatalog.PeerClass(*assoc.AssociationClassKey)
+	acClass, ok := e.sch.PeerClass(*assoc.AssociationClassKey)
 	if !ok {
 		return fmt.Errorf("association class %s not found", assoc.AssociationClassKey.String())
 	}
@@ -388,7 +395,7 @@ func (e *ActionExecutor) executeAssociationClassDestroy(
 	ctx *ExecutionContext,
 	work associationClassDestroyWork,
 	deleteEvent model_state.Event,
-	acInstance *state.ClassInstance,
+	acInstance *instance.Instance,
 ) error {
 	if !e.peerEventAvailable(work.acClass, acInstance, deleteEvent.Key) {
 		work.recordUnavailable(ctx, e, deleteEvent.Key, deleteEvent.Name)
@@ -410,7 +417,7 @@ func (e *ActionExecutor) removeAssociationLinkAfterPeerDelete(
 	if result != nil && result.WasDestroy {
 		return
 	}
-	assoc, found := e.peerCatalog.AssociationByKey(pu.AssocKey)
+	assoc, found := e.sch.AssociationByKey(pu.AssocKey)
 	if !found || assoc.AssociationClassKey != nil {
 		return
 	}

@@ -8,8 +8,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -30,7 +31,7 @@ type StepExecutorDeps struct {
 	StateActionExec    *StateActionExecutor
 	ChainHandler       *CreationChainHandler
 	ParamGen           *StepParameterGenerator
-	Catalog            *ClassCatalog
+	Schema             *schema.Schema
 	DerivedEval        *DerivedAttributeEvaluator
 	RNG                *rand.Rand
 	SimulationCoverage *SimulationCoverageTracker
@@ -43,7 +44,7 @@ type StepExecutor struct {
 	stateActionExec    *StateActionExecutor
 	chainHandler       *CreationChainHandler
 	paramGen           *StepParameterGenerator
-	catalog            *ClassCatalog
+	catalog            *schema.Schema
 	derivedEval        *DerivedAttributeEvaluator
 	rng                *rand.Rand
 	simulationCoverage *SimulationCoverageTracker
@@ -57,7 +58,7 @@ func NewStepExecutor(deps StepExecutorDeps) *StepExecutor {
 		stateActionExec:    deps.StateActionExec,
 		chainHandler:       deps.ChainHandler,
 		paramGen:           deps.ParamGen,
-		catalog:            deps.Catalog,
+		catalog:            deps.Schema,
 		derivedEval:        deps.DerivedEval,
 		rng:                deps.RNG,
 		simulationCoverage: deps.SimulationCoverage,
@@ -68,7 +69,7 @@ func NewStepExecutor(deps StepExecutorDeps) *StepExecutor {
 // Execute runs a single simulation step for the given pending action.
 func (e *StepExecutor) Execute(
 	pending *PendingAction,
-	simState *state.SimulationState,
+	simState *siminst.State,
 	stepNumber int,
 ) (*SimulationStep, error) {
 	if pending.IsQuery {
@@ -87,7 +88,7 @@ func (e *StepExecutor) Execute(
 	return e.executeTransition(pending, simState, stepNumber)
 }
 
-// executeQuery runs a read-only query on an existing instance.
+// executeQuery runs a read-only query on an existing siminst.
 func (e *StepExecutor) executeQuery(
 	pending *PendingAction,
 	stepNumber int,
@@ -97,7 +98,7 @@ func (e *StepExecutor) executeQuery(
 		Kind:       StepKindNormal,
 		ClassKey:   pending.Class.ClassKey,
 		ClassName:  pending.Class.Class.Name,
-		InstanceID: pending.Instance.ID,
+		InstanceID: pending.Instance.GetID(),
 	}
 
 	if pending.Query == nil {
@@ -110,10 +111,11 @@ func (e *StepExecutor) executeQuery(
 	// Query depends on out-of-scope association data — not surface-selected, but if
 	// something still invokes it, report a surface-out-of-scope violation.
 	if e.catalog != nil {
-		if unavail, ok := e.catalog.SurfaceUnavailableQuery(pending.Query.Key); ok {
-			step.Violations = append(step.Violations, invariants.NewSurfaceOutOfScopeViolation(
-				pending.Class.ClassKey, pending.Instance.ID, pending.Query.Name, unavail.Reason(),
-			))
+		if v := siminst.CheckSurfaceMemberAccess(
+			e.catalog, siminst.SurfaceMemberQuery, pending.Query.Key,
+			pending.Class.ClassKey, pending.Instance.GetID(), pending.Query.Name,
+		); v != nil {
+			step.Violations = append(step.Violations, v)
 			return step, nil
 		}
 	}
@@ -135,7 +137,7 @@ func (e *StepExecutor) executeQuery(
 	return step, nil
 }
 
-// executeDerivedRead evaluates one external derived attribute on an existing instance.
+// executeDerivedRead evaluates one external derived attribute on an existing siminst.
 func (e *StepExecutor) executeDerivedRead(
 	pending *PendingAction,
 	stepNumber int,
@@ -145,7 +147,7 @@ func (e *StepExecutor) executeDerivedRead(
 		Kind:       StepKindNormal,
 		ClassKey:   pending.Class.ClassKey,
 		ClassName:  pending.Class.Class.Name,
-		InstanceID: pending.Instance.ID,
+		InstanceID: pending.Instance.GetID(),
 	}
 
 	if pending.DerivedAttribute == nil {
@@ -177,7 +179,7 @@ func (e *StepExecutor) executeDerivedRead(
 	return step, nil
 }
 
-// executeDo handles a "do" state action — runs the action on the instance.
+// executeDo handles a "do" state action — runs the action on the siminst.
 func (e *StepExecutor) executeDo(
 	pending *PendingAction,
 	stepNumber int,
@@ -187,7 +189,7 @@ func (e *StepExecutor) executeDo(
 		Kind:       StepKindNormal,
 		ClassKey:   pending.Class.ClassKey,
 		ClassName:  pending.Class.Class.Name,
-		InstanceID: pending.Instance.ID,
+		InstanceID: pending.Instance.GetID(),
 	}
 
 	if pending.DoAction == nil {
@@ -209,7 +211,7 @@ func (e *StepExecutor) executeDo(
 // executeTransition handles event-triggered transitions (creation, normal, deletion).
 func (e *StepExecutor) executeTransition(
 	pending *PendingAction,
-	simState *state.SimulationState,
+	simState *siminst.State,
 	stepNumber int,
 ) (*SimulationStep, error) {
 	if pending.Event == nil {
@@ -318,7 +320,7 @@ func (e *StepExecutor) sampleEventParameters(pending *PendingAction) (map[string
 
 	if e.paramGen != nil && e.paramGen.Sampler != nil {
 		if pending.Instance != nil {
-			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.ID)
+			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.GetID())
 		} else {
 			e.paramGen.Sampler.SetPeerFieldDistinctExcludeInstanceID(0)
 		}
@@ -365,7 +367,7 @@ func (e *StepExecutor) executeExitActions(pending *PendingAction, step *Simulati
 func (e *StepExecutor) executeEntryActions(
 	pending *PendingAction,
 	result *actions.TransitionResult,
-	simState *state.SimulationState,
+	simState *siminst.State,
 	step *SimulationStep,
 ) error {
 	if result.WasDestroy || result.ToState == "" {
@@ -393,7 +395,7 @@ func (e *StepExecutor) executeEntryActions(
 // handleCreationChain handles cascaded creation steps for a creation transition.
 func (e *StepExecutor) handleCreationChain(
 	result *actions.TransitionResult,
-	simState *state.SimulationState,
+	simState *siminst.State,
 	step *SimulationStep,
 ) error {
 	if !result.WasCreation {
@@ -413,7 +415,7 @@ func (e *StepExecutor) handleCreationChain(
 }
 
 // getCurrentStateKey looks up the instance's current state key from its _state attribute.
-func getCurrentStateKey(instance *state.ClassInstance, classInfo *ClassInfo) *identity.Key {
+func getCurrentStateKey(instance *siminst.Instance, classInfo *schema.ClassSimInfo) *identity.Key {
 	stateName := getInstanceStateName(instance)
 	if stateName == "" {
 		return nil

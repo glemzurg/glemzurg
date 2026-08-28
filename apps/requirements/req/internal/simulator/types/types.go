@@ -41,9 +41,9 @@ func (s Substitution) Apply(t Type) Type {
 	return t.substitute(s)
 }
 
-// Compose combines two substitutions: s1 then s2.
+// compose combines two substitutions: s1 then s2.
 // Returns a new substitution that applies s1 first, then s2.
-func (s Substitution) Compose(other Substitution) Substitution {
+func (s Substitution) compose(other Substitution) Substitution {
 	result := make(Substitution)
 
 	// Apply other to all types in s
@@ -390,27 +390,27 @@ func (a Any) substitute(_ Substitution) Type { return a }
 // Constructor helpers
 // ----------------------------------------------------------------------------
 
-// NewTypeVar creates a fresh type variable with a unique ID.
+// newTypeVar creates a fresh type variable with a unique ID.
 var nextTypeVarID = 0
 
-func NewTypeVar(name string) TypeVar {
+func newTypeVar(name string) TypeVar {
 	id := nextTypeVarID
 	nextTypeVarID++
 	return TypeVar{ID: id, Name: name}
 }
 
-// ResetTypeVarCounter resets the type variable ID counter (for testing).
-func ResetTypeVarCounter() {
+// resetTypeVarCounter resets the type variable ID counter (for testing).
+func resetTypeVarCounter() {
 	nextTypeVarID = 0
 }
 
-// Monotype creates a Scheme with no quantified variables.
-func Monotype(t Type) Scheme {
+// monotype creates a Scheme with no quantified variables.
+func monotype(t Type) Scheme {
 	return Scheme{TypeVars: nil, Type: t}
 }
 
-// ForAll creates a polymorphic Scheme.
+// forAll creates a polymorphic Scheme.
 // varNames maps display names to IDs for the type.
-func ForAll(varIDs []int, t Type) Scheme {
+func forAll(varIDs []int, t Type) Scheme {
 	return Scheme{TypeVars: varIDs, Type: t}
 }

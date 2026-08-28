@@ -133,8 +133,8 @@ func (r *Record) WithField(name string, value Object) *Record {
 	return clone
 }
 
-// Without returns a new Record without the specified field.
-func (r *Record) Without(name string) *Record {
+// without returns a new Record without the specified field.
+func (r *Record) without(name string) *Record {
 	clone := r.Clone().(*Record)
 	delete(clone.fields, name)
 	return clone

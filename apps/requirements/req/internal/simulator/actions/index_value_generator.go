@@ -6,9 +6,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // generateIndexSafeValues populates attrs with random values for indexed attributes
@@ -17,8 +16,8 @@ import (
 // is unique across all existing instances.
 func generateIndexSafeValues(
 	attrs *object.Record,
-	indexInfo *invariants.ClassIndexInfo,
-	existingInstances []*state.ClassInstance,
+	indexInfo *instance.ClassIndexInfo,
+	existingInstances []*instance.Instance,
 	rng *rand.Rand,
 ) error {
 	for _, indexDef := range indexInfo.Indexes {
@@ -28,7 +27,7 @@ func generateIndexSafeValues(
 			getter := func(name string) object.Object {
 				return inst.GetAttribute(name)
 			}
-			key := invariants.BuildTupleKey(getter, indexDef.AttrNames)
+			key := instance.BuildTupleKey(getter, indexDef.AttrNames)
 			existingKeys[key] = true
 		}
 
@@ -59,7 +58,7 @@ func generateIndexSafeValues(
 			getter := func(name string) object.Object {
 				return attrs.Get(name)
 			}
-			tupleKey := invariants.BuildTupleKey(getter, indexDef.AttrNames)
+			tupleKey := instance.BuildTupleKey(getter, indexDef.AttrNames)
 
 			if !existingKeys[tupleKey] {
 				found = true
@@ -81,7 +80,7 @@ func generateIndexSafeValues(
 // deterministicFallback tries sequential/exhaustive value generation when random fails.
 func deterministicFallback(
 	attrs *object.Record,
-	indexDef invariants.IndexDefinition,
+	indexDef instance.IndexDefinition,
 	existingKeys map[string]bool,
 	preSet map[string]bool,
 ) error {
@@ -105,7 +104,7 @@ func tryDeterministicValues(
 	attrs *object.Record,
 	attrDef *model_class.Attribute,
 	attrName string,
-	indexDef invariants.IndexDefinition,
+	indexDef instance.IndexDefinition,
 	existingKeys map[string]bool,
 ) bool {
 	if attrDef.DataType != nil && attrDef.DataType.Atomic != nil {
@@ -127,7 +126,7 @@ func tryEnumValues(
 	attrs *object.Record,
 	attrDef *model_class.Attribute,
 	attrName string,
-	indexDef invariants.IndexDefinition,
+	indexDef instance.IndexDefinition,
 	existingKeys map[string]bool,
 ) bool {
 	for _, enumVal := range attrDef.DataType.Atomic.Enums {
@@ -143,7 +142,7 @@ func tryEnumValues(
 func trySpanValues(
 	attrs *object.Record,
 	attrName string,
-	indexDef invariants.IndexDefinition,
+	indexDef instance.IndexDefinition,
 	existingKeys map[string]bool,
 ) bool {
 	maxVal := findMaxExistingValue(existingKeys, indexDef, attrName)
@@ -154,7 +153,7 @@ func trySpanValues(
 func trySequentialValues(
 	attrs *object.Record,
 	attrName string,
-	indexDef invariants.IndexDefinition,
+	indexDef instance.IndexDefinition,
 	existingKeys map[string]bool,
 	startVal int64,
 ) bool {
@@ -168,17 +167,17 @@ func trySequentialValues(
 }
 
 // isUniqueTuple checks whether the current attrs produce a tuple key not in existingKeys.
-func isUniqueTuple(attrs *object.Record, indexDef invariants.IndexDefinition, existingKeys map[string]bool) bool {
+func isUniqueTuple(attrs *object.Record, indexDef instance.IndexDefinition, existingKeys map[string]bool) bool {
 	getter := func(name string) object.Object {
 		return attrs.Get(name)
 	}
-	tupleKey := invariants.BuildTupleKey(getter, indexDef.AttrNames)
+	tupleKey := instance.BuildTupleKey(getter, indexDef.AttrNames)
 	return !existingKeys[tupleKey]
 }
 
 // findMaxExistingValue scans existing tuple keys and returns the max integer seen
 // for the given attribute position. Returns 0 if none found.
-func findMaxExistingValue(existingKeys map[string]bool, indexDef invariants.IndexDefinition, targetAttr string) int64 {
+func findMaxExistingValue(existingKeys map[string]bool, indexDef instance.IndexDefinition, targetAttr string) int64 {
 	// This is a best-effort heuristic; we start from 0 if we can't determine max
 	_ = existingKeys
 	_ = indexDef

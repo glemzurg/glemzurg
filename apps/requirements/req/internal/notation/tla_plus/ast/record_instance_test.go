@@ -25,7 +25,7 @@ func (suite *RecordInstanceSuite) TestString() {
 			bindings: []*FieldBinding{
 				{
 					Field:      &Identifier{Value: `a`},
-					Expression: NewIntLiteral(1),
+					Expression: newIntLiteral(1),
 				},
 			},
 			expected: `[a ↦ 1]`,
@@ -35,11 +35,11 @@ func (suite *RecordInstanceSuite) TestString() {
 			bindings: []*FieldBinding{
 				{
 					Field:      &Identifier{Value: `a`},
-					Expression: NewIntLiteral(1),
+					Expression: newIntLiteral(1),
 				},
 				{
 					Field:      &Identifier{Value: `b`},
-					Expression: NewIntLiteral(2),
+					Expression: newIntLiteral(2),
 				},
 			},
 			expected: `[a ↦ 1, b ↦ 2]`,
@@ -49,15 +49,15 @@ func (suite *RecordInstanceSuite) TestString() {
 			bindings: []*FieldBinding{
 				{
 					Field:      &Identifier{Value: `a`},
-					Expression: NewIntLiteral(1),
+					Expression: newIntLiteral(1),
 				},
 				{
 					Field:      &Identifier{Value: `b`},
-					Expression: NewIntLiteral(2),
+					Expression: newIntLiteral(2),
 				},
 				{
 					Field:      &Identifier{Value: `c`},
-					Expression: NewIntLiteral(3),
+					Expression: newIntLiteral(3),
 				},
 			},
 			expected: `[a ↦ 1, b ↦ 2, c ↦ 3]`,
@@ -96,9 +96,9 @@ func (suite *RecordInstanceSuite) TestString() {
 				{
 					Field: &Identifier{Value: `sum`},
 					Expression: &RealInfixExpression{
-						Left:     NewIntLiteral(1),
+						Left:     newIntLiteral(1),
 						Operator: RealOperatorAdd,
-						Right:    NewIntLiteral(2),
+						Right:    newIntLiteral(2),
 					},
 				},
 			},
@@ -126,7 +126,7 @@ func (suite *RecordInstanceSuite) TestASCII() {
 			bindings: []*FieldBinding{
 				{
 					Field:      &Identifier{Value: `a`},
-					Expression: NewIntLiteral(1),
+					Expression: newIntLiteral(1),
 				},
 			},
 			expected: `[a |-> 1]`,
@@ -136,15 +136,15 @@ func (suite *RecordInstanceSuite) TestASCII() {
 			bindings: []*FieldBinding{
 				{
 					Field:      &Identifier{Value: `a`},
-					Expression: NewIntLiteral(1),
+					Expression: newIntLiteral(1),
 				},
 				{
 					Field:      &Identifier{Value: `b`},
-					Expression: NewIntLiteral(2),
+					Expression: newIntLiteral(2),
 				},
 				{
 					Field:      &Identifier{Value: `c`},
-					Expression: NewIntLiteral(3),
+					Expression: newIntLiteral(3),
 				},
 			},
 			expected: `[a |-> 1, b |-> 2, c |-> 3]`,
@@ -155,9 +155,9 @@ func (suite *RecordInstanceSuite) TestASCII() {
 				{
 					Field: &Identifier{Value: `ratio`},
 					Expression: &RealInfixExpression{
-						Left:     NewIntLiteral(10),
+						Left:     newIntLiteral(10),
 						Operator: RealOperatorDivide,
-						Right:    NewIntLiteral(2),
+						Right:    newIntLiteral(2),
 					},
 				},
 			},
@@ -187,7 +187,7 @@ func (suite *RecordInstanceSuite) TestValidate() {
 				Bindings: []*FieldBinding{
 					{
 						Field:      &Identifier{Value: `a`},
-						Expression: NewIntLiteral(1),
+						Expression: newIntLiteral(1),
 					},
 				},
 			},
@@ -198,15 +198,15 @@ func (suite *RecordInstanceSuite) TestValidate() {
 				Bindings: []*FieldBinding{
 					{
 						Field:      &Identifier{Value: `a`},
-						Expression: NewIntLiteral(1),
+						Expression: newIntLiteral(1),
 					},
 					{
 						Field:      &Identifier{Value: `b`},
-						Expression: NewIntLiteral(2),
+						Expression: newIntLiteral(2),
 					},
 					{
 						Field:      &Identifier{Value: `c`},
-						Expression: NewIntLiteral(3),
+						Expression: newIntLiteral(3),
 					},
 				},
 			},
@@ -238,7 +238,7 @@ func (suite *RecordInstanceSuite) TestValidate() {
 				Bindings: []*FieldBinding{
 					{
 						Field:      nil,
-						Expression: NewIntLiteral(1),
+						Expression: newIntLiteral(1),
 					},
 				},
 			},
@@ -250,7 +250,7 @@ func (suite *RecordInstanceSuite) TestValidate() {
 				Bindings: []*FieldBinding{
 					{
 						Field:      &Identifier{Value: ``},
-						Expression: NewIntLiteral(1),
+						Expression: newIntLiteral(1),
 					},
 				},
 			},
@@ -287,7 +287,7 @@ func (suite *RecordInstanceSuite) TestExpressionNode() {
 		Bindings: []*FieldBinding{
 			{
 				Field:      &Identifier{Value: `a`},
-				Expression: NewIntLiteral(1),
+				Expression: newIntLiteral(1),
 			},
 		},
 	}

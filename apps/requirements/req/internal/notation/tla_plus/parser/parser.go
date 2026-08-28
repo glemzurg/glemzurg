@@ -24,9 +24,9 @@ func ParseExpression(input string) (ast.Expression, error) {
 	return expr, nil
 }
 
-// ParseExpressionList parses multiple TLA+ expression strings.
+// parseExpressionList parses multiple TLA+ expression strings.
 // Returns the list of parsed expressions, or an error if any expression is invalid.
-func ParseExpressionList(inputs []string) ([]ast.Expression, error) {
+func parseExpressionList(inputs []string) ([]ast.Expression, error) {
 	expressions := make([]ast.Expression, len(inputs))
 
 	for i, input := range inputs {
@@ -40,9 +40,9 @@ func ParseExpressionList(inputs []string) ([]ast.Expression, error) {
 	return expressions, nil
 }
 
-// MustParseExpression is like ParseExpression but panics on error.
+// mustParseExpression is like ParseExpression but panics on error.
 // Useful for tests and static initialization.
-func MustParseExpression(input string) ast.Expression {
+func mustParseExpression(input string) ast.Expression {
 	expr, err := ParseExpression(input)
 	if err != nil {
 		panic(err)

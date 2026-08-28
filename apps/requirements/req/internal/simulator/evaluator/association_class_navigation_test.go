@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +33,7 @@ func TestAssociationClassHostNavigationEndpointsAndMember(t *testing.T) {
 	link.Set("_state", object.NewString("Active"))
 	link.Set("Fee", object.NewInteger(5))
 
-	ctx.CreateLink(hostKey, partner, jurisdiction)
+	ctx.createLink(hostKey, partner, jurisdiction)
 	ctx.AddAssociationClassRow(hostKey, partner, jurisdiction, link)
 
 	relInfo := ctx.GetForwardRelation(partnerKey, "Configures")
@@ -99,8 +100,8 @@ func TestAssociationClassMemberResolvesViaQuantifierEndpoint(t *testing.T) {
 	link2 := object.NewRecord()
 	link2.Set("Fee", object.NewInteger(2))
 
-	ctx.CreateLink(hostKey, partner, j1)
-	ctx.CreateLink(hostKey, partner, j2)
+	ctx.createLink(hostKey, partner, j1)
+	ctx.createLink(hostKey, partner, j2)
 	ctx.AddAssociationClassRow(hostKey, partner, j1, link1)
 	ctx.AddAssociationClassRow(hostKey, partner, j2, link2)
 
@@ -147,8 +148,8 @@ func TestAssociationClassMemberMultiWithoutBinderReturnsLinkSet(t *testing.T) {
 	link2 := object.NewRecord()
 	link2.Set("Fee", object.NewInteger(2))
 
-	ctx.CreateLink(hostKey, partner, j1)
-	ctx.CreateLink(hostKey, partner, j2)
+	ctx.createLink(hostKey, partner, j1)
+	ctx.createLink(hostKey, partner, j2)
 	ctx.AddAssociationClassRow(hostKey, partner, j1, link1)
 	ctx.AddAssociationClassRow(hostKey, partner, j2, link2)
 
@@ -204,8 +205,8 @@ func TestEndpointFieldBinderScalar(t *testing.T) {
 	link2 := object.NewRecord()
 	link2.Set("Fee", object.NewInteger(2))
 
-	ctx.CreateLink(hostKey, partner, j1)
-	ctx.CreateLink(hostKey, partner, j2)
+	ctx.createLink(hostKey, partner, j1)
+	ctx.createLink(hostKey, partner, j2)
 	ctx.AddAssociationClassRow(hostKey, partner, j1, link1)
 	ctx.AddAssociationClassRow(hostKey, partner, j2, link2)
 
@@ -275,4 +276,128 @@ func TestAssociationClassEmptyLinkMemberReturnsEmptySet(t *testing.T) {
 	set, ok := result.Value.(*object.Set)
 	require.True(t, ok)
 	require.Equal(t, 0, set.Size())
+}
+
+func TestAssociationRefWithClassMemberReturnsLinkSet(t *testing.T) {
+	t.Parallel()
+
+	ctx := NewRelationContext()
+	hostKeyStr := "domain/d/subdomain/s/cassociation/class/jwd/class/currency/is_subdivided_into"
+	hostKey := AssociationKey(hostKeyStr)
+	jwdKey := "domain/d/subdomain/s/class/jwd"
+	currencyKey := "domain/d/subdomain/s/class/currency"
+
+	ctx.AddAssociationClassHost(
+		hostKey,
+		"Is Subdivided Into",
+		AssociationHostEndpoints{FromClassKey: jwdKey, ToClassKey: currencyKey},
+		"Currency Wallet Definition",
+		AssociationHostMultiplicities{},
+	)
+
+	jwd := object.NewRecord()
+	jwd.Set("_state", object.NewString("Active"))
+	currency := object.NewRecord()
+	currency.Set("_state", object.NewString("Active"))
+	link := object.NewRecord()
+	link.Set("_state", object.NewString("Active"))
+
+	ctx.createLink(hostKey, jwd, currency)
+	ctx.AddAssociationClassRow(hostKey, jwd, currency, link)
+
+	bindings := NewBindings().WithSelfAndClass(jwd, jwdKey)
+	bindings.SetRelationContext(ctx)
+
+	// Bare AssociationRef + AC member (as in type:events domain IsSubdividedInto.CurrencyWalletDefinition).
+	assocKey, err := identity.ParseKey(hostKeyStr)
+	require.NoError(t, err)
+	assocRef := &me.AssociationRef{AssociationKey: assocKey}
+	memberAccess := &me.FieldAccess{Base: assocRef, Field: "CurrencyWalletDefinition"}
+	result := Eval(memberAccess, bindings)
+	require.False(t, result.IsError(), "%v", result)
+	// sole endpoint → scalar link row
+	linkRec, ok := result.Value.(*object.Record)
+	require.True(t, ok, "got %T", result.Value)
+	require.Equal(t, link, linkRec)
+}
+
+// Partner reached via CHOOSE over a set image is a cloned extent; AC member access must
+// still resolve (Player Initialize: CHOOSE p ∈ self._HasCustomers then p.ConfiguresCustomersFor.JWD).
+func TestAssociationClassMemberViaChooseOverSetImage(t *testing.T) {
+	t.Parallel()
+
+	ctx := NewRelationContext()
+	hostKey := AssociationKey("domain/d/subdomain/s/cassociation/class/partner/class/jurisdiction/configures")
+	hasCustomersKey := AssociationKey("domain/d/subdomain/s/cassociation/class/partner/class/player/has_customers")
+	partnerKey := "domain/d/subdomain/s/class/partner"
+	jurisdictionKey := "domain/d/subdomain/s/class/jurisdiction"
+	playerKey := "domain/d/subdomain/s/class/player"
+
+	ctx.AddAssociation(
+		hasCustomersKey,
+		"Has Customers",
+		partnerKey,
+		playerKey,
+		Multiplicity{},
+		Multiplicity{},
+	)
+	ctx.AddAssociationClassHost(
+		hostKey,
+		"Configures Customers For",
+		AssociationHostEndpoints{FromClassKey: partnerKey, ToClassKey: jurisdictionKey},
+		"Jurisdictional Wallet Definition",
+		AssociationHostMultiplicities{},
+	)
+
+	partnerAttrs := object.NewRecord()
+	partnerAttrs.Set("_state", object.NewString("Active"))
+	jurisdictionAttrs := object.NewRecord()
+	jurisdictionAttrs.Set("_state", object.NewString("Active"))
+	playerAttrs := object.NewRecord()
+	playerAttrs.Set("_state", object.NewString("Active"))
+	linkAttrs := object.NewRecord()
+	linkAttrs.Set("_state", object.NewString("Active"))
+	linkAttrs.Set("Fee", object.NewInteger(1))
+
+	partnerExtent := object.NewExtentElement(1, partnerAttrs)
+	jurisdictionExtent := object.NewExtentElement(2, jurisdictionAttrs)
+	playerExtent := object.NewExtentElement(3, playerAttrs)
+	linkExtent := object.NewExtentElement(4, linkAttrs)
+
+	ctx.CreateInstanceLink(hasCustomersKey,
+		InstanceEndpoint{ID: 1, Extent: partnerExtent, Data: partnerAttrs},
+		InstanceEndpoint{ID: 3, Extent: playerExtent, Data: playerAttrs},
+	)
+	ctx.CreateInstanceLink(hostKey,
+		InstanceEndpoint{ID: 1, Extent: partnerExtent, Data: partnerAttrs},
+		InstanceEndpoint{ID: 2, Extent: jurisdictionExtent, Data: jurisdictionAttrs},
+	)
+	ctx.EnsureInstance(4, linkAttrs)
+	ctx.AddAssociationClassRow(hostKey, partnerExtent, jurisdictionExtent, linkExtent)
+	ctx.RegisterClassKey(1, partnerKey)
+	ctx.RegisterClassKey(2, jurisdictionKey)
+	ctx.RegisterClassKey(3, playerKey)
+	ctx.RegisterClassKey(4, "domain/d/subdomain/s/class/jwd")
+
+	bindings := NewBindings().WithSelfAndClass(playerAttrs, playerKey)
+	bindings.SetRelationContext(ctx)
+
+	// (CHOOSE p ∈ self._HasCustomers : TRUE).ConfiguresCustomersFor.JurisdictionalWalletDefinition
+	choosePartner := &me.Choose{
+		Variable:  "p",
+		Set:       &me.FieldAccess{Base: &me.SelfRef{}, Field: "_HasCustomers"},
+		Predicate: &me.BoolLiteral{Value: true},
+	}
+	memberAccess := &me.FieldAccess{
+		Base: &me.FieldAccess{
+			Base:  choosePartner,
+			Field: "ConfiguresCustomersFor",
+		},
+		Field: "JurisdictionalWalletDefinition",
+	}
+	result := Eval(memberAccess, bindings)
+	require.False(t, result.IsError(), "%v", result)
+	linkRec, ok := result.Value.(*object.Record)
+	require.True(t, ok, "got %T", result.Value)
+	require.True(t, linkRec.Equals(linkExtent))
 }

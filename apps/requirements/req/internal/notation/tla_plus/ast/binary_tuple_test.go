@@ -27,14 +27,14 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 			operands: []Expression{
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
-						NewIntLiteral(2),
+						newIntLiteral(1),
+						newIntLiteral(2),
 					},
 				},
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(3),
-						NewIntLiteral(4),
+						newIntLiteral(3),
+						newIntLiteral(4),
 					},
 				},
 			},
@@ -46,17 +46,17 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 			operands: []Expression{
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
+						newIntLiteral(1),
 					},
 				},
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(2),
+						newIntLiteral(2),
 					},
 				},
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(3),
+						newIntLiteral(3),
 					},
 				},
 			},
@@ -68,7 +68,7 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 			operands: []Expression{
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
+						newIntLiteral(1),
 					},
 				},
 				&TupleLiteral{
@@ -83,7 +83,7 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 			operands: []Expression{
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
+						newIntLiteral(1),
 					},
 				},
 				&BuiltinCall{
@@ -91,8 +91,8 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 					Args: []Expression{
 						&TupleLiteral{
 							Elements: []Expression{
-								NewIntLiteral(2),
-								NewIntLiteral(3),
+								newIntLiteral(2),
+								newIntLiteral(3),
 							},
 						},
 					},
@@ -109,15 +109,15 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 					Args: []Expression{
 						&TupleLiteral{
 							Elements: []Expression{
-								NewIntLiteral(1),
+								newIntLiteral(1),
 							},
 						},
-						NewIntLiteral(2),
+						newIntLiteral(2),
 					},
 				},
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(3),
+						newIntLiteral(3),
 					},
 				},
 			},
@@ -132,19 +132,19 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 					Operands: []Expression{
 						&TupleLiteral{
 							Elements: []Expression{
-								NewIntLiteral(1),
+								newIntLiteral(1),
 							},
 						},
 						&TupleLiteral{
 							Elements: []Expression{
-								NewIntLiteral(2),
+								newIntLiteral(2),
 							},
 						},
 					},
 				},
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(3),
+						newIntLiteral(3),
 					},
 				},
 			},
@@ -175,14 +175,14 @@ func (suite *TupleInfixExpressionSuite) TestASCII() {
 			operands: []Expression{
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
-						NewIntLiteral(2),
+						newIntLiteral(1),
+						newIntLiteral(2),
 					},
 				},
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(3),
-						NewIntLiteral(4),
+						newIntLiteral(3),
+						newIntLiteral(4),
 					},
 				},
 			},
@@ -194,17 +194,17 @@ func (suite *TupleInfixExpressionSuite) TestASCII() {
 			operands: []Expression{
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
+						newIntLiteral(1),
 					},
 				},
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(2),
+						newIntLiteral(2),
 					},
 				},
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(3),
+						newIntLiteral(3),
 					},
 				},
 			},
@@ -216,7 +216,7 @@ func (suite *TupleInfixExpressionSuite) TestASCII() {
 			operands: []Expression{
 				&TupleLiteral{
 					Elements: []Expression{
-						NewIntLiteral(1),
+						newIntLiteral(1),
 					},
 				},
 				&BuiltinCall{
@@ -224,8 +224,8 @@ func (suite *TupleInfixExpressionSuite) TestASCII() {
 					Args: []Expression{
 						&TupleLiteral{
 							Elements: []Expression{
-								NewIntLiteral(2),
-								NewIntLiteral(3),
+								newIntLiteral(2),
+								newIntLiteral(3),
 							},
 						},
 					},
@@ -259,12 +259,12 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 				Operands: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
+							newIntLiteral(1),
 						},
 					},
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(2),
+							newIntLiteral(2),
 						},
 					},
 				},
@@ -277,17 +277,17 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 				Operands: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
+							newIntLiteral(1),
 						},
 					},
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(2),
+							newIntLiteral(2),
 						},
 					},
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(3),
+							newIntLiteral(3),
 						},
 					},
 				},
@@ -303,19 +303,19 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 						Operands: []Expression{
 							&TupleLiteral{
 								Elements: []Expression{
-									NewIntLiteral(1),
+									newIntLiteral(1),
 								},
 							},
 							&TupleLiteral{
 								Elements: []Expression{
-									NewIntLiteral(2),
+									newIntLiteral(2),
 								},
 							},
 						},
 					},
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(3),
+							newIntLiteral(3),
 						},
 					},
 				},
@@ -329,12 +329,12 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 				Operands: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
+							newIntLiteral(1),
 						},
 					},
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(2),
+							newIntLiteral(2),
 						},
 					},
 				},
@@ -348,12 +348,12 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 				Operands: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
+							newIntLiteral(1),
 						},
 					},
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(2),
+							newIntLiteral(2),
 						},
 					},
 				},
@@ -374,7 +374,7 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 				Operands: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
+							newIntLiteral(1),
 						},
 					},
 				},
@@ -388,7 +388,7 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 				Operands: []Expression{
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(1),
+							newIntLiteral(1),
 						},
 					},
 					nil,
@@ -408,7 +408,7 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 					},
 					&TupleLiteral{
 						Elements: []Expression{
-							NewIntLiteral(2),
+							newIntLiteral(2),
 						},
 					},
 				},
@@ -434,12 +434,12 @@ func (suite *TupleInfixExpressionSuite) TestExpressionNode() {
 		Operands: []Expression{
 			&TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(1),
+					newIntLiteral(1),
 				},
 			},
 			&TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(2),
+					newIntLiteral(2),
 				},
 			},
 		},

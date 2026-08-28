@@ -444,12 +444,14 @@ CREATE TABLE class (
   unfinished_notes text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   marked boolean NOT NULL DEFAULT false,
+  facet_of_key text DEFAULT NULL,
   PRIMARY KEY (model_key, class_key),
   CONSTRAINT fk_class_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
   CONSTRAINT fk_class_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE,
   CONSTRAINT fk_class_actor FOREIGN KEY (model_key, actor_key) REFERENCES actor (model_key, actor_key) ON DELETE CASCADE,
   CONSTRAINT fk_class_superclass FOREIGN KEY (model_key, superclass_of_key) REFERENCES class_generalization (model_key, generalization_key) ON DELETE CASCADE,
-  CONSTRAINT fk_class_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES class_generalization (model_key, generalization_key) ON DELETE CASCADE
+  CONSTRAINT fk_class_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES class_generalization (model_key, generalization_key) ON DELETE CASCADE,
+  CONSTRAINT fk_class_facet_of FOREIGN KEY (model_key, facet_of_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE class IS 'A set of objects that share the same semantics.';
@@ -464,6 +466,7 @@ COMMENT ON COLUMN class.details IS 'A summary description.';
 COMMENT ON COLUMN class.unfinished_notes IS 'Scratch notes not yet placed in final requirement locations.';
 COMMENT ON COLUMN class.uml_comment IS 'A comment that appears in the diagrams.';
 COMMENT ON COLUMN class.marked IS 'Authoring selection flag; true when the class is marked in the model.';
+COMMENT ON COLUMN class.facet_of_key IS 'If this class is a facet of another class, that class.';
 
 --------------------------------------------------------------
 

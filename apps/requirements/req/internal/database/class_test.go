@@ -139,6 +139,26 @@ func (suite *ClassSuite) TestAdd() {
 	}, class)
 }
 
+func (suite *ClassSuite) TestAddFacetOf() {
+	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
+		Key:  suite.classKey,
+		Name: "Primary",
+	})
+	suite.Require().NoError(err)
+
+	err = AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
+		Key:     suite.classKeyB,
+		Name:    "Facet",
+		FacetOf: &suite.classKey,
+	})
+	suite.Require().NoError(err)
+
+	_, class, err := LoadClass(suite.db, suite.model.Key, suite.classKeyB)
+	suite.Require().NoError(err)
+	suite.Require().NotNil(class.FacetOf)
+	suite.Equal(suite.classKey, *class.FacetOf)
+}
+
 func (suite *ClassSuite) TestAddNulls() {
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,

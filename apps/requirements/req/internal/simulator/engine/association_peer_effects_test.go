@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -16,7 +18,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/require"
@@ -37,17 +39,17 @@ func (s *AssociationPeerEffectsSuite) TestInlineDestroyGuaranteeRemovesPlainAsso
 
 	orderInst := s.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
+	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.GetID(), itemInst.GetID()))
 
 	action := peerInlineDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
-	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
+	s.Empty(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable))
 	s.Require().Len(result.PeerTransitions, 1)
 	s.Equal(model_state.EventNameDestroy, result.PeerTransitions[0].EventName)
 	s.True(result.PeerTransitions[0].Result.WasDestroy)
-	s.Nil(simState.GetInstance(itemInst.ID))
-	s.Empty(simState.GetLinkedForward(orderInst.ID, fix.assocKey))
+	s.Nil(simState.GetInstance(itemInst.GetID()))
+	s.Empty(simState.GetLinkedForward(orderInst.GetID(), fix.assocKey))
 }
 
 func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesPlainAssociationLink() {
@@ -56,16 +58,16 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesPlainAssociationLin
 
 	orderInst := s.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
+	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.GetID(), itemInst.GetID()))
 
 	action := peerDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
-	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
+	s.Empty(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable))
 	s.Require().Len(result.PeerTransitions, 1)
 	s.Equal(model_state.EventNameDestroy, result.PeerTransitions[0].EventName)
-	s.Nil(simState.GetInstance(itemInst.ID))
-	s.Empty(simState.GetLinkedForward(orderInst.ID, fix.assocKey))
+	s.Nil(simState.GetInstance(itemInst.GetID()))
+	s.Empty(simState.GetLinkedForward(orderInst.GetID(), fix.assocKey))
 }
 
 func (s *AssociationPeerEffectsSuite) TestSetMapDeleteViolationWhenPeerLacksDelete() {
@@ -74,70 +76,67 @@ func (s *AssociationPeerEffectsSuite) TestSetMapDeleteViolationWhenPeerLacksDele
 
 	orderInst := s.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := s.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
+	s.Require().NoError(simState.AddLink(fix.assocKey, orderInst.GetID(), itemInst.GetID()))
 
 	action := peerDestroyGuaranteeAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	s.Require().NoError(err)
 	s.False(result.Success)
-	s.Require().Len(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable), 1)
-	s.Equal(fmt.Sprintf("%d", itemInst.ID), result.Violations[0].ActualValue)
-	s.NotNil(simState.GetInstance(itemInst.ID))
-	s.Len(simState.GetLinkedForward(orderInst.ID, fix.assocKey), 1)
+	s.Require().Len(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable), 1)
+	s.Equal(fmt.Sprintf("%d", itemInst.GetID()), result.Violations[0].ActualValue)
+	s.NotNil(simState.GetInstance(itemInst.GetID()))
+	s.Len(simState.GetLinkedForward(orderInst.GetID(), fix.assocKey), 1)
 }
 
-func (s *AssociationPeerEffectsSuite) TestSetAddCreatesAssociationClassRow() {
+func (s *AssociationPeerEffectsSuite) TestSetAddNewPeerDoesNotCreateAssociationClassRow() {
+	// C1/E1: host set-add of a *new* far endpoint must not invent the association class.
 	tcm := buildAssociationClassPeerEffectModel()
 	simState, ae := s.buildPeerEffectExecutor(tcm.model)
-	registerCatalogAssociations(NewClassCatalog(tcm.model), state.NewBindingsBuilder(simState))
+	registerCatalogAssociations(schema.New(tcm.model, schema.RunScopeAll()), state.NewBindingsBuilder(simState))
 
 	partnerInst := s.createPeerEffectInstance(simState, tcm.partnerKey, "Active")
 	action := peerNewSetAddAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
 	result, err := ae.ExecuteAction(action, partnerInst, nil)
-	s.Require().NoError(err)
-	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
-	s.Require().Len(result.PeerTransitions, 2)
-	s.Equal("create", result.PeerTransitions[0].EventName)
-	s.Equal("Add", result.PeerTransitions[1].EventName)
-
-	links := simState.AssociationLinksFromEndpoint(tcm.hostAssocKey, partnerInst.ID)
-	s.Len(links, 1)
-	s.NotNil(simState.GetInstance(links[0].ToEndpointID))
-	s.NotNil(simState.GetInstance(links[0].LinkInstanceID))
+	s.Require().Error(err)
+	s.Contains(err.Error(), "surface _new")
+	s.Empty(simState.AssociationLinksFromEndpoint(tcm.hostAssocKey, partnerInst.GetID()))
+	_ = result
 }
 
 func (s *AssociationPeerEffectsSuite) TestSetMapDeleteRemovesAssociationClassRow() {
 	tcm := buildAssociationClassPeerEffectModel()
 	simState, ae := s.buildPeerEffectExecutor(tcm.model)
-	registerCatalogAssociations(NewClassCatalog(tcm.model), state.NewBindingsBuilder(simState))
+	registerCatalogAssociations(schema.New(tcm.model, schema.RunScopeAll()), state.NewBindingsBuilder(simState))
 
 	partnerInst := s.createPeerEffectInstance(simState, tcm.partnerKey, "Active")
 	jurisdictionInst := s.createPeerEffectInstance(simState, tcm.jurisdictionKey, "Active")
 
 	linkDefClass := tcm.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[tcm.linkDefKey]
 	addEvent := linkDefClass.Events[mustKey("domain/d/subdomain/s/class/link_def/event/add")]
+	partnerID := partnerInst.GetID()
+	jurisdictionID := jurisdictionInst.GetID()
 	addResult, err := ae.ExecuteTransition(
 		linkDefClass, addEvent, nil, nil,
-		actions.CreationLinkSource{SourceAssocKey: &tcm.hostAssocKey, SourceID: &partnerInst.ID},
-		&jurisdictionInst.ID,
+		actions.CreationLinkSource{SourceAssocKey: &tcm.hostAssocKey, SourceID: &partnerID},
+		&jurisdictionID,
 	)
 	s.Require().NoError(err)
 
 	action := peerDestroyGuaranteeAction(tcm.partnerKey, tcm.hostAssocKey, tcm.jurisdictionKey, "Configures")
 	result, err := ae.ExecuteAction(action, partnerInst, nil)
 	s.Require().NoError(err)
-	s.Empty(result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable))
+	s.Empty(violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable))
 	s.Require().GreaterOrEqual(len(result.PeerTransitions), 2)
 
-	s.Nil(simState.GetInstance(jurisdictionInst.ID))
-	s.Empty(simState.AssociationLinksFromEndpoint(tcm.hostAssocKey, partnerInst.ID))
+	s.Nil(simState.GetInstance(jurisdictionInst.GetID()))
+	s.Empty(simState.AssociationLinksFromEndpoint(tcm.hostAssocKey, partnerInst.GetID()))
 	s.Nil(simState.GetInstance(addResult.InstanceID))
 }
 
-func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*state.SimulationState, *actions.ActionExecutor) {
-	simState := state.NewSimulationState()
+func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model) (*siminst.State, *actions.ActionExecutor) {
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 	registerCatalogAssociations(catalog, bb)
 	ge := actions.NewGuardEvaluator(bb)
 	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic test seed
@@ -146,10 +145,10 @@ func (s *AssociationPeerEffectsSuite) buildPeerEffectExecutor(model *core.Model)
 }
 
 func (s *AssociationPeerEffectsSuite) createPeerEffectInstance(
-	simState *state.SimulationState,
+	simState *siminst.State,
 	classKey identity.Key,
 	stateName string,
-) *state.ClassInstance {
+) *siminst.Instance {
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString(stateName))
 	return simState.CreateInstance(classKey, attrs)
@@ -321,12 +320,12 @@ func TestSetMapUpdateViolationWhenEventParamsOmitted(t *testing.T) {
 
 	orderInst := suite.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := suite.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	require.NoError(t, simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
+	require.NoError(t, simState.AddLink(fix.assocKey, orderInst.GetID(), itemInst.GetID()))
 
 	action := peerUpdateSetMapAction(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem")
 	result, err := ae.ExecuteAction(action, orderInst, nil)
 	require.NoError(t, err)
-	require.Len(t, result.Violations.ByType(invariants.ViolationTypePeerEventUnavailable), 1)
+	require.Len(t, violationsByType(result.Violations, siminst.ViolationTypePeerEventUnavailable), 1)
 	require.Contains(t, result.Violations[0].Message, "parameter binding failed")
 }
 
@@ -337,7 +336,7 @@ func TestSetMapUpdateRespectsArgumentOrder(t *testing.T) {
 
 	orderInst := suite.createPeerEffectInstance(simState, fix.orderKey, "Open")
 	itemInst := suite.createPeerEffectInstance(simState, fix.itemKey, "Active")
-	require.NoError(t, simState.AddLink(fix.assocKey, orderInst.ID, itemInst.ID))
+	require.NoError(t, simState.AddLink(fix.assocKey, orderInst.GetID(), itemInst.GetID()))
 
 	action := peerUpdateSetMapActionWithArgOrder(fix.orderKey, fix.assocKey, fix.itemKey, "OrderItem", []string{"TopoffBalance", "MinimumBalance"})
 	ownerParams := map[string]object.Object{
@@ -349,7 +348,7 @@ func TestSetMapUpdateRespectsArgumentOrder(t *testing.T) {
 	require.Empty(t, result.Violations)
 	require.Len(t, result.PeerTransitions, 1)
 
-	updated := simState.GetInstance(itemInst.ID)
+	updated := simState.GetInstance(itemInst.GetID())
 	require.Equal(t, "200", updated.GetAttribute("minimum_balance").Inspect())
 	require.Equal(t, "100", updated.GetAttribute("topoff_balance").Inspect())
 }
@@ -634,7 +633,7 @@ func (s *AssociationPeerEffectsSuite) TestSetAddInfersSecondaryAssociationFromPa
 	action := peerSetAddWithObjectParam(
 		fix.defKey, fix.definesKey, fix.accountKey, "Defines", "Wallet",
 	)
-	walletObj := state.ClassExtentElement(walletInst.ID, walletInst.Attributes)
+	walletObj := state.ClassExtentElement(walletInst.GetID(), walletInst.GetAttributes())
 	result, err := ae.ExecuteAction(action, defInst, map[string]object.Object{
 		"Wallet": walletObj,
 	})
@@ -642,10 +641,10 @@ func (s *AssociationPeerEffectsSuite) TestSetAddInfersSecondaryAssociationFromPa
 	s.True(result.Success)
 	s.Empty(result.Violations)
 
-	defLinks := simState.GetLinkedForward(defInst.ID, fix.definesKey)
+	defLinks := simState.GetLinkedForward(defInst.GetID(), fix.definesKey)
 	s.Require().Len(defLinks, 1)
 	accountID := defLinks[0]
-	walletLinks := simState.GetLinkedForward(walletInst.ID, fix.subdividesKey)
+	walletLinks := simState.GetLinkedForward(walletInst.GetID(), fix.subdividesKey)
 	s.Require().Len(walletLinks, 1)
 	s.Equal(accountID, walletLinks[0])
 }
@@ -682,6 +681,162 @@ func peerSetAddWithObjectParam(
 	)
 }
 
+// peerMultiSetAddOverWalletSet: Defines \union { _new() : w \in Wallets } — one peer create per domain element.
+func peerMultiSetAddOverWalletSet(
+	ownerKey, assocKey, peerClassKey identity.Key,
+	assocTLAField string,
+) model_state.Action {
+	newEventKey := helper.Must(identity.NewEventKey(peerClassKey, model_state.EventNameNew))
+	expr := &me.SetOp{
+		Op:   me.SetUnion,
+		Left: &me.AssociationRef{AssociationKey: assocKey},
+		Right: &me.SetMap{
+			Variable:  "w",
+			Set:       &me.LocalVar{Name: "Wallets"},
+			Transform: &me.EventCall{EventKey: newEventKey},
+		},
+	}
+	actionKey := helper.Must(identity.NewActionKey(ownerKey, "multi_instantiate"))
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
+	logic := model_logic.NewLogic(
+		guaranteeKey, model_logic.LogicTypeStateChange, "", assocTLAField,
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil,
+	)
+	logic.Spec.Expression = expr
+	param := helper.Must(model_state.NewParameter(actionKey, "Wallets", "unique unordered of object of wallet", false))
+	ts := helper.Must(logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, "SUBSET Wallet", nil))
+	param.DataType.TypeSpec = &ts
+	return model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "MultiInstantiate", Details: ""},
+		nil,
+		[]model_logic.Logic{logic},
+		nil,
+		[]model_state.Parameter{param},
+	)
+}
+
+func (s *AssociationPeerEffectsSuite) TestMultiSetAddCreatesOnePeerPerDomainElement() {
+	fix := buildDualLinkFixture()
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+
+	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
+	w1 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	w2 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	w3 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+
+	wallets := object.NewSetFromElements([]object.Object{
+		state.ClassExtentElement(w1.GetID(), w1.GetAttributes()),
+		state.ClassExtentElement(w2.GetID(), w2.GetAttributes()),
+		state.ClassExtentElement(w3.GetID(), w3.GetAttributes()),
+	})
+
+	action := peerMultiSetAddOverWalletSet(fix.defKey, fix.definesKey, fix.accountKey, "Defines")
+	result, err := ae.ExecuteAction(action, defInst, map[string]object.Object{
+		"Wallets": wallets,
+	})
+	s.Require().NoError(err)
+	s.True(result.Success)
+	s.Empty(result.Violations)
+
+	defLinks := simState.GetLinkedForward(defInst.GetID(), fix.definesKey)
+	s.Require().Len(defLinks, 3, "one account per wallet in the domain set")
+	s.Require().Len(result.PeerTransitions, 3)
+}
+
+func (s *AssociationPeerEffectsSuite) TestMultiSetAddEmptyDomainIsNoOp() {
+	fix := buildDualLinkFixture()
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
+
+	action := peerMultiSetAddOverWalletSet(fix.defKey, fix.definesKey, fix.accountKey, "Defines")
+	result, err := ae.ExecuteAction(action, defInst, map[string]object.Object{
+		"Wallets": object.NewSet(),
+	})
+	s.Require().NoError(err)
+	s.True(result.Success)
+	s.Empty(simState.GetLinkedForward(defInst.GetID(), fix.definesKey))
+	s.Empty(result.PeerTransitions)
+}
+
+func (s *AssociationPeerEffectsSuite) TestSelfMultiFireEventSetMapFiresOnOwner() {
+	fix := buildDualLinkFixture()
+	// Definition.Backfill: { InstantiateAccount(self, w) : w \in Wallets } — receiver is owner.
+	defClass := fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.defKey]
+	stateActiveKey := mustKey("domain/d/subdomain/s/class/definition/state/active")
+	eventKey := helper.Must(identity.NewEventKey(fix.defKey, "InstantiateAccount"))
+	actionKey := helper.Must(identity.NewActionKey(fix.defKey, "InstantiateAccount"))
+	transKey := helper.Must(identity.NewTransitionKey(fix.defKey, "active", "InstantiateAccount", "", "InstantiateAccount", ""))
+
+	event := model_state.NewEvent(eventKey, "InstantiateAccount", "", []string{"Wallet"})
+	action := model_state.NewAction(
+		actionKey,
+		model_state.ActionDetails{Name: "InstantiateAccount", Details: ""},
+		nil, nil, nil,
+		[]model_state.Parameter{
+			paramWithTypeSpec(actionKey, "Wallet", "object of wallet", "Wallet"),
+		},
+	)
+	trans := model_state.NewTransition(
+		transKey, eventKey,
+		model_state.TransitionStateKeys{FromStateKey: &stateActiveKey, ToStateKey: &stateActiveKey},
+		model_state.TransitionLogicKeys{GuardKey: nil, ActionKey: &actionKey}, "",
+	)
+	defClass.SetEvents(appendEvent(defClass.Events, eventKey, event))
+	defClass.SetActions(map[identity.Key]model_state.Action{actionKey: action})
+	defClass.SetTransitions(appendTransition(defClass.Transitions, transKey, trans))
+	fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.defKey] = defClass
+
+	backfillKey := helper.Must(identity.NewActionKey(fix.defKey, "backfill"))
+	backfillGuarKey := helper.Must(identity.NewActionGuaranteeKey(backfillKey, "0"))
+	setMapExpr := &me.SetMap{
+		Variable: "w",
+		Set:      &me.LocalVar{Name: "Wallets"},
+		Transform: &me.EventCall{
+			EventKey: eventKey,
+			Args: []me.Expression{
+				&me.SelfRef{},
+				&me.LocalVar{Name: "w"},
+			},
+		},
+	}
+	backfillLogic := model_logic.NewLogic(
+		backfillGuarKey, model_logic.LogicTypeStateChange, "", "Defines",
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ InstantiateAccount(self, w) : w \\in Wallets }"}, nil,
+	)
+	backfillLogic.Spec.Expression = setMapExpr
+	backfillAction := model_state.NewAction(
+		backfillKey,
+		model_state.ActionDetails{Name: "Backfill", Details: ""},
+		nil,
+		[]model_logic.Logic{backfillLogic},
+		nil,
+		[]model_state.Parameter{
+			paramWithTypeSpec(backfillKey, "Wallets", "unique unordered of object of wallet", "SUBSET Wallet"),
+		},
+	)
+
+	simState, ae := s.buildPeerEffectExecutor(fix.model)
+	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
+	w1 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	w2 := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
+	wallets := object.NewSetFromElements([]object.Object{
+		state.ClassExtentElement(w1.GetID(), w1.GetAttributes()),
+		state.ClassExtentElement(w2.GetID(), w2.GetAttributes()),
+	})
+
+	result, err := ae.ExecuteAction(backfillAction, defInst, map[string]object.Object{
+		"Wallets": wallets,
+	})
+	s.Require().NoError(err)
+	s.True(result.Success)
+	s.Require().Len(result.PeerTransitions, 2)
+	for _, pt := range result.PeerTransitions {
+		s.Equal("InstantiateAccount", pt.EventName)
+		s.Equal(defInst.GetID(), pt.Result.InstanceID, "receiver must be the definition (self), not a wallet")
+	}
+}
+
 func (s *AssociationPeerEffectsSuite) TestPeerDomainEventSetMapFiresPeerAction() {
 	fix := buildDualLinkFixture()
 	// Add Instantiate event+action on definition that only records a primed no-op attribute-free success.
@@ -711,21 +866,24 @@ func (s *AssociationPeerEffectsSuite) TestPeerDomainEventSetMapFiresPeerAction()
 	defClass.SetTransitions(appendTransition(defClass.Transitions, transKey, trans))
 	fix.model.Domains[mustKey("domain/d")].Subdomains[testSubdomainKey()].Classes[fix.defKey] = defClass
 
-	// Wallet action: peer-domain set-map over a parameter set of definitions.
+	// Wallet action: receiver-first event set-map over a parameter set of definitions.
 	walletActionKey := helper.Must(identity.NewActionKey(fix.walletKey, "apply"))
 	walletGuarKey := helper.Must(identity.NewActionGuaranteeKey(walletActionKey, "0"))
-	// { InstantiateAccount(self) : d \in Definitions } as lowered AST.
+	// { InstantiateAccount(d, self) : d \in Definitions } — first arg is receiver.
 	setMapExpr := &me.SetMap{
 		Variable: "d",
 		Set:      &me.LocalVar{Name: "Definitions"},
 		Transform: &me.EventCall{
 			EventKey: eventKey,
-			Args:     []me.Expression{&me.SelfRef{}},
+			Args: []me.Expression{
+				&me.LocalVar{Name: "d"},
+				&me.SelfRef{},
+			},
 		},
 	}
 	walletLogic := model_logic.NewLogic(
 		walletGuarKey, model_logic.LogicTypeStateChange, "", "",
-		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ InstantiateAccount(self) : d \\in Definitions }"}, nil,
+		logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "{ InstantiateAccount(d, self) : d \\in Definitions }"}, nil,
 	)
 	walletLogic.Spec.Expression = setMapExpr
 	walletAction := model_state.NewAction(
@@ -742,7 +900,7 @@ func (s *AssociationPeerEffectsSuite) TestPeerDomainEventSetMapFiresPeerAction()
 	simState, ae := s.buildPeerEffectExecutor(fix.model)
 	walletInst := s.createPeerEffectInstance(simState, fix.walletKey, "Active")
 	defInst := s.createPeerEffectInstance(simState, fix.defKey, "Active")
-	defExtent := state.ClassExtentElement(defInst.ID, defInst.Attributes)
+	defExtent := state.ClassExtentElement(defInst.GetID(), defInst.GetAttributes())
 	defs := object.NewSetFromElements([]object.Object{defExtent})
 
 	result, err := ae.ExecuteAction(walletAction, walletInst, map[string]object.Object{
@@ -752,7 +910,7 @@ func (s *AssociationPeerEffectsSuite) TestPeerDomainEventSetMapFiresPeerAction()
 	s.True(result.Success)
 	s.Require().NotEmpty(result.PeerTransitions)
 	s.Equal("InstantiateAccount", result.PeerTransitions[0].EventName)
-	s.Equal(defInst.ID, result.PeerTransitions[0].Result.InstanceID)
+	s.Equal(defInst.GetID(), result.PeerTransitions[0].Result.InstanceID)
 }
 
 func paramWithTypeSpec(actionKey identity.Key, name, rules, typeSpec string) model_state.Parameter {

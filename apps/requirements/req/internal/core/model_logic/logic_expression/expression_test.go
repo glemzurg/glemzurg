@@ -339,10 +339,10 @@ func (s *ExpressionTestSuite) TestValidateCalls() {
 
 func (s *ExpressionTestSuite) TestValidateExpression() {
 	ctx := coreerr.NewContext("test", "")
-	// Test the ValidateExpression helper function.
-	s.Require().NoError(ValidateExpression(ctx, nil))
-	s.Require().NoError(ValidateExpression(ctx, &BoolLiteral{Value: true}))
-	s.Require().Error(ValidateExpression(ctx, &RationalLiteral{}))
+	// Test the validateExpression helper function.
+	s.Require().NoError(validateExpression(ctx, nil))
+	s.Require().NoError(validateExpression(ctx, &BoolLiteral{Value: true}))
+	s.Require().Error(validateExpression(ctx, &RationalLiteral{}))
 }
 
 func (s *ExpressionTestSuite) TestNodeType() {

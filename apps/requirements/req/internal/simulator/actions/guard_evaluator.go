@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -27,7 +28,7 @@ func NewGuardEvaluator(bindingsBuilder *state.BindingsBuilder) *GuardEvaluator {
 // for the given instance. Returns false if any expression is not TRUE.
 func (g *GuardEvaluator) EvaluateGuard(
 	guard model_state.Guard,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 ) (bool, error) {
 	bindings := g.bindingsBuilder.BuildForInstance(instance)
 

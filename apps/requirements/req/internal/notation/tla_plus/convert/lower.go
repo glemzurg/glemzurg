@@ -61,8 +61,34 @@ type LowerContext struct {
 	// SystemEventNames maps reserved system event names (_new, _destroy) to event keys.
 	SystemEventNames map[string]identity.Key
 
+	// ClassEventNames maps non-system event names declared on the current class to event keys
+	// (receiver-first Event(self, …) and same-class event set-maps).
+	ClassEventNames map[string]identity.Key
+
 	// PeerEventNames maps outgoing-association peer class event names to event keys.
 	PeerEventNames map[string]identity.Key
+
+	// UniqueEventNames maps event names that appear on exactly one class in the model.
+	// Used for receiver-first Event(receiver, …) when the receiver class is not a direct
+	// association peer of the authoring class (e.g. association-class definitions).
+	UniqueEventNames map[string]identity.Key
+
+	// PreferPeerEvents resolves event names to peer/unique EventCalls before same-class events.
+	// Used for type:events guarantees that send Event(receiver, …) to other objects; the
+	// event name is the receiver's (e.g. Account.Delete), not the sender's same-named event.
+	PreferPeerEvents bool
+
+	// AssocPeerEventNames maps outgoing association keys to that peer class's event name→key map.
+	// Used with PreferPeerEvents so { Event(x) : x \in Assoc } resolves Event on Assoc's to-class
+	// when several peers share the same event name (e.g. Delete on multiple wallet classes).
+	AssocPeerEventNames map[identity.Key]map[string]identity.Key
+
+	// AssocClassPeerEventNames maps outgoing association keys that have an association class
+	// to that association class's event name→key map (e.g. IsSubdividedInto.CurrencyWalletDefinition).
+	AssocClassPeerEventNames map[identity.Key]map[string]identity.Key
+
+	// ClassEventNamesByKey maps any class key to its event name→key map (for ClassRef domains).
+	ClassEventNamesByKey map[identity.Key]map[string]identity.Key
 
 	// GlobalFunctions maps global function names (with leading underscore) to their identity keys.
 	GlobalFunctions map[string]identity.Key
@@ -894,6 +920,16 @@ func withLocalVar(ctx *LowerContext, name string) *LowerContext {
 	return &child
 }
 
+// withPreferPeerEvents returns a child context that resolves event names to peer/unique keys first.
+func withPreferPeerEvents(ctx *LowerContext) *LowerContext {
+	if ctx == nil || ctx.PreferPeerEvents {
+		return ctx
+	}
+	child := *ctx
+	child.PreferPeerEvents = true
+	return &child
+}
+
 func lowerQuantifier(e *ast.Quantifier, ctx *LowerContext) (*me.Quantifier, error) {
 	var kind me.QuantifierKind
 	switch e.Quantifier {
@@ -939,11 +975,73 @@ func lowerSetMap(e *ast.SetMap, ctx *LowerContext) (*me.SetMap, error) {
 	}
 
 	childCtx := withLocalVar(ctx, varName)
+	// type:events: bind Event names to the domain association's peer class when known.
+	if ctx.PreferPeerEvents {
+		if peerNames := peerEventNamesFromDomainExpr(set, ctx); len(peerNames) > 0 {
+			childCtx = withPeerEventNames(childCtx, peerNames)
+		}
+	}
 	transform, err := Lower(e.Transform, childCtx)
 	if err != nil {
 		return nil, fmt.Errorf("SetMap.Transform: %w", err)
 	}
 	return &me.SetMap{Variable: varName, Set: set, Transform: transform}, nil
+}
+
+// peerEventNamesFromDomainExpr returns event names for the class of domain elements
+// ({ x \in Assoc }, { x \in Assoc.AssociationClass }, { x \in Class }, filters thereof).
+func peerEventNamesFromDomainExpr(set me.Expression, ctx *LowerContext) map[string]identity.Key {
+	if ctx == nil {
+		return nil
+	}
+	return peerEventNamesFromDomainExprInner(unwrapDomainSetFilter(set), ctx)
+}
+
+func unwrapDomainSetFilter(expr me.Expression) me.Expression {
+	for {
+		sf, ok := expr.(*me.SetFilter)
+		if !ok {
+			return expr
+		}
+		expr = sf.Set
+	}
+}
+
+func peerEventNamesFromDomainExprInner(expr me.Expression, ctx *LowerContext) map[string]identity.Key {
+	switch e := expr.(type) {
+	case *me.AssociationRef:
+		if len(ctx.AssocPeerEventNames) == 0 {
+			return nil
+		}
+		return ctx.AssocPeerEventNames[e.AssociationKey]
+	case *me.FieldAccess:
+		// Assoc.AssociationClassName → association-class instances
+		if base, ok := e.Base.(*me.AssociationRef); ok {
+			if len(ctx.AssocClassPeerEventNames) == 0 {
+				return nil
+			}
+			return ctx.AssocClassPeerEventNames[base.AssociationKey]
+		}
+		return nil
+	case *me.ClassRef:
+		if len(ctx.ClassEventNamesByKey) == 0 {
+			return nil
+		}
+		return ctx.ClassEventNamesByKey[e.ClassKey]
+	default:
+		return nil
+	}
+}
+
+// withPeerEventNames returns a child context whose PeerEventNames are exactly names
+// (for domain-scoped type:events Event resolution).
+func withPeerEventNames(ctx *LowerContext, names map[string]identity.Key) *LowerContext {
+	if ctx == nil {
+		return ctx
+	}
+	child := *ctx
+	child.PeerEventNames = names
+	return &child
 }
 
 // --- Call lowering ---
@@ -1012,22 +1110,42 @@ func lowerClassActionCall(e *ast.FunctionCall, ctx *LowerContext) (me.Expression
 		// Same-class action/query call: ActionName(args...)
 		name := e.Name.Value
 
-		// Check actions first.
+		// type:events: Event(receiver, …) names the receiver's event, not the sender's.
+		if ctx.PreferPeerEvents {
+			if key, ok := ctx.PeerEventNames[name]; ok {
+				return &me.EventCall{EventKey: key, Args: args}, nil
+			}
+			if key, ok := ctx.UniqueEventNames[name]; ok {
+				return &me.EventCall{EventKey: key, Args: args}, nil
+			}
+		}
+
+		// Same-class events before actions so Event(self, …) set-maps lower to EventCall.
+		if key, ok := ctx.ClassEventNames[name]; ok {
+			return &me.EventCall{EventKey: key, Args: args}, nil
+		}
+		// Then actions / queries.
 		if key, ok := ctx.ActionNames[name]; ok {
 			return &me.ActionCall{ActionKey: key, Args: args}, nil
 		}
-		// Then queries.
 		if key, ok := ctx.QueryNames[name]; ok {
 			return &me.ActionCall{ActionKey: key, Args: args}, nil
 		}
-		// Peer-class events on outgoing associations (e.g. Update in set-map guarantees).
+		// Peer-class events (outgoing associations / object-of params).
 		if key, ok := ctx.PeerEventNames[name]; ok {
 			return &me.EventCall{EventKey: key, Args: args}, nil
 		}
+		// Uniquely named events elsewhere in the model (receiver-first across association classes).
+		if key, ok := ctx.UniqueEventNames[name]; ok {
+			return &me.EventCall{EventKey: key, Args: args}, nil
+		}
 		var available []string
+		available = append(available, mapKeys(ctx.ClassEventNames)...)
 		available = append(available, mapKeys(ctx.ActionNames)...)
 		available = append(available, mapKeys(ctx.QueryNames)...)
-		return nil, unresolvedError("action/query", name, available)
+		available = append(available, mapKeys(ctx.PeerEventNames)...)
+		available = append(available, mapKeys(ctx.UniqueEventNames)...)
+		return nil, unresolvedError("action/query/event", name, available)
 	}
 
 	// Cross-class action call: Domain!Subdomain!Class!Action or shorter scope paths.

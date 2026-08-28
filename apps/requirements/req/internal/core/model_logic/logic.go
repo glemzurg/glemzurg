@@ -21,6 +21,7 @@ const (
 	LogicTypeValue       = "value"        // Single unnamed value expression (global functions).
 	LogicTypeLet         = "let"          // Local variable definition: target = expression.
 	LogicTypeDestroy     = "destroy"      // Action guarantee only: association peer removal via selection spec + destroy_event.
+	LogicTypeEvents      = "events"       // Action guarantee only: broadcast events to receivers (no primed LHS on self).
 )
 
 // validLogicTypes is the set of valid Logic.Type values.
@@ -32,14 +33,15 @@ var validLogicTypes = map[string]bool{
 	LogicTypeValue:       true,
 	LogicTypeLet:         true,
 	LogicTypeDestroy:     true,
+	LogicTypeEvents:      true,
 }
 
 // Logic represents a formal logic specification attached to a model element.
 type Logic struct {
 	Key              identity.Key              // The key is unique in the whole model, and built on the key of the containing object.
-	Type             string                    // One of: assessment, state_change, query, safety_rule, value, let, destroy.
+	Type             string                    // One of: assessment, state_change, query, safety_rule, value, let, destroy, events.
 	Description      string                    // Optional human-readable description.
-	Target           string                    // Identifier or attribute to set. Required for state_change, query, let, and destroy types.
+	Target           string                    // Identifier or attribute to set. Required for state_change, query, let, and destroy; empty for events.
 	Spec             logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
 	DestroyEventSpec logic_spec.ExpressionSpec // Destroy-type only: peer event call (e.g. _destroy(b) or _destroy(b, Param)).
 	TargetTypeSpec   *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
@@ -82,14 +84,17 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 	}
 	// Type is required.
 	if l.Type == "" {
-		return coreerr.NewWithValues(ctx, coreerr.LogicTypeRequired, "Type is required", "Type", "", "one of: assessment, state_change, query, safety_rule, value, let, destroy")
+		return coreerr.NewWithValues(ctx, coreerr.LogicTypeRequired, "Type is required", "Type", "", "one of: assessment, state_change, query, safety_rule, value, let, destroy, events")
 	}
 	// Type must be a valid value.
 	if !validLogicTypes[l.Type] {
-		return coreerr.NewWithValues(ctx, coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let, destroy")
+		return coreerr.NewWithValues(ctx, coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let, destroy, events")
 	}
 	if l.Type == LogicTypeDestroy && l.Key.KeyType != identity.KEY_TYPE_ACTION_GUARANTEE {
 		return coreerr.New(ctx, coreerr.LogicDestroyContextInvalid, "destroy logic may only appear in action guarantees", "Type")
+	}
+	if l.Type == LogicTypeEvents && l.Key.KeyType != identity.KEY_TYPE_ACTION_GUARANTEE {
+		return coreerr.New(ctx, coreerr.LogicDestroyContextInvalid, "events logic may only appear in action guarantees", "Type")
 	}
 	// Target validation based on logic type.
 	switch l.Type {
@@ -101,7 +106,7 @@ func (l *Logic) Validate(ctx *coreerr.ValidationContext) error {
 		if (l.Type == LogicTypeQuery || l.Type == LogicTypeLet) && strings.HasPrefix(l.Target, "_") {
 			return coreerr.NewWithValues(ctx, coreerr.LogicTargetNoUnderscore, fmt.Sprintf("logic %q of type %q has target %q starting with '_' which is not allowed", l.Key.String(), l.Type, l.Target), "Target", l.Target, "")
 		}
-	case LogicTypeAssessment, LogicTypeSafetyRule, LogicTypeValue:
+	case LogicTypeAssessment, LogicTypeSafetyRule, LogicTypeValue, LogicTypeEvents:
 		if l.Target != "" {
 			return coreerr.NewWithValues(ctx, coreerr.LogicTargetMustBeEmpty, fmt.Sprintf("logic %q of type %q must not have a target, got %q", l.Key.String(), l.Type, l.Target), "Target", l.Target, "empty string")
 		}

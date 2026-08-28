@@ -3,11 +3,10 @@
 package report
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 // ViolationReport categorizes and summarizes violations.
@@ -35,7 +34,7 @@ type ViolationEntry struct {
 }
 
 // FromViolations builds a ViolationReport from a ViolationErrors.
-func FromViolations(violations invariants.ViolationErrors) *ViolationReport {
+func FromViolations(violations instance.ViolationErrors) *ViolationReport {
 	r := &ViolationReport{
 		TotalCount: len(violations),
 	}
@@ -46,7 +45,7 @@ func FromViolations(violations invariants.ViolationErrors) *ViolationReport {
 	liveness := violations.LivenessViolations()
 
 	// Collect remaining violations (multiplicity, safety rules).
-	categorized := make(map[*invariants.ViolationError]bool)
+	categorized := make(map[*instance.ViolationError]bool)
 	for _, v := range tla {
 		categorized[v] = true
 	}
@@ -56,7 +55,7 @@ func FromViolations(violations invariants.ViolationErrors) *ViolationReport {
 	for _, v := range liveness {
 		categorized[v] = true
 	}
-	var other invariants.ViolationErrors
+	var other instance.ViolationErrors
 	for _, v := range violations {
 		if !categorized[v] {
 			other = append(other, v)
@@ -123,13 +122,8 @@ func (r *ViolationReport) FormatText() string {
 	return b.String()
 }
 
-// FormatJSON renders the report as indented JSON bytes.
-func (r *ViolationReport) FormatJSON() ([]byte, error) {
-	return json.MarshalIndent(r, "", "  ")
-}
-
 // buildCategory creates a ViolationCategory from a ViolationErrors.
-func buildCategory(name string, violations invariants.ViolationErrors) ViolationCategory {
+func buildCategory(name string, violations instance.ViolationErrors) ViolationCategory {
 	cat := ViolationCategory{
 		Name:  name,
 		Count: len(violations),

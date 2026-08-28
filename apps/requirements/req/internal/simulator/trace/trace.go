@@ -11,8 +11,9 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // SimulationTrace is the top-level serializable trace of a simulation run.
@@ -82,7 +83,7 @@ func FromResult(result *engine.SimulationResult) *SimulationTrace {
 	}
 
 	if result.FinalState != nil {
-		t.FinalState = buildFinalState(result.FinalState, result.Catalog)
+		t.FinalState = buildFinalState(result.FinalState, result.Schema)
 	}
 
 	return t
@@ -121,8 +122,8 @@ func (t *SimulationTrace) FormatText() string {
 	return b.String()
 }
 
-// FormatJSON renders the trace as indented JSON bytes.
-func (t *SimulationTrace) FormatJSON() ([]byte, error) {
+// formatJSON renders the trace as indented JSON bytes.
+func (t *SimulationTrace) formatJSON() ([]byte, error) {
 	return json.MarshalIndent(t, "", "  ")
 }
 
@@ -196,42 +197,31 @@ func convertAssociationMaterialization(mat *actions.AssociationMaterialization) 
 }
 
 // buildFinalState creates a FinalState snapshot from SimulationState.
-func buildFinalState(simState *state.SimulationState, catalog *engine.ClassCatalog) *FinalState {
-	instances := simState.AllInstances()
-
-	// Sort by ID for deterministic output.
-	sort.Slice(instances, func(i, j int) bool {
-		return instances[i].ID < instances[j].ID
-	})
-
+func buildFinalState(simState *instance.State, catalog *schema.Schema) *FinalState {
+	snap := simState.Snapshot()
 	fs := &FinalState{
-		InstanceCount: len(instances),
-		LinkCount:     simState.LinkCount(),
+		InstanceCount: snap.InstanceCount,
+		LinkCount:     snap.LinkCount,
+		Instances:     make([]InstanceState, 0, len(snap.Instances)),
 	}
 
-	for _, inst := range instances {
+	for _, inst := range snap.Instances {
 		is := InstanceState{
 			InstanceID: uint64(inst.ID),
 			ClassKey:   inst.ClassKey.String(),
-			Attributes: make(map[string]string),
+			Attributes: inst.Attributes,
+			Endpoints:  associationEndpointsForSnapshot(inst, simState, catalog),
 		}
-		for _, name := range inst.AttributeNames() {
-			val := inst.GetAttribute(name)
-			if val != nil {
-				is.Attributes[name] = val.Inspect()
-			}
-		}
-		is.Endpoints = associationEndpointsForInstance(inst, simState, catalog)
 		fs.Instances = append(fs.Instances, is)
 	}
 
 	return fs
 }
 
-func associationEndpointsForInstance(
-	inst *state.ClassInstance,
-	simState *state.SimulationState,
-	catalog *engine.ClassCatalog,
+func associationEndpointsForSnapshot(
+	inst instance.SnapshotInstance,
+	simState *instance.State,
+	catalog *schema.Schema,
 ) *AssociationMaterializationTrace {
 	if catalog == nil || !catalog.IsAssociationClass(inst.ClassKey) {
 		return nil
@@ -257,7 +247,7 @@ func associationEndpointsForInstance(
 }
 
 // extractAssignments gets the primed assignments for the primary instance.
-func extractAssignments(instanceID state.InstanceID, assignments map[state.InstanceID]map[string]object.Object) map[string]string {
+func extractAssignments(instanceID instance.ID, assignments map[instance.ID]map[string]object.Object) map[string]string {
 	fields, ok := assignments[instanceID]
 	if !ok || len(fields) == 0 {
 		return nil

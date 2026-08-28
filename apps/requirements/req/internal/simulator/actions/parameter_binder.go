@@ -46,9 +46,9 @@ func (b *ParameterBinder) SetObjectInstanceLookup(lookup ObjectInstanceLookup) {
 	b.objectLookup = lookup
 }
 
-// BindParameters validates that all required parameters are provided and returns
+// bindParameters validates that all required parameters are provided and returns
 // a map suitable for use as evaluator bindings.
-func (b *ParameterBinder) BindParameters(
+func (b *ParameterBinder) bindParameters(
 	paramDefs []model_state.Parameter,
 	paramValues map[string]object.Object,
 ) (map[string]object.Object, error) {

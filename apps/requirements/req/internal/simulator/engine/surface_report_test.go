@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
@@ -40,7 +42,7 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsClassesEventsQueriesAndD
 	assoc := model_class.NewAssociation(assocKey, model_class.AssociationDetails{Name: "OrderItem", Details: ""}, model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, model_class.AssociationOptions{AssociationClassKey: nil, UmlComment: ""})
 	model.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 	report := BuildSurfaceReport(catalog)
 
 	// Item has no external drivers (mandatory peer of Order); surface lists drivers only.
@@ -72,7 +74,7 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportOmitsClassesWithNoExternalDri
 	simpleClass.SetQueries(map[identity.Key]model_state.Query{})
 	simpleClass.SetTransitions(map[identity.Key]model_state.Transition{})
 
-	catalog := NewClassCatalog(testModel(classEntry(simpleClass, classKey)))
+	catalog := schema.New(testModel(classEntry(simpleClass, classKey)), schema.RunScopeAll())
 	report := BuildSurfaceReport(catalog)
 
 	s.Empty(report.Classes, "liveness-only / peer-only classes are not surface drivers")
@@ -128,8 +130,7 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsExternalDerivedAttribute
 	})
 
 	model := testModel(classEntry(accountClass, accountKey))
-	catalog := NewClassCatalog(model)
-	PopulateDerivedAttributeCallersFromModel(model, catalog)
+	catalog := schema.New(model, schema.RunScopeAll())
 	report := BuildSurfaceReport(catalog)
 
 	entry := findSurfaceClass(report, accountKey.String())
@@ -141,7 +142,7 @@ func (s *SurfaceReportSuite) TestBuildSurfaceReportListsExternalDerivedAttribute
 
 func (s *SurfaceReportSuite) TestFormatTextIncludesClassAndSurfaceEntries() {
 	orderClass, orderKey := testOrderClass()
-	catalog := NewClassCatalog(testModel(classEntry(orderClass, orderKey)))
+	catalog := schema.New(testModel(classEntry(orderClass, orderKey)), schema.RunScopeAll())
 	text := BuildSurfaceReport(catalog).FormatText()
 
 	s.Contains(text, "Simulation surface")
@@ -171,9 +172,9 @@ func TestFormatTextEmptySurface(t *testing.T) {
 	}
 }
 
-func (s *SurfaceReportSuite) TestFormatTextIncludesScopeBeforeSurface() {
+func (s *SurfaceReportSuite) TestFormatTextIncludesDriversBeforeScope() {
 	orderClass, orderKey := testOrderClass()
-	catalog := NewClassCatalog(testModel(classEntry(orderClass, orderKey)))
+	catalog := schema.New(testModel(classEntry(orderClass, orderKey)), schema.RunScopeAll())
 	report := BuildSurfaceReport(catalog)
 	report.Scope = []surface.ScopeEntry{
 		{Kind: surface.ScopeClass, Path: "d/s/order"},
@@ -182,5 +183,84 @@ func (s *SurfaceReportSuite) TestFormatTextIncludesScopeBeforeSurface() {
 	s.Contains(text, "Simulation scope")
 	s.Contains(text, "class d/s/order")
 	s.Contains(text, "Simulation surface")
-	s.Greater(strings.Index(text, "Simulation surface"), strings.Index(text, "Simulation scope"))
+	// Combined FormatText matches CLI piece order: drivers first, scope last.
+	s.Greater(strings.Index(text, "Simulation scope"), strings.Index(text, "Simulation surface"))
+}
+
+func (s *SurfaceReportSuite) TestFormatScopeTextAndDriversTextAreSeparate() {
+	orderClass, orderKey := testOrderClass()
+	catalog := schema.New(testModel(classEntry(orderClass, orderKey)), schema.RunScopeAll())
+	report := BuildSurfaceReport(catalog)
+	report.Scope = []surface.ScopeEntry{
+		{Kind: surface.ScopeClass, Path: "d/s/order"},
+	}
+	scopeText := report.FormatScopeText()
+	driversText := report.FormatDriversText()
+	s.Contains(scopeText, "Simulation scope")
+	s.Contains(scopeText, "class d/s/order")
+	s.NotContains(scopeText, "Simulation surface")
+	s.Contains(driversText, "Simulation surface")
+	s.NotContains(driversText, "Simulation scope")
+}
+
+func (s *SurfaceReportSuite) TestBuildSurfaceReportListsAssociationClassCreationAndStateEvents() {
+	tcm := buildAssociationClassTestModel()
+	catalog := schema.New(tcm.model, schema.RunScopeAll())
+	report := BuildSurfaceReport(catalog)
+
+	linkDef := findSurfaceClass(report, tcm.linkDefKey.String())
+	s.Require().NotNil(linkDef, "in-scope association class must appear on the surface")
+	s.Equal("association_class", linkDef.Role)
+	// E1: association-class _new/create is a surface creation driver.
+	s.Require().NotEmpty(linkDef.CreationEvents, "association class creation must be a surface driver")
+	creationNames := make([]string, 0, len(linkDef.CreationEvents))
+	for _, e := range linkDef.CreationEvents {
+		creationNames = append(creationNames, e.EventName)
+	}
+	s.Contains(creationNames, "Add")
+
+	// Active: Update and Delete (not Add, which is creation-only)
+	s.Require().NotEmpty(linkDef.States)
+	var active *SurfaceStateReport
+	for i := range linkDef.States {
+		if linkDef.States[i].StateName == "Active" {
+			active = &linkDef.States[i]
+			break
+		}
+	}
+	s.Require().NotNil(active, "Active state drivers")
+	eventNames := make([]string, 0, len(active.Events))
+	for _, e := range active.Events {
+		eventNames = append(eventNames, e.EventName)
+	}
+	s.Contains(eventNames, "Update")
+	s.Contains(eventNames, "Delete")
+	s.NotContains(eventNames, "Add")
+}
+
+func (s *SurfaceReportSuite) TestBuildSurfaceReportOmitsAssociationClassEventSentByInScopePeer() {
+	// Partner type:events sends Delete to LinkDef → LinkDef.Delete off surface; Update remains.
+	tcm := buildAssociationClassTestModel()
+	// Add partner action that type:events Delete to link def peers — simplified via SetEventSentBy after catalog build.
+	catalog := schema.New(tcm.model, schema.RunScopeAll())
+	eventDeleteKey := mustKey("domain/d/subdomain/s/class/link_def/event/delete")
+	catalog.SetEventSentBy(eventDeleteKey, []identity.Key{tcm.partnerKey})
+
+	report := BuildSurfaceReport(catalog)
+	linkDef := findSurfaceClass(report, tcm.linkDefKey.String())
+	s.Require().NotNil(linkDef)
+	var active *SurfaceStateReport
+	for i := range linkDef.States {
+		if linkDef.States[i].StateName == "Active" {
+			active = &linkDef.States[i]
+			break
+		}
+	}
+	s.Require().NotNil(active)
+	eventNames := make([]string, 0, len(active.Events))
+	for _, e := range active.Events {
+		eventNames = append(eventNames, e.EventName)
+	}
+	s.Contains(eventNames, "Update")
+	s.NotContains(eventNames, "Delete", "event sent by in-scope class is not a surface driver")
 }

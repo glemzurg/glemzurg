@@ -13,7 +13,7 @@ import (
 func TestAssociationNavigationKeepsIdenticalPeerDataDistinct(t *testing.T) {
 	t.Parallel()
 
-	sim := NewSimulationState()
+	sim := newSimulationState()
 	txnKey := testClassKey(t, "finance", "wallet", "transaction")
 	acctKey := testClassKey(t, "finance", "wallet", "account")
 	abcKey := testClassKey(t, "finance", "wallet", "account_balance_change")
@@ -40,9 +40,9 @@ func TestAssociationNavigationKeepsIdenticalPeerDataDistinct(t *testing.T) {
 		"amount": object.NewInteger(-25),
 	}))
 
-	require.NoError(t, sim.AddAssociationLink(assocKey, txn.ID, a1.ID, abc1.ID))
-	require.NoError(t, sim.AddAssociationLink(assocKey, txn.ID, a2.ID, abc2.ID))
-	require.NoError(t, sim.AddAssociationLink(assocKey, txn.ID, a3.ID, abc3.ID))
+	require.NoError(t, sim.AddAssociationLink(assocKey, txn.GetID(), a1.GetID(), abc1.GetID()))
+	require.NoError(t, sim.AddAssociationLink(assocKey, txn.GetID(), a2.GetID(), abc2.GetID()))
+	require.NoError(t, sim.AddAssociationLink(assocKey, txn.GetID(), a3.GetID(), abc3.GetID()))
 
 	builder := NewBindingsBuilder(sim)
 	builder.AddAssociationClassHost(

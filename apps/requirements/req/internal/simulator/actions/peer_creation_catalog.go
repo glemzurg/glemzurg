@@ -6,8 +6,10 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// PeerCreationCatalog resolves associations and peer-class events for association
-// set-add and set-map guarantees.
+// PeerCreationCatalog documents the static association/peer questions action execution
+// asks of schema. *schema.Schema implements this surface (via Catalog wrappers).
+// ActionExecutor holds *schema.Schema directly; this interface remains for documentation
+// and for tests that mock peer resolution.
 type PeerCreationCatalog interface {
 	AssociationClassIndex
 	AssociationByKey(assocKey identity.Key) (model_class.Association, bool)

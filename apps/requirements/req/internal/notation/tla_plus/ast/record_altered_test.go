@@ -42,7 +42,7 @@ func (suite *RecordAlteredSuite) TestString() {
 				},
 				{
 					Field:      &FieldIdentifier{Identifier: nil, Member: `rdy`},
-					Expression: NewIntLiteral(1),
+					Expression: newIntLiteral(1),
 				},
 			},
 			expected: `[chan EXCEPT !.val = d, !.rdy = 1]`,
@@ -68,15 +68,15 @@ func (suite *RecordAlteredSuite) TestString() {
 			alterations: []*FieldAlteration{
 				{
 					Field:      &FieldIdentifier{Identifier: nil, Member: `a`},
-					Expression: NewIntLiteral(1),
+					Expression: newIntLiteral(1),
 				},
 				{
 					Field:      &FieldIdentifier{Identifier: nil, Member: `b`},
-					Expression: NewIntLiteral(2),
+					Expression: newIntLiteral(2),
 				},
 				{
 					Field:      &FieldIdentifier{Identifier: nil, Member: `c`},
-					Expression: NewIntLiteral(3),
+					Expression: newIntLiteral(3),
 				},
 			},
 			expected: `[record EXCEPT !.a = 1, !.b = 2, !.c = 3]`,
@@ -118,9 +118,9 @@ func (suite *RecordAlteredSuite) TestASCII() {
 				{
 					Field: &FieldIdentifier{Identifier: nil, Member: `x`},
 					Expression: &RealInfixExpression{
-						Left:     NewIntLiteral(10),
+						Left:     newIntLiteral(10),
 						Operator: RealOperatorDivide,
-						Right:    NewIntLiteral(2),
+						Right:    newIntLiteral(2),
 					},
 				},
 			},
@@ -168,7 +168,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 					},
 					{
 						Field:      &FieldIdentifier{Identifier: nil, Member: `rdy`},
-						Expression: NewIntLiteral(1),
+						Expression: newIntLiteral(1),
 					},
 				},
 			},

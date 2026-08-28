@@ -24,69 +24,69 @@ func (suite *RealInfixExpressionSuite) TestString() {
 	}{
 		{
 			testName: `addition`,
-			left:     NewIntLiteral(1),
+			left:     newIntLiteral(1),
 			operator: RealOperatorAdd,
-			right:    NewIntLiteral(2),
+			right:    newIntLiteral(2),
 			expected: `1 + 2`,
 		},
 		{
 			testName: `subtraction`,
-			left:     NewIntLiteral(5),
+			left:     newIntLiteral(5),
 			operator: RealOperatorSubtract,
-			right:    NewIntLiteral(3),
+			right:    newIntLiteral(3),
 			expected: `5 - 3`,
 		},
 		{
 			testName: `multiplication`,
-			left:     NewIntLiteral(4),
+			left:     newIntLiteral(4),
 			operator: RealOperatorMultiply,
-			right:    NewIntLiteral(6),
+			right:    newIntLiteral(6),
 			expected: `4 * 6`,
 		},
 		{
 			testName: `power`,
-			left:     NewIntLiteral(2),
+			left:     newIntLiteral(2),
 			operator: RealOperatorPower,
-			right:    NewIntLiteral(8),
+			right:    newIntLiteral(8),
 			expected: `2 ^ 8`,
 		},
 		{
 			testName: `division`,
-			left:     NewIntLiteral(10),
+			left:     newIntLiteral(10),
 			operator: RealOperatorDivide,
-			right:    NewIntLiteral(2),
+			right:    newIntLiteral(2),
 			expected: `10 ÷ 2`,
 		},
 		{
 			testName: `modulo`,
-			left:     NewIntLiteral(10),
+			left:     newIntLiteral(10),
 			operator: RealOperatorModulo,
-			right:    NewIntLiteral(3),
+			right:    newIntLiteral(3),
 			expected: `10 % 3`,
 		},
 		{
 			testName: `with natural literals`,
-			left:     NewIntLiteral(5),
+			left:     newIntLiteral(5),
 			operator: RealOperatorAdd,
-			right:    NewIntLiteral(3),
+			right:    newIntLiteral(3),
 			expected: `5 + 3`,
 		},
 		{
 			testName: `with real literal`,
 			left:     NewDecimalNumberLiteral("3", "14"),
 			operator: RealOperatorMultiply,
-			right:    NewIntLiteral(2),
+			right:    newIntLiteral(2),
 			expected: `3.14 * 2`,
 		},
 		{
 			testName: `nested expression`,
 			left: &RealInfixExpression{
-				Left:     NewIntLiteral(1),
+				Left:     newIntLiteral(1),
 				Operator: RealOperatorAdd,
-				Right:    NewIntLiteral(2),
+				Right:    newIntLiteral(2),
 			},
 			operator: RealOperatorMultiply,
-			right:    NewIntLiteral(3),
+			right:    newIntLiteral(3),
 			expected: `1 + 2 * 3`,
 		},
 	}
@@ -112,27 +112,27 @@ func (suite *RealInfixExpressionSuite) TestASCII() {
 	}{
 		{
 			testName: `addition`,
-			left:     NewIntLiteral(1),
+			left:     newIntLiteral(1),
 			operator: RealOperatorAdd,
-			right:    NewIntLiteral(2),
+			right:    newIntLiteral(2),
 			expected: `1 + 2`,
 		},
 		{
 			testName: `division unicode to ascii`,
-			left:     NewIntLiteral(10),
+			left:     newIntLiteral(10),
 			operator: RealOperatorDivide,
-			right:    NewIntLiteral(2),
+			right:    newIntLiteral(2),
 			expected: `10 \div 2`,
 		},
 		{
 			testName: `nested expression`,
 			left: &RealInfixExpression{
-				Left:     NewIntLiteral(1),
+				Left:     newIntLiteral(1),
 				Operator: RealOperatorAdd,
-				Right:    NewIntLiteral(2),
+				Right:    newIntLiteral(2),
 			},
 			operator: RealOperatorDivide,
-			right:    NewIntLiteral(3),
+			right:    newIntLiteral(3),
 			expected: `1 + 2 \div 3`,
 		},
 	}
@@ -159,48 +159,48 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 			testName: `valid addition`,
 			r: &RealInfixExpression{
 				Operator: RealOperatorAdd,
-				Left:     NewIntLiteral(1),
-				Right:    NewIntLiteral(2),
+				Left:     newIntLiteral(1),
+				Right:    newIntLiteral(2),
 			},
 		},
 		{
 			testName: `valid subtraction`,
 			r: &RealInfixExpression{
 				Operator: RealOperatorSubtract,
-				Left:     NewIntLiteral(5),
-				Right:    NewIntLiteral(3),
+				Left:     newIntLiteral(5),
+				Right:    newIntLiteral(3),
 			},
 		},
 		{
 			testName: `valid multiplication`,
 			r: &RealInfixExpression{
 				Operator: RealOperatorMultiply,
-				Left:     NewIntLiteral(4),
-				Right:    NewIntLiteral(6),
+				Left:     newIntLiteral(4),
+				Right:    newIntLiteral(6),
 			},
 		},
 		{
 			testName: `valid power`,
 			r: &RealInfixExpression{
 				Operator: RealOperatorPower,
-				Left:     NewIntLiteral(2),
-				Right:    NewIntLiteral(8),
+				Left:     newIntLiteral(2),
+				Right:    newIntLiteral(8),
 			},
 		},
 		{
 			testName: `valid division`,
 			r: &RealInfixExpression{
 				Operator: RealOperatorDivide,
-				Left:     NewIntLiteral(10),
-				Right:    NewIntLiteral(2),
+				Left:     newIntLiteral(10),
+				Right:    newIntLiteral(2),
 			},
 		},
 		{
 			testName: `valid modulo`,
 			r: &RealInfixExpression{
 				Operator: RealOperatorModulo,
-				Left:     NewIntLiteral(10),
-				Right:    NewIntLiteral(3),
+				Left:     newIntLiteral(10),
+				Right:    newIntLiteral(3),
 			},
 		},
 		{
@@ -209,10 +209,10 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 				Operator: RealOperatorMultiply,
 				Left: &RealInfixExpression{
 					Operator: RealOperatorAdd,
-					Left:     NewIntLiteral(1),
-					Right:    NewIntLiteral(2),
+					Left:     newIntLiteral(1),
+					Right:    newIntLiteral(2),
 				},
-				Right: NewIntLiteral(3),
+				Right: newIntLiteral(3),
 			},
 		},
 
@@ -220,8 +220,8 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 		{
 			testName: `error missing operator`,
 			r: &RealInfixExpression{
-				Left:  NewIntLiteral(1),
-				Right: NewIntLiteral(2),
+				Left:  newIntLiteral(1),
+				Right: newIntLiteral(2),
 			},
 			errstr: `Operator`,
 		},
@@ -229,8 +229,8 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 			testName: `error invalid operator`,
 			r: &RealInfixExpression{
 				Operator: `invalid`,
-				Left:     NewIntLiteral(1),
-				Right:    NewIntLiteral(2),
+				Left:     newIntLiteral(1),
+				Right:    newIntLiteral(2),
 			},
 			errstr: `Operator`,
 		},
@@ -238,7 +238,7 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 			testName: `error missing left`,
 			r: &RealInfixExpression{
 				Operator: RealOperatorAdd,
-				Right:    NewIntLiteral(2),
+				Right:    newIntLiteral(2),
 			},
 			errstr: `Left`,
 		},
@@ -246,7 +246,7 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 			testName: `error missing right`,
 			r: &RealInfixExpression{
 				Operator: RealOperatorAdd,
-				Left:     NewIntLiteral(1),
+				Left:     newIntLiteral(1),
 			},
 			errstr: `Right`,
 		},
@@ -256,10 +256,10 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 				Operator: RealOperatorMultiply,
 				Left: &RealInfixExpression{
 					Operator: `invalid`,
-					Left:     NewIntLiteral(1),
-					Right:    NewIntLiteral(2),
+					Left:     newIntLiteral(1),
+					Right:    newIntLiteral(2),
 				},
-				Right: NewIntLiteral(3),
+				Right: newIntLiteral(3),
 			},
 			errstr: `Operator`,
 		},
@@ -279,9 +279,9 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 func (suite *RealInfixExpressionSuite) TestExpressionNode() {
 	// Verify that RealInfixExpression implements the expressionNode interface method.
 	r := &RealInfixExpression{
-		Left:     NewIntLiteral(1),
+		Left:     newIntLiteral(1),
 		Operator: RealOperatorAdd,
-		Right:    NewIntLiteral(2),
+		Right:    newIntLiteral(2),
 	}
 	// This should compile and not panic.
 	r.expressionNode()

@@ -43,16 +43,21 @@ type RelationContext struct {
 
 	// associationClassRows indexes materialized host rows for AC member traversal.
 	associationClassRows []associationClassRow
+
+	// associationClassHostKeys marks host associations whose endpoint image is
+	// derived only from associationClassRows (not the plain binary link table).
+	associationClassHostKeys map[AssociationKey]struct{}
 }
 
 // NewRelationContext creates a new relation context.
 func NewRelationContext() *RelationContext {
 	return &RelationContext{
-		ForwardRelations: make(map[string]map[string]*RelationInfo),
-		ReverseRelations: make(map[string]map[string]*RelationInfo),
-		identities:       NewIdentityRegistry(),
-		links:            NewLinkTable(),
-		classByObjectID:  make(map[ObjectID]string),
+		ForwardRelations:         make(map[string]map[string]*RelationInfo),
+		ReverseRelations:         make(map[string]map[string]*RelationInfo),
+		identities:               NewIdentityRegistry(),
+		links:                    NewLinkTable(),
+		classByObjectID:          make(map[ObjectID]string),
+		associationClassHostKeys: make(map[AssociationKey]struct{}),
 	}
 }
 
@@ -162,6 +167,20 @@ func (c *RelationContext) AddAssociationClassHost(
 		c.ReverseRelations[toClassKey] = make(map[string]*RelationInfo)
 	}
 	c.ReverseRelations[toClassKey][fieldName] = reverseInfo
+
+	if c.associationClassHostKeys == nil {
+		c.associationClassHostKeys = make(map[AssociationKey]struct{})
+	}
+	c.associationClassHostKeys[assocKey] = struct{}{}
+}
+
+// IsAssociationClassHost reports whether assocKey is materialized only via association-class rows.
+func (c *RelationContext) IsAssociationClassHost(assocKey AssociationKey) bool {
+	if c == nil || c.associationClassHostKeys == nil {
+		return false
+	}
+	_, ok := c.associationClassHostKeys[assocKey]
+	return ok
 }
 
 // GetForwardRelation returns relation info for a forward traversal (.Name).
@@ -201,10 +220,33 @@ func (c *RelationContext) GetRelation(classKey, fieldName string) *RelationInfo 
 	return c.GetForwardRelation(classKey, fieldName)
 }
 
-// CreateLink creates a link between two records for the given association.
+// FindRelationByAssociationKey finds forward then reverse RelationInfo on classKey
+// for the given association key (used when evaluating bare AssociationRef in TLA).
+func (c *RelationContext) FindRelationByAssociationKey(classKey string, assocKey AssociationKey) *RelationInfo {
+	if c == nil || classKey == "" {
+		return nil
+	}
+	if classMap, ok := c.ForwardRelations[classKey]; ok {
+		for _, info := range classMap {
+			if info != nil && info.AssociationKey == assocKey {
+				return info
+			}
+		}
+	}
+	if classMap, ok := c.ReverseRelations[classKey]; ok {
+		for _, info := range classMap {
+			if info != nil && info.AssociationKey == assocKey {
+				return info
+			}
+		}
+	}
+	return nil
+}
+
+// createLink creates a link between two records for the given association.
 // Both records will be assigned object IDs if they don't have them.
 // Prefer CreateInstanceLink when engine InstanceIDs and [id, data] extents are available.
-func (c *RelationContext) CreateLink(assocKey AssociationKey, from, to *object.Record) {
+func (c *RelationContext) createLink(assocKey AssociationKey, from, to *object.Record) {
 	fromID := c.identities.GetOrAssign(from)
 	toID := c.identities.GetOrAssign(to)
 	_ = c.links.AddLink(assocKey, fromID, toID)
@@ -277,6 +319,14 @@ func (c *RelationContext) EnsureInstance(id ObjectID, data *object.Record) {
 	c.identities.RegisterVisible(id, extent, data)
 }
 
+// VisibleRecord returns the TLA-visible record for a runtime object id, if any.
+func (c *RelationContext) VisibleRecord(id ObjectID) *object.Record {
+	if c == nil {
+		return nil
+	}
+	return c.identities.GetRecord(id)
+}
+
 // RemoveLink removes a link between two records for the given association.
 // Returns true if the link existed and was removed.
 func (c *RelationContext) RemoveLink(assocKey AssociationKey, from, to *object.Record) bool {
@@ -290,20 +340,40 @@ func (c *RelationContext) RemoveLink(assocKey AssociationKey, from, to *object.R
 	return c.links.RemoveLink(assocKey, fromID, toID)
 }
 
+// objectIDForRecord resolves a runtime record to its ObjectID.
+// Registered pointers hit the identity map; set-cloned [id, data] extent elements
+// fall back to the id field so CHOOSEn/set peers still navigate like the live instance.
+func (c *RelationContext) objectIDForRecord(record *object.Record) (ObjectID, bool) {
+	if record == nil {
+		return 0, false
+	}
+	if id, ok := c.identities.GetID(record); ok {
+		return id, true
+	}
+	eid, ok := object.ExtentID(record)
+	if !ok {
+		return 0, false
+	}
+	id := ObjectID(eid)
+	if c.identities.GetRecord(id) == nil {
+		return 0, false
+	}
+	return id, true
+}
+
 // GetRelatedRecords returns records related to the given record via an association.
 // If reverse is false, returns records linked FROM this record (forward traversal).
 // If reverse is true, returns records linked TO this record (reverse traversal).
+// Host associations with an association class derive endpoints only from AC rows
+// (no parallel binary-link image).
 func (c *RelationContext) GetRelatedRecords(record *object.Record, assocKey AssociationKey, reverse bool) []*object.Record {
-	id, exists := c.identities.GetID(record)
-	if !exists {
-		// Extent element clones are not pointer-equal to registered data; use id field.
-		if eid, ok := object.ExtentID(record); ok {
-			id = ObjectID(eid)
-			exists = c.identities.GetRecord(id) != nil
-		}
-	}
+	id, exists := c.objectIDForRecord(record)
 	if !exists {
 		return nil
+	}
+
+	if c.IsAssociationClassHost(assocKey) {
+		return c.relatedRecordsFromAssociationClassRows(id, assocKey, reverse)
 	}
 
 	var objectIDs []ObjectID
@@ -323,6 +393,43 @@ func (c *RelationContext) GetRelatedRecords(record *object.Record, assocKey Asso
 	return records
 }
 
+// relatedRecordsFromAssociationClassRows builds the host endpoint image from AC rows only.
+func (c *RelationContext) relatedRecordsFromAssociationClassRows(
+	anchorID ObjectID,
+	assocKey AssociationKey,
+	reverse bool,
+) []*object.Record {
+	records := make([]*object.Record, 0)
+	seen := make(map[ObjectID]struct{})
+	for _, row := range c.associationClassRows {
+		if row.hostKey != assocKey {
+			continue
+		}
+		var anchorRecord, farEndpoint *object.Record
+		if reverse {
+			anchorRecord = row.toRecord
+			farEndpoint = row.fromRecord
+		} else {
+			anchorRecord = row.fromRecord
+			farEndpoint = row.toRecord
+		}
+		rowAnchorID, ok := c.objectIDForRecord(anchorRecord)
+		if !ok || rowAnchorID != anchorID {
+			continue
+		}
+		farID, ok := c.objectIDForRecord(farEndpoint)
+		if !ok {
+			continue
+		}
+		if _, dup := seen[farID]; dup {
+			continue
+		}
+		seen[farID] = struct{}{}
+		records = append(records, farEndpoint)
+	}
+	return records
+}
+
 // AddAssociationClassRow records one materialized host row for AC member traversal.
 func (c *RelationContext) AddAssociationClassRow(
 	hostKey AssociationKey,
@@ -338,12 +445,14 @@ func (c *RelationContext) AddAssociationClassRow(
 
 // GetAssociationClassLinksByEndpoint maps each far-endpoint to its association-class row.
 // Each host association row (from, to) has exactly one association-class instance.
+// The anchor may be a set-cloned extent element (e.g. CHOOSE over an association image);
+// identity is resolved the same way as GetRelatedRecords so endpoints and link rows stay paired.
 func (c *RelationContext) GetAssociationClassLinksByEndpoint(
 	record *object.Record,
 	assocKey AssociationKey,
 	reverse bool,
 ) map[*object.Record]*object.Record {
-	anchorID, exists := c.identities.GetID(record)
+	anchorID, exists := c.objectIDForRecord(record)
 	if !exists {
 		return nil
 	}
@@ -361,7 +470,7 @@ func (c *RelationContext) GetAssociationClassLinksByEndpoint(
 			anchorRecord = row.fromRecord
 			farEndpoint = row.toRecord
 		}
-		rowAnchorID, ok := c.identities.GetID(anchorRecord)
+		rowAnchorID, ok := c.objectIDForRecord(anchorRecord)
 		if !ok || rowAnchorID != anchorID {
 			continue
 		}
@@ -373,22 +482,6 @@ func (c *RelationContext) GetAssociationClassLinksByEndpoint(
 // ClearAssociationClassRows removes materialized host-row indexes.
 func (c *RelationContext) ClearAssociationClassRows() {
 	c.associationClassRows = nil
-}
-
-// RegisterRecord ensures a record has an object ID assigned.
-// Returns the assigned ID.
-func (c *RelationContext) RegisterRecord(record *object.Record) ObjectID {
-	return c.identities.GetOrAssign(record)
-}
-
-// GetObjectID returns the object ID for a record, if assigned.
-func (c *RelationContext) GetObjectID(record *object.Record) (ObjectID, bool) {
-	return c.identities.GetID(record)
-}
-
-// Identities returns the underlying identity registry (for advanced use).
-func (c *RelationContext) Identities() *IdentityRegistry {
-	return c.identities
 }
 
 // Links returns the underlying link table (for advanced use).

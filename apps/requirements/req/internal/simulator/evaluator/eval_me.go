@@ -328,11 +328,11 @@ func evalBinaryNumericOperands(left, right me.Expression, bindings *Bindings) (*
 		return nil, nil, rightResult
 	}
 
-	leftNum, ok := leftResult.Value.(*object.Number)
+	leftNum, ok := object.CoerceToNumber(leftResult.Value)
 	if !ok {
 		return nil, nil, NewEvalError("left operand must be Number, got %s", leftResult.Value.Type())
 	}
-	rightNum, ok := rightResult.Value.(*object.Number)
+	rightNum, ok := object.CoerceToNumber(rightResult.Value)
 	if !ok {
 		return nil, nil, NewEvalError("right operand must be Number, got %s", rightResult.Value.Type())
 	}
@@ -498,12 +498,12 @@ func evalMECompare(n *me.Compare, bindings *Bindings) *EvalResult {
 		return NewEvalResult(nativeBoolToBoolean(equals))
 	}
 
-	// Numeric comparisons
-	leftNum, ok := leftResult.Value.(*object.Number)
+	// Numeric comparisons (coerce numeric strings so INT attributes stored as String still compare).
+	leftNum, ok := object.CoerceToNumber(leftResult.Value)
 	if !ok {
 		return NewEvalError("left operand must be Number, got %s", leftResult.Value.Type())
 	}
-	rightNum, ok := rightResult.Value.(*object.Number)
+	rightNum, ok := object.CoerceToNumber(rightResult.Value)
 	if !ok {
 		return NewEvalError("right operand must be Number, got %s", rightResult.Value.Type())
 	}

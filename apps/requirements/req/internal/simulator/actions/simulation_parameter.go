@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -146,7 +147,7 @@ func evaluateRuleSpecification(
 func BuildSimulationBindings(
 	builder *state.BindingsBuilder,
 	classNameMap map[identity.Key]string,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 ) *evaluator.Bindings {
 	if instance != nil {
 		return builder.BuildWithClassInstancesForInstance(classNameMap, instance)

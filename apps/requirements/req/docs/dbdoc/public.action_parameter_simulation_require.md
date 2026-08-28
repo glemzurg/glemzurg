@@ -2,7 +2,7 @@
 
 ## Description
 
-Simulator-only sampling preconditions for an action parameter.
+Simulator-only sampling preconditions for one rule of an action parameter.
 
 ## Columns
 
@@ -11,7 +11,8 @@ Simulator-only sampling preconditions for an action parameter.
 | model_key | text |  | false |  | [public.logic](public.logic.md) [public.action_parameter](public.action_parameter.md) | The model this join row belongs to. |
 | action_key | text |  | false |  | [public.action_parameter](public.action_parameter.md) | The action that owns the parameter. |
 | parameter_key | text |  | false |  | [public.action_parameter](public.action_parameter.md) | The parameter subkey. |
-| logic_key | text |  | false |  | [public.logic](public.logic.md) | Assessment logic that must hold before the parameter may be sampled. |
+| rule_index | integer |  | false |  |  | Zero-based index of the simulation rule this require belongs to. |
+| logic_key | text |  | false |  | [public.logic](public.logic.md) | Assessment logic that must hold before the rule may be sampled. |
 
 ## Constraints
 
@@ -21,15 +22,16 @@ Simulator-only sampling preconditions for an action parameter.
 | action_parameter_simulation_require_logic_key_not_null | n | NOT NULL logic_key |
 | action_parameter_simulation_require_model_key_not_null | n | NOT NULL model_key |
 | action_parameter_simulation_require_parameter_key_not_null | n | NOT NULL parameter_key |
+| action_parameter_simulation_require_rule_index_not_null | n | NOT NULL rule_index |
 | fk_action_param_sim_req_logic | FOREIGN KEY | FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
 | fk_action_param_sim_req_parameter | FOREIGN KEY | FOREIGN KEY (model_key, action_key, parameter_key) REFERENCES action_parameter(model_key, action_key, parameter_key) ON DELETE CASCADE |
-| action_parameter_simulation_require_pkey | PRIMARY KEY | PRIMARY KEY (model_key, action_key, parameter_key, logic_key) |
+| action_parameter_simulation_require_pkey | PRIMARY KEY | PRIMARY KEY (model_key, action_key, parameter_key, rule_index, logic_key) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| action_parameter_simulation_require_pkey | CREATE UNIQUE INDEX action_parameter_simulation_require_pkey ON public.action_parameter_simulation_require USING btree (model_key, action_key, parameter_key, logic_key) |
+| action_parameter_simulation_require_pkey | CREATE UNIQUE INDEX action_parameter_simulation_require_pkey ON public.action_parameter_simulation_require USING btree (model_key, action_key, parameter_key, rule_index, logic_key) |
 
 ## Relations
 

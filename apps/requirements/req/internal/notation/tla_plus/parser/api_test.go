@@ -16,12 +16,12 @@ func TestAPISuite(t *testing.T) {
 }
 
 // =============================================================================
-// ParseExpressionList
+// parseExpressionList
 // =============================================================================
 
 func (s *APITestSuite) TestParseExpressionList() {
 	inputs := []string{"TRUE", "42", `"hello"`, "-3/4"}
-	exprs, err := ParseExpressionList(inputs)
+	exprs, err := parseExpressionList(inputs)
 	s.Require().NoError(err)
 	s.Len(exprs, 4)
 
@@ -39,24 +39,24 @@ func (s *APITestSuite) TestParseExpressionList() {
 
 func (s *APITestSuite) TestParseExpressionListError() {
 	inputs := []string{"TRUE", "invalid@#$", "42"}
-	_, err := ParseExpressionList(inputs)
+	_, err := parseExpressionList(inputs)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "expression 1")
 }
 
 // =============================================================================
-// MustParseExpression
+// mustParseExpression
 // =============================================================================
 
 func (s *APITestSuite) TestMustParseExpressionSuccess() {
 	s.NotPanics(func() {
-		expr := MustParseExpression("TRUE")
+		expr := mustParseExpression("TRUE")
 		s.NotNil(expr)
 	})
 }
 
 func (s *APITestSuite) TestMustParseExpressionPanics() {
 	s.Panics(func() {
-		MustParseExpression("invalid@#$")
+		mustParseExpression("invalid@#$")
 	})
 }

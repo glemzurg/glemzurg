@@ -85,14 +85,14 @@
     },
     "guarantees": {
       "type": "array",
-      "description": "Postconditions that will be true after the action executes successfully. Each guarantee sets one attribute via its 'target' field, removes association peers via type 'destroy', reifies an association class via state_change with association_class=true, or defines a local 'let' binding. The target separates the left-hand side so the specification contains only the right-hand-side value expression with no primed values. Association-class reify may share the same association target as a separate relation image guarantee. Items may also be 'let' bindings that define local variables for use by subsequent items.",
+      "description": "Postconditions after the action succeeds. Use type 'state_change' for primed self assignments (attributes or association set-add/multi set-add). Use type 'events' for receiver-first event broadcasts with no primed LHS on self (specification only, e.g. '{ Delete(a) : a \\in Defines }' or '{ InstantiateX(d, self) : d \\in Defs }'). Use type 'destroy' for association peer removal. Use type 'let' for local bindings. Association-class reify uses state_change with endpoint_selector.",
       "items": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "description": "Required. The logic kind. Use 'state_change' for attribute assignments or association-class reify, 'destroy' for association peer removal, 'let' for local variable definitions.",
-            "enum": ["state_change", "let", "destroy"]
+            "description": "Required. 'state_change' (primed assignment / set-add), 'events' (event broadcast, no target), 'destroy' (association peer removal), or 'let' (local binding).",
+            "enum": ["state_change", "let", "destroy", "events"]
           },
           "description": {
             "type": "string",
@@ -101,9 +101,9 @@
           },
           "target": {
             "type": "string",
-            "description": "Required. For 'state_change': attribute SubKey or outgoing association TLA field. For association_class reify: the association field. For 'destroy': the outgoing association TLA field name. For 'let': the local variable name.",
+            "description": "Required for state_change/destroy/let; must be omitted for events. For state_change: attribute SubKey or outgoing association TLA field. For destroy: outgoing association TLA field. For let: local variable name.",
             "minLength": 1,
-            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
           },
           "target_type_spec": {
             "type": "string",
@@ -116,18 +116,18 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation. For 'state_change' and 'let', this must be only the right-hand-side value expression with no primed values; the left-hand side is captured by the 'target' field. For association_class reify, only the AC creation event call (e.g., '_new(r.amount)'). For 'destroy', this is the set-filter selection over the association. Peer _destroy calls belong in destroy_event, not here."
+            "description": "Formal specification. For state_change/let: RHS only (target is LHS). For events: full event set-map expression with no primed assignment. For destroy: set-filter selection over the association."
           },
           "destroy_event": {
             "type": "string",
-            "description": "Required for 'destroy' type: peer destroy event call (e.g., '_destroy(b)'). Must be omitted for 'state_change' and 'let'."
+            "description": "Required for 'destroy' type: peer destroy event call (e.g., '_destroy(b)'). Must be omitted for other types."
           },
           "endpoint_selector": {
             "type": "string",
             "description": "Required when association_class is true: TLA+ expression for the far-side endpoint (e.g., 'r.account')."
           }
         },
-        "required": ["type", "description", "target", "notation"],
+        "required": ["type", "description", "notation"],
         "additionalProperties": false
       }
     },

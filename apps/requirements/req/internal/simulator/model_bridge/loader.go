@@ -24,8 +24,8 @@ func (r *LoadResult) HasErrors() bool {
 	return len(r.Errors) > 0
 }
 
-// SuccessCount returns the number of successfully loaded definitions.
-func (r *LoadResult) SuccessCount() int {
+// successCount returns the number of successfully loaded definitions.
+func (r *LoadResult) successCount() int {
 	count := 0
 	for _, result := range r.Results {
 		if result.IsSuccess() {
@@ -35,13 +35,13 @@ func (r *LoadResult) SuccessCount() int {
 	return count
 }
 
-// ErrorCount returns the number of failed definitions.
-func (r *LoadResult) ErrorCount() int {
+// errorCount returns the number of failed definitions.
+func (r *LoadResult) errorCount() int {
 	return len(r.Errors)
 }
 
-// DefinitionsBySource returns all successful definitions grouped by their source type.
-func (r *LoadResult) DefinitionsBySource() map[ExpressionSource][]*registry.Definition {
+// definitionsBySource returns all successful definitions grouped by their source type.
+func (r *LoadResult) definitionsBySource() map[ExpressionSource][]*registry.Definition {
 	bySource := make(map[ExpressionSource][]*registry.Definition)
 	for _, result := range r.Results {
 		if result.IsSuccess() {
@@ -89,9 +89,9 @@ func (l *Loader) LoadFromModel(model *core.Model) *LoadResult {
 	return result
 }
 
-// LoadFromExpressions parses and registers a list of extracted expressions
+// loadFromExpressions parses and registers a list of extracted expressions
 // into a new registry.
-func (l *Loader) LoadFromExpressions(expressions []ExtractedExpression) *LoadResult {
+func (l *Loader) loadFromExpressions(expressions []ExtractedExpression) *LoadResult {
 	result := &LoadResult{
 		Registry: registry.NewRegistry(),
 		Results:  make([]*BuildResult, 0),
@@ -111,9 +111,9 @@ func (l *Loader) LoadFromExpressions(expressions []ExtractedExpression) *LoadRes
 	return result
 }
 
-// LoadIntoRegistry parses and registers expressions into an existing registry.
+// loadIntoRegistry parses and registers expressions into an existing registry.
 // This is useful for incremental loading.
-func (l *Loader) LoadIntoRegistry(expressions []ExtractedExpression, reg *registry.Registry) *LoadResult {
+func (l *Loader) loadIntoRegistry(expressions []ExtractedExpression, reg *registry.Registry) *LoadResult {
 	result := &LoadResult{
 		Registry: reg,
 		Results:  make([]*BuildResult, 0),
@@ -133,9 +133,9 @@ func (l *Loader) LoadIntoRegistry(expressions []ExtractedExpression, reg *regist
 	return result
 }
 
-// MustLoadFromModel is like LoadFromModel but panics if any errors occur.
+// mustLoadFromModel is like LoadFromModel but panics if any errors occur.
 // Useful for tests and static initialization.
-func (l *Loader) MustLoadFromModel(model *core.Model) *LoadResult {
+func (l *Loader) mustLoadFromModel(model *core.Model) *LoadResult {
 	result := l.LoadFromModel(model)
 	if result.HasErrors() {
 		panic(fmt.Sprintf("failed to load model: %v", result.Errors))
@@ -143,12 +143,12 @@ func (l *Loader) MustLoadFromModel(model *core.Model) *LoadResult {
 	return result
 }
 
-// LoadFromModelStrict loads from a model and returns an error if any
+// loadFromModelStrict loads from a model and returns an error if any
 // expression fails to load.
-func (l *Loader) LoadFromModelStrict(model *core.Model) (*LoadResult, error) {
+func (l *Loader) loadFromModelStrict(model *core.Model) (*LoadResult, error) {
 	result := l.LoadFromModel(model)
 	if result.HasErrors() {
-		return result, fmt.Errorf("failed to load %d expressions: %w", result.ErrorCount(), result.Errors[0])
+		return result, fmt.Errorf("failed to load %d expressions: %w", result.errorCount(), result.Errors[0])
 	}
 	return result, nil
 }

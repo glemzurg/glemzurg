@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
@@ -14,6 +16,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
@@ -53,16 +56,13 @@ func (s *OutOfScopeProtocolSuite) orderItemAssocModel() (
 	return orderClass, orderKey, itemClass, itemKey, assocKey, assoc
 }
 
-func (s *OutOfScopeProtocolSuite) TestRegisterOutOfScopeMetadata_EmptyExtentNames() {
+func (s *OutOfScopeProtocolSuite) TestSchemaScope_EmptyExtentNames() {
 	orderClass, orderKey := testOrderClass()
 	itemClass, itemKey := testItemClass()
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(active)
-	s.NotContains(catalog.ClassNameMap(), itemKey)
-
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
+	catalog := sch
 	names := catalog.ClassNameMap()
 	s.Equal("Order", names[orderKey])
 	s.Equal("Item", names[itemKey])
@@ -70,17 +70,13 @@ func (s *OutOfScopeProtocolSuite) TestRegisterOutOfScopeMetadata_EmptyExtentName
 	s.True(catalog.IsClassInScope(orderKey))
 }
 
-func (s *OutOfScopeProtocolSuite) TestRegisterOutOfScopeMetadata_BoundaryAssociationNavigable() {
+func (s *OutOfScopeProtocolSuite) TestSchemaScope_BoundaryAssociationNavigable() {
 	orderClass, orderKey, itemClass, itemKey, assocKey, assoc := s.orderItemAssocModel()
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	full.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 
-	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(active)
-	_, _, foundBefore := catalog.OutgoingAssociationByTLAField(orderKey, "Lines")
-	s.False(foundBefore)
-
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
+	catalog := sch
 	gotKey, gotAssoc, found := catalog.OutgoingAssociationByTLAField(orderKey, "Lines")
 	s.True(found)
 	s.Equal(assocKey, gotKey)
@@ -94,11 +90,10 @@ func (s *OutOfScopeProtocolSuite) TestClassExtentBinding_OutOfScopeIsEmptySet() 
 	itemClass, itemKey := testItemClass()
 	full := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(active)
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
+	catalog := sch
 
-	simState := state.NewSimulationState()
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	_ = simState.CreateInstance(orderKey, object.NewRecord())
 
@@ -151,7 +146,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	// Item uses create event name "create" (testItemClass), not _new — set-add matches PeerCreationEvent.
 	// Use EventNameNew only if peer has that event. testItemClass has "create" as creation event.
 	// MatchAssociationSetAddExpr needs EventCall with peer creation event key.
-	createEvent, ok := NewClassCatalog(testModel(classEntry(itemClass, itemKey))).GetCreationEvent(itemKey)
+	createEvent, ok := schema.New(testModel(classEntry(itemClass, itemKey)), schema.RunScopeAll()).GetCreationEvent(itemKey)
 	s.Require().True(ok)
 	expr := &me.SetOp{
 		Op:   me.SetUnion,
@@ -180,11 +175,10 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 		nil,
 	)
 
-	active := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(active)
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{orderKey}))
+	catalog := sch
 
-	simState := state.NewSimulationState()
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(catalog, bb)
 	orderInst := simState.CreateInstance(orderKey, object.NewRecord())
@@ -201,7 +195,7 @@ func (s *OutOfScopeProtocolSuite) TestSetAddToOutOfScopePeerIsNoOp() {
 	s.Require().NoError(err)
 	s.NotNil(result)
 	s.Empty(simState.InstancesByClass(itemKey))
-	s.Empty(simState.GetLinkedForward(orderInst.ID, assocKey))
+	s.Empty(simState.GetLinkedForward(orderInst.GetID(), assocKey))
 }
 
 func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp() {
@@ -244,11 +238,10 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 		nil,
 	)
 
-	active := testModel(classEntry(itemClass, itemKey))
-	catalog := NewClassCatalog(active)
-	catalog.RegisterOutOfScopeMetadata(full)
+	sch := schema.New(full, schema.NewRunScope([]identity.Key{itemKey}))
+	catalog := sch
 
-	simState := state.NewSimulationState()
+	simState := siminst.NewState(emptySchema())
 	bb := state.NewBindingsBuilder(simState)
 	registerCatalogAssociations(catalog, bb)
 	itemInst := simState.CreateInstance(itemKey, object.NewRecord())
@@ -264,7 +257,7 @@ func (s *OutOfScopeProtocolSuite) TestReverseStateChangeToOutOfScopePeerIsNoOp()
 	result, err := ae.ExecuteAction(action, itemInst, nil)
 	s.Require().NoError(err)
 	s.NotNil(result)
-	s.Empty(simState.GetLinkedReverse(itemInst.ID, assocKey))
+	s.Empty(simState.GetLinkedReverse(itemInst.GetID(), assocKey))
 	s.Empty(simState.InstancesByClass(peerKey))
 }
 
@@ -294,14 +287,18 @@ func (s *OutOfScopeProtocolSuite) TestEngineWithSurface_RunsWithOutOfScopePeerCl
 	})
 	s.Require().NoError(err)
 	s.NotNil(eng)
-	s.True(eng.catalog.IsClassInScope(itemKey))
-	s.False(eng.catalog.IsClassInScope(peerKey))
-	s.Contains(eng.catalog.ClassNameMap(), peerKey)
+	s.True(eng.sch.IsClassInScope(itemKey))
+	s.False(eng.sch.IsClassInScope(peerKey))
+	s.Contains(eng.sch.ClassNameMap(), peerKey)
 
 	result, err := eng.Run()
 	s.Require().NoError(err)
 	s.NotNil(result)
-	for _, inst := range result.FinalState.AllInstances() {
-		s.NotEqual(peerKey, inst.ClassKey)
-	}
+	hasPeer := false
+	result.FinalState.ForEachInstance(func(inst *siminst.Instance) {
+		if inst.GetClassKey() == peerKey {
+			hasPeer = true
+		}
+	})
+	s.False(hasPeer)
 }

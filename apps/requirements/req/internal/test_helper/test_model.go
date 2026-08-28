@@ -1563,8 +1563,8 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) tes
 	classCar := model_class.NewClass(k.classCar, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: &k.classGen3, SubclassOfKey: &k.classGen1}, model_class.ClassDetails{Name: "Car", Details: "A car is a type of vehicle.", UnfinishedNotes: notesClassCar, UmlComment: ""})
 	c.all[k.classCar] = classCar
 
-	// Warehouse (subdomain B).
-	classWarehouse := model_class.NewClass(k.classWarehouse, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil}, model_class.ClassDetails{Name: "Warehouse", Details: "A warehouse for storing products.", UnfinishedNotes: notesClassWarehouse, UmlComment: ""})
+	// Warehouse (subdomain B). Facet of Product (subdomain A) so FacetOf is exercised on the shared model.
+	classWarehouse := model_class.NewClass(k.classWarehouse, model_class.ClassLinks{ActorKey: nil, SuperclassOfKey: nil, SubclassOfKey: nil, FacetOf: &k.classProduct}, model_class.ClassDetails{Name: "Warehouse", Details: "A warehouse for storing products.", UnfinishedNotes: notesClassWarehouse, UmlComment: ""})
 	classWarehouse.SetInvariants(l.classInvariants3)
 	c.all[k.classWarehouse] = classWarehouse
 

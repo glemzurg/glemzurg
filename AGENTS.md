@@ -107,6 +107,97 @@ This applies to Go under `apps/requirements/req` and to any other production cod
 - Prefer generic mechanisms driven by model structure and authored guarantees (e.g. association bulk-create from a set-map over a parameter set) over embedding domain cascade rules in the engine.
 - **Tests and sample models are the exception:** `_test.go` files, fixtures, and sandbox models may use concrete domain names and paths. Production packages must still treat those only as examples of arbitrary valid models.
 
+## Template-driven systems (Definition → Instance)
+
+Models often need **templates** (definitions) that configure how many **instances** exist and how they nest. The problem domain is treated as an infinite-speed machine: **provision eagerly** — create the full instance tree when a template or host is added. Do **not** encode lazy “create on first use” inside ordinary business actions.
+
+### Roles
+
+| Role | Responsibility |
+| --- | --- |
+| **Template / Definition** | Shared config; association `Defines` (or similar) to instances; may nest child templates via `Is Subdivided Into` (plain or association class). |
+| **Instance** | Runtime object under a template and a parent instance; continues cascade in its own Initialize. |
+| **Host** | Starts a tree (e.g. register a player) with set-add of the root instance. |
+
+### Two different “messages”
+
+#### 1. `_new` is special (create / “return” into an association)
+
+`_new` / `«new»` **creates** a peer. Parameters are **construction args**, not “who receives the message.” The association image is the return channel for the new object.
+
+```text
+# One peer
+target: Defines
+specification: Defines \union {_new(ParentParam)}
+
+# Many peers (multi set-add)
+target: Defines
+specification: Defines \union { _new(p) : p \in ExistingParents }
+```
+
+Use multi set-add when a new template must provision under every existing parent and the create path is pure set-add (no extra logic on a named Instantiate event).
+
+#### 2. Normal events — receiver-first (`type: events`)
+
+For messages to **existing** objects, use guarantee **`type: events`** (not `state_change`). There is **no primed left-hand side** on `self` — the specification is only the event set-map (a TLA definition-style expression, not `Target' = …`).
+
+The **first argument is the receiver** (object of the class that declares the event). Remaining arguments are the event’s parameters. The set-map domain only supplies binders.
+
+```yaml
+guarantees:
+    - type: events
+      details: Fire Instantiate on self for each existing parent
+      specification: '{ InstantiateLevel(self, p) : p \in ExistingParents }'
+
+    - type: events
+      details: Fire Instantiate on each peer definition; self is a parameter
+      specification: '{ InstantiateLevel(d, self) : d \in ActiveDefinitions }'
+
+    - type: events
+      details: Cascade Delete to active linked instances
+      specification: '{ Delete(a) : a \in { x \in Defines : x._state = "Active" } }'
+```
+
+**Do not** write `Defines' = { Recover(w) : … }` or attach a dummy association `target` for broadcasts. That is not a state change of `Defines`.
+
+**Do not** use method-style `self.Event(…)` — ordinary TLA function-call form only.
+
+### Setup cascade (host → instances → templates)
+
+Because set-add materializes the peer **after** the creator’s peer phase, continue the tree **deeper** on the new instance’s Initialize (reverse link to parent is available).
+
+1. **Host.AddRoot** — `HasChildren \union {_new()}` only.
+2. **Root.Initialize** — `{ InstantiateLevel1(d, self) : d \in active templates of host }` (each template is receiver).
+3. **Template.InstantiateLevel1(Root)** — `Defines \union {_new(Root)}`.
+4. **Instance.Initialize** — link parent; `{ InstantiateChild(d, self) : d \in active child templates of defining template }`.
+5. Repeat until leaves.
+
+### Template addition (backfill)
+
+Pass `ExistingParents` as `unique unordered of object of <parent>` / `SUBSET Parent` (simulation: `{}` or the relevant set). Prefer:
+
+```text
+Defines \union { _new(p) : p \in ExistingParents }
+```
+
+or, if the named Instantiate event must run:
+
+```text
+{ InstantiateLevel(self, p) : p \in ExistingParents }
+```
+
+### What not to do
+
+- Lazy create-inside-business-action when the tree should already exist after setup/template add.
+- Cascades that need a return value from `_new` or from a peer event in the same action.
+- “Materialize” forwarder events that invert peer-domain only to work around missing multi set-add / receiver-first.
+- Treating `_new` as receiver-first (`_new` does not take a receiver as first parameter).
+- Dummy association targets on pure event set-maps when a real association target is not needed for multi set-add (multi set-add’s target **is** the link field).
+
+### Reference shape
+
+Sandbox finance wallet (`data_sandbox/model/evenplay/finance/wallet`) is one concrete example. Production Go stays model-agnostic; copy the **guarantee structure**, not domain names.
+
 ## Simulation surface (what is being tested)
 
 The **simulation surface** is the set of **external drivers** the exercise simulator may choose at the top level. Its purpose is to tell a **human tester what is actually being exercised** on a given run—not to dump every class that happens to be loaded in scope.
@@ -118,12 +209,14 @@ The **simulation surface** is the set of **external drivers** the exercise simul
 - Surface **do-actions** on a state
 - External **queries**
 - External **derived attributes** (readable at top level)
+- **Association classes in scope:** same non-creation drivers as normal classes (state events, do-actions, queries, derived). Bare `_new` is never a surface driver for association classes (they materialize via the host association).
 
 **Not surface (do not list as drivers even if in the simulation):**
 
-- Classes (or events) that only participate as **peers**—created or updated by another class’s guarantees (e.g. association set-add/set-map, cascade Delete, association-class reify)
-- **Association classes** when they only materialize via a host association (even if included in the include-list so reify is enabled)
-- Classes that are in scope for liveness or cascade but have **no external events, queries, or derived attributes**
+- Classes (or events) that only participate as **peers**—created or updated by another class’s guarantees (e.g. association set-add/set-map, association-class reify)
+- Events that another in-scope class **sends** via a `type: events` guarantee (e.g. Account Definition sends `Delete`/`Recover` to Account; those Account events are not surface drivers). Same rule for association-class events sent by another in-scope class.
+- Association-class **`_new`** (host materialization only)
+- Classes that are in scope for liveness or peer effects but have **no external events, queries, or derived attributes**
 - Derived attributes / queries that depend on **out-of-scope** classes (listed separately as off-surface, not as drivers)
 
 **Include-list vs surface report:** `-include-class` / sandbox `SIMULATE_CLASSES` (and subdomain includes) define **scope**—which classes may exist in the run. The surface **drivers** section is narrower: only hooks the selector can fire. Peer-only scoped classes still run (instances, links, invariants) but must not appear as empty driver rows.
@@ -133,15 +226,77 @@ The **simulation surface** is the set of **external drivers** the exercise simul
 - If **every** class of a subdomain is in the run, list the **subdomain** path only (`finance/wallet`)—do not enumerate its classes.
 - If **only some** classes of a subdomain are in the run, list each **class** path (`finance/wallet/transaction`, …).
 
-**Output order (text CLI):** completion summary → step trace / final state → **simulation scope** → **simulation surface (drivers)** → violations.
+**Output order (text CLI):** completion summary → step trace / final state → violations → **simulation surface (drivers)** → **simulation scope**. Surface is second-to-last and scope last so both remain visible after long liveness or violation dumps.
 
 When changing surface reporting or selection, preserve this contract: scope shows what is loaded; surface shows what is driven at top level.
+
+## Simulator `schema` package (sole model home for a run)
+
+`apps/requirements/req/internal/simulator/schema` is the **sole home of model facts for one simulation run**. It owns the (typically surface-filtered) `*core.Model` and indexes into model tree types (`model_class.Class`, `model_class.Association`, …)—not parallel schema DTOs for those concepts.
+
+**Data-flow gate**
+
+```text
+core.Model  ──schema.New──►  *schema.Schema  ──►  instance / engine / checkers / bindings
+```
+
+- **Intake:** `*core.Model` may be used only to build `*schema.Schema` (and one-shot surface resolution before that).
+- **Run:** no free `*core.Model` for the active surface. Use Schema methods and objects built from schema (class catalog, checkers, eval context, derived index, named sets). The model pointer is private to schema.
+- Do not mutate the model after `New`.
+- Do not own: live instances, links, SM positions (`instance`).
+
+**Why:** clear gates so static rules cannot drift across parallel model copies (schema vs catalog vs checkers each re-walking a free model pointer).
+
+## Simulator `instance` package
+
+`apps/requirements/req/internal/simulator/instance` holds **all mutable state for one simulation run**: class instances, binary association links, association-class host rows, state-machine positions, and identity mappings used with that world.
+
+**Boundary**
+
+- Own: create/update/delete instances, association links, SM current state, clone of the run world.
+- Read static model facts only through the attached `*schema.Schema` (never a free `*core.Model`).
+- Do not own: action execution, expression evaluation, model loading, surface selection, or TLA bindings construction (`state.BindingsBuilder` adapts `instance.State` into evaluator bindings).
+- Production callers depend on this package for run data; this package must not import `engine`, `actions`, `invariants`, or `trace`.
+
+**API discipline**
+
+- Prefer a small exported protocol (`State`, `Instance`, `ID`, association types and methods). Keep maps, locks, and ID counters unexported.
+- Construct via `NewState(sch *schema.Schema)` and `State` methods in production code (aligns with [Go constructors](#go-constructors)).
+- Godoc on the package and exported types is the contract; do not grow hidden public side doors without documenting them as temporary.
+
+**Joint test curation (AI + human)**
+
+Unit tests for this package are **jointly written and curated by AI and human** maintainers.
+
+- AI may draft and extend tests when implementing the package.
+- A human reviews, edits, and owns the suite’s intent (coverage gaps, naming, fragile cases, intentional non-coverage).
+- A green AI-only test pass is not “test design done” for this package — human curation is part of done for test changes here.
+- Prefer protocol-level tests of the exported API over white-box tests of unexported maps/locks unless a bug requires it.
+
+Unit tests for `schema` follow the same joint AI/human curation expectation when the suite grows beyond bootstrap coverage.
 
 ## Go `_test.go` files
 
 - Use the [testify](https://github.com/stretchr/testify) framework (`require` for fatal assertions, `assert` for non-fatal).
 - Prefer table-driven tests. Each row is a named case (`name string` field) and the test body uses `t.Run(tc.name, ...)`.
 - Use table-driven tests even for two cases when more cases are likely to be added.
+
+### No test-only code in production logic files
+
+**Do not put test-only helpers, fixtures, or convenience constructors in non-`_test.go` (logic) source files.**
+
+- Anything used only by tests (e.g. empty models, blank schemas, fixture builders, “for tests only” constructors) belongs in `*_test.go` in the same package, or in a clearly test-scoped helper package that production code never imports.
+- Production `.go` files must stay free of symbols that exist solely so tests can avoid setup.
+- If production needs a real constructor, it must be a legitimate runtime API—not a test shortcut.
+
+### Methods only used by tests must be unexported
+
+**Any function or method defined in a production `.go` file that is only called from tests (same package or other packages’ tests) should be unexported** (rename to a lower-case identifier).
+
+- Same-package tests can still call unexported symbols.
+- If another package’s tests need the behavior, either unexport and have those tests go through a public protocol, or keep export only when it is intentional production API.
+- Do not keep exported “for tests” methods on production types (e.g. dumps, setters, or helpers that no production caller uses).
+- When in doubt: if no production code path under `apps/` calls it, unexport it unless it is deliberate public library surface for external consumers (document that exception).
 
 ## Complexity linter (`go-complexity-lint`)
 

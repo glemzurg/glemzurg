@@ -66,8 +66,21 @@ func IsAssociationAddOrUpdateSpecification(specification string) bool {
 
 // AssociationSetMapEventKey returns the peer event key referenced by a set-map guarantee expression.
 // Accepts both bare association domains ({ Event : r \in Assoc }) and filtered/peer domains
-// ({ Event : r \in { x \in Assoc : pred } }) so SentBy/caller metadata tracks cascade events.
+// ({ Event : r \in { x \in Assoc : pred } }) so SentBy/caller metadata tracks peer-sent events.
 func AssociationSetMapEventKey(expr me.Expression) (identity.Key, bool) {
+	return peerEventCallKeyFromSetMapExpr(expr)
+}
+
+// EventsGuaranteeEventKey returns the peer event key from a type:events guarantee expression
+// such as { Delete(a) : a \in Domain } or { Instantiate(d, self) : d \in Domain }.
+// Used so SentBy marks the receiving class's event as internal (not a surface driver).
+func EventsGuaranteeEventKey(expr me.Expression) (identity.Key, bool) {
+	return peerEventCallKeyFromSetMapExpr(expr)
+}
+
+// peerEventCallKeyFromSetMapExpr extracts EventKey from set-map EventCall transforms
+// (association set-map, type:events broadcasts, and add-or-update update arms).
+func peerEventCallKeyFromSetMapExpr(expr me.Expression) (identity.Key, bool) {
 	if expr == nil {
 		return identity.Key{}, false
 	}
@@ -79,6 +92,9 @@ func AssociationSetMapEventKey(expr me.Expression) (identity.Key, bool) {
 		if eventCall, ok := setMap.Transform.(*me.EventCall); ok {
 			return eventCall.EventKey, true
 		}
+	}
+	if eventCall, ok := expr.(*me.EventCall); ok {
+		return eventCall.EventKey, true
 	}
 	if _, _, updateCall, ok := MatchAssociationAddOrUpdateExpr(expr); ok {
 		return updateCall.EventKey, true

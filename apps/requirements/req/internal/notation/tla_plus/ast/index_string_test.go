@@ -24,13 +24,13 @@ func (suite *StringIndexSuite) TestString() {
 		{
 			testName: `string literal with index`,
 			str:      &StringLiteral{Value: `hello`},
-			index:    NewIntLiteral(0),
+			index:    newIntLiteral(0),
 			expected: `"hello"[0]`,
 		},
 		{
 			testName: `string literal with index 3`,
 			str:      &StringLiteral{Value: `world`},
-			index:    NewIntLiteral(3),
+			index:    newIntLiteral(3),
 			expected: `"world"[3]`,
 		},
 		{
@@ -42,7 +42,7 @@ func (suite *StringIndexSuite) TestString() {
 					&StringLiteral{Value: `world`},
 				},
 			},
-			index:    NewIntLiteral(5),
+			index:    newIntLiteral(5),
 			expected: `"hello" ∘ "world"[5]`,
 		},
 	}
@@ -67,7 +67,7 @@ func (suite *StringIndexSuite) TestASCII() {
 		{
 			testName: `string literal with index`,
 			str:      &StringLiteral{Value: `hello`},
-			index:    NewIntLiteral(0),
+			index:    newIntLiteral(0),
 			expected: `"hello"[0]`,
 		},
 		{
@@ -79,7 +79,7 @@ func (suite *StringIndexSuite) TestASCII() {
 					&StringLiteral{Value: `world`},
 				},
 			},
-			index:    NewIntLiteral(5),
+			index:    newIntLiteral(5),
 			expected: `"hello" \o "world"[5]`,
 		},
 	}
@@ -105,7 +105,7 @@ func (suite *StringIndexSuite) TestValidate() {
 			testName: `valid index`,
 			s: &StringIndex{
 				Str:   &StringLiteral{Value: `hello`},
-				Index: NewIntLiteral(0),
+				Index: newIntLiteral(0),
 			},
 		},
 
@@ -113,7 +113,7 @@ func (suite *StringIndexSuite) TestValidate() {
 		{
 			testName: `error missing string`,
 			s: &StringIndex{
-				Index: NewIntLiteral(0),
+				Index: newIntLiteral(0),
 			},
 			errstr: `Str`,
 		},
@@ -140,7 +140,7 @@ func (suite *StringIndexSuite) TestValidate() {
 func (suite *StringIndexSuite) TestExpressionNode() {
 	s := &StringIndex{
 		Str:   &StringLiteral{Value: `hello`},
-		Index: NewIntLiteral(0),
+		Index: newIntLiteral(0),
 	}
 	s.expressionNode()
 }

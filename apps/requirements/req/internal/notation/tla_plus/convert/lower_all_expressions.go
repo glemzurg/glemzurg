@@ -18,17 +18,16 @@ import (
 // parse failures leave Expression as nil rather than returning an error.
 func LowerAllExpressions(model *core.Model) error {
 	// Build model-level lookup maps.
-	globalFunctions := BuildGlobalFunctionMap(model)
-	namedSets := BuildNamedSetMap(model)
-	allActions := BuildAllActionsMap(model)
+	maps := BuildModelLowerMaps(model)
 	classNames := BuildClassNameMap(model)
 
 	// 1. Lower model-level invariants (no class context).
 	modelCtx := &LowerContext{
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		ClassNames:      classNames,
-		AllActions:      allActions,
+		GlobalFunctions:  maps.GlobalFunctions,
+		NamedSets:        maps.NamedSets,
+		ClassNames:       classNames,
+		UniqueEventNames: maps.UniqueEvents,
+		AllActions:       maps.AllActions,
 	}
 	modelPF := NewExpressionParseFunc(modelCtx)
 	for i := range model.Invariants {
@@ -44,10 +43,10 @@ func LowerAllExpressions(model *core.Model) error {
 			params[p] = true
 		}
 		gfCtx := &LowerContext{
-			GlobalFunctions: globalFunctions,
-			NamedSets:       namedSets,
+			GlobalFunctions: maps.GlobalFunctions,
+			NamedSets:       maps.NamedSets,
 			ClassNames:      classNames,
-			AllActions:      allActions,
+			AllActions:      maps.AllActions,
 			Parameters:      params,
 		}
 		gfPF := NewExpressionParseFunc(gfCtx)
@@ -72,7 +71,7 @@ func LowerAllExpressions(model *core.Model) error {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
 				subdomainMaps := SubdomainClassMaps{Associations: allAssociations, Classes: subdomain.Classes}
-				if err := lowerAllClassExpressions(&class, globalFunctions, namedSets, classNames, allActions, subdomainMaps); err != nil {
+				if err := lowerAllClassExpressions(&class, maps, classNames, subdomainMaps); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -86,8 +85,8 @@ func LowerAllExpressions(model *core.Model) error {
 }
 
 // lowerAllClassExpressions re-creates all ExpressionSpecs in a class with full context.
-func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key, subdomainMaps SubdomainClassMaps) error {
-	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, subdomainMaps.Associations, subdomainMaps.Classes)
+func lowerAllClassExpressions(class *model_class.Class, maps ModelLowerMaps, classNames map[string]identity.Key, subdomainMaps SubdomainClassMaps) error {
+	classCtx := NewClassLowerContext(class, maps, subdomainMaps)
 	classCtx.ClassNames = classNames
 	classPF := NewExpressionParseFunc(classCtx)
 
@@ -161,7 +160,12 @@ func relowerActionExpressions(actKey identity.Key, action *model_state.Action, c
 			}
 			continue
 		}
-		if err := relowerSpec(&guar.Spec, actPF); err != nil {
+		guarPF := actPF
+		if guar.Type == model_logic.LogicTypeEvents {
+			// Resolve Event(receiver, …) to the peer event, not the sender's same-named event.
+			guarPF = NewExpressionParseFunc(withPreferPeerEvents(ContextWithParameters(classCtx, action.Parameters)))
+		}
+		if err := relowerSpec(&guar.Spec, guarPF); err != nil {
 			return fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err)
 		}
 	}
@@ -267,19 +271,18 @@ func relowerSpec(spec *logic_spec.ExpressionSpec, pf logic_spec.ExpressionParseF
 // errors instead of silently swallowing them. It collects ALL expression errors
 // and returns them as a combined error so the caller sees every problem at once.
 func LowerAllExpressionsStrict(model *core.Model) error {
-	globalFunctions := BuildGlobalFunctionMap(model)
-	namedSets := BuildNamedSetMap(model)
-	allActions := BuildAllActionsMap(model)
+	maps := BuildModelLowerMaps(model)
 	classNames := BuildClassNameMap(model)
 
 	var errs []error
 
 	// Model-level invariants.
 	modelCtx := &LowerContext{
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		ClassNames:      classNames,
-		AllActions:      allActions,
+		GlobalFunctions:  maps.GlobalFunctions,
+		NamedSets:        maps.NamedSets,
+		ClassNames:       classNames,
+		AllActions:       maps.AllActions,
+		UniqueEventNames: maps.UniqueEvents,
 	}
 	modelPF := NewExpressionParseFuncStrict(modelCtx)
 	for i := range model.Invariants {
@@ -295,10 +298,10 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 			params[p] = true
 		}
 		gfCtx := &LowerContext{
-			GlobalFunctions: globalFunctions,
-			NamedSets:       namedSets,
+			GlobalFunctions: maps.GlobalFunctions,
+			NamedSets:       maps.NamedSets,
 			ClassNames:      classNames,
-			AllActions:      allActions,
+			AllActions:      maps.AllActions,
 			Parameters:      params,
 		}
 		gfPF := NewExpressionParseFuncStrict(gfCtx)
@@ -323,7 +326,7 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
 				subdomainMaps := SubdomainClassMaps{Associations: allAssociations, Classes: subdomain.Classes}
-				if classErrs := lowerAllClassExpressionsStrict(&class, globalFunctions, namedSets, classNames, allActions, subdomainMaps); classErrs != nil {
+				if classErrs := lowerAllClassExpressionsStrict(&class, maps, classNames, subdomainMaps); classErrs != nil {
 					errs = append(errs, fmt.Errorf("class %q: %w", cKey.String(), classErrs))
 				}
 				subdomain.Classes[cKey] = class
@@ -339,8 +342,8 @@ func LowerAllExpressionsStrict(model *core.Model) error {
 // lowerAllClassExpressionsStrict collects all expression errors in a class.
 //
 //complexity:cyclo:warn=20,fail=20 Walks all class expression sites.
-func lowerAllClassExpressionsStrict(class *model_class.Class, globalFunctions, namedSets, classNames, allActions map[string]identity.Key, subdomainMaps SubdomainClassMaps) error {
-	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, subdomainMaps.Associations, subdomainMaps.Classes)
+func lowerAllClassExpressionsStrict(class *model_class.Class, maps ModelLowerMaps, classNames map[string]identity.Key, subdomainMaps SubdomainClassMaps) error {
+	classCtx := NewClassLowerContext(class, maps, subdomainMaps)
 	classCtx.ClassNames = classNames
 	classPF := NewExpressionParseFuncStrict(classCtx)
 
@@ -434,7 +437,12 @@ func lowerActionGuaranteesStrict(
 			errs = append(errs, relowerAssociationClassReifyStrict(actKey, i, guar, actCtx, actPF)...)
 			continue
 		}
-		if err := relowerSpecStrict(&guar.Spec, actPF); err != nil {
+		guarPF := actPF
+		if guar.Type == model_logic.LogicTypeEvents {
+			// Resolve Event(receiver, …) to the peer event, not the sender's same-named event.
+			guarPF = NewExpressionParseFuncStrict(withPreferPeerEvents(actCtx))
+		}
+		if err := relowerSpecStrict(&guar.Spec, guarPF); err != nil {
 			errs = append(errs, fmt.Errorf("action %q guarantee %d: %w", actKey.String(), i, err))
 		}
 	}

@@ -66,13 +66,6 @@ func NewEnclosedBindings(outer *Bindings) *Bindings {
 	return b
 }
 
-// WithSelf creates a new scope with the given self record.
-func (b *Bindings) WithSelf(self *object.Record) *Bindings {
-	child := NewEnclosedBindings(b)
-	child.self = self
-	return child
-}
-
 // WithSelfAndClass creates a new scope with the given self record and class key.
 // The classKey should be the identity.Key.String() for the class.
 func (b *Bindings) WithSelfAndClass(self *object.Record, classKey string) *Bindings {

@@ -2,9 +2,9 @@ package registry
 
 import "slices"
 
-// AddDependency records that 'from' depends on 'to'.
+// addDependency records that 'from' depends on 'to'.
 // This is called during type checking when a call expression is resolved.
-func (r *Registry) AddDependency(from, to DefinitionKey) {
+func (r *Registry) addDependency(from, to DefinitionKey) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -50,8 +50,8 @@ func (r *Registry) ClearDependencies(key DefinitionKey) {
 	def.DependsOn = nil
 }
 
-// GetDependents returns all definitions that directly depend on the given key.
-func (r *Registry) GetDependents(key DefinitionKey) []DefinitionKey {
+// getDependents returns all definitions that directly depend on the given key.
+func (r *Registry) getDependents(key DefinitionKey) []DefinitionKey {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -66,8 +66,8 @@ func (r *Registry) GetDependents(key DefinitionKey) []DefinitionKey {
 	return result
 }
 
-// GetDependencies returns all definitions that the given key depends on.
-func (r *Registry) GetDependencies(key DefinitionKey) []DefinitionKey {
+// getDependencies returns all definitions that the given key depends on.
+func (r *Registry) getDependencies(key DefinitionKey) []DefinitionKey {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -82,9 +82,9 @@ func (r *Registry) GetDependencies(key DefinitionKey) []DefinitionKey {
 	return result
 }
 
-// FindTransitiveDependents returns all definitions that transitively depend on the given key.
+// findTransitiveDependents returns all definitions that transitively depend on the given key.
 // This includes direct dependents and their dependents, recursively.
-func (r *Registry) FindTransitiveDependents(key DefinitionKey) []DefinitionKey {
+func (r *Registry) findTransitiveDependents(key DefinitionKey) []DefinitionKey {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

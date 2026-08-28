@@ -24,7 +24,7 @@ func (suite *AssignmentSuite) TestString() {
 		{
 			testName: `assign integer to state`,
 			target:   &Identifier{Value: `count`},
-			value:    NewIntLiteral(0),
+			value:    newIntLiteral(0),
 			expected: `count' = 0`,
 		},
 		{
@@ -44,9 +44,9 @@ func (suite *AssignmentSuite) TestString() {
 			target:   &Identifier{Value: `items`},
 			value: &TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(1),
-					NewIntLiteral(2),
-					NewIntLiteral(3),
+					newIntLiteral(1),
+					newIntLiteral(2),
+					newIntLiteral(3),
 				},
 			},
 			expected: `items' = ⟨1, 2, 3⟩`,
@@ -56,8 +56,8 @@ func (suite *AssignmentSuite) TestString() {
 			target:   &Identifier{Value: `result`},
 			value: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: true},
-				Then:      NewIntLiteral(1),
-				Else:      NewIntLiteral(0),
+				Then:      newIntLiteral(1),
+				Else:      newIntLiteral(0),
 			},
 			expected: `result' = IF TRUE THEN 1 ELSE 0`,
 		},
@@ -83,7 +83,7 @@ func (suite *AssignmentSuite) TestASCII() {
 		{
 			testName: `assign integer to state`,
 			target:   &Identifier{Value: `count`},
-			value:    NewIntLiteral(42),
+			value:    newIntLiteral(42),
 			expected: `count' = 42`,
 		},
 		{
@@ -91,8 +91,8 @@ func (suite *AssignmentSuite) TestASCII() {
 			target:   &Identifier{Value: `items`},
 			value: &TupleLiteral{
 				Elements: []Expression{
-					NewIntLiteral(1),
-					NewIntLiteral(2),
+					newIntLiteral(1),
+					newIntLiteral(2),
 				},
 			},
 			expected: `items' = <<1, 2>>`,
@@ -120,7 +120,7 @@ func (suite *AssignmentSuite) TestValidate() {
 			testName: `valid assignment`,
 			a: &Assignment{
 				Target: &Identifier{Value: `x`},
-				Value:  NewIntLiteral(1),
+				Value:  newIntLiteral(1),
 			},
 		},
 
@@ -128,7 +128,7 @@ func (suite *AssignmentSuite) TestValidate() {
 		{
 			testName: `error missing target`,
 			a: &Assignment{
-				Value: NewIntLiteral(1),
+				Value: newIntLiteral(1),
 			},
 			errstr: `Target`,
 		},
@@ -143,7 +143,7 @@ func (suite *AssignmentSuite) TestValidate() {
 			testName: `error invalid target`,
 			a: &Assignment{
 				Target: &Identifier{Value: ``},
-				Value:  NewIntLiteral(1),
+				Value:  newIntLiteral(1),
 			},
 			errstr: `Value`,
 		},
@@ -171,7 +171,7 @@ func (suite *AssignmentSuite) TestValidate() {
 func (suite *AssignmentSuite) TestStatementNode() {
 	a := &Assignment{
 		Target: &Identifier{Value: `x`},
-		Value:  NewIntLiteral(1),
+		Value:  newIntLiteral(1),
 	}
 	a.statementNode()
 }

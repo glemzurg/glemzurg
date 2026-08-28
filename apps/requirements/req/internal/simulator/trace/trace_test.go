@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
@@ -13,9 +15,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -108,7 +109,7 @@ func (s *TraceSuite) TestNormalTransitionStep() {
 					ToState:    "Closed",
 					ActionResult: &actions.ActionResult{
 						InstanceID: 1,
-						PrimedAssignments: map[state.InstanceID]map[string]object.Object{
+						PrimedAssignments: map[instance.ID]map[string]object.Object{
 							1: {
 								"amount": object.NewInteger(42),
 							},
@@ -145,7 +146,7 @@ func (s *TraceSuite) TestDoActionStep() {
 				InstanceID: 1,
 				DoActionResult: &actions.ActionResult{
 					InstanceID: 1,
-					PrimedAssignments: map[state.InstanceID]map[string]object.Object{
+					PrimedAssignments: map[instance.ID]map[string]object.Object{
 						1: {
 							"counter": object.NewInteger(5),
 						},
@@ -270,9 +271,9 @@ func (s *TraceSuite) TestStepWithViolations() {
 				ClassKey:   classKey,
 				ClassName:  "Order",
 				InstanceID: 1,
-				Violations: invariants.ViolationErrors{
+				Violations: instance.ViolationErrors{
 					{
-						Type:    invariants.ViolationTypeModelInvariant,
+						Type:    instance.ViolationTypeModelInvariant,
 						Message: "invariant failed: x > 0",
 					},
 				},
@@ -314,9 +315,9 @@ func (s *TraceSuite) TestViolationsPrintAfterCascadedSteps() {
 						EventName:  "_new",
 					},
 				},
-				Violations: invariants.ViolationErrors{
+				Violations: instance.ViolationErrors{
 					{
-						Type:    invariants.ViolationTypeMultiplicity,
+						Type:    instance.ViolationTypeMultiplicity,
 						Message: "multiplicity violation on instance 2",
 					},
 				},
@@ -360,7 +361,7 @@ func (s *TraceSuite) TestStepWithParameters() {
 }
 
 func (s *TraceSuite) TestFinalState() {
-	simState := state.NewSimulationState()
+	simState := instance.NewState(emptySchema())
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 
 	attrs := object.NewRecord()
@@ -418,19 +419,19 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 	model.ClassAssociations = map[identity.Key]model_class.Association{hostAssocKey: hostAssoc}
 
-	catalog := engine.NewClassCatalog(&model)
+	catalog := schema.New(&model, schema.RunScopeAll())
 
-	simState := state.NewSimulationState()
+	simState := instance.NewState(emptySchema())
 	partner := simState.CreateInstance(partnerKey, object.NewRecord())
 	jurisdiction := simState.CreateInstance(jurisdictionKey, object.NewRecord())
 	linkInst := simState.CreateInstance(linkDefKey, object.NewRecord())
-	s.Require().NoError(simState.AddAssociationLink(hostAssocKey, partner.ID, jurisdiction.ID, linkInst.ID))
+	s.Require().NoError(simState.AddAssociationLink(hostAssocKey, partner.GetID(), jurisdiction.GetID(), linkInst.GetID()))
 
 	result := &engine.SimulationResult{
 		StepsTaken:        1,
 		TerminationReason: "max_steps",
 		FinalState:        simState,
-		Catalog:           catalog,
+		Schema:            catalog,
 	}
 
 	tr := FromResult(result)
@@ -439,7 +440,7 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	s.Require().NotNil(tr.FinalState)
 	var linkRow *InstanceState
 	for i := range tr.FinalState.Instances {
-		if tr.FinalState.Instances[i].InstanceID == uint64(linkInst.ID) {
+		if tr.FinalState.Instances[i].InstanceID == uint64(linkInst.GetID()) {
 			linkRow = &tr.FinalState.Instances[i]
 			break
 		}
@@ -448,9 +449,9 @@ func (s *TraceSuite) TestFinalStateAssociationClassEndpoints() {
 	s.Require().NotNil(linkRow.Endpoints)
 	s.Equal("Configures", linkRow.Endpoints.AssociationName)
 	s.Equal("Partner", linkRow.Endpoints.FromClassName)
-	s.Equal(uint64(partner.ID), linkRow.Endpoints.FromInstanceID)
+	s.Equal(uint64(partner.GetID()), linkRow.Endpoints.FromInstanceID)
 	s.Equal("Jurisdiction", linkRow.Endpoints.ToClassName)
-	s.Equal(uint64(jurisdiction.ID), linkRow.Endpoints.ToInstanceID)
+	s.Equal(uint64(jurisdiction.GetID()), linkRow.Endpoints.ToInstanceID)
 	s.Contains(text, "Configures (Partner#")
 	s.Contains(text, "-> Jurisdiction#")
 }
@@ -580,7 +581,7 @@ func (s *TraceSuite) TestFormatJSONRoundTrip() {
 	}
 
 	tr := FromResult(result)
-	data, err := tr.FormatJSON()
+	data, err := tr.formatJSON()
 	s.Require().NoError(err)
 
 	var decoded SimulationTrace

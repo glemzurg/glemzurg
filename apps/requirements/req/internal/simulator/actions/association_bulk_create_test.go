@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/require"
@@ -63,12 +64,12 @@ func TestDiscoverToEndpointFromRow(t *testing.T) {
 		helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("d")), "s")),
 		"account",
 	))
-	simState := state.NewSimulationState()
+	simState := instance.NewState(emptySchema())
 	attrs := object.NewRecord()
 	attrs.Set("_state", object.NewString("Exists"))
 	inst := simState.CreateInstance(classKey, attrs)
 
-	extent := state.ClassExtentElement(inst.ID, inst.Attributes)
+	extent := state.ClassExtentElement(inst.GetID(), inst.GetAttributes())
 	row := object.NewRecordFromFields(map[string]object.Object{
 		"account": extent,
 		"amount":  object.NewInteger(75),
@@ -76,7 +77,7 @@ func TestDiscoverToEndpointFromRow(t *testing.T) {
 
 	id, ok := discoverToEndpointFromRow(simState, classKey, row)
 	require.True(t, ok)
-	require.Equal(t, inst.ID, id)
+	require.Equal(t, inst.GetID(), id)
 
 	// Bare data match (no id field).
 	flat := object.NewRecordFromFields(map[string]object.Object{
@@ -85,7 +86,7 @@ func TestDiscoverToEndpointFromRow(t *testing.T) {
 	})
 	id, ok = discoverToEndpointFromRow(simState, classKey, flat)
 	require.True(t, ok)
-	require.Equal(t, inst.ID, id)
+	require.Equal(t, inst.GetID(), id)
 
 	// No matching endpoint.
 	other := object.NewRecordFromFields(map[string]object.Object{

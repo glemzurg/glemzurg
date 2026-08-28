@@ -3,13 +3,12 @@ package engine
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
@@ -41,7 +40,7 @@ type DerivedAttributeEvaluator struct {
 	evalCtx *evaluator.EvalContext
 
 	// catalog reports surface-unavailable derived attributes (out-of-scope deps).
-	catalog *ClassCatalog
+	catalog *schema.Schema
 }
 
 // NewDerivedAttributeEvaluator creates a new evaluator by scanning the model
@@ -50,71 +49,45 @@ type DerivedAttributeEvaluator struct {
 // Returns an error if:
 //   - any DerivationPolicy expression is not parsed (ParseOk() == false)
 //   - any DerivationPolicy expression contains primed variables
-func NewDerivedAttributeEvaluator(
-	model *core.Model,
-	bindingsBuilder *state.BindingsBuilder,
-	evalCtx *evaluator.EvalContext,
-) (*DerivedAttributeEvaluator, error) {
+func NewDerivedAttributeEvaluator(sch *schema.Schema, bindingsBuilder *state.BindingsBuilder, evalCtx *evaluator.EvalContext) (*DerivedAttributeEvaluator, error) {
+	if sch == nil {
+		return nil, fmt.Errorf("derived attribute setup: nil schema")
+	}
+	if err := sch.ValidateDerivedAttributes(); err != nil {
+		return nil, err
+	}
 	dae := &DerivedAttributeEvaluator{
 		byClass:         make(map[identity.Key][]derivedAttrInfo),
 		byAttrKey:       make(map[identity.Key]derivedAttrInfo),
 		bindingsBuilder: bindingsBuilder,
 		evalCtx:         evalCtx,
 	}
-
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, class := range subdomain.Classes {
-				for _, attr := range class.Attributes {
-					if attr.DerivationPolicy == nil {
-						continue
-					}
-
-					expr := attr.DerivationPolicy.Spec.Expression
-					if expr == nil {
-						if attr.DerivationPolicy.Spec.Specification == "" {
-							continue // Skip empty specs
-						}
-						return nil, fmt.Errorf(
-							"class %s attribute %s DerivationPolicy: expression not lowered",
-							class.Name, attr.Name,
-						)
-					}
-
-					if model_bridge.ContainsAnyPrimedME(expr) {
-						return nil, fmt.Errorf(
-							"class %s attribute %s DerivationPolicy must not contain primed variables",
-							class.Name, attr.Name,
-						)
-					}
-
-					info := derivedAttrInfo{
-						attrKey:    attr.Key,
-						attrSubKey: attr.Key.SubKey,
-						attrName:   attr.Name,
-						expression: expr,
-					}
-					dae.byClass[class.Key] = append(dae.byClass[class.Key], info)
-					dae.byAttrKey[attr.Key] = info
-				}
+	sch.EachDerivedAttributeClass(func(classKey identity.Key, defs []schema.DerivedAttrDef) {
+		for _, def := range defs {
+			info := derivedAttrInfo{
+				attrKey:    def.AttrKey,
+				attrSubKey: def.AttrSubKey,
+				attrName:   def.AttrName,
+				expression: def.Expression,
 			}
+			dae.byClass[classKey] = append(dae.byClass[classKey], info)
+			dae.byAttrKey[def.AttrKey] = info
 		}
-	}
-
+	})
 	return dae, nil
 }
 
 // SetCatalog wires surface unavailability checks for derived evaluation.
-func (d *DerivedAttributeEvaluator) SetCatalog(catalog *ClassCatalog) {
+func (d *DerivedAttributeEvaluator) SetCatalog(catalog *schema.Schema) {
 	d.catalog = catalog
 }
 
-// ResolveDerived evaluates surface-available derived attributes for the given instance.
+// ResolveDerived evaluates surface-available derived attributes for the given siminst.
 // Surface-unavailable attributes (out-of-scope association deps) are skipped so
 // bindings inject only values that can be computed on this surface.
 // Keys in the returned map are attribute SubKeys so they match stored fields and self.field access.
-func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance) (map[string]object.Object, error) {
-	infos := d.byClass[instance.ClassKey]
+func (d *DerivedAttributeEvaluator) ResolveDerived(instance *siminst.Instance) (map[string]object.Object, error) {
+	infos := d.byClass[instance.GetClassKey()]
 	if len(infos) == 0 {
 		return make(map[string]object.Object), nil
 	}
@@ -141,24 +114,22 @@ func (d *DerivedAttributeEvaluator) ResolveDerived(instance *state.ClassInstance
 // ResolveDerivedAttribute evaluates one derived attribute. When the attribute depends
 // on out-of-scope classes, returns a surface-out-of-scope violation (not a hard error).
 func (d *DerivedAttributeEvaluator) ResolveDerivedAttribute(
-	instance *state.ClassInstance,
+	instance *siminst.Instance,
 	attrKey identity.Key,
 	attrName string,
-) (object.Object, invariants.ViolationErrors, error) {
+) (object.Object, siminst.ViolationErrors, error) {
 	if d.catalog != nil {
-		if unavail, ok := d.catalog.SurfaceUnavailableDerived(attrKey); ok {
-			return nil, invariants.ViolationErrors{
-				invariants.NewSurfaceOutOfScopeViolation(
-					instance.ClassKey, instance.ID, attrName, unavail.Reason(),
-				),
-			}, nil
+		if v := siminst.CheckSurfaceMemberAccess(
+			d.catalog, siminst.SurfaceMemberDerived, attrKey, instance.GetClassKey(), instance.GetID(), attrName,
+		); v != nil {
+			return nil, siminst.ViolationErrors{v}, nil
 		}
 	}
 
 	info, ok := d.byAttrKey[attrKey]
 	if !ok {
 		// Fall back to name match within the class (tests may use synthetic keys).
-		for _, candidate := range d.byClass[instance.ClassKey] {
+		for _, candidate := range d.byClass[instance.GetClassKey()] {
 			if candidate.attrName == attrName {
 				info = candidate
 				ok = true

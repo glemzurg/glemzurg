@@ -73,8 +73,8 @@ func (s *Set) Add(elem Object) {
 	s.elements[hashValue(elem)] = NormalizeSimulatorValue(elem).Clone()
 }
 
-// Remove removes an element from the set.
-func (s *Set) Remove(elem Object) {
+// remove removes an element from the set.
+func (s *Set) remove(elem Object) {
 	delete(s.elements, hashValue(elem))
 }
 

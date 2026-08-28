@@ -67,8 +67,8 @@ func ValidateOwnerRequiresSamplingSupport(className string, owner ParameterOwner
 	return owner.ValidateRequiresSamplingSupport(className)
 }
 
-// ValidateActionRequiresSamplingSupport validates one action's requires against its parameters.
-func ValidateActionRequiresSamplingSupport(className string, action model_state.Action) error {
+// validateActionRequiresSamplingSupport validates one action's requires against its parameters.
+func validateActionRequiresSamplingSupport(className string, action model_state.Action) error {
 	return ValidateOwnerRequiresSamplingSupport(className, ParameterOwnerFromAction(action))
 }
 

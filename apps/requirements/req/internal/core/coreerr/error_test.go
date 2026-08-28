@@ -136,16 +136,16 @@ func (suite *ErrorSuite) TestFormatPath() {
 
 func (suite *ErrorSuite) TestValidationContext() {
 	ctx := NewContext("model", "")
-	suite.Len(ctx.ContextPath(), 1)
-	suite.Equal("model", ctx.ContextPath()[0].Entity)
+	suite.Len(ctx.contextPath(), 1)
+	suite.Equal("model", ctx.contextPath()[0].Entity)
 
 	child := ctx.Child("domains", "d1")
-	suite.Len(child.ContextPath(), 2)
-	suite.Equal("domains", child.ContextPath()[1].Entity)
-	suite.Equal("d1", child.ContextPath()[1].Key)
+	suite.Len(child.contextPath(), 2)
+	suite.Equal("domains", child.contextPath()[1].Entity)
+	suite.Equal("d1", child.contextPath()[1].Key)
 
 	// Original context is unchanged.
-	suite.Len(ctx.ContextPath(), 1)
+	suite.Len(ctx.contextPath(), 1)
 }
 
 func (suite *ErrorSuite) TestNewPanicsOnNilContext() {

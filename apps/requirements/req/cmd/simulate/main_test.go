@@ -81,12 +81,15 @@ func (s *OutputSuite) TestOutputTextCleanRunIncludesSteps() {
 	s.Contains(text, "[1] Partner#1: active -> active")
 	s.Contains(text, "Simulation surface")
 	s.Contains(text, "No violations found.")
-	// Surface is after the step/state section and before violations.
+	s.Contains(text, "Simulation scope")
+	// Violations after steps; surface second-to-last; scope last.
 	stepIdx := strings.Index(text, "[1] Partner#1")
 	surfaceIdx := strings.Index(text, "Simulation surface")
 	violationsIdx := strings.Index(text, "No violations found.")
-	s.Greater(surfaceIdx, stepIdx)
-	s.Greater(violationsIdx, surfaceIdx)
+	scopeIdx := strings.Index(text, "Simulation scope")
+	s.Greater(violationsIdx, stepIdx)
+	s.Greater(surfaceIdx, violationsIdx)
+	s.Greater(scopeIdx, surfaceIdx)
 }
 
 func (s *OutputSuite) TestOutputTextViolationsHideStepsWithoutTrace() {
@@ -133,9 +136,12 @@ func (s *OutputSuite) TestOutputTextViolationsHideStepsWithoutTrace() {
 	s.NotContains(text, "[1] CREATE Partner#1")
 	s.Contains(text, "Simulation surface")
 	s.Contains(text, "1 violations found")
+	s.Contains(text, "Simulation scope")
 	surfaceIdx := strings.Index(text, "Simulation surface")
 	violationsIdx := strings.Index(text, "1 violations found")
-	s.Greater(violationsIdx, surfaceIdx)
+	scopeIdx := strings.Index(text, "Simulation scope")
+	s.Greater(surfaceIdx, violationsIdx)
+	s.Greater(scopeIdx, surfaceIdx)
 }
 
 func (s *OutputSuite) TestOutputJSONIncludesSurface() {

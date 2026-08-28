@@ -1,0 +1,523 @@
+package instance
+
+import (
+	"fmt"
+	"math/big"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
+)
+
+// _BOUND_TYPE_UNCONSTRAINED is the span bound type indicating no constraint.
+const _BOUND_TYPE_UNCONSTRAINED = "unconstrained"
+
+// _BOUND_TYPE_CLOSED is the span bound type indicating an inclusive boundary.
+const _BOUND_TYPE_CLOSED = "closed"
+
+// _BOUND_TYPE_OPEN is the span bound type indicating an exclusive boundary.
+const _BOUND_TYPE_OPEN = "open"
+
+// DataTypeChecker validates attribute values against their data type constraints.
+// It checks:
+//   - Required (non-nullable) attributes are not nil
+//   - Numeric values are within span constraints
+//   - Enumeration values are in the allowed set
+//   - Collection sizes are within bounds
+//
+// Attribute definitions are loaded per class from schema at check time (no bulk dump).
+type DataTypeChecker struct {
+	sch *schema.Schema
+
+	// unparsedAttributeDefs holds class-level violations for attributes whose rules did not parse.
+	unparsedAttributeDefs ViolationErrors
+}
+
+// NewDataTypeChecker creates a new data type checker from schema.
+func NewDataTypeChecker(sch *schema.Schema) (*DataTypeChecker, ViolationErrors) {
+	checker := &DataTypeChecker{sch: sch}
+	if sch != nil {
+		sch.EachInScopeClass(func(class model_class.Class) {
+			for _, attr := range class.Attributes {
+				if attr.DataType == nil {
+					checker.unparsedAttributeDefs = append(checker.unparsedAttributeDefs,
+						newUnparsedDataTypeViolation(class.Key, attr.Name, attr.DataTypeRules),
+					)
+				}
+			}
+		})
+	}
+	return checker, checker.unparsedAttributeDefs
+}
+
+// UnparsedAttributeDefinitionViolations returns class-level violations for attributes
+// whose data type rules did not parse in the simulated model.
+func (c *DataTypeChecker) UnparsedAttributeDefinitionViolations() ViolationErrors {
+	return c.unparsedAttributeDefs
+}
+
+// CheckInstance validates all attribute values on an instance against their data type constraints.
+// Attributes with a DerivationPolicy are virtual: their values are computed on demand and are not
+// stored on the instance, so storage-based required/type checks do not apply to them.
+func (c *DataTypeChecker) CheckInstance(instance *Instance) ViolationErrors {
+	var violations ViolationErrors
+	if c == nil || c.sch == nil || instance == nil {
+		return violations
+	}
+
+	attrs, inScope, err := c.sch.AttributesBySubKey(instance.GetClassKey())
+	if err != nil || !inScope || len(attrs) == 0 {
+		return violations
+	}
+
+	for fieldKey, attrDef := range attrs {
+		// Derived attributes live outside instance storage; do not treat missing
+		// storage as a required-attribute failure or type mismatch.
+		if attrDef.DerivationPolicy != nil {
+			continue
+		}
+
+		value := instance.GetAttribute(fieldKey)
+
+		// Check required (non-nullable) constraint
+		if !attrDef.Nullable && object.IsNull(value) {
+			violations = append(violations, newRequiredAttributeViolation(
+				instance.GetID(),
+				instance.GetClassKey(),
+				attrDef.Name,
+			))
+			continue // No point checking other constraints on nil value
+		}
+
+		// If value is NULL and attribute is nullable, skip constraint checks
+		if object.IsNull(value) {
+			continue
+		}
+
+		if defViolations := attributeDefinitionViolations(instance.GetID(), instance.GetClassKey(), attrDef); len(defViolations) > 0 {
+			violations = append(violations, defViolations...)
+			continue
+		}
+
+		typeViolations := c.checkDataTypeConstraints(
+			instance.GetID(),
+			instance.GetClassKey(),
+			attrDef.Name,
+			value,
+			attrDef.DataType,
+		)
+		violations = append(violations, typeViolations...)
+	}
+
+	return violations
+}
+
+// checkDataTypeConstraints validates a value against its data type constraints.
+func (c *DataTypeChecker) checkDataTypeConstraints(
+	instanceID ID,
+	classKey identity.Key,
+	attrName string,
+	value object.Object,
+	dataType *model_data_type.DataType,
+) ViolationErrors {
+	var violations ViolationErrors
+
+	// Check collection size constraints
+	if sizeViolation := c.checkCollectionSize(instanceID, classKey, attrName, value, dataType); sizeViolation != nil {
+		violations = append(violations, sizeViolation)
+	}
+
+	// Check atomic constraints (span, enumeration)
+	if dataType.Atomic != nil {
+		atomicViolations := c.checkAtomicConstraints(
+			instanceID,
+			classKey,
+			attrName,
+			value,
+			dataType,
+			dataType.Atomic,
+		)
+		violations = append(violations, atomicViolations...)
+	}
+
+	return violations
+}
+
+// checkCollectionSize validates collection size against min/max constraints.
+func (c *DataTypeChecker) checkCollectionSize(
+	instanceID ID,
+	classKey identity.Key,
+	attrName string,
+	value object.Object,
+	dataType *model_data_type.DataType,
+) *ViolationError {
+	// Skip if no collection constraints
+	if dataType.CollectionMin == nil && dataType.CollectionMax == nil {
+		return nil
+	}
+
+	// Get size based on collection type
+	var size int
+	switch dataType.CollectionType {
+	case model_data_type.COLLECTION_TYPE_ATOMIC:
+		// Atomic types don't have collection size constraints
+		return nil
+	case model_data_type.COLLECTION_TYPE_ORDERED, model_data_type.COLLECTION_TYPE_QUEUE, model_data_type.COLLECTION_TYPE_STACK:
+		if tuple, ok := value.(*object.Tuple); ok {
+			size = tuple.Len()
+		} else {
+			return nil // Type mismatch handled elsewhere
+		}
+	case model_data_type.COLLECTION_TYPE_UNORDERED:
+		if set, ok := value.(*object.Set); ok {
+			size = set.Size()
+		} else {
+			return nil // Type mismatch handled elsewhere
+		}
+	case model_data_type.COLLECTION_TYPE_RECORD:
+		if rec, ok := value.(*object.Record); ok {
+			size = len(rec.FieldNames())
+		} else {
+			return nil // Type mismatch handled elsewhere
+		}
+	default:
+		return nil
+	}
+
+	// Check min constraint
+	if dataType.CollectionMin != nil && size < *dataType.CollectionMin {
+		return newCollectionSizeViolation(
+			instanceID,
+			classKey,
+			attrName,
+			size,
+			dataType.CollectionMin,
+			dataType.CollectionMax,
+		)
+	}
+
+	// Check max constraint
+	if dataType.CollectionMax != nil && size > *dataType.CollectionMax {
+		return newCollectionSizeViolation(
+			instanceID,
+			classKey,
+			attrName,
+			size,
+			dataType.CollectionMin,
+			dataType.CollectionMax,
+		)
+	}
+
+	return nil
+}
+
+// checkAtomicConstraints validates value against atomic type constraints (span, enumeration).
+func (c *DataTypeChecker) checkAtomicConstraints(
+	instanceID ID,
+	classKey identity.Key,
+	attrName string,
+	value object.Object,
+	dataType *model_data_type.DataType,
+	atomic *model_data_type.Atomic,
+) ViolationErrors {
+	var violations ViolationErrors
+
+	switch atomic.ConstraintType {
+	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
+		// No constraints to check
+		return violations
+
+	case model_data_type.CONSTRAINT_TYPE_DATETIME:
+		if violation := checkDateTimeConstraint(instanceID, classKey, attrName, value); violation != nil {
+			violations = append(violations, violation)
+		}
+
+	case model_data_type.CONSTRAINT_TYPE_SPAN:
+		if atomic.Span != nil {
+			if violation := c.checkSpanConstraint(instanceID, classKey, attrName, value, atomic.Span); violation != nil {
+				violations = append(violations, violation)
+			}
+		}
+
+	case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
+		if len(atomic.Enums) > 0 {
+			if violation := c.checkEnumConstraint(instanceID, classKey, attrName, value, dataType, atomic.Enums); violation != nil {
+				violations = append(violations, violation)
+			}
+		}
+
+	case model_data_type.CONSTRAINT_TYPE_REFERENCE, model_data_type.CONSTRAINT_TYPE_OBJECT:
+		// Reference and object constraints are handled by link/instance validation
+		return violations
+	}
+
+	return violations
+}
+
+// checkDateTimeConstraint validates an integer timestamp against the datetime Nat range.
+func checkDateTimeConstraint(
+	instanceID ID,
+	classKey identity.Key,
+	attrName string,
+	value object.Object,
+) *ViolationError {
+	num, ok := value.(*object.Number)
+	if !ok {
+		return nil
+	}
+
+	rat := num.Rat()
+	if !rat.IsInt() {
+		return newDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
+	}
+
+	minRat := big.NewRat(model_data_type.DateTimeValueMin, 1)
+	maxRat := big.NewRat(model_data_type.DateTimeValueMax, 1)
+	if rat.Cmp(minRat) < 0 || rat.Cmp(maxRat) > 0 {
+		return newDateTimeConstraintViolation(instanceID, classKey, attrName, num.Inspect())
+	}
+
+	return nil
+}
+
+// checkSpanConstraint validates a numeric value against a span (range) constraint.
+func (c *DataTypeChecker) checkSpanConstraint(
+	instanceID ID,
+	classKey identity.Key,
+	attrName string,
+	value object.Object,
+	span *model_data_type.AtomicSpan,
+) *ViolationError {
+	// Get numeric value
+	num, ok := value.(*object.Number)
+	if !ok {
+		// Not a number - type mismatch handled elsewhere
+		return nil
+	}
+
+	// Get the value as a big.Rat for comparison
+	valueRat := num.Rat()
+
+	// Build range string for error message
+	rangeStr := formatSpanRange(span)
+
+	// Check lower bound
+	if span.LowerType != _BOUND_TYPE_UNCONSTRAINED && span.LowerValue != nil {
+		lowerRat := spanValueToRat(span.LowerValue, span.LowerDenominator)
+
+		cmp := valueRat.Cmp(lowerRat)
+		switch span.LowerType {
+		case _BOUND_TYPE_CLOSED:
+			// Closed: value >= lower
+			if cmp < 0 {
+				return newSpanConstraintViolation(
+					instanceID,
+					classKey,
+					attrName,
+					num.Inspect(),
+					rangeStr,
+				)
+			}
+		case _BOUND_TYPE_OPEN:
+			// Open: value > lower
+			if cmp <= 0 {
+				return newSpanConstraintViolation(
+					instanceID,
+					classKey,
+					attrName,
+					num.Inspect(),
+					rangeStr,
+				)
+			}
+		}
+	}
+
+	// Check upper bound
+	if span.HigherType != _BOUND_TYPE_UNCONSTRAINED && span.HigherValue != nil {
+		higherRat := spanValueToRat(span.HigherValue, span.HigherDenominator)
+
+		cmp := valueRat.Cmp(higherRat)
+		switch span.HigherType {
+		case _BOUND_TYPE_CLOSED:
+			// Closed: value <= higher
+			if cmp > 0 {
+				return newSpanConstraintViolation(
+					instanceID,
+					classKey,
+					attrName,
+					num.Inspect(),
+					rangeStr,
+				)
+			}
+		case _BOUND_TYPE_OPEN:
+			// Open: value < higher
+			if cmp >= 0 {
+				return newSpanConstraintViolation(
+					instanceID,
+					classKey,
+					attrName,
+					num.Inspect(),
+					rangeStr,
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+// spanValueToRat converts a span value (with optional denominator) to a *big.Rat.
+func spanValueToRat(value *int, denom *int) *big.Rat {
+	if value == nil {
+		return big.NewRat(0, 1)
+	}
+	denomVal := 1
+	if denom != nil {
+		denomVal = *denom
+	}
+	return big.NewRat(int64(*value), int64(denomVal))
+}
+
+// formatSpanRange creates a human-readable string for a span range.
+func formatSpanRange(span *model_data_type.AtomicSpan) string {
+	var lower, higher string
+	var lowerBracket, higherBracket string
+
+	// Lower bound
+	if span.LowerType == _BOUND_TYPE_UNCONSTRAINED {
+		lower = "-∞"
+		lowerBracket = "("
+	} else {
+		lower = formatSpanValue(span.LowerValue, span.LowerDenominator)
+		if span.LowerType == _BOUND_TYPE_CLOSED {
+			lowerBracket = "["
+		} else {
+			lowerBracket = "("
+		}
+	}
+
+	// Higher bound
+	if span.HigherType == _BOUND_TYPE_UNCONSTRAINED {
+		higher = "+∞"
+		higherBracket = ")"
+	} else {
+		higher = formatSpanValue(span.HigherValue, span.HigherDenominator)
+		if span.HigherType == _BOUND_TYPE_CLOSED {
+			higherBracket = "]"
+		} else {
+			higherBracket = ")"
+		}
+	}
+
+	return fmt.Sprintf("%s%s, %s%s", lowerBracket, lower, higher, higherBracket)
+}
+
+// formatSpanValue formats a span value for display.
+func formatSpanValue(value *int, denom *int) string {
+	if value == nil {
+		return "?"
+	}
+	if denom == nil || *denom == 1 {
+		return fmt.Sprintf("%d", *value)
+	}
+	return fmt.Sprintf("%d/%d", *value, *denom)
+}
+
+// AttributeDef returns the attribute definition for a class field sub-key, if known.
+func (c *DataTypeChecker) AttributeDef(classKey identity.Key, fieldSubKey string) *model_class.Attribute {
+	if c == nil || c.sch == nil {
+		return nil
+	}
+	attrs, inScope, err := c.sch.AttributesBySubKey(classKey)
+	if err != nil || !inScope {
+		return nil
+	}
+	return attrs[fieldSubKey]
+}
+
+// checkEnumConstraint validates a value against enumeration constraint.
+func (c *DataTypeChecker) checkEnumConstraint(
+	instanceID ID,
+	classKey identity.Key,
+	attrName string,
+	value object.Object,
+	dataType *model_data_type.DataType,
+	enums []model_data_type.AtomicEnum,
+) *ViolationError {
+	allowedValues := make([]string, len(enums))
+	for i, enum := range enums {
+		allowedValues[i] = enum.Value
+	}
+
+	if model_data_type.HasBooleanTypeSpec(dataType) {
+		if boolVal, ok := value.(*object.Boolean); ok {
+			literal := "FALSE"
+			if boolVal.Value() {
+				literal = "TRUE"
+			}
+			for _, enum := range enums {
+				if enum.Value == literal {
+					return nil
+				}
+			}
+			return newEnumConstraintViolation(
+				instanceID,
+				classKey,
+				attrName,
+				literal,
+				allowedValues,
+			)
+		}
+	}
+
+	// Get string value
+	str, ok := value.(*object.String)
+	if !ok {
+		// Not a string - type mismatch handled elsewhere
+		return nil
+	}
+
+	strVal := str.Value()
+
+	// Check if value is in allowed enumeration
+	for _, enum := range enums {
+		if enum.Value == strVal {
+			return nil // Value found in enumeration
+		}
+	}
+
+	// Value not in enumeration
+	return newEnumConstraintViolation(
+		instanceID,
+		classKey,
+		attrName,
+		strVal,
+		allowedValues,
+	)
+}
+
+// CheckState validates all instances in a simulation state.
+func (c *DataTypeChecker) CheckState(simState *State) ViolationErrors {
+	var violations ViolationErrors
+
+	simState.ForEachInstance(func(inst *Instance) {
+		violations = append(violations, c.CheckInstance(inst)...)
+	})
+
+	return violations
+}
+
+// GetAttributeDefinition returns the attribute definition keyed by YAML field name (attribute SubKey).
+func (c *DataTypeChecker) GetAttributeDefinition(classKey identity.Key, fieldKey string) *model_class.Attribute {
+	return c.AttributeDef(classKey, fieldKey)
+}
+
+func (c *DataTypeChecker) HasClass(classKey identity.Key) bool {
+	if c == nil || c.sch == nil {
+		return false
+	}
+	_, inScope, err := c.sch.AttributesBySubKey(classKey)
+	return err == nil && inScope
+}

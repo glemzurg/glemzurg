@@ -7,8 +7,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// AttributesByKey indexes attributes by key for lookup. Slice order is not represented.
-func AttributesByKey(attributes []Attribute) map[identity.Key]Attribute {
+// attributesByKey indexes attributes by key for lookup. Slice order is not represented.
+func attributesByKey(attributes []Attribute) map[identity.Key]Attribute {
 	if len(attributes) == 0 {
 		return nil
 	}
@@ -19,9 +19,9 @@ func AttributesByKey(attributes []Attribute) map[identity.Key]Attribute {
 	return byKey
 }
 
-// AttributeBySubKey returns the attribute whose key sub-key matches, using the same
+// attributeBySubKey returns the attribute whose key sub-key matches, using the same
 // normalization as identity key construction.
-func AttributeBySubKey(attributes []Attribute, subKey string) (Attribute, bool) {
+func attributeBySubKey(attributes []Attribute, subKey string) (Attribute, bool) {
 	normalized := identity.NormalizeSubKey(subKey)
 	for _, attr := range attributes {
 		if attr.Key.SubKey == normalized {

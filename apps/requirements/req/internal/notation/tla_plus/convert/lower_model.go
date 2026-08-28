@@ -22,18 +22,20 @@ import (
 // that has a TLA+ specification string into a logic_expression.Expression.
 // It returns the first error encountered, leaving the model partially populated.
 func LowerModel(model *core.Model) error {
-	// Build model-level lookup maps for global functions and named sets.
-	globalFunctions := BuildGlobalFunctionMap(model)
-	namedSets := BuildNamedSetMap(model)
+	// Association-class creation host ends are implicit params (not in authored files).
+	// Inject before lowering so Initialize logic may reference Partner / Jurisdiction / ….
+	if err := injectAssociationClassEndpointParams(model); err != nil {
+		return fmt.Errorf("association-class endpoint params: %w", err)
+	}
 
-	// Build cross-class action lookup (AllActions) across the entire model.
-	allActions := BuildAllActionsMap(model)
+	maps := BuildModelLowerMaps(model)
 
 	// 1. Lower model-level invariants (no class context).
 	modelCtx := &LowerContext{
-		GlobalFunctions: globalFunctions,
-		NamedSets:       namedSets,
-		AllActions:      allActions,
+		GlobalFunctions:  maps.GlobalFunctions,
+		NamedSets:        maps.NamedSets,
+		AllActions:       maps.AllActions,
+		UniqueEventNames: maps.UniqueEvents,
 	}
 	for i := range model.Invariants {
 		if err := lowerLogicSpec(&model.Invariants[i].Spec, modelCtx); err != nil {
@@ -48,9 +50,9 @@ func LowerModel(model *core.Model) error {
 			params[p] = true
 		}
 		gfCtx := &LowerContext{
-			GlobalFunctions: globalFunctions,
-			NamedSets:       namedSets,
-			AllActions:      allActions,
+			GlobalFunctions: maps.GlobalFunctions,
+			NamedSets:       maps.NamedSets,
+			AllActions:      maps.AllActions,
 			Parameters:      params,
 		}
 		if err := lowerLogicSpec(&gf.Logic.Spec, gfCtx); err != nil {
@@ -73,7 +75,8 @@ func LowerModel(model *core.Model) error {
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if err := lowerClass(&class, globalFunctions, namedSets, allActions, allAssociations, subdomain.Classes); err != nil {
+				subMaps := SubdomainClassMaps{Associations: allAssociations, Classes: subdomain.Classes}
+				if err := lowerClass(&class, maps, subMaps); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -87,15 +90,8 @@ func LowerModel(model *core.Model) error {
 }
 
 // lowerClass populates all ExpressionSpec.Expression fields within a class.
-func lowerClass(
-	class *model_class.Class,
-	globalFunctions map[string]identity.Key,
-	namedSets map[string]identity.Key,
-	allActions map[string]identity.Key,
-	associations map[identity.Key]model_class.Association,
-	classes map[identity.Key]model_class.Class,
-) error {
-	classCtx := NewClassLowerContext(class, globalFunctions, namedSets, allActions, associations, classes)
+func lowerClass(class *model_class.Class, maps ModelLowerMaps, subMaps SubdomainClassMaps) error {
+	classCtx := NewClassLowerContext(class, maps, subMaps)
 
 	// Class invariants.
 	for i := range class.Invariants {
@@ -169,6 +165,10 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 				return fmt.Errorf("guarantee %d: %w", i, err)
 			}
 			continue
+		}
+		if guar.Type == model_logic.LogicTypeEvents {
+			// Event(receiver, …) names the receiver's event, not the sender's same-named event.
+			guarCtx = withPreferPeerEvents(guarCtx)
 		}
 		if err := lowerLogicSpec(&guar.Spec, guarCtx); err != nil {
 			return fmt.Errorf("guarantee %d: %w", i, err)
@@ -355,6 +355,24 @@ type SubdomainClassMaps struct {
 	Classes      map[identity.Key]model_class.Class
 }
 
+// ModelLowerMaps holds model-wide name→key maps shared while lowering every class.
+type ModelLowerMaps struct {
+	GlobalFunctions map[string]identity.Key
+	NamedSets       map[string]identity.Key
+	AllActions      map[string]identity.Key
+	UniqueEvents    map[string]identity.Key
+}
+
+// BuildModelLowerMaps constructs model-wide maps used by LowerModel and related walkers.
+func BuildModelLowerMaps(model *core.Model) ModelLowerMaps {
+	return ModelLowerMaps{
+		GlobalFunctions: BuildGlobalFunctionMap(model),
+		NamedSets:       BuildNamedSetMap(model),
+		AllActions:      BuildAllActionsMap(model),
+		UniqueEvents:    BuildUniqueEventNameMap(model),
+	}
+}
+
 func BuildNamedSetMap(model *core.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(model.NamedSets))
 	for _, ns := range model.NamedSets {
@@ -442,27 +460,116 @@ func BuildQueryNameMap(class *model_class.Class) map[string]identity.Key {
 }
 
 // NewClassLowerContext builds a LowerContext for expressions scoped to one class.
-func NewClassLowerContext(
-	class *model_class.Class,
-	globalFunctions map[string]identity.Key,
-	namedSets map[string]identity.Key,
-	allActions map[string]identity.Key,
+func NewClassLowerContext(class *model_class.Class, maps ModelLowerMaps, subMaps SubdomainClassMaps) *LowerContext {
+	ctx := &LowerContext{
+		ClassKey:         class.Key,
+		UniqueEventNames: maps.UniqueEvents,
+		GlobalFunctions:  maps.GlobalFunctions,
+		NamedSets:        maps.NamedSets,
+		AllActions:       maps.AllActions,
+	}
+	fillClassLocalNameMaps(ctx, class, subMaps)
+	fillPeerEventNameMaps(ctx, class.Key, subMaps)
+	return ctx
+}
+
+// fillClassLocalNameMaps sets same-class name maps used for attribute/action/event/assoc resolution.
+func fillClassLocalNameMaps(ctx *LowerContext, class *model_class.Class, subMaps SubdomainClassMaps) {
+	ctx.AttributeNames = BuildAttributeNameMap(class)
+	ctx.ActionNames = BuildActionNameMap(class)
+	ctx.QueryNames = BuildQueryNameMap(class)
+	ctx.AssociationNames = BuildOutgoingAssociationFieldNameMap(class.Key, subMaps.Associations)
+	ctx.SystemEventNames = BuildSystemEventNameMap(class)
+	ctx.ClassEventNames = BuildClassEventNameMap(class)
+	ctx.ClassNames = BuildClassNamesForLower(subMaps.Classes)
+}
+
+// fillPeerEventNameMaps sets peer/association-class event maps for type:events Event resolution.
+func fillPeerEventNameMaps(ctx *LowerContext, classKey identity.Key, subMaps SubdomainClassMaps) {
+	ctx.PeerEventNames = BuildPeerEventNameMap(classKey, subMaps.Associations, subMaps.Classes)
+	ctx.AssocPeerEventNames = BuildAssocPeerEventNameMaps(classKey, subMaps.Associations, subMaps.Classes)
+	ctx.AssocClassPeerEventNames = BuildAssocClassPeerEventNameMaps(classKey, subMaps.Associations, subMaps.Classes)
+	ctx.ClassEventNamesByKey = BuildClassEventNamesByKey(subMaps.Classes)
+}
+
+// BuildAssocPeerEventNameMaps maps each outgoing association key to its to-class event name map.
+func BuildAssocPeerEventNameMaps(
+	fromClassKey identity.Key,
 	associations map[identity.Key]model_class.Association,
 	classes map[identity.Key]model_class.Class,
-) *LowerContext {
-	return &LowerContext{
-		ClassKey:         class.Key,
-		AttributeNames:   BuildAttributeNameMap(class),
-		ActionNames:      BuildActionNameMap(class),
-		QueryNames:       BuildQueryNameMap(class),
-		AssociationNames: BuildOutgoingAssociationFieldNameMap(class.Key, associations),
-		SystemEventNames: BuildSystemEventNameMap(class),
-		PeerEventNames:   BuildPeerEventNameMap(class.Key, associations, classes),
-		GlobalFunctions:  globalFunctions,
-		NamedSets:        namedSets,
-		ClassNames:       BuildClassNamesForLower(classes),
-		AllActions:       allActions,
+) map[identity.Key]map[string]identity.Key {
+	if len(associations) == 0 || len(classes) == 0 {
+		return nil
 	}
+	out := make(map[identity.Key]map[string]identity.Key)
+	for assocKey, assoc := range associations {
+		if assoc.FromClassKey != fromClassKey {
+			continue
+		}
+		peerClass, ok := classes[assoc.ToClassKey]
+		if !ok {
+			continue
+		}
+		m := make(map[string]identity.Key)
+		registerPeerClassEvents(m, peerClass)
+		if len(m) > 0 {
+			out[assocKey] = m
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// BuildAssocClassPeerEventNameMaps maps associations that have an association class to that
+// class's event names (for domains like IsSubdividedInto.CurrencyWalletDefinition).
+func BuildAssocClassPeerEventNameMaps(
+	fromClassKey identity.Key,
+	associations map[identity.Key]model_class.Association,
+	classes map[identity.Key]model_class.Class,
+) map[identity.Key]map[string]identity.Key {
+	if len(associations) == 0 || len(classes) == 0 {
+		return nil
+	}
+	out := make(map[identity.Key]map[string]identity.Key)
+	for assocKey, assoc := range associations {
+		if assoc.FromClassKey != fromClassKey || assoc.AssociationClassKey == nil {
+			continue
+		}
+		acClass, ok := classes[*assoc.AssociationClassKey]
+		if !ok {
+			continue
+		}
+		m := make(map[string]identity.Key)
+		registerPeerClassEvents(m, acClass)
+		if len(m) > 0 {
+			out[assocKey] = m
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// BuildClassEventNamesByKey maps every class key to its event name→key map.
+func BuildClassEventNamesByKey(classes map[identity.Key]model_class.Class) map[identity.Key]map[string]identity.Key {
+	if len(classes) == 0 {
+		return nil
+	}
+	out := make(map[identity.Key]map[string]identity.Key, len(classes))
+	for key, class := range classes {
+		m := make(map[string]identity.Key)
+		registerPeerClassEvents(m, class)
+		if len(m) > 0 {
+			out[key] = m
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // BuildClassNamesForLower maps TLA-friendly class names to keys for quantifier domains.
@@ -648,19 +755,51 @@ func BuildSystemEventNameMap(class *model_class.Class) map[string]identity.Key {
 	return m
 }
 
-// BuildSystemEventRaiseNameMap maps event keys to canonical TLA spellings («new», «destroy»).
-func BuildSystemEventRaiseNameMap(class *model_class.Class) map[identity.Key]string {
+// BuildClassEventNameMap maps non-system event names on the class to event keys.
+// Used for receiver-first messaging Event(self, …) and same-class event set-maps.
+func BuildClassEventNameMap(class *model_class.Class) map[string]identity.Key {
 	if len(class.Events) == 0 {
 		return nil
 	}
-	m := make(map[identity.Key]string)
+	m := make(map[string]identity.Key)
 	for _, event := range class.Events {
 		if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
-			m[event.Key] = model_state.SystemEventTLAName(event.Name)
+			continue
 		}
+		m[event.Name] = event.Key
 	}
 	if len(m) == 0 {
 		return nil
 	}
 	return m
+}
+
+// BuildUniqueEventNameMap maps event names that occur on exactly one class in the model.
+// Ambiguous names (e.g. Delete on many classes) are omitted; use peer/class maps instead.
+func BuildUniqueEventNameMap(model *core.Model) map[string]identity.Key {
+	counts := make(map[string]int)
+	keys := make(map[string]identity.Key)
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				for _, event := range class.Events {
+					if model_state.IsSystemCreationEvent(event.Name) || model_state.IsSystemFinalEvent(event.Name) {
+						continue
+					}
+					counts[event.Name]++
+					keys[event.Name] = event.Key
+				}
+			}
+		}
+	}
+	out := make(map[string]identity.Key)
+	for name, n := range counts {
+		if n == 1 {
+			out[name] = keys[name]
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }

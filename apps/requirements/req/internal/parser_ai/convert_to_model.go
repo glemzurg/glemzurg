@@ -1461,7 +1461,7 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 }
 
 // resolveLogicType returns the logic type from the input if specified as "let",
-// otherwise returns the default type for the context.
+// "destroy", or "events" on action guarantees; otherwise returns the default type.
 func resolveLogicType(input *inputLogic, defaultType string) string {
 	switch input.Type {
 	case model_logic.LogicTypeLet:
@@ -1469,6 +1469,11 @@ func resolveLogicType(input *inputLogic, defaultType string) string {
 	case model_logic.LogicTypeDestroy:
 		if defaultType == model_logic.LogicTypeStateChange {
 			return model_logic.LogicTypeDestroy
+		}
+		return defaultType
+	case model_logic.LogicTypeEvents:
+		if defaultType == model_logic.LogicTypeStateChange {
+			return model_logic.LogicTypeEvents
 		}
 		return defaultType
 	default:

@@ -25,16 +25,25 @@ func randomEnumerationValue(dataType *model_data_type.DataType, values []string,
 }
 
 // CoerceValueForDataType normalizes sampled or assigned values to match type_spec storage.
+// Boolean enums become Boolean; INT/Nat/span values become Number (including numeric strings).
 func CoerceValueForDataType(dataType *model_data_type.DataType, value object.Object) object.Object {
-	if !model_data_type.HasBooleanTypeSpec(dataType) {
+	if value == nil {
 		return value
 	}
-	if _, ok := value.(*object.Boolean); ok {
+	if model_data_type.HasBooleanTypeSpec(dataType) {
+		if _, ok := value.(*object.Boolean); ok {
+			return value
+		}
+		if str, ok := value.(*object.String); ok {
+			if boolValue, ok := model_data_type.BooleanFromEnumerationLiteral(str.Value()); ok {
+				return object.NewBoolean(boolValue)
+			}
+		}
 		return value
 	}
-	if str, ok := value.(*object.String); ok {
-		if boolValue, ok := model_data_type.BooleanFromEnumerationLiteral(str.Value()); ok {
-			return object.NewBoolean(boolValue)
+	if model_data_type.IsNumericAtomic(dataType) {
+		if n, ok := object.CoerceToNumber(value); ok {
+			return n
 		}
 	}
 	return value

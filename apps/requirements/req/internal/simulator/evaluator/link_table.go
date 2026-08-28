@@ -127,18 +127,6 @@ func (t *LinkTable) GetAllReverse(toID ObjectID) []Link {
 	return t.byTo[toID]
 }
 
-// AppendLinkWithoutValidation records a link without duplicate checking.
-// Invariant tests use this to represent link tables that bypass normal insertion rules.
-func (t *LinkTable) AppendLinkWithoutValidation(assocKey AssociationKey, fromID, toID ObjectID) {
-	link := Link{
-		AssociationKey: assocKey,
-		FromID:         fromID,
-		ToID:           toID,
-	}
-	t.byFrom[fromID] = append(t.byFrom[fromID], link)
-	t.byTo[toID] = append(t.byTo[toID], link)
-}
-
 // CountPairLinks returns how many links exist for one association between a from/to pair.
 func (t *LinkTable) CountPairLinks(assocKey AssociationKey, fromID, toID ObjectID) int {
 	count := 0

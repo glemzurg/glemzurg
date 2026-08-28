@@ -7,21 +7,21 @@ import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 func (e *ActionExecutor) tryApplyAssociationStateChangeGuarantee(
 	ctx *ExecutionContext,
-	instance *state.ClassInstance,
+	instance *instance.Instance,
 	target string,
 	expr me.Expression,
 	bindings *evaluator.Bindings,
 ) (bool, error) {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return false, nil
 	}
-	assocKey, assoc, reverse, found := e.peerCatalog.AssociationByNavigableTLAField(instance.ClassKey, target)
+	assocKey, assoc, reverse, found := e.sch.AssociationByNavigableTLAField(instance.GetClassKey(), target)
 	if !found {
 		return false, nil
 	}
@@ -35,36 +35,65 @@ func (e *ActionExecutor) tryApplyAssociationStateChangeGuarantee(
 		return false, fmt.Errorf("association state_change on %q: expression must evaluate to a set", target)
 	}
 
-	simState := e.bindingsBuilder.State()
-	peerClassKey := assoc.ToClassKey
-	if reverse {
-		peerClassKey = assoc.FromClassKey
-	}
-	removed := associationPeersRemovedFromSet(simState, instance.ID, assoc, reverse, peerClassKey, newSet)
-	ctx.SetAssociationRemovedPeers(instance.ID, assocKey, reverse, removed)
-
-	// Plain associations also establish missing links from the RHS set. Association-class
-	// hosts materialize rows via reify; their endpoint image is derived from those rows.
-	if assoc.AssociationClassKey == nil {
-		if err := e.addMissingPlainAssociationLinks(plainAssocLinkWork{
-			simState:     simState,
-			ownerID:      instance.ID,
-			assocKey:     assocKey,
-			assoc:        assoc,
-			reverse:      reverse,
-			peerClassKey: peerClassKey,
-			newSet:       newSet,
-		}); err != nil {
-			return true, fmt.Errorf("association state_change on %q: %w", target, err)
-		}
+	if err := e.applyAssociationStateChangeSet(associationStateChangeApply{
+		ctx:      ctx,
+		instance: instance,
+		target:   target,
+		assocKey: assocKey,
+		assoc:    assoc,
+		reverse:  reverse,
+		newSet:   newSet,
+	}); err != nil {
+		return true, err
 	}
 	return true, nil
 }
 
+// associationStateChangeApply carries a resolved state_change guarantee ready to apply to live links.
+type associationStateChangeApply struct {
+	ctx      *ExecutionContext
+	instance *instance.Instance
+	target   string
+	assocKey identity.Key
+	assoc    model_class.Association
+	reverse  bool
+	newSet   *object.Set
+}
+
+// applyAssociationStateChangeSet records removed peers and adds missing plain links for the RHS set.
+func (e *ActionExecutor) applyAssociationStateChangeSet(work associationStateChangeApply) error {
+	simState := e.bindingsBuilder.State()
+	ownerID := work.instance.GetID()
+	peerClassKey := work.assoc.ToClassKey
+	if work.reverse {
+		peerClassKey = work.assoc.FromClassKey
+	}
+	removed := associationPeersRemovedFromSet(simState, ownerID, work.assoc, work.reverse, peerClassKey, work.newSet)
+	work.ctx.SetAssociationRemovedPeers(ownerID, work.assocKey, work.reverse, removed)
+
+	// Plain associations also establish missing links from the RHS set. Association-class
+	// hosts materialize rows via reify; their endpoint image is derived from those rows.
+	if work.assoc.AssociationClassKey != nil {
+		return nil
+	}
+	if err := e.addMissingPlainAssociationLinks(plainAssocLinkWork{
+		simState:     simState,
+		ownerID:      ownerID,
+		assocKey:     work.assocKey,
+		assoc:        work.assoc,
+		reverse:      work.reverse,
+		peerClassKey: peerClassKey,
+		newSet:       work.newSet,
+	}); err != nil {
+		return fmt.Errorf("association state_change on %q: %w", work.target, err)
+	}
+	return nil
+}
+
 // plainAssocLinkWork is the context for establishing plain association links from a state_change RHS set.
 type plainAssocLinkWork struct {
-	simState     *state.SimulationState
-	ownerID      state.InstanceID
+	simState     *instance.State
+	ownerID      instance.ID
 	assocKey     identity.Key
 	assoc        model_class.Association
 	reverse      bool
@@ -73,18 +102,18 @@ type plainAssocLinkWork struct {
 }
 
 func associationPeersRemovedFromSet(
-	simState *state.SimulationState,
-	ownerID state.InstanceID,
+	simState *instance.State,
+	ownerID instance.ID,
 	assoc model_class.Association,
 	reverse bool,
 	peerClassKey identity.Key,
 	newSet *object.Set,
-) []state.InstanceID {
+) []instance.ID {
 	linked := linkedPeersForDirection(simState, ownerID, assoc, reverse)
 	if len(linked) == 0 {
 		return nil
 	}
-	var removed []state.InstanceID
+	var removed []instance.ID
 	for _, peerID := range linked {
 		if peerInRHSSet(simState, peerClassKey, peerID, newSet) {
 			continue
@@ -95,16 +124,16 @@ func associationPeersRemovedFromSet(
 }
 
 func peerInRHSSet(
-	simState *state.SimulationState,
+	simState *instance.State,
 	peerClassKey identity.Key,
-	peerID state.InstanceID,
+	peerID instance.ID,
 	newSet *object.Set,
 ) bool {
 	peerInstance := simState.GetInstance(peerID)
 	if peerInstance == nil {
 		return false
 	}
-	if newSet.Contains(peerInstance.Attributes) {
+	if newSet.Contains(peerInstance.GetAttributes()) {
 		return true
 	}
 	for _, elem := range newSet.Elements() {
@@ -116,11 +145,11 @@ func peerInRHSSet(
 }
 
 func linkedPeersForDirection(
-	simState *state.SimulationState,
-	ownerID state.InstanceID,
+	simState *instance.State,
+	ownerID instance.ID,
 	assoc model_class.Association,
 	reverse bool,
-) []state.InstanceID {
+) []instance.ID {
 	if reverse {
 		// Owner is the to-endpoint; peers are from-endpoints.
 		return simState.GetLinkedReverse(ownerID, assoc.Key)
@@ -131,7 +160,7 @@ func linkedPeersForDirection(
 // addMissingPlainAssociationLinks links each RHS set element that identifies a live peer.
 // Forward: owner is from-end, peers are to-end. Reverse: owner is to-end, peers are from-end.
 func (e *ActionExecutor) addMissingPlainAssociationLinks(work plainAssocLinkWork) error {
-	linked := make(map[state.InstanceID]bool)
+	linked := make(map[instance.ID]bool)
 	for _, peerID := range linkedPeersForDirection(work.simState, work.ownerID, work.assoc, work.reverse) {
 		linked[peerID] = true
 	}

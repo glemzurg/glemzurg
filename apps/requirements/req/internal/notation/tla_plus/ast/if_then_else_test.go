@@ -25,8 +25,8 @@ func (suite *ExpressionIfElseSuite) TestString() {
 		{
 			testName:  `if then else with literals`,
 			condition: &BooleanLiteral{Value: true},
-			then:      NewIntLiteral(1),
-			elseExpr:  NewIntLiteral(2),
+			then:      newIntLiteral(1),
+			elseExpr:  newIntLiteral(2),
 			expected:  `IF TRUE THEN 1 ELSE 2`,
 		},
 		{
@@ -39,9 +39,9 @@ func (suite *ExpressionIfElseSuite) TestString() {
 		{
 			testName: `if then else with comparison`,
 			condition: &LogicRealComparison{
-				Left:     NewIntLiteral(5),
+				Left:     newIntLiteral(5),
 				Operator: RealComparisonGreaterThan,
-				Right:    NewIntLiteral(0),
+				Right:    newIntLiteral(0),
 			},
 			then:     &Identifier{Value: `positive`},
 			elseExpr: &Identifier{Value: `nonpositive`},
@@ -52,10 +52,10 @@ func (suite *ExpressionIfElseSuite) TestString() {
 			condition: &BooleanLiteral{Value: true},
 			then: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: false},
-				Then:      NewIntLiteral(1),
-				Else:      NewIntLiteral(2),
+				Then:      newIntLiteral(1),
+				Else:      newIntLiteral(2),
 			},
-			elseExpr: NewIntLiteral(3),
+			elseExpr: newIntLiteral(3),
 			expected: `IF TRUE THEN IF FALSE THEN 1 ELSE 2 ELSE 3`,
 		},
 		{
@@ -65,8 +65,8 @@ func (suite *ExpressionIfElseSuite) TestString() {
 				Left:     &BooleanLiteral{Value: true},
 				Right:    &BooleanLiteral{Value: false},
 			},
-			then:     NewIntLiteral(1),
-			elseExpr: NewIntLiteral(0),
+			then:     newIntLiteral(1),
+			elseExpr: newIntLiteral(0),
 			expected: `IF TRUE ∧ FALSE THEN 1 ELSE 0`,
 		},
 	}
@@ -93,8 +93,8 @@ func (suite *ExpressionIfElseSuite) TestASCII() {
 		{
 			testName:  `if then else with literals`,
 			condition: &BooleanLiteral{Value: true},
-			then:      NewIntLiteral(1),
-			elseExpr:  NewIntLiteral(2),
+			then:      newIntLiteral(1),
+			elseExpr:  newIntLiteral(2),
 			expected:  `IF TRUE THEN 1 ELSE 2`,
 		},
 		{
@@ -111,8 +111,8 @@ func (suite *ExpressionIfElseSuite) TestASCII() {
 				Left:     &BooleanLiteral{Value: true},
 				Right:    &BooleanLiteral{Value: false},
 			},
-			then:     NewIntLiteral(1),
-			elseExpr: NewIntLiteral(0),
+			then:     newIntLiteral(1),
+			elseExpr: newIntLiteral(0),
 			expected: `IF TRUE /\ FALSE THEN 1 ELSE 0`,
 		},
 	}
@@ -139,8 +139,8 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 			testName: `valid if then else`,
 			e: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: true},
-				Then:      NewIntLiteral(1),
-				Else:      NewIntLiteral(2),
+				Then:      newIntLiteral(1),
+				Else:      newIntLiteral(2),
 			},
 		},
 		{
@@ -157,10 +157,10 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 				Condition: &BooleanLiteral{Value: true},
 				Then: &ExpressionIfElse{
 					Condition: &BooleanLiteral{Value: false},
-					Then:      NewIntLiteral(1),
-					Else:      NewIntLiteral(2),
+					Then:      newIntLiteral(1),
+					Else:      newIntLiteral(2),
 				},
-				Else: NewIntLiteral(3),
+				Else: newIntLiteral(3),
 			},
 		},
 
@@ -168,8 +168,8 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 		{
 			testName: `error missing condition`,
 			e: &ExpressionIfElse{
-				Then: NewIntLiteral(1),
-				Else: NewIntLiteral(2),
+				Then: newIntLiteral(1),
+				Else: newIntLiteral(2),
 			},
 			errstr: `Condition`,
 		},
@@ -177,7 +177,7 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 			testName: `error missing then`,
 			e: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: true},
-				Else:      NewIntLiteral(2),
+				Else:      newIntLiteral(2),
 			},
 			errstr: `Then`,
 		},
@@ -185,7 +185,7 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 			testName: `error missing else`,
 			e: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: true},
-				Then:      NewIntLiteral(1),
+				Then:      newIntLiteral(1),
 			},
 			errstr: `Else`,
 		},
@@ -197,8 +197,8 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 					Left:     &BooleanLiteral{Value: true},
 					// Missing Right
 				},
-				Then: NewIntLiteral(1),
-				Else: NewIntLiteral(2),
+				Then: newIntLiteral(1),
+				Else: newIntLiteral(2),
 			},
 			errstr: `Right`,
 		},
@@ -207,7 +207,7 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 			e: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: true},
 				Then:      &Identifier{Value: ``},
-				Else:      NewIntLiteral(2),
+				Else:      newIntLiteral(2),
 			},
 			errstr: `Value`,
 		},
@@ -215,7 +215,7 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 			testName: `error invalid else`,
 			e: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: true},
-				Then:      NewIntLiteral(1),
+				Then:      newIntLiteral(1),
 				Else:      &Identifier{Value: ``},
 			},
 			errstr: `Value`,
@@ -236,8 +236,8 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 func (suite *ExpressionIfElseSuite) TestExpressionNode() {
 	e := &ExpressionIfElse{
 		Condition: &BooleanLiteral{Value: true},
-		Then:      NewIntLiteral(1),
-		Else:      NewIntLiteral(2),
+		Then:      newIntLiteral(1),
+		Else:      newIntLiteral(2),
 	}
 	e.expressionNode()
 }

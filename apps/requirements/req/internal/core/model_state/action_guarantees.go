@@ -16,8 +16,9 @@ func validateActionGuarantees(ctx *coreerr.ValidationContext, guarantees []model
 		if err := guar.Validate(childCtx); err != nil {
 			return err
 		}
-		if guar.Type != model_logic.LogicTypeStateChange && guar.Type != model_logic.LogicTypeLet && guar.Type != model_logic.LogicTypeDestroy {
-			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeTypeInvalid, fmt.Sprintf("guarantee %d: logic kind must be '%s', '%s', or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, model_logic.LogicTypeDestroy, guar.Type), "Guarantees", guar.Type, fmt.Sprintf("one of: %s, %s, %s", model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, model_logic.LogicTypeDestroy))
+		if guar.Type != model_logic.LogicTypeStateChange && guar.Type != model_logic.LogicTypeLet &&
+			guar.Type != model_logic.LogicTypeDestroy && guar.Type != model_logic.LogicTypeEvents {
+			return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeTypeInvalid, fmt.Sprintf("guarantee %d: logic kind must be '%s', '%s', '%s', or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, model_logic.LogicTypeDestroy, model_logic.LogicTypeEvents, guar.Type), "Guarantees", guar.Type, fmt.Sprintf("one of: %s, %s, %s, %s", model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, model_logic.LogicTypeDestroy, model_logic.LogicTypeEvents))
 		}
 		switch guar.Type {
 		case model_logic.LogicTypeLet:
@@ -35,6 +36,8 @@ func validateActionGuarantees(ctx *coreerr.ValidationContext, guarantees []model
 				return coreerr.NewWithValues(childCtx, coreerr.ActionGuaranteeDuplicateTarget, fmt.Sprintf("guarantee %d: duplicate target %q — each target can only be set once per action", i, guar.Target), "Guarantees", guar.Target, "")
 			}
 			stateChangeTargets[guar.Target] = true
+		case model_logic.LogicTypeEvents:
+			// No target; multiple events guarantees allowed (broadcast side-effects).
 		}
 	}
 	return nil

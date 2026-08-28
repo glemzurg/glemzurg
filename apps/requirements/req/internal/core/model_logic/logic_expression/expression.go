@@ -75,8 +75,8 @@ const (
 	NodeClassRef    = "class_ref"
 )
 
-// ValidateExpression validates an Expression if it is non-nil.
-func ValidateExpression(ctx *coreerr.ValidationContext, expr Expression) error {
+// validateExpression validates an Expression if it is non-nil.
+func validateExpression(ctx *coreerr.ValidationContext, expr Expression) error {
 	if expr == nil {
 		return nil
 	}

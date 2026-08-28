@@ -2376,6 +2376,12 @@
           "nullable": false,
           "default": "false",
           "comment": "Authoring selection flag; true when the class is marked in the model."
+        },
+        {
+          "name": "facet_of_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "If this class is a facet of another class, that class."
         }
       ],
       "indexes": [
@@ -2520,6 +2526,21 @@
           "table": "public.class",
           "referenced_table": "",
           "columns": [
+            "model_key",
+            "class_key"
+          ]
+        },
+        {
+          "name": "fk_class_facet_of",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, facet_of_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE",
+          "table": "public.class",
+          "referenced_table": "class",
+          "columns": [
+            "model_key",
+            "facet_of_key"
+          ],
+          "referenced_columns": [
             "model_key",
             "class_key"
           ]
@@ -5155,7 +5176,7 @@
     {
       "name": "public.action_parameter_simulation_require",
       "type": "BASE TABLE",
-      "comment": "Simulator-only sampling preconditions for an action parameter.",
+      "comment": "Simulator-only sampling preconditions for one rule of an action parameter.",
       "columns": [
         {
           "name": "model_key",
@@ -5176,21 +5197,28 @@
           "comment": "The parameter subkey."
         },
         {
+          "name": "rule_index",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Zero-based index of the simulation rule this require belongs to."
+        },
+        {
           "name": "logic_key",
           "type": "text",
           "nullable": false,
-          "comment": "Assessment logic that must hold before the parameter may be sampled."
+          "comment": "Assessment logic that must hold before the rule may be sampled."
         }
       ],
       "indexes": [
         {
           "name": "action_parameter_simulation_require_pkey",
-          "def": "CREATE UNIQUE INDEX action_parameter_simulation_require_pkey ON public.action_parameter_simulation_require USING btree (model_key, action_key, parameter_key, logic_key)",
+          "def": "CREATE UNIQUE INDEX action_parameter_simulation_require_pkey ON public.action_parameter_simulation_require USING btree (model_key, action_key, parameter_key, rule_index, logic_key)",
           "table": "public.action_parameter_simulation_require",
           "columns": [
             "model_key",
             "action_key",
             "parameter_key",
+            "rule_index",
             "logic_key"
           ]
         }
@@ -5237,6 +5265,16 @@
           ]
         },
         {
+          "name": "action_parameter_simulation_require_rule_index_not_null",
+          "type": "n",
+          "def": "NOT NULL rule_index",
+          "table": "public.action_parameter_simulation_require",
+          "referenced_table": "",
+          "columns": [
+            "rule_index"
+          ]
+        },
+        {
           "name": "fk_action_param_sim_req_logic",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
@@ -5271,13 +5309,14 @@
         {
           "name": "action_parameter_simulation_require_pkey",
           "type": "PRIMARY KEY",
-          "def": "PRIMARY KEY (model_key, action_key, parameter_key, logic_key)",
+          "def": "PRIMARY KEY (model_key, action_key, parameter_key, rule_index, logic_key)",
           "table": "public.action_parameter_simulation_require",
           "referenced_table": "",
           "columns": [
             "model_key",
             "action_key",
             "parameter_key",
+            "rule_index",
             "logic_key"
           ]
         }
@@ -5286,7 +5325,7 @@
     {
       "name": "public.action_parameter_simulation_spec",
       "type": "BASE TABLE",
-      "comment": "Simulator-only value expression for sampling an action parameter.",
+      "comment": "Simulator-only value expression for one rule of an action parameter.",
       "columns": [
         {
           "name": "model_key",
@@ -5307,6 +5346,12 @@
           "comment": "The parameter subkey."
         },
         {
+          "name": "rule_index",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Zero-based index of the simulation rule this specification belongs to."
+        },
+        {
           "name": "logic_key",
           "type": "text",
           "nullable": false,
@@ -5316,12 +5361,13 @@
       "indexes": [
         {
           "name": "action_parameter_simulation_spec_pkey",
-          "def": "CREATE UNIQUE INDEX action_parameter_simulation_spec_pkey ON public.action_parameter_simulation_spec USING btree (model_key, action_key, parameter_key)",
+          "def": "CREATE UNIQUE INDEX action_parameter_simulation_spec_pkey ON public.action_parameter_simulation_spec USING btree (model_key, action_key, parameter_key, rule_index)",
           "table": "public.action_parameter_simulation_spec",
           "columns": [
             "model_key",
             "action_key",
-            "parameter_key"
+            "parameter_key",
+            "rule_index"
           ]
         }
       ],
@@ -5367,6 +5413,16 @@
           ]
         },
         {
+          "name": "action_parameter_simulation_spec_rule_index_not_null",
+          "type": "n",
+          "def": "NOT NULL rule_index",
+          "table": "public.action_parameter_simulation_spec",
+          "referenced_table": "",
+          "columns": [
+            "rule_index"
+          ]
+        },
+        {
           "name": "fk_action_param_sim_spec_logic",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
@@ -5401,13 +5457,14 @@
         {
           "name": "action_parameter_simulation_spec_pkey",
           "type": "PRIMARY KEY",
-          "def": "PRIMARY KEY (model_key, action_key, parameter_key)",
+          "def": "PRIMARY KEY (model_key, action_key, parameter_key, rule_index)",
           "table": "public.action_parameter_simulation_spec",
           "referenced_table": "",
           "columns": [
             "model_key",
             "action_key",
-            "parameter_key"
+            "parameter_key",
+            "rule_index"
           ]
         }
       ]
@@ -7765,6 +7822,21 @@
       "def": "FOREIGN KEY (model_key, superclass_of_key) REFERENCES class_generalization(model_key, generalization_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.class",
+      "columns": [
+        "model_key",
+        "facet_of_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.class",
+      "parent_columns": [
+        "model_key",
+        "class_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, facet_of_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.attribute",
       "columns": [
         "model_key",
@@ -8360,7 +8432,7 @@
         "action_key",
         "parameter_key"
       ],
-      "cardinality": "zero_or_one",
+      "cardinality": "zero_or_more",
       "parent_table": "public.action_parameter",
       "parent_columns": [
         "model_key",

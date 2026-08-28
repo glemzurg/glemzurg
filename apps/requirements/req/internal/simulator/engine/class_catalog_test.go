@@ -3,6 +3,8 @@ package engine
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
@@ -27,7 +29,7 @@ func (s *ClassCatalogSuite) TestCatalogFromModelWithOneClass() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	info := catalog.GetClassInfo(orderKey)
 	s.NotNil(info)
@@ -44,9 +46,10 @@ func (s *ClassCatalogSuite) TestCatalogWithMultipleClasses() {
 	itemClass, itemKey := testItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
-	all := catalog.AllSimulatableClasses()
+	var all []*schema.ClassSimInfo
+	catalog.EachSimulatableClassSim(func(sim *schema.ClassSimInfo) { all = append(all, sim) })
 	s.Len(all, 2)
 
 	s.NotNil(catalog.GetClassInfo(orderKey))
@@ -67,20 +70,23 @@ func (s *ClassCatalogSuite) TestClassWithNoStatesScopedForLiveness() {
 
 	model := testModel(classEntry(simpleClass, classKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	info := catalog.GetClassInfo(classKey)
 	s.NotNil(info)
 	s.False(info.HasStates)
-	s.Len(catalog.AllScopedClasses(), 1)
-	s.Empty(catalog.AllSimulatableClasses())
+	var scoped, simulatable int
+	catalog.EachInScopeClassSim(func(*schema.ClassSimInfo) { scoped++ })
+	catalog.EachSimulatableClassSim(func(*schema.ClassSimInfo) { simulatable++ })
+	s.Equal(1, scoped)
+	s.Equal(0, simulatable)
 }
 
 func (s *ClassCatalogSuite) TestStateEventsIndexedCorrectly() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 	info := catalog.GetClassInfo(orderKey)
 
 	// From "Open" state, "close" event should be eligible.
@@ -108,7 +114,7 @@ func (s *ClassCatalogSuite) TestMandatoryAssociationsDetected() {
 		assocKey: assoc,
 	}
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	mandatory := catalog.GetMandatoryOutboundAssociations(orderKey)
 	s.Len(mandatory, 1)
@@ -156,7 +162,7 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 	})
 
 	model := testModel(classEntry(class, classKey))
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	info := catalog.GetClassInfo(classKey)
 	s.NotNil(info)
@@ -170,7 +176,7 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsNoAssociation() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	// Without associations, creation events are external.
 	ext := catalog.ExternalCreationEvents(orderKey)
@@ -192,7 +198,7 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 		assocKey: assoc,
 	}
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	// Item creation is driven by Order → Item is NOT external.
 	ext := catalog.ExternalCreationEvents(itemKey)
@@ -205,21 +211,23 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 
 func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociationClass() {
 	tcm := buildAssociationClassTestModel()
-	catalog := NewClassCatalog(tcm.model)
+	catalog := schema.New(tcm.model, schema.RunScopeAll())
 
 	// To-endpoint stays externally creatable; mandatory link is via association class.
 	ext := catalog.ExternalCreationEvents(tcm.jurisdictionKey)
 	s.Len(ext, 1)
 	s.Equal("create", ext[0].Name)
 
-	// Association-class rows still require both host endpoints.
-	s.Empty(catalog.ExternalCreationEvents(tcm.linkDefKey))
+	// E1: association-class creation is itself a surface driver (ends from event params).
+	ext = catalog.ExternalCreationEvents(tcm.linkDefKey)
+	s.Len(ext, 1)
+	s.Equal("Add", ext[0].Name)
 }
 
 func (s *ClassCatalogSuite) TestGetActionForEvent() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	createEventKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	action, found := catalog.GetActionForEvent(orderKey, createEventKey, "")
@@ -237,7 +245,7 @@ func (s *ClassCatalogSuite) TestGetCreationEvent() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	ev, found := catalog.GetCreationEvent(orderKey)
 	s.True(found)
@@ -257,7 +265,7 @@ func (s *ClassCatalogSuite) TestExternalStateEvents_NoSentBy() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	ext := catalog.ExternalStateEvents(orderKey, "Open")
 	s.Len(ext, 1)
@@ -270,7 +278,7 @@ func (s *ClassCatalogSuite) TestExternalStateEvents_SentByInScope() {
 	itemClass, itemKey := testItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	// Mark the "close" event as sent by Item (in-scope).
 	closeEventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
@@ -285,7 +293,7 @@ func (s *ClassCatalogSuite) TestExternalStateEvents_SentByOutOfScope() {
 	orderClass, orderKey := testOrderClass()
 	model := testModel(classEntry(orderClass, orderKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	// Mark the "close" event as sent by a class NOT in the catalog.
 	closeEventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
@@ -332,7 +340,7 @@ func (s *ClassCatalogSuite) TestSurfaceDoActions_ReturnsStateDoActions() {
 	})
 
 	model := testModel(classEntry(class, classKey))
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	ext := catalog.SurfaceDoActions(classKey, "Active")
 	s.Len(ext, 1)
@@ -377,7 +385,7 @@ func (s *ClassCatalogSuite) TestSurfaceDoActions_UnaffectedByCalledBy() {
 	})
 
 	model := testModel(classEntry(class, classKey), classEntry(orderClass, orderKey))
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	// Mark the action as called by Order (in-scope).
 	catalog.SetActionCalledBy(actionDoKey, []identity.Key{orderKey})
@@ -392,7 +400,7 @@ func (s *ClassCatalogSuite) TestCallerDataExport() {
 	itemClass, itemKey := testItemClass()
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 
-	catalog := NewClassCatalog(model)
+	catalog := schema.New(model, schema.RunScopeAll())
 
 	eventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
 	actionKey := mustKey("domain/d/subdomain/s/class/order/action/do_close")

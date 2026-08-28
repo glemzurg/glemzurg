@@ -1,34 +1,31 @@
 package actions
 
 import (
-	"fmt"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 )
 
 type peerEventViolationContext struct {
-	OwnerInstanceID state.InstanceID
+	OwnerInstanceID instance.ID
 	OwnerClassKey   identity.Key
 	AssociationName string
 }
 
 func (e *ActionExecutor) peerEventAvailable(
 	class model_class.Class,
-	instance *state.ClassInstance,
+	inst *instance.Instance,
 	eventKey identity.Key,
 ) bool {
-	if e.peerCatalog == nil {
+	if e.sch == nil {
 		return false
 	}
-	event, ok := e.peerCatalog.PeerEvent(class.Key, eventKey)
+	event, ok := e.sch.PeerEvent(class.Key, eventKey)
 	if !ok {
 		return false
 	}
-	candidates := e.findCandidateTransitions(class, event, instance, getInstanceCurrentState(instance))
+	candidates := e.findCandidateTransitions(class, event, inst, getInstanceCurrentState(inst))
 	return len(candidates) > 0
 }
 
@@ -51,62 +48,58 @@ func findFinalDestroyEvent(class model_class.Class) (model_state.Event, bool) {
 	return model_state.Event{}, false
 }
 
+type peerEventTarget struct {
+	Class      model_class.Class
+	InstanceID instance.ID
+}
+
+type peerEventRef struct {
+	Key  identity.Key
+	Name string
+}
+
 func (e *ActionExecutor) recordPeerEventUnavailable(
 	ctx *ExecutionContext,
 	vctx peerEventViolationContext,
 	peerClass model_class.Class,
-	peerInstanceID state.InstanceID,
+	peerInstanceID instance.ID,
 	eventKey identity.Key,
 	eventName string,
 ) {
-	ctx.AddPeerViolation(e.peerEventUnavailableViolation(vctx, peerClass, peerInstanceID, eventKey, eventName))
+	e.recordPeerEventUnavailableDetail(ctx, vctx, peerEventTarget{Class: peerClass, InstanceID: peerInstanceID}, peerEventRef{Key: eventKey, Name: eventName}, "")
 }
 
-func (e *ActionExecutor) peerEventUnavailableViolation(
+func (e *ActionExecutor) recordPeerEventUnavailableDetail(
+	ctx *ExecutionContext,
 	vctx peerEventViolationContext,
-	peerClass model_class.Class,
-	peerInstanceID state.InstanceID,
-	eventKey identity.Key,
-	eventName string,
-) *invariants.ViolationError {
-	stateName := ""
-	if peerInstanceID != 0 {
-		if inst := e.bindingsBuilder.State().GetInstance(peerInstanceID); inst != nil {
-			stateName = getInstanceCurrentState(inst)
-		}
+	peer peerEventTarget,
+	event peerEventRef,
+	detail string,
+) {
+	st := e.bindingsBuilder.State()
+	if st == nil {
+		return
 	}
-	msg := fmt.Sprintf(
-		"association %q sent event %s to class %s",
-		vctx.AssociationName, eventName, peerClass.Name,
-	)
-	if peerInstanceID != 0 {
-		if stateName != "" {
-			msg = fmt.Sprintf(
-				"%s but instance %d has no %s transition from state %s",
-				msg, peerInstanceID, eventName, stateName,
-			)
-		} else {
-			msg = fmt.Sprintf("%s but instance %d is not available", msg, peerInstanceID)
-		}
-	} else {
-		msg = fmt.Sprintf("%s but the class has no %s creation transition", msg, eventName)
-	}
-	return invariants.NewPeerEventUnavailableViolation(invariants.PeerEventUnavailableParams{
+	v := st.CheckPeerEventUnavailable(instance.PeerEventUnavailableInput{
 		OwnerClassKey:   vctx.OwnerClassKey,
 		OwnerInstanceID: vctx.OwnerInstanceID,
 		AssociationName: vctx.AssociationName,
-		PeerClassKey:    peerClass.Key,
-		PeerInstanceID:  peerInstanceID,
-		EventKey:        eventKey,
-		EventName:       eventName,
-		Message:         msg,
+		PeerClassKey:    peer.Class.Key,
+		PeerClassName:   peer.Class.Name,
+		PeerInstanceID:  peer.InstanceID,
+		EventKey:        event.Key,
+		EventName:       event.Name,
+		Detail:          detail,
 	})
+	if v != nil {
+		ctx.AddPeerViolation(v)
+	}
 }
 
-func (e *ActionExecutor) ownerViolationContext(ownerInstanceID state.InstanceID, fallbackClassKey identity.Key, assocName string) peerEventViolationContext {
+func (e *ActionExecutor) ownerViolationContext(ownerInstanceID instance.ID, fallbackClassKey identity.Key, assocName string) peerEventViolationContext {
 	ownerClassKey := fallbackClassKey
 	if owner := e.bindingsBuilder.State().GetInstance(ownerInstanceID); owner != nil {
-		ownerClassKey = owner.ClassKey
+		ownerClassKey = owner.GetClassKey()
 	}
 	return peerEventViolationContext{
 		OwnerInstanceID: ownerInstanceID,

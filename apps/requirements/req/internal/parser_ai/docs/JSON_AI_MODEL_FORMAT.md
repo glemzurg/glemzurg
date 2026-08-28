@@ -48,6 +48,104 @@ Consider a "Shopping Cart" class with a "total" attribute and a "Calculate Total
 
 In the requirements model, none of this complexity appears. There is simply a Shopping Cart with items, and when you ask for the total, you get the correct value reflecting prices, taxes, and discounts. The model describes the *behavior* humans expect, not the *mechanism* that delivers it.
 
+## Template-driven systems (Definition → Instance)
+
+Use this pattern when templates (definitions) configure nested runtime instances that must be **provisioned eagerly** (no lazy create-on-first-use inside ordinary business actions).
+
+### Association-class `_new` — implicit host endpoint parameters
+
+When a class is the **association class** of a host association (`association_class_key` on that association), its **creation** event (`_new` / `«new»`) has **two engine-supplied parameters** that authors must **not** declare in JSON:
+
+| Situation | Parameter names (in order) |
+|-----------|----------------------------|
+| From-class and to-class are **different** | Class display names with spaces removed (TLA form), e.g. `Partner`, `Jurisdiction`, `JurisdictionalWalletDefinition` |
+| From-class and to-class are the **same** | `From<ClassTLAName>`, `To<ClassTLAName>` (e.g. `FromAccount`, `ToAccount`) |
+
+- Do **not** list these names under the creation event’s `parameters` or under the creation action’s `parameters` in AI JSON.
+- You **may and should** use them in Initialize (and other creation-action) TLA+ logic, e.g. `Partner.HasCustomers` or `JurisdictionalWalletDefinition.Defines`.
+- The host association link is materialised by the engine when surface `_new` runs; do not reify from the host class.
+- Any **extra** creation parameters you need (non-endpoint) are authored as usual and appear **after** the two implicit ends.
+
+Example (association class on Partner–Jurisdiction): authored `_new` has **no** parameters; Initialize may still say:
+
+```json
+{
+  "type": "events",
+  "description": "Instantiate a wallet for every existing customer of the host partner",
+  "notation": "tla_plus",
+  "specification": "{ InstantiateJurisdictionalWallet(self, p) : p \\in Partner.HasCustomers }"
+}
+```
+
+### `_new` is special (create into an association)
+
+`_new` / `«new»` creates a peer. Parameters are construction args only. The association field is the “return channel” for the new object.
+
+```json
+{
+  "type": "state_change",
+  "description": "Create one peer linked under Defines",
+  "target": "Defines",
+  "notation": "tla_plus",
+  "specification": "Defines \\union {_new(ParentParam)}"
+}
+```
+
+**Multi set-add** (one create per domain element):
+
+```json
+{
+  "type": "state_change",
+  "description": "Create a peer for every existing parent",
+  "target": "Defines",
+  "notation": "tla_plus",
+  "specification": "Defines \\union { _new(p) : p \\in ExistingParents }"
+}
+```
+
+`target` must be the **outgoing association** that receives the new peers (not a dummy field).
+
+### Normal events — receiver-first (`type: events`)
+
+For messages to **existing** objects, use logic **`type: events`**. There is **no `target`** and **no primed assignment on self** — only a specification that is a receiver-first event set-map (broadcast). The first argument is the **receiver**; remaining arguments are event parameters.
+
+```json
+{
+  "type": "events",
+  "description": "Fire Instantiate on self for each existing parent",
+  "notation": "tla_plus",
+  "specification": "{ InstantiateLevel(self, p) : p \\in ExistingParents }"
+}
+```
+
+```json
+{
+  "type": "events",
+  "description": "Fire Instantiate on each definition peer; self is a parameter",
+  "notation": "tla_plus",
+  "specification": "{ InstantiateLevel(d, self) : d \\in ActiveDefinitions }"
+}
+```
+
+```json
+{
+  "type": "events",
+  "description": "Cascade Delete to active linked instances",
+  "notation": "tla_plus",
+  "specification": "{ Delete(a) : a \\in { x \\in Defines : x._state = \"Active\" } }"
+}
+```
+
+Do **not** use `state_change` with a dummy association target for event broadcasts (that falsely implies `Target' = …`). Do **not** use method-style `self.Event(...)`.
+
+### Setup vs template backfill
+
+- **Host setup:** set-add root (`HasChildren \\union {_new()}`); continue cascades on the new instance’s Initialize with receiver-first `{ Instantiate(d, self) : d \\in templates }`.
+- **New template after parents exist:** multi set-add `Defines \\union { _new(p) : p \\in ExistingParents }` and/or receiver-first `{ Instantiate(self, p) : p \\in ExistingParents }`.
+- **Business actions** (e.g. post amounts) assume the tree already exists; do not lazily Instantiate missing structure there.
+
+See repository `AGENTS.md` section **Template-driven systems** for the full contract.
+
 ## Deriving a Model from an Existing System
 
 When examining another system to create a model, use these guidelines to identify model elements:

@@ -16,10 +16,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 const (
@@ -28,6 +27,8 @@ const (
 	logicOwnerKindAction                 = "action"
 	logicOwnerKindQuery                  = "query"
 	maxParameterSampleAttempts           = 10
+	// _EXPRESSION_RETURNED_NIL is the message when a requires expression evaluates to nil.
+	_EXPRESSION_RETURNED_NIL = "expression returned nil"
 )
 
 // ParameterOwner is an action or query that owns typed parameters and requires.
@@ -159,7 +160,7 @@ func (o ParameterOwner) AssessParameterInvariants(
 			if inv.Type != model_logic.LogicTypeAssessment || inv.Spec.Expression == nil {
 				continue
 			}
-			if invariants.IsParameterEqualityInvariant(inv.Spec.Expression) {
+			if instance.IsParameterEqualityInvariant(inv.Spec.Expression) {
 				continue
 			}
 			logics = append(logics, inv)
@@ -248,29 +249,33 @@ func assessOneLogic(
 // ParameterInvariantViolations converts parameter invariant assessment failures into violations.
 func (o ParameterOwner) ParameterInvariantViolations(
 	failures []RequireAssessmentFailure,
-	instanceID state.InstanceID,
-) invariants.ViolationErrors {
-	var violations invariants.ViolationErrors
-	for _, failure := range failures {
-		violations = append(violations, invariants.NewParameterInvariantViolation(
-			o.Key, o.Name, failure.Index, failure.Logic.Spec.Specification, instanceID, failure.Message,
-		))
-	}
-	return violations
+	instanceID instance.ID,
+) instance.ViolationErrors {
+	return instance.PackageParameterInvariantFailures(
+		o.Key, o.Name, assessedFailures(failures), instanceID,
+	)
 }
 
 // ActionRequiresViolations converts assessment failures into action-require violations.
 func (o ParameterOwner) ActionRequiresViolations(
 	failures []RequireAssessmentFailure,
-	instanceID state.InstanceID,
-) invariants.ViolationErrors {
-	var violations invariants.ViolationErrors
-	for _, failure := range failures {
-		violations = append(violations, invariants.NewActionRequiresViolation(
-			o.Key, o.Name, failure.Index, failure.Logic.Spec.Specification, instanceID, failure.Message,
-		))
+	instanceID instance.ID,
+) instance.ViolationErrors {
+	return instance.PackageActionRequireFailures(
+		o.Key, o.Name, assessedFailures(failures), instanceID,
+	)
+}
+
+func assessedFailures(failures []RequireAssessmentFailure) []instance.AssessedFailure {
+	out := make([]instance.AssessedFailure, 0, len(failures))
+	for _, f := range failures {
+		out = append(out, instance.AssessedFailure{
+			Index:   f.Index,
+			Spec:    f.Logic.Spec.Specification,
+			Message: f.Message,
+		})
 	}
-	return violations
+	return out
 }
 
 // RequireAssessmentError returns the first failure as an error for query-style callers.
@@ -619,15 +624,15 @@ func parameterInvariantAssessmentsForSampling(ownerKey identity.Key, params []mo
 			if inv.Type != model_logic.LogicTypeAssessment || inv.Spec.Expression == nil {
 				continue
 			}
-			if invariants.IsParameterEqualityInvariant(inv.Spec.Expression) {
+			if instance.IsParameterEqualityInvariant(inv.Spec.Expression) {
 				continue
 			}
 			logic := inv
-			if param.Nullable && !invariants.LogicSpecHasNullableWhenUnsetGuard(inv.Spec) {
+			if param.Nullable && !instance.LogicSpecHasNullableWhenUnsetGuard(inv.Spec) {
 				spec := logic_spec.ExpressionSpec{
 					Notation:      inv.Spec.Notation,
-					Specification: invariants.NullableWhenSetSpecification(param.Name, inv.Spec.Specification),
-					Expression:    invariants.WrapNullableWhenSetExpression(param.Name, inv.Spec.Expression),
+					Specification: instance.NullableWhenSetSpecification(param.Name, inv.Spec.Specification),
+					Expression:    instance.WrapNullableWhenSetExpression(param.Name, inv.Spec.Expression),
 				}
 				logic = model_logic.NewLogic(
 					inv.Key,
@@ -650,7 +655,7 @@ func hasParameterInvariantAssessments(params []model_state.Parameter) bool {
 			if inv.Type != model_logic.LogicTypeAssessment || inv.Spec.Expression == nil {
 				continue
 			}
-			if invariants.IsParameterEqualityInvariant(inv.Spec.Expression) {
+			if instance.IsParameterEqualityInvariant(inv.Spec.Expression) {
 				continue
 			}
 			return true

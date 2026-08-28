@@ -80,13 +80,25 @@ func RaiseContextFromLower(ctx *LowerContext) *RaiseContext {
 	if ctx == nil {
 		return &RaiseContext{}
 	}
+	peerRaise := peerEventRaiseNamesFromLower(ctx.PeerEventNames)
+	// Same-class and uniquely named model events share the raise map with peer events.
+	for _, src := range []map[string]identity.Key{ctx.ClassEventNames, ctx.UniqueEventNames} {
+		for k, v := range peerEventRaiseNamesFromLower(src) {
+			if peerRaise == nil {
+				peerRaise = make(map[identity.Key]string)
+			}
+			if _, exists := peerRaise[k]; !exists {
+				peerRaise[k] = v
+			}
+		}
+	}
 	rc := &RaiseContext{
 		AttributeNames:   invertMap(ctx.AttributeNames),
 		ActionNames:      invertMap(ctx.ActionNames),
 		QueryNames:       invertMap(ctx.QueryNames),
 		AssociationNames: invertMap(ctx.AssociationNames),
 		SystemEventNames: systemEventRaiseNamesFromLower(ctx.SystemEventNames),
-		PeerEventNames:   peerEventRaiseNamesFromLower(ctx.PeerEventNames),
+		PeerEventNames:   peerRaise,
 		GlobalFunctions:  invertMap(ctx.GlobalFunctions),
 		NamedSets:        invertMap(ctx.NamedSets),
 	}

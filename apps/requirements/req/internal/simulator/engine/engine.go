@@ -5,12 +5,12 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
@@ -40,17 +40,17 @@ type SimulationResult struct {
 	StepsTaken int
 
 	// Violations is the combined list of all violations from all steps.
-	Violations invariants.ViolationErrors
+	Violations siminst.ViolationErrors
 
 	// TerminationReason explains why the simulation stopped.
 	// One of: "max_steps", "violation", "deadlock".
 	TerminationReason string
 
 	// FinalState is the simulation state when the run ended.
-	FinalState *state.SimulationState
+	FinalState *siminst.State
 
-	// Catalog holds scoped class metadata for trace rendering (association-class endpoints).
-	Catalog *ClassCatalog
+	// Schema is the static model+catalog for this run (trace AC endpoints, etc.).
+	Schema *schema.Schema
 
 	// SimulationCoverage records parameter simulation specs that produced values during the run.
 	SimulationCoverage *SimulationCoverageTracker
@@ -61,18 +61,17 @@ type SimulationEngine struct {
 	config SimulationConfig
 
 	// Core state
-	simState        *state.SimulationState
+	simState        *siminst.State
 	bindingsBuilder *state.BindingsBuilder
 
 	// Components
-	catalog             *ClassCatalog
-	stepExecutor        *StepExecutor
-	selector            *ActionSelector
-	invariantChecker    *invariants.InvariantChecker
-	dataTypeChecker     *invariants.DataTypeChecker
-	livenessChecker     *LivenessChecker
-	stateMachineChecker *StateMachineChecker
-	simulationCoverage  *SimulationCoverageTracker
+	sch                *schema.Schema
+	stepExecutor       *StepExecutor
+	selector           *ActionSelector
+	invariantChecker   *siminst.InvariantChecker
+	dataTypeChecker    *siminst.DataTypeChecker
+	livenessChecker    *LivenessChecker
+	simulationCoverage *SimulationCoverageTracker
 
 	// scopeEntries summarize which classes/subdomains participate (include-list scope).
 	scopeEntries []surface.ScopeEntry
@@ -81,16 +80,21 @@ type SimulationEngine struct {
 // NewSimulationEngine creates and wires up all simulation components.
 // The model must have its ExpressionSpec.Expression fields already populated
 // (e.g., via parse functions passed to ExpressionSpec constructors).
+//
+// Data-flow gate: model + surface resolve into schema.New(fullModel, RunScope).
+// After that, the run is driven from *schema.Schema only (no dual model authority).
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
 	rng := newSimulationRNG(config.RandomSeed)
 
-	activeModel, unavailable, scopeEntries, err := prepareActiveModel(model, config)
+	sch, unavailable, scopeEntries, err := buildRunSchema(model, config)
 	if err != nil {
 		return nil, err
 	}
 
-	catalog := setupCatalogForSurface(model, activeModel, config, unavailable)
-	core, err := wireSimulationCore(activeModel, catalog, rng)
+	catalog := sch // schema owns private catalog indexes
+	catalog.SetSurfaceUnavailableMembers(unavailable)
+
+	core, err := wireSimulationCore(sch, catalog, rng)
 	if err != nil {
 		return nil, err
 	}
@@ -99,23 +103,70 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 	return newWiredSimulationEngine(config, catalog, core, scopeEntries), nil
 }
 
-// setupCatalogForSurface builds the scoped catalog and, when a surface is set,
-// registers full-model empty extents and boundary associations for OOS peers.
-func setupCatalogForSurface(
-	fullModel, activeModel *core.Model,
+// buildRunSchema resolves surface scope, builds schema from the full model + RunScope,
+// and overlays surface-scoped class bodies / model invariants when a surface is set.
+func buildRunSchema(
+	model *core.Model,
 	config SimulationConfig,
-	unavailable []surface.UnavailableMember,
-) *ClassCatalog {
-	catalog := setupClassCatalog(activeModel)
-	if config.Surface != nil && !config.Surface.IsEmpty() {
-		catalog.RegisterOutOfScopeMetadata(fullModel)
+) (*schema.Schema, []surface.UnavailableMember, []surface.ScopeEntry, error) {
+	if err := validateSimulationModel(model); err != nil {
+		return nil, nil, nil, err
 	}
-	catalog.SetSurfaceUnavailableMembers(unavailable)
-	return catalog
+	if config.Surface == nil || config.Surface.IsEmpty() {
+		scopeEntries := surface.BuildScopeEntries(model, surface.AllNonRealizedClasses(model))
+		return schema.New(model, schema.RunScopeAll()), nil, scopeEntries, nil
+	}
+	return buildRunSchemaWithSurface(model, config.Surface)
+}
+
+func buildRunSchemaWithSurface(
+	model *core.Model,
+	spec *surface.SurfaceSpecification,
+) (*schema.Schema, []surface.UnavailableMember, []surface.ScopeEntry, error) {
+	resolved, err := surface.Resolve(spec, model)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("surface area resolution: %w", err)
+	}
+	scopeEntries := surface.BuildScopeEntries(model, resolved.Classes)
+	sch := schema.New(model, schema.NewRunScope(resolvedClassKeys(resolved)))
+	if err := applySurfaceClassOverlays(sch, model, resolved); err != nil {
+		return nil, nil, nil, err
+	}
+	return sch, resolved.UnavailableMembers, scopeEntries, nil
+}
+
+func resolvedClassKeys(resolved *surface.ResolvedSurface) []identity.Key {
+	keys := make([]identity.Key, 0, len(resolved.Classes))
+	for k := range resolved.Classes {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// applySurfaceClassOverlays installs surface-scoped class bodies and model siminst.
+func applySurfaceClassOverlays(sch *schema.Schema, model *core.Model, resolved *surface.ResolvedSurface) error {
+	filtered, err := surface.BuildFilteredModel(model, resolved)
+	if err != nil {
+		return fmt.Errorf("build filtered model: %w", err)
+	}
+	if err := validateSimulationModel(filtered); err != nil {
+		return err
+	}
+	for _, domain := range filtered.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				if err := sch.ReplaceInScopeClass(class); err != nil {
+					return fmt.Errorf("install scoped class %s: %w", class.Key.String(), err)
+				}
+			}
+		}
+	}
+	sch.SetModelInvariants(resolved.ModelInvariants)
+	return nil
 }
 
 // includeOutOfScopeExtents lets invariant evaluation bind empty sets for OOS class names.
-func includeOutOfScopeExtents(core *simulationCore, catalog *ClassCatalog) {
+func includeOutOfScopeExtents(core *simulationCore, catalog *schema.Schema) {
 	if core == nil || core.checkers == nil || core.checkers.invariantChecker == nil {
 		return
 	}
@@ -124,29 +175,28 @@ func includeOutOfScopeExtents(core *simulationCore, catalog *ClassCatalog) {
 
 func newWiredSimulationEngine(
 	config SimulationConfig,
-	catalog *ClassCatalog,
+	catalog *schema.Schema,
 	core *simulationCore,
 	scopeEntries []surface.ScopeEntry,
 ) *SimulationEngine {
 	return &SimulationEngine{
-		config:              config,
-		simState:            core.simState,
-		bindingsBuilder:     core.bindingsBuilder,
-		catalog:             catalog,
-		stepExecutor:        core.stepExecutor,
-		selector:            core.selector,
-		invariantChecker:    core.checkers.invariantChecker,
-		dataTypeChecker:     core.checkers.dataTypeChecker,
-		livenessChecker:     core.livenessChecker,
-		stateMachineChecker: NewStateMachineChecker(catalog),
-		simulationCoverage:  core.simulationCoverage,
-		scopeEntries:        scopeEntries,
+		config:             config,
+		simState:           core.simState,
+		bindingsBuilder:    core.bindingsBuilder,
+		sch:                catalog,
+		stepExecutor:       core.stepExecutor,
+		selector:           core.selector,
+		invariantChecker:   core.checkers.invariantChecker,
+		dataTypeChecker:    core.checkers.dataTypeChecker,
+		livenessChecker:    core.livenessChecker,
+		simulationCoverage: core.simulationCoverage,
+		scopeEntries:       scopeEntries,
 	}
 }
 
 // simulationCore holds wired runtime components after catalog setup.
 type simulationCore struct {
-	simState           *state.SimulationState
+	simState           *siminst.State
 	bindingsBuilder    *state.BindingsBuilder
 	stepExecutor       *StepExecutor
 	selector           *ActionSelector
@@ -156,16 +206,16 @@ type simulationCore struct {
 }
 
 func wireSimulationCore(
-	activeModel *core.Model,
-	catalog *ClassCatalog,
+	sch *schema.Schema,
+	catalog *schema.Schema,
 	rng *rand.Rand,
 ) (*simulationCore, error) {
-	evalCtx, err := setupExpressionRegistry(activeModel)
+	evalCtx, err := sch.NewEvalContext()
 	if err != nil {
 		return nil, fmt.Errorf("expression registry setup: %w", err)
 	}
 
-	simState, bindingsBuilder, derivedEval, err := setupState(activeModel, catalog, evalCtx)
+	simState, bindingsBuilder, derivedEval, err := setupState(sch, catalog, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +223,7 @@ func wireSimulationCore(
 		derivedEval.SetCatalog(catalog)
 	}
 
-	checkers, err := setupCheckers(activeModel, evalCtx)
+	checkers, err := setupCheckers(sch, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -206,59 +256,19 @@ func newSimulationRNG(seed int64) *rand.Rand {
 	return rand.New(rand.NewSource(seed)) //nolint:gosec // simulation uses deterministic seeded RNG
 }
 
-func prepareActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, []surface.ScopeEntry, error) {
-	activeModel, unavailable, scopeEntries, err := resolveActiveModel(model, config)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	if err := validateSimulationModel(activeModel); err != nil {
-		return nil, nil, nil, err
-	}
-	return activeModel, unavailable, scopeEntries, nil
-}
-
-func setupClassCatalog(activeModel *core.Model) *ClassCatalog {
-	catalog := NewClassCatalog(activeModel)
-	PopulateCallerDataFromModel(activeModel, catalog)
-	PopulateDerivedAttributeCallersFromModel(activeModel, catalog)
-	return catalog
-}
-
-// resolveActiveModel applies surface area filtering if configured.
-// UnavailableMembers (derived/query depending on out-of-scope classes) are returned
-// for catalog wiring — they stay off the external surface.
-// ScopeEntries summarize included subdomains vs individual classes for tester reports.
-func resolveActiveModel(model *core.Model, config SimulationConfig) (*core.Model, []surface.UnavailableMember, []surface.ScopeEntry, error) {
-	if config.Surface == nil || config.Surface.IsEmpty() {
-		scope := surface.BuildScopeEntries(model, surface.AllNonRealizedClasses(model))
-		return model, nil, scope, nil
-	}
-	resolved, err := surface.Resolve(config.Surface, model)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("surface area resolution: %w", err)
-	}
-	scope := surface.BuildScopeEntries(model, resolved.Classes)
-	filtered, err := surface.BuildFilteredModel(model, resolved)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("build filtered model: %w", err)
-	}
-	return filtered, resolved.UnavailableMembers, scope, nil
-}
-
 // setupState creates simulation state and bindings builder, registers associations,
-// and sets up derived attribute evaluation.
+// and sets up derived attribute evaluation. sch is the sole static model for the run.
 func setupState(
-	model *core.Model,
-	catalog *ClassCatalog,
+	sch *schema.Schema,
+	catalog *schema.Schema,
 	evalCtx *evaluator.EvalContext,
-) (*state.SimulationState, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
-	simState := state.NewSimulationState()
+) (*siminst.State, *state.BindingsBuilder, *DerivedAttributeEvaluator, error) {
+	simState := siminst.NewState(sch)
 	bindingsBuilder := state.NewBindingsBuilder(simState)
 
 	registerCatalogAssociations(catalog, bindingsBuilder)
 
-	// Set up derived attribute evaluation (on-demand computation).
-	derivedEval, err := NewDerivedAttributeEvaluator(model, bindingsBuilder, evalCtx)
+	derivedEval, err := NewDerivedAttributeEvaluator(sch, bindingsBuilder, evalCtx)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("derived attribute setup: %w", err)
 	}
@@ -266,7 +276,7 @@ func setupState(
 		bindingsBuilder.SetDerivedResolver(derivedEval)
 	}
 
-	if err := bindingsBuilder.RegisterNamedSets(model); err != nil {
+	if err := bindingsBuilder.RegisterNamedSets(sch); err != nil {
 		return nil, nil, nil, fmt.Errorf("named set setup: %w", err)
 	}
 
@@ -275,34 +285,34 @@ func setupState(
 
 // simulationCheckers groups all invariant/constraint checkers.
 type simulationCheckers struct {
-	invariantChecker         *invariants.InvariantChecker
-	dataTypeChecker          *invariants.DataTypeChecker
-	indexChecker             *invariants.IndexUniquenessChecker
-	multChecker              *invariants.MultiplicityChecker
-	assocInstancePairChecker *invariants.AssociationInstancePairChecker
-	assocUniquenessChecker   *invariants.AssociationUniquenessChecker
-	associationInvChecker    *invariants.AssociationInvariantChecker
+	invariantChecker         *siminst.InvariantChecker
+	dataTypeChecker          *siminst.DataTypeChecker
+	indexChecker             *siminst.IndexUniquenessChecker
+	multChecker              *siminst.MultiplicityChecker
+	assocInstancePairChecker *siminst.AssociationInstancePairChecker
+	assocUniquenessChecker   *siminst.AssociationUniquenessChecker
+	associationInvChecker    *siminst.AssociationInvariantChecker
+	assocClassHostChecker    *siminst.AssociationClassHostChecker
 }
 
-// setupCheckers creates all invariant and constraint checkers.
-// evalCtx wires model global functions into class/model invariant evaluation.
-func setupCheckers(model *core.Model, evalCtx *evaluator.EvalContext) (*simulationCheckers, error) {
-	invariantChecker, err := invariants.NewInvariantChecker(model)
+// setupCheckers constructs constraint checkers from schema (no *core.Model).
+func setupCheckers(sch *schema.Schema, evalCtx *evaluator.EvalContext) (*simulationCheckers, error) {
+	invariantChecker, err := siminst.NewInvariantChecker(sch)
 	if err != nil {
 		return nil, fmt.Errorf("invariant checker setup: %w", err)
 	}
 	invariantChecker.SetEvalContext(evalCtx)
 
-	dataTypeChecker, _ := invariants.NewDataTypeChecker(model)
-
-	indexChecker := invariants.NewIndexUniquenessChecker(model)
-	multChecker := invariants.NewMultiplicityChecker(model)
-	assocInstancePairChecker := invariants.NewAssociationInstancePairChecker(model)
-	assocUniquenessChecker := invariants.NewAssociationUniquenessChecker(model)
-	associationInvChecker, err := invariants.NewAssociationInvariantChecker(model)
+	dataTypeChecker, _ := siminst.NewDataTypeChecker(sch)
+	indexChecker := siminst.NewIndexUniquenessChecker(sch)
+	multChecker := siminst.NewMultiplicityChecker(sch)
+	assocInstancePairChecker := siminst.NewAssociationInstancePairChecker(sch)
+	assocUniquenessChecker := siminst.NewAssociationUniquenessChecker(sch)
+	associationInvChecker, err := siminst.NewAssociationInvariantChecker(sch)
 	if err != nil {
 		return nil, fmt.Errorf("association invariant checker setup: %w", err)
 	}
+	assocClassHostChecker := siminst.NewAssociationClassHostChecker(sch)
 
 	return &simulationCheckers{
 		invariantChecker:         invariantChecker,
@@ -312,52 +322,19 @@ func setupCheckers(model *core.Model, evalCtx *evaluator.EvalContext) (*simulati
 		assocInstancePairChecker: assocInstancePairChecker,
 		assocUniquenessChecker:   assocUniquenessChecker,
 		associationInvChecker:    associationInvChecker,
+		assocClassHostChecker:    assocClassHostChecker,
 	}, nil
 }
 
-func registerCatalogAssociations(catalog *ClassCatalog, bindingsBuilder *state.BindingsBuilder) {
-	for _, ai := range catalog.AllAssociations() {
-		assoc := ai.Association
-		fromMult := evaluator.Multiplicity{
-			LowerBound:  assoc.FromMultiplicity.LowerBound,
-			HigherBound: assoc.FromMultiplicity.HigherBound,
-		}
-		toMult := evaluator.Multiplicity{
-			LowerBound:  assoc.ToMultiplicity.LowerBound,
-			HigherBound: assoc.ToMultiplicity.HigherBound,
-		}
-		// Association-class host only when the AC class is on the surface; otherwise plain.
-		if assoc.AssociationClassKey != nil {
-			if linkInfo := catalog.GetClassInfo(*assoc.AssociationClassKey); linkInfo != nil {
-				bindingsBuilder.AddAssociationClassHost(
-					assoc.Key,
-					assoc.Name,
-					evaluator.AssociationHostEndpoints{
-						FromClassKey: assoc.FromClassKey.String(),
-						ToClassKey:   assoc.ToClassKey.String(),
-					},
-					linkInfo.Class.Name,
-					evaluator.AssociationHostMultiplicities{From: fromMult, To: toMult},
-				)
-				continue
-			}
-		}
-		bindingsBuilder.AddAssociation(
-			assoc.Key,
-			assoc.Name,
-			assoc.FromClassKey,
-			assoc.ToClassKey,
-			fromMult,
-			toMult,
-		)
-	}
+func registerCatalogAssociations(catalog *schema.Schema, bindingsBuilder *state.BindingsBuilder) {
+	catalog.RegisterAssociationBindings(bindingsBuilder)
 }
 
 type executorSetupDeps struct {
 	bindingsBuilder    *state.BindingsBuilder
 	derivedEval        *DerivedAttributeEvaluator
 	checkers           *simulationCheckers
-	catalog            *ClassCatalog
+	catalog            *schema.Schema
 	rng                *rand.Rand
 	simulationCoverage *SimulationCoverageTracker
 }
@@ -366,7 +343,7 @@ type executorSetupDeps struct {
 func setupExecutors(deps executorSetupDeps) (*StepExecutor, *ActionSelector, *LivenessChecker, error) {
 	actionExecutor := buildActionExecutor(deps.bindingsBuilder, deps.checkers, deps.catalog, deps.rng)
 
-	if len(deps.catalog.AllEventBearingClasses()) == 0 {
+	if !deps.catalog.HasEventBearingClass() {
 		return nil, nil, nil, fmt.Errorf("no event-bearing simulatable classes found in model")
 	}
 
@@ -380,16 +357,17 @@ func setupExecutors(deps executorSetupDeps) (*StepExecutor, *ActionSelector, *Li
 func buildActionExecutor(
 	bindingsBuilder *state.BindingsBuilder,
 	checkers *simulationCheckers,
-	catalog *ClassCatalog,
+	catalog *schema.Schema,
 	rng *rand.Rand,
 ) *actions.ActionExecutor {
 	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
-	structuralCheckers := &invariants.StructuralInvariantCheckers{
+	structuralCheckers := &siminst.StructuralInvariantCheckers{
 		Index:                   checkers.indexChecker,
 		Multiplicity:            checkers.multChecker,
 		AssociationInstancePair: checkers.assocInstancePairChecker,
 		AssociationUniqueness:   checkers.assocUniquenessChecker,
 		AssociationInvariants:   checkers.associationInvChecker,
+		AssociationClassHost:    checkers.assocClassHostChecker,
 	}
 	return actions.NewActionExecutor(
 		bindingsBuilder,
@@ -402,7 +380,7 @@ func buildActionExecutor(
 // buildStepParameterGenerator creates surface and nested parameter generators from model named sets.
 func buildStepParameterGenerator(
 	bindingsBuilder *state.BindingsBuilder,
-	catalog *ClassCatalog,
+	catalog *schema.Schema,
 ) (*actions.ParameterBinder, *StepParameterGenerator) {
 	paramBinder := actions.NewParameterBinder()
 	wireParameterLookups(paramBinder, bindingsBuilder, catalog)
@@ -414,7 +392,7 @@ func buildStepParameterGenerator(
 func wireParameterLookups(
 	paramBinder *actions.ParameterBinder,
 	bindingsBuilder *state.BindingsBuilder,
-	catalog *ClassCatalog,
+	catalog *schema.Schema,
 ) {
 	if paramBinder == nil || catalog == nil {
 		return
@@ -435,7 +413,7 @@ func wirePeerFieldDistinctLookup(
 		var values []object.Object
 		excludeID := paramSampler.PeerFieldDistinctExcludeInstanceID()
 		for _, inst := range bindingsBuilder.State().InstancesByClass(classKey) {
-			if excludeID != 0 && inst.ID == excludeID {
+			if excludeID != 0 && inst.GetID() == excludeID {
 				continue
 			}
 			values = append(values, inst.GetAttribute(fieldSubKey))
@@ -447,41 +425,22 @@ func wirePeerFieldDistinctLookup(
 // objectInstancesForClassRef returns extent elements for in-scope instances matching
 // an object-of class reference (subkey, display name, or TLA name).
 func objectInstancesForClassRef(
-	simState *state.SimulationState,
-	catalog *ClassCatalog,
+	simState *siminst.State,
+	catalog *schema.Schema,
 	objectClassRef string,
 ) []object.Object {
 	if simState == nil || catalog == nil || objectClassRef == "" {
 		return nil
 	}
-	want := identity.NormalizeSubKey(objectClassRef)
+	classKey, inScope, ok := catalog.ResolveObjectClassRef(objectClassRef)
+	if !ok || !inScope {
+		return nil
+	}
 	var out []object.Object
-	for _, info := range catalog.AllScopedClasses() {
-		if !objectClassRefMatches(want, objectClassRef, info) {
-			continue
-		}
-		for _, inst := range simState.InstancesByClass(info.ClassKey) {
-			out = append(out, state.ClassExtentElement(inst.ID, inst.Attributes))
-		}
-		return out
+	for _, inst := range simState.InstancesByClass(classKey) {
+		out = append(out, state.ClassExtentElement(inst.GetID(), inst.GetAttributes()))
 	}
-	return nil
-}
-
-func objectClassRefMatches(wantNorm, objectClassRef string, info *ClassInfo) bool {
-	if info == nil {
-		return false
-	}
-	if info.ClassKey.SubKey == objectClassRef || info.ClassKey.String() == objectClassRef {
-		return true
-	}
-	if identity.NormalizeSubKey(info.Class.Name) == wantNorm {
-		return true
-	}
-	if model_class.ClassTLAName(info.Class.Name) == objectClassRef {
-		return true
-	}
-	return identity.NormalizeSubKey(model_class.ClassTLAName(info.Class.Name)) == wantNorm
+	return out
 }
 
 // buildStepExecutor creates the step executor, action selector, and liveness checker.
@@ -489,7 +448,7 @@ func buildStepExecutor(
 	actionExecutor *actions.ActionExecutor,
 	bindingsBuilder *state.BindingsBuilder,
 	derivedEval *DerivedAttributeEvaluator,
-	catalog *ClassCatalog,
+	catalog *schema.Schema,
 	rng *rand.Rand,
 	simulationCoverage *SimulationCoverageTracker,
 ) (*StepExecutor, *ActionSelector, *LivenessChecker) {
@@ -501,7 +460,7 @@ func buildStepExecutor(
 		StateActionExec:    stateActionExec,
 		ChainHandler:       chainHandler,
 		ParamGen:           paramGen,
-		Catalog:            catalog,
+		Schema:             catalog,
 		DerivedEval:        derivedEval,
 		RNG:                rng,
 		SimulationCoverage: simulationCoverage,
@@ -527,9 +486,10 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 		// Execute the step (association structural checks run after nested work inside the step).
 		stepResult, err := e.stepExecutor.Execute(pending, e.simState, step+1)
 		if err != nil {
-			// Domain exhausted after selection: skip and reselect (eligibility filter
-			// should prevent this; soft-skip avoids hard failure if state raced).
-			if isNamedSetDomainExhaustedError(err) {
+			// Sampling ineligible after selection: skip and reselect (eligibility filters
+			// should prevent this; soft-skip avoids hard failure if state raced or
+			// parameter simulation requires no longer hold).
+			if isNamedSetDomainExhaustedError(err) || isNoEligibleSimulationRulesError(err) {
 				domainExhaustedSkips++
 				if domainExhaustedSkips > e.config.MaxSteps {
 					result.TerminationReason = "deadlock"
@@ -543,9 +503,7 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 
 		// Class/attribute invariants after the full step graph is built (including nesting).
 		// Model + association structural checks run in the step executor after nesting.
-		stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)...)
-		stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckAttributeInvariants(e.simState, e.bindingsBuilder)...)
-
+		e.appendStepInvariantViolations(stepResult)
 		result.Steps = append(result.Steps, stepResult)
 		result.StepsTaken++
 		result.Violations = append(result.Violations, stepResult.Violations...)
@@ -559,33 +517,34 @@ func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	if result.TerminationReason == "" {
 		result.TerminationReason = "max_steps"
 	}
-
-	result.FinalState = e.simState
-	result.Catalog = e.catalog
-	result.SimulationCoverage = e.simulationCoverage
-
-	if e.dataTypeChecker != nil {
-		result.Violations = append(result.Violations, e.dataTypeChecker.UnparsedAttributeDefinitionViolations()...)
-	}
-
-	// Run post-simulation model checks.
-	result.Violations = append(result.Violations, e.stateMachineChecker.Check()...)
-
-	// Run liveness checks after simulation completes.
-	livenessViolations := e.livenessChecker.Check(result)
-	result.Violations = append(result.Violations, livenessViolations...)
-
+	e.finalizeSimulationResult(result)
 	return result, nil
 }
 
+func (e *SimulationEngine) appendStepInvariantViolations(stepResult *SimulationStep) {
+	stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckClassInvariants(e.simState, e.bindingsBuilder)...)
+	stepResult.Violations = append(stepResult.Violations, e.invariantChecker.CheckAttributeInvariants(e.simState, e.bindingsBuilder)...)
+}
+
+func (e *SimulationEngine) finalizeSimulationResult(result *SimulationResult) {
+	result.FinalState = e.simState
+	result.Schema = e.sch
+	result.SimulationCoverage = e.simulationCoverage
+	if e.dataTypeChecker != nil {
+		result.Violations = append(result.Violations, e.dataTypeChecker.UnparsedAttributeDefinitionViolations()...)
+	}
+	result.Violations = append(result.Violations, siminst.CheckStateMachineCompleteness(e.sch)...)
+	result.Violations = append(result.Violations, e.livenessChecker.Check(result)...)
+}
+
 // State returns the current simulation state (useful for testing).
-func (e *SimulationEngine) State() *state.SimulationState {
+func (e *SimulationEngine) State() *siminst.State {
 	return e.simState
 }
 
 // SurfaceReport returns simulation scope plus external drivers for this run.
 func (e *SimulationEngine) SurfaceReport() *SurfaceReport {
-	report := BuildSurfaceReport(e.catalog)
+	report := BuildSurfaceReport(e.sch)
 	report.Scope = append([]surface.ScopeEntry(nil), e.scopeEntries...)
 	return report
 }

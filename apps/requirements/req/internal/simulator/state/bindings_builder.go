@@ -1,13 +1,17 @@
+// Package state adapts [instance.State] into evaluator bindings and TLA extents.
+// Mutable run state lives in simulator/instance; this package builds expression
+// bindings on top of that world.
 package state
 
 import (
 	"fmt"
 	"maps"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 )
 
 // DerivedAttributeResolver computes derived attribute values for an instance.
@@ -15,13 +19,13 @@ import (
 type DerivedAttributeResolver interface {
 	// ResolveDerived evaluates all derived attributes for the given instance
 	// and returns a map of attribute name -> computed value.
-	ResolveDerived(instance *ClassInstance) (map[string]object.Object, error)
+	ResolveDerived(inst *instance.Instance) (map[string]object.Object, error)
 }
 
 // BindingsBuilder creates evaluator.Bindings from simulation state.
 // It adapts the simulation state into the format expected by the evaluator.
 type BindingsBuilder struct {
-	state *SimulationState
+	state *instance.State
 
 	// relationContext is shared across all bindings created by this builder
 	relationCtx *evaluator.RelationContext
@@ -34,18 +38,18 @@ type BindingsBuilder struct {
 }
 
 // NewBindingsBuilder creates a new bindings builder for the given simulation state.
-func NewBindingsBuilder(state *SimulationState) *BindingsBuilder {
+func NewBindingsBuilder(simState *instance.State) *BindingsBuilder {
 	return &BindingsBuilder{
-		state:       state,
+		state:       simState,
 		relationCtx: evaluator.NewRelationContext(),
 	}
 }
 
 // NewBindingsBuilderWithRelations creates a bindings builder with a pre-configured
 // relation context containing association metadata.
-func NewBindingsBuilderWithRelations(state *SimulationState, relationCtx *evaluator.RelationContext) *BindingsBuilder {
+func NewBindingsBuilderWithRelations(simState *instance.State, relationCtx *evaluator.RelationContext) *BindingsBuilder {
 	return &BindingsBuilder{
-		state:       state,
+		state:       simState,
 		relationCtx: relationCtx,
 	}
 }
@@ -61,14 +65,15 @@ func (b *BindingsBuilder) NamedSetValues() map[string]object.Object {
 }
 
 // RegisterNamedSets evaluates and caches model-level named sets for expression lookup.
-func (b *BindingsBuilder) RegisterNamedSets(model *core.Model) error {
+func (b *BindingsBuilder) RegisterNamedSets(sch *schema.Schema) error {
 	b.namedSetValues = make(map[string]object.Object)
-	if len(model.NamedSets) == 0 {
+	namedSets := sch.NamedSets()
+	if len(namedSets) == 0 {
 		return nil
 	}
 
 	evalBindings := evaluator.NewBindings()
-	for _, ns := range model.NamedSets {
+	for _, ns := range namedSets {
 		if ns.Spec.Expression == nil {
 			return fmt.Errorf("named set %q has no lowered expression", ns.Name)
 		}
@@ -87,9 +92,9 @@ func (b *BindingsBuilder) applyNamedSets(bindings *evaluator.Bindings) {
 	}
 }
 
-// BuildGlobal creates a root bindings context with global state variables.
-// This is suitable for evaluating model-level invariants.
-func (b *BindingsBuilder) BuildGlobal() *evaluator.Bindings {
+// buildGlobal creates a root bindings context with global state variables.
+// This is suitable for evaluating model-level instance.
+func (b *BindingsBuilder) buildGlobal() *evaluator.Bindings {
 	bindings := evaluator.NewBindings()
 	bindings.SetRelationContext(b.buildRelationContext())
 	b.applyNamedSets(bindings)
@@ -107,8 +112,8 @@ func (b *BindingsBuilder) BuildForInstanceBase(instance *ClassInstance) *evaluat
 	bindings := evaluator.NewBindings()
 	relCtx := b.buildRelationContext()
 	bindings.SetRelationContext(relCtx)
-	b.aliasSelfForNavigation(relCtx, instance, instance.Attributes)
-	child := bindings.WithSelfAndClass(instance.Attributes, instance.ClassKey.String())
+	b.aliasSelfForNavigation(relCtx, instance, instance.GetAttributes())
+	child := bindings.WithSelfAndClass(instance.GetAttributes(), instance.GetClassKey().String())
 	b.applyNamedSets(child)
 	return child
 }
@@ -126,7 +131,7 @@ func (b *BindingsBuilder) BuildForInstance(instance *ClassInstance) *evaluator.B
 	b.aliasSelfForNavigation(relCtx, instance, attrs)
 
 	// Create a child scope with self set
-	child := bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+	child := bindings.WithSelfAndClass(attrs, instance.GetClassKey().String())
 	b.applyNamedSets(child)
 	return child
 }
@@ -141,10 +146,10 @@ func (b *BindingsBuilder) aliasSelfForNavigation(
 	if relCtx == nil || instance == nil {
 		return
 	}
-	id := evaluator.ObjectID(instance.ID)
-	relCtx.EnsureInstance(id, instance.Attributes)
-	relCtx.RegisterClassKey(id, instance.ClassKey.String())
-	if selfData != nil && selfData != instance.Attributes {
+	id := evaluator.ObjectID(instance.GetID())
+	relCtx.EnsureInstance(id, instance.GetAttributes())
+	relCtx.RegisterClassKey(id, instance.GetClassKey().String())
+	if selfData != nil && selfData != instance.GetAttributes() {
 		relCtx.RegisterDataAlias(id, selfData)
 	}
 }
@@ -197,7 +202,7 @@ func (b *BindingsBuilder) bindClassInstanceSets(bindings *evaluator.Bindings, cl
 func classInstanceExtentSet(instances []*ClassInstance) *object.Set {
 	classSet := object.NewSet()
 	for _, instance := range instances {
-		classSet.Add(ClassExtentElement(instance.ID, instance.Attributes))
+		classSet.Add(ClassExtentElement(instance.GetID(), instance.GetAttributes()))
 	}
 	return classSet
 }
@@ -233,7 +238,7 @@ func (b *BindingsBuilder) BuildWithClassInstancesForInstance(
 	attrs := b.resolveAttributes(instance)
 
 	// Create a child scope with self set
-	return bindings.WithSelfAndClass(attrs, instance.ClassKey.String())
+	return bindings.WithSelfAndClass(attrs, instance.GetClassKey().String())
 }
 
 // BuildWithClassInstancesForInstanceWithVariables combines class instance sets, self, and parameters.
@@ -253,16 +258,16 @@ func (b *BindingsBuilder) BuildWithClassInstancesForInstanceWithVariables(
 // If no DerivedAttributeResolver is set, returns the original attributes unchanged.
 func (b *BindingsBuilder) resolveAttributes(instance *ClassInstance) *object.Record {
 	if b.derivedResolver == nil {
-		return instance.Attributes
+		return instance.GetAttributes()
 	}
 
 	derived, err := b.derivedResolver.ResolveDerived(instance)
 	if err != nil || len(derived) == 0 {
-		return instance.Attributes
+		return instance.GetAttributes()
 	}
 
 	// Clone the attributes to avoid modifying the persisted instance.
-	attrs := instance.Attributes.Clone().(*object.Record)
+	attrs := instance.GetAttributes().Clone().(*object.Record)
 	for name, value := range derived {
 		attrs.Set(name, value)
 	}
@@ -277,85 +282,11 @@ func (b *BindingsBuilder) buildRelationContext() *evaluator.RelationContext {
 
 	// Rebuild runtime identity/link/AC state from engine InstanceIDs each time.
 	b.relationCtx.Clear()
-	// Register every live instance (and its class) so peer field navigation works
-	// for extent elements that are not yet endpoints of any association.
-	b.syncAllInstances()
-	b.syncLinks()
-	b.syncAssociationLinks()
+	// Project live instances and links so peer navigation works even before an
+	// object is an association endpoint.
+	b.state.ProjectToRelationContext(b.relationCtx)
 
 	return b.relationCtx
-}
-
-// syncAllInstances registers each instance's id, data, and class key for peer navigation.
-func (b *BindingsBuilder) syncAllInstances() {
-	for _, instance := range b.state.AllInstances() {
-		id := evaluator.ObjectID(instance.ID)
-		b.relationCtx.EnsureInstance(id, instance.Attributes)
-		b.relationCtx.RegisterClassKey(id, instance.ClassKey.String())
-	}
-}
-
-// syncLinks synchronizes plain (non-AC) association links into the relation context.
-// Endpoint images are [id, data] extent elements so structurally equal peers stay distinct.
-func (b *BindingsBuilder) syncLinks() {
-	for _, instance := range b.state.AllInstances() {
-		objID := evaluator.ObjectID(instance.ID)
-		links := b.state.links.GetAllForward(objID)
-		for _, link := range links {
-			fromInstance := b.state.GetInstance(InstanceID(link.FromID))
-			toInstance := b.state.GetInstance(InstanceID(link.ToID))
-			if fromInstance == nil || toInstance == nil {
-				continue
-			}
-			b.createExtentLink(
-				link.AssociationKey,
-				fromInstance,
-				toInstance,
-			)
-		}
-	}
-}
-
-func (b *BindingsBuilder) syncAssociationLinks() {
-	for _, link := range b.state.AssociationLinks().AllLinks() {
-		fromInstance := b.state.GetInstance(link.FromEndpointID)
-		linkInstance := b.state.GetInstance(link.LinkInstanceID)
-		toInstance := b.state.GetInstance(link.ToEndpointID)
-		if fromInstance == nil || linkInstance == nil || toInstance == nil {
-			continue
-		}
-
-		hostKey := evaluator.AssociationKey(link.HostAssocKey.String())
-		fromExtent, toExtent := b.createExtentLink(hostKey, fromInstance, toInstance)
-		linkExtent := ClassExtentElement(linkInstance.ID, linkInstance.Attributes)
-		b.relationCtx.EnsureInstance(evaluator.ObjectID(linkInstance.ID), linkInstance.Attributes)
-		b.relationCtx.AddAssociationClassRow(hostKey, fromExtent, toExtent, linkExtent)
-	}
-}
-
-// createExtentLink registers a from→to association using engine ids and [id, data] endpoints.
-func (b *BindingsBuilder) createExtentLink(
-	assocKey evaluator.AssociationKey,
-	fromInstance, toInstance *ClassInstance,
-) (fromExtent, toExtent *object.Record) {
-	fromExtent = ClassExtentElement(fromInstance.ID, fromInstance.Attributes)
-	toExtent = ClassExtentElement(toInstance.ID, toInstance.Attributes)
-	b.relationCtx.CreateInstanceLink(
-		assocKey,
-		evaluator.InstanceEndpoint{
-			ID:     evaluator.ObjectID(fromInstance.ID),
-			Extent: fromExtent,
-			Data:   fromInstance.Attributes,
-		},
-		evaluator.InstanceEndpoint{
-			ID:     evaluator.ObjectID(toInstance.ID),
-			Extent: toExtent,
-			Data:   toInstance.Attributes,
-		},
-	)
-	b.relationCtx.RegisterClassKey(evaluator.ObjectID(fromInstance.ID), fromInstance.ClassKey.String())
-	b.relationCtx.RegisterClassKey(evaluator.ObjectID(toInstance.ID), toInstance.ClassKey.String())
-	return fromExtent, toExtent
 }
 
 // AddAssociationClassHost registers a host association materialized by association-class instances.
@@ -419,7 +350,7 @@ func (b *BindingsBuilder) ApplyPrimedBindings(
 		// Check if this is a self field modification (self.field' = value)
 		// In the bindings, self fields appear as the field name directly
 		if instance.HasAttribute(name) {
-			if err := b.state.UpdateInstanceField(instance.ID, name, value); err != nil {
+			if err := b.state.UpdateInstanceField(instance.GetID(), name, value); err != nil {
 				return err
 			}
 		}

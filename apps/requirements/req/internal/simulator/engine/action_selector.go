@@ -12,7 +12,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	siminst "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/instance"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -29,14 +31,23 @@ func isNamedSetDomainExhaustedError(err error) bool {
 	return strings.Contains(err.Error(), "named-set sample domain empty")
 }
 
+// isNoEligibleSimulationRulesError reports parameter simulation sampling failure when
+// no rule's requires hold (e.g. object-of class extent empty).
+func isNoEligibleSimulationRulesError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "has no eligible simulation rules")
+}
+
 // PendingAction describes a single eligible simulation action.
 type PendingAction struct {
-	Class            *ClassInfo
+	Class            *schema.ClassSimInfo
 	Event            *model_state.Event     // Non-nil for event-triggered transitions.
 	Query            *model_state.Query     // Non-nil for query invocations.
 	DerivedAttribute *model_class.Attribute // Non-nil for derived attribute reads.
 	DoAction         *model_state.Action    // Non-nil for "do" state actions.
-	Instance         *state.ClassInstance   // nil for creation.
+	Instance         *siminst.Instance      // nil for creation.
 	IsCreation       bool
 	IsQuery          bool
 	IsDerivedRead    bool // True when this reads an external derived attribute.
@@ -44,13 +55,13 @@ type PendingAction struct {
 
 	// Association-class Add binds both host-association endpoints.
 	SourceAssocKey   *identity.Key
-	SourceInstanceID *state.InstanceID
-	TargetInstanceID *state.InstanceID
+	SourceInstanceID *siminst.ID
+	TargetInstanceID *siminst.ID
 }
 
 // ActionSelector randomly selects the next simulation action.
 type ActionSelector struct {
-	catalog         *ClassCatalog
+	catalog         *schema.Schema
 	derivedEval     *DerivedAttributeEvaluator
 	bindingsBuilder *state.BindingsBuilder
 	paramSampler    *actions.ParameterSampler
@@ -59,7 +70,7 @@ type ActionSelector struct {
 
 // NewActionSelector creates a new action selector.
 func NewActionSelector(
-	catalog *ClassCatalog,
+	catalog *schema.Schema,
 	derivedEval *DerivedAttributeEvaluator,
 	bindingsBuilder *state.BindingsBuilder,
 	paramSampler *actions.ParameterSampler,
@@ -76,7 +87,7 @@ func NewActionSelector(
 
 // SelectAction picks a random eligible action from all classes and instances.
 // Returns error if no actions are available (deadlock).
-func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*PendingAction, error) {
+func (s *ActionSelector) SelectAction(simState *siminst.State) (*PendingAction, error) {
 	eligible := s.collectEligibleActions(simState)
 	eligible = s.filterByObjectParamAvailability(eligible, simState)
 	eligible = s.filterBySimulationRequires(eligible)
@@ -107,7 +118,7 @@ func (s *ActionSelector) SelectAction(simState *state.SimulationState) (*Pending
 // always pass (sampled as empty set). Model-agnostic.
 func (s *ActionSelector) filterByObjectParamAvailability(
 	eligible []PendingAction,
-	simState *state.SimulationState,
+	simState *siminst.State,
 ) []PendingAction {
 	if s.catalog == nil || simState == nil {
 		return eligible
@@ -123,7 +134,7 @@ func (s *ActionSelector) filterByObjectParamAvailability(
 
 func (s *ActionSelector) objectParamsHaveInstances(
 	pending PendingAction,
-	simState *state.SimulationState,
+	simState *siminst.State,
 ) bool {
 	for _, classKey := range s.requiredObjectParamClasses(pending) {
 		if !s.catalog.IsClassInScope(classKey) {
@@ -171,7 +182,7 @@ func (s *ActionSelector) requiredObjectParamClasses(pending PendingAction) []ide
 
 // objectClassKeysFromDataType collects in-catalog class keys referenced by object-of
 // constraints anywhere in a parameter data type tree.
-func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *ClassCatalog) []identity.Key {
+func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *schema.Schema) []identity.Key {
 	if dt == nil || catalog == nil {
 		return nil
 	}
@@ -195,33 +206,19 @@ func objectClassKeysFromDataType(dt *model_data_type.DataType, catalog *ClassCat
 // resolveObjectClassRef maps an object-of class reference to a catalog class key.
 // Prefers in-scope classes; falls back to full extent names (out-of-scope) so callers
 // can still distinguish "known but OOS" (allow empty) from "unknown".
-func resolveObjectClassRef(objectClassRef string, catalog *ClassCatalog) (identity.Key, bool) {
-	if catalog == nil || objectClassRef == "" {
+func resolveObjectClassRef(objectClassRef string, catalog *schema.Schema) (identity.Key, bool) {
+	if catalog == nil {
 		return identity.Key{}, false
 	}
-	want := identity.NormalizeSubKey(objectClassRef)
-	for _, info := range catalog.AllScopedClasses() {
-		if objectClassRefMatches(want, objectClassRef, info) {
-			return info.ClassKey, true
-		}
-	}
-	// Known only as out-of-scope extent: still return a key so OOS path can skip the gate.
-	for classKey, tlaName := range catalog.ClassNameMap() {
-		if classKey.SubKey == objectClassRef || classKey.String() == objectClassRef {
-			return classKey, true
-		}
-		if identity.NormalizeSubKey(tlaName) == want || tlaName == objectClassRef {
-			return classKey, true
-		}
-	}
-	return identity.Key{}, false
+	key, _, ok := catalog.ResolveObjectClassRef(objectClassRef)
+	return key, ok
 }
 
 // collectEligibleActions builds the list of all eligible actions across all classes.
-func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState) []PendingAction {
+func (s *ActionSelector) collectEligibleActions(simState *siminst.State) []PendingAction {
 	var eligible []PendingAction
 
-	for _, classInfo := range s.catalog.AllSimulatableClasses() {
+	s.catalog.EachSimulatableClassSim(func(classInfo *schema.ClassSimInfo) {
 		if classInfo.HasEvents {
 			externalCreationEvents := s.catalog.ExternalCreationEvents(classInfo.ClassKey)
 			for i := range externalCreationEvents {
@@ -237,7 +234,7 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 
 		instances := simState.InstancesByClass(classInfo.ClassKey)
 		sort.Slice(instances, func(i, j int) bool {
-			return instances[i].ID < instances[j].ID
+			return instances[i].GetID() < instances[j].GetID()
 		})
 		for _, instance := range instances {
 			currentState := getInstanceStateName(instance)
@@ -279,7 +276,7 @@ func (s *ActionSelector) collectEligibleActions(simState *state.SimulationState)
 
 			eligible = append(eligible, s.collectDerivedReadActions(classInfo, instance)...)
 		}
-	}
+	})
 
 	return eligible
 }
@@ -339,7 +336,7 @@ func (s *ActionSelector) namedSetSampleDomainsAvailable(pending PendingAction) b
 	}
 	params := action.Parameters
 	if pending.Instance != nil {
-		s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.ID)
+		s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(pending.Instance.GetID())
 		defer s.paramSampler.SetPeerFieldDistinctExcludeInstanceID(0)
 	}
 	owner := actions.ParameterOwnerFromAction(*action)
@@ -369,8 +366,8 @@ func (s *ActionSelector) resolveSurfaceAction(pending PendingAction) *model_stat
 }
 
 func (s *ActionSelector) collectDerivedReadActions(
-	classInfo *ClassInfo,
-	instance *state.ClassInstance,
+	classInfo *schema.ClassSimInfo,
+	instance *siminst.Instance,
 ) []PendingAction {
 	externalDerived := s.catalog.ExternalDerivedAttributes(classInfo.ClassKey)
 	var eligible []PendingAction
@@ -386,7 +383,7 @@ func (s *ActionSelector) collectDerivedReadActions(
 }
 
 // getInstanceStateName extracts the current state name from an instance's _state attribute.
-func getInstanceStateName(instance *state.ClassInstance) string {
+func getInstanceStateName(instance *siminst.Instance) string {
 	stateAttr := instance.GetAttribute("_state")
 	if stateAttr == nil {
 		return ""

@@ -7,6 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/schema"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
@@ -83,25 +84,27 @@ type SurfaceAssocCreateNote struct {
 }
 
 // BuildSurfaceReport lists only classes that have at least one external driver
-// (creation/state event, do-action, query, or derived attribute). Peer-only classes,
-// association classes, and empty scoped classes are omitted so the report matches what
-// a human tester can treat as under test at the top level. Out-of-scope pass-through
-// derived/queries appear under UnavailableMembers, not as drivers.
-func BuildSurfaceReport(catalog *ClassCatalog) *SurfaceReport {
+// (creation/state event, do-action, query, or derived attribute). Peer-only classes
+// and empty scoped classes are omitted so the report matches what a human tester can
+// treat as under test at the top level.
+//
+// Association classes in scope list creation (_new) as a surface driver when the
+// event is not SentBy an in-scope peer (E1: AC _new materializes data + host link).
+// Events sent by another in-scope class (e.g. type: events) stay off the surface via
+// ExternalStateEvents / SentBy. Out-of-scope pass-through derived/queries appear under
+// UnavailableMembers, not as drivers.
+func BuildSurfaceReport(catalog *schema.Schema) *SurfaceReport {
 	report := &SurfaceReport{
-		Classes: make([]SurfaceClassReport, 0, len(catalog.classes)),
+		Classes: make([]SurfaceClassReport, 0),
 	}
 
-	for _, classInfo := range catalog.AllScopedClasses() {
-		if catalog.IsAssociationClass(classInfo.ClassKey) {
-			continue
-		}
+	catalog.EachInScopeClassSim(func(classInfo *schema.ClassSimInfo) {
 		entry := buildSurfaceClassReport(catalog, classInfo)
 		if !surfaceClassHasDrivers(entry) {
-			continue
+			return
 		}
 		report.Classes = append(report.Classes, entry)
-	}
+	})
 
 	for _, m := range catalog.SurfaceUnavailableMembers() {
 		report.UnavailableMembers = append(report.UnavailableMembers, SurfaceUnavailableMemberReport{
@@ -130,7 +133,7 @@ func surfaceClassHasDrivers(entry SurfaceClassReport) bool {
 	return false
 }
 
-func buildSurfaceClassReport(catalog *ClassCatalog, classInfo *ClassInfo) SurfaceClassReport {
+func buildSurfaceClassReport(catalog *schema.Schema, classInfo *schema.ClassSimInfo) SurfaceClassReport {
 	entry := SurfaceClassReport{
 		ClassKey:  classInfo.ClassKey.String(),
 		ClassName: classInfo.Class.Name,
@@ -173,7 +176,7 @@ func buildSurfaceClassReport(catalog *ClassCatalog, classInfo *ClassInfo) Surfac
 	return entry
 }
 
-func appendSurfaceReadEntries(catalog *ClassCatalog, classKey identity.Key, entry *SurfaceClassReport) {
+func appendSurfaceReadEntries(catalog *schema.Schema, classKey identity.Key, entry *SurfaceClassReport) {
 	for _, query := range catalog.ExternalQueries(classKey) {
 		entry.Queries = append(entry.Queries, SurfaceQueryReport{QueryName: query.Name})
 	}
@@ -182,7 +185,7 @@ func appendSurfaceReadEntries(catalog *ClassCatalog, classKey identity.Key, entr
 	}
 }
 
-func surfaceClassRole(catalog *ClassCatalog, classInfo *ClassInfo) string {
+func surfaceClassRole(catalog *schema.Schema, classInfo *schema.ClassSimInfo) string {
 	switch {
 	case !classInfo.HasStates:
 		return "liveness_only"
@@ -193,7 +196,7 @@ func surfaceClassRole(catalog *ClassCatalog, classInfo *ClassInfo) string {
 	}
 }
 
-func sortedStateNames(classInfo *ClassInfo) []string {
+func sortedStateNames(classInfo *schema.ClassSimInfo) []string {
 	names := make([]string, 0, len(classInfo.Class.States))
 	for _, state := range classInfo.Class.States {
 		names = append(names, state.Name)
@@ -203,7 +206,7 @@ func sortedStateNames(classInfo *ClassInfo) []string {
 }
 
 func surfaceEventReport(
-	catalog *ClassCatalog,
+	catalog *schema.Schema,
 	classKey identity.Key,
 	event model_state.Event,
 	stateName string,
@@ -215,16 +218,38 @@ func surfaceEventReport(
 	return report
 }
 
-// FormatText renders scope (what is loaded) then surface drivers (what is tested at top level).
-func (r *SurfaceReport) FormatText() string {
+// FormatDriversText renders surface drivers (what is tested at top level) and off-surface notes.
+func (r *SurfaceReport) FormatDriversText() string {
 	if r == nil {
-		return "Simulation scope\n\n  (empty)\n\nSimulation surface\n\n  (empty)\n"
+		return "Simulation surface\n\n  (empty)\n"
 	}
 	var b strings.Builder
-	writeSurfaceScopeSection(&b, r.Scope)
 	writeSurfaceDriversSection(&b, r.Classes)
 	writeSurfaceUnavailableSection(&b, r.UnavailableMembers)
 	return b.String()
+}
+
+// FormatScopeText renders simulation scope (what is loaded for the run).
+func (r *SurfaceReport) FormatScopeText() string {
+	if r == nil {
+		return "Simulation scope\n\n  (empty)\n"
+	}
+	var b strings.Builder
+	writeSurfaceScopeSection(&b, r.Scope)
+	return b.String()
+}
+
+// FormatText renders drivers then scope as a single block (CLI prints them after violations, scope last).
+func (r *SurfaceReport) FormatText() string {
+	drivers := r.FormatDriversText()
+	scope := r.FormatScopeText()
+	if drivers == "" {
+		return scope
+	}
+	if scope == "" {
+		return drivers
+	}
+	return strings.TrimRight(drivers, "\n") + "\n\n" + scope
 }
 
 func writeSurfaceScopeSection(b *strings.Builder, scope []surface.ScopeEntry) {
@@ -246,7 +271,7 @@ func writeSurfaceScopeSection(b *strings.Builder, scope []surface.ScopeEntry) {
 }
 
 func writeSurfaceDriversSection(b *strings.Builder, classes []SurfaceClassReport) {
-	b.WriteString("\nSimulation surface\n")
+	b.WriteString("Simulation surface\n")
 	if len(classes) == 0 {
 		b.WriteString("\n  (empty)\n")
 		return

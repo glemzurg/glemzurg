@@ -17,7 +17,7 @@ func TestBagSuite(t *testing.T) {
 func (s *BagSuite) TestNewBag() {
 	bag := NewBag()
 	s.Equal(0, bag.Size())
-	s.Equal(0, bag.UniqueCount())
+	s.Equal(0, bag.uniqueCount())
 	s.Equal(TypeBag, bag.Type())
 }
 
@@ -36,7 +36,7 @@ func (s *BagSuite) TestAddAndSize() {
 	bag.Add(NewInteger(1), 2)
 	bag.Add(NewInteger(2), 3)
 	s.Equal(5, bag.Size())
-	s.Equal(2, bag.UniqueCount())
+	s.Equal(2, bag.uniqueCount())
 }
 
 func (s *BagSuite) TestAddIncreasesCount() {
@@ -51,10 +51,10 @@ func (s *BagSuite) TestRemove() {
 	bag := NewBag()
 
 	bag.Add(NewInteger(1), 5)
-	bag.Remove(NewInteger(1), 2)
+	bag.remove(NewInteger(1), 2)
 	s.Equal(3, bag.CopiesIn(NewInteger(1)))
 
-	bag.Remove(NewInteger(1), 10) // Remove more than exists
+	bag.remove(NewInteger(1), 10) // remove more than exists
 	s.Equal(0, bag.CopiesIn(NewInteger(1)))
 	s.False(bag.Contains(NewInteger(1)))
 }
