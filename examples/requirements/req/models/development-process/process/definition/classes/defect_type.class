@@ -1,0 +1,26 @@
+# Defect Type
+
+A type of defect classified within a process family.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this defect type within the family.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: Unique among defect types of the same family.
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING
+    - key: base_num
+      name: Base Num
+      details: Base classification number for this defect type.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat

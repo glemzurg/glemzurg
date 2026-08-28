@@ -1,0 +1,22 @@
+# Phase
+
+Fundamental phase skeleton for a process family.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this phase within the family.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: Unique among phases of the same family.
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      details: Defaults to empty when omitted.
+      rules: unconstrained
+      type_spec: STRING

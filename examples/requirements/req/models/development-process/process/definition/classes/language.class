@@ -1,0 +1,16 @@
+# Language
+
+A programming language used when estimating size or time in a process family.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      details: Unique among languages of the same family.
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      type_spec: STRING

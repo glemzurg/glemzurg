@@ -1,0 +1,33 @@
+# Step
+
+A step of a process script. Every step occurs in a phase of the same family as its process.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this step within the script.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: Unique among steps of the same script.
+      rules: unconstrained
+      type_spec: STRING
+    - key: tasks
+      name: Tasks
+      details: Work performed in this step.
+      rules: unconstrained
+      type_spec: STRING
+
+invariants:
+    - details: The phase of a step belongs to the same family as the process that owns the script.
+      specification: 'LET script == CHOOSE s \in self._HasSteps : TRUE IN LET process == CHOOSE p \in script._HasScripts : TRUE IN LET familyFromProcess == CHOOSE f \in process._HasProcesses : TRUE IN LET phase == CHOOSE ph \in self.OccursIn : TRUE IN LET familyFromPhase == CHOOSE f \in phase._HasPhases : TRUE IN familyFromProcess = familyFromPhase'
+
+associations:
+    - name: Occurs In
+      details: Phase of the family skeleton this step is performed in.
+      from_multiplicity: any
+      to_class_key: phase
+      to_multiplicity: "1"

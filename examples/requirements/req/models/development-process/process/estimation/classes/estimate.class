@@ -1,0 +1,140 @@
+# Estimate
+
+An estimate of size or time, categorized by family, language, axis, and scope. Method-specific fields are used only for the chosen method.
+
+◇
+
+attributes:
+    - key: axis
+      name: Axis
+      details: Whether this estimate is of size or time.
+      rules: enum of size, time
+      type_spec: STRING
+    - key: scope
+      name: Scope
+      details: How the estimate is categorized.
+      rules: enum of project, phase, cycle, proxy, added, modified, deleted
+      type_spec: STRING
+    - key: version
+      name: Version
+      details: Increments as the estimate is updated. Defaults to 1.
+      rules: "[1 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: mean
+      name: Mean
+      details: The middle of the estimate bell curve.
+      rules: "[unconstrained .. unconstrained] at 0.01 unit"
+      type_spec: Real
+    - key: variance
+      name: Variance
+      details: The shape of the estimate bell curve.
+      rules: "[0 .. unconstrained] at 0.01 unit"
+      type_spec: Real
+    - key: low
+      name: Low
+      details: Lowest estimate based on the prediction interval.
+      rules: "[unconstrained .. unconstrained] at 0.01 unit"
+      type_spec: Real
+    - key: high
+      name: High
+      details: Highest estimate based on the prediction interval.
+      rules: "[unconstrained .. unconstrained] at 0.01 unit"
+      type_spec: Real
+    - key: actual
+      name: Actual
+      details: Value recorded when work completed. Defaults to 0.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: method
+      name: Method
+      details: How the estimate was computed. Guess, sum, and portion each use their own fields.
+      rules: enum of guess, sum, portion
+      type_spec: STRING
+    - key: prediction_interval
+      name: Prediction Interval
+      details: High/low range of interest, from 0 to 1.
+      rules: "[0 .. 1] at 0.01 fraction"
+      type_spec: Real
+    - key: comment
+      name: Comment
+      details: Note about how the estimate was computed.
+      rules: unconstrained
+      type_spec: STRING
+    - key: estimation_time
+      name: Estimation Time
+      details: When the estimate was made.
+      rules: datetime
+      type_spec: Nat
+    - key: guess_lowest_80pred
+      name: Guess Lowest 80 Pred
+      details: Lowest expected value at an 80 percent prediction interval. Used only by a guess estimate.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+      nullable: true
+    - key: guess_highest_80pred
+      name: Guess Highest 80 Pred
+      details: Highest expected value at an 80 percent prediction interval. Used only by a guess estimate.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+      nullable: true
+    - key: sum_count
+      name: Sum Count
+      details: Number of inputs into a sum estimate.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+      nullable: true
+    - key: sum_mean
+      name: Sum Mean
+      details: Middle of the summed estimate bell curve.
+      rules: "[unconstrained .. unconstrained] at 0.01 unit"
+      type_spec: Real
+      nullable: true
+    - key: sum_variance
+      name: Sum Variance
+      details: Shape of the summed estimate bell curve.
+      rules: "[0 .. unconstrained] at 0.01 unit"
+      type_spec: Real
+      nullable: true
+    - key: portion_portion
+      name: Portion Portion
+      details: Fraction of the original value, from 0 to 1. Used only by a portion estimate.
+      rules: "[0 .. 1] at 0.01 fraction"
+      type_spec: Real
+      nullable: true
+    - key: portion_mean
+      name: Portion Mean
+      details: Middle of the portion estimate bell curve.
+      rules: "[unconstrained .. unconstrained] at 0.01 unit"
+      type_spec: Real
+      nullable: true
+    - key: portion_variance
+      name: Portion Variance
+      details: Shape of the portion estimate bell curve.
+      rules: "[0 .. unconstrained] at 0.01 unit"
+      type_spec: Real
+      nullable: true
+
+invariants:
+    - details: The language of an estimate belongs to the same family as the estimate.
+      specification: 'LET lang == CHOOSE l \in self.UsesLanguage : TRUE IN LET family == CHOOSE f \in self._HasEstimates : TRUE IN lang \in family.HasLanguages'
+    - details: Guess-only fields are set only when the method is guess.
+      specification: 'self.method = "guess" \/ (self.guess_lowest_80pred = NULL /\ self.guess_highest_80pred = NULL)'
+    - details: Sum-only fields are set only when the method is sum.
+      specification: 'self.method = "sum" \/ (self.sum_count = NULL /\ self.sum_mean = NULL /\ self.sum_variance = NULL)'
+    - details: Portion-only fields are set only when the method is portion.
+      specification: 'self.method = "portion" \/ (self.portion_portion = NULL /\ self.portion_mean = NULL /\ self.portion_variance = NULL)'
+
+associations:
+    - name: Uses Language
+      details: Language this estimate is categorized by. The language must belong to the same family.
+      from_multiplicity: any
+      to_class_key: definition/language
+      to_multiplicity: "1"
+    - name: Has History
+      details: Prior versions of this estimate.
+      from_multiplicity: "1"
+      to_class_key: estimate_historic
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - version

@@ -1,0 +1,65 @@
+# Family
+
+Core partitioning of the catalog. Phases, defect types, languages, processes, and estimates all belong to one family.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      details: Unique name of this family.
+      rules: unconstrained
+      type_spec: STRING
+      index_nums: [0]
+    - key: description
+      name: Description
+      details: Defaults to empty when omitted.
+      rules: unconstrained
+      type_spec: STRING
+
+invariants:
+    - details: Phase name is unique among phases of this family.
+      specification: '\A p \in self.HasPhases : _FiniteSets!Cardinality({ q \in self.HasPhases : q.name = p.name }) = 1'
+    - details: Defect type name is unique among defect types of this family.
+      specification: '\A d \in self.HasDefectTypes : _FiniteSets!Cardinality({ q \in self.HasDefectTypes : q.name = d.name }) = 1'
+
+associations:
+    - name: Has Phases
+      details: Ordered phase skeleton for this family.
+      from_multiplicity: "1"
+      to_class_key: phase
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - num
+    - name: Has Defect Types
+      details: Defect types classified for this family.
+      from_multiplicity: "1"
+      to_class_key: defect_type
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - num
+    - name: Has Languages
+      details: Programming languages used when estimating in this family.
+      from_multiplicity: "1"
+      to_class_key: language
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - name
+    - name: Has Processes
+      details: Versioned processes that belong to this family.
+      from_multiplicity: "1"
+      to_class_key: process
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - name
+              - version
+              - version_minor
+    - name: Has Estimates
+      details: Size and time estimates recorded in this family.
+      from_multiplicity: "1"
+      to_class_key: estimation/estimate
+      to_multiplicity: any

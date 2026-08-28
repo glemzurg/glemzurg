@@ -1,0 +1,58 @@
+# Process
+
+A versioned process to follow, owned by a family. May replace an earlier process as its ancestor.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      details: Unique together with version and version minor within the family.
+      rules: unconstrained
+      type_spec: STRING
+    - key: version
+      name: Version
+      details: Major version of this process.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: version_minor
+      name: Version Minor
+      details: Minor version of this process. Defaults to 0.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: purpose
+      name: Purpose
+      rules: unconstrained
+      type_spec: STRING
+    - key: entry_criteria
+      name: Entry Criteria
+      rules: unconstrained
+      type_spec: STRING
+    - key: exit_criteria
+      name: Exit Criteria
+      rules: unconstrained
+      type_spec: STRING
+    - key: script_lock
+      name: Script Lock
+      details: When TRUE, scripts of this process are locked. Defaults to FALSE.
+      rules: enum of TRUE, FALSE
+      type_spec: BOOLEAN
+
+invariants:
+    - details: Script name is unique among scripts of this process.
+      specification: '\A s \in self.HasScripts : _FiniteSets!Cardinality({ q \in self.HasScripts : q.name = s.name }) = 1'
+
+associations:
+    - name: Has Scripts
+      details: Ordered scripts that make up this process.
+      from_multiplicity: "1"
+      to_class_key: script
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - num
+    - name: Has Ancestor
+      details: Earlier process this version replaces, when one exists.
+      from_multiplicity: any
+      to_class_key: process
+      to_multiplicity: "0..1"

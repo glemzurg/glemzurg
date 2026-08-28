@@ -1,0 +1,52 @@
+# Script
+
+A step-by-step process script owned by a process.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this script within the process.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: Unique among scripts of the same process.
+      rules: unconstrained
+      type_spec: STRING
+    - key: task_summary
+      name: Task Summary
+      rules: unconstrained
+      type_spec: STRING
+    - key: purpose
+      name: Purpose
+      rules: unconstrained
+      type_spec: STRING
+    - key: entry_criteria
+      name: Entry Criteria
+      rules: unconstrained
+      type_spec: STRING
+    - key: exit_criteria
+      name: Exit Criteria
+      rules: unconstrained
+      type_spec: STRING
+    - key: cycle
+      name: Cycle
+      details: Whether this script is a cycle. Defaults to FALSE.
+      rules: enum of TRUE, FALSE
+      type_spec: BOOLEAN
+
+invariants:
+    - details: Step name is unique among steps of this script.
+      specification: '\A s \in self.HasSteps : _FiniteSets!Cardinality({ q \in self.HasSteps : q.name = s.name }) = 1'
+
+associations:
+    - name: Has Steps
+      details: Ordered steps of this script.
+      from_multiplicity: "1"
+      to_class_key: step
+      to_multiplicity: any
+      uniqueness:
+          to_attributes:
+              - num
