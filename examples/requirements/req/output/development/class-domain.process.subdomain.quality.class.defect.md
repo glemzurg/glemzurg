@@ -15,6 +15,7 @@ A defect injected and removed in projects and phases.
 | Cycle | _(unparsed)_ [0 .. unconstrained] at 1 unit | false |  |  |
 | Fix Minutes | _(unparsed)_ [0 .. unconstrained] at 1 minute | false |  |  |
 | Description | _(unparsed)_ unconstrained | false |  |  |
+| Test Defect | _(unparsed)_ unconstrained | false |  | A defect in a test itself. |
 
 
 
@@ -35,6 +36,7 @@ class class_domain_process_subdomain_quality_class_defect["Defect"] {
         Cycle
         Fix Minutes
         Description
+        Test Defect
     }
 namespace Definition {
 class class_domain_process_subdomain_definition_class_phase["Phase"] {

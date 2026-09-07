@@ -1,18 +1,18 @@
 #!/bin/bash
-# Generate markdown docs for the development-process model.
+# Generate markdown docs for the development model.
 #
 # Usage:
 #   ./examples/requirements/req/generate.sh
 #   ./examples/requirements/req/generate.sh -debug
 #
-# Writes to examples/requirements/req/output/development-process
+# Writes to examples/requirements/req/output/development
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
-MODEL="development-process"
+MODEL="development"
 ROOTSOURCE="$SCRIPT_DIR/models"
 ROOTOUTPUT="$SCRIPT_DIR/output"
 

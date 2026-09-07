@@ -259,6 +259,7 @@ class class_domain_process_subdomain_quality_class_defect["Defect"] {
             Cycle
             Fix Minutes
             Description
+            Test Defect
         }
 class class_domain_process_subdomain_quality_class_issue["Issue"] {
             Found Time

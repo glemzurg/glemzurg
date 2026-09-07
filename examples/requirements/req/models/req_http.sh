@@ -1,19 +1,19 @@
 #!/bin/bash
-# Start the HTTP server for the development-process model.
+# Start the HTTP server for the development model.
 #
 # Usage:
 #   ./examples/requirements/req/models/req_http.sh
 #   ./examples/requirements/req/models/req_http.sh 9090
 #   ./examples/requirements/req/models/req_http.sh 9090 -debug
 #
-# Serves examples/requirements/req/models/development-process (data/yaml).
+# Serves examples/requirements/req/models/development (data/yaml).
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
-MODEL="development-process"
+MODEL="development"
 ROOTSOURCE="$SCRIPT_DIR"
 PORT="${1:-8080}"
 INPUT_FORMAT="data/yaml"
