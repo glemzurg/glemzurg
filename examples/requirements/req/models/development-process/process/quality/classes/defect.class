@@ -21,6 +21,11 @@ attributes:
       name: Description
       rules: unconstrained
       type_spec: STRING
+    - key: test_defect
+      name: Test Defect
+      details: A defect in a test itself.
+      rules: unconstrained
+      type_spec: BOOLEAN
 
 associations:
     - name: Injected In
