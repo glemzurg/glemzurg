@@ -67,8 +67,8 @@ class class_domain_process_subdomain_definition_class_script["Script"] {
         Exit Criteria
         Cycle
     }
-namespace Project {
-class class_domain_process_subdomain_project_class_project["Project"] {
+namespace Project.Core {
+class class_domain_project_subdomain_core_class_project["Project"] {
             Name
             Description
             Created Time
@@ -85,8 +85,8 @@ class class_domain_process_subdomain_project_class_project["Project"] {
             Planned Failure Coq
         }
 }
-namespace Quality {
-class class_domain_process_subdomain_quality_class_pip["Process Improvement Proposal"] {
+namespace Project.Quality {
+class class_domain_project_subdomain_quality_class_pip["Process Improvement Proposal"] {
             Found Time
             Problem
             Proposal
@@ -94,9 +94,9 @@ class class_domain_process_subdomain_quality_class_pip["Process Improvement Prop
         }
 }
 style class_domain_process_subdomain_definition_class_process stroke:#9370DB,stroke-width:3px
-class_domain_process_subdomain_project_class_project "*" --> "1" class_domain_process_subdomain_definition_class_process : Follows Process
-class_domain_process_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_process : On Process
-class_domain_process_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_process : Resolved In Process
+class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_process : Follows Process
+class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_process : On Process
+class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_process : Resolved In Process
 class_domain_process_subdomain_definition_class_family "1" --> "*" class_domain_process_subdomain_definition_class_process : Has Processes<br/>{unique → Name, Version, Version Minor}
 class_domain_process_subdomain_definition_class_module_template "*" --> "0..1" class_domain_process_subdomain_definition_class_process : Follows Process
 class_domain_process_subdomain_definition_class_process "*" --> "0..1" class_domain_process_subdomain_definition_class_process : Has Ancestor
@@ -106,8 +106,8 @@ class_domain_process_subdomain_definition_class_process "1" --> "*" class_domain
 - **[Family](class-domain.process.subdomain.definition.class.family.md).** Core partitioning of the catalog.
 - **[Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
 - **[Process](class-domain.process.subdomain.definition.class.process.md).** A versioned process to follow, owned by a family.
-- **[Quality::Process Improvement Proposal](class-domain.process.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
-- **[Project::Project](class-domain.process.subdomain.project.class.project.md).** Work that follows a process.
+- **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
+- **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Script](class-domain.process.subdomain.definition.class.script.md).** A step-by-step process script owned by a process.
 
 

@@ -55,8 +55,8 @@ class class_domain_process_subdomain_definition_class_process["Process"] {
         Size Unit
         Size K Unit
     }
-namespace Project {
-class class_domain_process_subdomain_project_class_project["Project"] {
+namespace Project.Core {
+class class_domain_project_subdomain_core_class_project["Project"] {
             Name
             Description
             Created Time
@@ -72,15 +72,15 @@ class class_domain_process_subdomain_project_class_project["Project"] {
             Planned Appraisal Coq
             Planned Failure Coq
         }
-class class_domain_process_subdomain_project_class_project_cycle_actual["Project Cycle Actual"] {
+class class_domain_project_subdomain_core_class_project_cycle_actual["Project Cycle Actual"] {
             Num
             Actual Pct Reuse
         }
-class class_domain_process_subdomain_project_class_project_cycle_plan["Project Cycle Plan"] {
+class class_domain_project_subdomain_core_class_project_cycle_plan["Project Cycle Plan"] {
             Num
             Planned Pct Reuse
         }
-class class_domain_process_subdomain_project_class_project_part["Project Part"] {
+class class_domain_project_subdomain_core_class_project_part["Project Part"] {
             Name
             Description
             Multi Day
@@ -94,10 +94,10 @@ class class_domain_process_subdomain_project_class_project_part["Project Part"] 
         }
 }
 style class_domain_process_subdomain_definition_class_module_template stroke:#9370DB,stroke-width:3px
-class_domain_process_subdomain_project_class_project "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
-class_domain_process_subdomain_project_class_project_cycle_actual "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
-class_domain_process_subdomain_project_class_project_cycle_plan "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
-class_domain_process_subdomain_project_class_project_part "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
+class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
+class_domain_project_subdomain_core_class_project_cycle_actual "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
+class_domain_project_subdomain_core_class_project_cycle_plan "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
+class_domain_project_subdomain_core_class_project_part "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
 class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_design_method : Uses Design Method
 class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_language : Uses Language
 class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_method : Uses Size Estimation Method
@@ -110,10 +110,10 @@ class_domain_process_subdomain_definition_class_module_template "*" --> "0..1" c
 - **[Method](class-domain.process.subdomain.definition.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
 - **[Process](class-domain.process.subdomain.definition.class.process.md).** A versioned process to follow, owned by a family.
-- **[Project::Project](class-domain.process.subdomain.project.class.project.md).** Work that follows a process.
-- **[Project::Project Cycle Actual](class-domain.process.subdomain.project.class.project_cycle_actual.md).** Actual recording values for one cycle of a project.
-- **[Project::Project Cycle Plan](class-domain.process.subdomain.project.class.project_cycle_plan.md).** Planned recording values for one cycle of a project.
-- **[Project::Project Part](class-domain.process.subdomain.project.class.project_part.md).** A language-specific part of a project.
+- **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
+- **[Project::Core::Project Cycle Actual](class-domain.project.subdomain.core.class.project_cycle_actual.md).** Actual recording values for one cycle of a project.
+- **[Project::Core::Project Cycle Plan](class-domain.project.subdomain.core.class.project_cycle_plan.md).** Planned recording values for one cycle of a project.
+- **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 
 
 # State Machine

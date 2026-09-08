@@ -32,8 +32,8 @@ class class_domain_process_subdomain_definition_class_stats_bucket["Stats Bucket
         Name
         Description
     }
-namespace Project {
-class class_domain_process_subdomain_project_class_project["Project"] {
+namespace Project.Core {
+class class_domain_project_subdomain_core_class_project["Project"] {
             Name
             Description
             Created Time
@@ -49,7 +49,7 @@ class class_domain_process_subdomain_project_class_project["Project"] {
             Planned Appraisal Coq
             Planned Failure Coq
         }
-class class_domain_process_subdomain_project_class_project_part["Project Part"] {
+class class_domain_project_subdomain_core_class_project_part["Project Part"] {
             Name
             Description
             Multi Day
@@ -61,20 +61,20 @@ class class_domain_process_subdomain_project_class_project_part["Project Part"] 
             Planned Appraisal Coq
             Planned Failure Coq
         }
-class class_domain_process_subdomain_project_class_project_stat_phase["Project Stat Phase"] {
+class class_domain_project_subdomain_core_class_project_stat_phase["Project Stat Phase"] {
             Estimate Minute
             Estimate Comment
         }
 }
 style class_domain_process_subdomain_definition_class_stats_bucket stroke:#9370DB,stroke-width:3px
-class_domain_process_subdomain_project_class_project "*" --> "0..1" class_domain_process_subdomain_definition_class_stats_bucket : In Bucket
-class_domain_process_subdomain_project_class_project_part "*" --> "0..1" class_domain_process_subdomain_definition_class_stats_bucket : In Bucket
-class_domain_process_subdomain_project_class_project_stat_phase "*" --> "1" class_domain_process_subdomain_definition_class_stats_bucket : In Bucket
+class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_definition_class_stats_bucket : In Bucket
+class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_domain_process_subdomain_definition_class_stats_bucket : In Bucket
+class_domain_project_subdomain_core_class_project_stat_phase "*" --> "1" class_domain_process_subdomain_definition_class_stats_bucket : In Bucket
 
 ```
-- **[Project::Project](class-domain.process.subdomain.project.class.project.md).** Work that follows a process.
-- **[Project::Project Part](class-domain.process.subdomain.project.class.project_part.md).** A language-specific part of a project.
-- **[Project::Project Stat Phase](class-domain.process.subdomain.project.class.project_stat_phase.md).** A per-phase statistical estimate on a project. stat_phase is Phase; bucket is Stats Bucket.
+- **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
+- **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
+- **[Project::Core::Project Stat Phase](class-domain.project.subdomain.core.class.project_stat_phase.md).** A per-phase statistical estimate on a project. stat_phase is Phase; bucket is Stats Bucket.
 - **[Stats Bucket](class-domain.process.subdomain.definition.class.stats_bucket.md).** A bucket used to group project statistics.
 
 

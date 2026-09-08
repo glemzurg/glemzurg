@@ -1,6 +1,8 @@
 # Development Process
 
-A process-definition, project, estimation, and quality catalog used to test the requirements tool.
+A process-definition and running-project catalog used to test the requirements tool.
+
+Process is the definition of a process family. Project is data recorded for a running project that follows a process.
 
 Surrogate primary keys are object identity. Foreign keys are associations. Remaining columns are attributes. Commented SQL drafts are included: duplicate CREATE bodies for the same table are unioned; CREATE TABLE names that do not match DROP TABLE follow the DROP name.
 

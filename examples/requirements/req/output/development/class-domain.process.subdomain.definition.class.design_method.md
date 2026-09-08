@@ -36,8 +36,8 @@ class class_domain_process_subdomain_definition_class_module_template["Module Te
         Name
         Description
     }
-namespace Project {
-class class_domain_process_subdomain_project_class_project["Project"] {
+namespace Project.Core {
+class class_domain_project_subdomain_core_class_project["Project"] {
             Name
             Description
             Created Time
@@ -53,7 +53,7 @@ class class_domain_process_subdomain_project_class_project["Project"] {
             Planned Appraisal Coq
             Planned Failure Coq
         }
-class class_domain_process_subdomain_project_class_project_part["Project Part"] {
+class class_domain_project_subdomain_core_class_project_part["Project Part"] {
             Name
             Description
             Multi Day
@@ -67,15 +67,15 @@ class class_domain_process_subdomain_project_class_project_part["Project Part"] 
         }
 }
 style class_domain_process_subdomain_definition_class_design_method stroke:#9370DB,stroke-width:3px
-class_domain_process_subdomain_project_class_project "*" --> "1" class_domain_process_subdomain_definition_class_design_method : Uses Design Method
-class_domain_process_subdomain_project_class_project_part "*" --> "1" class_domain_process_subdomain_definition_class_design_method : Uses Design Method
+class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_design_method : Uses Design Method
+class_domain_project_subdomain_core_class_project_part "*" --> "1" class_domain_process_subdomain_definition_class_design_method : Uses Design Method
 class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_design_method : Uses Design Method
 
 ```
 - **[Design Method](class-domain.process.subdomain.definition.class.design_method.md).** A design template used when planning a project or module.
 - **[Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
-- **[Project::Project](class-domain.process.subdomain.project.class.project.md).** Work that follows a process.
-- **[Project::Project Part](class-domain.process.subdomain.project.class.project_part.md).** A language-specific part of a project.
+- **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
+- **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 
 
 # State Machine

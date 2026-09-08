@@ -1,7 +1,11 @@
 # Process
 
-Process families, projects that follow them, estimates, and quality records.
+The definition of a process: families, scripts, methods, templates, and family-level estimates.
 
 ◇
 
 realized: false
+
+associations:
+
+    - solution_domain_key: project

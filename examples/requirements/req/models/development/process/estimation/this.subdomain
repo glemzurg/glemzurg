@@ -1,10 +1,9 @@
 # Estimation
 
-Size and time estimates, PROBE calculations, and lines-of-code accounts.
+Family-level size and time estimates, including prior versions of each estimate.
 
 ◇
 
 associations:
 
     - solution_subdomain_key: definition
-    - solution_subdomain_key: project

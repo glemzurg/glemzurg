@@ -1,6 +1,8 @@
 # Development Process
 
-A process-definition, project, estimation, and quality catalog used to test the requirements tool.
+A process-definition and running-project catalog used to test the requirements tool.
+
+Process is the definition of a process family. Project is data recorded for a running project that follows a process.
 
 Surrogate primary keys are object identity. Foreign keys are associations. Remaining columns are attributes. Commented SQL drafts are included: duplicate CREATE bodies for the same table are unioned; CREATE TABLE names that do not match DROP TABLE follow the DROP name.
 
@@ -289,10 +291,13 @@ The domains of this model.
 ```mermaid
 graph TD
 domain_domain_process["Process"]
+domain_domain_project["Project"]
+domain_domain_project -.-> domain_domain_process
 
 ```
 
-- **[Process](domain-domain.process.md).** Process families, projects that follow them, estimates, and quality records.
+- **[Process](domain-domain.process.md).** The definition of a process: families, scripts, methods, templates, and family-level estimates.
+- **[Project](domain-domain.project.md).** Data recorded for a running project that follows a process.
 
 
 ## Invariants
