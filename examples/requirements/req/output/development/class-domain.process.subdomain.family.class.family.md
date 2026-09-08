@@ -59,8 +59,8 @@ class class_domain_process_subdomain_family_class_phase["Phase"] {
         Name
         Description
     }
-namespace Definition {
-class class_domain_process_subdomain_definition_class_process["Process"] {
+namespace Process {
+class class_domain_process_subdomain_process_class_process["Process"] {
             Name
             Version
             Version Minor
@@ -72,8 +72,8 @@ class class_domain_process_subdomain_definition_class_process["Process"] {
             Size K Unit
         }
 }
-namespace Estimation {
-class class_domain_process_subdomain_estimation_class_estimate["Estimate"] {
+namespace Project.Estimation {
+class class_domain_project_subdomain_estimation_class_estimate["Estimate"] {
             Axis
             Scope
             Version
@@ -95,7 +95,7 @@ class class_domain_process_subdomain_estimation_class_estimate["Estimate"] {
             Portion Mean
             Portion Variance
         }
-class class_domain_process_subdomain_estimation_class_estimate_historic["Estimate Historic"] {
+class class_domain_project_subdomain_estimation_class_estimate_historic["Estimate Historic"] {
             Axis
             Scope
             Version
@@ -119,21 +119,21 @@ class class_domain_process_subdomain_estimation_class_estimate_historic["Estimat
         }
 }
 style class_domain_process_subdomain_family_class_family stroke:#9370DB,stroke-width:3px
-class_domain_process_subdomain_estimation_class_estimate_historic "*" --> "1" class_domain_process_subdomain_family_class_family : Belongs To Family
-class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_definition_class_process : Has Processes<br/>{unique → Name, Version, Version Minor}
-class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_estimation_class_estimate : Has Estimates
+class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_project_subdomain_estimation_class_estimate : Has Estimates
+class_domain_project_subdomain_estimation_class_estimate_historic "*" --> "1" class_domain_process_subdomain_family_class_family : Belongs To Family
+class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_process_class_process : Has Processes<br/>{unique → Name, Version, Version Minor}
 class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_defect_type : Has Defect Types<br/>{unique → Num}
 class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_language : Has Languages<br/>{unique → Name}
 class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_phase : Has Phases<br/>{unique → Num}
 
 ```
 - **[Defect Type](class-domain.process.subdomain.family.class.defect_type.md).** A type of defect classified within a process family.
-- **[Estimation::Estimate](class-domain.process.subdomain.estimation.class.estimate.md).** An estimate of size or time, categorized by family, language, axis, and scope.
-- **[Estimation::Estimate Historic](class-domain.process.subdomain.estimation.class.estimate_historic.md).** A stored prior iteration of an estimate.
+- **[Project::Estimation::Estimate](class-domain.project.subdomain.estimation.class.estimate.md).** An estimate of size or time, categorized by family, language, axis, and scope.
+- **[Project::Estimation::Estimate Historic](class-domain.project.subdomain.estimation.class.estimate_historic.md).** A stored prior iteration of an estimate.
 - **[Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
 - **[Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
-- **[Definition::Process](class-domain.process.subdomain.definition.class.process.md).** A versioned process to follow, owned by a family.
+- **[Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 
 
 # State Machine

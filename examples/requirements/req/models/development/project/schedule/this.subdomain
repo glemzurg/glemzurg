@@ -1,0 +1,9 @@
+# Schedule
+
+The planned calendar for a project, in days or weeks.
+
+◇
+
+associations:
+
+    - solution_subdomain_key: core

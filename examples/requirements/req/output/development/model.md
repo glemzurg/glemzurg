@@ -292,12 +292,15 @@ The domains of this model.
 graph TD
 domain_domain_process["Process"]
 domain_domain_project["Project"]
+domain_domain_statistics["Statistics"]
 domain_domain_process -.-> domain_domain_project
+domain_domain_project -.-> domain_domain_statistics
 
 ```
 
 - **[Process](domain-domain.process.md).** The definition of a process: families, scripts, methods, templates, and family-level estimates.
 - **[Project](domain-domain.project.md).** Data recorded for a running project that follows a process.
+- **[Statistics](domain-domain.statistics.md).** Buckets used to group project statistics.
 
 
 ## Invariants

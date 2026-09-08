@@ -1,9 +1,12 @@
 # Definition
 
-Processes, scripts, methods, and templates that a family uses.
+Templates and PROBE catalogs used when following a process.
 
 ◇
 
 associations:
 
     - solution_subdomain_key: family
+    - solution_subdomain_key: process
+    - solution_subdomain_key: estimate
+    - solution_subdomain_key: method

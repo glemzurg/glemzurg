@@ -25,10 +25,10 @@ associations:
     - name: In Bucket
       details: Stats bucket these statistics are grouped in.
       from_multiplicity: any
-      to_class_key: process/definition/stats_bucket
+      to_class_key: statistics/default/stats_bucket
       to_multiplicity: "1"
     - name: Uses Method
       details: Programming method for these statistics, when one is set.
       from_multiplicity: any
-      to_class_key: process/definition/method
+      to_class_key: process/estimate/method
       to_multiplicity: "0..1"

@@ -31,7 +31,7 @@ associations:
     - name: On Process
       details: Process this proposal is about.
       from_multiplicity: any
-      to_class_key: process/definition/process
+      to_class_key: process/process/process
       to_multiplicity: "1"
     - name: On Phase
       details: Phase this proposal is about.
@@ -41,10 +41,10 @@ associations:
     - name: On Subphase
       details: Planning step this proposal is about.
       from_multiplicity: any
-      to_class_key: process/definition/step
+      to_class_key: process/process/step
       to_multiplicity: "1"
     - name: Resolved In Process
       details: Process version that absorbed this proposal.
       from_multiplicity: any
-      to_class_key: process/definition/process
+      to_class_key: process/process/process
       to_multiplicity: "1"

@@ -54,8 +54,15 @@ class class_domain_project_subdomain_core_class_project["Project"] {
             Planned Failure Coq
         }
 }
-namespace Process.Definition {
-class class_domain_process_subdomain_definition_class_process["Process"] {
+namespace Process.Family {
+class class_domain_process_subdomain_family_class_phase["Phase"] {
+            Num
+            Name
+            Description
+        }
+}
+namespace Process.Process {
+class class_domain_process_subdomain_process_class_process["Process"] {
             Name
             Version
             Version Minor
@@ -66,32 +73,25 @@ class class_domain_process_subdomain_definition_class_process["Process"] {
             Size Unit
             Size K Unit
         }
-class class_domain_process_subdomain_definition_class_step["Step"] {
+class class_domain_process_subdomain_process_class_step["Step"] {
             Num
             Name
             Tasks
         }
 }
-namespace Process.Family {
-class class_domain_process_subdomain_family_class_phase["Phase"] {
-            Num
-            Name
-            Description
-        }
-}
 style class_domain_project_subdomain_quality_class_pip stroke:#9370DB,stroke-width:3px
-class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_process : On Process
-class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_process : Resolved In Process
-class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_step : On Subphase
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_family_class_phase : On Phase
+class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_process : On Process
+class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_process : Resolved In Process
+class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_step : On Subphase
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_project_subdomain_core_class_project : On Project
 
 ```
 - **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
-- **[Process::Definition::Process](class-domain.process.subdomain.definition.class.process.md).** A versioned process to follow, owned by a family.
+- **[Process::Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
-- **[Process::Definition::Step](class-domain.process.subdomain.definition.class.step.md).** A step of a process script.
+- **[Process::Process::Step](class-domain.process.subdomain.process.class.step.md).** A step of a process script.
 
 
 # State Machine

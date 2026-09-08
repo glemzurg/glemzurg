@@ -2,7 +2,7 @@
 
 # Estimation
 
-Lines-of-code accounts and PROBE calculations recorded on a running project.
+Size and time estimates, lines-of-code accounts, and PROBE calculations.
 ## Classes
 
 The classes of this subdomain.
@@ -25,6 +25,50 @@ class class_domain_project_subdomain_estimation_class_actual_loc["Actual Loc"] {
         Deleted
         Reused
         Object Loc
+    }
+class class_domain_project_subdomain_estimation_class_estimate["Estimate"] {
+        Axis
+        Scope
+        Version
+        Mean
+        Variance
+        Low
+        High
+        Actual
+        Method
+        Prediction Interval
+        Comment
+        Estimation Time
+        Guess Lowest 80 Pred
+        Guess Highest 80 Pred
+        Sum Count
+        Sum Mean
+        Sum Variance
+        Portion Portion
+        Portion Mean
+        Portion Variance
+    }
+class class_domain_project_subdomain_estimation_class_estimate_historic["Estimate Historic"] {
+        Axis
+        Scope
+        Version
+        Mean
+        Variance
+        Low
+        High
+        Actual
+        Method
+        Prediction Interval
+        Comment
+        Estimation Time
+        Guess Lowest 80 Pred
+        Guess Highest 80 Pred
+        Sum Count
+        Sum Mean
+        Sum Variance
+        Portion Portion
+        Portion Mean
+        Portion Variance
     }
 class class_domain_project_subdomain_estimation_class_estimate_loc["Estimate Loc"] {
         Base
@@ -105,6 +149,14 @@ class class_domain_process_subdomain_definition_class_probe_type["Probe Type"] {
         }
 }
 namespace Process.Family {
+class class_domain_process_subdomain_family_class_family["Family"] {
+            Name [key]
+            Description
+        }
+class class_domain_process_subdomain_family_class_language["Language"] {
+            Name
+            Description
+        }
 class class_domain_process_subdomain_family_class_phase["Phase"] {
             Num
             Name
@@ -114,10 +166,14 @@ class class_domain_process_subdomain_family_class_phase["Phase"] {
 class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for["Has Probe Estimate For"]
 <<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
 style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
+class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_project_subdomain_estimation_class_estimate : Has Estimates
 class_domain_project_subdomain_core_class_project "1" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
     assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for --> "*" class_domain_process_subdomain_family_class_phase
     class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
 class_domain_project_subdomain_estimation_class_actual_loc "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_estimation_class_estimate "*" --> "1" class_domain_process_subdomain_family_class_language : Uses Language
+class_domain_project_subdomain_estimation_class_estimate_historic "*" --> "1" class_domain_process_subdomain_family_class_family : Belongs To Family
+class_domain_project_subdomain_estimation_class_estimate_historic "*" --> "1" class_domain_process_subdomain_family_class_language : Uses Language
 class_domain_project_subdomain_estimation_class_estimate_loc "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
 class_domain_project_subdomain_estimation_class_estimate_probe_add_loc "*" --> "1" class_domain_process_subdomain_definition_class_probe_object_size : Of Size
 class_domain_project_subdomain_estimation_class_estimate_probe_add_loc "*" --> "1" class_domain_process_subdomain_definition_class_probe_type : Of Type
@@ -131,15 +187,20 @@ class_domain_project_subdomain_core_class_project "1" --> "0..1" class_domain_pr
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_estimation_class_estimate_probe_add_loc : Has Probe Add Loc
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_estimation_class_estimate_probe_object_loc : Has Probe Object Loc
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_estimation_class_estimate_probe_object_reused : Has Probe Object Reused
+class_domain_project_subdomain_estimation_class_estimate "1" --> "*" class_domain_project_subdomain_estimation_class_estimate_historic : Has History<br/>{unique → Version}
 
 ```
 
 - **[Actual Loc](class-domain.project.subdomain.estimation.class.actual_loc.md).** Actual lines-of-code account for a project.
+- **[Estimate](class-domain.project.subdomain.estimation.class.estimate.md).** An estimate of size or time, categorized by family, language, axis, and scope.
+- **[Estimate Historic](class-domain.project.subdomain.estimation.class.estimate_historic.md).** A stored prior iteration of an estimate.
 - **[Estimate Loc](class-domain.project.subdomain.estimation.class.estimate_loc.md).** Planned lines-of-code account for a project.
 - **[Estimate Probe](class-domain.project.subdomain.estimation.class.estimate_probe.md).** PROBE size and time calculation for a project in a phase.
 - **[Estimate Probe Add Loc](class-domain.project.subdomain.estimation.class.estimate_probe_add_loc.md).** An added-object line in a PROBE size estimate.
 - **[Estimate Probe Object Loc](class-domain.project.subdomain.estimation.class.estimate_probe_object_loc.md).** A new-object line in a PROBE size estimate.
 - **[Estimate Probe Object Reused](class-domain.project.subdomain.estimation.class.estimate_probe_object_reused.md).** A reused-object line in a PROBE size estimate.
+- **[Process::Family::Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
+- **[Process::Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
 - **[Process::Definition::Probe Object Size](class-domain.process.subdomain.definition.class.probe_object_size.md).** A relative size category used when estimating objects with PROBE.
 - **[Process::Definition::Probe Type](class-domain.process.subdomain.definition.class.probe_type.md).** A PROBE object-type category used when listing added and new objects.

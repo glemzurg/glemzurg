@@ -59,14 +59,6 @@ class class_domain_project_subdomain_core_class_project["Project"] {
         Planned Appraisal Coq
         Planned Failure Coq
     }
-class class_domain_project_subdomain_core_class_project_cycle_actual["Project Cycle Actual"] {
-        Num
-        Actual Pct Reuse
-    }
-class class_domain_project_subdomain_core_class_project_cycle_plan["Project Cycle Plan"] {
-        Num
-        Planned Pct Reuse
-    }
 class class_domain_project_subdomain_core_class_project_part["Project Part"] {
         Name
         Description
@@ -83,26 +75,16 @@ class class_domain_project_subdomain_core_class_project_stat_phase["Project Stat
         Estimate Minute
         Estimate Comment
     }
-class class_domain_project_subdomain_core_class_schedule["Schedule"] {
-        Day Or Week
-    }
-class class_domain_project_subdomain_core_class_schedule_week["Schedule Week"] {
-        Num
-        Date Monday
-    }
-class class_domain_project_subdomain_core_class_task["Task"] {
-        Num
-        Name
-        Planned Hours
-        Pct Complete
-    }
-class class_domain_project_subdomain_core_class_time_log["Time Log"] {
-        Cycle
-        Start Time
-        Stop Time
-        Interruption Minutes
-        Comments
-    }
+namespace Cycle {
+class class_domain_project_subdomain_cycle_class_project_cycle_actual["Project Cycle Actual"] {
+            Num
+            Actual Pct Reuse
+        }
+class class_domain_project_subdomain_cycle_class_project_cycle_plan["Project Cycle Plan"] {
+            Num
+            Planned Pct Reuse
+        }
+}
 namespace Estimation {
 class class_domain_project_subdomain_estimation_class_actual_loc["Actual Loc"] {
             Cycle
@@ -165,37 +147,15 @@ class class_domain_project_subdomain_estimation_class_estimate_probe_object_reus
         }
 }
 namespace Process.Definition {
-class class_domain_process_subdomain_definition_class_design_method["Design Method"] {
-            Name
-            Description
-        }
-class class_domain_process_subdomain_definition_class_method["Method"] {
-            Name [key]
-            Description
-        }
 class class_domain_process_subdomain_definition_class_module_template["Module Template"] {
             Name
             Description
         }
-class class_domain_process_subdomain_definition_class_process["Process"] {
-            Name
-            Version
-            Version Minor
-            Purpose
-            Entry Criteria
-            Exit Criteria
-            Script Lock
-            Size Unit
-            Size K Unit
-        }
-class class_domain_process_subdomain_definition_class_stats_bucket["Stats Bucket"] {
-            Name
+}
+namespace Process.Estimate {
+class class_domain_process_subdomain_estimate_class_method["Method"] {
+            Name [key]
             Description
-        }
-class class_domain_process_subdomain_definition_class_step["Step"] {
-            Num
-            Name
-            Tasks
         }
 }
 namespace Process.Family {
@@ -207,6 +167,30 @@ class class_domain_process_subdomain_family_class_phase["Phase"] {
             Num
             Name
             Description
+        }
+}
+namespace Process.Method {
+class class_domain_process_subdomain_method_class_design_method["Design Method"] {
+            Name
+            Description
+        }
+}
+namespace Process.Process {
+class class_domain_process_subdomain_process_class_process["Process"] {
+            Name
+            Version
+            Version Minor
+            Purpose
+            Entry Criteria
+            Exit Criteria
+            Script Lock
+            Size Unit
+            Size K Unit
+        }
+class class_domain_process_subdomain_process_class_step["Step"] {
+            Num
+            Name
+            Tasks
         }
 }
 namespace Quality {
@@ -242,6 +226,36 @@ class class_domain_project_subdomain_quality_class_test_case_result["Test Case R
             Actual
         }
 }
+namespace Schedule {
+class class_domain_project_subdomain_schedule_class_schedule["Schedule"] {
+            Day Or Week
+        }
+class class_domain_project_subdomain_schedule_class_schedule_week["Schedule Week"] {
+            Num
+            Date Monday
+        }
+}
+namespace Statistics {
+class class_domain_statistics_subdomain_default_class_stats_bucket["Stats Bucket"] {
+            Name
+            Description
+        }
+}
+namespace Task {
+class class_domain_project_subdomain_task_class_task["Task"] {
+            Num
+            Name
+            Planned Hours
+            Pct Complete
+        }
+class class_domain_project_subdomain_task_class_time_log["Time Log"] {
+            Cycle
+            Start Time
+            Stop Time
+            Interruption Minutes
+            Comments
+        }
+}
 style class_domain_project_subdomain_core_class_project stroke:#9370DB,stroke-width:3px
 class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products["Checks Phase Products"]
 <<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
@@ -249,13 +263,9 @@ class assoc_cassociation_domain_project_subdomain_core_class_project_domain_proc
 <<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
 style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products stroke:#333,stroke-dasharray:5 5
 style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
-class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_design_method : Uses Design Method
-class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_method : Uses Size Estimation Method
-class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_method : Uses Time Estimation Method
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
-class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_process : Follows Process
-class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_definition_class_stats_bucket : In Bucket
-class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_definition_class_step : Current Subphase
+class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_estimate_class_method : Uses Size Estimation Method
+class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_estimate_class_method : Uses Time Estimation Method
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_family_class_language : Uses Language
 class_domain_project_subdomain_core_class_project "*" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
     assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products --> "*" class_domain_process_subdomain_family_class_phase
@@ -264,30 +274,34 @@ class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_pr
 class_domain_project_subdomain_core_class_project "1" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
     assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for --> "*" class_domain_process_subdomain_family_class_phase
     class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
+class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_method_class_design_method : Uses Design Method
+class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_process_class_process : Follows Process
+class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_process_class_step : Current Subphase
+class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_statistics_subdomain_default_class_stats_bucket : In Bucket
+class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_cycle_class_project_cycle_actual : Has Cycle Actuals<br/>{unique → Num}
+class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_cycle_class_project_cycle_plan : Has Cycle Plans<br/>{unique → Num}
 class_domain_project_subdomain_core_class_project "1" --> "0..1" class_domain_project_subdomain_estimation_class_actual_loc : Has Actual Loc
 class_domain_project_subdomain_core_class_project "1" --> "0..1" class_domain_project_subdomain_estimation_class_estimate_loc : Has Loc Estimate
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_estimation_class_estimate_probe_add_loc : Has Probe Add Loc
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_estimation_class_estimate_probe_object_loc : Has Probe Object Loc
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_estimation_class_estimate_probe_object_reused : Has Probe Object Reused
+class_domain_project_subdomain_core_class_project "1" --> "0..1" class_domain_project_subdomain_schedule_class_schedule : Has Schedule
+class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_task_class_task : Has Tasks
+class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_task_class_time_log : Has Time Logs
 class_domain_project_subdomain_quality_class_defect "*" --> "1" class_domain_project_subdomain_core_class_project : Injected In
 class_domain_project_subdomain_quality_class_defect "*" --> "1" class_domain_project_subdomain_core_class_project : Removed In
 class_domain_project_subdomain_quality_class_issue "*" --> "1" class_domain_project_subdomain_core_class_project : Injected In
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_project_subdomain_core_class_project : On Project
 class_domain_project_subdomain_quality_class_test_case "*" --> "1" class_domain_project_subdomain_core_class_project : For Project
 class_domain_project_subdomain_quality_class_test_case_result "*" --> "1" class_domain_project_subdomain_core_class_project : For Project
-class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_cycle_actual : Has Cycle Actuals<br/>{unique → Num}
-class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_cycle_plan : Has Cycle Plans<br/>{unique → Num}
+class_domain_project_subdomain_schedule_class_schedule_week "*" --> "1" class_domain_project_subdomain_core_class_project : For Project
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_part : Has Parts
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_stat_phase : Has Stat Phases
-class_domain_project_subdomain_core_class_project "1" --> "0..1" class_domain_project_subdomain_core_class_schedule : Has Schedule
-class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_task : Has Tasks
-class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_time_log : Has Time Logs
-class_domain_project_subdomain_core_class_schedule_week "*" --> "1" class_domain_project_subdomain_core_class_project : For Project
 
 ```
 - **[Estimation::Actual Loc](class-domain.project.subdomain.estimation.class.actual_loc.md).** Actual lines-of-code account for a project.
 - **[Quality::Defect](class-domain.project.subdomain.quality.class.defect.md).** A defect injected and removed in projects and phases.
-- **[Process::Definition::Design Method](class-domain.process.subdomain.definition.class.design_method.md).** A design template used when planning a project or module.
+- **[Process::Method::Design Method](class-domain.process.subdomain.method.class.design_method.md).** A design template used when planning a project or module.
 - **[Estimation::Estimate Loc](class-domain.project.subdomain.estimation.class.estimate_loc.md).** Planned lines-of-code account for a project.
 - **[Estimation::Estimate Probe](class-domain.project.subdomain.estimation.class.estimate_probe.md).** PROBE size and time calculation for a project in a phase.
 - **[Estimation::Estimate Probe Add Loc](class-domain.project.subdomain.estimation.class.estimate_probe_add_loc.md).** An added-object line in a PROBE size estimate.
@@ -295,25 +309,25 @@ class_domain_project_subdomain_core_class_schedule_week "*" --> "1" class_domain
 - **[Estimation::Estimate Probe Object Reused](class-domain.project.subdomain.estimation.class.estimate_probe_object_reused.md).** A reused-object line in a PROBE size estimate.
 - **[Quality::Issue](class-domain.project.subdomain.quality.class.issue.md).** An issue found in a project phase, with an optional resolution.
 - **[Process::Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
-- **[Process::Definition::Method](class-domain.process.subdomain.definition.class.method.md).** A programming method used when recording phase statistics for a project.
+- **[Process::Estimate::Method](class-domain.process.subdomain.estimate.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Process::Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
 - **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
 - **[Phase Products Check](class-domain.project.subdomain.core.class.phase_products_check.md).** Whether a project's products for a phase are satisfied.
-- **[Process::Definition::Process](class-domain.process.subdomain.definition.class.process.md).** A versioned process to follow, owned by a family.
+- **[Process::Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
-- **[Project Cycle Actual](class-domain.project.subdomain.core.class.project_cycle_actual.md).** Actual recording values for one cycle of a project.
-- **[Project Cycle Plan](class-domain.project.subdomain.core.class.project_cycle_plan.md).** Planned recording values for one cycle of a project.
+- **[Cycle::Project Cycle Actual](class-domain.project.subdomain.cycle.class.project_cycle_actual.md).** Actual recording values for one cycle of a project.
+- **[Cycle::Project Cycle Plan](class-domain.project.subdomain.cycle.class.project_cycle_plan.md).** Planned recording values for one cycle of a project.
 - **[Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 - **[Project Stat Phase](class-domain.project.subdomain.core.class.project_stat_phase.md).** A per-phase statistical estimate on a project. stat_phase is Phase; bucket is Stats Bucket.
-- **[Schedule](class-domain.project.subdomain.core.class.schedule.md).** The planned calendar for a project, in days or weeks.
-- **[Schedule Week](class-domain.project.subdomain.core.class.schedule_week.md).** One week (or day slot) on a project schedule.
-- **[Process::Definition::Stats Bucket](class-domain.process.subdomain.definition.class.stats_bucket.md).** A bucket used to group project statistics.
-- **[Process::Definition::Step](class-domain.process.subdomain.definition.class.step.md).** A step of a process script.
-- **[Task](class-domain.project.subdomain.core.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.
+- **[Schedule::Schedule](class-domain.project.subdomain.schedule.class.schedule.md).** The planned calendar for a project, in days or weeks.
+- **[Schedule::Schedule Week](class-domain.project.subdomain.schedule.class.schedule_week.md).** One week (or day slot) on a project schedule.
+- **[Statistics::Stats Bucket](class-domain.statistics.subdomain.default.class.stats_bucket.md).** A bucket used to group project statistics.
+- **[Process::Process::Step](class-domain.process.subdomain.process.class.step.md).** A step of a process script.
+- **[Task::Task](class-domain.project.subdomain.task.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.
 - **[Quality::Test Case](class-domain.project.subdomain.quality.class.test_case.md).** A test case defined for a project.
 - **[Quality::Test Case Result](class-domain.project.subdomain.quality.class.test_case_result.md).** A recorded run of a test case.
-- **[Time Log](class-domain.project.subdomain.core.class.time_log.md).** A recorded interval of work on a project.
+- **[Task::Time Log](class-domain.project.subdomain.task.class.time_log.md).** A recorded interval of work on a project.
 
 
 # State Machine

@@ -56,7 +56,7 @@ associations:
     - name: In Bucket
       details: Stats bucket this part is grouped in, when one is set.
       from_multiplicity: any
-      to_class_key: process/definition/stats_bucket
+      to_class_key: statistics/default/stats_bucket
       to_multiplicity: "0..1"
     - name: Current Phase
       details: Phase whose forms are currently open, when one is set.
@@ -66,19 +66,19 @@ associations:
     - name: Current Subphase
       details: Planning step currently taking place, when one is set.
       from_multiplicity: any
-      to_class_key: process/definition/step
+      to_class_key: process/process/step
       to_multiplicity: "0..1"
     - name: Uses Design Method
       from_multiplicity: any
-      to_class_key: process/definition/design_method
+      to_class_key: process/method/design_method
       to_multiplicity: "1"
     - name: Uses Size Estimation Method
       from_multiplicity: any
-      to_class_key: process/definition/method
+      to_class_key: process/estimate/method
       to_multiplicity: "1"
     - name: Uses Time Estimation Method
       from_multiplicity: any
-      to_class_key: process/definition/method
+      to_class_key: process/estimate/method
       to_multiplicity: "1"
     - name: Uses Language
       details: Language this part is implemented in.

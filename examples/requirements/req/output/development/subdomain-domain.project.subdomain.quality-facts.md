@@ -14,10 +14,10 @@ Association multiplicity, association invariant, and index uniqueness constraint
 - each Issue (injected in phase) links to exactly one Process::Family::Phase; each Process::Family::Phase may link to any number of Issues (Phase where this issue was found.).
 - each Issue (injected in) links to exactly one Core::Project; each Core::Project may link to any number of Issues (Project where this issue was found.).
 - each Process Improvement Proposal (on phase) links to exactly one Process::Family::Phase; each Process::Family::Phase may link to any number of Process Improvement Proposals (Phase this proposal is about.).
-- each Process Improvement Proposal (on process) links to exactly one Process::Definition::Process; each Process::Definition::Process may link to any number of Process Improvement Proposals (Process this proposal is about.).
+- each Process Improvement Proposal (on process) links to exactly one Process::Process::Process; each Process::Process::Process may link to any number of Process Improvement Proposals (Process this proposal is about.).
 - each Process Improvement Proposal (on project) links to exactly one Core::Project; each Core::Project may link to any number of Process Improvement Proposals (Project this proposal was raised on.).
-- each Process Improvement Proposal (on subphase) links to exactly one Process::Definition::Step; each Process::Definition::Step may link to any number of Process Improvement Proposals (Planning step this proposal is about.).
-- each Process Improvement Proposal (resolved in process) links to exactly one Process::Definition::Process; each Process::Definition::Process may link to any number of Process Improvement Proposals (Process version that absorbed this proposal.).
+- each Process Improvement Proposal (on subphase) links to exactly one Process::Process::Step; each Process::Process::Step may link to any number of Process Improvement Proposals (Planning step this proposal is about.).
+- each Process Improvement Proposal (resolved in process) links to exactly one Process::Process::Process; each Process::Process::Process may link to any number of Process Improvement Proposals (Process version that absorbed this proposal.).
 - each Test Case (for project) links to exactly one Core::Project; each Core::Project may link to any number of Test Cases (Project this test case belongs to.).
 - each Test Case (has results) links to any number of Test Case Results; each Test Case Result links to exactly one Test Case (Recorded runs of this test case.).
 - each Test Case Result (for project) links to exactly one Core::Project; each Core::Project may link to any number of Test Case Results (Project this result was recorded against.).

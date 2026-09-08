@@ -71,7 +71,7 @@ associations:
     - name: Follows Process
       details: Process this project follows.
       from_multiplicity: any
-      to_class_key: process/definition/process
+      to_class_key: process/process/process
       to_multiplicity: "1"
     - name: Instantiates
       details: Module template this project is created from.
@@ -81,7 +81,7 @@ associations:
     - name: In Bucket
       details: Stats bucket this project is grouped in, when one is set.
       from_multiplicity: any
-      to_class_key: process/definition/stats_bucket
+      to_class_key: statistics/default/stats_bucket
       to_multiplicity: "0..1"
     - name: Current Phase
       details: Phase whose forms are currently open, when one is set.
@@ -91,22 +91,22 @@ associations:
     - name: Current Subphase
       details: Planning step currently taking place, when one is set.
       from_multiplicity: any
-      to_class_key: process/definition/step
+      to_class_key: process/process/step
       to_multiplicity: "0..1"
     - name: Uses Design Method
       details: Design template used by this project.
       from_multiplicity: any
-      to_class_key: process/definition/design_method
+      to_class_key: process/method/design_method
       to_multiplicity: "1"
     - name: Uses Size Estimation Method
       details: Method used to estimate size.
       from_multiplicity: any
-      to_class_key: process/definition/method
+      to_class_key: process/estimate/method
       to_multiplicity: "1"
     - name: Uses Time Estimation Method
       details: Method used to estimate time.
       from_multiplicity: any
-      to_class_key: process/definition/method
+      to_class_key: process/estimate/method
       to_multiplicity: "1"
     - name: Uses Language
       details: Language this project is implemented in.
@@ -121,7 +121,7 @@ associations:
     - name: Has Cycle Plans
       details: Planned reuse values recorded per cycle.
       from_multiplicity: "1"
-      to_class_key: project_cycle_plan
+      to_class_key: cycle/project_cycle_plan
       to_multiplicity: any
       uniqueness:
           to_attributes:
@@ -129,7 +129,7 @@ associations:
     - name: Has Cycle Actuals
       details: Actual reuse values recorded per cycle.
       from_multiplicity: "1"
-      to_class_key: project_cycle_actual
+      to_class_key: cycle/project_cycle_actual
       to_multiplicity: any
       uniqueness:
           to_attributes:
@@ -148,17 +148,17 @@ associations:
     - name: Has Schedule
       details: Schedule for recording planned work.
       from_multiplicity: "1"
-      to_class_key: schedule
+      to_class_key: schedule/schedule
       to_multiplicity: "0..1"
     - name: Has Tasks
       details: Planned tasks on this project.
       from_multiplicity: "1"
-      to_class_key: task
+      to_class_key: task/task
       to_multiplicity: any
     - name: Has Time Logs
       details: Recorded time log entries.
       from_multiplicity: "1"
-      to_class_key: time_log
+      to_class_key: task/time_log
       to_multiplicity: any
     - name: Has Loc Estimate
       details: Planned lines-of-code account for this project.

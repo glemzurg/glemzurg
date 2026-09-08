@@ -51,7 +51,7 @@ associations:
     - name: Has Processes
       details: Versioned processes that belong to this family.
       from_multiplicity: "1"
-      to_class_key: definition/process
+      to_class_key: process/process
       to_multiplicity: any
       uniqueness:
           to_attributes:
@@ -61,5 +61,5 @@ associations:
     - name: Has Estimates
       details: Size and time estimates recorded in this family.
       from_multiplicity: "1"
-      to_class_key: estimation/estimate
+      to_class_key: project/estimation/estimate
       to_multiplicity: any

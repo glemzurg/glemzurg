@@ -48,13 +48,9 @@ class class_domain_project_subdomain_core_class_project_stat_phase["Project Stat
         Estimate Minute
         Estimate Comment
     }
-namespace Process.Definition {
-class class_domain_process_subdomain_definition_class_method["Method"] {
+namespace Process.Estimate {
+class class_domain_process_subdomain_estimate_class_method["Method"] {
             Name [key]
-            Description
-        }
-class class_domain_process_subdomain_definition_class_stats_bucket["Stats Bucket"] {
-            Name
             Description
         }
 }
@@ -65,18 +61,24 @@ class class_domain_process_subdomain_family_class_phase["Phase"] {
             Description
         }
 }
+namespace Statistics {
+class class_domain_statistics_subdomain_default_class_stats_bucket["Stats Bucket"] {
+            Name
+            Description
+        }
+}
 style class_domain_project_subdomain_core_class_project_stat_phase stroke:#9370DB,stroke-width:3px
-class_domain_project_subdomain_core_class_project_stat_phase "*" --> "0..1" class_domain_process_subdomain_definition_class_method : Uses Method
-class_domain_project_subdomain_core_class_project_stat_phase "*" --> "1" class_domain_process_subdomain_definition_class_stats_bucket : In Bucket
+class_domain_project_subdomain_core_class_project_stat_phase "*" --> "0..1" class_domain_process_subdomain_estimate_class_method : Uses Method
 class_domain_project_subdomain_core_class_project_stat_phase "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_core_class_project_stat_phase "*" --> "1" class_domain_statistics_subdomain_default_class_stats_bucket : In Bucket
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_stat_phase : Has Stat Phases
 
 ```
-- **[Process::Definition::Method](class-domain.process.subdomain.definition.class.method.md).** A programming method used when recording phase statistics for a project.
+- **[Process::Estimate::Method](class-domain.process.subdomain.estimate.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
 - **[Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Project Stat Phase](class-domain.project.subdomain.core.class.project_stat_phase.md).** A per-phase statistical estimate on a project. stat_phase is Phase; bucket is Stats Bucket.
-- **[Process::Definition::Stats Bucket](class-domain.process.subdomain.definition.class.stats_bucket.md).** A bucket used to group project statistics.
+- **[Statistics::Stats Bucket](class-domain.statistics.subdomain.default.class.stats_bucket.md).** A bucket used to group project statistics.
 
 
 # State Machine

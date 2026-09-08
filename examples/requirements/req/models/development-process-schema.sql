@@ -12,7 +12,7 @@ DROP TABLE IF EXISTS `family`;
 
 CREATE TABLE `family` ( # core partitioning of the database
   `family_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,The c
   `description` varchar(255) NOT NULL default '',
   PRIMARY KEY (`family_id`),
   UNIQUE KEY (`name`)

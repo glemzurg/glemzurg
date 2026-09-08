@@ -1,0 +1,10 @@
+# Task
+
+Planned tasks and recorded time logs on a project.
+
+◇
+
+associations:
+
+    - solution_subdomain_key: core
+    - solution_subdomain_key: schedule
