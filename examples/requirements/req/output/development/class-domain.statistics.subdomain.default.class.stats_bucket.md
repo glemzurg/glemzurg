@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Statistics](domain-domain.statistics.md)
+[⇦ Development](model.md) / [Statistics](domain-domain.statistics.md)
 
 # Stats Bucket
 
@@ -12,7 +12,7 @@ A bucket used to group project statistics.
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
 | Name | _(unparsed)_ unconstrained | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 
 
 

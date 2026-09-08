@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md)
 
 # Quality
 
@@ -20,6 +20,7 @@ class class_domain_project_subdomain_quality_class_defect["Defect"] {
         Cycle
         Fix Minutes
         Description
+        Prevention
         Test Defect
     }
 class class_domain_project_subdomain_quality_class_issue["Issue"] {
@@ -112,7 +113,7 @@ class_domain_project_subdomain_quality_class_test_case "1" --> "*" class_domain_
 - **[Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Test Case](class-domain.project.subdomain.quality.class.test_case.md).** A test case defined for a project.
 - **[Test Case Result](class-domain.project.subdomain.quality.class.test_case_result.md).** A recorded run of a test case.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Process::Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Process::Process::Step](class-domain.process.subdomain.process.class.step.md).** A step of a process script.

@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Definition](subdomain-domain.process.subdomain.definition.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Definition](subdomain-domain.process.subdomain.definition.md)
 
 # Probe Object Type
 
@@ -15,7 +15,7 @@ The commented CREATE body repeated estimate_probe columns; those calculation col
 | ---- | ----- | -------- | ---- | --------------------- |
 | Number | _(unparsed)_ [0 .. unconstrained] at 1 unit | false |  |  |
 | Name | _(unparsed)_ unconstrained | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 
 
 

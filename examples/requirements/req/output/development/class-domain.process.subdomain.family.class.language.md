@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Family](subdomain-domain.process.subdomain.family.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Family](subdomain-domain.process.subdomain.family.md)
 
 # Language
 
@@ -12,7 +12,7 @@ A programming language used when estimating size or time in a process family.
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
 | Name | _(unparsed)_ unconstrained | false |  | Unique among languages of the same family. |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 
 
 
@@ -29,7 +29,7 @@ config:
 ---
 classDiagram
 class class_domain_process_subdomain_family_class_family["Family"] {
-        Name [key]
+        Name
         Description
     }
 class class_domain_process_subdomain_family_class_language["Language"] {
@@ -129,7 +129,7 @@ class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_proc
 ```
 - **[Project::Estimation::Estimate](class-domain.project.subdomain.estimation.class.estimate.md).** An estimate of size or time, categorized by family, language, axis, and scope.
 - **[Project::Estimation::Estimate Historic](class-domain.project.subdomain.estimation.class.estimate_historic.md).** A stored prior iteration of an estimate.
-- **[Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
+- **[Family](class-domain.process.subdomain.family.class.family.md).** A family is a shared group of processes, and by extention a shared group of projects that use those processes.
 - **[Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
 - **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.

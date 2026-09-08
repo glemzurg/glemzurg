@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Definition](subdomain-domain.process.subdomain.definition.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Definition](subdomain-domain.process.subdomain.definition.md)
 
 # Probe Type
 
@@ -13,7 +13,7 @@ A PROBE object-type category used when listing added and new objects.
 | ---- | ----- | -------- | ---- | --------------------- |
 | Number | _(unparsed)_ [0 .. unconstrained] at 1 unit | false |  |  |
 | Name | _(unparsed)_ unconstrained | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 
 
 

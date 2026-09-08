@@ -1,8 +1,10 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Family](subdomain-domain.process.subdomain.family.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Family](subdomain-domain.process.subdomain.family.md)
 
 # Family
 
-Core partitioning of the catalog. Phases, defect types, languages, processes, and estimates all belong to one family.
+A family is a shared group of processes, and by extention a shared group of projects that use those processes.
+
+The basic concept is that you may have a set of processes for writing software and a set of processes for writing a novel, and this is a way to bucket them easily.
 
 
 
@@ -11,21 +13,9 @@ Core partitioning of the catalog. Phases, defect types, languages, processes, an
 
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
-| Name [key] | _(unparsed)_ unconstrained | false |  | Unique name of this family. |
-| Description | _(unparsed)_ unconstrained | false |  | Defaults to empty when omitted. |
+| Name | _(unparsed)_ unconstrained | false |  | The name of this family. |
+| Description | _(unparsed)_ unconstrained | true |  | A description of this family of processes. |
 
-
-### Indexes
-
-- key [Name]
-
-
-## Invariants
-
-- Phase name is unique among phases of this family.
-    - **∀ p ∈ self.HasPhases : _FiniteSets!Cardinality({q ∈ self.HasPhases : q.name = p.name}) = 1**
-- Defect type name is unique among defect types of this family.
-    - **∀ d ∈ self.HasDefectTypes : _FiniteSets!Cardinality({q ∈ self.HasDefectTypes : q.name = d.name}) = 1**
 
 
 
@@ -47,7 +37,7 @@ class class_domain_process_subdomain_family_class_defect_type["Defect Type"] {
         Base Num
     }
 class class_domain_process_subdomain_family_class_family["Family"] {
-        Name [key]
+        Name
         Description
     }
 class class_domain_process_subdomain_family_class_language["Language"] {
@@ -72,67 +62,17 @@ class class_domain_process_subdomain_process_class_process["Process"] {
             Size K Unit
         }
 }
-namespace Project.Estimation {
-class class_domain_project_subdomain_estimation_class_estimate["Estimate"] {
-            Axis
-            Scope
-            Version
-            Mean
-            Variance
-            Low
-            High
-            Actual
-            Method
-            Prediction Interval
-            Comment
-            Estimation Time
-            Guess Lowest 80 Pred
-            Guess Highest 80 Pred
-            Sum Count
-            Sum Mean
-            Sum Variance
-            Portion Portion
-            Portion Mean
-            Portion Variance
-        }
-class class_domain_project_subdomain_estimation_class_estimate_historic["Estimate Historic"] {
-            Axis
-            Scope
-            Version
-            Mean
-            Variance
-            Low
-            High
-            Actual
-            Method
-            Prediction Interval
-            Comment
-            Estimation Time
-            Guess Lowest 80 Pred
-            Guess Highest 80 Pred
-            Sum Count
-            Sum Mean
-            Sum Variance
-            Portion Portion
-            Portion Mean
-            Portion Variance
-        }
-}
 style class_domain_process_subdomain_family_class_family stroke:#9370DB,stroke-width:3px
-class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_project_subdomain_estimation_class_estimate : Has Estimates
-class_domain_project_subdomain_estimation_class_estimate_historic "*" --> "1" class_domain_process_subdomain_family_class_family : Belongs To Family
 class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_process_class_process : Has Processes<br/>{unique → Name, Version, Version Minor}
-class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_defect_type : Has Defect Types<br/>{unique → Num}
+class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_defect_type : Has Defect Types<br/>{unique → Name}<br/>{unique → Num}
 class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_language : Has Languages<br/>{unique → Name}
 class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_phase : Has Phases<br/>{unique → Name}<br/>{unique → Num}
 
 ```
 - **[Defect Type](class-domain.process.subdomain.family.class.defect_type.md).** A type of defect classified within a process family.
-- **[Project::Estimation::Estimate](class-domain.project.subdomain.estimation.class.estimate.md).** An estimate of size or time, categorized by family, language, axis, and scope.
-- **[Project::Estimation::Estimate Historic](class-domain.project.subdomain.estimation.class.estimate_historic.md).** A stored prior iteration of an estimate.
-- **[Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
+- **[Family](class-domain.process.subdomain.family.class.family.md).** A family is a shared group of processes, and by extention a shared group of projects that use those processes.
 - **[Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
-- **[Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 
 

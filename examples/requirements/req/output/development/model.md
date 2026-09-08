@@ -1,23 +1,13 @@
-# Development Process
+# Development
 
-A process-definition and running-project catalog used to test the requirements tool.
+A process-definition and project tracking tool for running single person projects.
 
-Process is the definition of a process family. Project is data recorded for a running project that follows a process.
+The inspiration for this tool is A Discipline for Software Engineering by Watts S. Humphrey.
 
-Surrogate primary keys are object identity. Foreign keys are associations. Remaining columns are attributes. Commented SQL drafts are included: duplicate CREATE bodies for the same table are unioned; CREATE TABLE names that do not match DROP TABLE follow the DROP name.
-
-## Live tables
+## Review To Do 
 
 | Table | Column | Model |
 | --- | --- | --- |
-| family | family_id | Family identity |
-| family | name | Family.name (unique index) |
-| family | description | Family.description |
-| phase | phase_id | Phase identity |
-| phase | family_id | Family Has Phases |
-| phase | num | Phase.num (unique per family) |
-| phase | name | Phase.name (unique per family) |
-| phase | description | Phase.description |
 | defect_type | defect_type_id | Defect Type identity |
 | defect_type | family_id | Family Has Defect Types |
 | defect_type | num | Defect Type.num (unique per family) |
@@ -81,11 +71,6 @@ Surrogate primary keys are object identity. Foreign keys are associations. Remai
 | estimate_historic | language_id | Estimate Historic Uses Language |
 | estimate_historic | version | Estimate Historic.version (unique per estimate) |
 | estimate_historic | remaining columns | Same attributes as Estimate |
-
-## Commented tables
-
-| Table | Column | Model |
-| --- | --- | --- |
 | method | method_id | Method identity |
 | method | name | Method.name (unique index) |
 | method | description | Method.description |

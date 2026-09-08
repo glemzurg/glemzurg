@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md)
 
 # Process
 
@@ -48,7 +48,7 @@ class class_domain_process_subdomain_definition_class_module_template["Module Te
 }
 namespace Family {
 class class_domain_process_subdomain_family_class_family["Family"] {
-            Name [key]
+            Name
             Description
         }
 class class_domain_process_subdomain_family_class_phase["Phase"] {
@@ -113,9 +113,9 @@ class_domain_process_subdomain_process_class_script "1" --> "*" class_domain_pro
 - **[Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Script](class-domain.process.subdomain.process.class.script.md).** A step-by-step process script owned by a process.
 - **[Step](class-domain.process.subdomain.process.class.step.md).** A step of a process script.
-- **[Family::Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
+- **[Family::Family](class-domain.process.subdomain.family.class.family.md).** A family is a shared group of processes, and by extention a shared group of projects that use those processes.
 - **[Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
-- **[Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.

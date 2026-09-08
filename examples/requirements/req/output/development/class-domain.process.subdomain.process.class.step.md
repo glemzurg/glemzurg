@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Process](subdomain-domain.process.subdomain.process.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Process](subdomain-domain.process.subdomain.process.md)
 
 # Step
 
@@ -100,7 +100,7 @@ class_domain_process_subdomain_process_class_step "*" --> "1" class_domain_proce
 class_domain_process_subdomain_process_class_script "1" --> "*" class_domain_process_subdomain_process_class_step : Has Steps<br/>{unique → Num}
 
 ```
-- **[Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.

@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Schedule](subdomain-domain.project.subdomain.schedule.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Schedule](subdomain-domain.project.subdomain.schedule.md)
 
 # Schedule Week
 

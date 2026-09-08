@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Quality](subdomain-domain.project.subdomain.quality.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Quality](subdomain-domain.project.subdomain.quality.md)
 
 # Test Case
 
@@ -13,7 +13,7 @@ A test case defined for a project.
 | ---- | ----- | -------- | ---- | --------------------- |
 | Found Time | _(unparsed)_ datetime | false |  |  |
 | Objective | _(unparsed)_ unconstrained | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 | Conditions | _(unparsed)_ unconstrained | false |  |  |
 | Expected | _(unparsed)_ unconstrained | false |  |  |
 

@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Statistics](domain-domain.statistics.md)
+[⇦ Development](model.md) / [Statistics](domain-domain.statistics.md)
 
 # Model Facts — Default
 

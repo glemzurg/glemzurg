@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Definition](subdomain-domain.process.subdomain.definition.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Definition](subdomain-domain.process.subdomain.definition.md)
 
 # Probe Object Size
 
@@ -13,7 +13,7 @@ A relative size category used when estimating objects with PROBE.
 | ---- | ----- | -------- | ---- | --------------------- |
 | Number | _(unparsed)_ [0 .. unconstrained] at 1 unit | false |  |  |
 | Name | _(unparsed)_ unconstrained | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 
 
 

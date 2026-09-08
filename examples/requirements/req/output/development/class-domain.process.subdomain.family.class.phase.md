@@ -1,8 +1,10 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Family](subdomain-domain.process.subdomain.family.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Family](subdomain-domain.process.subdomain.family.md)
 
 # Phase
 
-Fundamental phase skeleton for a process family.
+Fundamental phase skeleton for all the processes in a family.
+
+Not every process will use every phase, but all processes use phases that are shared across the family.
 
 
 
@@ -11,9 +13,9 @@ Fundamental phase skeleton for a process family.
 
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
-| Num | _(unparsed)_ [0 .. unconstrained] at 1 unit | false |  | Order of this phase within the family. |
-| Name | _(unparsed)_ unconstrained | false |  | Unique among phases of the same family. |
-| Description | _(unparsed)_ unconstrained | false |  | Defaults to empty when omitted. |
+| Num | _(unparsed)_ [1 .. unconstrained] at 1 unit | false |  | Order of this phase within the family, same order across all processes. |
+| Name | _(unparsed)_ unconstrained | false |  | Unique among phases of the same family, same name across all processes. |
+| Description | _(unparsed)_ unconstrained | true |  | A high level description of this phase. |
 
 
 
@@ -30,7 +32,7 @@ config:
 ---
 classDiagram
 class class_domain_process_subdomain_family_class_family["Family"] {
-        Name [key]
+        Name
         Description
     }
 class class_domain_process_subdomain_family_class_phase["Phase"] {
@@ -149,6 +151,7 @@ class class_domain_project_subdomain_quality_class_defect["Defect"] {
             Cycle
             Fix Minutes
             Description
+            Prevention
             Test Defect
         }
 class class_domain_project_subdomain_quality_class_issue["Issue"] {
@@ -218,9 +221,9 @@ class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_proc
 - **[Project::Estimation::Estimate Probe Add Loc](class-domain.project.subdomain.estimation.class.estimate_probe_add_loc.md).** An added-object line in a PROBE size estimate.
 - **[Project::Estimation::Estimate Probe Object Loc](class-domain.project.subdomain.estimation.class.estimate_probe_object_loc.md).** A new-object line in a PROBE size estimate.
 - **[Project::Estimation::Estimate Probe Object Reused](class-domain.project.subdomain.estimation.class.estimate_probe_object_reused.md).** A reused-object line in a PROBE size estimate.
-- **[Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
+- **[Family](class-domain.process.subdomain.family.class.family.md).** A family is a shared group of processes, and by extention a shared group of projects that use those processes.
 - **[Project::Quality::Issue](class-domain.project.subdomain.quality.class.issue.md).** An issue found in a project phase, with an optional resolution.
-- **[Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Project::Core::Phase Products Check](class-domain.project.subdomain.core.class.phase_products_check.md).** Whether a project's products for a phase are satisfied.
 - **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.

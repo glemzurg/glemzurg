@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Core](subdomain-domain.project.subdomain.core.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Core](subdomain-domain.project.subdomain.core.md)
 
 # Project
 
@@ -12,7 +12,7 @@ Work that follows a process. The two commented project drafts are one class: ins
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
 | Name | _(unparsed)_ unconstrained | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 | Created Time | _(unparsed)_ datetime | false |  |  |
 | Started Time | _(unparsed)_ datetime | true |  | Empty when the project has not started. |
 | Estimate Minute | _(unparsed)_ [0 .. unconstrained] at 1 minute | false |  | Defaults to 0. |
@@ -199,6 +199,7 @@ class class_domain_project_subdomain_quality_class_defect["Defect"] {
             Cycle
             Fix Minutes
             Description
+            Prevention
             Test Defect
         }
 class class_domain_project_subdomain_quality_class_issue["Issue"] {
@@ -311,7 +312,7 @@ class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_proje
 - **[Process::Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Process::Estimate::Method](class-domain.process.subdomain.estimate.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Process::Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Phase Products Check](class-domain.project.subdomain.core.class.phase_products_check.md).** Whether a project's products for a phase are satisfied.
 - **[Process::Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.

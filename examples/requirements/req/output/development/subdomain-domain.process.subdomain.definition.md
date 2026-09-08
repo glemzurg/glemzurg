@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md)
 
 # Definition
 

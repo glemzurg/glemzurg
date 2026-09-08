@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Estimate](subdomain-domain.process.subdomain.estimate.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Estimate](subdomain-domain.process.subdomain.estimate.md)
 
 # Method
 
@@ -12,7 +12,7 @@ A programming method used when recording phase statistics for a project.
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
 | Name [key] | _(unparsed)_ unconstrained | false |  | Unique name of this method. |
-| Description | _(unparsed)_ unconstrained | false |  | Defaults to empty when omitted. |
+| Description | _(unparsed)_ unconstrained | true |  | Defaults to empty when omitted. |
 
 
 ### Indexes

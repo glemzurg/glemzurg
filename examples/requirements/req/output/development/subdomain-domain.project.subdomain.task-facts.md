@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Task](subdomain-domain.project.subdomain.task.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Task](subdomain-domain.project.subdomain.task.md)
 
 # Model Facts — Task
 

@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Process](subdomain-domain.process.subdomain.process.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Process](subdomain-domain.process.subdomain.process.md)
 
 # Process
 
@@ -67,7 +67,7 @@ class class_domain_process_subdomain_definition_class_module_template["Module Te
 }
 namespace Family {
 class class_domain_process_subdomain_family_class_family["Family"] {
-            Name [key]
+            Name
             Description
         }
 }
@@ -107,7 +107,7 @@ class_domain_process_subdomain_process_class_process "*" --> "0..1" class_domain
 class_domain_process_subdomain_process_class_process "1" --> "*" class_domain_process_subdomain_process_class_script : Has Scripts<br/>{unique → Num}
 
 ```
-- **[Family::Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
+- **[Family::Family](class-domain.process.subdomain.family.class.family.md).** A family is a shared group of processes, and by extention a shared group of projects that use those processes.
 - **[Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
 - **[Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.

@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Task](subdomain-domain.project.subdomain.task.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Task](subdomain-domain.project.subdomain.task.md)
 
 # Task
 
@@ -81,7 +81,7 @@ class_domain_project_subdomain_task_class_task "*" --> "1" class_domain_project_
 class_domain_project_subdomain_task_class_time_log "*" --> "1" class_domain_project_subdomain_task_class_task : For Task
 
 ```
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Schedule::Schedule Week](class-domain.project.subdomain.schedule.class.schedule_week.md).** One week (or day slot) on a project schedule.
 - **[Task](class-domain.project.subdomain.task.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.

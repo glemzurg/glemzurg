@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Method](subdomain-domain.process.subdomain.method.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Method](subdomain-domain.process.subdomain.method.md)
 
 # Design Method
 
@@ -12,7 +12,7 @@ A design template used when planning a project or module.
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
 | Name | _(unparsed)_ unconstrained | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  | The various design templates used. |
+| Description | _(unparsed)_ unconstrained | true |  | The various design templates used. |
 
 
 

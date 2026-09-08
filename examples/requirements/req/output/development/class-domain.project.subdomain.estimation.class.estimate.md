@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Estimation](subdomain-domain.project.subdomain.estimation.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Estimation](subdomain-domain.project.subdomain.estimation.md)
 
 # Estimate
 
@@ -101,24 +101,18 @@ class class_domain_project_subdomain_estimation_class_estimate_historic["Estimat
         Portion Variance
     }
 namespace Process.Family {
-class class_domain_process_subdomain_family_class_family["Family"] {
-            Name [key]
-            Description
-        }
 class class_domain_process_subdomain_family_class_language["Language"] {
             Name
             Description
         }
 }
 style class_domain_project_subdomain_estimation_class_estimate stroke:#9370DB,stroke-width:3px
-class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_project_subdomain_estimation_class_estimate : Has Estimates
 class_domain_project_subdomain_estimation_class_estimate "*" --> "1" class_domain_process_subdomain_family_class_language : Uses Language
 class_domain_project_subdomain_estimation_class_estimate "1" --> "*" class_domain_project_subdomain_estimation_class_estimate_historic : Has History<br/>{unique → Version}
 
 ```
 - **[Estimate](class-domain.project.subdomain.estimation.class.estimate.md).** An estimate of size or time, categorized by family, language, axis, and scope.
 - **[Estimate Historic](class-domain.project.subdomain.estimation.class.estimate_historic.md).** A stored prior iteration of an estimate.
-- **[Process::Family::Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
 - **[Process::Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 
 

@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Quality](subdomain-domain.project.subdomain.quality.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Quality](subdomain-domain.project.subdomain.quality.md)
 
 # Issue
 
@@ -13,7 +13,7 @@ An issue found in a project phase, with an optional resolution.
 | ---- | ----- | -------- | ---- | --------------------- |
 | Found Time | _(unparsed)_ datetime | false |  |  |
 | Cycle | _(unparsed)_ [0 .. unconstrained] at 1 unit | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 | Resolution Time | _(unparsed)_ datetime | false |  |  |
 | Resolution | _(unparsed)_ unconstrained | false |  |  |
 
@@ -69,7 +69,7 @@ class_domain_project_subdomain_quality_class_issue "*" --> "1" class_domain_proj
 
 ```
 - **[Issue](class-domain.project.subdomain.quality.class.issue.md).** An issue found in a project phase, with an optional resolution.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 
 

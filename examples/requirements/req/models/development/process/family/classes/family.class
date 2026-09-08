@@ -16,6 +16,7 @@ attributes:
       name: Description
       details: A description of this family of processes.
       rules: unconstrained
+      nullable: true
       type_spec: STRING
 
 associations:

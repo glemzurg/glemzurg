@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Method](subdomain-domain.process.subdomain.method.md)
+[⇦ Development](model.md) / [Process](domain-domain.process.md) / [Method](subdomain-domain.process.subdomain.method.md)
 
 # Model Facts — Method
 

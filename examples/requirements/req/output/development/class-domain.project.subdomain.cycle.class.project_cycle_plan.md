@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Cycle](subdomain-domain.project.subdomain.cycle.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Cycle](subdomain-domain.project.subdomain.cycle.md)
 
 # Project Cycle Plan
 

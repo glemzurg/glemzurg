@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Estimation](subdomain-domain.project.subdomain.estimation.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Estimation](subdomain-domain.project.subdomain.estimation.md)
 
 # Actual Loc
 
@@ -77,7 +77,7 @@ class_domain_project_subdomain_core_class_project "1" --> "0..1" class_domain_pr
 
 ```
 - **[Actual Loc](class-domain.project.subdomain.estimation.class.actual_loc.md).** Actual lines-of-code account for a project.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 
 

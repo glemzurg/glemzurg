@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md)
 
 # Core
 
@@ -174,6 +174,7 @@ class class_domain_project_subdomain_quality_class_defect["Defect"] {
             Cycle
             Fix Minutes
             Description
+            Prevention
             Test Defect
         }
 class class_domain_project_subdomain_quality_class_issue["Issue"] {
@@ -301,7 +302,7 @@ class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_proje
 - **[Process::Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Process::Estimate::Method](class-domain.process.subdomain.estimate.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Process::Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Process::Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Cycle::Project Cycle Actual](class-domain.project.subdomain.cycle.class.project_cycle_actual.md).** Actual recording values for one cycle of a project.

@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Quality](subdomain-domain.project.subdomain.quality.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Quality](subdomain-domain.project.subdomain.quality.md)
 
 # Process Improvement Proposal
 
@@ -87,7 +87,7 @@ class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_proces
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_project_subdomain_core_class_project : On Project
 
 ```
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Process::Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.

@@ -15,4 +15,5 @@ attributes:
       name: Description
       details: Defaults to empty when omitted.
       rules: unconstrained
+      nullable: true
       type_spec: STRING

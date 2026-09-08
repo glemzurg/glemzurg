@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Project](domain-domain.project.md) / [Core](subdomain-domain.project.subdomain.core.md)
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Core](subdomain-domain.project.subdomain.core.md)
 
 # Project Part
 
@@ -12,7 +12,7 @@ A language-specific part of a project.
 | Name | Rules | Nullable | TLA+ | Comments / Invariants |
 | ---- | ----- | -------- | ---- | --------------------- |
 | Name | _(unparsed)_ unconstrained | false |  |  |
-| Description | _(unparsed)_ unconstrained | false |  |  |
+| Description | _(unparsed)_ unconstrained | true |  |  |
 | Multi Day | _(unparsed)_ enum of TRUE, FALSE | false |  | SQL column mutli_day. |
 | Planned Time | _(unparsed)_ [0 .. unconstrained] at 1 unit | false |  |  |
 | Actual Time | _(unparsed)_ [0 .. unconstrained] at 1 unit | false |  |  |
@@ -122,7 +122,7 @@ class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_proje
 - **[Process::Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Process::Estimate::Method](class-domain.process.subdomain.estimate.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Process::Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 - **[Statistics::Stats Bucket](class-domain.statistics.subdomain.default.class.stats_bucket.md).** A bucket used to group project statistics.

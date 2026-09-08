@@ -12,6 +12,7 @@ attributes:
     - key: description
       name: Description
       rules: unconstrained
+      nullable: true
       type_spec: STRING
     - key: multi_day
       name: Multi Day

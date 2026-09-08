@@ -13,4 +13,5 @@ attributes:
       name: Description
       details: The various design templates used.
       rules: unconstrained
+      nullable: true
       type_spec: STRING

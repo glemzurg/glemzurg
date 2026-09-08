@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md)
+[⇦ Development](model.md)
 
 # Process
 
@@ -19,7 +19,7 @@ subdomain_domain_process_subdomain_definition -.-> subdomain_domain_process_subd
 subdomain_domain_process_subdomain_definition -.-> subdomain_domain_process_subdomain_family
 subdomain_domain_process_subdomain_definition -.-> subdomain_domain_process_subdomain_method
 subdomain_domain_process_subdomain_definition -.-> subdomain_domain_process_subdomain_process
-subdomain_domain_process_subdomain_process -.-> subdomain_domain_process_subdomain_family
+subdomain_domain_process_subdomain_family -.-> subdomain_domain_process_subdomain_process
 
 ```
 
