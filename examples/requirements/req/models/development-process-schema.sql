@@ -36,20 +36,20 @@
 
 # ------------------------------------------------------------
 
-DROP TABLE IF EXISTS `defect_type`;
+-- DROP TABLE IF EXISTS `defect_type`;
 
-CREATE TABLE `defect_type` ( # type of defect
-  `defect_type_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `family_id` int(11) unsigned NOT NULL,
-  `num` int(11) unsigned NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `description` varchar(255) NOT NULL,
-  `base_num` int(11) unsigned NOT NULL,
-  PRIMARY KEY (`defect_type_id`),
-  UNIQUE KEY (`family_id`, `num`),
-  UNIQUE KEY (`family_id`, `name`),
-  CONSTRAINT `fk_defect_type_family` FOREIGN KEY (`family_id`) REFERENCES `family` (`family_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- CREATE TABLE `defect_type` ( # type of defect
+--   `defect_type_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+--   `family_id` int(11) unsigned NOT NULL,
+--   `num` int(11) unsigned NOT NULL,
+--   `name` varchar(255) NOT NULL,
+--   `description` varchar(255) NOT NULL,
+--   `base_num` int(11) unsigned NOT NULL,
+--   PRIMARY KEY (`defect_type_id`),
+--   UNIQUE KEY (`family_id`, `num`),
+--   UNIQUE KEY (`family_id`, `name`),
+--   CONSTRAINT `fk_defect_type_family` FOREIGN KEY (`family_id`) REFERENCES `family` (`family_id`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 # ------------------------------------------------------------
 

@@ -34,6 +34,11 @@ attributes:
       type_spec: BOOLEAN
 
 associations:
+    - name: Is Of Type
+      details: The category of defect this is.
+      from_multiplicity: "any"
+      to_class_key: process/family/defect_type
+      to_multiplicity: "1"
     - name: Injected In
       details: Project where this defect was injected.
       from_multiplicity: any

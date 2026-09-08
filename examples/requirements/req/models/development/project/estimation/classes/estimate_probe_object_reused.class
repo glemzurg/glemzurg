@@ -23,5 +23,5 @@ associations:
     - name: For Phase
       details: Phase this reused-object line is for.
       from_multiplicity: any
-      to_class_key: process/family/phase
+      to_class_key: project/core/project_part
       to_multiplicity: "1"

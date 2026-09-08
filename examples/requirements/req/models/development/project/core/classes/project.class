@@ -87,7 +87,7 @@ associations:
     - name: Current Phase
       details: Phase whose forms are currently open, when one is set.
       from_multiplicity: any
-      to_class_key: process/family/phase
+      to_class_key: project/core/project_part
       to_multiplicity: "0..1"
     - name: Current Subphase
       details: Planning step currently taking place, when one is set.
@@ -143,7 +143,7 @@ associations:
     - name: Checks Phase Products
       details: Whether each phase's products are satisfied for this project.
       from_multiplicity: any
-      to_class_key: process/family/phase
+      to_class_key: project/core/project_part
       to_multiplicity: any
       association_class_key: phase_products_check
     - name: Has Schedule
@@ -174,7 +174,7 @@ associations:
     - name: Has Probe Estimate For
       details: PROBE size and time calculation for a phase of this project.
       from_multiplicity: "1"
-      to_class_key: process/family/phase
+      to_class_key: project/core/project_part
       to_multiplicity: any
       association_class_key: estimation/estimate_probe
     - name: Has Probe Add Loc
