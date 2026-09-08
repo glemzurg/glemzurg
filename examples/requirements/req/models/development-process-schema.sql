@@ -8,15 +8,15 @@
 
 # ------------------------------------------------------------
 
-DROP TABLE IF EXISTS `family`;
+-- DROP TABLE IF EXISTS `family`;
 
-CREATE TABLE `family` ( # core partitioning of the database
-  `family_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,The c
-  `description` varchar(255) NOT NULL default '',
-  PRIMARY KEY (`family_id`),
-  UNIQUE KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- CREATE TABLE `family` ( # core partitioning of the database
+--   `family_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+--   `name` varchar(255) NOT NULL,The c
+--   `description` varchar(255) NOT NULL default '',
+--   PRIMARY KEY (`family_id`),
+--   UNIQUE KEY (`name`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 # ------------------------------------------------------------
 

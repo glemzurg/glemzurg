@@ -129,11 +129,6 @@ invariants:
       specification: 'self.method = "portion" \/ (self.portion_portion = NULL /\ self.portion_mean = NULL /\ self.portion_variance = NULL)'
 
 associations:
-    - name: Belongs To Family
-      details: Family copied from the estimate this snapshot belongs to.
-      from_multiplicity: any
-      to_class_key: process/family/family
-      to_multiplicity: "1"
     - name: Uses Language
       details: Language copied from the estimate this snapshot belongs to.
       from_multiplicity: any

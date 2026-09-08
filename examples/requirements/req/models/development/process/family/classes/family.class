@@ -1,27 +1,22 @@
 # Family
 
-Core partitioning of the catalog. Phases, defect types, languages, processes, and estimates all belong to one family.
+A family is a shared group of processes, and by extention a shared group of projects that use those processes.
+
+The basic concept is that you may have a set of processes for writing software and a set of processes for writing a novel, and this is a way to bucket them easily.
 
 ◇
 
 attributes:
     - key: name
       name: Name
-      details: Unique name of this family.
+      details: The name of this family.
       rules: unconstrained
       type_spec: STRING
-      index_nums: [0]
     - key: description
       name: Description
-      details: Defaults to empty when omitted.
+      details: A description of this family of processes.
       rules: unconstrained
       type_spec: STRING
-
-invariants:
-    - details: Phase name is unique among phases of this family.
-      specification: '\A p \in self.HasPhases : _FiniteSets!Cardinality({ q \in self.HasPhases : q.name = p.name }) = 1'
-    - details: Defect type name is unique among defect types of this family.
-      specification: '\A d \in self.HasDefectTypes : _FiniteSets!Cardinality({ q \in self.HasDefectTypes : q.name = d.name }) = 1'
 
 associations:
     - name: Has Phases
@@ -31,7 +26,7 @@ associations:
       to_multiplicity: any
       uniqueness:
           to_attributes:
-              - num
+              - name
     - name: Has Defect Types
       details: Defect types classified for this family.
       from_multiplicity: "1"
@@ -58,8 +53,3 @@ associations:
               - name
               - version
               - version_minor
-    - name: Has Estimates
-      details: Size and time estimates recorded in this family.
-      from_multiplicity: "1"
-      to_class_key: project/estimation/estimate
-      to_multiplicity: any
