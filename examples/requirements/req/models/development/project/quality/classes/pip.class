@@ -28,16 +28,6 @@ associations:
       from_multiplicity: any
       to_class_key: core/project
       to_multiplicity: "1"
-    - name: On Process
-      details: Process this proposal is about.
-      from_multiplicity: any
-      to_class_key: process/process/process
-      to_multiplicity: "1"
-    - name: On Phase
-      details: Phase this proposal is about.
-      from_multiplicity: any
-      to_class_key: process/family/phase
-      to_multiplicity: "1"
     - name: On Subphase
       details: Planning step this proposal is about.
       from_multiplicity: any
