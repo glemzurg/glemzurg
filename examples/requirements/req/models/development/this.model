@@ -8,11 +8,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 
 | Table | Column | Model |
 | --- | --- | --- |
-| phase | phase_id | Phase identity |
-| phase | family_id | Family Has Phases |
-| phase | num | Phase.num (unique per family) |
-| phase | name | Phase.name (unique per family) |
-| phase | description | Phase.description |
 | defect_type | defect_type_id | Defect Type identity |
 | defect_type | family_id | Family Has Defect Types |
 | defect_type | num | Defect Type.num (unique per family) |

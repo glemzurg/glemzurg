@@ -1,22 +1,25 @@
 # Phase
 
-Fundamental phase skeleton for a process family.
+Fundamental phase skeleton for all the processes in a family.
+
+Not every process will use every phase, but all processes use phases that are shared across the family.
 
 ◇
 
 attributes:
     - key: num
       name: Num
-      details: Order of this phase within the family.
-      rules: "[0 .. unconstrained] at 1 unit"
+      details: Order of this phase within the family, same order across all processes.
+      rules: "[1 .. unconstrained] at 1 unit"
       type_spec: Nat
     - key: name
       name: Name
-      details: Unique among phases of the same family.
+      details: Unique among phases of the same family, same name across all processes.
       rules: unconstrained
       type_spec: STRING
     - key: description
       name: Description
-      details: Defaults to empty when omitted.
+      details: A high level description of this phase.
       rules: unconstrained
+      nullable: true
       type_spec: STRING

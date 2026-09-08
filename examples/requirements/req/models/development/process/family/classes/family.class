@@ -36,6 +36,8 @@ associations:
       to_multiplicity: any
       uniqueness:
           - to_attributes:
+                - name
+          - to_attributes:
                 - num
     - name: Has Languages
       details: Programming languages used when estimating in this family.
