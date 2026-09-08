@@ -23,7 +23,7 @@ associations:
     - name: For Phase
       details: Phase this added-object line is for.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "1"
     - name: Of Type
       details: PROBE type of this added object. SQL column type.

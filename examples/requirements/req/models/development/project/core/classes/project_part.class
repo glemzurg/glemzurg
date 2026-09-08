@@ -61,7 +61,7 @@ associations:
     - name: Current Phase
       details: Phase whose forms are currently open, when one is set.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "0..1"
     - name: Current Subphase
       details: Planning step currently taking place, when one is set.
@@ -83,5 +83,5 @@ associations:
     - name: Uses Language
       details: Language this part is implemented in.
       from_multiplicity: any
-      to_class_key: process/definition/language
+      to_class_key: process/family/language
       to_multiplicity: "1"

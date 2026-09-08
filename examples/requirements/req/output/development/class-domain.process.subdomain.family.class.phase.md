@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Definition](subdomain-domain.process.subdomain.definition.md)
+[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Family](subdomain-domain.process.subdomain.family.md)
 
 # Phase
 
@@ -29,20 +29,22 @@ config:
     hideEmptyMembersBox: true
 ---
 classDiagram
-class class_domain_process_subdomain_definition_class_family["Family"] {
+class class_domain_process_subdomain_family_class_family["Family"] {
         Name [key]
         Description
     }
-class class_domain_process_subdomain_definition_class_phase["Phase"] {
+class class_domain_process_subdomain_family_class_phase["Phase"] {
         Num
         Name
         Description
     }
+namespace Definition {
 class class_domain_process_subdomain_definition_class_step["Step"] {
-        Num
-        Name
-        Tasks
-    }
+            Num
+            Name
+            Tasks
+        }
+}
 namespace Project.Core {
 class class_domain_project_subdomain_core_class_phase_products_check["Phase Products Check"] {
             Satisfied
@@ -176,35 +178,35 @@ class class_domain_project_subdomain_quality_class_pip["Process Improvement Prop
             Resolved Time
         }
 }
-style class_domain_process_subdomain_definition_class_phase stroke:#9370DB,stroke-width:3px
-class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_checks_phase_products["Checks Phase Products"]
-<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_checks_phase_products
-class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for["Has Probe Estimate For"]
-<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for
-style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_checks_phase_products stroke:#333,stroke-dasharray:5 5
-style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
-class_domain_project_subdomain_core_class_project "*" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_checks_phase_products
-    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_checks_phase_products --> "*" class_domain_process_subdomain_definition_class_phase
-    class_domain_project_subdomain_core_class_phase_products_check .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_checks_phase_products
-class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_definition_class_phase : Current Phase
-class_domain_project_subdomain_core_class_project "1" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for
-    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for --> "*" class_domain_process_subdomain_definition_class_phase
-    class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for
-class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_domain_process_subdomain_definition_class_phase : Current Phase
-class_domain_project_subdomain_core_class_project_stat_phase "*" --> "1" class_domain_process_subdomain_definition_class_phase : For Phase
-class_domain_project_subdomain_core_class_task "*" --> "1" class_domain_process_subdomain_definition_class_phase : Occurs In
-class_domain_project_subdomain_core_class_time_log "*" --> "1" class_domain_process_subdomain_definition_class_phase : Occurs In
-class_domain_project_subdomain_estimation_class_actual_loc "*" --> "1" class_domain_process_subdomain_definition_class_phase : For Phase
-class_domain_project_subdomain_estimation_class_estimate_loc "*" --> "1" class_domain_process_subdomain_definition_class_phase : For Phase
-class_domain_project_subdomain_estimation_class_estimate_probe_add_loc "*" --> "1" class_domain_process_subdomain_definition_class_phase : For Phase
-class_domain_project_subdomain_estimation_class_estimate_probe_object_loc "*" --> "1" class_domain_process_subdomain_definition_class_phase : For Phase
-class_domain_project_subdomain_estimation_class_estimate_probe_object_reused "*" --> "1" class_domain_process_subdomain_definition_class_phase : For Phase
-class_domain_project_subdomain_quality_class_defect "*" --> "1" class_domain_process_subdomain_definition_class_phase : Injected In Phase
-class_domain_project_subdomain_quality_class_defect "*" --> "1" class_domain_process_subdomain_definition_class_phase : Removed In Phase
-class_domain_project_subdomain_quality_class_issue "*" --> "1" class_domain_process_subdomain_definition_class_phase : Injected In Phase
-class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_phase : On Phase
-class_domain_process_subdomain_definition_class_family "1" --> "*" class_domain_process_subdomain_definition_class_phase : Has Phases<br/>{unique → Num}
-class_domain_process_subdomain_definition_class_step "*" --> "1" class_domain_process_subdomain_definition_class_phase : Occurs In
+style class_domain_process_subdomain_family_class_phase stroke:#9370DB,stroke-width:3px
+class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products["Checks Phase Products"]
+<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
+class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for["Has Probe Estimate For"]
+<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
+style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products stroke:#333,stroke-dasharray:5 5
+style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
+class_domain_project_subdomain_core_class_project "*" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
+    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products --> "*" class_domain_process_subdomain_family_class_phase
+    class_domain_project_subdomain_core_class_phase_products_check .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
+class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_family_class_phase : Current Phase
+class_domain_project_subdomain_core_class_project "1" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
+    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for --> "*" class_domain_process_subdomain_family_class_phase
+    class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
+class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_domain_process_subdomain_family_class_phase : Current Phase
+class_domain_project_subdomain_core_class_project_stat_phase "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_core_class_task "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
+class_domain_project_subdomain_core_class_time_log "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
+class_domain_project_subdomain_estimation_class_actual_loc "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_estimation_class_estimate_loc "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_estimation_class_estimate_probe_add_loc "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_estimation_class_estimate_probe_object_loc "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_estimation_class_estimate_probe_object_reused "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_quality_class_defect "*" --> "1" class_domain_process_subdomain_family_class_phase : Injected In Phase
+class_domain_project_subdomain_quality_class_defect "*" --> "1" class_domain_process_subdomain_family_class_phase : Removed In Phase
+class_domain_project_subdomain_quality_class_issue "*" --> "1" class_domain_process_subdomain_family_class_phase : Injected In Phase
+class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_family_class_phase : On Phase
+class_domain_process_subdomain_definition_class_step "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
+class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_phase : Has Phases<br/>{unique → Num}
 
 ```
 - **[Project::Estimation::Actual Loc](class-domain.project.subdomain.estimation.class.actual_loc.md).** Actual lines-of-code account for a project.
@@ -214,15 +216,15 @@ class_domain_process_subdomain_definition_class_step "*" --> "1" class_domain_pr
 - **[Project::Estimation::Estimate Probe Add Loc](class-domain.project.subdomain.estimation.class.estimate_probe_add_loc.md).** An added-object line in a PROBE size estimate.
 - **[Project::Estimation::Estimate Probe Object Loc](class-domain.project.subdomain.estimation.class.estimate_probe_object_loc.md).** A new-object line in a PROBE size estimate.
 - **[Project::Estimation::Estimate Probe Object Reused](class-domain.project.subdomain.estimation.class.estimate_probe_object_reused.md).** A reused-object line in a PROBE size estimate.
-- **[Family](class-domain.process.subdomain.definition.class.family.md).** Core partitioning of the catalog.
+- **[Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
 - **[Project::Quality::Issue](class-domain.project.subdomain.quality.class.issue.md).** An issue found in a project phase, with an optional resolution.
-- **[Phase](class-domain.process.subdomain.definition.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
 - **[Project::Core::Phase Products Check](class-domain.project.subdomain.core.class.phase_products_check.md).** Whether a project's products for a phase are satisfied.
 - **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 - **[Project::Core::Project Stat Phase](class-domain.project.subdomain.core.class.project_stat_phase.md).** A per-phase statistical estimate on a project. stat_phase is Phase; bucket is Stats Bucket.
-- **[Step](class-domain.process.subdomain.definition.class.step.md).** A step of a process script.
+- **[Definition::Step](class-domain.process.subdomain.definition.class.step.md).** A step of a process script.
 - **[Project::Core::Task](class-domain.project.subdomain.core.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.
 - **[Project::Core::Time Log](class-domain.project.subdomain.core.class.time_log.md).** A recorded interval of work on a project.
 

@@ -32,10 +32,6 @@ class class_domain_process_subdomain_definition_class_design_method["Design Meth
         Name
         Description
     }
-class class_domain_process_subdomain_definition_class_language["Language"] {
-        Name
-        Description
-    }
 class class_domain_process_subdomain_definition_class_method["Method"] {
         Name [key]
         Description
@@ -55,6 +51,12 @@ class class_domain_process_subdomain_definition_class_process["Process"] {
         Size Unit
         Size K Unit
     }
+namespace Family {
+class class_domain_process_subdomain_family_class_language["Language"] {
+            Name
+            Description
+        }
+}
 namespace Project.Core {
 class class_domain_project_subdomain_core_class_project["Project"] {
             Name
@@ -98,15 +100,15 @@ class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_proce
 class_domain_project_subdomain_core_class_project_cycle_actual "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
 class_domain_project_subdomain_core_class_project_cycle_plan "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
 class_domain_project_subdomain_core_class_project_part "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
+class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_family_class_language : Uses Language
 class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_design_method : Uses Design Method
-class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_language : Uses Language
 class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_method : Uses Size Estimation Method
 class_domain_process_subdomain_definition_class_module_template "*" --> "1" class_domain_process_subdomain_definition_class_method : Uses Time Estimation Method
 class_domain_process_subdomain_definition_class_module_template "*" --> "0..1" class_domain_process_subdomain_definition_class_process : Follows Process
 
 ```
 - **[Design Method](class-domain.process.subdomain.definition.class.design_method.md).** A design template used when planning a project or module.
-- **[Language](class-domain.process.subdomain.definition.class.language.md).** A programming language used when estimating size or time in a process family.
+- **[Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Method](class-domain.process.subdomain.definition.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
 - **[Process](class-domain.process.subdomain.definition.class.process.md).** A versioned process to follow, owned by a family.

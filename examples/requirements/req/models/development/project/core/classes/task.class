@@ -26,7 +26,7 @@ associations:
     - name: Occurs In
       details: Phase this task is performed in.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "1"
     - name: On Week
       details: Schedule week this task is planned for.

@@ -29,5 +29,5 @@ associations:
     - name: Occurs In
       details: Phase of the family skeleton this step is performed in.
       from_multiplicity: any
-      to_class_key: phase
+      to_class_key: family/phase
       to_multiplicity: "1"

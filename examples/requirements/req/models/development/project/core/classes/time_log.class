@@ -30,7 +30,7 @@ associations:
     - name: Occurs In
       details: Phase this time was spent in.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "1"
     - name: For Task
       details: Task this time was spent on.

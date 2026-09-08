@@ -1,3 +1,9 @@
 # Definition
 
-The catalog of process families: phases, defect types, languages, methods, templates, processes, scripts, and steps.
+Processes, scripts, methods, and templates that a family uses.
+
+◇
+
+associations:
+
+    - solution_subdomain_key: family

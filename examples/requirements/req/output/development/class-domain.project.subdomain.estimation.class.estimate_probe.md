@@ -86,24 +86,24 @@ class class_domain_project_subdomain_core_class_project["Project"] {
             Planned Failure Coq
         }
 }
-namespace Process.Definition {
-class class_domain_process_subdomain_definition_class_phase["Phase"] {
+namespace Process.Family {
+class class_domain_process_subdomain_family_class_phase["Phase"] {
             Num
             Name
             Description
         }
 }
 style class_domain_project_subdomain_estimation_class_estimate_probe stroke:#9370DB,stroke-width:3px
-class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for["Has Probe Estimate For"]
-<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for
-style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
-class_domain_project_subdomain_core_class_project "1" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for
-    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for --> "*" class_domain_process_subdomain_definition_class_phase
-    class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_definition_class_phase_has_probe_estimate_for
+class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for["Has Probe Estimate For"]
+<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
+style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
+class_domain_project_subdomain_core_class_project "1" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
+    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for --> "*" class_domain_process_subdomain_family_class_phase
+    class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
 
 ```
 - **[Estimate Probe](class-domain.project.subdomain.estimation.class.estimate_probe.md).** PROBE size and time calculation for a project in a phase.
-- **[Process::Definition::Phase](class-domain.process.subdomain.definition.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 
 

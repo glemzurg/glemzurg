@@ -132,10 +132,10 @@ associations:
     - name: Belongs To Family
       details: Family copied from the estimate this snapshot belongs to.
       from_multiplicity: any
-      to_class_key: definition/family
+      to_class_key: family/family
       to_multiplicity: "1"
     - name: Uses Language
       details: Language copied from the estimate this snapshot belongs to.
       from_multiplicity: any
-      to_class_key: definition/language
+      to_class_key: family/language
       to_multiplicity: "1"

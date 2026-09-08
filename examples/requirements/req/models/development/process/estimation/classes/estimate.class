@@ -128,7 +128,7 @@ associations:
     - name: Uses Language
       details: Language this estimate is categorized by. The language must belong to the same family.
       from_multiplicity: any
-      to_class_key: definition/language
+      to_class_key: family/language
       to_multiplicity: "1"
     - name: Has History
       details: Prior versions of this estimate.

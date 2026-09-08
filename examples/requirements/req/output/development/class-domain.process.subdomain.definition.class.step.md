@@ -33,11 +33,6 @@ config:
     hideEmptyMembersBox: true
 ---
 classDiagram
-class class_domain_process_subdomain_definition_class_phase["Phase"] {
-        Num
-        Name
-        Description
-    }
 class class_domain_process_subdomain_definition_class_script["Script"] {
         Num
         Name
@@ -52,6 +47,13 @@ class class_domain_process_subdomain_definition_class_step["Step"] {
         Name
         Tasks
     }
+namespace Family {
+class class_domain_process_subdomain_family_class_phase["Phase"] {
+            Num
+            Name
+            Description
+        }
+}
 namespace Project.Core {
 class class_domain_project_subdomain_core_class_project["Project"] {
             Name
@@ -94,11 +96,11 @@ style class_domain_process_subdomain_definition_class_step stroke:#9370DB,stroke
 class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_definition_class_step : Current Subphase
 class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_domain_process_subdomain_definition_class_step : Current Subphase
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_step : On Subphase
+class_domain_process_subdomain_definition_class_step "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
 class_domain_process_subdomain_definition_class_script "1" --> "*" class_domain_process_subdomain_definition_class_step : Has Steps<br/>{unique → Num}
-class_domain_process_subdomain_definition_class_step "*" --> "1" class_domain_process_subdomain_definition_class_phase : Occurs In
 
 ```
-- **[Phase](class-domain.process.subdomain.definition.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
 - **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.

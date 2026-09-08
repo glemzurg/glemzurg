@@ -35,5 +35,5 @@ associations:
     - name: Injected In Phase
       details: Phase where this issue was found.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "1"

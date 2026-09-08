@@ -292,7 +292,7 @@ The domains of this model.
 graph TD
 domain_domain_process["Process"]
 domain_domain_project["Project"]
-domain_domain_project -.-> domain_domain_process
+domain_domain_process -.-> domain_domain_project
 
 ```
 

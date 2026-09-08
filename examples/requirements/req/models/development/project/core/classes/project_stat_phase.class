@@ -20,7 +20,7 @@ associations:
     - name: For Phase
       details: Phase these statistics are for.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "1"
     - name: In Bucket
       details: Stats bucket these statistics are grouped in.

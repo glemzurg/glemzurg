@@ -36,7 +36,7 @@ associations:
     - name: Injected In Phase
       details: Phase where this defect was injected.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "1"
     - name: Removed In
       details: Project where this defect was removed.
@@ -46,7 +46,7 @@ associations:
     - name: Removed In Phase
       details: Phase where this defect was removed.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "1"
     - name: Has Source
       details: Defect this one was cloned from, when one exists.

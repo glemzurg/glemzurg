@@ -6,8 +6,8 @@ Association multiplicity, association invariant, and index uniqueness constraint
 
 ## Associations
 
-- each Project (checks phase products) links to any number of Process::Definition::Phases; each Process::Definition::Phase may link to any number of Projects; each Project–Process::Definition::Phase pairing is a Phase Products Check (Whether each phase's products are satisfied for this project.).
-- each Project (current phase) may link to at most one Process::Definition::Phase; each Process::Definition::Phase may link to any number of Projects (Phase whose forms are currently open, when one is set.).
+- each Project (checks phase products) links to any number of Process::Family::Phases; each Process::Family::Phase may link to any number of Projects; each Project–Process::Family::Phase pairing is a Phase Products Check (Whether each phase's products are satisfied for this project.).
+- each Project (current phase) may link to at most one Process::Family::Phase; each Process::Family::Phase may link to any number of Projects (Phase whose forms are currently open, when one is set.).
 - each Project (current subphase) may link to at most one Process::Definition::Step; each Process::Definition::Step may link to any number of Projects (Planning step currently taking place, when one is set.).
 - each Project (follows process) links to exactly one Process::Definition::Process; each Process::Definition::Process may link to any number of Projects (Process this project follows.).
 - each Project (has actual loc) may link to at most one Estimation::Actual Loc; each Estimation::Actual Loc links to exactly one Project (Actual lines-of-code account for this project.).
@@ -16,7 +16,7 @@ Association multiplicity, association invariant, and index uniqueness constraint
 - each Project (has loc estimate) may link to at most one Estimation::Estimate Loc; each Estimation::Estimate Loc links to exactly one Project (Planned lines-of-code account for this project.).
 - each Project (has parts) links to any number of Project Parts; each Project Part links to exactly one Project (Language-specific parts of this project.).
 - each Project (has probe add loc) links to any number of Estimation::Estimate Probe Add Locs; each Estimation::Estimate Probe Add Loc links to exactly one Project (Added-object LOC lines in the PROBE estimate.).
-- each Project (has probe estimate for) links to any number of Process::Definition::Phases; each Process::Definition::Phase links to exactly one Project; each Project–Process::Definition::Phase pairing is a Estimation::Estimate Probe (PROBE size and time calculation for a phase of this project.).
+- each Project (has probe estimate for) links to any number of Process::Family::Phases; each Process::Family::Phase links to exactly one Project; each Project–Process::Family::Phase pairing is a Estimation::Estimate Probe (PROBE size and time calculation for a phase of this project.).
 - each Project (has probe object loc) links to any number of Estimation::Estimate Probe Object Locs; each Estimation::Estimate Probe Object Loc links to exactly one Project (New-object LOC lines in the PROBE estimate.).
 - each Project (has probe object reused) links to any number of Estimation::Estimate Probe Object Reuseds; each Estimation::Estimate Probe Object Reused links to exactly one Project (Reused-object LOC lines in the PROBE estimate.).
 - each Project (has schedule) may link to at most one Schedule; each Schedule links to exactly one Project (Schedule for recording planned work.).
@@ -26,20 +26,20 @@ Association multiplicity, association invariant, and index uniqueness constraint
 - each Project (in bucket) may link to at most one Process::Definition::Stats Bucket; each Process::Definition::Stats Bucket may link to any number of Projects (Stats bucket this project is grouped in, when one is set.).
 - each Project (instantiates) links to exactly one Process::Definition::Module Template; each Process::Definition::Module Template may link to any number of Projects (Module template this project is created from.).
 - each Project (uses design method) links to exactly one Process::Definition::Design Method; each Process::Definition::Design Method may link to any number of Projects (Design template used by this project.).
-- each Project (uses language) links to exactly one Process::Definition::Language; each Process::Definition::Language may link to any number of Projects (Language this project is implemented in.).
+- each Project (uses language) links to exactly one Process::Family::Language; each Process::Family::Language may link to any number of Projects (Language this project is implemented in.).
 - each Project (uses size estimation method) links to exactly one Process::Definition::Method; each Process::Definition::Method may link to any number of Projects (Method used to estimate size.).
 - each Project (uses time estimation method) links to exactly one Process::Definition::Method; each Process::Definition::Method may link to any number of Projects (Method used to estimate time.).
 - each Project Cycle Actual (instantiates) links to exactly one Process::Definition::Module Template; each Process::Definition::Module Template may link to any number of Project Cycle Actuals (Module template this cycle actual is based on.).
 - each Project Cycle Plan (instantiates) links to exactly one Process::Definition::Module Template; each Process::Definition::Module Template may link to any number of Project Cycle Plans (Module template this cycle plan is based on.).
-- each Project Part (current phase) may link to at most one Process::Definition::Phase; each Process::Definition::Phase may link to any number of Project Parts (Phase whose forms are currently open, when one is set.).
+- each Project Part (current phase) may link to at most one Process::Family::Phase; each Process::Family::Phase may link to any number of Project Parts (Phase whose forms are currently open, when one is set.).
 - each Project Part (current subphase) may link to at most one Process::Definition::Step; each Process::Definition::Step may link to any number of Project Parts (Planning step currently taking place, when one is set.).
 - each Project Part (in bucket) may link to at most one Process::Definition::Stats Bucket; each Process::Definition::Stats Bucket may link to any number of Project Parts (Stats bucket this part is grouped in, when one is set.).
 - each Project Part (instantiates) links to exactly one Process::Definition::Module Template; each Process::Definition::Module Template may link to any number of Project Parts (Module template this part is created from.).
 - each Project Part (uses design method) links to exactly one Process::Definition::Design Method; each Process::Definition::Design Method may link to any number of Project Parts.
-- each Project Part (uses language) links to exactly one Process::Definition::Language; each Process::Definition::Language may link to any number of Project Parts (Language this part is implemented in.).
+- each Project Part (uses language) links to exactly one Process::Family::Language; each Process::Family::Language may link to any number of Project Parts (Language this part is implemented in.).
 - each Project Part (uses size estimation method) links to exactly one Process::Definition::Method; each Process::Definition::Method may link to any number of Project Parts.
 - each Project Part (uses time estimation method) links to exactly one Process::Definition::Method; each Process::Definition::Method may link to any number of Project Parts.
-- each Project Stat Phase (for phase) links to exactly one Process::Definition::Phase; each Process::Definition::Phase may link to any number of Project Stat Phases (Phase these statistics are for.).
+- each Project Stat Phase (for phase) links to exactly one Process::Family::Phase; each Process::Family::Phase may link to any number of Project Stat Phases (Phase these statistics are for.).
 - each Project Stat Phase (in bucket) links to exactly one Process::Definition::Stats Bucket; each Process::Definition::Stats Bucket may link to any number of Project Stat Phases (Stats bucket these statistics are grouped in.).
 - each Project Stat Phase (uses method) may link to at most one Process::Definition::Method; each Process::Definition::Method may link to any number of Project Stat Phases (Programming method for these statistics, when one is set.).
 - each Quality::Defect (injected in) links to exactly one Project; each Project may link to any number of Quality::Defects (Project where this defect was injected.).
@@ -50,8 +50,8 @@ Association multiplicity, association invariant, and index uniqueness constraint
 - each Quality::Test Case Result (for project) links to exactly one Project; each Project may link to any number of Quality::Test Case Results (Project this result was recorded against.).
 - each Schedule (has weeks) links to any number of Schedule Weeks; each Schedule Week links to exactly one Schedule; each Schedule–Schedule Week pairing has the uniqueness → Num (Ordered weeks (or day slots) on this schedule.).
 - each Schedule Week (for project) links to exactly one Project; each Project may link to any number of Schedule Weeks (Project this week belongs to, copied from the schedule.).
-- each Task (occurs in) links to exactly one Process::Definition::Phase; each Process::Definition::Phase may link to any number of Tasks (Phase this task is performed in.).
+- each Task (occurs in) links to exactly one Process::Family::Phase; each Process::Family::Phase may link to any number of Tasks (Phase this task is performed in.).
 - each Task (on week) links to exactly one Schedule Week; each Schedule Week may link to any number of Tasks (Schedule week this task is planned for.).
 - each Time Log (for task) links to exactly one Task; each Task may link to any number of Time Logs (Task this time was spent on.).
-- each Time Log (occurs in) links to exactly one Process::Definition::Phase; each Process::Definition::Phase may link to any number of Time Logs (Phase this time was spent in.).
+- each Time Log (occurs in) links to exactly one Process::Family::Phase; each Process::Family::Phase may link to any number of Time Logs (Phase this time was spent in.).
 

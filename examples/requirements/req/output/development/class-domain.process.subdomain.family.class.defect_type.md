@@ -1,4 +1,4 @@
-[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Definition](subdomain-domain.process.subdomain.definition.md)
+[⇦ Development Process](model.md) / [Process](domain-domain.process.md) / [Family](subdomain-domain.process.subdomain.family.md)
 
 # Defect Type
 
@@ -30,22 +30,22 @@ config:
     hideEmptyMembersBox: true
 ---
 classDiagram
-class class_domain_process_subdomain_definition_class_defect_type["Defect Type"] {
+class class_domain_process_subdomain_family_class_defect_type["Defect Type"] {
         Num
         Name
         Description
         Base Num
     }
-class class_domain_process_subdomain_definition_class_family["Family"] {
+class class_domain_process_subdomain_family_class_family["Family"] {
         Name [key]
         Description
     }
-style class_domain_process_subdomain_definition_class_defect_type stroke:#9370DB,stroke-width:3px
-class_domain_process_subdomain_definition_class_family "1" --> "*" class_domain_process_subdomain_definition_class_defect_type : Has Defect Types<br/>{unique → Num}
+style class_domain_process_subdomain_family_class_defect_type stroke:#9370DB,stroke-width:3px
+class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_defect_type : Has Defect Types<br/>{unique → Num}
 
 ```
-- **[Defect Type](class-domain.process.subdomain.definition.class.defect_type.md).** A type of defect classified within a process family.
-- **[Family](class-domain.process.subdomain.definition.class.family.md).** Core partitioning of the catalog.
+- **[Defect Type](class-domain.process.subdomain.family.class.defect_type.md).** A type of defect classified within a process family.
+- **[Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
 
 
 # State Machine

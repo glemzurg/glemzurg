@@ -63,21 +63,21 @@ class class_domain_project_subdomain_core_class_time_log["Time Log"] {
         Interruption Minutes
         Comments
     }
-namespace Process.Definition {
-class class_domain_process_subdomain_definition_class_phase["Phase"] {
+namespace Process.Family {
+class class_domain_process_subdomain_family_class_phase["Phase"] {
             Num
             Name
             Description
         }
 }
 style class_domain_project_subdomain_core_class_task stroke:#9370DB,stroke-width:3px
-class_domain_project_subdomain_core_class_task "*" --> "1" class_domain_process_subdomain_definition_class_phase : Occurs In
+class_domain_project_subdomain_core_class_task "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_task : Has Tasks
 class_domain_project_subdomain_core_class_task "*" --> "1" class_domain_project_subdomain_core_class_schedule_week : On Week
 class_domain_project_subdomain_core_class_time_log "*" --> "1" class_domain_project_subdomain_core_class_task : For Task
 
 ```
-- **[Process::Definition::Phase](class-domain.process.subdomain.definition.class.phase.md).** Fundamental phase skeleton for a process family.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for a process family.
 - **[Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Schedule Week](class-domain.project.subdomain.core.class.schedule_week.md).** One week (or day slot) on a project schedule.
 - **[Task](class-domain.project.subdomain.core.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.

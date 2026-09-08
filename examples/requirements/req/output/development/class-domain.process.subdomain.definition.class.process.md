@@ -39,10 +39,6 @@ config:
     hideEmptyMembersBox: true
 ---
 classDiagram
-class class_domain_process_subdomain_definition_class_family["Family"] {
-        Name [key]
-        Description
-    }
 class class_domain_process_subdomain_definition_class_module_template["Module Template"] {
         Name
         Description
@@ -67,6 +63,12 @@ class class_domain_process_subdomain_definition_class_script["Script"] {
         Exit Criteria
         Cycle
     }
+namespace Family {
+class class_domain_process_subdomain_family_class_family["Family"] {
+            Name [key]
+            Description
+        }
+}
 namespace Project.Core {
 class class_domain_project_subdomain_core_class_project["Project"] {
             Name
@@ -97,13 +99,13 @@ style class_domain_process_subdomain_definition_class_process stroke:#9370DB,str
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_process : Follows Process
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_process : On Process
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_definition_class_process : Resolved In Process
-class_domain_process_subdomain_definition_class_family "1" --> "*" class_domain_process_subdomain_definition_class_process : Has Processes<br/>{unique → Name, Version, Version Minor}
+class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_definition_class_process : Has Processes<br/>{unique → Name, Version, Version Minor}
 class_domain_process_subdomain_definition_class_module_template "*" --> "0..1" class_domain_process_subdomain_definition_class_process : Follows Process
 class_domain_process_subdomain_definition_class_process "*" --> "0..1" class_domain_process_subdomain_definition_class_process : Has Ancestor
 class_domain_process_subdomain_definition_class_process "1" --> "*" class_domain_process_subdomain_definition_class_script : Has Scripts<br/>{unique → Num}
 
 ```
-- **[Family](class-domain.process.subdomain.definition.class.family.md).** Core partitioning of the catalog.
+- **[Family::Family](class-domain.process.subdomain.family.class.family.md).** Core partitioning of the catalog.
 - **[Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
 - **[Process](class-domain.process.subdomain.definition.class.process.md).** A versioned process to follow, owned by a family.
 - **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.

@@ -42,5 +42,5 @@ associations:
     - name: For Phase
       details: Phase this size account is for.
       from_multiplicity: any
-      to_class_key: process/definition/phase
+      to_class_key: process/family/phase
       to_multiplicity: "1"
