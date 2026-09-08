@@ -138,9 +138,36 @@ func (suite *AssociationSuite) TestValidate() {
 				Name:         "Name",
 				FromClassKey: fromClassKey,
 				ToClassKey:   toClassKey,
-				Uniqueness:   &AssociationUniqueness{},
+				Uniqueness:   []AssociationUniqueness{{}},
 			},
 			errstr: "at least one",
+		},
+		{
+			testName: "error duplicate uniqueness constraints",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+				Uniqueness: []AssociationUniqueness{
+					NewAssociationUniqueness(nil, []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))}),
+					NewAssociationUniqueness(nil, []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))}),
+				},
+			},
+			errstr: "duplicates",
+		},
+		{
+			testName: "valid two uniqueness constraints",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+				Uniqueness: []AssociationUniqueness{
+					NewAssociationUniqueness(nil, []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "name"))}),
+					NewAssociationUniqueness(nil, []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "num"))}),
+				},
+			},
 		},
 		{
 			testName: "error AssociationClassKey wrong key type",
@@ -183,8 +210,8 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 
-	uniqueness := NewAssociationUniqueness(nil, []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))})
-	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, AssociationOptions{AssociationClassKey: &assocClassKey, Uniqueness: &uniqueness, UmlComment: "UmlComment"})
+	uniqueness := []AssociationUniqueness{NewAssociationUniqueness(nil, []identity.Key{helper.Must(identity.NewAttributeKey(toClassKey, "code"))})}
+	assoc := NewAssociation(key, AssociationDetails{Name: "Name", Details: "Details"}, AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity}, AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity}, AssociationOptions{AssociationClassKey: &assocClassKey, Uniqueness: uniqueness, UmlComment: "UmlComment"})
 	suite.Equal(Association{
 		Key:                 key,
 		Name:                "Name",
@@ -193,7 +220,7 @@ func (suite *AssociationSuite) TestNew() {
 		FromMultiplicity:    multiplicity,
 		ToClassKey:          toClassKey,
 		ToMultiplicity:      multiplicity,
-		Uniqueness:          &uniqueness,
+		Uniqueness:          uniqueness,
 		AssociationClassKey: &assocClassKey,
 		UmlComment:          "UmlComment",
 	}, assoc)
@@ -250,6 +277,19 @@ func (suite *AssociationSuite) TestValidateReferences() {
 		fromClassKey:  NewClass(fromClassKey, ClassLinks{}, ClassDetails{Name: "From"}),
 		toClassKey:    NewClass(toClassKey, ClassLinks{}, ClassDetails{Name: "To"}),
 		assocClassKey: NewClass(assocClassKey, ClassLinks{}, ClassDetails{Name: "Assoc"}),
+	}
+	nameAttrKey := helper.Must(identity.NewAttributeKey(toClassKey, "name"))
+	numAttrKey := helper.Must(identity.NewAttributeKey(toClassKey, "num"))
+	missingAttrKey := helper.Must(identity.NewAttributeKey(toClassKey, "missing"))
+	toClassWithAttrs := NewClass(toClassKey, ClassLinks{}, ClassDetails{Name: "To"})
+	toClassWithAttrs.SetAttributes([]Attribute{
+		helper.Must(NewAttribute(nameAttrKey, AttributeDetails{Name: "Name"}, "unconstrained", nil, true, AttributeAnnotations{})),
+		helper.Must(NewAttribute(numAttrKey, AttributeDetails{Name: "Num"}, "unconstrained", nil, true, AttributeAnnotations{})),
+	})
+	classesWithUniquenessAttrs := map[identity.Key]Class{
+		fromClassKey:  classes[fromClassKey],
+		toClassKey:    toClassWithAttrs,
+		assocClassKey: classes[assocClassKey],
 	}
 
 	tests := []struct {
@@ -312,6 +352,35 @@ func (suite *AssociationSuite) TestValidateReferences() {
 			},
 			classes: classes,
 			errstr:  "references non-existent association class",
+		},
+		{
+			testName: "valid two uniqueness constraints",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+				Uniqueness: []AssociationUniqueness{
+					NewAssociationUniqueness(nil, []identity.Key{nameAttrKey}),
+					NewAssociationUniqueness(nil, []identity.Key{numAttrKey}),
+				},
+			},
+			classes: classesWithUniquenessAttrs,
+		},
+		{
+			testName: "error second uniqueness attribute missing",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+				Uniqueness: []AssociationUniqueness{
+					NewAssociationUniqueness(nil, []identity.Key{nameAttrKey}),
+					NewAssociationUniqueness(nil, []identity.Key{missingAttrKey}),
+				},
+			},
+			classes: classesWithUniquenessAttrs,
+			errstr:  "missing",
 		},
 	}
 	for _, tt := range tests {

@@ -48,5 +48,5 @@ associations:
       to_class_key: step
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - num
+          - to_attributes:
+                - num

@@ -136,5 +136,5 @@ associations:
       to_class_key: estimate_historic
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - version
+          - to_attributes:
+                - version

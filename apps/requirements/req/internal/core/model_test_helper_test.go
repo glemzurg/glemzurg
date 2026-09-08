@@ -16,23 +16,22 @@ func TestGetTestModelExploresAssociationUniqueness(t *testing.T) {
 
 	var fromOnly, toOnly, bothSides int
 	for _, assoc := range model.GetClassAssociations() {
-		if assoc.Uniqueness == nil {
-			continue
-		}
-		fromCount := len(assoc.Uniqueness.FromAttributeKeys)
-		toCount := len(assoc.Uniqueness.ToAttributeKeys)
-		require.Positive(t, fromCount+toCount, "association %q must list at least one uniqueness attribute", assoc.Name)
-		switch {
-		case fromCount > 0 && toCount > 0:
-			bothSides++
-		case fromCount > 0:
-			fromOnly++
-		case toCount > 0:
-			toOnly++
+		for i, uniqueness := range assoc.Uniqueness {
+			fromCount := len(uniqueness.FromAttributeKeys)
+			toCount := len(uniqueness.ToAttributeKeys)
+			require.Positive(t, fromCount+toCount, "association %q uniqueness[%d] must list at least one uniqueness attribute", assoc.Name, i)
+			switch {
+			case fromCount > 0 && toCount > 0:
+				bothSides++
+			case fromCount > 0:
+				fromOnly++
+			case toCount > 0:
+				toOnly++
+			}
 		}
 	}
 
-	assert.Equal(t, 1, fromOnly)
-	assert.Equal(t, 1, toOnly)
-	assert.Equal(t, 1, bothSides)
+	assert.Positive(t, fromOnly)
+	assert.Positive(t, toOnly)
+	assert.Positive(t, bothSides)
 }

@@ -3367,6 +3367,12 @@
           "nullable": false
         },
         {
+          "name": "uniqueness_sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Order of this uniqueness constraint on the association."
+        },
+        {
           "name": "end_side",
           "type": "association_end",
           "nullable": false,
@@ -3388,11 +3394,12 @@
       "indexes": [
         {
           "name": "association_uniqueness_attribute_pkey",
-          "def": "CREATE UNIQUE INDEX association_uniqueness_attribute_pkey ON public.association_uniqueness_attribute USING btree (model_key, association_key, end_side, attribute_sort_order)",
+          "def": "CREATE UNIQUE INDEX association_uniqueness_attribute_pkey ON public.association_uniqueness_attribute USING btree (model_key, association_key, uniqueness_sort_order, end_side, attribute_sort_order)",
           "table": "public.association_uniqueness_attribute",
           "columns": [
             "model_key",
             "association_key",
+            "uniqueness_sort_order",
             "end_side",
             "attribute_sort_order"
           ]
@@ -3450,6 +3457,16 @@
           ]
         },
         {
+          "name": "association_uniqueness_attribute_uniqueness_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL uniqueness_sort_order",
+          "table": "public.association_uniqueness_attribute",
+          "referenced_table": "",
+          "columns": [
+            "uniqueness_sort_order"
+          ]
+        },
+        {
           "name": "fk_assoc_uniq_attr_attribute",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE",
@@ -3482,12 +3499,13 @@
         {
           "name": "association_uniqueness_attribute_pkey",
           "type": "PRIMARY KEY",
-          "def": "PRIMARY KEY (model_key, association_key, end_side, attribute_sort_order)",
+          "def": "PRIMARY KEY (model_key, association_key, uniqueness_sort_order, end_side, attribute_sort_order)",
           "table": "public.association_uniqueness_attribute",
           "referenced_table": "",
           "columns": [
             "model_key",
             "association_key",
+            "uniqueness_sort_order",
             "end_side",
             "attribute_sort_order"
           ]

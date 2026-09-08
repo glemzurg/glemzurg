@@ -1619,10 +1619,11 @@ func buildClassGeneralizations(k testKeys) testGeneralizations {
 	return g
 }
 
-// ptrAssociationUniqueness returns a heap-allocated uniqueness tuple for AssociationOptions.
-func ptrAssociationUniqueness(fromAttributeKeys, toAttributeKeys []identity.Key) *model_class.AssociationUniqueness {
-	u := model_class.NewAssociationUniqueness(fromAttributeKeys, toAttributeKeys)
-	return &u
+// associationUniqueness returns one uniqueness constraint for AssociationOptions.
+func associationUniqueness(fromAttributeKeys, toAttributeKeys []identity.Key) []model_class.AssociationUniqueness {
+	return []model_class.AssociationUniqueness{
+		model_class.NewAssociationUniqueness(fromAttributeKeys, toAttributeKeys),
+	}
 }
 
 // =========================================================================
@@ -1675,7 +1676,10 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 		k.subdomainAssoc2, model_class.AssociationDetails{Name: "order belongs to customer", Details: "Order-Customer association."},
 		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: mult1},
 		model_class.AssociationOptions{
-			Uniqueness: ptrAssociationUniqueness(nil, []identity.Key{k.attrCustomerCode}),
+			Uniqueness: []model_class.AssociationUniqueness{
+				model_class.NewAssociationUniqueness(nil, []identity.Key{k.attrCustomerCode}),
+				model_class.NewAssociationUniqueness([]identity.Key{k.attrOrderDate}, nil),
+			},
 			UmlComment: "",
 		},
 	)
@@ -1701,7 +1705,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 		k.domainClassAssoc2, model_class.AssociationDetails{Name: "product stored on shelf", Details: "Product-Shelf relationship."},
 		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classShelf, Multiplicity: mult1},
 		model_class.AssociationOptions{
-			Uniqueness: ptrAssociationUniqueness([]identity.Key{k.attrProductName}, nil),
+			Uniqueness: associationUniqueness([]identity.Key{k.attrProductName}, nil),
 			UmlComment: "",
 		},
 	)
@@ -1727,7 +1731,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 		k.modelClassAssoc2, model_class.AssociationDetails{Name: "order has shipment", Details: "Order-Shipment relationship."},
 		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classShipment, Multiplicity: multOpt},
 		model_class.AssociationOptions{
-			Uniqueness: ptrAssociationUniqueness(
+			Uniqueness: associationUniqueness(
 				[]identity.Key{k.attrOrderDate},
 				[]identity.Key{k.attrShipmentTracking},
 			),

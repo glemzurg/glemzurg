@@ -2,12 +2,13 @@ package model_class
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
-// AssociationUniquenessKey lists attribute keys on each endpoint class that form the
+// AssociationUniqueness lists attribute keys on each endpoint class that form the
 // uniqueness tuple for one association constraint. If only one side has attributes, the
 // implied uniqueness on the other side is by instance.
 type AssociationUniqueness struct {
@@ -86,4 +87,9 @@ func classHasAttributeKey(class Class, attrKey identity.Key) bool {
 		}
 	}
 	return false
+}
+
+func (c *AssociationUniqueness) sameTuple(other AssociationUniqueness) bool {
+	return slices.Equal(c.FromAttributeKeys, other.FromAttributeKeys) &&
+		slices.Equal(c.ToAttributeKeys, other.ToAttributeKeys)
 }

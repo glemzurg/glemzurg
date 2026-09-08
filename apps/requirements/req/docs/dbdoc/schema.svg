@@ -1001,40 +1001,43 @@
 <!-- public.association_uniqueness_attribute -->
 <g id="node24" class="node">
 <title>public.association_uniqueness_attribute</title>
-<polygon fill="#efefef" stroke="none" points="584.09,-3443.8 584.09,-3479.4 1010.02,-3479.4 1010.02,-3443.8 584.09,-3443.8"/>
-<polygon fill="none" stroke="black" points="584.09,-3443.8 584.09,-3479.4 1010.02,-3479.4 1010.02,-3443.8 584.09,-3443.8"/>
-<text text-anchor="start" x="591.09" y="-3457.2" font-family="Arial Bold" font-size="18.00">public.association_uniqueness_attribute</text>
-<text text-anchor="start" x="878.53" y="-3457.2" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="909.65" y="-3457.2" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="584.09,-3413 584.09,-3443.8 1010.02,-3443.8 1010.02,-3413 584.09,-3413"/>
-<text text-anchor="start" x="591.09" y="-3425.2" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="662.68" y="-3425.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="584.09,-3382.2 584.09,-3413 1010.02,-3413 1010.02,-3382.2 584.09,-3382.2"/>
-<text text-anchor="start" x="591.09" y="-3394.4" font-family="Arial" font-size="14.00">association_key </text>
-<text text-anchor="start" x="694.59" y="-3394.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="584.09,-3351.4 584.09,-3382.2 1010.02,-3382.2 1010.02,-3351.4 584.09,-3351.4"/>
-<text text-anchor="start" x="591.09" y="-3363.6" font-family="Arial" font-size="14.00">end_side </text>
-<text text-anchor="start" x="651.81" y="-3363.6" font-family="Arial" font-size="14.00" fill="#666666">[association_end]</text>
-<polygon fill="none" stroke="black" points="584.09,-3320.6 584.09,-3351.4 1010.02,-3351.4 1010.02,-3320.6 584.09,-3320.6"/>
-<text text-anchor="start" x="591.09" y="-3332.8" font-family="Arial" font-size="14.00">attribute_sort_order </text>
-<text text-anchor="start" x="717.16" y="-3332.8" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
-<polygon fill="none" stroke="black" points="584.09,-3289.8 584.09,-3320.6 1010.02,-3320.6 1010.02,-3289.8 584.09,-3289.8"/>
-<text text-anchor="start" x="591.09" y="-3302" font-family="Arial" font-size="14.00">attribute_key </text>
-<text text-anchor="start" x="675.14" y="-3302" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="584.09,-3459.2 584.09,-3494.8 1010.02,-3494.8 1010.02,-3459.2 584.09,-3459.2"/>
+<polygon fill="none" stroke="black" points="584.09,-3459.2 584.09,-3494.8 1010.02,-3494.8 1010.02,-3459.2 584.09,-3459.2"/>
+<text text-anchor="start" x="591.09" y="-3472.6" font-family="Arial Bold" font-size="18.00">public.association_uniqueness_attribute</text>
+<text text-anchor="start" x="878.53" y="-3472.6" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="909.65" y="-3472.6" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="584.09,-3428.4 584.09,-3459.2 1010.02,-3459.2 1010.02,-3428.4 584.09,-3428.4"/>
+<text text-anchor="start" x="591.09" y="-3440.6" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="662.68" y="-3440.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="584.09,-3397.6 584.09,-3428.4 1010.02,-3428.4 1010.02,-3397.6 584.09,-3397.6"/>
+<text text-anchor="start" x="591.09" y="-3409.8" font-family="Arial" font-size="14.00">association_key </text>
+<text text-anchor="start" x="694.59" y="-3409.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="584.09,-3366.8 584.09,-3397.6 1010.02,-3397.6 1010.02,-3366.8 584.09,-3366.8"/>
+<text text-anchor="start" x="591.09" y="-3379" font-family="Arial" font-size="14.00">uniqueness_sort_order </text>
+<text text-anchor="start" x="738.19" y="-3379" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
+<polygon fill="none" stroke="black" points="584.09,-3336 584.09,-3366.8 1010.02,-3366.8 1010.02,-3336 584.09,-3336"/>
+<text text-anchor="start" x="591.09" y="-3348.2" font-family="Arial" font-size="14.00">end_side </text>
+<text text-anchor="start" x="651.81" y="-3348.2" font-family="Arial" font-size="14.00" fill="#666666">[association_end]</text>
+<polygon fill="none" stroke="black" points="584.09,-3305.2 584.09,-3336 1010.02,-3336 1010.02,-3305.2 584.09,-3305.2"/>
+<text text-anchor="start" x="591.09" y="-3317.4" font-family="Arial" font-size="14.00">attribute_sort_order </text>
+<text text-anchor="start" x="717.16" y="-3317.4" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
+<polygon fill="none" stroke="black" points="584.09,-3274.4 584.09,-3305.2 1010.02,-3305.2 1010.02,-3274.4 584.09,-3274.4"/>
+<text text-anchor="start" x="591.09" y="-3286.6" font-family="Arial" font-size="14.00">attribute_key </text>
+<text text-anchor="start" x="675.14" y="-3286.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.association_uniqueness_attribute&#45;&gt;public.attribute -->
 <g id="edge45" class="edge">
 <title>public.association_uniqueness_attribute:model_key&#45;&gt;public.attribute:model_key</title>
-<path fill="none" stroke="black" d="M1021.45,-3428.19C1217.11,-3420.37 1165.08,-3190.62 1352.06,-3108 1446.04,-3066.47 1726.89,-3127.98 1813.06,-3072 1852.98,-3046.06 1816.46,-2977.8 1864.08,-2977.8"/>
-<polygon fill="black" stroke="black" points="1021.35,-3428.2 1011.26,-3423.89 1016.02,-3428.3 1011.69,-3428.39 1011.69,-3428.39 1011.69,-3428.39 1016.02,-3428.3 1011.44,-3432.89 1021.35,-3428.2"/>
-<text text-anchor="start" x="476.62" y="-3438.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M1021.39,-3443.6C1221.64,-3435.62 1161.72,-3194.78 1352.06,-3108 1445.55,-3065.37 1726.89,-3127.98 1813.06,-3072 1852.98,-3046.06 1816.46,-2977.8 1864.08,-2977.8"/>
+<polygon fill="black" stroke="black" points="1021.35,-3443.6 1011.26,-3439.29 1016.02,-3443.7 1011.69,-3443.79 1011.69,-3443.79 1011.69,-3443.79 1016.02,-3443.7 1011.44,-3448.29 1021.35,-3443.6"/>
+<text text-anchor="start" x="1018.02" y="-3453.8" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.association_uniqueness_attribute&#45;&gt;public.association -->
 <g id="edge46" class="edge">
 <title>public.association_uniqueness_attribute:model_key&#45;&gt;public.association:model_key</title>
-<path fill="none" stroke="black" d="M572.8,-3427.63C374.86,-3397.2 490.49,-2481 699.07,-2481"/>
-<polygon fill="black" stroke="black" points="572.79,-3427.62 582.42,-3432.86 578.11,-3428.02 582.42,-3428.35 582.42,-3428.35 582.42,-3428.35 578.11,-3428.02 583.1,-3423.89 572.79,-3427.62"/>
-<text text-anchor="start" x="7" y="-3412.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, association_key) REFERENCES association(model_key, association_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M572.93,-3443.06C371.35,-3413.02 487.04,-2481 699.07,-2481"/>
+<polygon fill="black" stroke="black" points="572.78,-3443.05 582.43,-3448.26 578.11,-3443.44 582.42,-3443.75 582.42,-3443.75 582.42,-3443.75 578.11,-3443.44 583.09,-3439.29 572.78,-3443.05"/>
+<text text-anchor="start" x="7" y="-3453.8" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, association_key) REFERENCES association(model_key, association_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.association_invariant -->
 <g id="node25" class="node">

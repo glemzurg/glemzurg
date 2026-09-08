@@ -28,6 +28,14 @@ func TestAssociationUniquenessMermaidTag(t *testing.T) {
 		model_class.ClassDetails{Name: "Partner"},
 	)
 	assert.Equal(t, "{unique → Jurisdiction Code}", associationUniquenessMermaidTag(&uniqueness, fromClass, toClass))
+	nameAttrKey := helper.Must(identity.NewAttributeKey(toKey, "name"))
+	toClass.SetAttributes([]model_class.Attribute{
+		mermaidTestAttribute(jurisdictionAttrKey, "Jurisdiction Code"),
+		mermaidTestAttribute(nameAttrKey, "Name"),
+	})
+	second := model_class.NewAssociationUniqueness(nil, []identity.Key{nameAttrKey})
+	assert.Equal(t, []string{"{unique → Jurisdiction Code}", "{unique → Name}"},
+		associationUniquenessMermaidTags([]model_class.AssociationUniqueness{uniqueness, second}, fromClass, toClass))
 }
 
 func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
@@ -51,7 +59,7 @@ func TestGenerateClassesMermaidDirectAssociationUniqueness(t *testing.T) {
 		model_class.AssociationDetails{Name: "owns", Details: ""},
 		model_class.AssociationEnd{ClassKey: fromKey, Multiplicity: one},
 		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: one},
-		model_class.AssociationOptions{Uniqueness: &uniqueness},
+		model_class.AssociationOptions{Uniqueness: []model_class.AssociationUniqueness{uniqueness}},
 	)
 
 	model := core.Model{
@@ -119,7 +127,7 @@ func TestGenerateClassesMermaidAssociationClassUniqueness(t *testing.T) {
 		model_class.AssociationEnd{ClassKey: bKey, Multiplicity: one},
 		model_class.AssociationOptions{
 			AssociationClassKey: &cKey,
-			Uniqueness:          &uniqueness,
+			Uniqueness:          []model_class.AssociationUniqueness{uniqueness},
 		},
 	)
 	domainKey := helper.Must(identity.NewDomainKey("dx"))
@@ -159,7 +167,7 @@ func TestGenerateClassesMermaidLeaderboardUniquenessLabel(t *testing.T) {
 		model_class.AssociationDetails{Name: "Is Composed Of", Details: ""},
 		model_class.AssociationEnd{ClassKey: leaderboardKey, Multiplicity: one},
 		model_class.AssociationEnd{ClassKey: rowKey, Multiplicity: any},
-		model_class.AssociationOptions{Uniqueness: &uniqueness},
+		model_class.AssociationOptions{Uniqueness: []model_class.AssociationUniqueness{uniqueness}},
 	)
 
 	rowClass := mermaidTestClassWithAttrs(rowKey, "Leaderboard Row", []model_class.Attribute{

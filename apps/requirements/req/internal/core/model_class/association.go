@@ -14,13 +14,13 @@ import (
 type Association struct {
 	Key                 identity.Key
 	Name                string
-	Details             string                 // Markdown.
-	FromClassKey        identity.Key           // The class on one end of the association.
-	FromMultiplicity    Multiplicity           // The multiplicity from one end of the association.
-	ToClassKey          identity.Key           // The class on the other end of the association.
-	ToMultiplicity      Multiplicity           // The multiplicity on the other end of the association.
-	AssociationClassKey *identity.Key          // Any class that points to this association.
-	Uniqueness          *AssociationUniqueness // Any extra constraint on uniqueness.
+	Details             string                  // Markdown.
+	FromClassKey        identity.Key            // The class on one end of the association.
+	FromMultiplicity    Multiplicity            // The multiplicity from one end of the association.
+	ToClassKey          identity.Key            // The class on the other end of the association.
+	ToMultiplicity      Multiplicity            // The multiplicity on the other end of the association.
+	AssociationClassKey *identity.Key           // Any class that points to this association.
+	Uniqueness          []AssociationUniqueness // Extra uniqueness tuples; empty means none.
 	UmlComment          string
 	Invariants          []model_logic.Logic // Constraints on link sets from the from-class anchor.
 }
@@ -40,7 +40,7 @@ type AssociationDetails struct {
 // AssociationOptions holds optional association-class, uniqueness, and diagram metadata.
 type AssociationOptions struct {
 	AssociationClassKey *identity.Key
-	Uniqueness          *AssociationUniqueness
+	Uniqueness          []AssociationUniqueness
 	UmlComment          string
 }
 
@@ -101,10 +101,8 @@ func (a *Association) Validate(ctx *coreerr.ValidationContext) error {
 	if err := a.ToMultiplicity.Validate(ctx); err != nil {
 		return coreerr.New(ctx, coreerr.AssocToMultInvalid, fmt.Sprintf("ToMultiplicity: %s", err.Error()), "ToMultiplicity")
 	}
-	if a.Uniqueness != nil {
-		if err := a.Uniqueness.Validate(ctx); err != nil {
-			return err
-		}
+	if err := a.validateUniqueness(ctx); err != nil {
+		return err
 	}
 	// Validate AssociationClassKey FK key type and constraints.
 	if a.AssociationClassKey != nil {
@@ -202,9 +200,27 @@ func (a *Association) ValidateReferences(ctx *coreerr.ValidationContext, allClas
 			return coreerr.NewWithValues(ctx, coreerr.AssocAssocclassNotfound, fmt.Sprintf("association '%s' references non-existent association class '%s'", a.Key.String(), a.AssociationClassKey.String()), "AssociationClassKey", a.AssociationClassKey.String(), "")
 		}
 	}
-	if a.Uniqueness != nil {
-		if err := a.Uniqueness.ValidateAttributeReferences(ctx, fromClass, toClass); err != nil {
+	for i := range a.Uniqueness {
+		uniqCtx := ctx.Child("uniqueness", fmt.Sprintf("%d", i))
+		if err := a.Uniqueness[i].ValidateAttributeReferences(uniqCtx, fromClass, toClass); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func (a *Association) validateUniqueness(ctx *coreerr.ValidationContext) error {
+	for i := range a.Uniqueness {
+		uniqCtx := ctx.Child("uniqueness", fmt.Sprintf("%d", i))
+		if err := a.Uniqueness[i].Validate(uniqCtx); err != nil {
+			return err
+		}
+		for j := range i {
+			if a.Uniqueness[i].sameTuple(a.Uniqueness[j]) {
+				return coreerr.NewWithValues(uniqCtx, coreerr.AssocUniquenessDuplicate,
+					fmt.Sprintf("uniqueness[%d] duplicates uniqueness[%d]", i, j),
+					"Uniqueness", fmt.Sprintf("%d", i), "")
+			}
 		}
 	}
 	return nil

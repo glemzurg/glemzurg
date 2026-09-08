@@ -1,0 +1,15 @@
+{
+    "name": "Has Phases",
+    "from_class_key": "family",
+    "from_multiplicity": "1",
+    "to_class_key": "phase",
+    "to_multiplicity": "any",
+    "uniqueness": [
+        {
+            "to_attributes": ["name"]
+        },
+        {
+            "to_attributes": ["num"]
+        }
+    ]
+}

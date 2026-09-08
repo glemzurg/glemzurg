@@ -124,16 +124,16 @@ associations:
       to_class_key: cycle/project_cycle_plan
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - num
+          - to_attributes:
+                - num
     - name: Has Cycle Actuals
       details: Actual reuse values recorded per cycle.
       from_multiplicity: "1"
       to_class_key: cycle/project_cycle_actual
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - num
+          - to_attributes:
+                - num
     - name: Has Stat Phases
       details: Per-phase statistical estimates for this project.
       from_multiplicity: "1"

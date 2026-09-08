@@ -59,8 +59,8 @@ associations:
       to_class_key: script
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - num
+          - to_attributes:
+                - num
     - name: Has Ancestor
       details: Earlier process this version replaces, when one exists.
       from_multiplicity: any

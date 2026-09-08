@@ -35,21 +35,24 @@
       "minLength": 1
     },
     "uniqueness": {
-      "type": "object",
-      "description": "Optional uniqueness tuple for this association. Limits how often the same attribute combination may appear among links. At least one of from_attributes or to_attributes must be non-empty when this object is present. If only one side lists attributes, the other side is unique by instance.",
-      "properties": {
-        "from_attributes": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Attribute SubKeys on the from class that form the uniqueness tuple."
+      "type": "array",
+      "description": "Optional uniqueness tuples for this association. Each entry is an independent constraint. At least one of from_attributes or to_attributes must be non-empty in each entry. If only one side lists attributes, the other side is unique by instance.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from_attributes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "description": "Attribute SubKeys on the from class that form the uniqueness tuple."
+          },
+          "to_attributes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "description": "Attribute SubKeys on the to class that form the uniqueness tuple."
+          }
         },
-        "to_attributes": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Attribute SubKeys on the to class that form the uniqueness tuple."
-        }
-      },
-      "additionalProperties": false
+        "additionalProperties": false
+      }
     },
     "association_class_key": {
       "type": ["string", "null"],

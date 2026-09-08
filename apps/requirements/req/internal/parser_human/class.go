@@ -1477,7 +1477,7 @@ func generateClassAssociationsYaml(builder *YamlBuilder, class model_class.Class
 		addMultiplicityField(assocBuilder, "from_multiplicity", assoc.FromMultiplicity)
 		assocBuilder.AddField("to_class_key", mustFormatScopedClassKey(class.Key, assoc.ToClassKey))
 		addMultiplicityField(assocBuilder, "to_multiplicity", assoc.ToMultiplicity)
-		if assoc.Uniqueness != nil {
+		if len(assoc.Uniqueness) > 0 {
 			generateAssociationUniquenessYaml(assocBuilder, assoc.Uniqueness)
 		}
 		if assoc.AssociationClassKey != nil {

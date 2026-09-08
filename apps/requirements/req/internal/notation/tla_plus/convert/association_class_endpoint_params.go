@@ -2,6 +2,7 @@ package convert
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -60,9 +61,7 @@ func allClassesByKey(model *core.Model) map[identity.Key]model_class.Class {
 	out := make(map[identity.Key]model_class.Class)
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
-			for k, c := range subdomain.Classes {
-				out[k] = c
-			}
+			maps.Copy(out, subdomain.Classes)
 		}
 	}
 	return out

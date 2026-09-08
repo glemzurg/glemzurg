@@ -50,10 +50,10 @@ func (s *Schema) reindexAssociationGraph() {
 		view := associationViewFrom(*assoc)
 		scoped = append(scoped, view)
 
-		if assoc.Uniqueness != nil {
+		for _, uniqueness := range assoc.Uniqueness {
 			s.uniquenessBindings = append(s.uniquenessBindings, UniquenessBinding{
 				Association: *assoc,
-				Uniqueness:  *assoc.Uniqueness,
+				Uniqueness:  uniqueness,
 			})
 		}
 		if len(assoc.Invariants) > 0 {
@@ -91,7 +91,7 @@ func (s *Schema) reindexAssociationGraph() {
 		s.assocsByClass[classKey] = views
 	}
 
-	sort.Slice(s.uniquenessBindings, func(i, j int) bool {
+	sort.SliceStable(s.uniquenessBindings, func(i, j int) bool {
 		return s.uniquenessBindings[i].Association.Key.String() < s.uniquenessBindings[j].Association.Key.String()
 	})
 	sort.Slice(s.assocsWithInvariants, func(i, j int) bool {

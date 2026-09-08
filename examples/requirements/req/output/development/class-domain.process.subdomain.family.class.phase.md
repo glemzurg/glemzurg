@@ -208,7 +208,7 @@ class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_proces
 class_domain_project_subdomain_task_class_task "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
 class_domain_project_subdomain_task_class_time_log "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
 class_domain_process_subdomain_process_class_step "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
-class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_phase : Has Phases<br/>{unique → Num}
+class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_family_class_phase : Has Phases<br/>{unique → Name}<br/>{unique → Num}
 
 ```
 - **[Project::Estimation::Actual Loc](class-domain.project.subdomain.estimation.class.actual_loc.md).** Actual lines-of-code account for a project.

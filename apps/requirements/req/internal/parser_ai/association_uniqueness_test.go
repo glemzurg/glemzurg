@@ -15,25 +15,48 @@ func TestConvertUniquenessRoundTrip(t *testing.T) {
 	jurisdictionClass := helper.Must(identity.NewClassKey(subdomainKey, "jurisdiction"))
 	fromAttr := helper.Must(identity.NewAttributeKey(partnerClass, "partner_code"))
 	toAttr := helper.Must(identity.NewAttributeKey(jurisdictionClass, "jurisdiction_code"))
-	uniqueness := model_class.NewAssociationUniqueness([]identity.Key{fromAttr}, []identity.Key{toAttr})
+	uniqueness := []model_class.AssociationUniqueness{
+		model_class.NewAssociationUniqueness([]identity.Key{fromAttr}, []identity.Key{toAttr}),
+	}
 
-	input := convertUniquenessFromModel(&uniqueness)
-	require.NotNil(t, input)
-	require.Equal(t, []string{"partner_code"}, input.FromAttributes)
-	require.Equal(t, []string{"jurisdiction_code"}, input.ToAttributes)
+	input := convertUniquenessFromModel(uniqueness)
+	require.Len(t, input, 1)
+	require.Equal(t, []string{"partner_code"}, input[0].FromAttributes)
+	require.Equal(t, []string{"jurisdiction_code"}, input[0].ToAttributes)
 
 	result, err := convertInputUniqueness(input, partnerClass, jurisdictionClass, "test.assoc.json")
 	require.NoError(t, err)
-	require.NotNil(t, result)
-	require.Equal(t, uniqueness, *result)
+	require.Equal(t, uniqueness, result)
 }
 
-func TestConvertUniquenessAbsentIsNilPointer(t *testing.T) {
+func TestConvertUniquenessMultipleRoundTrip(t *testing.T) {
+	subdomainKey := helper.Must(identity.NewSubdomainKey(helper.Must(identity.NewDomainKey("process")), "family"))
+	familyClass := helper.Must(identity.NewClassKey(subdomainKey, "family"))
+	phaseClass := helper.Must(identity.NewClassKey(subdomainKey, "phase"))
+	nameAttr := helper.Must(identity.NewAttributeKey(phaseClass, "name"))
+	numAttr := helper.Must(identity.NewAttributeKey(phaseClass, "num"))
+	uniqueness := []model_class.AssociationUniqueness{
+		model_class.NewAssociationUniqueness(nil, []identity.Key{nameAttr}),
+		model_class.NewAssociationUniqueness(nil, []identity.Key{numAttr}),
+	}
+
+	input := convertUniquenessFromModel(uniqueness)
+	require.Len(t, input, 2)
+	require.Equal(t, []string{"name"}, input[0].ToAttributes)
+	require.Equal(t, []string{"num"}, input[1].ToAttributes)
+
+	result, err := convertInputUniqueness(input, familyClass, phaseClass, "test.assoc.json")
+	require.NoError(t, err)
+	require.Equal(t, uniqueness, result)
+}
+
+func TestConvertUniquenessAbsentIsNil(t *testing.T) {
 	result, err := convertInputUniqueness(nil, identity.Key{}, identity.Key{}, "test.assoc.json")
 	require.NoError(t, err)
 	require.Nil(t, result)
 }
 
-func TestConvertUniquenessFromModelNilPointer(t *testing.T) {
+func TestConvertUniquenessFromModelEmpty(t *testing.T) {
 	require.Nil(t, convertUniquenessFromModel(nil))
+	require.Nil(t, convertUniquenessFromModel([]model_class.AssociationUniqueness{}))
 }

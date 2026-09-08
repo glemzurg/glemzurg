@@ -40,7 +40,7 @@ func (s *AssociationUniquenessCheckerSuite) buildModel() (*core.Model, identity.
 		model_class.AssociationEnd{ClassKey: toKey, Multiplicity: toMult},
 		model_class.AssociationOptions{
 			AssociationClassKey: &acKey,
-			Uniqueness:          &uniqueness,
+			Uniqueness:          []model_class.AssociationUniqueness{uniqueness},
 		},
 	)
 
@@ -136,6 +136,70 @@ func (s *AssociationUniquenessCheckerSuite) TestPlainToOnlyDuplicateReportsViola
 	}))
 	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), customer1.GetID()))
 	s.Require().NoError(simState.AddLink(assocKey, order.GetID(), customer2.GetID()))
+
+	violations := checker.CheckState(simState)
+	s.Require().Len(violations, 1)
+	s.Equal(ViolationTypeAssociationUniqueness, violations[0].Type)
+}
+
+func (s *AssociationUniquenessCheckerSuite) TestTwoToOnlyConstraintsDistinctNoViolation() {
+	model, assocKey, familyKey, phaseKey := associationUniquenessTwoToOnlyModel()
+	checker := NewAssociationUniquenessChecker(schema.New(model, schema.RunScopeAll()))
+
+	simState := NewState(emptySchema())
+	family := simState.CreateInstance(familyKey, object.NewRecord())
+	phase1 := simState.CreateInstance(phaseKey, object.NewRecordFromFields(map[string]object.Object{
+		"name": object.NewString("Planning"),
+		"num":  object.NewInteger(1),
+	}))
+	phase2 := simState.CreateInstance(phaseKey, object.NewRecordFromFields(map[string]object.Object{
+		"name": object.NewString("Coding"),
+		"num":  object.NewInteger(2),
+	}))
+	s.Require().NoError(simState.AddLink(assocKey, family.GetID(), phase1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, family.GetID(), phase2.GetID()))
+
+	s.Empty(checker.CheckState(simState))
+}
+
+func (s *AssociationUniquenessCheckerSuite) TestTwoToOnlyConstraintsDuplicateNameReportsViolation() {
+	model, assocKey, familyKey, phaseKey := associationUniquenessTwoToOnlyModel()
+	checker := NewAssociationUniquenessChecker(schema.New(model, schema.RunScopeAll()))
+
+	simState := NewState(emptySchema())
+	family := simState.CreateInstance(familyKey, object.NewRecord())
+	phase1 := simState.CreateInstance(phaseKey, object.NewRecordFromFields(map[string]object.Object{
+		"name": object.NewString("Planning"),
+		"num":  object.NewInteger(1),
+	}))
+	phase2 := simState.CreateInstance(phaseKey, object.NewRecordFromFields(map[string]object.Object{
+		"name": object.NewString("Planning"),
+		"num":  object.NewInteger(2),
+	}))
+	s.Require().NoError(simState.AddLink(assocKey, family.GetID(), phase1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, family.GetID(), phase2.GetID()))
+
+	violations := checker.CheckState(simState)
+	s.Require().Len(violations, 1)
+	s.Equal(ViolationTypeAssociationUniqueness, violations[0].Type)
+}
+
+func (s *AssociationUniquenessCheckerSuite) TestTwoToOnlyConstraintsDuplicateNumReportsViolation() {
+	model, assocKey, familyKey, phaseKey := associationUniquenessTwoToOnlyModel()
+	checker := NewAssociationUniquenessChecker(schema.New(model, schema.RunScopeAll()))
+
+	simState := NewState(emptySchema())
+	family := simState.CreateInstance(familyKey, object.NewRecord())
+	phase1 := simState.CreateInstance(phaseKey, object.NewRecordFromFields(map[string]object.Object{
+		"name": object.NewString("Planning"),
+		"num":  object.NewInteger(1),
+	}))
+	phase2 := simState.CreateInstance(phaseKey, object.NewRecordFromFields(map[string]object.Object{
+		"name": object.NewString("Coding"),
+		"num":  object.NewInteger(1),
+	}))
+	s.Require().NoError(simState.AddLink(assocKey, family.GetID(), phase1.GetID()))
+	s.Require().NoError(simState.AddLink(assocKey, family.GetID(), phase2.GetID()))
 
 	violations := checker.CheckState(simState)
 	s.Require().Len(violations, 1)
@@ -274,7 +338,7 @@ func associationUniquenessPlainToOnlyModel() (*core.Model, identity.Key, identit
 		model_class.AssociationDetails{Name: "order belongs to customer", Details: ""},
 		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: customerKey, Multiplicity: toMult},
-		model_class.AssociationOptions{Uniqueness: &uniqueness},
+		model_class.AssociationOptions{Uniqueness: []model_class.AssociationUniqueness{uniqueness}},
 	)
 	model := multiplicityTestModel(classEntry(orderClass, orderKey), classEntry(customerClass, customerKey))
 	associationUniquenessAttachAssoc(model, assocKey, assoc)
@@ -294,7 +358,7 @@ func associationUniquenessPlainFromOnlyModel() (*core.Model, identity.Key, ident
 		model_class.AssociationDetails{Name: "product stored on shelf", Details: ""},
 		model_class.AssociationEnd{ClassKey: productKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: shelfKey, Multiplicity: toMult},
-		model_class.AssociationOptions{Uniqueness: &uniqueness},
+		model_class.AssociationOptions{Uniqueness: []model_class.AssociationUniqueness{uniqueness}},
 	)
 	model := multiplicityTestModel(classEntry(productClass, productKey), classEntry(shelfClass, shelfKey))
 	associationUniquenessAttachAssoc(model, assocKey, assoc)
@@ -318,7 +382,7 @@ func associationUniquenessPlainBothSidesModel() (*core.Model, identity.Key, iden
 		model_class.AssociationDetails{Name: "order has shipment", Details: ""},
 		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
 		model_class.AssociationEnd{ClassKey: shipmentKey, Multiplicity: toMult},
-		model_class.AssociationOptions{Uniqueness: &uniqueness},
+		model_class.AssociationOptions{Uniqueness: []model_class.AssociationUniqueness{uniqueness}},
 	)
 	model := multiplicityTestModel(classEntry(orderClass, orderKey), classEntry(shipmentClass, shipmentKey))
 	associationUniquenessAttachAssoc(model, assocKey, assoc)
@@ -333,6 +397,48 @@ func associationUniquenessAttachAssoc(model *core.Model, assocKey identity.Key, 
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{assocKey: assoc}
 	domain.Subdomains[subdomainKey] = subdomain
 	model.Domains[domainKey] = domain
+}
+
+func associationUniquenessTwoToOnlyModel() (*core.Model, identity.Key, identity.Key, identity.Key) {
+	familyClass, familyKey := associationUniquenessFamilyClass()
+	phaseClass, phaseKey := associationUniquenessPhaseClass()
+	assocKey := multiplicityTestAssocKey(familyKey, phaseKey)
+	nameKey := multiplicityMustKey("domain/d/subdomain/s/class/phase/attribute/name")
+	numKey := multiplicityMustKey("domain/d/subdomain/s/class/phase/attribute/num")
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity("any"))
+	assoc := model_class.NewAssociation(
+		assocKey,
+		model_class.AssociationDetails{Name: "has phases", Details: ""},
+		model_class.AssociationEnd{ClassKey: familyKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: phaseKey, Multiplicity: toMult},
+		model_class.AssociationOptions{
+			Uniqueness: []model_class.AssociationUniqueness{
+				model_class.NewAssociationUniqueness(nil, []identity.Key{nameKey}),
+				model_class.NewAssociationUniqueness(nil, []identity.Key{numKey}),
+			},
+		},
+	)
+	model := multiplicityTestModel(classEntry(familyClass, familyKey), classEntry(phaseClass, phaseKey))
+	associationUniquenessAttachAssoc(model, assocKey, assoc)
+	return model, assocKey, familyKey, phaseKey
+}
+
+func associationUniquenessFamilyClass() (model_class.Class, identity.Key) {
+	classKey := multiplicityMustKey("domain/d/subdomain/s/class/family")
+	return model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Family"}), classKey
+}
+
+func associationUniquenessPhaseClass() (model_class.Class, identity.Key) {
+	classKey := multiplicityMustKey("domain/d/subdomain/s/class/phase")
+	nameKey := multiplicityMustKey("domain/d/subdomain/s/class/phase/attribute/name")
+	numKey := multiplicityMustKey("domain/d/subdomain/s/class/phase/attribute/num")
+	class := model_class.NewClass(classKey, model_class.ClassLinks{}, model_class.ClassDetails{Name: "Phase"})
+	class.SetAttributes([]model_class.Attribute{
+		helper.Must(model_class.NewAttribute(nameKey, model_class.AttributeDetails{Name: "Name"}, "unconstrained", nil, true, model_class.AttributeAnnotations{})),
+		helper.Must(model_class.NewAttribute(numKey, model_class.AttributeDetails{Name: "Num"}, "unconstrained", nil, true, model_class.AttributeAnnotations{})),
+	})
+	return class, classKey
 }
 
 func associationUniquenessOrderClass() (model_class.Class, identity.Key) {

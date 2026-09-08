@@ -18,5 +18,5 @@ associations:
       to_class_key: schedule_week
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - num
+          - to_attributes:
+                - num

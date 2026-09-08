@@ -45,17 +45,18 @@ func (suite *AssociationUniquenessSuite) SetupTest() {
 	t_AddAttribute(suite.T(), suite.db, suite.modelKey, partner.Key, suite.fromAttrKey)
 	t_AddAttribute(suite.T(), suite.db, suite.modelKey, jurisdiction.Key, suite.toAttrKey)
 
-	uniqueness := model_class.NewAssociationUniqueness(
-		[]identity.Key{suite.fromAttrKey},
-		[]identity.Key{suite.toAttrKey},
-	)
 	err := AddAssociations(suite.db, suite.modelKey, []model_class.Association{
 		model_class.NewAssociation(
 			suite.assocKey,
 			model_class.AssociationDetails{Name: "Configures Customers For"},
 			model_class.AssociationEnd{ClassKey: partner.Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
 			model_class.AssociationEnd{ClassKey: jurisdiction.Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
-			model_class.AssociationOptions{Uniqueness: &uniqueness},
+			model_class.AssociationOptions{
+				Uniqueness: []model_class.AssociationUniqueness{
+					model_class.NewAssociationUniqueness(nil, []identity.Key{suite.toAttrKey}),
+					model_class.NewAssociationUniqueness([]identity.Key{suite.fromAttrKey}, nil),
+				},
+			},
 		),
 	})
 	suite.Require().NoError(err)
@@ -64,19 +65,22 @@ func (suite *AssociationUniquenessSuite) SetupTest() {
 func (suite *AssociationUniquenessSuite) TestRoundTrip() {
 	association, err := LoadAssociation(suite.db, suite.modelKey, suite.assocKey)
 	suite.Require().NoError(err)
-	suite.Require().NotNil(association.Uniqueness)
-	suite.Equal(model_class.AssociationUniqueness{
-		FromAttributeKeys: []identity.Key{suite.fromAttrKey},
-		ToAttributeKeys:   []identity.Key{suite.toAttrKey},
-	}, *association.Uniqueness)
+	suite.Equal([]model_class.AssociationUniqueness{
+		{
+			ToAttributeKeys: []identity.Key{suite.toAttrKey},
+		},
+		{
+			FromAttributeKeys: []identity.Key{suite.fromAttrKey},
+		},
+	}, association.Uniqueness)
 }
 
 func (suite *AssociationUniquenessSuite) TestFKAttribute() {
 	err := dbExec(suite.db, `
 		INSERT INTO association_uniqueness_attribute
-			(model_key, association_key, end_side, attribute_sort_order, attribute_key)
+			(model_key, association_key, uniqueness_sort_order, end_side, attribute_sort_order, attribute_key)
 		VALUES
-			($1, $2, 'to'::association_end, 0, $3)`,
+			($1, $2, 2, 'to'::association_end, 0, $3)`,
 		suite.modelKey,
 		suite.assocKey.String(),
 		suite.bogusAttrKey.String(),

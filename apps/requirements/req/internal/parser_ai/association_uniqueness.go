@@ -17,35 +17,45 @@ func resolveAssociationUniquenessFromInput(
 	assoc *inputClassAssociation,
 	fromClassKey, toClassKey identity.Key,
 	assocFile string,
-) (*model_class.AssociationUniqueness, error) {
+) ([]model_class.AssociationUniqueness, error) {
 	return convertInputUniqueness(assoc.Uniqueness, fromClassKey, toClassKey, assocFile)
 }
 
 func convertInputUniqueness(
-	input *inputAssociationUniqueness,
+	input []inputAssociationUniqueness,
 	fromClassKey, toClassKey identity.Key,
 	assocFile string,
-) (*model_class.AssociationUniqueness, error) {
-	if input == nil {
-		return nil, nil //nolint:nilnil // optional field, absence is not an error
+) ([]model_class.AssociationUniqueness, error) {
+	if len(input) == 0 {
+		return nil, nil
 	}
-	fromKeys, err := attributeKeysFromSubKeys(fromClassKey, input.FromAttributes, "uniqueness.from_attributes", assocFile)
-	if err != nil {
-		return nil, err
+	result := make([]model_class.AssociationUniqueness, 0, len(input))
+	for i, item := range input {
+		fromField := fmt.Sprintf("uniqueness[%d].from_attributes", i)
+		toField := fmt.Sprintf("uniqueness[%d].to_attributes", i)
+		fromKeys, err := attributeKeysFromSubKeys(fromClassKey, item.FromAttributes, fromField, assocFile)
+		if err != nil {
+			return nil, err
+		}
+		toKeys, err := attributeKeysFromSubKeys(toClassKey, item.ToAttributes, toField, assocFile)
+		if err != nil {
+			return nil, err
+		}
+		if len(fromKeys) == 0 && len(toKeys) == 0 {
+			return nil, convErr(
+				ErrConvAssocUniquenessInvalid,
+				fmt.Sprintf("uniqueness[%d] needs from_attributes or to_attributes", i),
+				assocFile,
+			).WithField(fmt.Sprintf("uniqueness[%d]", i))
+		}
+		uniqueness := model_class.NewAssociationUniqueness(fromKeys, toKeys)
+		ctx := coreerr.NewContext(assocFile, fmt.Sprintf("uniqueness[%d]", i))
+		if err := uniqueness.Validate(ctx); err != nil {
+			return nil, mapValidationError(err)
+		}
+		result = append(result, uniqueness)
 	}
-	toKeys, err := attributeKeysFromSubKeys(toClassKey, input.ToAttributes, "uniqueness.to_attributes", assocFile)
-	if err != nil {
-		return nil, err
-	}
-	if len(fromKeys) == 0 && len(toKeys) == 0 {
-		return nil, nil //nolint:nilnil // empty object means no uniqueness constraint
-	}
-	uniqueness := model_class.NewAssociationUniqueness(fromKeys, toKeys)
-	ctx := coreerr.NewContext(assocFile, "uniqueness")
-	if err := uniqueness.Validate(ctx); err != nil {
-		return nil, mapValidationError(err)
-	}
-	return &uniqueness, nil
+	return result, nil
 }
 
 func attributeKeysFromSubKeys(classKey identity.Key, subKeys []string, field, assocFile string) ([]identity.Key, error) {
@@ -67,17 +77,24 @@ func attributeKeysFromSubKeys(classKey identity.Key, subKeys []string, field, as
 	return keys, nil
 }
 
-func convertUniquenessFromModel(uniqueness *model_class.AssociationUniqueness) *inputAssociationUniqueness {
-	if uniqueness == nil {
+func convertUniquenessFromModel(uniqueness []model_class.AssociationUniqueness) []inputAssociationUniqueness {
+	if len(uniqueness) == 0 {
 		return nil
 	}
-	if len(uniqueness.FromAttributeKeys) == 0 && len(uniqueness.ToAttributeKeys) == 0 {
+	result := make([]inputAssociationUniqueness, 0, len(uniqueness))
+	for _, constraint := range uniqueness {
+		if len(constraint.FromAttributeKeys) == 0 && len(constraint.ToAttributeKeys) == 0 {
+			continue
+		}
+		result = append(result, inputAssociationUniqueness{
+			FromAttributes: attributeSubKeysFromKeys(constraint.FromAttributeKeys),
+			ToAttributes:   attributeSubKeysFromKeys(constraint.ToAttributeKeys),
+		})
+	}
+	if len(result) == 0 {
 		return nil
 	}
-	return &inputAssociationUniqueness{
-		FromAttributes: attributeSubKeysFromKeys(uniqueness.FromAttributeKeys),
-		ToAttributes:   attributeSubKeysFromKeys(uniqueness.ToAttributeKeys),
-	}
+	return result
 }
 
 func attributeSubKeysFromKeys(keys []identity.Key) []string {
@@ -92,15 +109,14 @@ func attributeSubKeysFromKeys(keys []identity.Key) []string {
 }
 
 func validateAssociationUniqueness(assoc *inputClassAssociation, assocKey, assocPath string) error {
-	if assoc.Uniqueness == nil {
-		return nil
-	}
-	if len(assoc.Uniqueness.FromAttributes) == 0 && len(assoc.Uniqueness.ToAttributes) == 0 {
-		return NewParseError(
-			ErrAssocUniquenessConstraintInvalid,
-			fmt.Sprintf("association '%s' uniqueness needs from_attributes or to_attributes", assocKey),
-			assocPath,
-		).WithField("uniqueness")
+	for i, constraint := range assoc.Uniqueness {
+		if len(constraint.FromAttributes) == 0 && len(constraint.ToAttributes) == 0 {
+			return NewParseError(
+				ErrAssocUniquenessConstraintInvalid,
+				fmt.Sprintf("association '%s' uniqueness[%d] needs from_attributes or to_attributes", assocKey, i),
+				assocPath,
+			).WithField(fmt.Sprintf("uniqueness[%d]", i))
+		}
 	}
 	return nil
 }

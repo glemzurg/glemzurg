@@ -25,31 +25,33 @@ associations:
       to_class_key: phase
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - name
+          - to_attributes:
+                - name
+          - to_attributes:
+                - num
     - name: Has Defect Types
       details: Defect types classified for this family.
       from_multiplicity: "1"
       to_class_key: defect_type
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - num
+          - to_attributes:
+                - num
     - name: Has Languages
       details: Programming languages used when estimating in this family.
       from_multiplicity: "1"
       to_class_key: language
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - name
+          - to_attributes:
+                - name
     - name: Has Processes
       details: Versioned processes that belong to this family.
       from_multiplicity: "1"
       to_class_key: process/process
       to_multiplicity: any
       uniqueness:
-          to_attributes:
-              - name
-              - version
-              - version_minor
+          - to_attributes:
+                - name
+                - version
+                - version_minor

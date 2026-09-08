@@ -52,13 +52,26 @@ func associationUniquenessMermaidTag(
 	return fmt.Sprintf("{unique %s}", tuple)
 }
 
+func associationUniquenessMermaidTags(
+	uniqueness []model_class.AssociationUniqueness,
+	fromClass, toClass model_class.Class,
+) []string {
+	var tags []string
+	for i := range uniqueness {
+		if tag := associationUniquenessMermaidTag(&uniqueness[i], fromClass, toClass); tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
+}
+
 // classesMermaidAssociationLinkLabel formats the edge label for a direct association arrow.
 func classesMermaidAssociationLinkLabel(assoc model_class.Association, fromClass, toClass model_class.Class) string {
-	tag := associationUniquenessMermaidTag(assoc.Uniqueness, fromClass, toClass)
-	if tag == "" {
+	tags := associationUniquenessMermaidTags(assoc.Uniqueness, fromClass, toClass)
+	if len(tags) == 0 {
 		return assoc.Name
 	}
-	return assoc.Name + "<br/>" + tag
+	return assoc.Name + "<br/>" + strings.Join(tags, "<br/>")
 }
 
 // classesMermaidAssociationNodeTitle formats the dashed association link node title

@@ -10,15 +10,15 @@ import (
 
 // inputClassAssociation represents an association JSON file.
 type inputClassAssociation struct {
-	Name                string                      `json:"name"`
-	Details             string                      `json:"details,omitempty"`
-	FromClassKey        string                      `json:"from_class_key"`
-	FromMultiplicity    string                      `json:"from_multiplicity"`
-	ToClassKey          string                      `json:"to_class_key"`
-	ToMultiplicity      string                      `json:"to_multiplicity"`
-	Uniqueness          *inputAssociationUniqueness `json:"uniqueness,omitempty"`
-	AssociationClassKey *string                     `json:"association_class_key,omitempty"`
-	UmlComment          string                      `json:"uml_comment,omitempty"`
+	Name                string                       `json:"name"`
+	Details             string                       `json:"details,omitempty"`
+	FromClassKey        string                       `json:"from_class_key"`
+	FromMultiplicity    string                       `json:"from_multiplicity"`
+	ToClassKey          string                       `json:"to_class_key"`
+	ToMultiplicity      string                       `json:"to_multiplicity"`
+	Uniqueness          []inputAssociationUniqueness `json:"uniqueness,omitempty"`
+	AssociationClassKey *string                      `json:"association_class_key,omitempty"`
+	UmlComment          string                       `json:"uml_comment,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
 	Invariants []inputLogic `json:"-"`
