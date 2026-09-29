@@ -62,20 +62,11 @@ class class_domain_project_subdomain_core_class_project["Project"] {
             Planned Failure Coq
         }
 }
-namespace Process.Family {
-class class_domain_process_subdomain_family_class_phase["Phase"] {
-            Num
-            Name
-            Description
-        }
-}
 style class_domain_project_subdomain_task_class_time_log stroke:#9370DB,stroke-width:3px
-class_domain_project_subdomain_task_class_time_log "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_task_class_time_log : Has Time Logs
 class_domain_project_subdomain_task_class_time_log "*" --> "1" class_domain_project_subdomain_task_class_task : For Task
 
 ```
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Task](class-domain.project.subdomain.task.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.
 - **[Time Log](class-domain.project.subdomain.task.class.time_log.md).** A recorded interval of work on a project.

@@ -163,11 +163,6 @@ class class_domain_process_subdomain_family_class_language["Language"] {
             Name
             Description
         }
-class class_domain_process_subdomain_family_class_phase["Phase"] {
-            Num
-            Name
-            Description
-        }
 }
 namespace Process.Method {
 class class_domain_process_subdomain_method_class_design_method["Design Method"] {
@@ -258,23 +253,16 @@ class class_domain_project_subdomain_task_class_time_log["Time Log"] {
         }
 }
 style class_domain_project_subdomain_core_class_project stroke:#9370DB,stroke-width:3px
-class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products["Checks Phase Products"]
-<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
-class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for["Has Probe Estimate For"]
-<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
-style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products stroke:#333,stroke-dasharray:5 5
-style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
+class assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products["Checks Phase Products"]
+<<association>> assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
+class assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for["Has Probe Estimate For"]
+<<association>> assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for
+style assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products stroke:#333,stroke-dasharray:5 5
+style assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_estimate_class_method : Uses Size Estimation Method
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_estimate_class_method : Uses Time Estimation Method
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_family_class_language : Uses Language
-class_domain_project_subdomain_core_class_project "*" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
-    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products --> "*" class_domain_process_subdomain_family_class_phase
-    class_domain_project_subdomain_core_class_phase_products_check .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
-class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_family_class_phase : Current Phase
-class_domain_project_subdomain_core_class_project "1" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
-    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for --> "*" class_domain_process_subdomain_family_class_phase
-    class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_has_probe_estimate_for
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_method_class_design_method : Uses Design Method
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_process_class_process : Follows Process
 class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_process_class_step : Current Subphase
@@ -296,7 +284,14 @@ class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_projec
 class_domain_project_subdomain_quality_class_test_case "*" --> "1" class_domain_project_subdomain_core_class_project : For Project
 class_domain_project_subdomain_quality_class_test_case_result "*" --> "1" class_domain_project_subdomain_core_class_project : For Project
 class_domain_project_subdomain_schedule_class_schedule_week "*" --> "1" class_domain_project_subdomain_core_class_project : For Project
+class_domain_project_subdomain_core_class_project "*" -- assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
+    assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products --> "*" class_domain_project_subdomain_core_class_project_part
+    class_domain_project_subdomain_core_class_phase_products_check .. assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
+class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_project_subdomain_core_class_project_part : Current Phase
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_part : Has Parts
+class_domain_project_subdomain_core_class_project "1" -- assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for
+    assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for --> "*" class_domain_project_subdomain_core_class_project_part
+    class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_stat_phase : Has Stat Phases
 
 ```
@@ -312,7 +307,6 @@ class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_proje
 - **[Process::Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Process::Estimate::Method](class-domain.process.subdomain.estimate.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Process::Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Phase Products Check](class-domain.project.subdomain.core.class.phase_products_check.md).** Whether a project's products for a phase are satisfied.
 - **[Process::Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.

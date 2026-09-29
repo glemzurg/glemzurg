@@ -99,7 +99,6 @@ class class_domain_project_subdomain_quality_class_pip["Process Improvement Prop
 }
 style class_domain_process_subdomain_process_class_process stroke:#9370DB,stroke-width:3px
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_process_class_process : Follows Process
-class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_process : On Process
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_process : Resolved In Process
 class_domain_process_subdomain_definition_class_module_template "*" --> "0..1" class_domain_process_subdomain_process_class_process : Follows Process
 class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_process_class_process : Has Processes<br/>{unique → Name, Version, Version Minor}

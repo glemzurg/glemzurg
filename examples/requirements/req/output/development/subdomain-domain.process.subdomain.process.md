@@ -95,12 +95,20 @@ class class_domain_project_subdomain_quality_class_pip["Process Improvement Prop
             Resolved Time
         }
 }
+namespace Project.Task {
+class class_domain_project_subdomain_task_class_task["Task"] {
+            Num
+            Name
+            Planned Hours
+            Pct Complete
+        }
+}
 class_domain_project_subdomain_core_class_project "*" --> "1" class_domain_process_subdomain_process_class_process : Follows Process
 class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_process_class_step : Current Subphase
 class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_domain_process_subdomain_process_class_step : Current Subphase
-class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_process : On Process
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_process : Resolved In Process
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_step : On Subphase
+class_domain_project_subdomain_task_class_task "*" --> "1" class_domain_process_subdomain_process_class_step : Occurs In
 class_domain_process_subdomain_definition_class_module_template "*" --> "0..1" class_domain_process_subdomain_process_class_process : Follows Process
 class_domain_process_subdomain_family_class_family "1" --> "*" class_domain_process_subdomain_process_class_process : Has Processes<br/>{unique → Name, Version, Version Minor}
 class_domain_process_subdomain_process_class_step "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
@@ -119,6 +127,7 @@ class_domain_process_subdomain_process_class_script "1" --> "*" class_domain_pro
 - **[Project::Quality::Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Project::Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
+- **[Project::Task::Task](class-domain.project.subdomain.task.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.
 
 [Model facts](subdomain-domain.process.subdomain.process-facts.md)
 

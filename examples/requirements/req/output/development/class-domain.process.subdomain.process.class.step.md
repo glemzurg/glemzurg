@@ -92,10 +92,19 @@ class class_domain_project_subdomain_quality_class_pip["Process Improvement Prop
             Resolved Time
         }
 }
+namespace Project.Task {
+class class_domain_project_subdomain_task_class_task["Task"] {
+            Num
+            Name
+            Planned Hours
+            Pct Complete
+        }
+}
 style class_domain_process_subdomain_process_class_step stroke:#9370DB,stroke-width:3px
 class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_process_subdomain_process_class_step : Current Subphase
 class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_domain_process_subdomain_process_class_step : Current Subphase
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_step : On Subphase
+class_domain_project_subdomain_task_class_task "*" --> "1" class_domain_process_subdomain_process_class_step : Occurs In
 class_domain_process_subdomain_process_class_step "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
 class_domain_process_subdomain_process_class_script "1" --> "*" class_domain_process_subdomain_process_class_step : Has Steps<br/>{unique → Num}
 
@@ -106,6 +115,7 @@ class_domain_process_subdomain_process_class_script "1" --> "*" class_domain_pro
 - **[Project::Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 - **[Script](class-domain.process.subdomain.process.class.script.md).** A step-by-step process script owned by a process.
 - **[Step](class-domain.process.subdomain.process.class.step.md).** A step of a process script.
+- **[Project::Task::Task](class-domain.project.subdomain.task.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.
 
 
 # State Machine

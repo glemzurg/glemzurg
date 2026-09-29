@@ -54,13 +54,6 @@ class class_domain_project_subdomain_core_class_project["Project"] {
             Planned Failure Coq
         }
 }
-namespace Process.Family {
-class class_domain_process_subdomain_family_class_phase["Phase"] {
-            Num
-            Name
-            Description
-        }
-}
 namespace Process.Process {
 class class_domain_process_subdomain_process_class_process["Process"] {
             Name
@@ -80,14 +73,11 @@ class class_domain_process_subdomain_process_class_step["Step"] {
         }
 }
 style class_domain_project_subdomain_quality_class_pip stroke:#9370DB,stroke-width:3px
-class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_family_class_phase : On Phase
-class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_process : On Process
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_process : Resolved In Process
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_process_subdomain_process_class_step : On Subphase
 class_domain_project_subdomain_quality_class_pip "*" --> "1" class_domain_project_subdomain_core_class_project : On Project
 
 ```
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Process::Process::Process](class-domain.process.subdomain.process.class.process.md).** A versioned process to follow, owned by a family.
 - **[Process Improvement Proposal](class-domain.project.subdomain.quality.class.pip.md).** A process improvement proposal raised on a project.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.

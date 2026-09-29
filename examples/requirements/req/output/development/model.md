@@ -8,12 +8,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 
 | Table | Column | Model |
 | --- | --- | --- |
-| defect_type | defect_type_id | Defect Type identity |
-| defect_type | family_id | Family Has Defect Types |
-| defect_type | num | Defect Type.num (unique per family) |
-| defect_type | name | Defect Type.name (unique per family) |
-| defect_type | description | Defect Type.description |
-| defect_type | base_num | Defect Type.base_num |
 | language | language_id | Language identity |
 | language | family_id | Family Has Languages |
 | language | name | Language.name (unique per family) |

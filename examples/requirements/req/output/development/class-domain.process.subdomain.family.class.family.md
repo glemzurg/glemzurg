@@ -34,7 +34,6 @@ class class_domain_process_subdomain_family_class_defect_type["Defect Type"] {
         Num
         Name
         Description
-        Base Num
     }
 class class_domain_process_subdomain_family_class_family["Family"] {
         Name

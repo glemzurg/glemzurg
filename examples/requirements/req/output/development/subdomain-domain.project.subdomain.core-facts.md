@@ -6,8 +6,13 @@ Association multiplicity, association invariant, and index uniqueness constraint
 
 ## Associations
 
-- each Project (checks phase products) links to any number of Process::Family::Phases; each Process::Family::Phase may link to any number of Projects; each Project–Process::Family::Phase pairing is a Phase Products Check (Whether each phase's products are satisfied for this project.).
-- each Project (current phase) may link to at most one Process::Family::Phase; each Process::Family::Phase may link to any number of Projects (Phase whose forms are currently open, when one is set.).
+- each Estimation::Actual Loc (for phase) links to exactly one Project Part; each Project Part may link to any number of Estimation::Actual Locs (Phase this size account is for.).
+- each Estimation::Estimate Loc (for phase) links to exactly one Project Part; each Project Part may link to any number of Estimation::Estimate Locs (Phase this size account is for.).
+- each Estimation::Estimate Probe Add Loc (for phase) links to exactly one Project Part; each Project Part may link to any number of Estimation::Estimate Probe Add Locs (Phase this added-object line is for.).
+- each Estimation::Estimate Probe Object Loc (for phase) links to exactly one Project Part; each Project Part may link to any number of Estimation::Estimate Probe Object Locs (Phase this new-object line is for.).
+- each Estimation::Estimate Probe Object Reused (for phase) links to exactly one Project Part; each Project Part may link to any number of Estimation::Estimate Probe Object Reuseds (Phase this reused-object line is for.).
+- each Project (checks phase products) links to any number of Project Parts; each Project Part may link to any number of Projects; each Project–Project Part pairing is a Phase Products Check (Whether each phase's products are satisfied for this project.).
+- each Project (current phase) may link to at most one Project Part; each Project Part may link to any number of Projects (Phase whose forms are currently open, when one is set.).
 - each Project (current subphase) may link to at most one Process::Process::Step; each Process::Process::Step may link to any number of Projects (Planning step currently taking place, when one is set.).
 - each Project (follows process) links to exactly one Process::Process::Process; each Process::Process::Process may link to any number of Projects (Process this project follows.).
 - each Project (has actual loc) may link to at most one Estimation::Actual Loc; each Estimation::Actual Loc links to exactly one Project (Actual lines-of-code account for this project.).
@@ -16,7 +21,7 @@ Association multiplicity, association invariant, and index uniqueness constraint
 - each Project (has loc estimate) may link to at most one Estimation::Estimate Loc; each Estimation::Estimate Loc links to exactly one Project (Planned lines-of-code account for this project.).
 - each Project (has parts) links to any number of Project Parts; each Project Part links to exactly one Project (Language-specific parts of this project.).
 - each Project (has probe add loc) links to any number of Estimation::Estimate Probe Add Locs; each Estimation::Estimate Probe Add Loc links to exactly one Project (Added-object LOC lines in the PROBE estimate.).
-- each Project (has probe estimate for) links to any number of Process::Family::Phases; each Process::Family::Phase links to exactly one Project; each Project–Process::Family::Phase pairing is a Estimation::Estimate Probe (PROBE size and time calculation for a phase of this project.).
+- each Project (has probe estimate for) links to any number of Project Parts; each Project Part links to exactly one Project; each Project–Project Part pairing is a Estimation::Estimate Probe (PROBE size and time calculation for a phase of this project.).
 - each Project (has probe object loc) links to any number of Estimation::Estimate Probe Object Locs; each Estimation::Estimate Probe Object Loc links to exactly one Project (New-object LOC lines in the PROBE estimate.).
 - each Project (has probe object reused) links to any number of Estimation::Estimate Probe Object Reuseds; each Estimation::Estimate Probe Object Reused links to exactly one Project (Reused-object LOC lines in the PROBE estimate.).
 - each Project (has schedule) may link to at most one Schedule::Schedule; each Schedule::Schedule links to exactly one Project (Schedule for recording planned work.).

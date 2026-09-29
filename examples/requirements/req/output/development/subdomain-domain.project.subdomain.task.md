@@ -46,11 +46,11 @@ class class_domain_project_subdomain_core_class_project["Project"] {
             Planned Failure Coq
         }
 }
-namespace Process.Family {
-class class_domain_process_subdomain_family_class_phase["Phase"] {
+namespace Process.Process {
+class class_domain_process_subdomain_process_class_step["Step"] {
             Num
             Name
-            Description
+            Tasks
         }
 }
 namespace Schedule {
@@ -59,8 +59,7 @@ class class_domain_project_subdomain_schedule_class_schedule_week["Schedule Week
             Date Monday
         }
 }
-class_domain_project_subdomain_task_class_task "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
-class_domain_project_subdomain_task_class_time_log "*" --> "1" class_domain_process_subdomain_family_class_phase : Occurs In
+class_domain_project_subdomain_task_class_task "*" --> "1" class_domain_process_subdomain_process_class_step : Occurs In
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_task_class_task : Has Tasks
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_task_class_time_log : Has Time Logs
 class_domain_project_subdomain_task_class_task "*" --> "1" class_domain_project_subdomain_schedule_class_schedule_week : On Week
@@ -70,9 +69,9 @@ class_domain_project_subdomain_task_class_time_log "*" --> "1" class_domain_proj
 
 - **[Task](class-domain.project.subdomain.task.class.task.md).** A planned task on a project, assigned to a phase and a schedule week.
 - **[Time Log](class-domain.project.subdomain.task.class.time_log.md).** A recorded interval of work on a project.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Schedule::Schedule Week](class-domain.project.subdomain.schedule.class.schedule_week.md).** One week (or day slot) on a project schedule.
+- **[Process::Process::Step](class-domain.process.subdomain.process.class.step.md).** A step of a process script.
 
 [Model facts](subdomain-domain.project.subdomain.task-facts.md)
 

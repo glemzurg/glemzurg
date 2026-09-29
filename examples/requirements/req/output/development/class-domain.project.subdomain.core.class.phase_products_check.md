@@ -46,25 +46,30 @@ class class_domain_project_subdomain_core_class_project["Project"] {
         Planned Appraisal Coq
         Planned Failure Coq
     }
-namespace Process.Family {
-class class_domain_process_subdomain_family_class_phase["Phase"] {
-            Num
-            Name
-            Description
-        }
-}
+class class_domain_project_subdomain_core_class_project_part["Project Part"] {
+        Name
+        Description
+        Multi Day
+        Planned Time
+        Actual Time
+        Planned Pct Reuse
+        Actual Pct Reuse
+        Planned Defect Count
+        Planned Appraisal Coq
+        Planned Failure Coq
+    }
 style class_domain_project_subdomain_core_class_phase_products_check stroke:#9370DB,stroke-width:3px
-class assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products["Checks Phase Products"]
-<<association>> assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
-style assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products stroke:#333,stroke-dasharray:5 5
-class_domain_project_subdomain_core_class_project "*" -- assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
-    assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products --> "*" class_domain_process_subdomain_family_class_phase
-    class_domain_project_subdomain_core_class_phase_products_check .. assoc_cassociation_domain_project_subdomain_core_class_project_domain_process_subdomain_family_class_phase_checks_phase_products
+class assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products["Checks Phase Products"]
+<<association>> assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
+style assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products stroke:#333,stroke-dasharray:5 5
+class_domain_project_subdomain_core_class_project "*" -- assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
+    assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products --> "*" class_domain_project_subdomain_core_class_project_part
+    class_domain_project_subdomain_core_class_phase_products_check .. assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
 
 ```
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Phase Products Check](class-domain.project.subdomain.core.class.phase_products_check.md).** Whether a project's products for a phase are satisfied.
 - **[Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
+- **[Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 
 
 # State Machine

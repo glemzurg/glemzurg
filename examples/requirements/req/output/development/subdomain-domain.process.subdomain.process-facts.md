@@ -13,9 +13,9 @@ Association multiplicity, association invariant, and index uniqueness constraint
 - each Project::Core::Project (current subphase) may link to at most one Step; each Step may link to any number of Project::Core::Projects (Planning step currently taking place, when one is set.).
 - each Project::Core::Project (follows process) links to exactly one Process; each Process may link to any number of Project::Core::Projects (Process this project follows.).
 - each Project::Core::Project Part (current subphase) may link to at most one Step; each Step may link to any number of Project::Core::Project Parts (Planning step currently taking place, when one is set.).
-- each Project::Quality::Process Improvement Proposal (on process) links to exactly one Process; each Process may link to any number of Project::Quality::Process Improvement Proposals (Process this proposal is about.).
 - each Project::Quality::Process Improvement Proposal (on subphase) links to exactly one Step; each Step may link to any number of Project::Quality::Process Improvement Proposals (Planning step this proposal is about.).
 - each Project::Quality::Process Improvement Proposal (resolved in process) links to exactly one Process; each Process may link to any number of Project::Quality::Process Improvement Proposals (Process version that absorbed this proposal.).
+- each Project::Task::Task (occurs in) links to exactly one Step; each Step may link to any number of Project::Task::Tasks (Step this task is performed in.).
 - each Script (has steps) links to any number of Steps; each Step links to exactly one Script; each Script–Step pairing has the uniqueness → Num (Ordered steps of this script.).
 - each Step (occurs in) links to exactly one Family::Phase; each Family::Phase may link to any number of Steps (Phase of the family skeleton this step is performed in.).
 

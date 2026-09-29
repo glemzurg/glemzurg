@@ -61,22 +61,27 @@ class class_domain_project_subdomain_core_class_project["Project"] {
             Planned Appraisal Coq
             Planned Failure Coq
         }
-}
-namespace Process.Family {
-class class_domain_process_subdomain_family_class_phase["Phase"] {
-            Num
+class class_domain_project_subdomain_core_class_project_part["Project Part"] {
             Name
             Description
+            Multi Day
+            Planned Time
+            Actual Time
+            Planned Pct Reuse
+            Actual Pct Reuse
+            Planned Defect Count
+            Planned Appraisal Coq
+            Planned Failure Coq
         }
 }
 style class_domain_project_subdomain_estimation_class_estimate_loc stroke:#9370DB,stroke-width:3px
-class_domain_project_subdomain_estimation_class_estimate_loc "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
 class_domain_project_subdomain_core_class_project "1" --> "0..1" class_domain_project_subdomain_estimation_class_estimate_loc : Has Loc Estimate
+class_domain_project_subdomain_estimation_class_estimate_loc "*" --> "1" class_domain_project_subdomain_core_class_project_part : For Phase
 
 ```
 - **[Estimate Loc](class-domain.project.subdomain.estimation.class.estimate_loc.md).** Planned lines-of-code account for a project.
-- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
 - **[Core::Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
+- **[Core::Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 
 
 # State Machine

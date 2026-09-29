@@ -36,6 +36,9 @@ config:
     hideEmptyMembersBox: true
 ---
 classDiagram
+class class_domain_project_subdomain_core_class_phase_products_check["Phase Products Check"] {
+        Satisfied
+    }
 class class_domain_project_subdomain_core_class_project["Project"] {
         Name
         Description
@@ -64,6 +67,67 @@ class class_domain_project_subdomain_core_class_project_part["Project Part"] {
         Planned Appraisal Coq
         Planned Failure Coq
     }
+namespace Estimation {
+class class_domain_project_subdomain_estimation_class_actual_loc["Actual Loc"] {
+            Cycle
+            Base
+            New
+            Changed
+            Added
+            Modified
+            Deleted
+            Reused
+            Object Loc
+        }
+class class_domain_project_subdomain_estimation_class_estimate_loc["Estimate Loc"] {
+            Base
+            New
+            Changed
+            Added
+            Modified
+            Deleted
+            Reused
+            Object Loc
+        }
+class class_domain_project_subdomain_estimation_class_estimate_probe["Estimate Probe"] {
+            Base Loc
+            Deleted Loc
+            Modified Loc
+            B0 Size
+            B1 Size
+            B0 Time
+            B1 Time
+            New Loc
+            New Reuse Loc
+            Estimated Time Min
+            Upper Prediction Interval
+            Lower Prediction Interval
+            Prediction Interval Percent
+            Actual Base Loc
+            Actual Deleted Loc
+            Actual Modified Loc
+            Loc Upper Prediction Interval 70
+            Loc Lower Prediction Interval 70
+            Time Upper Prediction Interval 70
+            Time Lower Prediction Interval 70
+        }
+class class_domain_project_subdomain_estimation_class_estimate_probe_add_loc["Estimate Probe Add Loc"] {
+            Name
+            Loc
+            Actual Loc
+        }
+class class_domain_project_subdomain_estimation_class_estimate_probe_object_loc["Estimate Probe Object Loc"] {
+            Name
+            Loc Per Method
+            Actual Loc
+            For Reuse
+        }
+class class_domain_project_subdomain_estimation_class_estimate_probe_object_reused["Estimate Probe Object Reused"] {
+            Name
+            Loc
+            Actual Loc
+        }
+}
 namespace Process.Definition {
 class class_domain_process_subdomain_definition_class_module_template["Module Template"] {
             Name
@@ -107,6 +171,12 @@ class class_domain_statistics_subdomain_default_class_stats_bucket["Stats Bucket
         }
 }
 style class_domain_project_subdomain_core_class_project_part stroke:#9370DB,stroke-width:3px
+class assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products["Checks Phase Products"]
+<<association>> assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
+class assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for["Has Probe Estimate For"]
+<<association>> assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for
+style assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products stroke:#333,stroke-dasharray:5 5
+style assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for stroke:#333,stroke-dasharray:5 5
 class_domain_project_subdomain_core_class_project_part "*" --> "1" class_domain_process_subdomain_definition_class_module_template : Instantiates
 class_domain_project_subdomain_core_class_project_part "*" --> "1" class_domain_process_subdomain_estimate_class_method : Uses Size Estimation Method
 class_domain_project_subdomain_core_class_project_part "*" --> "1" class_domain_process_subdomain_estimate_class_method : Uses Time Estimation Method
@@ -115,14 +185,33 @@ class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_doma
 class_domain_project_subdomain_core_class_project_part "*" --> "1" class_domain_process_subdomain_method_class_design_method : Uses Design Method
 class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_domain_process_subdomain_process_class_step : Current Subphase
 class_domain_project_subdomain_core_class_project_part "*" --> "0..1" class_domain_statistics_subdomain_default_class_stats_bucket : In Bucket
+class_domain_project_subdomain_estimation_class_actual_loc "*" --> "1" class_domain_project_subdomain_core_class_project_part : For Phase
+class_domain_project_subdomain_estimation_class_estimate_loc "*" --> "1" class_domain_project_subdomain_core_class_project_part : For Phase
+class_domain_project_subdomain_estimation_class_estimate_probe_add_loc "*" --> "1" class_domain_project_subdomain_core_class_project_part : For Phase
+class_domain_project_subdomain_estimation_class_estimate_probe_object_loc "*" --> "1" class_domain_project_subdomain_core_class_project_part : For Phase
+class_domain_project_subdomain_estimation_class_estimate_probe_object_reused "*" --> "1" class_domain_project_subdomain_core_class_project_part : For Phase
+class_domain_project_subdomain_core_class_project "*" -- assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
+    assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products --> "*" class_domain_project_subdomain_core_class_project_part
+    class_domain_project_subdomain_core_class_phase_products_check .. assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_checks_phase_products
+class_domain_project_subdomain_core_class_project "*" --> "0..1" class_domain_project_subdomain_core_class_project_part : Current Phase
 class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_part : Has Parts
+class_domain_project_subdomain_core_class_project "1" -- assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for
+    assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for --> "*" class_domain_project_subdomain_core_class_project_part
+    class_domain_project_subdomain_estimation_class_estimate_probe .. assoc_domain_project_subdomain_core_cassociation_class_project_class_project_part_has_probe_estimate_for
 
 ```
+- **[Estimation::Actual Loc](class-domain.project.subdomain.estimation.class.actual_loc.md).** Actual lines-of-code account for a project.
 - **[Process::Method::Design Method](class-domain.process.subdomain.method.class.design_method.md).** A design template used when planning a project or module.
+- **[Estimation::Estimate Loc](class-domain.project.subdomain.estimation.class.estimate_loc.md).** Planned lines-of-code account for a project.
+- **[Estimation::Estimate Probe](class-domain.project.subdomain.estimation.class.estimate_probe.md).** PROBE size and time calculation for a project in a phase.
+- **[Estimation::Estimate Probe Add Loc](class-domain.project.subdomain.estimation.class.estimate_probe_add_loc.md).** An added-object line in a PROBE size estimate.
+- **[Estimation::Estimate Probe Object Loc](class-domain.project.subdomain.estimation.class.estimate_probe_object_loc.md).** A new-object line in a PROBE size estimate.
+- **[Estimation::Estimate Probe Object Reused](class-domain.project.subdomain.estimation.class.estimate_probe_object_reused.md).** A reused-object line in a PROBE size estimate.
 - **[Process::Family::Language](class-domain.process.subdomain.family.class.language.md).** A programming language used when estimating size or time in a process family.
 - **[Process::Estimate::Method](class-domain.process.subdomain.estimate.class.method.md).** A programming method used when recording phase statistics for a project.
 - **[Process::Definition::Module Template](class-domain.process.subdomain.definition.class.module_template.md).** Shared configuration for projects (and project parts) that follow a process.
 - **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
+- **[Phase Products Check](class-domain.project.subdomain.core.class.phase_products_check.md).** Whether a project's products for a phase are satisfied.
 - **[Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
 - **[Project Part](class-domain.project.subdomain.core.class.project_part.md).** A language-specific part of a project.
 - **[Statistics::Stats Bucket](class-domain.statistics.subdomain.default.class.stats_bucket.md).** A bucket used to group project statistics.
