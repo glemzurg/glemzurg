@@ -8,11 +8,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 
 | Table | Column | Model |
 | --- | --- | --- |
-| language | language_id | Language identity |
-| language | family_id | Family Has Languages |
-| language | name | Language.name (unique per family) |
-| language | description | Language.description |
-| language | INDEX (language_id, family_id) | Supports Language composite FK; not a second identity |
 | process | process_id | Process identity |
 | process | family_id | Family Has Processes |
 | process | name, version, version_minor | unique per family |
