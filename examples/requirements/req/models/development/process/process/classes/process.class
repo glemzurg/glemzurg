@@ -32,11 +32,6 @@ attributes:
       name: Exit Criteria
       rules: unconstrained
       type_spec: STRING
-    - key: script_lock
-      name: Script Lock
-      details: When TRUE, scripts of this process are locked. Defaults to FALSE.
-      rules: enum of TRUE, FALSE
-      type_spec: BOOLEAN
 
 invariants:
     - details: Script name is unique among scripts of this process.
@@ -56,3 +51,17 @@ associations:
       from_multiplicity: any
       to_class_key: process
       to_multiplicity: "0..1"
+
+states:
+    Editable:
+        details: Process can still be changed.
+    Locked:
+        details: Process can no longer be changed.
+events:
+    _new:
+        details: Creates the process in the editable state.
+    Lock:
+        details: Locks the process.
+transitions:
+    - {event: "_new", to: "Editable"}
+    - {from: "Editable", event: "Lock", to: "Locked"}

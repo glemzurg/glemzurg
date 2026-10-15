@@ -8,14 +8,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 
 | Table | Column | Model |
 | --- | --- | --- |
-| process | process_id | Process identity |
-| process | family_id | Family Has Processes |
-| process | name, version, version_minor | unique per family |
-| process | purpose | Process.purpose |
-| process | entry_criteria | Process.entry_criteria |
-| process | exit_criteria | Process.exit_criteria |
-| process | script_lock | Process.script_lock |
-| process | ancestor_id | Process Has Ancestor |
 | script | script_id | Script identity |
 | script | process_id | Process Has Scripts |
 | script | num | Script.num (unique per process) |
