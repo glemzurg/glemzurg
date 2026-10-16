@@ -1,0 +1,19 @@
+# Guess
+
+An estimate computed as a direct guess.
+
+◇
+
+subclass_of_key: method
+
+attributes:
+    - key: guess_lowest_80pred
+      name: Guess Lowest 80 Pred
+      details: Lowest expected value at an 80 percent prediction interval.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: guess_highest_80pred
+      name: Guess Highest 80 Pred
+      details: Highest expected value at an 80 percent prediction interval.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat

@@ -1,0 +1,24 @@
+# Sum
+
+An estimate computed by summing inputs.
+
+◇
+
+subclass_of_key: method
+
+attributes:
+    - key: sum_count
+      name: Sum Count
+      details: Number of inputs into this sum.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: sum_mean
+      name: Sum Mean
+      details: Middle of the summed bell curve.
+      rules: "[unconstrained .. unconstrained] at 0.01 unit"
+      type_spec: Real
+    - key: sum_variance
+      name: Sum Variance
+      details: Shape of the summed bell curve.
+      rules: "[0 .. unconstrained] at 0.01 unit"
+      type_spec: Real

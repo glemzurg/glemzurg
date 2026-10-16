@@ -1,0 +1,12 @@
+# Actual
+
+The recorded result of an estimate. Added when the work is done, which completes the estimate.
+
+◇
+
+attributes:
+    - key: value
+      name: Value
+      details: Value recorded when the estimated work is complete.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat

@@ -8,34 +8,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 
 | Table | Column | Model |
 | --- | --- | --- |
-| estimate | estimate_id | Estimate identity |
-| estimate | family_id | Family Has Estimates |
-| estimate | language_id | Estimate Uses Language |
-| estimate | axis | Estimate.axis |
-| estimate | scope | Estimate.scope |
-| estimate | version | Estimate.version |
-| estimate | mean | Estimate.mean |
-| estimate | variance | Estimate.variance |
-| estimate | low | Estimate.low |
-| estimate | high | Estimate.high |
-| estimate | actual | Estimate.actual |
-| estimate | method | Estimate.method |
-| estimate | prediction_interval | Estimate.prediction_interval |
-| estimate | comment | Estimate.comment |
-| estimate | estimation_time | Estimate.estimation_time |
-| estimate | guess_lowest_80pred | Estimate.guess_lowest_80pred |
-| estimate | guess_highest_80pred | Estimate.guess_highest_80pred |
-| estimate | sum_count | Estimate.sum_count |
-| estimate | sum_mean | Estimate.sum_mean |
-| estimate | sum_variance | Estimate.sum_variance |
-| estimate | portion_portion | Estimate.portion_portion |
-| estimate | portion_mean | Estimate.portion_mean |
-| estimate | portion_variance | Estimate.portion_variance |
-| estimate | INDEX (actual) | Lookup aid, not an identity |
-| estimate | prior_estimate_id | Estimate Has Prior |
-| method | method_id | Method identity |
-| method | name | Method.name (unique index) |
-| method | description | Method.description |
 | project (both drafts) | project_id | Project identity |
 | project | created_time | Project.created_time |
 | project | name | Project.name |
