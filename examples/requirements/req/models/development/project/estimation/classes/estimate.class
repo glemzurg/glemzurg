@@ -130,11 +130,8 @@ associations:
       from_multiplicity: any
       to_class_key: process/family/language
       to_multiplicity: "1"
-    - name: Has History
-      details: Prior versions of this estimate.
-      from_multiplicity: "1"
-      to_class_key: estimate_historic
-      to_multiplicity: any
-      uniqueness:
-          - to_attributes:
-                - version
+    - name: Has Prior
+      details: Earlier version of this estimate, when one exists.
+      from_multiplicity: any
+      to_class_key: estimate
+      to_multiplicity: "0..1"

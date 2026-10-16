@@ -32,11 +32,7 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | estimate | portion_mean | Estimate.portion_mean |
 | estimate | portion_variance | Estimate.portion_variance |
 | estimate | INDEX (actual) | Lookup aid, not an identity |
-| estimate_historic | estimate_id | Estimate Has History |
-| estimate_historic | family_id | Estimate Historic Belongs To Family |
-| estimate_historic | language_id | Estimate Historic Uses Language |
-| estimate_historic | version | Estimate Historic.version (unique per estimate) |
-| estimate_historic | remaining columns | Same attributes as Estimate |
+| estimate | prior_estimate_id | Estimate Has Prior |
 | method | method_id | Method identity |
 | method | name | Method.name (unique index) |
 | method | description | Method.description |
