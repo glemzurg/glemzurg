@@ -8,29 +8,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 
 | Table | Column | Model |
 | --- | --- | --- |
-| cycle | cycle_id | Cycle identity |
-| cycle | process_id | Process Has Cycles |
-| cycle | num | Cycle.num (unique per process) |
-| cycle | name | Cycle.name (unique per process) |
-| cycle | task_summary | Cycle.task_summary |
-| cycle | purpose | Cycle.purpose |
-| cycle | entry_criteria | Cycle.entry_criteria |
-| cycle | exit_criteria | Cycle.exit_criteria |
-| cycle | type | Cycle.type (once or repeating) |
-| script | script_id | Script identity |
-| script | cycle_id | Cycle Has Scripts |
-| script | num | Script.num (unique per cycle) |
-| script | name | Script.name (unique per cycle) |
-| script | task_summary | Script.task_summary |
-| script | purpose | Script.purpose |
-| script | entry_criteria | Script.entry_criteria |
-| script | exit_criteria | Script.exit_criteria |
-| step | step_id | Step identity |
-| step | script_id | Script Has Steps |
-| step | num | Step.num (unique per script) |
-| step | name | Step.name (unique per script) |
-| step | phase_id | Step Occurs In Phase |
-| step | tasks | Step.tasks |
 | estimate | estimate_id | Estimate identity |
 | estimate | family_id | Family Has Estimates |
 | estimate | language_id | Estimate Uses Language |
