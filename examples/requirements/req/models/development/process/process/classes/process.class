@@ -33,19 +33,12 @@ attributes:
       rules: unconstrained
       type_spec: STRING
 
-invariants:
-    - details: Script name is unique among scripts of this process.
-      specification: '\A s \in self.HasScripts : _FiniteSets!Cardinality({ q \in self.HasScripts : q.name = s.name }) = 1'
-
 associations:
-    - name: Has Scripts
-      details: Ordered scripts that make up this process.
+    - name: Has Cycles
+      details: Cycles of scripts that make up this process.
       from_multiplicity: "1"
-      to_class_key: script
+      to_class_key: cycle
       to_multiplicity: any
-      uniqueness:
-          - to_attributes:
-                - num
     - name: Has Ancestor
       details: Earlier process this version replaces, when one exists.
       from_multiplicity: any

@@ -8,15 +8,17 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 
 | Table | Column | Model |
 | --- | --- | --- |
+| cycle | cycle_id | Cycle identity |
+| cycle | process_id | Process Has Cycles |
+| cycle | type | Cycle.type (once or repeated) |
 | script | script_id | Script identity |
-| script | process_id | Process Has Scripts |
-| script | num | Script.num (unique per process) |
-| script | name | Script.name (unique per process) |
+| script | cycle_id | Cycle Has Scripts |
+| script | num | Script.num (unique per cycle) |
+| script | name | Script.name (unique per cycle) |
 | script | task_summary | Script.task_summary |
 | script | purpose | Script.purpose |
 | script | entry_criteria | Script.entry_criteria |
 | script | exit_criteria | Script.exit_criteria |
-| script | cycle | Script.cycle |
 | step | step_id | Step identity |
 | step | script_id | Script Has Steps |
 | step | num | Step.num (unique per script) |

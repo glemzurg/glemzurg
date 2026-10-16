@@ -22,8 +22,8 @@ attributes:
       type_spec: STRING
 
 invariants:
-    - details: The phase of a step belongs to the same family as the process that owns the script.
-      specification: 'LET script == CHOOSE s \in self._HasSteps : TRUE IN LET process == CHOOSE p \in script._HasScripts : TRUE IN LET familyFromProcess == CHOOSE f \in process._HasProcesses : TRUE IN LET phase == CHOOSE ph \in self.OccursIn : TRUE IN LET familyFromPhase == CHOOSE f \in phase._HasPhases : TRUE IN familyFromProcess = familyFromPhase'
+    - details: The phase of a step belongs to the same family as the process that owns the cycle of its script.
+      specification: 'LET script == CHOOSE s \in self._HasSteps : TRUE IN LET cycle == CHOOSE c \in script._HasScripts : TRUE IN LET process == CHOOSE p \in cycle._HasCycles : TRUE IN LET familyFromProcess == CHOOSE f \in process._HasProcesses : TRUE IN LET phase == CHOOSE ph \in self.OccursIn : TRUE IN LET familyFromPhase == CHOOSE f \in phase._HasPhases : TRUE IN familyFromProcess = familyFromPhase'
 
 associations:
     - name: Occurs In

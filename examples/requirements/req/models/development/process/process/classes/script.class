@@ -1,18 +1,18 @@
 # Script
 
-A step-by-step process script owned by a process.
+A step-by-step process script owned by a cycle.
 
 ◇
 
 attributes:
     - key: num
       name: Num
-      details: Order of this script within the process.
+      details: Order of this script within the cycle.
       rules: "[0 .. unconstrained] at 1 unit"
       type_spec: Nat
     - key: name
       name: Name
-      details: Unique among scripts of the same process.
+      details: Unique among scripts of the same cycle.
       rules: unconstrained
       type_spec: STRING
     - key: task_summary
@@ -31,11 +31,6 @@ attributes:
       name: Exit Criteria
       rules: unconstrained
       type_spec: STRING
-    - key: cycle
-      name: Cycle
-      details: Whether this script is a cycle. Defaults to FALSE.
-      rules: enum of TRUE, FALSE
-      type_spec: BOOLEAN
 
 invariants:
     - details: Step name is unique among steps of this script.

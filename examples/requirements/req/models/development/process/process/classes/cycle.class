@@ -1,0 +1,26 @@
+# Cycle
+
+A repeating set of scripts within a process.
+
+◇
+
+attributes:
+    - key: type
+      name: Type
+      details: Whether this cycle runs once or is repeated.
+      rules: enum of once, repeating
+      type_spec: STRING
+
+invariants:
+    - details: Script name is unique among scripts of this cycle.
+      specification: '\A s \in self.HasScripts : _FiniteSets!Cardinality({ q \in self.HasScripts : q.name = s.name }) = 1'
+
+associations:
+    - name: Has Scripts
+      details: Ordered scripts that make up this cycle.
+      from_multiplicity: "1"
+      to_class_key: script
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - num
