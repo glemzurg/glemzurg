@@ -10,7 +10,13 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | --- | --- | --- |
 | cycle | cycle_id | Cycle identity |
 | cycle | process_id | Process Has Cycles |
-| cycle | type | Cycle.type (once or repeated) |
+| cycle | num | Cycle.num (unique per process) |
+| cycle | name | Cycle.name (unique per process) |
+| cycle | task_summary | Cycle.task_summary |
+| cycle | purpose | Cycle.purpose |
+| cycle | entry_criteria | Cycle.entry_criteria |
+| cycle | exit_criteria | Cycle.exit_criteria |
+| cycle | type | Cycle.type (once or repeating) |
 | script | script_id | Script identity |
 | script | cycle_id | Cycle Has Scripts |
 | script | num | Script.num (unique per cycle) |

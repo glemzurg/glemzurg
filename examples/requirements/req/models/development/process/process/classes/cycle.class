@@ -5,9 +5,35 @@ A repeating set of scripts within a process.
 ◇
 
 attributes:
+    - key: num
+      name: Num
+      details: Order of this cycle within the process.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: Unique among cycles of the same process.
+      rules: unconstrained
+      type_spec: STRING
+    - key: task_summary
+      name: Task Summary
+      rules: unconstrained
+      type_spec: STRING
+    - key: purpose
+      name: Purpose
+      rules: unconstrained
+      type_spec: STRING
+    - key: entry_criteria
+      name: Entry Criteria
+      rules: unconstrained
+      type_spec: STRING
+    - key: exit_criteria
+      name: Exit Criteria
+      rules: unconstrained
+      type_spec: STRING
     - key: type
       name: Type
-      details: Whether this cycle runs once or is repeated.
+      details: Whether this cycle runs once or is repeating.
       rules: enum of once, repeating
       type_spec: STRING
 
