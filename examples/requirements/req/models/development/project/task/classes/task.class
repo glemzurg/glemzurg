@@ -1,18 +1,10 @@
 # Task
 
-A planned task on a project, assigned to a phase and a schedule week.
+Project-specific estimate of a process step task.
 
 ◇
 
 attributes:
-    - key: num
-      name: Num
-      rules: "[0 .. unconstrained] at 1 unit"
-      type_spec: Nat
-    - key: name
-      name: Name
-      rules: unconstrained
-      type_spec: STRING
     - key: planned_hours
       name: Planned Hours
       rules: "[0 .. unconstrained] at 1 hour"
@@ -23,10 +15,10 @@ attributes:
       type_spec: Nat
 
 associations:
-    - name: Occurs In
-      details: Step this task is performed in.
+    - name: For Step Task
+      details: Process step task this project task estimates.
       from_multiplicity: any
-      to_class_key: process/process/step
+      to_class_key: process/process/step_task
       to_multiplicity: "1"
     - name: On Week
       details: Schedule week this task is planned for.

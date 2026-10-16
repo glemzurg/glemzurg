@@ -80,8 +80,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | stats_bucket | stats_bucket_id | Stats Bucket identity |
 | stats_bucket | name | Stats Bucket.name |
 | stats_bucket | description | Stats Bucket.description |
-| process (commented columns) | size_unit | Process.size_unit |
-| process (commented columns) | size_k_unit | Process.size_k_unit |
 | module_template | module_template_id | Module Template identity |
 | module_template | process_id | Module Template Follows Process |
 | module_template | name | Module Template.name |
@@ -171,10 +169,8 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | schedule_week | date_monday | Schedule Week.date_monday |
 | task | task_id | Task identity |
 | task | project_id | Project Has Tasks |
-| task | phase_id | Task Occurs In |
+| task | step_task_id | Task For Step Task |
 | task | schedule_week_id | Task On Week |
-| task | num | Task.num |
-| task | name | Task.name |
 | task | planned_hours | Task.planned_hours |
 | task | pct_complete | Task.pct_complete |
 | time_log | time_log_id | Time Log identity |

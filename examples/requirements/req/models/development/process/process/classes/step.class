@@ -15,17 +15,20 @@ attributes:
       details: Unique among steps of the same script.
       rules: unconstrained
       type_spec: STRING
-    - key: tasks
-      name: Tasks
-      details: Work performed in this step.
-      rules: unconstrained
-      type_spec: STRING
 
 invariants:
     - details: The phase of a step belongs to the same family as the process that owns the cycle of its script.
       specification: 'LET script == CHOOSE s \in self._HasSteps : TRUE IN LET cycle == CHOOSE c \in script._HasScripts : TRUE IN LET process == CHOOSE p \in cycle._HasCycles : TRUE IN LET familyFromProcess == CHOOSE f \in process._HasProcesses : TRUE IN LET phase == CHOOSE ph \in self.OccursIn : TRUE IN LET familyFromPhase == CHOOSE f \in phase._HasPhases : TRUE IN familyFromProcess = familyFromPhase'
 
 associations:
+    - name: Has Step Tasks
+      details: Ordered work defined for this step, shared by every project that follows the process.
+      from_multiplicity: "1"
+      to_class_key: step_task
+      to_multiplicity: "1..many"
+      uniqueness:
+          - to_attributes:
+                - num
     - name: Occurs In
       details: Phase of the family skeleton this step is performed in.
       from_multiplicity: any

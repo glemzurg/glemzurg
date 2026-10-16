@@ -1,0 +1,21 @@
+# Step Task
+
+Work defined on a process step. Shared by every project that follows the process.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this step task within the step.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      details: Work performed for this step task.
+      rules: unconstrained
+      type_spec: STRING
