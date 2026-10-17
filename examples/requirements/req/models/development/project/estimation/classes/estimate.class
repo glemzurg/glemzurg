@@ -1,6 +1,6 @@
 # Estimate
 
-An estimate of size or time, categorized by family, language, axis, and scope. One estimate is edited in place. Guess, sum, portion, and loc are subclasses.
+An estimate of size or time, categorized by family, axis, and scope. One estimate is edited in place. Guess, computed, and loc are subclasses.
 
 ◇
 
@@ -49,10 +49,10 @@ attributes:
       type_spec: Nat
 
 associations:
-    - name: Uses Size Count
-      details: Size metric this estimate is categorized by.
+    - name: Uses Size Category
+      details: Size category this estimate is categorized by.
       from_multiplicity: any
-      to_class_key: process/family/size_count_type
+      to_class_key: process/family/size_category
       to_multiplicity: "1"
     - name: Has Actual
       details: Recorded result that completes this estimate, added when the work is done.

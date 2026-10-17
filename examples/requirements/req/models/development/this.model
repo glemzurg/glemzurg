@@ -23,7 +23,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | project | design_method_id | Project Uses Design Method |
 | project | size_estimation_method_id | Project Uses Size Estimation Method |
 | project | time_estimation_method_id | Project Uses Time Estimation Method |
-| project | language_id | Project Uses Language |
 | project | mutli_day | Project.multi_day |
 | project | planned_time | Project.planned_time |
 | project | actual_time | Project.actual_time |
@@ -41,7 +40,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | project_stat_phase | estimate_comment | Project Stat Phase.estimate_comment |
 | phase_products_check | phase_id, project_id | Project Checks Phase Products (association class) |
 | phase_products_check | satisfied | Phase Products Check.satisfied |
-| language (commented) | (duplicate of live language) | Language |
 | design_method | design_id | Design Method identity |
 | design_method | name | Design Method.name |
 | design_method | description | Design Method.description |
@@ -55,7 +53,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | module_template | size_estimation_method_id | Module Template Uses Size Estimation Method |
 | module_template | time_estimation_method_id | Module Template Uses Time Estimation Method |
 | module_template | design_method_id | Module Template Uses Design Method |
-| module_template | language_id | Module Template Uses Language |
 | project_part | (identity) | Project Part identity |
 | project_part | module_template_id | Project Part Instantiates |
 | project_part | project_bucket_id | Project Part In Bucket |
@@ -66,7 +63,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | project_part | design_method_id | Project Part Uses Design Method |
 | project_part | size_estimation_method_id | Project Part Uses Size Estimation Method |
 | project_part | time_estimation_method_id | Project Part Uses Time Estimation Method |
-| project_part | language_id | Project Part Uses Language |
 | project_part | mutli_day | Project Part.multi_day |
 | project_part | planned_time | Project Part.planned_time |
 | project_part | actual_time | Project Part.actual_time |

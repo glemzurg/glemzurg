@@ -1,6 +1,6 @@
 # Project Part
 
-A language-specific part of a project.
+A part of a project.
 
 ◇
 
@@ -80,9 +80,4 @@ associations:
     - name: Uses Time Estimation Method
       from_multiplicity: any
       to_class_key: process/estimate/method
-      to_multiplicity: "1"
-    - name: Uses Language
-      details: Language this part is implemented in.
-      from_multiplicity: any
-      to_class_key: process/family/language
       to_multiplicity: "1"

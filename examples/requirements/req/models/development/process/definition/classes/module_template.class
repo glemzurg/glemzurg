@@ -36,8 +36,3 @@ associations:
       from_multiplicity: any
       to_class_key: method/design_method
       to_multiplicity: "1"
-    - name: Uses Language
-      details: Language this module template is for.
-      from_multiplicity: any
-      to_class_key: family/language
-      to_multiplicity: "1"

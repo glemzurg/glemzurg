@@ -14,3 +14,15 @@ attributes:
       rules: unconstrained
       nullable: true
       type_spec: STRING
+
+associations:
+    - name: Has Size Categories
+      details: Ordered categories of this size count.
+      from_multiplicity: "1"
+      to_class_key: size_category
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - num
+          - to_attributes:
+                - name

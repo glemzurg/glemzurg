@@ -109,13 +109,8 @@ associations:
       from_multiplicity: any
       to_class_key: process/estimate/method
       to_multiplicity: "1"
-    - name: Uses Language
-      details: Language this project is implemented in.
-      from_multiplicity: any
-      to_class_key: process/family/language
-      to_multiplicity: "1"
     - name: Has Parts
-      details: Language-specific parts of this project.
+      details: Parts of this project.
       from_multiplicity: "1"
       to_class_key: project_part
       to_multiplicity: any
