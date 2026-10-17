@@ -86,10 +86,9 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | project_cycle_actual | num | Project Cycle Actual.num |
 | project_cycle_actual | actual_pct_reuse | Project Cycle Actual.actual_pct_reuse |
 | project_cycle_actual | (project) | Project Has Cycle Actuals |
-| estimate_loc | estimate_id | Estimate Loc identity |
-| estimate_loc | project_id | Project Has Loc Estimate |
-| estimate_loc | base, new, changed, added, modified, deleted, reused, object_loc | Estimate Loc attributes |
-| estimate_loc | phase_id (FK only) | Estimate Loc For Phase |
+| loc | base, new, changed, added, modified, deleted, reused, object_loc | Loc attributes |
+| loc | phase_id | Loc For Phase |
+| estimate | project_id | Project Has Loc Estimate (optional) |
 | probe_object_type | (catalog) | Probe Object Type; CREATE body duplicated estimate_probe columns already on Estimate Probe |
 | probe_object_type | number, name, description | Probe Object Type attributes |
 | estimate_probe | estimate_id | Estimate Probe identity (association class of Project Has Probe Estimate For Phase) |

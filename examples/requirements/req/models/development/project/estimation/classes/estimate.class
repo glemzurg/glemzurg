@@ -1,17 +1,12 @@
 # Estimate
 
-An estimate of size or time, categorized by family, language, axis, and scope. One estimate is edited in place. Guess, sum, and portion are subclasses.
+An estimate of size or time, categorized by family, language, axis, and scope. One estimate is edited in place. Guess, sum, portion, and loc are subclasses.
 
 ◇
 
 superclass_of_key: method
 
 attributes:
-    - key: axis
-      name: Axis
-      details: Whether this estimate is of size or time.
-      rules: enum of size, time
-      type_spec: STRING
     - key: scope
       name: Scope
       details: How the estimate is categorized.
@@ -53,15 +48,11 @@ attributes:
       rules: datetime
       type_spec: Nat
 
-invariants:
-    - details: The language of an estimate belongs to the same family as the estimate.
-      specification: 'LET lang == CHOOSE l \in self.UsesLanguage : TRUE IN LET family == CHOOSE f \in self._HasEstimates : TRUE IN lang \in family.HasLanguages'
-
 associations:
-    - name: Uses Language
-      details: Language this estimate is categorized by. The language must belong to the same family.
+    - name: Uses Size Count
+      details: Size metric this estimate is categorized by.
       from_multiplicity: any
-      to_class_key: process/family/language
+      to_class_key: process/family/size_count_type
       to_multiplicity: "1"
     - name: Has Actual
       details: Recorded result that completes this estimate, added when the work is done.

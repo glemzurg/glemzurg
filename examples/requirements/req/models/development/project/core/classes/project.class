@@ -162,9 +162,9 @@ associations:
       to_class_key: task/time_log
       to_multiplicity: any
     - name: Has Loc Estimate
-      details: Planned lines-of-code account for this project.
-      from_multiplicity: "1"
-      to_class_key: estimation/estimate_loc
+      details: Estimate for this project, when one is set. A lines-of-code account is a Loc estimate.
+      from_multiplicity: "0..1"
+      to_class_key: estimation/estimate
       to_multiplicity: "0..1"
     - name: Has Actual Loc
       details: Actual lines-of-code account for this project.

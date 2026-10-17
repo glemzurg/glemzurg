@@ -1,8 +1,10 @@
-# Estimate Loc
+# Loc
 
-Planned lines-of-code account for a project.
+A lines-of-code estimate.
 
 ◇
+
+subclass_of_key: method
 
 attributes:
     - key: base

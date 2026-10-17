@@ -1,0 +1,16 @@
+# Size Count Type
+
+A named kind of count for size. In software this could be lines of code for a specific language.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      nullable: true
+      type_spec: STRING

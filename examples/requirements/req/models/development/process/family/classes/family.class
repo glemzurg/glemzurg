@@ -40,10 +40,10 @@ associations:
                 - name
           - to_attributes:
                 - num
-    - name: Has Languages
-      details: Programming languages used when estimating in this family.
+    - name: Has Size Counts
+      details: Ways of recording and estimating sizes.
       from_multiplicity: "1"
-      to_class_key: language
+      to_class_key: size_count_type
       to_multiplicity: any
       uniqueness:
           - to_attributes:
