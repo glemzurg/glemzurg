@@ -2,8 +2,6 @@
 
 A kind of object used when estimating with PROBE.
 
-The commented CREATE body repeated estimate_probe columns; those calculation columns live on Estimate Probe. This class is the object-type catalog named by the DROP TABLE.
-
 ◇
 
 attributes:

@@ -1,24 +1,24 @@
 # Computed
 
-An estimate computed from inputs.
+An estimate computed from historic data.
 
 ◇
 
 subclass_of_key: method
 
 attributes:
-    - key: computed_count
-      name: Computed Count
-      details: Number of inputs into this computation.
+    - key: count
+      name: Count
+      details: Number of values used in this computation.
       rules: "[0 .. unconstrained] at 1 unit"
       type_spec: Nat
-    - key: computed_mean
-      name: Computed Mean
+    - key: mean
+      name: Mean
       details: Middle of the computed bell curve.
       rules: "[unconstrained .. unconstrained] at 0.01 unit"
       type_spec: Real
-    - key: computed_variance
-      name: Computed Variance
+    - key: variance
+      name: Variance
       details: Shape of the computed bell curve.
       rules: "[0 .. unconstrained] at 0.01 unit"
       type_spec: Real

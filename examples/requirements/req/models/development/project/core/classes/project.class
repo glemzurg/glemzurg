@@ -161,24 +161,3 @@ associations:
       from_multiplicity: "1"
       to_class_key: estimation/actual_loc
       to_multiplicity: "0..1"
-    - name: Has Probe Estimate For
-      details: PROBE size and time calculation for a phase of this project.
-      from_multiplicity: "1"
-      to_class_key: project/core/project_part
-      to_multiplicity: any
-      association_class_key: estimation/estimate_probe
-    - name: Has Probe Add Loc
-      details: Added-object LOC lines in the PROBE estimate.
-      from_multiplicity: "1"
-      to_class_key: estimation/estimate_probe_add_loc
-      to_multiplicity: any
-    - name: Has Probe Object Loc
-      details: New-object LOC lines in the PROBE estimate.
-      from_multiplicity: "1"
-      to_class_key: estimation/estimate_probe_object_loc
-      to_multiplicity: any
-    - name: Has Probe Object Reused
-      details: Reused-object LOC lines in the PROBE estimate.
-      from_multiplicity: "1"
-      to_class_key: estimation/estimate_probe_object_reused
-      to_multiplicity: any

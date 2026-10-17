@@ -85,38 +85,12 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | loc | base, new, changed, added, modified, deleted, reused, object_loc | Loc attributes |
 | loc | phase_id | Loc For Phase |
 | estimate | task_id | Core Task Has Loc Estimate (optional) |
-| probe_object_type | (catalog) | Probe Object Type; CREATE body duplicated estimate_probe columns already on Estimate Probe |
+| probe_object_type | (catalog) | Probe Object Type |
 | probe_object_type | number, name, description | Probe Object Type attributes |
-| estimate_probe | estimate_id | Estimate Probe identity (association class of Project Has Probe Estimate For Phase) |
-| estimate_probe | project_id, phase_id | Project Has Probe Estimate For |
-| estimate_probe | remaining loc/regression columns | Estimate Probe attributes |
 | probe_type | probe_type_id | Probe Type identity |
 | probe_type | number, name, description | Probe Type attributes |
 | probe_object_size | (identity) | Probe Object Size identity |
 | probe_object_size | number, name, description | Probe Object Size attributes |
-| estimate_probe_add_loc | estimate_probe_add_loc_id | Estimate Probe Add Loc identity |
-| estimate_probe_add_loc | project_id | Project Has Probe Add Loc |
-| estimate_probe_add_loc | name | Estimate Probe Add Loc.name |
-| estimate_probe_add_loc | type | Estimate Probe Add Loc Of Type |
-| estimate_probe_add_loc | relative_size | Estimate Probe Add Loc Of Size |
-| estimate_probe_add_loc | loc | Estimate Probe Add Loc.loc |
-| estimate_probe_add_loc | acual_loc | Estimate Probe Add Loc.actual_loc |
-| estimate_probe_add_loc | phase_id (FK only) | Estimate Probe Add Loc For Phase |
-| estimate_probe_object_loc | (identity) | Estimate Probe Object Loc identity |
-| estimate_probe_object_loc | project_id | Project Has Probe Object Loc |
-| estimate_probe_object_loc | name | Estimate Probe Object Loc.name |
-| estimate_probe_object_loc | type | Estimate Probe Object Loc Of Type |
-| estimate_probe_object_loc | relative_size | Estimate Probe Object Loc Of Size |
-| estimate_probe_object_loc | loc_per_method | Estimate Probe Object Loc.loc_per_method |
-| estimate_probe_object_loc | acual_loc | Estimate Probe Object Loc.actual_loc |
-| estimate_probe_object_loc | for_reuse | Estimate Probe Object Loc.for_reuse |
-| estimate_probe_object_loc | phase_id (FK only) | Estimate Probe Object Loc For Phase |
-| estimate_probe_object_reused | (identity) | Estimate Probe Object Reused identity |
-| estimate_probe_object_reused | project_id | Project Has Probe Object Reused |
-| estimate_probe_object_reused | name | Estimate Probe Object Reused.name |
-| estimate_probe_object_reused | loc | Estimate Probe Object Reused.loc |
-| estimate_probe_object_reused | acual_loc | Estimate Probe Object Reused.actual_loc |
-| estimate_probe_object_reused | phase_id (FK only) | Estimate Probe Object Reused For Phase |
 | actual_loc | estimate_id | Actual Loc identity |
 | actual_loc | project_id | Project Has Actual Loc |
 | actual_loc | cycle | Actual Loc.cycle |

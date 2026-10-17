@@ -1,17 +1,12 @@
 # Estimate
 
-An estimate of size or time, categorized by family, axis, and scope. One estimate is edited in place. Guess, computed, and loc are subclasses.
+An estimate of time, organzied and future tracked by the size catagory.
 
 ◇
 
 superclass_of_key: method
 
 attributes:
-    - key: scope
-      name: Scope
-      details: How the estimate is categorized.
-      rules: enum of project, phase, cycle, proxy, added, modified, deleted
-      type_spec: STRING
     - key: mean
       name: Mean
       details: The middle of the estimate bell curve.
