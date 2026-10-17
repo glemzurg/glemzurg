@@ -1,0 +1,23 @@
+# Task
+
+Work in a project that an estimate can be recorded against.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      nullable: true
+      type_spec: STRING
+
+associations:
+    - name: Has Size Estimate
+      details: Estimate for this task, when one is set.
+      from_multiplicity: "0..1"
+      to_class_key: estimation/estimate
+      to_multiplicity: "0..1"
