@@ -30,5 +30,5 @@ associations:
     - name: For Task
       details: Task this time was spent on.
       from_multiplicity: any
-      to_class_key: task
+      to_class_key: core/task
       to_multiplicity: "1"

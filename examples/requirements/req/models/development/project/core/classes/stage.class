@@ -20,5 +20,5 @@ associations:
     - name: Has Tasks
       details: Tasks of this stage. Each task is an instance of a process step task.
       from_multiplicity: "1"
-      to_class_key: task/task
+      to_class_key: task
       to_multiplicity: any

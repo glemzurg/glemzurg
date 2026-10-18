@@ -18,144 +18,19 @@ attributes:
       name: Created Time
       rules: datetime
       type_spec: Nat
-    - key: started_time
-      name: Started Time
-      details: Empty when the project has not started.
-      rules: datetime
-      type_spec: Nat
-      nullable: true
-    - key: estimate_minute
-      name: Estimate Minute
-      details: Defaults to 0.
-      rules: "[0 .. unconstrained] at 1 minute"
-      type_spec: Nat
-    - key: estimate_comment
-      name: Estimate Comment
-      details: Defaults to empty.
-      rules: unconstrained
-      type_spec: STRING
-    - key: multi_day
-      name: Multi Day
-      details: SQL column mutli_day.
-      rules: enum of TRUE, FALSE
-      type_spec: BOOLEAN
-    - key: planned_time
-      name: Planned Time
-      rules: "[0 .. unconstrained] at 1 unit"
-      type_spec: Nat
-    - key: actual_time
-      name: Actual Time
-      rules: "[0 .. unconstrained] at 1 unit"
-      type_spec: Nat
-    - key: planned_pct_reuse
-      name: Planned Pct Reuse
-      rules: "[0 .. 100] at 1 percent"
-      type_spec: Nat
-    - key: actual_pct_reuse
-      name: Actual Pct Reuse
-      rules: "[0 .. 100] at 1 percent"
-      type_spec: Nat
-    - key: planned_defect_count
-      name: Planned Defect Count
-      rules: "[0 .. unconstrained] at 1 unit"
-      type_spec: Nat
-    - key: planned_appraisal_coq
-      name: Planned Appraisal Coq
-      rules: "[0 .. unconstrained] at 1 unit"
-      type_spec: Nat
-    - key: planned_failure_coq
-      name: Planned Failure Coq
-      rules: "[0 .. unconstrained] at 1 unit"
-      type_spec: Nat
+
 
 associations:
-    - name: Instance Of
-      details: Process this project is an instance of.
+    - name: Follows
+      details: This project follows the struction of a process.
       from_multiplicity: any
       to_class_key: process/process/process
       to_multiplicity: "1"
     - name: Has Cycles
       details: Cycles of this project. Each cycle is an instance of a process phase.
       from_multiplicity: "1"
-      to_class_key: cycle/cycle
+      to_class_key: cycle
       to_multiplicity: any
       uniqueness:
           - to_attributes:
                 - num
-    - name: Instantiates
-      details: Module template this project is created from.
-      from_multiplicity: any
-      to_class_key: process/definition/module_template
-      to_multiplicity: "1"
-    - name: In Bucket
-      details: Stats bucket this project is grouped in, when one is set.
-      from_multiplicity: any
-      to_class_key: statistics/default/stats_bucket
-      to_multiplicity: "0..1"
-    - name: Current Phase
-      details: Phase whose forms are currently open, when one is set.
-      from_multiplicity: any
-      to_class_key: project/core/project_part
-      to_multiplicity: "0..1"
-    - name: Current Subphase
-      details: Planning step currently taking place, when one is set.
-      from_multiplicity: any
-      to_class_key: process/process/step
-      to_multiplicity: "0..1"
-    - name: Uses Design Method
-      details: Design template used by this project.
-      from_multiplicity: any
-      to_class_key: process/method/design_method
-      to_multiplicity: "1"
-    - name: Uses Size Estimation Method
-      details: Method used to estimate size.
-      from_multiplicity: any
-      to_class_key: process/estimate/method
-      to_multiplicity: "1"
-    - name: Uses Time Estimation Method
-      details: Method used to estimate time.
-      from_multiplicity: any
-      to_class_key: process/estimate/method
-      to_multiplicity: "1"
-    - name: Has Parts
-      details: Parts of this project.
-      from_multiplicity: "1"
-      to_class_key: project_part
-      to_multiplicity: any
-    - name: Has Cycle Plans
-      details: Planned reuse values recorded per cycle.
-      from_multiplicity: "1"
-      to_class_key: cycle/project_cycle_plan
-      to_multiplicity: any
-      uniqueness:
-          - to_attributes:
-                - num
-    - name: Has Cycle Actuals
-      details: Actual reuse values recorded per cycle.
-      from_multiplicity: "1"
-      to_class_key: cycle/project_cycle_actual
-      to_multiplicity: any
-      uniqueness:
-          - to_attributes:
-                - num
-    - name: Has Stat Phases
-      details: Per-phase statistical estimates for this project.
-      from_multiplicity: "1"
-      to_class_key: project_stat_phase
-      to_multiplicity: any
-    - name: Checks Phase Products
-      details: Whether each phase's products are satisfied for this project.
-      from_multiplicity: any
-      to_class_key: project/core/project_part
-      to_multiplicity: any
-      association_class_key: phase_products_check
-    - name: Has Schedule
-      details: Schedule for recording planned work.
-      from_multiplicity: "1"
-      to_class_key: schedule/schedule
-      to_multiplicity: "0..1"
-    - name: Has Time Logs
-      details: Recorded time log entries.
-      from_multiplicity: "1"
-      to_class_key: task/time_log
-      to_multiplicity: any

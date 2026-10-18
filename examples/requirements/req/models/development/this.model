@@ -18,7 +18,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | project | estimate_comment | Project.estimate_comment |
 | project | module_template_id | Project Instantiates |
 | project | project_bucket_id | Project In Bucket |
-| project | current_phase_id | Project Current Phase |
 | project | current_subphase_id | Project Current Subphase |
 | project | design_method_id | Project Uses Design Method |
 | project | size_estimation_method_id | Project Uses Size Estimation Method |
@@ -31,15 +30,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | project | planned_defect_count | Project.planned_defect_count |
 | project | planned_appraisal_coq | Project.planned_appraisal_coq |
 | project | planned_failure_coq | Project.planned_failure_coq |
-| project_stat_phase | project_stat_phase_id | Project Stat Phase identity |
-| project_stat_phase | project_id | Project Has Stat Phases |
-| project_stat_phase | stat_phase_id | Project Stat Phase For Phase |
-| project_stat_phase | bucket_id | Project Stat Phase In Bucket |
-| project_stat_phase | method_id | Project Stat Phase Uses Method |
-| project_stat_phase | estimate_minute | Project Stat Phase.estimate_minute |
-| project_stat_phase | estimate_comment | Project Stat Phase.estimate_comment |
-| phase_products_check | phase_id, project_id | Project Checks Phase Products (association class) |
-| phase_products_check | satisfied | Phase Products Check.satisfied |
 | design_method | design_id | Design Method identity |
 | design_method | name | Design Method.name |
 | design_method | description | Design Method.description |
@@ -53,25 +43,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | module_template | size_estimation_method_id | Module Template Uses Size Estimation Method |
 | module_template | time_estimation_method_id | Module Template Uses Time Estimation Method |
 | module_template | design_method_id | Module Template Uses Design Method |
-| project_part | (identity) | Project Part identity |
-| project_part | module_template_id | Project Part Instantiates |
-| project_part | project_bucket_id | Project Part In Bucket |
-| project_part | name | Project Part.name |
-| project_part | description | Project Part.description |
-| project_part | current_phase_id | Project Part Current Phase |
-| project_part | current_subphase_id | Project Part Current Subphase |
-| project_part | design_method_id | Project Part Uses Design Method |
-| project_part | size_estimation_method_id | Project Part Uses Size Estimation Method |
-| project_part | time_estimation_method_id | Project Part Uses Time Estimation Method |
-| project_part | mutli_day | Project Part.multi_day |
-| project_part | planned_time | Project Part.planned_time |
-| project_part | actual_time | Project Part.actual_time |
-| project_part | planned_pct_reuse | Project Part.planned_pct_reuse |
-| project_part | actual_pct_reuse | Project Part.actual_pct_reuse |
-| project_part | planned_defect_count | Project Part.planned_defect_count |
-| project_part | planned_appraisal_coq | Project Part.planned_appraisal_coq |
-| project_part | planned_failure_coq | Project Part.planned_failure_coq |
-| project_part | (implicit project) | Project Has Parts |
 | project_cycle_plan | (identity) | Project Cycle Plan identity |
 | project_cycle_plan | module_template_id | Project Cycle Plan Instantiates |
 | project_cycle_plan | num | Project Cycle Plan.num |
@@ -82,9 +53,7 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | project_cycle_actual | num | Project Cycle Actual.num |
 | project_cycle_actual | actual_pct_reuse | Project Cycle Actual.actual_pct_reuse |
 | project_cycle_actual | (project) | Project Has Cycle Actuals |
-| loc | base, new, changed, added, modified, deleted, reused, object_loc | Loc attributes |
-| loc | phase_id | Loc For Phase |
-| estimate | task_id | Core Task Has Loc Estimate (optional) |
+| estimate | task_id | Task Has Size Estimate (optional) |
 | probe_object_type | (catalog) | Probe Object Type |
 | probe_object_type | number, name, description | Probe Object Type attributes |
 | probe_type | probe_type_id | Probe Type identity |

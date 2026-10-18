@@ -1,10 +1,9 @@
 # Task
 
-Tasks of a project stage. Each task is an instance of a process step task.
+Recorded time logs on a project.
 
 ◇
 
 associations:
 
     - solution_subdomain_key: core
-    - solution_subdomain_key: schedule

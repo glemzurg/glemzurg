@@ -20,7 +20,7 @@ associations:
     - name: Has Stages
       details: Stages of this cycle. Each stage is an instance of a process step.
       from_multiplicity: "1"
-      to_class_key: core/stage
+      to_class_key: stage
       to_multiplicity: any
       uniqueness:
           - to_attributes:
