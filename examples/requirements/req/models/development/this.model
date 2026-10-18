@@ -43,16 +43,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | module_template | size_estimation_method_id | Module Template Uses Size Estimation Method |
 | module_template | time_estimation_method_id | Module Template Uses Time Estimation Method |
 | module_template | design_method_id | Module Template Uses Design Method |
-| project_cycle_plan | (identity) | Project Cycle Plan identity |
-| project_cycle_plan | module_template_id | Project Cycle Plan Instantiates |
-| project_cycle_plan | num | Project Cycle Plan.num |
-| project_cycle_plan | planned_pct_reuse | Project Cycle Plan.planned_pct_reuse |
-| project_cycle_plan | (project) | Project Has Cycle Plans |
-| project_cycle_actual | (identity) | Project Cycle Actual identity |
-| project_cycle_actual | module_template_id | Project Cycle Actual Instantiates |
-| project_cycle_actual | num | Project Cycle Actual.num |
-| project_cycle_actual | actual_pct_reuse | Project Cycle Actual.actual_pct_reuse |
-| project_cycle_actual | (project) | Project Has Cycle Actuals |
 | estimate | task_id | Task Has Size Estimate (optional) |
 | probe_object_type | (catalog) | Probe Object Type |
 | probe_object_type | number, name, description | Probe Object Type attributes |
