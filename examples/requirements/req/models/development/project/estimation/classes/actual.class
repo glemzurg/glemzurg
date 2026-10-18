@@ -1,0 +1,17 @@
+# Actual
+
+The recorded result of an time estimate. Added when the work is done, which completes the estimate.
+
+◇
+
+attributes:
+    - key: value
+      name: Value
+      details: Value recorded when the estimated work is complete.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: completion_time
+      name: Completion Time
+      details: When the work was completed.
+      rules: datetime
+      type_spec: Nat

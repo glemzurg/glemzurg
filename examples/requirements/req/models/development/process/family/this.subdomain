@@ -1,0 +1,10 @@
+# Family
+
+A process family and the phases, defect types, and size categories that belong to it.
+
+◇
+
+associations:
+
+    - solution_subdomain_key: process
+

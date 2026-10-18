@@ -1,0 +1,6 @@
+{
+    "code": 6004,
+    "message_prefix": "association JSON does not match schema:",
+    "error_file": "6004_assoc_schema_violation.md",
+    "has_schema": true
+}

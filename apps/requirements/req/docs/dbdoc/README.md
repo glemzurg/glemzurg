@@ -27,7 +27,7 @@
 | [public.class_invariant](public.class_invariant.md) | 3 | An invariant that is forever true objects of a class. | BASE TABLE |
 | [public.attribute_invariant](public.attribute_invariant.md) | 3 | Join table linking attributes to their invariant logic predicates. | BASE TABLE |
 | [public.association](public.association.md) | 12 | A semantic relationship between typed instances. | BASE TABLE |
-| [public.association_uniqueness_attribute](public.association_uniqueness_attribute.md) | 5 | Attributes that form one side of an association uniqueness tuple. | BASE TABLE |
+| [public.association_uniqueness_attribute](public.association_uniqueness_attribute.md) | 6 | Attributes that form one side of an association uniqueness tuple. | BASE TABLE |
 | [public.association_invariant](public.association_invariant.md) | 4 | Join table linking class associations to their invariant logic predicates. | BASE TABLE |
 | [public.query](public.query.md) | 5 | A business logic query of a class that does not change the state of a class. | BASE TABLE |
 | [public.query_parameter](public.query_parameter.md) | 8 | A parameter of a query. | BASE TABLE |

@@ -59,6 +59,15 @@ func (suite *AssociationUniquenessSuite) TestValidate() {
 	}
 }
 
+func (suite *AssociationUniquenessSuite) TestSameTuple() {
+	jurisdictionAttrKey := helper.Must(identity.ParseKey("domain/d/subdomain/s/class/jurisdiction/attribute/jurisdiction_code"))
+	nameAttrKey := helper.Must(identity.ParseKey("domain/d/subdomain/s/class/jurisdiction/attribute/name"))
+	same := NewAssociationUniqueness(nil, []identity.Key{jurisdictionAttrKey})
+	suite.True(same.sameTuple(NewAssociationUniqueness(nil, []identity.Key{jurisdictionAttrKey})))
+	suite.False(same.sameTuple(NewAssociationUniqueness(nil, []identity.Key{nameAttrKey})))
+	suite.False(same.sameTuple(NewAssociationUniqueness([]identity.Key{jurisdictionAttrKey}, nil)))
+}
+
 func (suite *AssociationUniquenessSuite) TestValidateAttributeReferences() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))

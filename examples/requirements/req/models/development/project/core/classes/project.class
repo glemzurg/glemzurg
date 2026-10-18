@@ -1,0 +1,36 @@
+# Project
+
+Work that follows a process. The two commented project drafts are one class: instance fields from the first draft and planning fields from the second.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      nullable: true
+      type_spec: STRING
+    - key: created_time
+      name: Created Time
+      rules: datetime
+      type_spec: Nat
+
+
+associations:
+    - name: Follows
+      details: This project follows the struction of a process.
+      from_multiplicity: any
+      to_class_key: process/process/process
+      to_multiplicity: "1"
+    - name: Has Cycles
+      details: Cycles of this project. Each cycle is an instance of a process stage.
+      from_multiplicity: "1"
+      to_class_key: cycle
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - num

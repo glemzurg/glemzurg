@@ -302,15 +302,25 @@ func attributeListPhrase(names []string) string {
 	}
 }
 
-// formatAssociationUniquenessDisplay renders the uniqueness tuple as endpoint attribute
-// names separated by →. Blank sides stay empty when that endpoint lists no attributes.
+// formatAssociationUniquenessDisplay renders uniqueness tuples as endpoint attribute
+// names separated by →. Independent constraints are joined in declaration order.
 func formatAssociationUniquenessDisplay(
-	uniqueness *model_class.AssociationUniqueness,
+	uniqueness []model_class.AssociationUniqueness,
 	fromClass, toClass model_class.Class,
 ) string {
-	if uniqueness == nil {
-		return ""
+	var parts []string
+	for i := range uniqueness {
+		if display := formatOneAssociationUniqueness(uniqueness[i], fromClass, toClass); display != "" {
+			parts = append(parts, display)
+		}
 	}
+	return strings.Join(parts, " and the uniqueness ")
+}
+
+func formatOneAssociationUniqueness(
+	uniqueness model_class.AssociationUniqueness,
+	fromClass, toClass model_class.Class,
+) string {
 	fromAttrs := attributeListPhrase(attributeNamesFromClass(fromClass, uniqueness.FromAttributeKeys))
 	toAttrs := attributeListPhrase(attributeNamesFromClass(toClass, uniqueness.ToAttributeKeys))
 	switch {

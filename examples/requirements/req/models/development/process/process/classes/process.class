@@ -1,0 +1,67 @@
+# Process
+
+A versioned process to follow, owned by a family. May replace an earlier process as its ancestor.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      details: Unique together with version and version minor within the family.
+      rules: unconstrained
+      type_spec: STRING
+    - key: version
+      name: Version
+      details: Major version of this process.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: version_minor
+      name: Version Minor
+      details: Minor version of this process. Defaults to 0.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: purpose
+      name: Purpose
+      rules: unconstrained
+      type_spec: STRING
+    - key: entry_criteria
+      name: Entry Criteria
+      rules: unconstrained
+      type_spec: STRING
+    - key: exit_criteria
+      name: Exit Criteria
+      rules: unconstrained
+      type_spec: STRING
+
+invariants:
+    - details: Stage name is unique among stages of this process.
+      specification: '\A c \in self.HasStages : _FiniteSets!Cardinality({ q \in self.HasStages : q.name = c.name }) = 1'
+
+associations:
+    - name: Has Stages
+      details: Ordered stages that make up this process.
+      from_multiplicity: "1"
+      to_class_key: stage
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - num
+    - name: Has Ancestor
+      details: Earlier process this version replaces, when one exists.
+      from_multiplicity: any
+      to_class_key: process
+      to_multiplicity: "0..1"
+
+states:
+    Editable:
+        details: Process can still be changed.
+    Locked:
+        details: Process can no longer be changed.
+events:
+    _new:
+        details: Creates the process in the editable state.
+    Lock:
+        details: Locks the process.
+transitions:
+    - {event: "_new", to: "Editable"}
+    - {from: "Editable", event: "Lock", to: "Locked"}

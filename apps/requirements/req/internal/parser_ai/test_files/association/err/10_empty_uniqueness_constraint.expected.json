@@ -1,0 +1,7 @@
+{
+    "code": 6016,
+    "message_prefix": "association 'Has Phases' uniqueness[0] needs from_attributes or to_attributes",
+    "error_file": "6016_assoc_uniqueness_required.md",
+    "has_schema": false,
+    "field": "uniqueness[0]"
+}

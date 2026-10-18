@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -10,7 +11,6 @@ import (
 )
 
 type associationUniquenessRow struct {
-	AssociationKey    identity.Key
 	FromAttributeKeys []identity.Key
 	ToAttributeKeys   []identity.Key
 }
@@ -22,32 +22,31 @@ func AddAssociationUniqueness(dbOrTx DbOrTx, modelKey string, associations []mod
 	attrCount := 0
 
 	for _, assoc := range associations {
-		if assoc.Uniqueness == nil {
-			continue
-		}
-		for j, attrKey := range assoc.Uniqueness.FromAttributeKeys {
-			if attrCount > 0 {
-				attrBuilder.WriteString(", ")
+		for uniquenessSortOrder, uniqueness := range assoc.Uniqueness {
+			for j, attrKey := range uniqueness.FromAttributeKeys {
+				if attrCount > 0 {
+					attrBuilder.WriteString(", ")
+				}
+				if attrCount == 0 {
+					attrBuilder.WriteString(`INSERT INTO association_uniqueness_attribute (model_key, association_key, uniqueness_sort_order, end_side, attribute_sort_order, attribute_key) VALUES `)
+				}
+				base := attrCount * 6
+				fmt.Fprintf(&attrBuilder, "($%d, $%d, $%d, $%d::association_end, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+				attrArgs = append(attrArgs, modelKey, assoc.Key.String(), uniquenessSortOrder, associationEndFrom, j, attrKey.String())
+				attrCount++
 			}
-			if attrCount == 0 {
-				attrBuilder.WriteString(`INSERT INTO association_uniqueness_attribute (model_key, association_key, end_side, attribute_sort_order, attribute_key) VALUES `)
+			for j, attrKey := range uniqueness.ToAttributeKeys {
+				if attrCount > 0 {
+					attrBuilder.WriteString(", ")
+				}
+				if attrCount == 0 {
+					attrBuilder.WriteString(`INSERT INTO association_uniqueness_attribute (model_key, association_key, uniqueness_sort_order, end_side, attribute_sort_order, attribute_key) VALUES `)
+				}
+				base := attrCount * 6
+				fmt.Fprintf(&attrBuilder, "($%d, $%d, $%d, $%d::association_end, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+				attrArgs = append(attrArgs, modelKey, assoc.Key.String(), uniquenessSortOrder, associationEndTo, j, attrKey.String())
+				attrCount++
 			}
-			base := attrCount * 5
-			fmt.Fprintf(&attrBuilder, "($%d, $%d, $%d::association_end, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
-			attrArgs = append(attrArgs, modelKey, assoc.Key.String(), associationEndFrom, j, attrKey.String())
-			attrCount++
-		}
-		for j, attrKey := range assoc.Uniqueness.ToAttributeKeys {
-			if attrCount > 0 {
-				attrBuilder.WriteString(", ")
-			}
-			if attrCount == 0 {
-				attrBuilder.WriteString(`INSERT INTO association_uniqueness_attribute (model_key, association_key, end_side, attribute_sort_order, attribute_key) VALUES `)
-			}
-			base := attrCount * 5
-			fmt.Fprintf(&attrBuilder, "($%d, $%d, $%d::association_end, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
-			attrArgs = append(attrArgs, modelKey, assoc.Key.String(), associationEndTo, j, attrKey.String())
-			attrCount++
 		}
 	}
 	if attrCount == 0 {
@@ -57,13 +56,13 @@ func AddAssociationUniqueness(dbOrTx DbOrTx, modelKey string, associations []mod
 }
 
 // QueryAssociationUniqueness loads uniqueness keyed by association.
-func QueryAssociationUniqueness(dbOrTx DbOrTx, modelKey string) (map[identity.Key]*model_class.AssociationUniqueness, error) {
-	rowsByAssoc := make(map[identity.Key]*associationUniquenessRow)
+func QueryAssociationUniqueness(dbOrTx DbOrTx, modelKey string) (map[identity.Key][]model_class.AssociationUniqueness, error) {
+	rowsByAssoc := make(map[identity.Key]map[int]*associationUniquenessRow)
 
 	err := dbQuery(dbOrTx, func(scanner Scanner) error {
 		var associationKeyStr, endSide, attributeKeyStr string
-		var attributeSortOrder int
-		if err := scanner.Scan(&associationKeyStr, &endSide, &attributeSortOrder, &attributeKeyStr); err != nil {
+		var uniquenessSortOrder, attributeSortOrder int
+		if err := scanner.Scan(&associationKeyStr, &uniquenessSortOrder, &endSide, &attributeSortOrder, &attributeKeyStr); err != nil {
 			return errors.WithStack(err)
 		}
 		associationKey, err := identity.ParseKey(associationKeyStr)
@@ -74,10 +73,15 @@ func QueryAssociationUniqueness(dbOrTx DbOrTx, modelKey string) (map[identity.Ke
 		if err != nil {
 			return err
 		}
-		row := rowsByAssoc[associationKey]
+		bySort := rowsByAssoc[associationKey]
+		if bySort == nil {
+			bySort = make(map[int]*associationUniquenessRow)
+			rowsByAssoc[associationKey] = bySort
+		}
+		row := bySort[uniquenessSortOrder]
 		if row == nil {
-			row = &associationUniquenessRow{AssociationKey: associationKey}
-			rowsByAssoc[associationKey] = row
+			row = &associationUniquenessRow{}
+			bySort[uniquenessSortOrder] = row
 		}
 		switch associationEnd(endSide) {
 		case associationEndFrom:
@@ -88,18 +92,27 @@ func QueryAssociationUniqueness(dbOrTx DbOrTx, modelKey string) (map[identity.Ke
 			return errors.Errorf("invalid association_end %q", endSide)
 		}
 		return nil
-	}, `SELECT association_key, end_side, attribute_sort_order, attribute_key
+	}, `SELECT association_key, uniqueness_sort_order, end_side, attribute_sort_order, attribute_key
 		FROM association_uniqueness_attribute
 		WHERE model_key = $1
-		ORDER BY association_key, end_side, attribute_sort_order`, modelKey)
+		ORDER BY association_key, uniqueness_sort_order, end_side, attribute_sort_order`, modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	result := make(map[identity.Key]*model_class.AssociationUniqueness, len(rowsByAssoc))
-	for assocKey, row := range rowsByAssoc {
-		uniqueness := model_class.NewAssociationUniqueness(row.FromAttributeKeys, row.ToAttributeKeys)
-		result[assocKey] = &uniqueness
+	result := make(map[identity.Key][]model_class.AssociationUniqueness, len(rowsByAssoc))
+	for assocKey, bySort := range rowsByAssoc {
+		sorts := make([]int, 0, len(bySort))
+		for uniquenessSortOrder := range bySort {
+			sorts = append(sorts, uniquenessSortOrder)
+		}
+		slices.Sort(sorts)
+		constraints := make([]model_class.AssociationUniqueness, 0, len(sorts))
+		for _, uniquenessSortOrder := range sorts {
+			row := bySort[uniquenessSortOrder]
+			constraints = append(constraints, model_class.NewAssociationUniqueness(row.FromAttributeKeys, row.ToAttributeKeys))
+		}
+		result[assocKey] = constraints
 	}
 	return result, nil
 }

@@ -1,0 +1,61 @@
+# Defect
+
+A defect injected in a task and removed in a step instance.
+
+◇
+
+attributes:
+    - key: found_time
+      name: Found Time
+      rules: datetime
+      type_spec: Nat
+    - key: cycle
+      name: Cycle
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: fix_minutes
+      name: Fix Minutes
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat
+    - key: description
+      name: Description
+      rules: unconstrained
+      nullable: true
+      type_spec: STRING
+    - key: prevention
+      name: Prevention
+      details: A prescriptive measure to either catch this defect earlier or prevent it entirely.
+      rules: unconstrained
+      type_spec: STRING
+    - key: test_defect
+      name: Test Defect
+      details: A defect in a test itself.
+      rules: unconstrained
+      type_spec: BOOLEAN
+
+associations:
+    - name: Is Of Type
+      details: The category of defect this is.
+      from_multiplicity: "any"
+      to_class_key: process/family/defect_type
+      to_multiplicity: "1"
+    - name: Injected In
+      details: Task where this defect was injected.
+      from_multiplicity: any
+      to_class_key: core/task
+      to_multiplicity: "1"
+    - name: Removed In
+      details: Step instance where this defect was removed. A step instance is an instance of a process step.
+      from_multiplicity: any
+      to_class_key: core/step_instance
+      to_multiplicity: "1"
+    - name: Has Time Logs
+      details: Time recorded against this defect.
+      from_multiplicity: "0..1"
+      to_class_key: task/time_log
+      to_multiplicity: any
+    - name: Has Source
+      details: Defect this one was cloned from, when one exists.
+      from_multiplicity: any
+      to_class_key: defect
+      to_multiplicity: "0..1"

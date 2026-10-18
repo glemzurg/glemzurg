@@ -1,0 +1,27 @@
+# Step
+
+A step of a process script.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this step within the script.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: Unique among steps of the same script.
+      rules: unconstrained
+      type_spec: STRING
+
+associations:
+    - name: Has Step Tasks
+      details: Ordered work defined for this step, shared by every project that follows the process.
+      from_multiplicity: "1"
+      to_class_key: step_task
+      to_multiplicity: "1..many"
+      uniqueness:
+          - to_attributes:
+                - num

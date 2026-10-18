@@ -1,0 +1,9 @@
+# Task
+
+Recorded time logs on a project.
+
+◇
+
+associations:
+
+    - solution_subdomain_key: core

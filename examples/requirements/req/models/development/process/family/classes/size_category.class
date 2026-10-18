@@ -1,0 +1,22 @@
+# Size Category
+
+An ordered category of a size count type.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this category within the size count type.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: Unique among categories of the same size count type.
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      rules: unconstrained
+      nullable: true
+      type_spec: STRING

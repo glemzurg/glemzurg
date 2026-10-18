@@ -1,0 +1,109 @@
+[⇦ Development](model.md) / [Project](domain-domain.project.md) / [Core](subdomain-domain.project.subdomain.core.md)
+
+# Project Stat Phase
+
+A per-phase statistical estimate on a project. stat_phase is Phase; bucket is Stats Bucket.
+
+
+
+
+## Attributes
+
+| Name | Rules | Nullable | TLA+ | Comments / Invariants |
+| ---- | ----- | -------- | ---- | --------------------- |
+| Estimate Minute | _(unparsed)_ [0 .. unconstrained] at 1 minute | false |  | Defaults to 0. |
+| Estimate Comment | _(unparsed)_ unconstrained | false |  | Defaults to empty. |
+
+
+
+
+## Relations
+
+The classes in this diagram.
+
+```mermaid
+---
+config:
+  class:
+    hideEmptyMembersBox: true
+---
+classDiagram
+class class_domain_project_subdomain_core_class_project["Project"] {
+        Name
+        Description
+        Created Time
+        Started Time
+        Estimate Minute
+        Estimate Comment
+        Multi Day
+        Planned Time
+        Actual Time
+        Planned Pct Reuse
+        Actual Pct Reuse
+        Planned Defect Count
+        Planned Appraisal Coq
+        Planned Failure Coq
+    }
+class class_domain_project_subdomain_core_class_project_stat_phase["Project Stat Phase"] {
+        Estimate Minute
+        Estimate Comment
+    }
+namespace Process.Estimate {
+class class_domain_process_subdomain_estimate_class_method["Method"] {
+            Name [key]
+            Description
+        }
+}
+namespace Process.Family {
+class class_domain_process_subdomain_family_class_phase["Phase"] {
+            Num
+            Name
+            Description
+        }
+}
+namespace Statistics {
+class class_domain_statistics_subdomain_default_class_stats_bucket["Stats Bucket"] {
+            Name
+            Description
+        }
+}
+style class_domain_project_subdomain_core_class_project_stat_phase stroke:#9370DB,stroke-width:3px
+class_domain_project_subdomain_core_class_project_stat_phase "*" --> "0..1" class_domain_process_subdomain_estimate_class_method : Uses Method
+class_domain_project_subdomain_core_class_project_stat_phase "*" --> "1" class_domain_process_subdomain_family_class_phase : For Phase
+class_domain_project_subdomain_core_class_project_stat_phase "*" --> "1" class_domain_statistics_subdomain_default_class_stats_bucket : In Bucket
+class_domain_project_subdomain_core_class_project "1" --> "*" class_domain_project_subdomain_core_class_project_stat_phase : Has Stat Phases
+
+```
+- **[Process::Estimate::Method](class-domain.process.subdomain.estimate.class.method.md).** A programming method used when recording phase statistics for a project.
+- **[Process::Family::Phase](class-domain.process.subdomain.family.class.phase.md).** Fundamental phase skeleton for all the processes in a family.
+- **[Project](class-domain.project.subdomain.core.class.project.md).** Work that follows a process.
+- **[Project Stat Phase](class-domain.project.subdomain.core.class.project_stat_phase.md).** A per-phase statistical estimate on a project. stat_phase is Phase; bucket is Stats Bucket.
+- **[Statistics::Stats Bucket](class-domain.statistics.subdomain.default.class.stats_bucket.md).** A bucket used to group project statistics.
+
+
+# State Machine
+
+
+## State and Event Descriptions
+
+The states for this class.
+
+*None*
+
+The events for this class.
+
+*None*
+
+
+
+## Action Specifications
+
+The actions for this class.
+
+*None*
+
+## Query Specifications
+
+The queries for this class.
+
+*None*

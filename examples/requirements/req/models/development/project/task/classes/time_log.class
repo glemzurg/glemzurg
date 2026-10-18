@@ -1,0 +1,27 @@
+# Time Log
+
+A recorded interval of work on one task or one defect.
+
+◇
+
+attributes:
+    - key: cycle
+      name: Cycle
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: start_time
+      name: Start Time
+      rules: datetime
+      type_spec: Nat
+    - key: stop_time
+      name: Stop Time
+      rules: datetime
+      type_spec: Nat
+    - key: interruption_minutes
+      name: Interruption Minutes
+      rules: "[0 .. unconstrained] at 1 minute"
+      type_spec: Nat
+    - key: comments
+      name: Comments
+      rules: unconstrained
+      type_spec: STRING

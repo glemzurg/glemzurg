@@ -598,15 +598,17 @@ CREATE TYPE association_end AS ENUM ('from', 'to');
 CREATE TABLE association_uniqueness_attribute (
   model_key text NOT NULL,
   association_key text NOT NULL,
+  uniqueness_sort_order int NOT NULL,
   end_side association_end NOT NULL,
   attribute_sort_order int NOT NULL,
   attribute_key text NOT NULL,
-  PRIMARY KEY (model_key, association_key, end_side, attribute_sort_order),
+  PRIMARY KEY (model_key, association_key, uniqueness_sort_order, end_side, attribute_sort_order),
   CONSTRAINT fk_assoc_uniq_attr_association FOREIGN KEY (model_key, association_key) REFERENCES association (model_key, association_key) ON DELETE CASCADE,
   CONSTRAINT fk_assoc_uniq_attr_attribute FOREIGN KEY (model_key, attribute_key) REFERENCES attribute (model_key, attribute_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE association_uniqueness_attribute IS 'Attributes that form one side of an association uniqueness tuple.';
+COMMENT ON COLUMN association_uniqueness_attribute.uniqueness_sort_order IS 'Order of this uniqueness constraint on the association.';
 COMMENT ON COLUMN association_uniqueness_attribute.end_side IS 'Whether the attribute belongs to the from or to endpoint class.';
 COMMENT ON COLUMN association_uniqueness_attribute.attribute_sort_order IS 'Order of this attribute within the from or to tuple.';
 COMMENT ON COLUMN association_uniqueness_attribute.attribute_key IS 'The endpoint-class attribute that contributes to the uniqueness tuple.';

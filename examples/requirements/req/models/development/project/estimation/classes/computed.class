@@ -1,0 +1,24 @@
+# Computed
+
+An estimate computed from historic data.
+
+◇
+
+subclass_of_key: method
+
+attributes:
+    - key: count
+      name: Count
+      details: Number of values used in this computation.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: mean
+      name: Mean
+      details: Middle of the computed bell curve.
+      rules: "[unconstrained .. unconstrained] at 0.01 unit"
+      type_spec: Real
+    - key: variance
+      name: Variance
+      details: Shape of the computed bell curve.
+      rules: "[0 .. unconstrained] at 0.01 unit"
+      type_spec: Real

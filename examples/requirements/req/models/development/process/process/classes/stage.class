@@ -1,0 +1,59 @@
+# Stage
+
+A set of scripts within a process. A stage runs once or is repeating.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this stage within the process.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: Unique among stages of the same process.
+      rules: unconstrained
+      type_spec: STRING
+    - key: task_summary
+      name: Task Summary
+      rules: unconstrained
+      type_spec: STRING
+    - key: purpose
+      name: Purpose
+      rules: unconstrained
+      type_spec: STRING
+    - key: entry_criteria
+      name: Entry Criteria
+      rules: unconstrained
+      type_spec: STRING
+    - key: exit_criteria
+      name: Exit Criteria
+      rules: unconstrained
+      type_spec: STRING
+    - key: type
+      name: Type
+      details: Whether this stage runs once or is repeating.
+      rules: enum of once, repeating
+      type_spec: STRING
+
+invariants:
+    - details: Script name is unique among scripts of this stage.
+      specification: '\A s \in self.HasScripts : _FiniteSets!Cardinality({ q \in self.HasScripts : q.name = s.name }) = 1'
+    - details: The family phase of a stage belongs to the same family as the process that owns the stage.
+      specification: 'LET familyPhase == CHOOSE ph \in self.OccursIn : TRUE IN LET process == CHOOSE p \in self._HasStages : TRUE IN LET familyFromProcess == CHOOSE f \in process._HasProcesses : TRUE IN LET familyFromPhase == CHOOSE f \in familyPhase._HasPhases : TRUE IN familyFromProcess = familyFromPhase'
+
+associations:
+    - name: Occurs In
+      details: Family phase this stage is performed in.
+      from_multiplicity: any
+      to_class_key: family/phase
+      to_multiplicity: "1"
+    - name: Has Scripts
+      details: Ordered scripts that make up this stage.
+      from_multiplicity: "1"
+      to_class_key: script
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - num

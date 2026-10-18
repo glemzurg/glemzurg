@@ -315,7 +315,7 @@ func TestAssociationFactsForSubdomain_testModel(t *testing.T) {
 	assert.Contains(t, joined, "each Customer links to one or more Orders")
 	assert.Contains(t, joined, "each Product (product has line items) links to one or more Line Items")
 	assert.Contains(t, joined, "each Line Item links to exactly one Product")
-	assert.Contains(t, joined, "each Order–Customer pairing has the uniqueness → Customer Code")
+	assert.Contains(t, joined, "each Order–Customer pairing has the uniqueness → Customer Code and the uniqueness Order Date →")
 	assert.Contains(t, joined, "Warehousing::Warehouse")
 }
 
@@ -402,7 +402,7 @@ func TestFormatAssociationUniquenessDisplay(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			got := formatAssociationUniquenessDisplay(&tc.uniqueness, tc.fromClass, tc.toClass)
+			got := formatOneAssociationUniqueness(tc.uniqueness, tc.fromClass, tc.toClass)
 			assert.Equal(t, tc.want, got)
 		})
 	}

@@ -27,10 +27,10 @@ associations:
       to_class_key: child_key
       to_multiplicity: any
       uniqueness:
-        from_attributes:
+        - from_attributes:
             - link_code
             - slot_num
-        to_attributes:
+          to_attributes:
             - child_role
             - sort_order
       uml_comment: very import to users

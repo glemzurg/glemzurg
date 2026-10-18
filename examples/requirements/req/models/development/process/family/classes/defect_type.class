@@ -1,0 +1,34 @@
+# Defect Type
+
+A type of defect classified within a process family.
+
+All processes in the same family use the same defect types, which allows analysis of defects across projects in the family.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: The unique value for this defect type, every 10 value is a base type and the number to the next base are subtypes.
+      rules: "[10 .. unconstrained] at 1 unit"
+      type_spec: Nat
+    - key: name
+      name: Name
+      details: A simple name for this type of defect.
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      details: What kind of defects are this type.
+      rules: unconstrained
+      nullable: true
+      type_spec: STRING
+
+
+associations:
+    - name: Subtype Of
+      details: A defect that is a subtype of another defect.
+      from_multiplicity: any
+      to_class_key: defect_type
+      to_multiplicity: "1"
+

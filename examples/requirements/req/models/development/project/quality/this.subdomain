@@ -1,0 +1,9 @@
+# Quality
+
+Defects injected in a task and removed in a step instance.
+
+◇
+
+associations:
+
+    - solution_subdomain_key: core

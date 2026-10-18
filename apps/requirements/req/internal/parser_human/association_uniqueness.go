@@ -1,6 +1,8 @@
 package parser_human
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -10,41 +12,67 @@ import (
 func uniquenessFromYaml(
 	fromClassKey, toClassKey identity.Key,
 	associationData map[string]any,
-) (*model_class.AssociationUniqueness, error) {
+) ([]model_class.AssociationUniqueness, error) {
 	if _, found := associationData["uniqueness_constraints"]; found {
 		return nil, errors.Errorf("uniqueness_constraints is no longer supported; use uniqueness")
 	}
 
-	mapping, ok := associationData["uniqueness"].(map[string]any)
+	raw, found := associationData["uniqueness"]
+	if !found || raw == nil {
+		return nil, nil
+	}
+	seq, ok := raw.([]any)
 	if !ok {
-		return nil, nil //nolint:nilnil // optional field, absence is not an error
+		return nil, errors.Errorf("uniqueness must be a sequence of constraints")
+	}
+	if len(seq) == 0 {
+		return nil, nil
 	}
 
+	result := make([]model_class.AssociationUniqueness, 0, len(seq))
+	for i, item := range seq {
+		mapping, ok := item.(map[string]any)
+		if !ok {
+			return nil, errors.Errorf("uniqueness[%d] must be a mapping", i)
+		}
+		constraint, err := uniquenessConstraintFromYaml(fromClassKey, toClassKey, i, mapping)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, constraint)
+	}
+	return result, nil
+}
+
+func uniquenessConstraintFromYaml(
+	fromClassKey, toClassKey identity.Key,
+	index int,
+	mapping map[string]any,
+) (model_class.AssociationUniqueness, error) {
+	fromField := fmt.Sprintf("uniqueness[%d].from_attributes", index)
+	toField := fmt.Sprintf("uniqueness[%d].to_attributes", index)
 	fromAttrs, err := yamlStringSlice(mapping, "from_attributes")
 	if err != nil {
-		return nil, err
+		return model_class.AssociationUniqueness{}, err
 	}
 	toAttrs, err := yamlStringSlice(mapping, "to_attributes")
 	if err != nil {
-		return nil, err
+		return model_class.AssociationUniqueness{}, err
 	}
-	if len(fromAttrs) == 0 && len(toAttrs) == 0 {
-		return nil, nil //nolint:nilnil // empty mapping means no uniqueness constraint
-	}
-	fromKeys, err := attributeKeysFromYamlSubKeys(fromClassKey, fromAttrs, "uniqueness.from_attributes")
+	fromKeys, err := attributeKeysFromYamlSubKeys(fromClassKey, fromAttrs, fromField)
 	if err != nil {
-		return nil, err
+		return model_class.AssociationUniqueness{}, err
 	}
-	toKeys, err := attributeKeysFromYamlSubKeys(toClassKey, toAttrs, "uniqueness.to_attributes")
+	toKeys, err := attributeKeysFromYamlSubKeys(toClassKey, toAttrs, toField)
 	if err != nil {
-		return nil, err
+		return model_class.AssociationUniqueness{}, err
 	}
 	uniqueness := model_class.NewAssociationUniqueness(fromKeys, toKeys)
-	ctx := coreerr.NewContext("association", "uniqueness")
+	ctx := coreerr.NewContext("association", fmt.Sprintf("uniqueness[%d]", index))
 	if err := uniqueness.Validate(ctx); err != nil {
-		return nil, errors.WithStack(err)
+		return model_class.AssociationUniqueness{}, errors.WithStack(err)
 	}
-	return &uniqueness, nil
+	return uniqueness, nil
 }
 
 func attributeKeysFromYamlSubKeys(classKey identity.Key, subKeys []string, field string) ([]identity.Key, error) {
@@ -85,18 +113,22 @@ func yamlStringSlice(data map[string]any, field string) ([]string, error) {
 	}
 }
 
-func generateAssociationUniquenessYaml(builder *YamlBuilder, uniqueness *model_class.AssociationUniqueness) {
-	if uniqueness == nil {
+func generateAssociationUniquenessYaml(builder *YamlBuilder, uniqueness []model_class.AssociationUniqueness) {
+	if len(uniqueness) == 0 {
 		return
 	}
-	uniquenessBuilder := NewYamlBuilder()
-	if fromAttrs := attributeSubKeysFromKeys(uniqueness.FromAttributeKeys); len(fromAttrs) > 0 {
-		uniquenessBuilder.AddSequenceField("from_attributes", fromAttrs)
+	var items []*YamlBuilder
+	for _, constraint := range uniqueness {
+		item := NewYamlBuilder()
+		if fromAttrs := attributeSubKeysFromKeys(constraint.FromAttributeKeys); len(fromAttrs) > 0 {
+			item.AddSequenceField("from_attributes", fromAttrs)
+		}
+		if toAttrs := attributeSubKeysFromKeys(constraint.ToAttributeKeys); len(toAttrs) > 0 {
+			item.AddSequenceField("to_attributes", toAttrs)
+		}
+		items = append(items, item)
 	}
-	if toAttrs := attributeSubKeysFromKeys(uniqueness.ToAttributeKeys); len(toAttrs) > 0 {
-		uniquenessBuilder.AddSequenceField("to_attributes", toAttrs)
-	}
-	builder.AddMappingField("uniqueness", uniquenessBuilder)
+	builder.AddSequenceOfMappings("uniqueness", items)
 }
 
 func attributeSubKeysFromKeys(keys []identity.Key) []string {

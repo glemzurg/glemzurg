@@ -1,0 +1,60 @@
+# Family
+
+A family is a shared group of processes, and by extention a shared group of projects that use those processes.
+
+The basic concept is that you may have a set of processes for writing software and a set of processes for writing a novel, and this is a way to bucket them easily.
+
+◇
+
+attributes:
+    - key: name
+      name: Name
+      details: The name of this family.
+      rules: unconstrained
+      type_spec: STRING
+    - key: description
+      name: Description
+      details: A description of this family of processes.
+      rules: unconstrained
+      nullable: true
+      type_spec: STRING
+
+associations:
+    - name: Has Phases
+      details: Ordered phase skeleton for this family.
+      from_multiplicity: "1"
+      to_class_key: phase
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - name
+          - to_attributes:
+                - num
+    - name: Has Defect Types
+      details: Defect types classified for this family.
+      from_multiplicity: "1"
+      to_class_key: defect_type
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - name
+          - to_attributes:
+                - num
+    - name: Has Size Counts
+      details: Ways of recording and estimating sizes.
+      from_multiplicity: "1"
+      to_class_key: size_count_type
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - name
+    - name: Has Processes
+      details: Versioned processes that belong to this family.
+      from_multiplicity: "1"
+      to_class_key: process/process
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - name
+                - version
+                - version_minor

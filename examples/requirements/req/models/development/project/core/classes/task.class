@@ -1,0 +1,32 @@
+# Task
+
+A project task. An instance of a process step task.
+
+◇
+
+attributes:
+    - key: planned_hours
+      name: Planned Hours
+      rules: "[0 .. unconstrained] at 1 hour"
+      type_spec: Nat
+    - key: pct_complete
+      name: Pct Complete
+      rules: "[0 .. 100] at 1 percent"
+      type_spec: Nat
+
+associations:
+    - name: Instance Of
+      details: Process step task this task is an instance of.
+      from_multiplicity: any
+      to_class_key: process/process/step_task
+      to_multiplicity: "1"
+    - name: Has Size Estimate
+      details: Estimate for this task, when one is set.
+      from_multiplicity: "0..1"
+      to_class_key: estimation/estimate
+      to_multiplicity: "0..1"
+    - name: Has Time Logs
+      details: Time recorded against this task.
+      from_multiplicity: "0..1"
+      to_class_key: task/time_log
+      to_multiplicity: any
