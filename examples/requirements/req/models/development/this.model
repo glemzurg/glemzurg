@@ -84,33 +84,3 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | defect | fix_minutes | Defect.fix_minutes |
 | defect | source_defect_id | Defect Has Source |
 | defect | description | Defect.description |
-| issue | issue_id | Issue identity |
-| issue | found_time | Issue.found_time |
-| issue | inject_project_id | Issue Injected In |
-| issue | cycle | Issue.cycle |
-| issue | inject_phase_id | Issue Injected In Phase |
-| issue | description | Issue.description |
-| issue | resolution_time | Issue.resolution_time |
-| issue | resolution | Issue.resolution |
-| pip | pip_id | Pip identity |
-| pip | found_time | Pip.found_time |
-| pip | project_id | Pip On Project |
-| pip | process_id | Pip On Process |
-| pip | phase_id | Pip On Phase |
-| pip | subphase_id | Pip On Subphase |
-| pip | problem | Pip.problem |
-| pip | proposal | Pip.proposal |
-| pip | resolved_time | Pip.resolved_time |
-| pip | resolved_in_process_id | Pip Resolved In Process |
-| test_case | test_case_id | Test Case identity |
-| test_case | found_time | Test Case.found_time |
-| test_case | project_id | Test Case For Project |
-| test_case | objective | Test Case.objective |
-| test_case | description | Test Case.description |
-| test_case | conditions | Test Case.conditions |
-| test_case | expected | Test Case.expected |
-| test_case_result | (identity) | Test Case Result identity |
-| test_case_result | test_case_id | Test Case Has Results |
-| test_case_result | run_time | Test Case Result.run_time |
-| test_case_result | project_id | Test Case Result For Project |
-| test_case_result | actual | Test Case Result.actual |
