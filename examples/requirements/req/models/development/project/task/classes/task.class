@@ -1,6 +1,6 @@
 # Task
 
-Project-specific estimate of a process step task.
+A project task. An instance of a process step task.
 
 ◇
 
@@ -15,11 +15,16 @@ attributes:
       type_spec: Nat
 
 associations:
-    - name: For Step Task
-      details: Process step task this project task estimates.
+    - name: Instance Of
+      details: Process step task this task is an instance of.
       from_multiplicity: any
       to_class_key: process/process/step_task
       to_multiplicity: "1"
+    - name: Has Size Estimate
+      details: Estimate for this task, when one is set.
+      from_multiplicity: "0..1"
+      to_class_key: estimation/estimate
+      to_multiplicity: "0..1"
     - name: On Week
       details: Schedule week this task is planned for.
       from_multiplicity: any

@@ -1,0 +1,27 @@
+# Cycle
+
+A run of one process phase within a project.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this cycle within the project.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+
+associations:
+    - name: Instance Of
+      details: Process phase this cycle is an instance of.
+      from_multiplicity: any
+      to_class_key: process/process/phase
+      to_multiplicity: "1"
+    - name: Has Stages
+      details: Stages of this cycle. Each stage is an instance of a process step.
+      from_multiplicity: "1"
+      to_class_key: core/stage
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - num

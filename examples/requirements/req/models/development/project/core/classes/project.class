@@ -69,11 +69,19 @@ attributes:
       type_spec: Nat
 
 associations:
-    - name: Follows Process
-      details: Process this project follows.
+    - name: Instance Of
+      details: Process this project is an instance of.
       from_multiplicity: any
       to_class_key: process/process/process
       to_multiplicity: "1"
+    - name: Has Cycles
+      details: Cycles of this project. Each cycle is an instance of a process phase.
+      from_multiplicity: "1"
+      to_class_key: cycle/cycle
+      to_multiplicity: any
+      uniqueness:
+          - to_attributes:
+                - num
     - name: Instantiates
       details: Module template this project is created from.
       from_multiplicity: any
@@ -146,18 +154,8 @@ associations:
       from_multiplicity: "1"
       to_class_key: schedule/schedule
       to_multiplicity: "0..1"
-    - name: Has Tasks
-      details: Planned tasks on this project.
-      from_multiplicity: "1"
-      to_class_key: task/task
-      to_multiplicity: any
     - name: Has Time Logs
       details: Recorded time log entries.
       from_multiplicity: "1"
       to_class_key: task/time_log
       to_multiplicity: any
-    - name: Has Actual Loc
-      details: Actual lines-of-code account for this project.
-      from_multiplicity: "1"
-      to_class_key: estimation/actual_loc
-      to_multiplicity: "0..1"

@@ -1,18 +1,18 @@
-# Cycle
+# Phase
 
-A repeating set of scripts within a process.
+A set of scripts within a process. A phase runs once or is repeating.
 
 ◇
 
 attributes:
     - key: num
       name: Num
-      details: Order of this cycle within the process.
+      details: Order of this phase within the process.
       rules: "[0 .. unconstrained] at 1 unit"
       type_spec: Nat
     - key: name
       name: Name
-      details: Unique among cycles of the same process.
+      details: Unique among phases of the same process.
       rules: unconstrained
       type_spec: STRING
     - key: task_summary
@@ -33,17 +33,17 @@ attributes:
       type_spec: STRING
     - key: type
       name: Type
-      details: Whether this cycle runs once or is repeating.
+      details: Whether this phase runs once or is repeating.
       rules: enum of once, repeating
       type_spec: STRING
 
 invariants:
-    - details: Script name is unique among scripts of this cycle.
+    - details: Script name is unique among scripts of this phase.
       specification: '\A s \in self.HasScripts : _FiniteSets!Cardinality({ q \in self.HasScripts : q.name = s.name }) = 1'
 
 associations:
     - name: Has Scripts
-      details: Ordered scripts that make up this cycle.
+      details: Ordered scripts that make up this phase.
       from_multiplicity: "1"
       to_class_key: script
       to_multiplicity: any

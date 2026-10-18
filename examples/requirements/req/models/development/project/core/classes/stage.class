@@ -1,0 +1,24 @@
+# Stage
+
+Work in a project cycle. An instance of a process step.
+
+◇
+
+attributes:
+    - key: num
+      name: Num
+      details: Order of this stage within the cycle.
+      rules: "[0 .. unconstrained] at 1 unit"
+      type_spec: Nat
+
+associations:
+    - name: Instance Of
+      details: Process step this stage is an instance of.
+      from_multiplicity: any
+      to_class_key: process/process/step
+      to_multiplicity: "1"
+    - name: Has Tasks
+      details: Tasks of this stage. Each task is an instance of a process step task.
+      from_multiplicity: "1"
+      to_class_key: task/task
+      to_multiplicity: any

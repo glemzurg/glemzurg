@@ -12,7 +12,7 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | project | created_time | Project.created_time |
 | project | name | Project.name |
 | project | description | Project.description |
-| project | process_id | Project Follows Process |
+| project | process_id | Project Instance Of |
 | project | started_time | Project.started_time |
 | project | estimate_minute | Project.estimate_minute |
 | project | estimate_comment | Project.estimate_comment |
@@ -91,11 +91,6 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | probe_type | number, name, description | Probe Type attributes |
 | probe_object_size | (identity) | Probe Object Size identity |
 | probe_object_size | number, name, description | Probe Object Size attributes |
-| actual_loc | estimate_id | Actual Loc identity |
-| actual_loc | project_id | Project Has Actual Loc |
-| actual_loc | cycle | Actual Loc.cycle |
-| actual_loc | base, new, changed, added, modified, deleted, reused, object_loc | Actual Loc attributes |
-| actual_loc | phase_id (FK only) | Actual Loc For Phase |
 | schedule | schedule_id | Schedule identity |
 | schedule | project_id | Project Has Schedule |
 | schedule | day_or_week | Schedule.day_or_week |
@@ -105,8 +100,8 @@ The inspiration for this tool is A Discipline for Software Engineering by Watts 
 | schedule_week | num | Schedule Week.num |
 | schedule_week | date_monday | Schedule Week.date_monday |
 | task | task_id | Task identity |
-| task | project_id | Project Has Tasks |
-| task | step_task_id | Task For Step Task |
+| task | stage_id | Stage Has Tasks |
+| task | step_task_id | Task Instance Of |
 | task | schedule_week_id | Task On Week |
 | task | planned_hours | Task.planned_hours |
 | task | pct_complete | Task.pct_complete |
