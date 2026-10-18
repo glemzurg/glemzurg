@@ -1,6 +1,6 @@
 # Time Log
 
-A recorded interval of work on a project.
+A recorded interval of work on one task or one defect.
 
 ◇
 
@@ -25,10 +25,3 @@ attributes:
       name: Comments
       rules: unconstrained
       type_spec: STRING
-
-associations:
-    - name: For Task
-      details: Task this time was spent on.
-      from_multiplicity: any
-      to_class_key: core/task
-      to_multiplicity: "1"

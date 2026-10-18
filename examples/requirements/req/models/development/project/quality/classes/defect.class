@@ -1,6 +1,6 @@
 # Defect
 
-A defect injected and removed in projects and phases.
+A defect injected in a task and removed in a stage.
 
 ◇
 
@@ -40,25 +40,20 @@ associations:
       to_class_key: process/family/defect_type
       to_multiplicity: "1"
     - name: Injected In
-      details: Project where this defect was injected.
+      details: Task where this defect was injected.
       from_multiplicity: any
-      to_class_key: core/project
-      to_multiplicity: "1"
-    - name: Injected In Phase
-      details: Phase where this defect was injected.
-      from_multiplicity: any
-      to_class_key: process/family/phase
+      to_class_key: core/task
       to_multiplicity: "1"
     - name: Removed In
-      details: Project where this defect was removed.
+      details: Stage where this defect was removed. A stage is an instance of a process step.
       from_multiplicity: any
-      to_class_key: core/project
+      to_class_key: core/stage
       to_multiplicity: "1"
-    - name: Removed In Phase
-      details: Phase where this defect was removed.
-      from_multiplicity: any
-      to_class_key: process/family/phase
-      to_multiplicity: "1"
+    - name: Has Time Logs
+      details: Time recorded against this defect.
+      from_multiplicity: "0..1"
+      to_class_key: task/time_log
+      to_multiplicity: any
     - name: Has Source
       details: Defect this one was cloned from, when one exists.
       from_multiplicity: any
