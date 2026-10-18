@@ -2,84 +2,9 @@
 
 A process-definition and project tracking tool for running single person projects.
 
-The inspiration for this tool is A Discipline for Software Engineering by Watts S. Humphrey.
+The inspiration for this tool is from a few books:
 
-## Review To Do 
+- A Discipline for Software Engineering by Watts S. Humphrey
 
-| Table | Column | Model |
-| --- | --- | --- |
-| project (both drafts) | project_id | Project identity |
-| project | created_time | Project.created_time |
-| project | name | Project.name |
-| project | description | Project.description |
-| project | process_id | Project Instance Of |
-| project | started_time | Project.started_time |
-| project | estimate_minute | Project.estimate_minute |
-| project | estimate_comment | Project.estimate_comment |
-| project | module_template_id | Project Instantiates |
-| project | project_bucket_id | Project In Bucket |
-| project | current_subphase_id | Project Current Subphase |
-| project | design_method_id | Project Uses Design Method |
-| project | size_estimation_method_id | Project Uses Size Estimation Method |
-| project | time_estimation_method_id | Project Uses Time Estimation Method |
-| project | mutli_day | Project.multi_day |
-| project | planned_time | Project.planned_time |
-| project | actual_time | Project.actual_time |
-| project | planned_pct_reuse | Project.planned_pct_reuse |
-| project | actual_pct_reuse | Project.actual_pct_reuse |
-| project | planned_defect_count | Project.planned_defect_count |
-| project | planned_appraisal_coq | Project.planned_appraisal_coq |
-| project | planned_failure_coq | Project.planned_failure_coq |
-| design_method | design_id | Design Method identity |
-| design_method | name | Design Method.name |
-| design_method | description | Design Method.description |
-| stats_bucket | stats_bucket_id | Stats Bucket identity |
-| stats_bucket | name | Stats Bucket.name |
-| stats_bucket | description | Stats Bucket.description |
-| module_template | module_template_id | Module Template identity |
-| module_template | process_id | Module Template Follows Process |
-| module_template | name | Module Template.name |
-| module_template | description | Module Template.description |
-| module_template | size_estimation_method_id | Module Template Uses Size Estimation Method |
-| module_template | time_estimation_method_id | Module Template Uses Time Estimation Method |
-| module_template | design_method_id | Module Template Uses Design Method |
-| estimate | task_id | Task Has Size Estimate (optional) |
-| probe_object_type | (catalog) | Probe Object Type |
-| probe_object_type | number, name, description | Probe Object Type attributes |
-| probe_type | probe_type_id | Probe Type identity |
-| probe_type | number, name, description | Probe Type attributes |
-| probe_object_size | (identity) | Probe Object Size identity |
-| probe_object_size | number, name, description | Probe Object Size attributes |
-| schedule | schedule_id | Schedule identity |
-| schedule | project_id | Project Has Schedule |
-| schedule | day_or_week | Schedule.day_or_week |
-| schedule_week | schedule_week_id | Schedule Week identity |
-| schedule_week | schedule_id | Schedule Has Weeks |
-| schedule_week | project_id | Schedule Week For Project |
-| schedule_week | num | Schedule Week.num |
-| schedule_week | date_monday | Schedule Week.date_monday |
-| task | task_id | Task identity |
-| task | stage_id | Stage Has Tasks |
-| task | step_task_id | Task Instance Of |
-| task | schedule_week_id | Task On Week |
-| task | planned_hours | Task.planned_hours |
-| task | pct_complete | Task.pct_complete |
-| time_log | time_log_id | Time Log identity |
-| time_log | project_id | Project Has Time Logs |
-| time_log | phase_id | Time Log Occurs In |
-| time_log | cycle | Time Log.cycle |
-| time_log | task_id | Task Has Time Logs |
-| time_log | defect_id | Defect Has Time Logs |
-| time_log | start_time | Time Log.start_time |
-| time_log | stop_time | Time Log.stop_time |
-| time_log | interruption_minutes | Time Log.interruption_minutes |
-| time_log | comments | Time Log.comments |
-| defect_type (commented) | (duplicate of live defect_type) | Defect Type |
-| defect | defect_id | Defect identity |
-| defect | found_time | Defect.found_time |
-| defect | task_id | Defect Injected In |
-| defect | cycle | Defect.cycle |
-| defect | stage_id | Defect Removed In |
-| defect | fix_minutes | Defect.fix_minutes |
-| defect | source_defect_id | Defect Has Source |
-| defect | description | Defect.description |
+A clean way to track projects.
+

@@ -1,18 +1,18 @@
 # Script
 
-A step-by-step process script owned by a phase.
+A step-by-step process script owned by a stage.
 
 ◇
 
 attributes:
     - key: num
       name: Num
-      details: Order of this script within the phase.
+      details: Order of this script within the stage.
       rules: "[0 .. unconstrained] at 1 unit"
       type_spec: Nat
     - key: name
       name: Name
-      details: Unique among scripts of the same phase.
+      details: Unique among scripts of the same stage.
       rules: unconstrained
       type_spec: STRING
     - key: task_summary

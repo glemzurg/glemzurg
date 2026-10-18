@@ -1,6 +1,6 @@
 # Defect
 
-A defect injected in a task and removed in a stage.
+A defect injected in a task and removed in a step instance.
 
 ◇
 
@@ -45,9 +45,9 @@ associations:
       to_class_key: core/task
       to_multiplicity: "1"
     - name: Removed In
-      details: Stage where this defect was removed. A stage is an instance of a process step.
+      details: Step instance where this defect was removed. A step instance is an instance of a process step.
       from_multiplicity: any
-      to_class_key: core/stage
+      to_class_key: core/step_instance
       to_multiplicity: "1"
     - name: Has Time Logs
       details: Time recorded against this defect.

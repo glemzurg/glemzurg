@@ -25,11 +25,6 @@ associations:
       from_multiplicity: "0..1"
       to_class_key: estimation/estimate
       to_multiplicity: "0..1"
-    - name: On Week
-      details: Schedule week this task is planned for.
-      from_multiplicity: any
-      to_class_key: schedule/schedule_week
-      to_multiplicity: "1"
     - name: Has Time Logs
       details: Time recorded against this task.
       from_multiplicity: "0..1"

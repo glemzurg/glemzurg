@@ -1,6 +1,6 @@
 # Step
 
-A step of a process script. Every step occurs in a phase of the same family as its process.
+A step of a process script.
 
 ◇
 
@@ -16,10 +16,6 @@ attributes:
       rules: unconstrained
       type_spec: STRING
 
-invariants:
-    - details: The family phase of a step belongs to the same family as the process that owns the phase of its script.
-      specification: 'LET script == CHOOSE s \in self._HasSteps : TRUE IN LET processPhase == CHOOSE c \in script._HasScripts : TRUE IN LET process == CHOOSE p \in processPhase._HasPhases : TRUE IN LET familyFromProcess == CHOOSE f \in process._HasProcesses : TRUE IN LET familyPhase == CHOOSE ph \in self.OccursIn : TRUE IN LET familyFromPhase == CHOOSE f \in familyPhase._HasPhases : TRUE IN familyFromProcess = familyFromPhase'
-
 associations:
     - name: Has Step Tasks
       details: Ordered work defined for this step, shared by every project that follows the process.
@@ -29,8 +25,3 @@ associations:
       uniqueness:
           - to_attributes:
                 - num
-    - name: Occurs In
-      details: Phase of the family skeleton this step is performed in.
-      from_multiplicity: any
-      to_class_key: family/phase
-      to_multiplicity: "1"

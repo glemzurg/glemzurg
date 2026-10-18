@@ -34,14 +34,14 @@ attributes:
       type_spec: STRING
 
 invariants:
-    - details: Phase name is unique among phases of this process.
-      specification: '\A c \in self.HasPhases : _FiniteSets!Cardinality({ q \in self.HasPhases : q.name = c.name }) = 1'
+    - details: Stage name is unique among stages of this process.
+      specification: '\A c \in self.HasStages : _FiniteSets!Cardinality({ q \in self.HasStages : q.name = c.name }) = 1'
 
 associations:
-    - name: Has Phases
-      details: Ordered phases that make up this process.
+    - name: Has Stages
+      details: Ordered stages that make up this process.
       from_multiplicity: "1"
-      to_class_key: phase
+      to_class_key: stage
       to_multiplicity: any
       uniqueness:
           - to_attributes:

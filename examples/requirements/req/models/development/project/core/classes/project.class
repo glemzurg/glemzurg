@@ -27,7 +27,7 @@ associations:
       to_class_key: process/process/process
       to_multiplicity: "1"
     - name: Has Cycles
-      details: Cycles of this project. Each cycle is an instance of a process phase.
+      details: Cycles of this project. Each cycle is an instance of a process stage.
       from_multiplicity: "1"
       to_class_key: cycle
       to_multiplicity: any

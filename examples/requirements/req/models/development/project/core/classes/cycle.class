@@ -1,6 +1,6 @@
 # Cycle
 
-A run of one process phase within a project.
+A run of one process stage within a project.
 
 ◇
 
@@ -13,14 +13,14 @@ attributes:
 
 associations:
     - name: Instance Of
-      details: Process phase this cycle is an instance of.
+      details: Process stage this cycle is an instance of.
       from_multiplicity: any
-      to_class_key: process/process/phase
+      to_class_key: process/process/stage
       to_multiplicity: "1"
-    - name: Has Stages
-      details: Stages of this cycle. Each stage is an instance of a process step.
+    - name: Has Step Instances
+      details: Step instances of this cycle. Each is an instance of a process step.
       from_multiplicity: "1"
-      to_class_key: stage
+      to_class_key: step_instance
       to_multiplicity: any
       uniqueness:
           - to_attributes:
