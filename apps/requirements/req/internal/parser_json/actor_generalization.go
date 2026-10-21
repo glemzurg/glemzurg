@@ -1,0 +1,153 @@
+package parser_json
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json/json_schemas"
+	"github.com/santhosh-tekuri/jsonschema/v5"
+)
+
+// inputActorGeneralization represents an actor generalization JSON file.
+// Actor generalizations define super/sub-type hierarchies between actors.
+type inputActorGeneralization struct {
+	Name            string   `json:"name"`
+	Details         string   `json:"details,omitempty"`
+	UnfinishedNotes string   `json:"unfinished_notes,omitempty"`
+	SuperclassKey   string   `json:"superclass_key"`
+	SubclassKeys    []string `json:"subclass_keys"`
+	IsComplete      bool     `json:"is_complete,omitempty"`
+	IsStatic        bool     `json:"is_static,omitempty"`
+	UMLComment      string   `json:"uml_comment,omitempty"`
+}
+
+// actorGeneralizationSchema is the compiled JSON schema for actor generalization files.
+var actorGeneralizationSchema *jsonschema.Schema
+
+// actorGeneralizationSchemaContent is the raw JSON schema content for error reporting.
+var actorGeneralizationSchemaContent string
+
+func init() {
+	compiler := jsonschema.NewCompiler()
+	schemaBytes, err := json_schemas.Schemas.ReadFile("actor_generalization.schema.json")
+	if err != nil {
+		panic("failed to read actor_generalization.schema.json: " + err.Error())
+	}
+	actorGeneralizationSchemaContent = string(schemaBytes)
+	if err := compiler.AddResource("actor_generalization.schema.json", strings.NewReader(actorGeneralizationSchemaContent)); err != nil {
+		panic("failed to add actor generalization schema resource: " + err.Error())
+	}
+	actorGeneralizationSchema, err = compiler.Compile("actor_generalization.schema.json")
+	if err != nil {
+		panic("failed to compile actor_generalization.schema.json: " + err.Error())
+	}
+}
+
+// parseActorGeneralization parses an actor generalization JSON file content into an inputActorGeneralization struct.
+// The filename parameter is the path to the JSON file being parsed.
+// It validates the input against the actor generalization schema and returns detailed errors if validation fails.
+func parseActorGeneralization(content []byte, filename string) (*inputActorGeneralization, error) {
+	// Validate JSON syntax and schema first (using untyped parse).
+	var jsonData any
+	if err := json.Unmarshal(content, &jsonData); err != nil {
+		return nil, NewParseError(
+			ErrActorGenInvalidJSON,
+			"failed to parse actor generalization JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
+	}
+	if err := actorGeneralizationSchema.Validate(jsonData); err != nil {
+		return nil, NewParseError(
+			ErrActorGenSchemaViolation,
+			"actor generalization JSON does not match schema: "+err.Error(),
+			filename,
+		).WithHint("run: req_check --schema actor_generalization")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var gen inputActorGeneralization
+	if err := json.Unmarshal(content, &gen); err != nil {
+		return nil, NewParseError(
+			ErrActorGenInvalidJSON,
+			"failed to parse actor generalization JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
+	}
+
+	// Validate required fields and business rules
+	if err := validateActorGeneralization(&gen, filename); err != nil {
+		return nil, err
+	}
+
+	return &gen, nil
+}
+
+// validateActorGeneralization validates an inputActorGeneralization struct.
+// The filename parameter is the path to the JSON file being parsed.
+func validateActorGeneralization(gen *inputActorGeneralization, filename string) error {
+	// Name is required (schema enforces this, but we provide a clearer error)
+	if gen.Name == "" {
+		return NewParseError(
+			ErrActorGenNameRequired,
+			"actor generalization name is required, got ''",
+			filename,
+		).WithField("name").WithHint("add a non-empty \"name\" field")
+	}
+
+	// Name cannot be only whitespace
+	if strings.TrimSpace(gen.Name) == "" {
+		return NewParseError(
+			ErrActorGenNameEmpty,
+			"actor generalization name cannot be empty or whitespace only, got '"+gen.Name+"'",
+			filename,
+		).WithField("name").WithHint("add a non-empty \"name\" field")
+	}
+
+	// Superclass key is required (schema enforces this, but we provide a clearer error)
+	if gen.SuperclassKey == "" {
+		return NewParseError(
+			ErrActorGenSuperclassRequired,
+			"actor generalization superclass_key is required, got ''",
+			filename,
+		).WithField("superclass_key").WithHint("add a non-empty \"superclass_key\" referencing a defined actor")
+	}
+
+	// Superclass key cannot be only whitespace
+	if strings.TrimSpace(gen.SuperclassKey) == "" {
+		return NewParseError(
+			ErrActorGenSuperclassRequired,
+			"actor generalization superclass_key cannot be empty or whitespace only, got '"+gen.SuperclassKey+"'",
+			filename,
+		).WithField("superclass_key").WithHint("add a non-empty \"superclass_key\" referencing a defined actor")
+	}
+
+	// Subclass keys is required and must have at least one entry (schema enforces this)
+	if len(gen.SubclassKeys) == 0 {
+		return NewParseError(
+			ErrActorGenSubclassesRequired,
+			"actor generalization subclass_keys is required and must have at least one entry",
+			filename,
+		).WithField("subclass_keys").WithHint("add \"subclass_keys\" array with at least one actor key")
+	}
+
+	// Each subclass key must be non-empty and non-whitespace
+	for i, key := range gen.SubclassKeys {
+		if key == "" {
+			return NewParseError(
+				ErrActorGenSubclassesEmpty,
+				fmt.Sprintf("actor generalization subclass_keys[%d] cannot be empty", i),
+				filename,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("each entry in \"subclass_keys\" must be a non-empty actor key")
+		}
+		if strings.TrimSpace(key) == "" {
+			return NewParseError(
+				ErrActorGenSubclassesEmpty,
+				fmt.Sprintf("actor generalization subclass_keys[%d] cannot be whitespace only, got '%s'", i, key),
+				filename,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("each entry in \"subclass_keys\" must be a non-empty actor key")
+		}
+	}
+
+	return nil
+}

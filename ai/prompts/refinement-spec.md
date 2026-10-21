@@ -198,11 +198,11 @@ Acceptance: `go test ./internal/core/...` passes. The package now exposes everyt
 
 ---
 
-## Step 2: `parser_ai` (JSON-schema authoring)
+## Step 2: `parser_json` (JSON-schema authoring)
 
-In [internal/parser_ai](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_ai):
+In [internal/parser_json](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_json):
 
-1. Update [json_schemas/model.schema.json](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_ai/json_schemas/model.schema.json):
+1. Update [json_schemas/model.schema.json](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_json/json_schemas/model.schema.json):
    - Add optional `kind: "requirements" | "specification"` (default `requirements`).
    - Add optional `refines_model: string`.
 2. Update every per-element schema (class, state_machine, action, query, parameter, etc.) to allow an optional `refines: string` property with pattern `^[a-z_]+:[a-z0-9_]+$`.
@@ -211,7 +211,7 @@ In [internal/parser_ai](file:///workspaces/glemzurg/apps/requirements/req/intern
    - A minimal `kind: specification` model with one class refining a requirements class.
    - A spec class with a spec-only attribute (no `refines:`).
    - Negative cases: malformed `refines:` syntax, `refines:` on a requirements-kind file.
-5. Add a short authoring guide at `parser_ai/docs/refinement.md`. It is intentionally brief and rule-based, suitable for an AI prompt to cite verbatim:
+5. Add a short authoring guide at `parser_json/docs/refinement.md`. It is intentionally brief and rule-based, suitable for an AI prompt to cite verbatim:
    - A spec file is structurally identical to a requirements file.
    - Set `kind: specification` and `refines_model: <key>` at the top.
    - For each element you intentionally implement, add `refines: <kind>:<key>`.
@@ -318,7 +318,7 @@ The following are deliberately deferred so this iteration stays small:
 ## Suggested rollout order
 
 1. Step 1 — `core` fields and validator.
-2. Step 2 — `parser_ai` schemas, conversions, tests, AI guide.
+2. Step 2 — `parser_json` schemas, conversions, tests, AI guide.
 3. Step 3 — `parser_human` regex, parsers, tests, human guide.
 4. Step 4 — `req_check trace` command.
 5. Step 5 — markdown views and helpers.

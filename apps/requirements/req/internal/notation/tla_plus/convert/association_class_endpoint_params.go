@@ -25,7 +25,7 @@ func associationClassEndpointParamNames(fromClassName, toClassName string) (from
 // injectAssociationClassEndpointParams adds the implicit host-endpoint parameters
 // to association-class creation events and their Initialize (creation) actions.
 //
-// Authors do not declare these in parser_human / parser_ai. Injection runs before
+// Authors do not declare these in parser_human / parser_json. Injection runs before
 // lowering so well-formed logic may reference them (e.g. Partner.HasCustomers).
 func injectAssociationClassEndpointParams(model *core.Model) error {
 	if model == nil {

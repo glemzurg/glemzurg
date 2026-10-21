@@ -10,15 +10,15 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/perftrack"
 )
 
 // Input format constants.
 const (
 	InputFormatDataYAML = "data/yaml"
-	InputFormatAIJSON   = "ai/json"
+	InputFormatJSON     = "json"
 )
 
 // SourceExtensionsYAML defines file extensions for human model format.
@@ -127,7 +127,7 @@ func (sw *SourceWatcher) handleFileChange(path string) {
 
 	// Select extensions based on input format
 	var extensions []string
-	if sw.inputFormat == InputFormatAIJSON {
+	if sw.inputFormat == InputFormatJSON {
 		extensions = SourceExtensionsJSON
 	} else {
 		extensions = SourceExtensionsYAML
@@ -164,7 +164,7 @@ func (sw *SourceWatcher) updateModel() error {
 	defer tracker.LogIfSlow()
 
 	var err error
-	if sw.inputFormat == InputFormatAIJSON {
+	if sw.inputFormat == InputFormatJSON {
 		err = sw.updateModelFromJSON(tracker)
 	} else {
 		err = sw.updateModelFromYAML(tracker)
@@ -177,12 +177,12 @@ func (sw *SourceWatcher) updateModel() error {
 	return nil
 }
 
-// updateModelFromJSON parses a model from parser_ai JSON format.
+// updateModelFromJSON parses a model from parser_json JSON format.
 func (sw *SourceWatcher) updateModelFromJSON(tracker *perftrack.Tracker) error {
 	var parsedModel core.Model
 	var err error
 	perftrack.RunOn(tracker, "parse.json", func() {
-		parsedModel, err = parser_ai.ReadModel(sw.modelPath)
+		parsedModel, err = parser_json.ReadModel(sw.modelPath)
 	})
 	if err != nil {
 		return err

@@ -1,147 +1,196 @@
 package parser_json
 
 import (
-	"github.com/pkg/errors"
+	"encoding/json"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json/json_schemas"
+	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
-// pipeSpec is the authored notation and text of an expression or type spec.
-// The parsed tree is a cache and is rebuilt by constructors when a caller asks.
-type pipeSpec struct {
-	Notation      string `json:"notation,omitempty"`
-	Specification string `json:"specification,omitempty"`
+// _LOGIC_TYPE_QUERY is the logic type string for query logic.
+const _LOGIC_TYPE_QUERY = "query"
+
+const _LOGIC_TYPE_DESTROY = "destroy"
+const _LOGIC_TYPE_EVENTS = "events"
+
+// inputLogic represents a formal logic specification in JSON.
+type inputLogic struct {
+	Type               string `json:"type"`
+	Description        string `json:"description"`
+	Target             string `json:"target,omitempty"`
+	TargetTypeSpec     string `json:"target_type_spec,omitempty"`
+	OverAssociationKey string `json:"over_association_key,omitempty"`
+	Notation           string `json:"notation,omitempty"`
+	Specification      string `json:"specification,omitempty"`
+	DestroyEvent       string `json:"destroy_event,omitempty"`
+	EndpointSelector   string `json:"endpoint_selector,omitempty"`
 }
 
-type pipeLogic struct {
-	Key                  string    `json:"key"`
-	Type                 string    `json:"type"`
-	Description          string    `json:"description,omitempty"`
-	Target               string    `json:"target,omitempty"`
-	OverAssociationKey   string    `json:"over_association_key,omitempty"`
-	Spec                 *pipeSpec `json:"spec,omitempty"`
-	DestroyEventSpec     *pipeSpec `json:"destroy_event_spec,omitempty"`
-	EndpointSelectorSpec *pipeSpec `json:"endpoint_selector_spec,omitempty"`
-	TargetTypeSpec       *pipeSpec `json:"target_type_spec,omitempty"`
+// logicSchema is the compiled JSON schema for logic objects.
+var logicSchema *jsonschema.Schema
+
+// logicSchemaContent is the raw JSON schema content for error reporting.
+var logicSchemaContent string
+
+func init() {
+	compiler := jsonschema.NewCompiler()
+	schemaBytes, err := json_schemas.Schemas.ReadFile("logic.schema.json")
+	if err != nil {
+		panic("failed to read logic.schema.json: " + err.Error())
+	}
+	logicSchemaContent = string(schemaBytes)
+	if err := compiler.AddResource("logic.schema.json", strings.NewReader(logicSchemaContent)); err != nil {
+		panic("failed to add logic schema resource: " + err.Error())
+	}
+	logicSchema, err = compiler.Compile("logic.schema.json")
+	if err != nil {
+		panic("failed to compile logic.schema.json: " + err.Error())
+	}
 }
 
-func specFromCore(spec logic_spec.ExpressionSpec) *pipeSpec {
-	if spec.Notation == "" && spec.Specification == "" {
+// parseLogic parses a logic JSON object content into an inputLogic struct.
+// The filename parameter is the path to the JSON file being parsed.
+// It validates the input against the logic schema and returns detailed errors if validation fails.
+func parseLogic(content []byte, filename string) (*inputLogic, error) {
+	// Validate JSON syntax and schema first (using untyped parse).
+	var jsonData any
+	if err := json.Unmarshal(content, &jsonData); err != nil {
+		return nil, NewParseError(
+			ErrLogicInvalidJSON,
+			"failed to parse logic JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
+	}
+	if err := logicSchema.Validate(jsonData); err != nil {
+		return nil, NewParseError(
+			ErrLogicSchemaViolation,
+			"logic JSON does not match schema: "+err.Error(),
+			filename,
+		).WithHint("run: req_check --schema logic")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var logic inputLogic
+	if err := json.Unmarshal(content, &logic); err != nil {
+		return nil, NewParseError(
+			ErrLogicInvalidJSON,
+			"failed to parse logic JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
+	}
+
+	// Validate required fields and business rules
+	if err := validateLogic(&logic, filename); err != nil {
+		return nil, err
+	}
+
+	return &logic, nil
+}
+
+// validateLogic validates an inputLogic struct.
+// The filename parameter is the path to the JSON file being parsed.
+func validateLogic(logic *inputLogic, filename string) error {
+	// Type is required.
+	if logic.Type == "" {
+		return NewParseError(
+			ErrLogicTypeRequired,
+			"logic type is required, got ''",
+			filename,
+		).WithField("type").WithHint("add a \"type\" field with one of: assessment, state_change, query, safety_rule, value, let, destroy, events")
+	}
+
+	// Description is required (schema enforces this, but we provide a clearer error)
+	if logic.Description == "" {
+		return NewParseError(
+			ErrLogicDescriptionRequired,
+			"logic description is required, got ''",
+			filename,
+		).WithField("description").WithHint("add a non-empty \"description\" field")
+	}
+
+	// Description cannot be only whitespace
+	if strings.TrimSpace(logic.Description) == "" {
+		return NewParseError(
+			ErrLogicDescriptionEmpty,
+			"logic description cannot be empty or whitespace only, got '"+logic.Description+"'",
+			filename,
+		).WithField("description").WithHint("add a non-empty \"description\" field")
+	}
+
+	// Target validation based on logic type (when type is specified).
+	switch logic.Type {
+	case "state_change", _LOGIC_TYPE_QUERY, "let", _LOGIC_TYPE_DESTROY:
+		if logic.Target == "" {
+			return NewParseError(
+				ErrLogicTargetRequired,
+				"logic of type '"+logic.Type+"' requires a non-empty 'target' field — for state_change this is the attribute SubKey being set, for query this is the output identifier name, for let this is the local variable name",
+				filename,
+			).WithField("target").WithHint("state_change/query/let/destroy types require a non-empty \"target\" field")
+		}
+		if logic.Type == _LOGIC_TYPE_DESTROY {
+			if strings.TrimSpace(logic.DestroyEvent) == "" {
+				return NewParseError(
+					ErrLogicDestroyEventRequired,
+					"logic of type '"+_LOGIC_TYPE_DESTROY+"' requires a non-empty 'destroy_event' field",
+					filename,
+				).WithField("destroy_event").WithHint("add destroy_event with the peer event call, e.g. \"_destroy(b)\"")
+			}
+		} else if strings.TrimSpace(logic.DestroyEvent) != "" {
+			return NewParseError(
+				ErrLogicDestroyEventNotAllowed,
+				"only destroy logic may declare destroy_event, got type '"+logic.Type+"'",
+				filename,
+			).WithField("destroy_event").WithHint("remove destroy_event or change type to destroy")
+		}
+		if (logic.Type == _LOGIC_TYPE_QUERY || logic.Type == "let") && strings.HasPrefix(logic.Target, "_") {
+			return NewParseError(
+				ErrLogicTargetNoLeadUnderscore,
+				logic.Type+" logic target '"+logic.Target+"' cannot start with '_' — use a plain identifier name",
+				filename,
+			).WithField("target").WithHint("query/let target names cannot start with underscore")
+		}
+	case "assessment", "safety_rule", "value", _LOGIC_TYPE_EVENTS:
+		if logic.Target != "" {
+			return NewParseError(
+				ErrLogicTargetNotAllowed,
+				"logic of type '"+logic.Type+"' must not have a 'target' field, got '"+logic.Target+"' — only state_change, query, let, and destroy types use target",
+				filename,
+			).WithField("target").WithHint("assessment/safety_rule/value/events types must not have a \"target\" field")
+		}
+		if strings.TrimSpace(logic.DestroyEvent) != "" {
+			return NewParseError(
+				ErrLogicDestroyEventNotAllowed,
+				"only destroy logic may declare destroy_event, got type '"+logic.Type+"'",
+				filename,
+			).WithField("destroy_event").WithHint("remove destroy_event or change type to destroy")
+		}
+	}
+	if err := validateAssociationClassFields(logic, filename); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateAssociationClassFields(logic *inputLogic, filename string) error {
+	hasSelector := strings.TrimSpace(logic.EndpointSelector) != ""
+	if !hasSelector {
 		return nil
 	}
-	return &pipeSpec{Notation: spec.Notation, Specification: spec.Specification}
-}
-
-func typeSpecFromCore(spec *logic_spec.TypeSpec) *pipeSpec {
-	if spec == nil || (spec.Notation == "" && spec.Specification == "") {
-		return nil
+	if logic.Type != "state_change" {
+		return NewParseError(
+			ErrLogicAssocClassNotAllowed,
+			"endpoint_selector is only valid on state_change guarantees",
+			filename,
+		).WithField("endpoint_selector").WithHint("use type state_change for association-class reify")
 	}
-	return &pipeSpec{Notation: spec.Notation, Specification: spec.Specification}
-}
-
-func specToCore(spec *pipeSpec) (logic_spec.ExpressionSpec, error) {
-	if spec == nil {
-		return logic_spec.ExpressionSpec{}, nil
+	if strings.TrimSpace(logic.Specification) == "" {
+		return NewParseError(
+			ErrLogicAssocClassSpecRequired,
+			"association-class reify requires a creation specification",
+			filename,
+		).WithField("specification").WithHint("add specification with the AC _new(...) call or set-map of _new")
 	}
-	parsed, err := logic_spec.NewExpressionSpec(spec.Notation, spec.Specification, nil)
-	if err != nil {
-		return logic_spec.ExpressionSpec{}, errors.WithStack(err)
-	}
-	return parsed, nil
-}
-
-func typeSpecToCore(spec *pipeSpec) (*logic_spec.TypeSpec, error) {
-	if spec == nil {
-		return nil, nil //nolint:nilnil // nil pointer means no type spec present
-	}
-	parsed, err := logic_spec.NewTypeSpec(spec.Notation, spec.Specification, nil)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return &parsed, nil
-}
-
-func logicFromCore(logic model_logic.Logic) pipeLogic {
-	over := ""
-	if logic.OverAssociationKey != nil {
-		over = keyString(*logic.OverAssociationKey)
-	}
-	return pipeLogic{
-		Key:                  keyString(logic.Key),
-		Type:                 logic.Type,
-		Description:          logic.Description,
-		Target:               logic.Target,
-		OverAssociationKey:   over,
-		Spec:                 specFromCore(logic.Spec),
-		DestroyEventSpec:     specFromCore(logic.DestroyEventSpec),
-		EndpointSelectorSpec: specFromCore(logic.EndpointSelectorSpec),
-		TargetTypeSpec:       typeSpecFromCore(logic.TargetTypeSpec),
-	}
-}
-
-func logicToCore(item pipeLogic) (model_logic.Logic, error) {
-	key, err := parseKey("key", item.Key)
-	if err != nil {
-		return model_logic.Logic{}, err
-	}
-	spec, err := specToCore(item.Spec)
-	if err != nil {
-		return model_logic.Logic{}, errors.Wrap(err, "spec")
-	}
-	targetType, err := typeSpecToCore(item.TargetTypeSpec)
-	if err != nil {
-		return model_logic.Logic{}, errors.Wrap(err, "target_type_spec")
-	}
-
-	logic := model_logic.NewLogic(key, item.Type, item.Description, item.Target, spec, targetType)
-
-	if item.OverAssociationKey != "" {
-		over, err := parseKey("over_association_key", item.OverAssociationKey)
-		if err != nil {
-			return model_logic.Logic{}, err
-		}
-		logic.SetOverAssociationKey(&over)
-	}
-	if item.DestroyEventSpec != nil {
-		destroySpec, err := specToCore(item.DestroyEventSpec)
-		if err != nil {
-			return model_logic.Logic{}, errors.Wrap(err, "destroy_event_spec")
-		}
-		logic.SetDestroyEventSpec(destroySpec)
-	}
-	if item.EndpointSelectorSpec != nil {
-		selector, err := specToCore(item.EndpointSelectorSpec)
-		if err != nil {
-			return model_logic.Logic{}, errors.Wrap(err, "endpoint_selector_spec")
-		}
-		logic.SetEndpointSelectorSpec(selector)
-	}
-	return logic, nil
-}
-
-func logicsFromCore(items []model_logic.Logic) []pipeLogic {
-	if len(items) == 0 {
-		return nil
-	}
-	out := make([]pipeLogic, len(items))
-	for i, item := range items {
-		out[i] = logicFromCore(item)
-	}
-	return out
-}
-
-func logicsToCore(items []pipeLogic) ([]model_logic.Logic, error) {
-	if len(items) == 0 {
-		return nil, nil
-	}
-	out := make([]model_logic.Logic, 0, len(items))
-	for i, item := range items {
-		logic, err := logicToCore(item)
-		if err != nil {
-			return nil, errors.Wrapf(err, "logic[%d]", i)
-		}
-		out = append(out, logic)
-	}
-	return out, nil
+	return nil
 }

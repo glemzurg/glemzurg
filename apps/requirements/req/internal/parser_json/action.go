@@ -1,0 +1,104 @@
+package parser_json
+
+import (
+	"encoding/json"
+	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json/json_schemas"
+	"github.com/santhosh-tekuri/jsonschema/v5"
+)
+
+// inputAction represents an action JSON file.
+type inputAction struct {
+	Name        string           `json:"name"`
+	Details     string           `json:"details,omitempty"`
+	Parameters  []inputParameter `json:"parameters,omitempty"`
+	Requires    []inputLogic     `json:"requires,omitempty"`
+	Guarantees  []inputLogic     `json:"guarantees,omitempty"`
+	SafetyRules []inputLogic     `json:"safety_rules,omitempty"`
+}
+
+// actionSchema is the compiled JSON schema for action files.
+var actionSchema *jsonschema.Schema
+
+// actionSchemaContent is the raw JSON schema content for error reporting.
+var actionSchemaContent string
+
+func init() {
+	compiler := jsonschema.NewCompiler()
+	schemaBytes, err := json_schemas.Schemas.ReadFile("action.schema.json")
+	if err != nil {
+		panic("failed to read action.schema.json: " + err.Error())
+	}
+	actionSchemaContent = string(schemaBytes)
+	if err := compiler.AddResource("action.schema.json", strings.NewReader(actionSchemaContent)); err != nil {
+		panic("failed to add action schema resource: " + err.Error())
+	}
+	actionSchema, err = compiler.Compile("action.schema.json")
+	if err != nil {
+		panic("failed to compile action.schema.json: " + err.Error())
+	}
+}
+
+// parseAction parses an action JSON file content into an inputAction struct.
+// The filename parameter is the path to the JSON file being parsed.
+// It validates the input against the action schema and returns detailed errors if validation fails.
+func parseAction(content []byte, filename string) (*inputAction, error) {
+	// Validate JSON syntax and schema first (using untyped parse).
+	var jsonData any
+	if err := json.Unmarshal(content, &jsonData); err != nil {
+		return nil, NewParseError(
+			ErrActionInvalidJSON,
+			"failed to parse action JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
+	}
+	if err := actionSchema.Validate(jsonData); err != nil {
+		return nil, NewParseError(
+			ErrActionSchemaViolation,
+			"action JSON does not match schema: "+err.Error(),
+			filename,
+		).WithHint("run: req_check --schema action")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var action inputAction
+	if err := json.Unmarshal(content, &action); err != nil {
+		return nil, NewParseError(
+			ErrActionInvalidJSON,
+			"failed to parse action JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
+	}
+
+	// Validate required fields and business rules
+	if err := validateAction(&action, filename); err != nil {
+		return nil, err
+	}
+
+	return &action, nil
+}
+
+// validateAction validates an inputAction struct.
+// The filename parameter is the path to the JSON file being parsed.
+func validateAction(action *inputAction, filename string) error {
+	// Name is required (schema enforces this, but we provide a clearer error)
+	if action.Name == "" {
+		return NewParseError(
+			ErrActionNameRequired,
+			"action name is required, got ''",
+			filename,
+		).WithField("name").WithHint("add a non-empty \"name\" field")
+	}
+
+	// Name cannot be only whitespace
+	if strings.TrimSpace(action.Name) == "" {
+		return NewParseError(
+			ErrActionNameEmpty,
+			"action name cannot be empty or whitespace only, got '"+action.Name+"'",
+			filename,
+		).WithField("name").WithHint("add a non-empty \"name\" field")
+	}
+
+	return nil
+}

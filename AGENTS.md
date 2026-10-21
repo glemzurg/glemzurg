@@ -42,7 +42,7 @@ Do not switch git branches, git add, git commit, git push, git pull.
 1. **`internal/core`** — types, constructors, setters, validation, and unit tests.
 2. **`internal/test_helper`** — fixture models and prune helpers that mirror core shapes.
 3. **`internal/database`** — schema, persistence, load/assemble paths, and database tests.
-4. **`internal/parser_ai`** — JSON tree read/write, conversion to/from core, and **JSON schemas** under `json_schemas/` that must stay aligned with core shapes. When a core field changes type or semantics, update the matching `*.schema.json` (descriptions, `type`, cross-field references) in the same stage — not only Go conversion code.
+4. **`internal/parser_json`** — JSON tree read/write, conversion to/from core, and **JSON schemas** under `json_schemas/` that must stay aligned with core shapes. When a core field changes type or semantics, update the matching `*.schema.json` (descriptions, `type`, cross-field references) in the same stage — not only Go conversion code.
 
 **Parser AI input types mirror core structurally.** `inputClass`, `inputAttribute`, and sibling `input*` types should match core layout (ordered slices where core uses slices, unique keys where core requires them). Their role is to ease JSON authoring and schema validation — small JSON-friendly adjustments (string keys instead of `identity.Key`, omitted empty fields) are fine; structural deviation (e.g. core `[]Attribute` vs input map) should be rare and temporary. Example: class `attributes` in `class.schema.json` is an **array** of attribute objects, each with a `key` field; array order is declaration order, matching core `[]Attribute`.
 5. **`internal/parser_human`** — YAML read/write and conversion to/from core.

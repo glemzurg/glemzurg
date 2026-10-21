@@ -20,11 +20,11 @@ april (in parallel)
 
 constraints:
   - add regex constraints to model string values
-    - ensure the schemas in parser_ai match them
+    - ensure the schemas in parser_json match them
 
 cleanup:
   - remove the json markup in req_model tree, and any json handling code
-    - move to the parser_ai package
+    - move to the parser_json package
   - change constants styles
   - replace all fmt.Errorf() with errors.Errorf()
   - rename as intermediate representation?

@@ -109,7 +109,7 @@ _Seq!Seq(Int \X BOOLEAN)
 ## Practical notes
 
 1. **Optional** — omit `type_spec` when informal typing via `data_type_rules` is enough.
-2. **No syntax check at JSON load** — `parser_ai` stores `type_spec` as a string without validating TLA+ syntax when `class.json` is read. Malformed values do not fail class parsing.
+2. **No syntax check at JSON load** — `parser_json` stores `type_spec` as a string without validating TLA+ syntax when `class.json` is read. Malformed values do not fail class parsing.
 3. **Common values in the repo** — `"Nat"`, `"STRING"`, `"Int"`, and `"SUBSET STRING"` (named sets).
 
 ## When to use it
@@ -118,6 +118,6 @@ Use `data_type_rules` alone for most attributes. Add `type_spec` when you need a
 
 ## Related documentation
 
-- [JSON AI model format](../internal/parser_ai/docs/JSON_AI_MODEL_FORMAT.md) — `class.json` structure and attribute fields
+- [JSON AI model format](../internal/parser_json/docs/JSON_AI_MODEL_FORMAT.md) — `class.json` structure and attribute fields
 - Error **E5011** — `data_type_rules` syntax reference
 - Error **E11022** — class attribute completeness (actor-backed classes may have no attributes)

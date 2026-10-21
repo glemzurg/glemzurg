@@ -61,7 +61,7 @@ There is **no** stored host edge that is not implied by an association-class ins
 
 ### Association class `_new` signature
 
-1. **Host ends are implicit** — not authored on the event or Initialize action in `parser_human` / `parser_ai` files.
+1. **Host ends are implicit** — not authored on the event or Initialize action in `parser_human` / `parser_json` files.
 2. **Names** (engine injects as the first two creation parameters before logic lower / sim):
    - Distinct endpoint classes: `ClassTLAName` of each end (spaces stripped), e.g. `Partner`, `Jurisdiction`, `JurisdictionalWalletDefinition`.
    - Same class on both ends: `From<ClassTLAName>`, `To<ClassTLAName>`.

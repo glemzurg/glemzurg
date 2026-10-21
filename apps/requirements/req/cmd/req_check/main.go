@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
-	parserErrors "github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/errors"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/json_schemas"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json"
+	parserErrors "github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json/errors"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json/json_schemas"
 )
 
 const helpText = `req_check - validate an AI-generated requirements model
@@ -154,7 +154,7 @@ func validateModel(modelPath string) []error {
 	var allErrors []error
 
 	// Read and validate the input model.
-	m, err := parser_ai.ReadModel(modelPath)
+	m, err := parser_json.ReadModel(modelPath)
 	if err != nil {
 		allErrors = append(allErrors, flattenErrors(err)...)
 		return allErrors
@@ -195,18 +195,18 @@ func outputJSON(errs []error) {
 // outputJSONTo writes errors as a JSON array to the given writer.
 func outputJSONTo(w io.Writer, errs []error) {
 	type jsonError struct {
-		Type    string                          `json:"type"`
-		Code    string                          `json:"code"`
-		Message string                          `json:"message"`
-		File    string                          `json:"file,omitempty"`
-		Field   string                          `json:"field,omitempty"`
-		Hint    string                          `json:"hint,omitempty"`
-		Context *parser_ai.CoreValidationDetail `json:"context,omitempty"`
+		Type    string                            `json:"type"`
+		Code    string                            `json:"code"`
+		Message string                            `json:"message"`
+		File    string                            `json:"file,omitempty"`
+		Field   string                            `json:"field,omitempty"`
+		Hint    string                            `json:"hint,omitempty"`
+		Context *parser_json.CoreValidationDetail `json:"context,omitempty"`
 	}
 
 	var items []jsonError
 	for _, err := range errs {
-		var pe *parser_ai.ParseError
+		var pe *parser_json.ParseError
 		var ve *coreerr.ValidationError
 		switch {
 		case errors.As(err, &pe):
@@ -227,7 +227,7 @@ func outputJSONTo(w io.Writer, errs []error) {
 				Code:    string(ve.Code()),
 				Message: ve.Message(),
 				Field:   ve.Field(),
-				Context: &parser_ai.CoreValidationDetail{
+				Context: &parser_json.CoreValidationDetail{
 					Code:    string(ve.Code()),
 					Message: ve.Message(),
 					Path:    ve.Path(),
@@ -253,7 +253,7 @@ func outputJSONTo(w io.Writer, errs []error) {
 // It combines the error's own hint with category-specific follow-up commands:
 //   - File/directory structure errors: adds --tree
 //   - All parse errors: adds --explain E{code}
-func buildParseErrorHint(pe *parser_ai.ParseError, code string) string {
+func buildParseErrorHint(pe *parser_json.ParseError, code string) string {
 	parts := []string{}
 	if pe.Hint != "" {
 		parts = append(parts, pe.Hint)
@@ -273,10 +273,10 @@ func buildParseErrorHint(pe *parser_ai.ParseError, code string) string {
 func isFileStructureError(code int) bool {
 	switch code {
 	case
-		parser_ai.ErrKeyInvalidFormat,              // filename/dir key syntax
-		parser_ai.ErrAssocFilenameInvalidFormat,    // assoc filename format
-		parser_ai.ErrAssocFilenameInvalidComponent, // assoc filename component
-		parser_ai.ErrConvDomainStructureInvalid:    // subdomain naming rules (core)
+		parser_json.ErrKeyInvalidFormat,              // filename/dir key syntax
+		parser_json.ErrAssocFilenameInvalidFormat,    // assoc filename format
+		parser_json.ErrAssocFilenameInvalidComponent, // assoc filename component
+		parser_json.ErrConvDomainStructureInvalid:    // subdomain naming rules (core)
 		return true
 	}
 	return false

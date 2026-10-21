@@ -17,7 +17,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/httpserver"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/modelfacts"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json"
 )
@@ -25,15 +24,14 @@ import (
 // Supported input formats.
 const (
 	InputFormatDataYAML = "data/yaml" // Parser format (YAML files)
-	InputFormatAIJSON   = "ai/json"   // AI format (JSON files)
+	InputFormatJSON     = "json"      // JSON file tree
 )
 
 // Supported output formats.
 const (
 	OutputFormatDataYAML = "data/yaml" // Parser format (YAML files)
 	OutputFormatMD       = "md"        // Markdown documentation
-	OutputFormatAIJSON   = "ai/json"   // AI format (JSON files)
-	OutputFormatJSON     = "json"      // Core-pipe document (model.json)
+	OutputFormatJSON     = "json"      // JSON file tree
 )
 
 func main() {
@@ -41,17 +39,14 @@ func main() {
 	// Default: data/yaml to md
 	//   $GOBIN/req -rootsource example/models -rootoutput example/output/models -model model_a
 	//
-	// Convert ai/json to md
-	//   $GOBIN/req -input ai/json -output md -rootsource example/ai_models -rootoutput example/output/models -model model_a
+	// Convert json to md
+	//   $GOBIN/req -input json -output md -rootsource example/ai_models -rootoutput example/output/models -model model_a
 	//
-	// Convert data/yaml to ai/json
-	//   $GOBIN/req -input data/yaml -output ai/json -rootsource example/models -rootoutput example/ai_models -model model_a
+	// Convert data/yaml to json
+	//   $GOBIN/req -input data/yaml -output json -rootsource example/models -rootoutput example/ai_models -model model_a
 	//
-	// Convert ai/json to data/yaml
-	//   $GOBIN/req -input ai/json -output data/yaml -rootsource example/ai_models -rootoutput example/models -model model_a
-	//
-	// Core-pipe JSON for another tool. -rootoutput - writes the document to stdout:
-	//   $GOBIN/req -output json -rootsource example/models -rootoutput - -model model_a
+	// Convert json to data/yaml
+	//   $GOBIN/req -input json -output data/yaml -rootsource example/ai_models -rootoutput example/models -model model_a
 	//
 	// HTTP server mode (serves in-memory generated content for a single model):
 	//   $GOBIN/req -http -port 8080 -rootsource example/models -model model_a
@@ -68,8 +63,8 @@ func main() {
 	flag.StringVar(&rootSourcePath, "rootsource", "", "the path to the source models")
 	flag.StringVar(&rootOutputPath, "rootoutput", "", "the path to output files")
 	flag.StringVar(&model, "model", "", "the model to process")
-	flag.StringVar(&inputFormat, "input", InputFormatDataYAML, "input format: data/yaml or ai/json")
-	flag.StringVar(&outputFormat, "output", OutputFormatMD, "output format: data/yaml, md, ai/json, or json")
+	flag.StringVar(&inputFormat, "input", InputFormatDataYAML, "input format: data/yaml or json")
+	flag.StringVar(&outputFormat, "output", OutputFormatMD, "output format: data/yaml, md, or json")
 	flag.BoolVar(&debug, "debug", false, "enable the debug level of logging")
 	flag.BoolVar(&skipDB, "skipdb", false, "skip database validation step")
 	flag.BoolVar(&httpMode, "http", false, "start HTTP server mode")
@@ -80,15 +75,15 @@ func main() {
 
 	// Validate input format
 	inputFormat = strings.ToLower(inputFormat)
-	if inputFormat != InputFormatDataYAML && inputFormat != InputFormatAIJSON {
-		log.Printf("Error: invalid input format '%s'. Valid options: data/yaml, ai/json", inputFormat)
+	if inputFormat != InputFormatDataYAML && inputFormat != InputFormatJSON {
+		log.Printf("Error: invalid input format '%s'. Valid options: data/yaml, json", inputFormat)
 		os.Exit(1)
 	}
 
 	// Validate output format
 	outputFormat = strings.ToLower(outputFormat)
-	if outputFormat != OutputFormatDataYAML && outputFormat != OutputFormatMD && outputFormat != OutputFormatAIJSON && outputFormat != OutputFormatJSON {
-		log.Printf("Error: invalid output format '%s'. Valid options: data/yaml, md, ai/json, json", outputFormat)
+	if outputFormat != OutputFormatDataYAML && outputFormat != OutputFormatMD && outputFormat != OutputFormatJSON {
+		log.Printf("Error: invalid output format '%s'. Valid options: data/yaml, md, json", outputFormat)
 		os.Exit(1)
 	}
 
@@ -243,11 +238,11 @@ func runConversion(flags conversionFlags, paths conversionPaths, model string, f
 		parsedModel = &m
 		failures = parseFailures
 
-	case InputFormatAIJSON:
-		log.Println("Reading model from ai/json format...")
-		m, err := parser_ai.ReadModel(sourcePath)
+	case InputFormatJSON:
+		log.Println("Reading model from json format...")
+		m, err := parser_json.ReadModel(sourcePath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read ai/json model: %w", err)
+			return nil, fmt.Errorf("failed to read json model: %w", err)
 		}
 		parsedModel = &m
 	}
@@ -275,11 +270,7 @@ func runConversion(flags conversionFlags, paths conversionPaths, model string, f
 	}
 
 	// Step 3: Write the output in the desired format.
-	// A placeholder class would look like authored data in the pipe.
-	if formats.outputFormat == OutputFormatJSON && len(failures) > 0 {
-		return nil, fmt.Errorf("%d class file(s) failed to parse — refusing core-pipe JSON output", len(failures))
-	}
-	if err := writeConversionOutput(formats.outputFormat, paths.rootOutputPath, outputPath, *parsedModel, failures); err != nil {
+	if err := writeConversionOutput(formats.outputFormat, outputPath, *parsedModel, failures); err != nil {
 		return nil, err
 	}
 
@@ -287,7 +278,7 @@ func runConversion(flags conversionFlags, paths conversionPaths, model string, f
 	return failures, nil
 }
 
-func writeConversionOutput(outputFormat, rootOutput, outputPath string, model core.Model, failures []parser_human.ParseFailure) error {
+func writeConversionOutput(outputFormat, outputPath string, model core.Model, failures []parser_human.ParseFailure) error {
 	switch outputFormat {
 	case OutputFormatMD:
 		log.Println("Generating markdown output...")
@@ -296,13 +287,13 @@ func writeConversionOutput(outputFormat, rootOutput, outputPath string, model co
 			return fmt.Errorf("failed to generate markdown: %w", err)
 		}
 
-	case OutputFormatAIJSON:
-		log.Println("Converting to ai/json format...")
+	case OutputFormatJSON:
+		log.Println("Converting to json format...")
 		if err := os.MkdirAll(outputPath, 0755); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
-		if err := parser_ai.WriteModel(model, outputPath); err != nil {
-			return fmt.Errorf("failed to write ai/json model: %w", err)
+		if err := parser_json.WriteModel(model, outputPath); err != nil {
+			return fmt.Errorf("failed to write json model: %w", err)
 		}
 		log.Printf("Model written to: %s", outputPath)
 
@@ -312,38 +303,7 @@ func writeConversionOutput(outputFormat, rootOutput, outputPath string, model co
 			return fmt.Errorf("failed to write data/yaml model: %w", err)
 		}
 		log.Printf("Model written to: %s", outputPath)
-
-	case OutputFormatJSON:
-		log.Println("Writing core-pipe JSON...")
-		if err := writeCorePipe(rootOutput, outputPath, model); err != nil {
-			return err
-		}
 	}
-	return nil
-}
-
-// writeCorePipe writes one core-pipe document. rootOutput "-" is stdout; any
-// other root writes <root>/<model>/model.json.
-func writeCorePipe(rootOutput, outputPath string, model core.Model) error {
-	if rootOutput == "-" {
-		if err := parser_json.Write(model, os.Stdout); err != nil {
-			return fmt.Errorf("failed to write core-pipe JSON: %w", err)
-		}
-		return nil
-	}
-	if err := os.MkdirAll(outputPath, 0755); err != nil {
-		return fmt.Errorf("failed to create output directory: %w", err)
-	}
-	path := filepath.Join(outputPath, "model.json")
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644) //nolint:gosec // generated pipe is intentionally world-readable
-	if err != nil {
-		return fmt.Errorf("failed to create model.json: %w", err)
-	}
-	defer file.Close()
-	if err := parser_json.Write(model, file); err != nil {
-		return fmt.Errorf("failed to write core-pipe JSON: %w", err)
-	}
-	log.Printf("Model written to: %s", path)
 	return nil
 }
 

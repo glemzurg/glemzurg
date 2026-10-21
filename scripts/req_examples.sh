@@ -6,14 +6,14 @@
 #   With debug:
 #     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/output/ web_books -debug
 #
-#   Convert data/yaml to ai/json:
-#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/ai_output/ web_books -debug "data/yaml" "ai/json"
+#   Convert data/yaml to json:
+#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/ai_output/ web_books -debug "data/yaml" "json"
 #
-#   Convert ai/json to md:
-#     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/output/ web_books "" "ai/json" "md"
+#   Convert json to md:
+#     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/output/ web_books "" "json" "md"
 #
-#   Convert ai/json to data/yaml:
-#     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/models_output/ web_books "" "ai/json" "data/yaml"
+#   Convert json to data/yaml:
+#     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/models_output/ web_books "" "json" "data/yaml"
 
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -24,8 +24,8 @@ MODEL="$3"
 
 # Optional parameters
 DEBUG="$4"           # -debug or empty
-INPUT_FORMAT="$5"    # data/yaml (default) or ai/json
-OUTPUT_FORMAT="$6"   # md (default), data/yaml, or ai/json
+INPUT_FORMAT="$5"    # data/yaml (default) or json
+OUTPUT_FORMAT="$6"   # md (default), data/yaml, or json
 
 # Check required parameters
 if [ -z "$INPUT_PATH" ]; then

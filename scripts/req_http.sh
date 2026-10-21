@@ -8,8 +8,8 @@
 #   With custom port:
 #     ./scripts/req_http.sh /data/examples/requirements/req/models/ web_books 9090
 #
-#   With ai/json format:
-#     ./scripts/req_http.sh /data/examples/requirements/req/ai_models/ web_books 8080 ai/json
+#   With json format:
+#     ./scripts/req_http.sh /data/examples/requirements/req/ai_models/ web_books 8080 json
 
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -19,7 +19,7 @@ MODEL="$2"
 
 # Optional parameters
 PORT="${3:-8080}"           # Default to 8080
-INPUT_FORMAT="${4:-data/yaml}"  # data/yaml (default) or ai/json
+INPUT_FORMAT="${4:-data/yaml}"  # data/yaml (default) or json
 
 # Check required parameters
 if [ -z "$INPUT_PATH" ]; then

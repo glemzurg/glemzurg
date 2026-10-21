@@ -24,7 +24,7 @@ const _DEFAULT_SUBDOMAIN_NAME = "default"
 // A parse failure in a single .class file does not abort assembly: that class
 // becomes an empty placeholder and its error is returned in the []ParseFailure
 // slice. After assembly, model.Validate() runs; validation errors are returned
-// as err (same contract as parser_ai ReadModel). A failure in a .model / .domain
+// as err (same contract as parser_json ReadModel). A failure in a .model / .domain
 // / .subdomain file (entities that others depend on) or a filesystem walk error
 // is catastrophic and returned as err before validation.
 func Parse(modelPath string) (model core.Model, failures []ParseFailure, err error) {

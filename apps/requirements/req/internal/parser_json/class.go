@@ -1,266 +1,195 @@
 package parser_json
 
 import (
-	"github.com/pkg/errors"
+	"encoding/json"
+	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json/json_schemas"
+	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
-type pipeClass struct {
-	Key             string           `json:"key"`
+// inputAttribute represents an attribute within a class.
+type inputAttribute struct {
+	Key              string      `json:"key"`
+	Name             string      `json:"name"`
+	DataTypeRules    string      `json:"data_type_rules,omitempty"`
+	Details          string      `json:"details,omitempty"`
+	DerivationPolicy *inputLogic `json:"derivation_policy,omitempty"`
+	Nullable         bool        `json:"nullable,omitempty"`
+	UMLComment       string      `json:"uml_comment,omitempty"`
+	TypeSpec         string      `json:"type_spec,omitempty"`
+
+	// Children (not from JSON, populated during directory traversal)
+	Invariants []inputLogic `json:"-"`
+}
+
+// inputClass represents a class JSON file.
+type inputClass struct {
 	Name            string           `json:"name"`
 	Details         string           `json:"details,omitempty"`
 	UnfinishedNotes string           `json:"unfinished_notes,omitempty"`
-	UmlComment      string           `json:"uml_comment,omitempty"`
-	Marked          bool             `json:"marked,omitempty"`
 	ActorKey        string           `json:"actor_key,omitempty"`
-	SuperclassOfKey string           `json:"superclass_of_key,omitempty"`
-	SubclassOfKey   string           `json:"subclass_of_key,omitempty"`
-	FacetOf         string           `json:"facet_of,omitempty"`
-	Invariants      []pipeLogic      `json:"invariants,omitempty"`
-	Attributes      []pipeAttribute  `json:"attributes,omitempty"`
-	States          []pipeState      `json:"states,omitempty"`
-	Events          []pipeEvent      `json:"events,omitempty"`
-	Guards          []pipeGuard      `json:"guards,omitempty"`
-	Actions         []pipeAction     `json:"actions,omitempty"`
-	Queries         []pipeQuery      `json:"queries,omitempty"`
-	Transitions     []pipeTransition `json:"transitions,omitempty"`
+	UMLComment      string           `json:"uml_comment,omitempty"`
+	Marked          bool             `json:"marked,omitempty"`
+	Attributes      []inputAttribute `json:"attributes,omitempty"`
+	Indexes         [][]string       `json:"indexes,omitempty"`
+
+	// Children (not from JSON, populated during directory traversal)
+	Invariants   []inputLogic            `json:"-"`
+	StateMachine *inputStateMachine      `json:"-"`
+	Actions      map[string]*inputAction `json:"-"`
+	Queries      map[string]*inputQuery  `json:"-"`
 }
 
-type pipeAttribute struct {
-	Key              string      `json:"key"`
-	Name             string      `json:"name"`
-	Details          string      `json:"details,omitempty"`
-	DataTypeRules    string      `json:"data_type_rules,omitempty"`
-	UmlComment       string      `json:"uml_comment,omitempty"`
-	Nullable         bool        `json:"nullable,omitempty"`
-	IndexNums        []uint      `json:"index_nums,omitempty"`
-	DerivationPolicy *pipeLogic  `json:"derivation_policy,omitempty"`
-	Invariants       []pipeLogic `json:"invariants,omitempty"`
+// classSchema is the compiled JSON schema for class files.
+var classSchema *jsonschema.Schema
+
+// classSchemaContent is the raw JSON schema content for error reporting.
+var classSchemaContent string
+
+func init() {
+	compiler := jsonschema.NewCompiler()
+	schemaBytes, err := json_schemas.Schemas.ReadFile("class.schema.json")
+	if err != nil {
+		panic("failed to read class.schema.json: " + err.Error())
+	}
+	classSchemaContent = string(schemaBytes)
+	if err := compiler.AddResource("class.schema.json", strings.NewReader(classSchemaContent)); err != nil {
+		panic("failed to add class schema resource: " + err.Error())
+	}
+	classSchema, err = compiler.Compile("class.schema.json")
+	if err != nil {
+		panic("failed to compile class.schema.json: " + err.Error())
+	}
 }
 
-type pipeClassGeneralization struct {
-	Key             string `json:"key"`
-	Name            string `json:"name"`
-	Details         string `json:"details,omitempty"`
-	UnfinishedNotes string `json:"unfinished_notes,omitempty"`
-	IsComplete      bool   `json:"is_complete,omitempty"`
-	IsStatic        bool   `json:"is_static,omitempty"`
-	UmlComment      string `json:"uml_comment,omitempty"`
+// parseClass parses a class JSON file content into an inputClass struct.
+// The filename parameter is the path to the JSON file being parsed.
+// It validates the input against the class schema and returns detailed errors if validation fails.
+func parseClass(content []byte, filename string) (*inputClass, error) {
+	// Validate JSON syntax and schema first (using untyped parse).
+	var jsonData any
+	if err := json.Unmarshal(content, &jsonData); err != nil {
+		return nil, NewParseError(
+			ErrClassInvalidJSON,
+			"failed to parse class JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
+	}
+	if err := classSchema.Validate(jsonData); err != nil {
+		return nil, NewParseError(
+			ErrClassSchemaViolation,
+			"class JSON does not match schema: "+err.Error(),
+			filename,
+		).WithHint("run: req_check --schema class")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var class inputClass
+	if err := json.Unmarshal(content, &class); err != nil {
+		return nil, NewParseError(
+			ErrClassInvalidJSON,
+			"failed to parse class JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
+	}
+
+	// Validate required fields and business rules
+	if err := validateClass(&class, filename); err != nil {
+		return nil, err
+	}
+
+	return &class, nil
 }
 
-func classFromCore(class model_class.Class) pipeClass {
-	item := pipeClass{
-		Key:             keyString(class.Key),
-		Name:            class.Name,
-		Details:         class.Details,
-		UnfinishedNotes: class.UnfinishedNotes,
-		UmlComment:      class.UmlComment,
-		Marked:          class.Marked,
-		ActorKey:        optionalKeyString(class.ActorKey),
-		SuperclassOfKey: optionalKeyString(class.SuperclassOfKey),
-		SubclassOfKey:   optionalKeyString(class.SubclassOfKey),
-		FacetOf:         optionalKeyString(class.FacetOf),
+// validateClass validates an inputClass struct.
+// The filename parameter is the path to the JSON file being parsed.
+func validateClass(class *inputClass, filename string) error {
+	// Name is required (schema enforces this, but we provide a clearer error)
+	if class.Name == "" {
+		return NewParseError(
+			ErrClassNameRequired,
+			"class name is required, got ''",
+			filename,
+		).WithField("name").WithHint("add a non-empty \"name\" field to class.json")
 	}
-	item.Invariants = logicsFromCore(class.Invariants)
-	for _, attr := range class.Attributes {
-		item.Attributes = append(item.Attributes, attributeFromCore(attr))
-	}
-	setBehaviorFromCore(&item, class)
-	return item
-}
 
-func classesFromCore(classes map[identity.Key]model_class.Class) []pipeClass {
-	if len(classes) == 0 {
-		return nil
+	// Name cannot be only whitespace
+	if strings.TrimSpace(class.Name) == "" {
+		return NewParseError(
+			ErrClassNameEmpty,
+			"class name cannot be empty or whitespace only, got '"+class.Name+"'",
+			filename,
+		).WithField("name").WithHint("add a non-empty \"name\" field to class.json")
 	}
-	out := make([]pipeClass, 0, len(classes))
-	for _, class := range classes {
-		out = append(out, classFromCore(class))
-	}
-	sortByKey(out, func(item pipeClass) string { return item.Key })
-	return out
-}
 
-func classesToCore(items []pipeClass) (map[identity.Key]model_class.Class, error) {
-	if len(items) == 0 {
-		return nil, nil //nolint:nilnil // omitted collection is the zero value, not an error
-	}
-	out := make(map[identity.Key]model_class.Class, len(items))
-	for i, item := range items {
-		class, err := classToCore(item)
-		if err != nil {
-			return nil, errors.Wrapf(err, "classes[%d]", i)
+	// Validate attributes if present.
+	seenKeys := make(map[string]bool, len(class.Attributes))
+	for i, attr := range class.Attributes {
+		fieldPrefix := fmt.Sprintf("attributes[%d]", i)
+		if attr.Key == "" {
+			return NewParseError(
+				ErrClassAttributeNameEmpty,
+				fmt.Sprintf("attribute[%d] key is required, got ''", i),
+				filename,
+			).WithField(fieldPrefix + ".key").WithHint("each attribute must have a non-empty \"key\" field")
 		}
-		if err := putUnique(out, class.Key, class, i); err != nil {
-			return nil, errors.Wrap(err, "classes")
+		if seenKeys[attr.Key] {
+			return NewParseError(
+				ErrClassAttributeNameEmpty,
+				fmt.Sprintf("duplicate attribute key '%s'", attr.Key),
+				filename,
+			).WithField(fieldPrefix + ".key").WithHint("attribute keys must be unique within the class")
 		}
-	}
-	return out, nil
-}
+		seenKeys[attr.Key] = true
 
-func classToCore(item pipeClass) (model_class.Class, error) {
-	key, err := parseKey("key", item.Key)
-	if err != nil {
-		return model_class.Class{}, err
-	}
-	actorKey, err := optionalKeyToCore("actor_key", item.ActorKey)
-	if err != nil {
-		return model_class.Class{}, err
-	}
-	superKey, err := optionalKeyToCore("superclass_of_key", item.SuperclassOfKey)
-	if err != nil {
-		return model_class.Class{}, err
-	}
-	subKey, err := optionalKeyToCore("subclass_of_key", item.SubclassOfKey)
-	if err != nil {
-		return model_class.Class{}, err
-	}
-	facetOf, err := optionalKeyToCore("facet_of", item.FacetOf)
-	if err != nil {
-		return model_class.Class{}, err
-	}
-	invariants, err := logicsToCore(item.Invariants)
-	if err != nil {
-		return model_class.Class{}, errors.Wrap(err, "invariants")
-	}
-	attributes, err := attributesToCore(item.Attributes)
-	if err != nil {
-		return model_class.Class{}, err
-	}
-
-	class := model_class.NewClass(key, model_class.ClassLinks{
-		ActorKey:        actorKey,
-		SuperclassOfKey: superKey,
-		SubclassOfKey:   subKey,
-		FacetOf:         facetOf,
-	}, model_class.ClassDetails{
-		Name:            item.Name,
-		Details:         item.Details,
-		UnfinishedNotes: item.UnfinishedNotes,
-		UmlComment:      item.UmlComment,
-	})
-	class.SetMarked(item.Marked)
-	class.SetInvariants(invariants)
-	class.SetAttributes(attributes)
-	if err := setBehaviorToCore(&class, item); err != nil {
-		return model_class.Class{}, err
-	}
-	return class, nil
-}
-
-func attributeFromCore(attr model_class.Attribute) pipeAttribute {
-	item := pipeAttribute{
-		Key:           keyString(attr.Key),
-		Name:          attr.Name,
-		Details:       attr.Details,
-		DataTypeRules: attr.DataTypeRules,
-		UmlComment:    attr.UmlComment,
-		Nullable:      attr.Nullable,
-		IndexNums:     attr.IndexNums,
-	}
-	if attr.DerivationPolicy != nil {
-		encoded := logicFromCore(*attr.DerivationPolicy)
-		item.DerivationPolicy = &encoded
-	}
-	for _, inv := range attr.Invariants {
-		item.Invariants = append(item.Invariants, logicFromCore(inv))
-	}
-	return item
-}
-
-func attributesToCore(items []pipeAttribute) ([]model_class.Attribute, error) {
-	if len(items) == 0 {
-		return nil, nil
-	}
-	out := make([]model_class.Attribute, 0, len(items))
-	for i, item := range items {
-		attr, err := attributeToCore(item)
-		if err != nil {
-			return nil, errors.Wrapf(err, "attributes[%d]", i)
+		if attr.Name == "" {
+			return NewParseError(
+				ErrClassAttributeNameEmpty,
+				fmt.Sprintf("attribute '%s' name is required, got ''", attr.Key),
+				filename,
+			).WithField(fieldPrefix + ".name").WithHint("each attribute must have a non-empty \"name\" field")
 		}
-		out = append(out, attr)
-	}
-	return out, nil
-}
 
-func attributeToCore(item pipeAttribute) (model_class.Attribute, error) {
-	key, err := parseKey("key", item.Key)
-	if err != nil {
-		return model_class.Attribute{}, err
-	}
-	var derivation *model_logic.Logic
-	if item.DerivationPolicy != nil {
-		logic, err := logicToCore(*item.DerivationPolicy)
-		if err != nil {
-			return model_class.Attribute{}, errors.Wrap(err, "derivation_policy")
-		}
-		derivation = &logic
-	}
-	attr, err := model_class.NewAttribute(key, model_class.AttributeDetails{
-		Name:    item.Name,
-		Details: item.Details,
-	}, item.DataTypeRules, derivation, item.Nullable, model_class.AttributeAnnotations{
-		UmlComment: item.UmlComment,
-		IndexNums:  item.IndexNums,
-	})
-	if err != nil {
-		return model_class.Attribute{}, err
-	}
-	invariants, err := logicsToCore(item.Invariants)
-	if err != nil {
-		return model_class.Attribute{}, errors.Wrap(err, "invariants")
-	}
-	attr.SetInvariants(invariants)
-	return attr, nil
-}
-
-func classGeneralizationFromCore(generalization model_class.Generalization) pipeClassGeneralization {
-	return pipeClassGeneralization{
-		Key:             keyString(generalization.Key),
-		Name:            generalization.Name,
-		Details:         generalization.Details,
-		UnfinishedNotes: generalization.UnfinishedNotes,
-		IsComplete:      generalization.IsComplete,
-		IsStatic:        generalization.IsStatic,
-		UmlComment:      generalization.UmlComment,
-	}
-}
-
-func classGeneralizationsFromCore(items map[identity.Key]model_class.Generalization) []pipeClassGeneralization {
-	if len(items) == 0 {
-		return nil
-	}
-	out := make([]pipeClassGeneralization, 0, len(items))
-	for _, item := range items {
-		out = append(out, classGeneralizationFromCore(item))
-	}
-	sortByKey(out, func(item pipeClassGeneralization) string { return item.Key })
-	return out
-}
-
-func classGeneralizationsToCore(items []pipeClassGeneralization) (map[identity.Key]model_class.Generalization, error) {
-	if len(items) == 0 {
-		return nil, nil //nolint:nilnil // omitted collection is the zero value, not an error
-	}
-	out := make(map[identity.Key]model_class.Generalization, len(items))
-	for i, item := range items {
-		key, err := parseKey("key", item.Key)
-		if err != nil {
-			return nil, errors.Wrapf(err, "generalizations[%d]", i)
-		}
-		generalization := model_class.NewGeneralization(key, model_class.GeneralizationDetails{
-			Name:    item.Name,
-			Details: item.Details,
-		}, item.UnfinishedNotes, model_class.GeneralizationTraits{
-			IsComplete: item.IsComplete,
-			IsStatic:   item.IsStatic,
-		}, item.UmlComment)
-		if err := putUnique(out, generalization.Key, generalization, i); err != nil {
-			return nil, errors.Wrap(err, "generalizations")
+		if strings.TrimSpace(attr.Name) == "" {
+			return NewParseError(
+				ErrClassAttributeNameEmpty,
+				fmt.Sprintf("attribute '%s' name cannot be empty or whitespace only, got '%s'", attr.Key, attr.Name),
+				filename,
+			).WithField(fieldPrefix + ".name").WithHint("each attribute must have a non-empty \"name\" field")
 		}
 	}
-	return out, nil
+
+	// Validate indexes if present
+	for i, index := range class.Indexes {
+		// Each index must have at least one attribute (schema enforces minItems: 1)
+		if len(index) == 0 {
+			return NewParseError(
+				ErrClassIndexInvalid,
+				fmt.Sprintf("index[%d] must have at least one attribute key", i),
+				filename,
+			).WithField(fmt.Sprintf("indexes[%d]", i)).WithHint("each index must be an array of one or more non-empty attribute keys")
+		}
+
+		// Each attribute key in the index must be non-empty
+		for j, attrKey := range index {
+			if attrKey == "" {
+				return NewParseError(
+					ErrClassIndexInvalid,
+					fmt.Sprintf("index[%d][%d] attribute key cannot be empty", i, j),
+					filename,
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint("each index must be an array of one or more non-empty attribute keys")
+			}
+			if strings.TrimSpace(attrKey) == "" {
+				return NewParseError(
+					ErrClassIndexInvalid,
+					fmt.Sprintf("index[%d][%d] attribute key cannot be whitespace only, got '%s'", i, j, attrKey),
+					filename,
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint("each index must be an array of one or more non-empty attribute keys")
+			}
+		}
+	}
+
+	return nil
 }

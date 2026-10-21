@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -66,7 +66,7 @@ func (s *CLISuite) TestFlattenErrors_NestedJoinedErrors() {
 // --- outputJSON tests ---
 
 func (s *CLISuite) TestOutputJSON_ParseError() {
-	pe := parser_ai.NewParseError(parser_ai.ErrModelNameRequired, "model name is required", "model.json").
+	pe := parser_json.NewParseError(parser_json.ErrModelNameRequired, "model name is required", "model.json").
 		WithField("name").
 		WithHint("add a name field")
 	errs := []error{pe}
@@ -135,7 +135,7 @@ func (s *CLISuite) TestOutputJSON_GenericError() {
 }
 
 func (s *CLISuite) TestOutputJSON_MixedErrors() {
-	pe := parser_ai.NewParseError(parser_ai.ErrModelNameRequired, "parse error", "model.json")
+	pe := parser_json.NewParseError(parser_json.ErrModelNameRequired, "parse error", "model.json")
 	ctx := coreerr.NewContext("test", "")
 	ve := coreerr.New(ctx, "VAL_CODE", "validation error", "field")
 	ge := fmt.Errorf("generic error")
