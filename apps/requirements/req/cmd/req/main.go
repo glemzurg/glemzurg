@@ -19,6 +19,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/modelfacts"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json"
 )
 
 // Supported input formats.
@@ -32,6 +33,7 @@ const (
 	OutputFormatDataYAML = "data/yaml" // Parser format (YAML files)
 	OutputFormatMD       = "md"        // Markdown documentation
 	OutputFormatAIJSON   = "ai/json"   // AI format (JSON files)
+	OutputFormatJSON     = "json"      // Core-pipe document (model.json)
 )
 
 func main() {
@@ -47,6 +49,9 @@ func main() {
 	//
 	// Convert ai/json to data/yaml
 	//   $GOBIN/req -input ai/json -output data/yaml -rootsource example/ai_models -rootoutput example/models -model model_a
+	//
+	// Core-pipe JSON for another tool. -rootoutput - writes the document to stdout:
+	//   $GOBIN/req -output json -rootsource example/models -rootoutput - -model model_a
 	//
 	// HTTP server mode (serves in-memory generated content for a single model):
 	//   $GOBIN/req -http -port 8080 -rootsource example/models -model model_a
@@ -64,7 +69,7 @@ func main() {
 	flag.StringVar(&rootOutputPath, "rootoutput", "", "the path to output files")
 	flag.StringVar(&model, "model", "", "the model to process")
 	flag.StringVar(&inputFormat, "input", InputFormatDataYAML, "input format: data/yaml or ai/json")
-	flag.StringVar(&outputFormat, "output", OutputFormatMD, "output format: data/yaml, md, or ai/json")
+	flag.StringVar(&outputFormat, "output", OutputFormatMD, "output format: data/yaml, md, ai/json, or json")
 	flag.BoolVar(&debug, "debug", false, "enable the debug level of logging")
 	flag.BoolVar(&skipDB, "skipdb", false, "skip database validation step")
 	flag.BoolVar(&httpMode, "http", false, "start HTTP server mode")
@@ -82,8 +87,8 @@ func main() {
 
 	// Validate output format
 	outputFormat = strings.ToLower(outputFormat)
-	if outputFormat != OutputFormatDataYAML && outputFormat != OutputFormatMD && outputFormat != OutputFormatAIJSON {
-		log.Printf("Error: invalid output format '%s'. Valid options: data/yaml, md, ai/json", outputFormat)
+	if outputFormat != OutputFormatDataYAML && outputFormat != OutputFormatMD && outputFormat != OutputFormatAIJSON && outputFormat != OutputFormatJSON {
+		log.Printf("Error: invalid output format '%s'. Valid options: data/yaml, md, ai/json, json", outputFormat)
 		os.Exit(1)
 	}
 
@@ -167,9 +172,11 @@ func main() {
 //
 // A catastrophic failure (e.g. an unreadable model) still writes a whole-model
 // red-bold error document to <output>/model.md. Localized per-class parse
-// failures are NOT catastrophic: the full output is generated with red-bold
-// error blocks on the affected class pages, and processConversion returns a
-// non-nil error only so the caller logs it and exits non-zero.
+// failures are NOT catastrophic for markdown: the full output is generated
+// with red-bold error blocks on the affected class pages, and processConversion
+// returns a non-nil error only so the caller logs it and exits non-zero.
+// JSON output is refused in that case, because a placeholder class would be
+// written as authored data.
 type conversionFlags struct {
 	debug  bool
 	skipDB bool
@@ -267,36 +274,77 @@ func runConversion(flags conversionFlags, paths conversionPaths, model string, f
 		log.Printf("Skipping database step: %d class file(s) failed to parse", len(failures))
 	}
 
-	// Step 3: Write the output in the desired format
-	switch formats.outputFormat {
+	// Step 3: Write the output in the desired format.
+	// A placeholder class would look like authored data in the pipe.
+	if formats.outputFormat == OutputFormatJSON && len(failures) > 0 {
+		return nil, fmt.Errorf("%d class file(s) failed to parse — refusing core-pipe JSON output", len(failures))
+	}
+	if err := writeConversionOutput(formats.outputFormat, paths.rootOutputPath, outputPath, *parsedModel, failures); err != nil {
+		return nil, err
+	}
+
+	log.Println("Done!")
+	return failures, nil
+}
+
+func writeConversionOutput(outputFormat, rootOutput, outputPath string, model core.Model, failures []parser_human.ParseFailure) error {
+	switch outputFormat {
 	case OutputFormatMD:
 		log.Println("Generating markdown output...")
-		// Use the already-parsed model to generate markdown
-		err := generate.GenerateMdFromModel(outputPath, *parsedModel, classErrorMap(failures))
+		err := generate.GenerateMdFromModel(outputPath, model, classErrorMap(failures))
 		if err != nil {
-			return nil, fmt.Errorf("failed to generate markdown: %w", err)
+			return fmt.Errorf("failed to generate markdown: %w", err)
 		}
 
 	case OutputFormatAIJSON:
 		log.Println("Converting to ai/json format...")
 		if err := os.MkdirAll(outputPath, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create output directory: %w", err)
+			return fmt.Errorf("failed to create output directory: %w", err)
 		}
-		if err := parser_ai.WriteModel(*parsedModel, outputPath); err != nil {
-			return nil, fmt.Errorf("failed to write ai/json model: %w", err)
+		if err := parser_ai.WriteModel(model, outputPath); err != nil {
+			return fmt.Errorf("failed to write ai/json model: %w", err)
 		}
 		log.Printf("Model written to: %s", outputPath)
 
 	case OutputFormatDataYAML:
 		log.Println("Converting to data/yaml format...")
-		if err := parser_human.Write(*parsedModel, outputPath); err != nil {
-			return nil, fmt.Errorf("failed to write data/yaml model: %w", err)
+		if err := parser_human.Write(model, outputPath); err != nil {
+			return fmt.Errorf("failed to write data/yaml model: %w", err)
 		}
 		log.Printf("Model written to: %s", outputPath)
-	}
 
-	log.Println("Done!")
-	return failures, nil
+	case OutputFormatJSON:
+		log.Println("Writing core-pipe JSON...")
+		if err := writeCorePipe(rootOutput, outputPath, model); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// writeCorePipe writes one core-pipe document. rootOutput "-" is stdout; any
+// other root writes <root>/<model>/model.json.
+func writeCorePipe(rootOutput, outputPath string, model core.Model) error {
+	if rootOutput == "-" {
+		if err := parser_json.Write(model, os.Stdout); err != nil {
+			return fmt.Errorf("failed to write core-pipe JSON: %w", err)
+		}
+		return nil
+	}
+	if err := os.MkdirAll(outputPath, 0755); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+	path := filepath.Join(outputPath, "model.json")
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644) //nolint:gosec // generated pipe is intentionally world-readable
+	if err != nil {
+		return fmt.Errorf("failed to create model.json: %w", err)
+	}
+	defer file.Close()
+	if err := parser_json.Write(model, file); err != nil {
+		return fmt.Errorf("failed to write core-pipe JSON: %w", err)
+	}
+	log.Printf("Model written to: %s", path)
+	return nil
 }
 
 // classErrorMap converts parser failures into a class-key -> error-message map

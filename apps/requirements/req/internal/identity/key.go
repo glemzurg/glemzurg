@@ -518,6 +518,11 @@ func parseClassAssociationKey(parts []string) (Key, bool, error) {
 		subKey := strings.Join(remainingParts[:splitIdx], "/")
 		subKey2Val := strings.Join(remainingParts[splitIdx:secondClassEndIdx], "/")
 		subKey3Val := strings.Join(remainingParts[secondClassEndIdx:], "/")
+		// An association name is one distilled segment. A slash means a longer key
+		// whose parent is this association, such as an association invariant.
+		if strings.Contains(subKey3Val, "/") {
+			continue
+		}
 		parentKey := strings.Join(parts[:i], "/")
 		k, err := newKeyWithSubKey3(parentKey, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2Val, subKey3Val)
 		return k, true, err

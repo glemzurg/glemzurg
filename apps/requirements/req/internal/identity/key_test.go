@@ -1581,6 +1581,15 @@ func (suite *KeySuite) TestParseKeyRoundTrip() {
 			},
 			description: "ClassInvariant key with numeric subKey",
 		},
+		{
+			testName: "class association invariant key round trip",
+			createKey: func() (Key, error) {
+				other := helper.Must(NewClassKey(subdomainKey, "other_class"))
+				assoc := helper.Must(NewClassAssociationKey(subdomainKey, classKey, other, "Has Lines"))
+				return NewClassAssociationInvariantKey(assoc, "1")
+			},
+			description: "Invariant parented by a class association",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
