@@ -12,7 +12,7 @@ This document describes the JSON-based format for defining requirements models. 
 
 A file whose name ends in `.annot.json` is not part of this format. It is a hand-written note for a later pipeline step, placed next to the model file it describes: `class.json` beside `class.annot.json`, `actions/ship.json` beside `actions/ship.annot.json`, `actors/customer.actor.json` beside `actors/customer.actor.annot.json`. The same relative paths can live in a separate directory and be merged by path before the next tool runs.
 
-This parser does not read, validate, write, or apply annotation files. Writing a model file leaves its annotation sibling on disk. The parser that applies annotations does not exist yet.
+This parser does not read, validate, write, or apply annotation files. Writing a model file leaves its annotation sibling on disk. The postgresql command reads those siblings with its own parser.
 
 ## What This Model Represents
 

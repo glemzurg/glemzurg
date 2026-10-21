@@ -28,7 +28,7 @@ func (r *Requirement) incompleteUseCase() (incompletes []Incomplete, err error) 
 			// The pattern that indicates a step is out of scope for system is "[x]".
 			endsWithOutOfScope := strings.HasSuffix(strings.TrimSpace(textline), "[x]")
 
-			if !(endsWithColon || endsWithOutOfScope) {
+			if !endsWithColon && !endsWithOutOfScope {
 
 				links, err := findLinks(textline)
 				if err != nil {
