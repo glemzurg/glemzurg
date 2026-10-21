@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/code/postgresql/internal/annot"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/parser_json"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/pkg/parser_json"
 	"github.com/stretchr/testify/require"
 )
 

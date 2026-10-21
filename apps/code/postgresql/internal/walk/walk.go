@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/code/postgresql/internal/annot"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/pkg/core"
 )
 
 // Result is one walk of a model.

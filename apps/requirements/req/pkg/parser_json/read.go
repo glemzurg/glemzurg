@@ -4,8 +4,8 @@
 package parser_json
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/core"
 	ijson "github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/pkg/core"
 )
 
 // ReadModel loads the model directory written by the requirements JSON writer.

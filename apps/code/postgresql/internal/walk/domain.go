@@ -5,7 +5,7 @@ import (
 	"path"
 	"sort"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/pkg/core"
 )
 
 func modelAssociations(ctx *context, level, dir, labelPrefix string, model core.Model) ([]AssocVisit, error) {

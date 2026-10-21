@@ -9,7 +9,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/code/postgresql/internal/annot"
 	"github.com/glemzurg/glemzurg/apps/code/postgresql/internal/walk"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/parser_json"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/pkg/parser_json"
 )
 
 // Load reads the model directory and the annotation directory, then walks the model.

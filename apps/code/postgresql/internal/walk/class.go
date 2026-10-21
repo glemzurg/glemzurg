@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/pkg/core"
 )
 
 func classes(model core.Model, domainKey, subKey string, ctx *context) ([]ClassVisit, error) {
