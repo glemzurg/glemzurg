@@ -1888,7 +1888,7 @@ func parseModelScopedKey(key string) (domain, subdomain, class string, err error
 const defaultSubdomainName = "default"
 
 // removeEmptyDefaultSubdomains drops placeholder default subdomains with no content
-// and normalizes empty subdomain maps to nil, matching parser_human assembly.
+// and normalizes empty subdomain maps to nil, matching parser_yaml assembly.
 func removeEmptyDefaultSubdomains(model *core.Model) {
 	for domainKey, domain := range model.Domains {
 		for subdomainKey, subdomain := range domain.Subdomains {

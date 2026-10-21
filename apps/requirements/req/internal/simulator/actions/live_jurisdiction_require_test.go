@@ -7,7 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_yaml"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/require"
@@ -18,7 +18,7 @@ func TestLiveEvenplayJurisdictionAddDomainExhaustedIsIneligible(t *testing.T) {
 	if _, err := os.Stat(modelPath); err != nil {
 		t.Skip("evenplay model not present")
 	}
-	model, failures, err := parser_human.Parse(modelPath)
+	model, failures, err := parser_yaml.Parse(modelPath)
 	require.NoError(t, err)
 	require.Empty(t, failures)
 	require.NoError(t, convert.LowerModel(&model))

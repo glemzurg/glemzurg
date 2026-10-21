@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-// domainLevelContentDirs lists directories that parser_human may place directly under a
+// domainLevelContentDirs lists directories that parser_yaml may place directly under a
 // domain folder; parser_json must reject them and require subdomains/{subdomain}/ instead.
 var domainLevelContentDirs = []string{"classes", "use_cases"}
 

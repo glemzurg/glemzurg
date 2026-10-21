@@ -223,11 +223,11 @@ In [internal/parser_json](file:///workspaces/glemzurg/apps/requirements/req/inte
 
 ---
 
-## Step 3: `parser_human` (markdown-style authoring)
+## Step 3: `parser_yaml` (markdown-style authoring)
 
-In [internal/parser_human](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_human):
+In [internal/parser_yaml](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_yaml):
 
-1. Extend the trailing key/value block (where `actor_key:` etc. live today, see [01_basic.md](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_human/test_files/class/01_basic.md)) to accept one new optional line per element:
+1. Extend the trailing key/value block (where `actor_key:` etc. live today, see [01_basic.md](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_yaml/test_files/class/01_basic.md)) to accept one new optional line per element:
    ```
    refines: class:order
    ```
@@ -237,9 +237,9 @@ In [internal/parser_human](file:///workspaces/glemzurg/apps/requirements/req/int
    refines_model: ecommerce_requirements
    ```
    Both default-omitted; existing files keep parsing unchanged.
-3. Update [regex.go](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_human/regex.go) and the per-element parsers to read and write the new lines.
+3. Update [regex.go](file:///workspaces/glemzurg/apps/requirements/req/internal/parser_yaml/regex.go) and the per-element parsers to read and write the new lines.
 4. Add round-trip test files under `test_files/` mirroring the additions made in Step 2.
-5. Update the `parser_human` README with a short "Authoring a refinement spec" section. Identical rules to the AI guide so authors learn one concept whether they are typing markdown or generating JSON.
+5. Update the `parser_yaml` README with a short "Authoring a refinement spec" section. Identical rules to the AI guide so authors learn one concept whether they are typing markdown or generating JSON.
 
 🛑 **STOP for human review.** Confirm the markdown syntax, the round-trip, and that all existing test files still pass without modification before changing any rendering.
 
@@ -319,7 +319,7 @@ The following are deliberately deferred so this iteration stays small:
 
 1. Step 1 — `core` fields and validator.
 2. Step 2 — `parser_json` schemas, conversions, tests, AI guide.
-3. Step 3 — `parser_human` regex, parsers, tests, human guide.
+3. Step 3 — `parser_yaml` regex, parsers, tests, human guide.
 4. Step 4 — `req_check trace` command.
 5. Step 5 — markdown views and helpers.
 

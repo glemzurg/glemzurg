@@ -302,7 +302,7 @@ func buildTestModel() (core.Model, error) {
 	}
 
 	// Lower all expressions with full model context so Expression trees are populated.
-	// Uses the tolerant approach (via NewExpressionSpec) that matches what parser_human
+	// Uses the tolerant approach (via NewExpressionSpec) that matches what parser_yaml
 	// does — parse failures leave Expression as nil rather than returning an error.
 	if err := convert.LowerAllExpressions(&model); err != nil {
 		return core.Model{}, err

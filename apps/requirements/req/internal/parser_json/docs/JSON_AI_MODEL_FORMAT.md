@@ -1270,7 +1270,7 @@ Each entity type has appropriate structured fields for logic:
 
 ## Constraints
 
-Parser enforcement matches `parser_human`: **wire-format integrity** (valid JSON, directory layout, filename/key syntax, JSON Schema shape) during read, then **`core.Model.Validate()`** after assembly. Display names are independent of filesystem keys.
+Parser enforcement matches `parser_yaml`: **wire-format integrity** (valid JSON, directory layout, filename/key syntax, JSON Schema shape) during read, then **`core.Model.Validate()`** after assembly. Display names are independent of filesystem keys.
 
 1. **Subdomain size** (recommendation): Subdomains often work well with 20-40 classes. Split when a domain grows large enough to need multiple cohesive groupings.
 

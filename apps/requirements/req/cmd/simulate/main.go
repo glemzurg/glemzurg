@@ -12,7 +12,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_yaml"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/report"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
@@ -150,7 +150,7 @@ func loadModel(rootSource, modelName string, includeSubdomainPaths, includeClass
 	}
 
 	modelPath := filepath.Join(rootSource, modelName)
-	parsed, failures, err := parser_human.Parse(modelPath)
+	parsed, failures, err := parser_yaml.Parse(modelPath)
 	if err != nil {
 		return nil, err
 	}

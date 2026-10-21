@@ -17,8 +17,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/httpserver"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/modelfacts"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_yaml"
 )
 
 // Supported input formats.
@@ -220,18 +220,18 @@ func writeErrorMarkdown(outputPath string, genErr error) error {
 // It returns the per-class parse failures (if any) separately from err. A
 // non-nil err is a catastrophic failure; a non-empty failures slice with a nil
 // err means the output was generated with per-class error blocks.
-func runConversion(flags conversionFlags, paths conversionPaths, model string, formats conversionFormats) ([]parser_human.ParseFailure, error) {
+func runConversion(flags conversionFlags, paths conversionPaths, model string, formats conversionFormats) ([]parser_yaml.ParseFailure, error) {
 	sourcePath := filepath.Join(paths.rootSourcePath, model)
 	outputPath := filepath.Join(paths.rootOutputPath, model)
 
 	// Step 1: Read the input model into core.Model
 	var parsedModel *core.Model
-	var failures []parser_human.ParseFailure
+	var failures []parser_yaml.ParseFailure
 
 	switch formats.inputFormat {
 	case InputFormatDataYAML:
 		log.Println("Reading model from data/yaml format...")
-		m, parseFailures, err := parser_human.Parse(sourcePath)
+		m, parseFailures, err := parser_yaml.Parse(sourcePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse data/yaml model: %w", err)
 		}
@@ -278,7 +278,7 @@ func runConversion(flags conversionFlags, paths conversionPaths, model string, f
 	return failures, nil
 }
 
-func writeConversionOutput(outputFormat, outputPath string, model core.Model, failures []parser_human.ParseFailure) error {
+func writeConversionOutput(outputFormat, outputPath string, model core.Model, failures []parser_yaml.ParseFailure) error {
 	switch outputFormat {
 	case OutputFormatMD:
 		log.Println("Generating markdown output...")
@@ -299,7 +299,7 @@ func writeConversionOutput(outputFormat, outputPath string, model core.Model, fa
 
 	case OutputFormatDataYAML:
 		log.Println("Converting to data/yaml format...")
-		if err := parser_human.Write(model, outputPath); err != nil {
+		if err := parser_yaml.Write(model, outputPath); err != nil {
 			return fmt.Errorf("failed to write data/yaml model: %w", err)
 		}
 		log.Printf("Model written to: %s", outputPath)
@@ -309,7 +309,7 @@ func writeConversionOutput(outputFormat, outputPath string, model core.Model, fa
 
 // classErrorMap converts parser failures into a class-key -> error-message map
 // for the generator. Returns nil when there are no failures.
-func classErrorMap(failures []parser_human.ParseFailure) map[string]string {
+func classErrorMap(failures []parser_yaml.ParseFailure) map[string]string {
 	if len(failures) == 0 {
 		return nil
 	}
@@ -338,10 +338,10 @@ func runModelFacts(rootSourcePath, model, subdomainPath string) error {
 	sourcePath := filepath.Join(rootSourcePath, model)
 
 	var parsed core.Model
-	var failures []parser_human.ParseFailure
+	var failures []parser_yaml.ParseFailure
 	var err error
 	withDiscardedLog(func() {
-		parsed, failures, err = parser_human.Parse(sourcePath)
+		parsed, failures, err = parser_yaml.Parse(sourcePath)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to parse model: %w", err)

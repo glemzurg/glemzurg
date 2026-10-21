@@ -10,8 +10,8 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_json"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_yaml"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/perftrack"
 )
 
@@ -206,10 +206,10 @@ func (sw *SourceWatcher) updateModelFromJSON(tracker *perftrack.Tracker) error {
 // into red-bold error blocks on those classes' pages.
 func (sw *SourceWatcher) updateModelFromYAML(tracker *perftrack.Tracker) error {
 	var parsedModel core.Model
-	var failures []parser_human.ParseFailure
+	var failures []parser_yaml.ParseFailure
 	var err error
 	perftrack.RunOn(tracker, "parse.yaml", func() {
-		parsedModel, failures, err = parser_human.Parse(sw.modelPath)
+		parsedModel, failures, err = parser_yaml.Parse(sw.modelPath)
 	})
 	if err != nil {
 		return err
@@ -228,7 +228,7 @@ func (sw *SourceWatcher) updateModelFromYAML(tracker *perftrack.Tracker) error {
 
 // classErrorMap converts parser failures into a class-key -> error-message map
 // for the generator. Returns nil when there are no failures.
-func classErrorMap(failures []parser_human.ParseFailure) map[string]string {
+func classErrorMap(failures []parser_yaml.ParseFailure) map[string]string {
 	if len(failures) == 0 {
 		return nil
 	}
