@@ -1,0 +1,3 @@
+ALTER TABLE {{.Table}} ADD COLUMN {{.Column}} bigint{{if .NotNull}} NOT NULL{{end}};
+ALTER TABLE {{.Table}} ADD CONSTRAINT {{.Constraint}}
+  FOREIGN KEY ({{.Column}}) REFERENCES {{.RefTable}} (pk) ON DELETE {{.OnDelete}};

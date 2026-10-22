@@ -1,0 +1,5 @@
+CREATE TABLE {{.Name}} (
+  pk bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY
+{{- range .Columns}},
+  {{.Name}} {{.Type}}{{if .NotNull}} NOT NULL{{end}}{{if .Default}} DEFAULT {{.Default}}{{end}}{{end}}
+);
