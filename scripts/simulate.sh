@@ -38,7 +38,7 @@
 #     ./scripts/simulate.sh data_sandbox/model evenplay 42 finance/wallet
 #
 #   Examples tree:
-#     ./scripts/simulate.sh /data/examples/requirements/req/models/ web_books 1
+#     ./scripts/simulate.sh /data/examples/develop/req/models/ develop 1
 
 set -e
 

@@ -3,13 +3,13 @@
 #
 # Example usage:
 #   Default (data/yaml format):
-#     ./scripts/req_http.sh /data/examples/requirements/req/models/ web_books
+#     ./scripts/req_http.sh /data/examples/develop/req/models/ develop
 #
 #   With custom port:
-#     ./scripts/req_http.sh /data/examples/requirements/req/models/ web_books 9090
+#     ./scripts/req_http.sh /data/examples/develop/req/models/ develop 9090
 #
 #   With json format:
-#     ./scripts/req_http.sh /data/examples/requirements/req/ai_models/ web_books 8080 json
+#     ./scripts/req_http.sh /data/examples/develop/req/ai_models/ develop 8080 json
 
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 

@@ -1,19 +1,19 @@
 #!/bin/bash
 # Example usage:
 #   Default (data/yaml to md):
-#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/output/ web_books
+#     ./scripts/req_examples.sh /data/examples/develop/req/models/ /data/examples/develop/req/output/ develop
 #
 #   With debug:
-#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/output/ web_books -debug
+#     ./scripts/req_examples.sh /data/examples/develop/req/models/ /data/examples/develop/req/output/ develop -debug
 #
 #   Convert data/yaml to json:
-#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/ai_output/ web_books -debug "data/yaml" "json"
+#     ./scripts/req_examples.sh /data/examples/develop/req/models/ /data/examples/develop/req/ai_output/ develop -debug "data/yaml" "json"
 #
 #   Convert json to md:
-#     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/output/ web_books "" "json" "md"
+#     ./scripts/req_examples.sh /data/examples/develop/req/ai_models/ /data/examples/develop/req/output/ develop "" "json" "md"
 #
 #   Convert json to data/yaml:
-#     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/models_output/ web_books "" "json" "data/yaml"
+#     ./scripts/req_examples.sh /data/examples/develop/req/ai_models/ /data/examples/develop/req/models_output/ develop "" "json" "data/yaml"
 
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 

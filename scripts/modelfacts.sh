@@ -9,7 +9,7 @@
 #     ./scripts/modelfacts.sh data_sandbox/model evenplay finance/wallet -debug
 #
 #   Examples tree:
-#     ./scripts/modelfacts.sh /data/examples/requirements/req/models/ web_books finance/wallet
+#     ./scripts/modelfacts.sh /data/examples/develop/req/models/ develop process/process
 
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
