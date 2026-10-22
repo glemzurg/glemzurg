@@ -2,19 +2,19 @@
 # Generate markdown docs for the develop model.
 #
 # Usage:
-#   ./examples/develop/req/generate.sh
-#   ./examples/develop/req/generate.sh -debug
+#   ./examples/develop/generate.sh
+#   ./examples/develop/generate.sh -debug
 #
 # Writes to examples/develop/req/output/develop
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 MODEL="develop"
-ROOTSOURCE="$SCRIPT_DIR/models"
-ROOTOUTPUT="$SCRIPT_DIR/output"
+ROOTSOURCE="$SCRIPT_DIR/req/models"
+ROOTOUTPUT="$SCRIPT_DIR/req/output"
 
 usage() {
     echo "Usage: $0 [OPTIONS]"
